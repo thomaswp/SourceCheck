@@ -1,10 +1,13 @@
 package com.snap.parser;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
+
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 
 import com.snap.data.Snapshot;
 
@@ -18,20 +21,16 @@ public class SnappierParser {
 		if (!dataDir.endsWith("/") && !dataDir.endsWith("\\")) {
 			dataDir += "/";
 		}
-		try {
-			FileInputStream fis = new FileInputStream(dataDir + FILE);
-			Scanner sc = new Scanner(fis);
+		try {			
+			CSVParser parser = new CSVParser(new FileReader(dataDir + FILE), CSVFormat.DEFAULT);
 			
-			for (int i = 0; i < 10; i++) {
-				String line = sc.nextLine();
-				String[] parts = line.split(",");
-//				String.join(",", elements)
-				System.out.println(line);
+			int left = 100;
+			for (CSVRecord csvRecord : parser) {
+				System.out.println(csvRecord.size());
+				if (left-- == 0) break;
 			}
 			
-			sc.close();
-			
-		} catch (FileNotFoundException e) {
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		
