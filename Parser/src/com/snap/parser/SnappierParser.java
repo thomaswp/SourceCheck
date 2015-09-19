@@ -3,6 +3,8 @@ package com.snap.parser;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 import org.apache.commons.csv.CSVFormat;
@@ -22,13 +24,34 @@ public class SnappierParser {
 			dataDir += "/";
 		}
 		try {			
-			CSVParser parser = new CSVParser(new FileReader(dataDir + FILE), CSVFormat.DEFAULT);
+			CSVParser parser = new CSVParser(new FileReader(dataDir + FILE), CSVFormat.DEFAULT.withHeader());
 			
-			int left = 100;
+			for (String header : parser.getHeaderMap().keySet()) System.out.print(header + ", ");
+			System.out.println();
+			
+			HashSet<String> students = new HashSet<String>();
+			HashSet<String> projects = new HashSet<String>();
+			
+			int left = 20000;
 			for (CSVRecord csvRecord : parser) {
-				System.out.println(csvRecord.size());
 				if (left-- == 0) break;
+				int size = csvRecord.size();
+//				for (int i = 0; i < size; i++) {
+//					System.out.println(csvRecord.get(i));
+//				}
+				
+				String studentID = csvRecord.get(1);
+				String pairID = csvRecord.get(2);
+				String projectName = csvRecord.get(3);
+				
+				students.add(studentID);
+				projects.add(projectName);				
+				
+//				for (int i = 0; i < 7; i++) System.out.print(csvRecord.get(i) + ", ");
+//				System.out.println();
 			}
+			System.out.println("Students: " + students.size());
+			System.out.println("Projects: " + projects.size());
 			
 		} catch (IOException e) {
 			e.printStackTrace();
