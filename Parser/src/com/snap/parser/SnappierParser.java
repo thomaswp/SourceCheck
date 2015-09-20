@@ -1,6 +1,7 @@
 package com.snap.parser;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -25,8 +26,11 @@ public class SnappierParser {
 		}
 		try {			
 			File splitFolder = new File(dataDir + SPLIT_FOLDER);
+			if (splitFolder.exists()) {
+				for (File f : splitFolder.listFiles()) f.delete();
+			}
 			splitFolder.delete();
-			splitFolder.mkdir();
+			splitFolder.mkdirs();
 			
 			CSVParser parser = new CSVParser(new FileReader(dataDir + FILE), CSVFormat.DEFAULT.withHeader());
 			
@@ -41,9 +45,9 @@ public class SnappierParser {
 			String[] header = new String[keepIndices.length];
 			for (int i = 0; i < header.length; i++) header[i] = fullHeader[keepIndices[i]];
 			
-			int left = 2000;
+			int row = 0;
 			for (CSVRecord csvRecord : parser) {
-				if (left-- == 0) break;
+				if (++row % 250 == 0) System.out.println(row);
 				int size = csvRecord.size();
 				if (size != 10) System.out.println("Improper size: " + csvRecord.getRecordNumber());
 //				for (int i = 0; i < size; i++) {
@@ -65,7 +69,7 @@ public class SnappierParser {
 						printers.remove(key).close();
 					}
 					
-					printer = new CSVPrinter(new FileWriter(filename), CSVFormat.DEFAULT.withHeader(header));
+					printer = new CSVPrinter(new FileWriter(filename), CSVFormat.EXCEL.withHeader(header));
 					printers.put(filename, printer);
 				}
 				
@@ -84,7 +88,7 @@ public class SnappierParser {
 		}
 	}
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws FileNotFoundException {
 		SnappierParser.splitCSV("../data/");
 	}
 }
