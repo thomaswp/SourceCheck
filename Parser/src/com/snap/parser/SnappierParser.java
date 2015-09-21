@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 
 import org.apache.commons.csv.CSVFormat;
@@ -88,7 +89,19 @@ public class SnappierParser {
 		}
 	}
 	
+	public static void analyze(String dataDir) {
+		File splitFolder = new File(dataDir + SPLIT_FOLDER);
+		HashSet<String> students = new HashSet<String>();
+		for (File file : splitFolder.listFiles()) {
+			String name = file.getName();
+			name = name.split("(_|\\.)")[1];
+			students.add(name);
+		}
+		System.out.println(students.size());
+	}
+	
 	public static void main(String[] args) throws FileNotFoundException {
-		SnappierParser.splitCSV("../data/");
+//		SnappierParser.splitCSV("../data/");
+		SnappierParser.analyze("../data/");
 	}
 }
