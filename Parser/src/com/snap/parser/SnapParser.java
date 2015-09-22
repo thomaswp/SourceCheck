@@ -1,3 +1,5 @@
+package com.snap.parser;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -109,7 +111,7 @@ public class SnapParser {
 				writer = null;
 			}
 		}
-	}	
+	}
 }
 
 
