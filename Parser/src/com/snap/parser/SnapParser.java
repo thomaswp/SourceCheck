@@ -1,14 +1,18 @@
 package com.snap.parser;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.Set;
+
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.csv.CSVRecord;
 
 /**
  * Snap parser for logging files
@@ -16,9 +20,11 @@ import java.util.Set;
  */
 public class SnapParser {
 	
-	private static final String FILE_HEADER = "id,time,message,jsonData,assignmentID,projectID,sessionID,browserID,code \n";
-	private static final String NEW_LINE = "\n";
-	private Map<String, BufferedWriter> writers = new HashMap<String, BufferedWriter>();
+	private static final String[] HEADER = new String[] {
+			"id","time","message","jsonData","assignmentID","projectID","sessionID","browserID","code"
+	};
+	private Map<String, CSVPrinter> csvPrinters = new HashMap<String, CSVPrinter>();
+	private String outputFolder;
 	
 	/**
 	 * SnapParserConstructor
@@ -29,13 +35,14 @@ public class SnapParser {
 	
 	/**
 	 * Scans the CSV file name, and sends scanner to the processRows method
-	 * @param SnapCSVfileName
+	 * @param snapCSVfileName
 	 * @throws IOException
 	 */
-	public void parseStudentRecords(String SnapCSVfileName) throws IOException{
+	public void parseStudentRecords(String snapCSVfileName, String outputFolder) throws IOException{
+		this.outputFolder = outputFolder;
+		new File(outputFolder).mkdirs();
 		try{
-			Scanner input = new Scanner(new File(SnapCSVfileName)); //filename
-			processRows(input);
+			processRows(snapCSVfileName);
 		} catch (FileNotFoundException e){
 			e.printStackTrace();
 		}
@@ -46,19 +53,17 @@ public class SnapParser {
 	 * @param input
 	 * @throws IOException
 	 */
-	private void processRows(Scanner input) throws IOException{
-		while(input.hasNextLine()){
-			String row = input.nextLine();
-			String[] data = row.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1); 
-			//create variables
-			String assignmentID = data[4];
-			String projectID = data[5];
-			createFolderStructure(assignmentID,projectID, row);
+	private void processRows(String input) throws IOException{
+		CSVParser parser = new CSVParser(new FileReader(input), CSVFormat.DEFAULT.withHeader());
+		for (CSVRecord record : parser) {
+			String assignmentID = record.get(4);
+			String projectID = record.get(5);
+			createFolderStructure(assignmentID,projectID, record);
 		}
 		//close out all the writers in hashmap
+		parser.close();
 		cleanUp();
 		//close out scanner for csv file
-		input.close();
 	}
 
 	/**
@@ -67,31 +72,27 @@ public class SnapParser {
 	 * @param userId
 	 * @throws IOException 
 	 */
-	private void createFolderStructure(String assignmentID, String projectID, String row) throws IOException{
+	private void createFolderStructure(String assignmentID, String projectID, CSVRecord record) throws IOException{
 		//rows without projectID are skipped. these are the logger.started lines
 		if(!projectID.equals("")){
-			//check to see if folder for assignment such as GuessLab3 already exists, if not - create folder 
-			boolean checkFolder = new File(assignmentID).exists();
-			String currentFolderPath = null;
-			if(!checkFolder){
-				File newAssignmentFolder = new File(assignmentID);
-				newAssignmentFolder.mkdir();
-				currentFolderPath = newAssignmentFolder.getAbsolutePath();			
-			} else {
-				File newAssignmentFolder = new File(assignmentID);
-				currentFolderPath = newAssignmentFolder.getAbsolutePath();		
-			}
+			//check to see if folder for assignment such as GuessLab3 already exists, if not - create folder
+			File newAssignmentFolder = new File(outputFolder, assignmentID);
+			newAssignmentFolder.mkdir();
+			String currentFolderPath = newAssignmentFolder.getAbsolutePath();
 
 			//hashmap for bufferedWriters
 			String keyword = assignmentID+projectID;
-			BufferedWriter writer = writers.get(keyword);
-			if(writer == null){
-				writer = new BufferedWriter(new FileWriter(new File(currentFolderPath + "/" + projectID + ".csv"),true));
-				writers.put(keyword, writer);
-				writer.write(FILE_HEADER);
+			CSVPrinter printer = csvPrinters.get(keyword);
+			if(printer == null){
+				printer = new CSVPrinter(new FileWriter(currentFolderPath + "/" + projectID + ".csv"), CSVFormat.EXCEL.withHeader(HEADER));
+				csvPrinters.put(keyword, printer);
 			}
-			writer.write(row);
-			writer.write(NEW_LINE);
+			
+			Object[] cols = new Object[record.size()];
+			for (int i = 0; i < cols.length; i++) {
+				cols[i] = record.get(i);
+			}
+			printer.printRecord(cols);
 		}
 	}
 	
@@ -99,9 +100,9 @@ public class SnapParser {
 	 * code taken from StackOverflow to close out BufferedWriters
 	 */
 	private void cleanUp(){
-		Set<String> keySet = writers.keySet();
+		Set<String> keySet = csvPrinters.keySet();
 		for(String key : keySet){
-			BufferedWriter writer = writers.get(key);
+			CSVPrinter writer = csvPrinters.get(key);
 			if(writer != null){
 				try{
 					writer.close();
@@ -111,6 +112,10 @@ public class SnapParser {
 				writer = null;
 			}
 		}
+	}
+	
+	public static void main(String[] args) throws IOException {
+		new SnapParser().parseStudentRecords("../data/csc200/fall2015.csv", "../data/csc200/fall2015");
 	}
 }
 
