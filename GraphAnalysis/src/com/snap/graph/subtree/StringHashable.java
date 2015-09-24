@@ -6,8 +6,8 @@ import java.util.List;
 
 public abstract class StringHashable implements Comparable<StringHashable> {
 	
-	private String cachedCanonicalString;
-	private int cachedHashCode;
+	private transient String cachedCanonicalString;
+	private transient int cachedHashCode;
 	
 	public void cache() {
 		cachedCanonicalString = toCanonicalStringInternal();

@@ -12,6 +12,11 @@ public class Node extends StringHashable {
 	public final Node parent;
 	public final List<Node> children = new ArrayList<Node>();
 	
+	@SuppressWarnings("unused")
+	private Node() {
+		this(null, null);
+	}
+	
 	public Node(Node parent, String type) {
 		this(parent, type, null);
 	}
