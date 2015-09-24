@@ -37,6 +37,8 @@ public class SnapParser {
 	};
 	
 	private final Map<String, CSVPrinter> csvPrinters = new HashMap<String, CSVPrinter>();
+	private Kryo kyro = new Kryo();
+	
 	private final String outputFolder;
 	private final boolean cacheFiles;
 	
@@ -114,9 +116,7 @@ public class SnapParser {
 		}
 	}
 	
-	Kryo kyro = new Kryo();
-	
-	private List<DataRow> parseRows(File logFile) throws IOException {
+	public List<DataRow> parseRows(File logFile) throws IOException {
 		File cached = new File(logFile.getAbsolutePath() + ".cached");
 		if (cacheFiles && cached.exists()) {
 			try {
@@ -165,7 +165,7 @@ public class SnapParser {
 	}
 	
 	
-	private HashMap<String, List<DataRow>> parseAssignment(String folder) throws IOException {
+	public HashMap<String, List<DataRow>> parseAssignment(String folder) throws IOException {
 		HashMap<String, List<DataRow>> students = new HashMap<>();
 		for (File file : new File(outputFolder, folder).listFiles()) {
 			if (file.getName().endsWith(".cached")) continue;
