@@ -1,6 +1,8 @@
 package com.snap.graph.subtree;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -18,7 +20,6 @@ public class SnapSubtree {
 		HashMap<String, List<Node>> nodeMap = new HashMap<String, List<Node>>();
 		
 		for (String student : students.keySet()) {
-			System.out.println(student);
 			List<DataRow> rows = students.get(student);
 			List<Node> nodes = new ArrayList<>();
 			
@@ -33,17 +34,20 @@ public class SnapSubtree {
 		float total = 0;
 		int done = 0;
 		boolean subtree = true;
-		for (List<Node> test : nodeMap.values()) {
+		for (String testKey : nodeMap.keySet()) {
+			System.out.println(testKey);
+			List<Node> test = nodeMap.get(testKey);
 			Builder builder = new Builder();
 			for (List<Node> nodes : nodeMap.values()) {
 				if (nodes == test) continue;
-				builder.addStudent(nodes, subtree, true);
+				builder.addStudent(nodes, subtree, false);
 			}
-//			builder.graph.export(new PrintStream(new FileOutputStream("test" + done + ".graphml")), true, 1, true, true);
+			builder.graph.export(new PrintStream(new FileOutputStream("test" + done + ".graphml")), true, 1, true, true);
 			total += builder.testStudent(test, subtree);
+			
 			done++;
 			
-			if (done == 10) break;
+			if (done == 1) break;
 		}
 		
 		System.out.println(total / done);

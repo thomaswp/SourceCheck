@@ -15,6 +15,8 @@ public class Builder {
 	
 	@SuppressWarnings("unchecked")
 	public void addStudent(List<Node> path, boolean subtree, boolean duplicates) {
+		// duplicates allows multiple edges from the same student
+		
 		if (path.size() == 0) return;
 		
 		LblTree lastTree = null;
@@ -97,22 +99,20 @@ public class Builder {
 			List<LblTree> list = Collections.list(tree.depthFirstEnumeration());
 			if (lastTree != null) {
 				opt.init(lastTree, tree);
-				List<Node> n = new ArrayList<Node>();
 				for (int[] a : opt.computeEditMapping()) {
 					LblTree c1 = a[0] == 0 ? null : lastList.get(a[0] - 1);
 					LblTree c2 = a[1] == 0 ? null : list.get(a[1] - 1);
+					// We look for newly created blocks (they have no match in the previous state)
 					if (c1 == null) {
-						Node n2 = (Node)c2.getUserObject();
-						Tuple<Node,Node> hint = getHint(n2);
-						n.add(n2);
+						Node n = (Node)c2.getUserObject();
+						Tuple<Node,Node> hint = getHint(n);
 						if (hint != null) {
-//							System.out.println(hint.x + " -> " + hint.y);
+							System.out.println(i + ":"  + hint.x + "\n\t-> " + hint.y);
 							success++;
 							break;
 						}
 					}
 				}
-//				if (n.size() > 0) System.out.println(n);
 			}
 			lastTree = tree;
 			lastList = list;
@@ -124,7 +124,7 @@ public class Builder {
 		return perc;
 	}
 	
-	private Tuple<Node,Node> getHint(Node node) {
+	public Tuple<Node,Node> getHint(Node node) {
 		List<Graph<Node,Void>.Edge> next = graph.fromMap.get(node);
 		if (next != null && next.size() > 0) return new Tuple<Node,Node>(node, next.get(0).to);
 		for (Node child : node.children) {
@@ -134,7 +134,7 @@ public class Builder {
 		return null;
 	}
 
-	private class Tuple<T1,T2> {
+	public class Tuple<T1,T2> {
 		public final T1 x;
 		public final T2 y;
 		
