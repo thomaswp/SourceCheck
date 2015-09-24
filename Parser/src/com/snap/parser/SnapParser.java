@@ -35,14 +35,17 @@ public class SnapParser {
 	private static final String[] HEADER = new String[] {
 			"id","time","message","jsonData","assignmentID","projectID","sessionID","browserID","code"
 	};
+	
 	private final Map<String, CSVPrinter> csvPrinters = new HashMap<String, CSVPrinter>();
 	private final String outputFolder;
+	private final boolean cacheFiles;
 	
 	/**
 	 * SnapParserConstructor
 	 */
-	public SnapParser(String outputFolder){
+	public SnapParser(String outputFolder, boolean cacheFiles){
 		this.outputFolder = outputFolder;
+		this.cacheFiles = cacheFiles;
 		new File(outputFolder).mkdirs();
 	}
 	
@@ -115,7 +118,7 @@ public class SnapParser {
 	
 	private List<DataRow> parseRows(File logFile) throws IOException {
 		File cached = new File(logFile.getAbsolutePath() + ".cached");
-		if (cached.exists()) {
+		if (cacheFiles && cached.exists()) {
 			try {
 				Input input = new Input(new FileInputStream(cached));
 				@SuppressWarnings("unchecked")
@@ -123,7 +126,7 @@ public class SnapParser {
 				input.close();
 				if (rows != null) return rows;
 			} catch (Exception e) { 
-				e.printStackTrace();
+				cached.delete();
 			}
 		}
 		
@@ -144,19 +147,20 @@ public class SnapParser {
 			DataRow row = new DataRow(timestamp, xml);
 			if (row.snapshot != null) {
 				rows.add(row);
-//				System.out.println(row.snapshot.toCode());
 			}
 		}
 		parser.close();
 		
-		cached.delete();
-		try {
-			Output output = new Output(new FileOutputStream(cached));
-			kyro.writeObject(output, rows);
-			output.close();
-		} catch (Exception e) { }
+		if (cacheFiles) {
+			cached.delete();
+			try {
+				Output output = new Output(new FileOutputStream(cached));
+				kyro.writeObject(output, rows);
+				output.close();
+			} catch (Exception e) { }
+		}
 		
-		System.out.println("Parsed: " + rows.size());
+		System.out.println("Parsed: " + logFile.getName());
 		return rows;
 	}
 	
@@ -175,12 +179,10 @@ public class SnapParser {
 	
 	
 	public static void main(String[] args) throws IOException {
-		SnapParser parser = new SnapParser("../data/csc200/fall2015");
+		SnapParser parser = new SnapParser("../data/csc200/fall2015", true);
 //		parser.splitStudentRecords("../data/csc200/fall2015.csv");
-		
 //		parser.parseRows(new File(parser.outputFolder + "/guess1Lab/0b368197-7d2d-4b11-be38-9111bbb9b475.csv"));
-		
-//		parser.parseRows(new File(parser.outputFolder + "/guess1Lab/0e1c3e4a-ecb5-4576-bde7-ace5141f9a5b.csv"));
+//		parser.parseRows(new File(parser.outputFolder + "/guess1Lab/2a2da14b-58b5-4d9f-bb3e-68974c9baf45.csv"));
 		parser.parseAssignment("guess1Lab");
 	}
 }

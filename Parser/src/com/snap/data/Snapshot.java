@@ -25,6 +25,7 @@ public class Snapshot extends Code {
 	public final Stage stage;
 	public final List<BlockDefinition> blocks = new ArrayList<BlockDefinition>();
 	public final List<String> variables = new ArrayList<String>();
+	public final List<Script> editing = new ArrayList<Script>();
 
 	@SuppressWarnings("unused")
 	private Snapshot() {
@@ -65,6 +66,13 @@ public class Snapshot extends Code {
 			for (Element variable : XML.getGrandchildrenByTagName(project, "variables", "variable")) {
 				snapshot.variables.add(variable.getAttribute("name"));
 			}
+			Element editing = XML.getFirstChildByTagName(project, "editing");
+			if (editing.hasChildNodes()) {
+				System.out.println("!");
+				for (Code script : XML.getCodeInFirstChild(editing, "scripts")) {
+					snapshot.editing.add((Script)script);
+				}
+			}
 			XML.ensureEmpty(project, "headers", "code");
 			// TODO: what is in <hidden>?
 			return snapshot;
@@ -84,6 +92,10 @@ public class Snapshot extends Code {
 		.add(blocks)
 		.close()
 		.add(variables.size() == 0 ? null : ("variables: " + variables.toString() + "\n"))
+		.add("editing:")
+		.indent()
+		.add(editing)
+		.close()
 		.end();
 	}
 
