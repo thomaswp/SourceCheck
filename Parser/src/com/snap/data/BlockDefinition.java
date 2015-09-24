@@ -8,13 +8,24 @@ import org.w3c.dom.Element;
 import com.snap.XML;
 
 public class BlockDefinition extends Block {
+	private static final long serialVersionUID = 1L;
 	
 	public final String type;
 	public final Script script;
 	public final List<String> inputs = new ArrayList<String>();
 	
+	@SuppressWarnings("unused")
+	private BlockDefinition() {
+		this(null, null, null);
+	}
+	
+	private static String steralizeName(String name) {
+		if (name == null) return null;
+		return name.replace("&apos;", "'").replaceAll("%'[A-Za-z0-9# ]*'", "%s");
+	}
+	
 	public BlockDefinition(String name, String type, Script script) {
-		super(name.replace("&apos;", "'").replaceAll("%'[A-Za-z0-9# ]*'", "%s"));
+		super(steralizeName(name));
 		this.type = type;
 		this.script = script;
 	}

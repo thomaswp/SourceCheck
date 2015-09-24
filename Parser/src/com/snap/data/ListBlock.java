@@ -8,6 +8,7 @@ import org.w3c.dom.Element;
 import com.snap.XML;
 
 public class ListBlock extends Block {
+	private static final long serialVersionUID = 1L;
 
 	public ListBlock() {
 		super("list");

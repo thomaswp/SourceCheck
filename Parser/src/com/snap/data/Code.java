@@ -1,10 +1,13 @@
 package com.snap.data;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public abstract class Code {
+public abstract class Code implements Serializable {
+	private static final long serialVersionUID = 1L;
+
 	public abstract String toCode();
 	public abstract String addChildren(boolean canon, Accumulator ac);
 	

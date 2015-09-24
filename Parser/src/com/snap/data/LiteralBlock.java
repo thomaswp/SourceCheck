@@ -6,6 +6,8 @@ import java.util.HashSet;
 import org.w3c.dom.Element;
 
 public class LiteralBlock extends Block {
+	private static final long serialVersionUID = 1L;
+	
 	public final String value;
 	public final boolean isVarRef;
 	
@@ -15,6 +17,11 @@ public class LiteralBlock extends Block {
 		"doShowVar",
 		"doHideVar"
 	}));
+
+	@SuppressWarnings("unused")
+	private LiteralBlock() {
+		this(null, null, false);
+	}
 	
 	public LiteralBlock(String type, String value, boolean isVarRef) {
 		super(type);

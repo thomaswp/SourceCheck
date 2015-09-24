@@ -1,11 +1,19 @@
 package com.snap.parser;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -13,6 +21,10 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
+
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 
 /**
  * Snap parser for logging files
@@ -23,14 +35,15 @@ public class SnapParser {
 	private static final String[] HEADER = new String[] {
 			"id","time","message","jsonData","assignmentID","projectID","sessionID","browserID","code"
 	};
-	private Map<String, CSVPrinter> csvPrinters = new HashMap<String, CSVPrinter>();
-	private String outputFolder;
+	private final Map<String, CSVPrinter> csvPrinters = new HashMap<String, CSVPrinter>();
+	private final String outputFolder;
 	
 	/**
 	 * SnapParserConstructor
 	 */
-	public SnapParser(){
-		
+	public SnapParser(String outputFolder){
+		this.outputFolder = outputFolder;
+		new File(outputFolder).mkdirs();
 	}
 	
 	/**
@@ -38,41 +51,25 @@ public class SnapParser {
 	 * @param snapCSVfileName
 	 * @throws IOException
 	 */
-	public void parseStudentRecords(String snapCSVfileName, String outputFolder) throws IOException{
-		this.outputFolder = outputFolder;
-		new File(outputFolder).mkdirs();
-		try{
-			processRows(snapCSVfileName);
-		} catch (FileNotFoundException e){
-			e.printStackTrace();
-		}
-	}
-
-	/**
-	 * takes in scanner, sends assignmentID, projectID, and row to the createFolderStructure method
-	 * @param input
-	 * @throws IOException
-	 */
-	private void processRows(String input) throws IOException{
-		CSVParser parser = new CSVParser(new FileReader(input), CSVFormat.DEFAULT.withHeader());
+	public void splitStudentRecords(String snapCSVfileName) throws IOException{
+		CSVParser parser = new CSVParser(new FileReader(snapCSVfileName), CSVFormat.DEFAULT.withHeader());
 		for (CSVRecord record : parser) {
 			String assignmentID = record.get(4);
 			String projectID = record.get(5);
-			createFolderStructure(assignmentID,projectID, record);
+			writeRecord(assignmentID,projectID, record);
 		}
 		//close out all the writers in hashmap
 		parser.close();
-		cleanUp();
-		//close out scanner for csv file
+		cleanUpSplit();
 	}
-
+	
 	/**
 	 * creates File tree structure
 	 * @param assignment
 	 * @param userId
 	 * @throws IOException 
 	 */
-	private void createFolderStructure(String assignmentID, String projectID, CSVRecord record) throws IOException{
+	private void writeRecord(String assignmentID, String projectID, CSVRecord record) throws IOException{
 		//rows without projectID are skipped. these are the logger.started lines
 		if(!projectID.equals("")){
 			//check to see if folder for assignment such as GuessLab3 already exists, if not - create folder
@@ -99,7 +96,7 @@ public class SnapParser {
 	/**
 	 * code taken from StackOverflow to close out BufferedWriters
 	 */
-	private void cleanUp(){
+	private void cleanUpSplit(){
 		Set<String> keySet = csvPrinters.keySet();
 		for(String key : keySet){
 			CSVPrinter writer = csvPrinters.get(key);
@@ -114,8 +111,77 @@ public class SnapParser {
 		}
 	}
 	
+	Kryo kyro = new Kryo();
+	
+	private List<DataRow> parseRows(File logFile) throws IOException {
+		File cached = new File(logFile.getAbsolutePath() + ".cached");
+		if (cached.exists()) {
+			try {
+				Input input = new Input(new FileInputStream(cached));
+				@SuppressWarnings("unchecked")
+				List<DataRow> rows = kyro.readObject(input, LinkedList.class);
+				input.close();
+				if (rows != null) return rows;
+			} catch (Exception e) { 
+				e.printStackTrace();
+			}
+		}
+		
+		ArrayList<DataRow> rows = new ArrayList<>();
+		CSVParser parser = new CSVParser(new FileReader(logFile), CSVFormat.EXCEL.withHeader());
+		
+		DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		
+		for (CSVRecord record : parser) {
+			String timestampString = record.get(1);
+			Date timestamp = null;
+			try {
+				timestamp = format.parse(timestampString);
+			} catch (ParseException e) {
+				e.printStackTrace();
+			}
+			String xml = record.get(8);
+			DataRow row = new DataRow(timestamp, xml);
+			if (row.snapshot != null) {
+				rows.add(row);
+//				System.out.println(row.snapshot.toCode());
+			}
+		}
+		parser.close();
+		
+		cached.delete();
+		try {
+			Output output = new Output(new FileOutputStream(cached));
+			kyro.writeObject(output, rows);
+			output.close();
+		} catch (Exception e) { }
+		
+		System.out.println("Parsed: " + rows.size());
+		return rows;
+	}
+	
+	
+	private HashMap<String, List<DataRow>> parseAssignment(String folder) throws IOException {
+		HashMap<String, List<DataRow>> students = new HashMap<>();
+		for (File file : new File(outputFolder, folder).listFiles()) {
+			if (file.getName().endsWith(".cached")) continue;
+			List<DataRow> rows = parseRows(file);
+			if (rows.size() > 3) {
+				students.put(file.getName(), rows);
+			}
+		}
+		return students;
+	}
+	
+	
 	public static void main(String[] args) throws IOException {
-		new SnapParser().parseStudentRecords("../data/csc200/fall2015.csv", "../data/csc200/fall2015");
+		SnapParser parser = new SnapParser("../data/csc200/fall2015");
+//		parser.splitStudentRecords("../data/csc200/fall2015.csv");
+		
+//		parser.parseRows(new File(parser.outputFolder + "/guess1Lab/0b368197-7d2d-4b11-be38-9111bbb9b475.csv"));
+		
+//		parser.parseRows(new File(parser.outputFolder + "/guess1Lab/0e1c3e4a-ecb5-4576-bde7-ace5141f9a5b.csv"));
+		parser.parseAssignment("guess1Lab");
 	}
 }
 

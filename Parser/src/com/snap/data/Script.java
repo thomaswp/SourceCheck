@@ -8,6 +8,8 @@ import org.w3c.dom.Element;
 import com.snap.XML;
 
 public class Script extends Code {
+	private static final long serialVersionUID = 1L;
+	
 	public final List<Block> blocks = new ArrayList<Block>();
 
 	public static Script parse(Element element) {

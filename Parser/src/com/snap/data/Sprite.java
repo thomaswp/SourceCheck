@@ -8,10 +8,17 @@ import org.w3c.dom.Element;
 import com.snap.XML;
 
 public class Sprite extends Code {
+	private static final long serialVersionUID = 1L;
+	
 	public final String name;
 	public final List<String> variables = new ArrayList<String>();
 	public final List<Script> scripts = new ArrayList<Script>();
 	public final List<BlockDefinition> blocks = new ArrayList<BlockDefinition>();
+	
+	@SuppressWarnings("unused")
+	private Sprite() {
+		this(null);
+	}
 	
 	public Sprite(String name) {
 		this.name = name == null ? "Stage" : name;

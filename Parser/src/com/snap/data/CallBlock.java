@@ -8,11 +8,17 @@ import org.w3c.dom.Element;
 import com.snap.XML;
 
 public class CallBlock extends Block {
+	private static final long serialVersionUID = 1L;
 	
 	public final List<Block> parameters = new ArrayList<Block>();
 	public final List<Script> bodies = new ArrayList<Script>();
 	public final boolean isCustom;
 
+	@SuppressWarnings("unused")
+	private CallBlock() {
+		this(null, false);
+	}
+	
 	public CallBlock(String type, boolean isCustom) {
 		super(type);
 		this.isCustom = isCustom;
