@@ -8,13 +8,28 @@ import util.LblTree;
 public class Node extends StringHashable {
 
 	public final String type;
-	private String arg;
 	public final Node parent;
 	public final List<Node> children = new ArrayList<Node>();
+	public transient Object tag;
+
+	private String arg;
+	private int cachedSize = -1;
 	
 	@SuppressWarnings("unused")
 	private Node() {
 		this(null, null);
+	}
+	
+	@Override
+	public void cache() {
+		super.cache();
+		cachedSize = size();
+	}
+	
+	@Override
+	public void clearCache() {
+		super.clearCache();
+		cachedSize = -1;
 	}
 	
 	public Node(Node parent, String type) {
@@ -25,6 +40,15 @@ public class Node extends StringHashable {
 		this.parent = parent;
 		this.type = type;
 		this.arg = arg;
+	}
+	
+	public int size() {
+		if (cachedSize != -1) return cachedSize;
+		int size = 1;
+		for (Node node : children) {
+			size += node.size();
+		}
+		return size;
 	}
 
 	@Override
@@ -42,13 +66,14 @@ public class Node extends StringHashable {
 		return tree;
 	}
 	
-	public static Node fromTree(Node parent, LblTree tree) {
+	public static Node fromTree(Node parent, LblTree tree, boolean cache) {
 		Node node = new Node(parent, tree.getLabel());
 		int count = tree.getChildCount();
 		for (int i = 0; i < count; i++) {
-			Node child = fromTree(node, (LblTree) tree.getChildAt(i));
+			Node child = fromTree(node, (LblTree) tree.getChildAt(i), cache);
 			node.children.add(child);
 		}
+		if (cache) node.cache();
 		return node;
 	}
 

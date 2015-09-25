@@ -20,6 +20,6 @@ public class VarBlock extends Block {
 
 	@Override
 	public String addChildren(boolean canon, Accumulator ac) {
-		return name;
+		return canon ? "var" : name;
 	}
 }

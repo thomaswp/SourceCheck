@@ -10,6 +10,7 @@ public abstract class StringHashable implements Comparable<StringHashable> {
 	private transient int cachedHashCode;
 	
 	public void cache() {
+		clearCache();
 		cachedCanonicalString = toCanonicalStringInternal();
 		cachedHashCode = cachedCanonicalString.hashCode();
 	}

@@ -32,6 +32,12 @@ import com.esotericsoftware.kryo.io.Output;
  */
 public class SnapParser {
 	
+	public enum CacheUse {
+		Ignore,
+		Use,
+		Overwrite
+	}
+	
 	private static final String[] HEADER = new String[] {
 			"id","time","message","jsonData","assignmentID","projectID","sessionID","browserID","code"
 	};
@@ -40,14 +46,14 @@ public class SnapParser {
 	private Kryo kyro = new Kryo();
 	
 	private final String outputFolder;
-	private final boolean cacheFiles;
+	private final CacheUse cacheUse;
 	
 	/**
 	 * SnapParserConstructor
 	 */
-	public SnapParser(String outputFolder, boolean cacheFiles){
+	public SnapParser(String outputFolder, CacheUse cacheUse){
 		this.outputFolder = outputFolder;
-		this.cacheFiles = cacheFiles;
+		this.cacheUse = cacheUse;
 		new File(outputFolder).mkdirs();
 	}
 	
@@ -118,7 +124,7 @@ public class SnapParser {
 	
 	public List<DataRow> parseRows(File logFile) throws IOException {
 		File cached = new File(logFile.getAbsolutePath() + ".cached");
-		if (cacheFiles && cached.exists()) {
+		if (cacheUse == CacheUse.Use && cached.exists()) {
 			try {
 				Input input = new Input(new FileInputStream(cached));
 				@SuppressWarnings("unchecked")
@@ -143,15 +149,17 @@ public class SnapParser {
 			} catch (ParseException e) {
 				e.printStackTrace();
 			}
+			String action = record.get(2);
 			String xml = record.get(8);
 			DataRow row = new DataRow(timestamp, xml);
-			if (row.snapshot != null) {
+			if (row.snapshot != null && !action.equals("Block.grabbed")) {
 				rows.add(row);
 			}
+			
 		}
 		parser.close();
 		
-		if (cacheFiles) {
+		if (cacheUse != CacheUse.Ignore) {
 			cached.delete();
 			try {
 				Output output = new Output(new FileOutputStream(cached));
@@ -179,7 +187,7 @@ public class SnapParser {
 	
 	
 	public static void main(String[] args) throws IOException {
-		SnapParser parser = new SnapParser("../data/csc200/fall2015", true);
+		SnapParser parser = new SnapParser("../data/csc200/fall2015", CacheUse.Overwrite);
 //		parser.splitStudentRecords("../data/csc200/fall2015.csv");
 //		parser.parseRows(new File(parser.outputFolder + "/guess1Lab/0b368197-7d2d-4b11-be38-9111bbb9b475.csv"));
 //		parser.parseRows(new File(parser.outputFolder + "/guess1Lab/2a2da14b-58b5-4d9f-bb3e-68974c9baf45.csv"));

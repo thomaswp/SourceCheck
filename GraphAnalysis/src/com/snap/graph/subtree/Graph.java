@@ -151,7 +151,7 @@ public class Graph<N,E> {
 		}
 	}
 	
-	public class Edge {
+	public class Edge implements Comparable<Edge> {
 		public final N from, to;
 		public final E data;
 		public int weight = 1;
@@ -220,6 +220,11 @@ public class Graph<N,E> {
 			
 			if (f != from.length() || t != to.length()) return "?";
 			return diff;
+		}
+
+		@Override
+		public int compareTo(Edge o) {
+			return Integer.compare(weight, o == null ? Integer.MIN_VALUE : o.weight);
 		}
 	}
 }

@@ -1,8 +1,9 @@
 package com.snap.graph.subtree;
 
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -105,7 +106,7 @@ public class Builder {
 					// We look for newly created blocks (they have no match in the previous state)
 					if (c1 == null) {
 						Node n = (Node)c2.getUserObject();
-						Tuple<Node,Node> hint = getHint(n);
+						Tuple<Node,Node> hint = getAHint(n);
 						if (hint != null) {
 							System.out.println(i + ":"  + hint.x + "\n\t-> " + hint.y);
 							success++;
@@ -124,17 +125,127 @@ public class Builder {
 		return perc;
 	}
 	
-	public Tuple<Node,Node> getHint(Node node) {
-		List<Graph<Node,Void>.Edge> next = graph.fromMap.get(node);
-		if (next != null && next.size() > 0) return new Tuple<Node,Node>(node, next.get(0).to);
-		for (Node child : node.children) {
-			Tuple<Node,Node> hint = getHint(child); 
-			if (hint != null) return hint;
+	public List<Hint> getHints(Node parent) {
+		LinkedList<Hint> hints = new LinkedList<Builder.Hint>();
+		getHints(parent, hints);
+		return hints;
+	}
+	
+	private void getHints(Node node, List<Hint> list) {
+		List<Graph<Node,Void>.Edge> edges = graph.fromMap.get(node);
+		
+		int context = node.size();
+		
+		if (edges != null) {
+			for (Graph<Node,Void>.Edge edge : edges) {
+				Hint hint = new Hint(node, edge.to);
+				hint.context = context;
+				hint.quality = edge.weight;
+				list.add(hint);
+			}
 		}
+		
+		for (Node child : node.children) getHints(child, list);
+	}
+	
+	
+	public Tuple<Node,Node> getAHint(Node node) {
+		List<Node> toSearch = new LinkedList<Node>();
+		toSearch.add(node);
+		
+		while (!toSearch.isEmpty()) {
+			Node next = toSearch.remove(0);
+			List<Graph<Node,Void>.Edge> edges = graph.fromMap.get(node);
+			Node to = getMoreFrequentPredecessor(edges);
+			if (to != null) return new Tuple<Node,Node>(next, to);
+			toSearch.addAll(next.children);
+		}
+		
 		return null;
 	}
+	
+	private Node getMoreFrequentPredecessor(List<Graph<Node,Void>.Edge> edges) {
+		if (edges == null || edges.size() == 0) return null;
+		
+		// TODO: better
+//		if (edges.size() > 1) System.out.println("edges: " + edges.size());
+		Collections.sort(edges);
+		Collections.reverse(edges);
+		for (Graph<Node,Void>.Edge edge : edges) System.out.printf("%s (%d), ", edge.to.toString(), edge.weight);
+		System.out.println();
+		return edges.get(0).to;
+	}
 
-	public class Tuple<T1,T2> {
+	public static class Hint extends Tuple<Node, Node> {
+
+		public int relevance, context, quality;
+		
+		
+		public Hint(Node x, Node y) {
+			super(x, y);
+		}
+		
+		@Override
+		public String toString() {
+			return String.format("[%d,%d,%d]: %s -> %s", relevance, context, quality, x.toString(), y.toString());
+		}
+		
+	}
+	
+	public static abstract class HintComparator implements Comparator<Hint> { 
+		public final static HintComparator ByRelevance = new HintComparator() {
+			@Override
+			public int compare(Hint o1, Hint o2) {
+				return Integer.compare(o2.relevance, o1.relevance);
+			}
+		};
+		
+		public final static HintComparator ByContext = new HintComparator() {
+			@Override
+			public int compare(Hint o1, Hint o2) {
+				return Integer.compare(o2.context, o1.context);
+			}
+		};
+		
+		public final static HintComparator ByQuality = new HintComparator() {
+			@Override
+			public int compare(Hint o1, Hint o2) {
+				return Integer.compare(o2.quality, o1.quality);
+			}
+		};
+		
+		public HintComparator then(final HintComparator comparator) {
+			return new HintComparator() {
+				@Override
+				public int compare(Hint o1, Hint o2) {
+					int first = HintComparator.this.compare(o1, o2);
+					if (first != 0) return first; 
+					return comparator.compare(o1, o2);
+				}
+			};
+		}
+		
+		public static HintComparator compose(HintComparator... comparators) {
+			HintComparator base = comparators[0];
+			for (int i = 0; i < comparators.length; i++) {
+				base = base.then(comparators[i]);
+			}
+			return base;
+		}
+		
+		public static HintComparator weighted(final double relevance, final double context, final double quality) {
+			return new HintComparator() {
+				@Override
+				public int compare(Hint o1, Hint o2) {
+					return Double.compare(
+							o2.relevance * relevance + o2.context * context + o2.quality * quality,
+							o1.relevance * relevance + o1.context * context + o1.quality * quality);
+				}
+			};
+		}
+	}
+	
+	public static class Tuple<T1,T2> {
 		public final T1 x;
 		public final T2 y;
 		
