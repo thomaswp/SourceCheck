@@ -13,7 +13,7 @@ public class Node extends StringHashable {
 	public transient Object tag;
 
 	private String arg;
-	private int cachedSize = -1;
+	private transient int cachedSize = -1;
 	
 	@SuppressWarnings("unused")
 	private Node() {

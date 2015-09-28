@@ -25,6 +25,7 @@ public class SnapSubtree {
 //		SubtreeBuilder graph = subtree.buildGraph(true);
 		System.out.println(System.currentTimeMillis());
 		subtree.buildGraph(Mode.Use);
+//		subtree.analyze();
 		System.out.println(System.currentTimeMillis());
 	}
 	

@@ -3,21 +3,23 @@ package com.snap.graph.subtree;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
 import util.LblTree;
 
-import com.snap.graph.data.Graph.Edge;
+import com.snap.graph.data.HintMap;
+import com.snap.graph.data.HintMap.HintList;
 import com.snap.graph.data.Node;
-import com.snap.graph.data.NodeGraph;
+import com.snap.graph.data.SimpleHintMap;
 
 import distance.RTED_InfoTree_Opt;
 
 public class SubtreeBuilder {
 
-	public final NodeGraph graph = new NodeGraph();
+	public final HintMap graph = new SimpleHintMap();
 	
 	@SuppressWarnings("unchecked")
 	public void addStudent(List<Node> path, boolean subtree, boolean duplicates) {
@@ -95,7 +97,7 @@ public class SubtreeBuilder {
 			if (!set.add(node)) continue;
 			size++;
 			
-			if (graph.vertexMap.containsKey(node)) {
+			if (graph.hasVertex(node)) {
 				success++;
 				continue;
 			}
@@ -111,9 +113,7 @@ public class SubtreeBuilder {
 					// We look for newly created blocks (they have no match in the previous state)
 					if (c1 == null) {
 						Node n = (Node)c2.getUserObject();
-						Tuple<Node,Node> hint = getAHint(n);
-						if (hint != null) {
-							System.out.println(i + ":"  + hint.x + "\n\t-> " + hint.y);
+						if (hasHint(n)) {
 							success++;
 							break;
 						}
@@ -137,15 +137,15 @@ public class SubtreeBuilder {
 	}
 	
 	private void getHints(Node node, List<Hint> list) {
-		List<Edge<Node,Void>> edges = graph.fromMap.get(node);
+		HintList edges = graph.getHints(node);
 		
 		int context = node.size();
 		
 		if (edges != null) {
-			for (Edge<Node,Void> edge : edges) {
-				Hint hint = new Hint(node, edge.to);
+			for (Node to : edges) {
+				Hint hint = new Hint(node, to);
 				hint.context = context;
-				hint.quality = edge.weight;
+				hint.quality = edges.getWeight(to);
 				list.add(hint);
 			}
 		}
@@ -154,31 +154,19 @@ public class SubtreeBuilder {
 	}
 	
 	
-	public Tuple<Node,Node> getAHint(Node node) {
+	public boolean hasHint(Node node) {
 		List<Node> toSearch = new LinkedList<Node>();
 		toSearch.add(node);
 		
 		while (!toSearch.isEmpty()) {
 			Node next = toSearch.remove(0);
-			List<Edge<Node,Void>> edges = graph.fromMap.get(node);
-			Node to = getMoreFrequentPredecessor(edges);
-			if (to != null) return new Tuple<Node,Node>(next, to);
+			HintList edges = graph.getHints(node);
+			Iterator<Node> iterator = edges.iterator();
+			if (iterator.hasNext()) return true;
 			toSearch.addAll(next.children);
 		}
 		
-		return null;
-	}
-	
-	private Node getMoreFrequentPredecessor(List<Edge<Node,Void>> edges) {
-		if (edges == null || edges.size() == 0) return null;
-		
-		// TODO: better
-//		if (edges.size() > 1) System.out.println("edges: " + edges.size());
-		Collections.sort(edges);
-		Collections.reverse(edges);
-		for (Edge<Node,Void> edge : edges) System.out.printf("%s (%d), ", edge.to.toString(), edge.weight);
-		System.out.println();
-		return edges.get(0).to;
+		return false;
 	}
 
 	public static class Hint extends Tuple<Node, Node> {

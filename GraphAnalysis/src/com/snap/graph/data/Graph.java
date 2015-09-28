@@ -8,11 +8,11 @@ import java.util.Set;
 
 public class Graph<N,E> {
 	
-	public final Set<N> vertices = new HashSet<N>();
-	public final Set<Edge<N,E>> edges = new HashSet<Edge<N,E>>();
-	public final HashMap<N, List<Edge<N,E>>> fromMap = new HashMap<N, List<Edge<N,E>>>();
-	public final HashMap<N, List<Edge<N,E>>> toMap = new HashMap<N, List<Edge<N,E>>>();
-	public final HashMap<N, Vertex<N>> vertexMap = new HashMap<N, Vertex<N>>();
+	protected final Set<N> vertices = new HashSet<N>();
+	protected final Set<Edge<N,E>> edges = new HashSet<Edge<N,E>>();
+	protected final HashMap<N, List<Edge<N,E>>> fromMap = new HashMap<N, List<Edge<N,E>>>();
+	protected final HashMap<N, List<Edge<N,E>>> toMap = new HashMap<N, List<Edge<N,E>>>();
+	protected final HashMap<N, Vertex<N>> vertexMap = new HashMap<N, Vertex<N>>();
 	
 	public Iterable<N> vertices() {
 		return vertices;
