@@ -1,5 +1,6 @@
 package com.snap.graph.subtree;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,29 +15,47 @@ import com.snap.graph.subtree.SubtreeBuilder.Hint;
 import com.snap.graph.subtree.SubtreeBuilder.HintComparator;
 import com.snap.parser.DataRow;
 import com.snap.parser.SnapParser;
+import com.snap.parser.Store;
+import com.snap.parser.Store.Mode;
 
 public class SnapSubtree {
 	
 	public static void main(String[] args) throws IOException {
 		SnapSubtree subtree = new SnapSubtree("../data/csc200/fall2015", "guess1Lab");
 //		SubtreeBuilder graph = subtree.buildGraph(true);
-		subtree.analyze();
+		System.out.println(System.currentTimeMillis());
+		subtree.buildGraph(Mode.Use);
+		System.out.println(System.currentTimeMillis());
 	}
 	
-	private final HashMap<String, List<Node>> nodeMap;
+	public final String dataDir;
+	public final String assignment;
 	
-	private SnapSubtree(String dataDir, String assignment) throws IOException {
-		this.nodeMap = parseStudents(dataDir, assignment);
+	private HashMap<String, List<Node>> nodeMapCache;
+	
+	private HashMap<String, List<Node>> nodeMap() {
+		if (nodeMapCache == null) {
+			try {
+				parseStudents();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		return nodeMapCache;
+	}
+	
+	private SnapSubtree(String dataDir, String assignment) {
+		this.dataDir = dataDir;
+		this.assignment = assignment;
 	}
 	
 	private void analyze() {
 		float total = 0;
 		int done = 0;
-		boolean subtree = true;
-		for (String testKey : nodeMap.keySet()) {
+		for (String testKey : nodeMap().keySet()) {
 			System.out.println(testKey);
-			List<Node> test = nodeMap.get(testKey);
-			SubtreeBuilder builder = buildGraph(subtree, testKey);
+			List<Node> test = nodeMap().get(testKey);
+			SubtreeBuilder builder = buildGraph(testKey);
 //			builder.graph.export(new PrintStream(new FileOutputStream("test" + done + ".graphml")), true, 1, true, true);
 
 			for (Node node : test) {
@@ -67,25 +86,30 @@ public class SnapSubtree {
 	}
 
 	
-	public SubtreeBuilder buildGraph(boolean subtree) {
-		return buildGraph(subtree);
+	public SubtreeBuilder buildGraph(Mode storeMode) {
+		String storePath = new File(dataDir, assignment + ".cached").getAbsolutePath();
+		return Store.getCachedObject(storePath, SubtreeBuilder.class, storeMode, new Store.Loader<SubtreeBuilder>() {
+			@Override
+			public SubtreeBuilder load() {
+				return buildGraph((String)null);
+			}
+		});
 	}
 	
-	public SubtreeBuilder buildGraph(boolean subtree, String testStudent) {
+	public SubtreeBuilder buildGraph(String testStudent) {
 		SubtreeBuilder builder = new SubtreeBuilder();
-		List<Node> test = nodeMap.get(testStudent);
-		for (List<Node> nodes : nodeMap.values()) {
+		List<Node> test = nodeMap().get(testStudent);
+		for (List<Node> nodes : nodeMap().values()) {
 			if (nodes == test) continue;
-			builder.addStudent(nodes, subtree, false);
+			builder.addStudent(nodes, true, false);
 		}
 		return builder;
 	}
 
-	private static HashMap<String, List<Node>> parseStudents(String dataDir, String assignment)
-			throws IOException {
-		SnapParser parser = new SnapParser(dataDir, SnapParser.CacheUse.Use);
+	private void parseStudents() throws IOException {
+		SnapParser parser = new SnapParser(dataDir, Store.Mode.Use);
 		HashMap<String,List<DataRow>> students = parser.parseAssignment(assignment);
-		HashMap<String, List<Node>> nodeMap = new HashMap<String, List<Node>>();
+		nodeMapCache = new HashMap<String, List<Node>>();
 		
 		for (String student : students.keySet()) {
 			List<DataRow> rows = students.get(student);
@@ -97,8 +121,7 @@ public class SnapSubtree {
 				node.tag = row;
 				nodes.add(node);
 			}
-			nodeMap.put(student, nodes);
+			nodeMapCache.put(student, nodes);
 		}
-		return nodeMap;
 	}
 }

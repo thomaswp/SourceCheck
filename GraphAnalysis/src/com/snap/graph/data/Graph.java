@@ -9,22 +9,22 @@ import java.util.Set;
 public class Graph<N,E> {
 	
 	public final Set<N> vertices = new HashSet<N>();
-	public final Set<Edge> edges = new HashSet<Graph<N,E>.Edge>();
-	public final HashMap<N, List<Edge>> fromMap = new HashMap<N, List<Edge>>();
-	public final HashMap<N, List<Edge>> toMap = new HashMap<N, List<Edge>>();
-	public final HashMap<N, Vertex> vertexMap = new HashMap<N, Vertex>();
+	public final Set<Edge<N,E>> edges = new HashSet<Edge<N,E>>();
+	public final HashMap<N, List<Edge<N,E>>> fromMap = new HashMap<N, List<Edge<N,E>>>();
+	public final HashMap<N, List<Edge<N,E>>> toMap = new HashMap<N, List<Edge<N,E>>>();
+	public final HashMap<N, Vertex<N>> vertexMap = new HashMap<N, Vertex<N>>();
 	
 	public Iterable<N> vertices() {
 		return vertices;
 	}
 	
-	public Iterable<Graph<N,E>.Edge> edges() {
+	public Iterable<Edge<N,E>> edges() {
 		return edges;
 	}
 	
 	public boolean addVertex(N v) {
 		if (vertices.add(v)) {
-			vertexMap.put(v, new Vertex(v));
+			vertexMap.put(v, new Vertex<N>(v));
 			return true;
 		}
 		return false;
@@ -43,23 +43,23 @@ public class Graph<N,E> {
 	public boolean addEdge(N from , N to, E edgeData, int color, double colorWeight) {
 		addVertex(from);
 		addVertex(to);
-		Edge edge = new Edge(from, to, edgeData);
+		Edge<N,E> edge = new Edge<N,E>(from, to, edgeData);
 		boolean added = edges.add(edge);
 		if (added) {
-			List<Edge> edges = fromMap.get(from);
+			List<Edge<N,E>> edges = fromMap.get(from);
 			if (edges == null) {
-				fromMap.put(from, edges = new ArrayList<Graph<N,E>.Edge>());
+				fromMap.put(from, edges = new ArrayList<Edge<N,E>>());
 			}
 			edges.add(edge);
 			
 			edges = toMap.get(to);
 			if (edges == null) {
-				toMap.put(to, edges = new ArrayList<Graph<N,E>.Edge>());
+				toMap.put(to, edges = new ArrayList<Edge<N,E>>());
 			}
 			edges.add(edge);
 		}
-		List<Edge> edges = fromMap.get(from);
-		for (Edge e : edges) {
+		List<Edge<N,E>> edges = fromMap.get(from);
+		for (Edge<N,E> e : edges) {
 			if (e.equals(edge)) {
 				if (!added) e.weight++;
 				addWeight(e.colorWeights, color, colorWeight);
@@ -70,7 +70,7 @@ public class Graph<N,E> {
 	}
 	
 	public void addGraph(Graph<N, E> graph) {
-		for (Vertex v : graph.vertexMap.values()) {
+		for (Vertex<N> v : graph.vertexMap.values()) {
 			for (Integer color : v.colorWeights.keySet()) {
 				addVertex(v.data, color, v.colorWeights.get(color));
 			}
@@ -78,7 +78,7 @@ public class Graph<N,E> {
 				addVertex(v.data);
 			}
 		}
-		for (Edge e : graph.edges) {
+		for (Edge<N,E> e : graph.edges) {
 			for (Integer color : e.colorWeights.keySet()) {
 				addEdge(e.from, e.to, e.data, color, e.colorWeights.get(color));
 			}
@@ -101,7 +101,7 @@ public class Graph<N,E> {
 		return vertexMap.get(v).colorWeights.size() > 1;
 	}
 	
-	private int color(HashMap<Integer, Double> colorWeights) {
+	private static int color(HashMap<Integer, Double> colorWeights) {
 		if (colorWeights.size() == 0) return 0x999999;
 		double r = 0, b = 0, g = 0;
 		double weightTotal = 0;
@@ -118,10 +118,10 @@ public class Graph<N,E> {
 	}
 	
 	public int outWeight(N vertex, boolean ignoreLoops) {
-		List<Graph<N, E>.Edge> vertices = fromMap.get(vertex);
+		List<Edge<N,E>> vertices = fromMap.get(vertex);
 		if (vertices == null) return 0;
 		int w = 0;
-		for (Edge edge : vertices) {
+		for (Edge<N,E> edge : vertices) {
 			if (ignoreLoops && edge.isLoop()) continue;
 			w += edge.weight;
 		}
@@ -129,10 +129,10 @@ public class Graph<N,E> {
 	}
 	
 	public int inWeight(N vertex, boolean ignoreLoops) {
-		List<Graph<N, E>.Edge> vertices = toMap.get(vertex);
+		List<Edge<N, E>> vertices = toMap.get(vertex);
 		if (vertices == null) return 0;
 		int w = 0;
-		for (Edge edge : vertices) {
+		for (Edge<N,E> edge : vertices) {
 			if (ignoreLoops && edge.isLoop()) continue;
 			w += edge.weight;
 		}
@@ -140,24 +140,34 @@ public class Graph<N,E> {
 	}
 	
 	
-	public class Vertex {
+	public static class Vertex<N> {
 		public final N data;
 		protected double bValue;
 
 		public final HashMap<Integer, Double> colorWeights = new HashMap<Integer, Double>();
+
+		@SuppressWarnings("unused")
+		private Vertex() {
+			this(null);
+		}
 		
 		public Vertex(N data) {
 			this.data = data;
 		}
 	}
 	
-	public class Edge implements Comparable<Edge> {
+	public static class Edge<N,E> implements Comparable<Edge<N,E>> {
 		public final N from, to;
 		public final E data;
 		public int weight = 1;
 		public final HashMap<Integer, Double> colorWeights = new HashMap<Integer, Double>();
 		protected double bRelativeWeight, bR;
 		protected boolean bBest;
+		
+		@SuppressWarnings("unused")
+		private Edge() {
+			this(null, null, null);
+		}
 		
 		public Edge(N from, N to, E data) {
 			this.from = from;
@@ -166,7 +176,7 @@ public class Graph<N,E> {
 		}
 		
 		public int color() {
-			return Graph.this.color(colorWeights);
+			return Graph.color(colorWeights);
 		}
 		
 		public boolean isLoop() {
@@ -177,7 +187,7 @@ public class Graph<N,E> {
 		public boolean equals(Object obj) {
 			if (!(obj instanceof Graph.Edge)) return false;
 			@SuppressWarnings("unchecked")
-			Edge e = (Edge) obj;
+			Edge<N,E> e = (Edge<N,E>) obj;
 			return (from == null ? e.from == null : from.equals(e.from)) &&
 					(to == null ? e.to == null : to.equals(e.to)) &&
 					(data == null ? e.data == null : data.equals(e.data));
@@ -223,7 +233,7 @@ public class Graph<N,E> {
 		}
 
 		@Override
-		public int compareTo(Edge o) {
+		public int compareTo(Edge<N,E> o) {
 			return Integer.compare(weight, o == null ? Integer.MIN_VALUE : o.weight);
 		}
 	}

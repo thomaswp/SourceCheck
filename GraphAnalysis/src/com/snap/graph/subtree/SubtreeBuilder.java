@@ -9,7 +9,7 @@ import java.util.Set;
 
 import util.LblTree;
 
-import com.snap.graph.data.Graph;
+import com.snap.graph.data.Graph.Edge;
 import com.snap.graph.data.Node;
 import com.snap.graph.data.NodeGraph;
 
@@ -137,12 +137,12 @@ public class SubtreeBuilder {
 	}
 	
 	private void getHints(Node node, List<Hint> list) {
-		List<Graph<Node,Void>.Edge> edges = graph.fromMap.get(node);
+		List<Edge<Node,Void>> edges = graph.fromMap.get(node);
 		
 		int context = node.size();
 		
 		if (edges != null) {
-			for (Graph<Node,Void>.Edge edge : edges) {
+			for (Edge<Node,Void> edge : edges) {
 				Hint hint = new Hint(node, edge.to);
 				hint.context = context;
 				hint.quality = edge.weight;
@@ -160,7 +160,7 @@ public class SubtreeBuilder {
 		
 		while (!toSearch.isEmpty()) {
 			Node next = toSearch.remove(0);
-			List<Graph<Node,Void>.Edge> edges = graph.fromMap.get(node);
+			List<Edge<Node,Void>> edges = graph.fromMap.get(node);
 			Node to = getMoreFrequentPredecessor(edges);
 			if (to != null) return new Tuple<Node,Node>(next, to);
 			toSearch.addAll(next.children);
@@ -169,14 +169,14 @@ public class SubtreeBuilder {
 		return null;
 	}
 	
-	private Node getMoreFrequentPredecessor(List<Graph<Node,Void>.Edge> edges) {
+	private Node getMoreFrequentPredecessor(List<Edge<Node,Void>> edges) {
 		if (edges == null || edges.size() == 0) return null;
 		
 		// TODO: better
 //		if (edges.size() > 1) System.out.println("edges: " + edges.size());
 		Collections.sort(edges);
 		Collections.reverse(edges);
-		for (Graph<Node,Void>.Edge edge : edges) System.out.printf("%s (%d), ", edge.to.toString(), edge.weight);
+		for (Edge<Node,Void> edge : edges) System.out.printf("%s (%d), ", edge.to.toString(), edge.weight);
 		System.out.println();
 		return edges.get(0).to;
 	}

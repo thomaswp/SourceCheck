@@ -10,8 +10,6 @@ public class NodeGraph extends Graph<Node, Void> {
 		return addEdge(from, to, null, 0, 1);
 	}
 	
-
-	
 	public void export(PrintStream ps, boolean showLoops, int prune, boolean colorEdges, boolean yEd) {
 				
 		ps.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
@@ -89,7 +87,7 @@ public class NodeGraph extends Graph<Node, Void> {
 		
 
 		int i = 0;
-		for (Graph<Node,Void>.Edge edge : edges()) {
+		for (Graph.Edge<Node,Void> edge : edges()) {
 			if (!showLoops && edge.from.equals(edge.to)) continue;
 			if (edge.isLoop() && edge.weight <= prune) continue;
 			if (ignoreNs.contains(edge.to) || ignoreNs.contains(edge.from)) continue;

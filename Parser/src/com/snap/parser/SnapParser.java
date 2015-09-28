@@ -1,8 +1,6 @@
 package com.snap.parser;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -12,7 +10,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -22,9 +19,7 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
+import com.snap.parser.Store.Mode;
 
 /**
  * Snap parser for logging files
@@ -32,28 +27,21 @@ import com.esotericsoftware.kryo.io.Output;
  */
 public class SnapParser {
 	
-	public enum CacheUse {
-		Ignore,
-		Use,
-		Overwrite
-	}
-	
 	private static final String[] HEADER = new String[] {
 			"id","time","message","jsonData","assignmentID","projectID","sessionID","browserID","code"
 	};
 	
 	private final Map<String, CSVPrinter> csvPrinters = new HashMap<String, CSVPrinter>();
-	private Kryo kyro = new Kryo();
 	
 	private final String outputFolder;
-	private final CacheUse cacheUse;
+	private final Mode storeMode;
 	
 	/**
 	 * SnapParserConstructor
 	 */
-	public SnapParser(String outputFolder, CacheUse cacheUse){
+	public SnapParser(String outputFolder, Mode cacheUse){
 		this.outputFolder = outputFolder;
-		this.cacheUse = cacheUse;
+		this.storeMode = cacheUse;
 		new File(outputFolder).mkdirs();
 	}
 	
@@ -122,54 +110,43 @@ public class SnapParser {
 		}
 	}
 	
-	public List<DataRow> parseRows(File logFile) throws IOException {
-		File cached = new File(logFile.getAbsolutePath() + ".cached");
-		if (cacheUse == CacheUse.Use && cached.exists()) {
-			try {
-				Input input = new Input(new FileInputStream(cached));
-				@SuppressWarnings("unchecked")
-				List<DataRow> rows = kyro.readObject(input, LinkedList.class);
-				input.close();
-				if (rows != null) return rows;
-			} catch (Exception e) { 
-				cached.delete();
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public List<DataRow> parseRows(final File logFile) throws IOException {
+		String cachePath = logFile.getAbsolutePath() + ".cached";
+		
+		return Store.getCachedObject(cachePath, ArrayList.class, storeMode, new Store.Loader<ArrayList>() {
+			@Override
+			public ArrayList load() {
+				ArrayList<DataRow> rows = new ArrayList<>();
+				try {
+					CSVParser parser = new CSVParser(new FileReader(logFile), CSVFormat.EXCEL.withHeader());
+					
+					DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+					
+					for (CSVRecord record : parser) {
+						String timestampString = record.get(1);
+						Date timestamp = null;
+						try {
+							timestamp = format.parse(timestampString);
+						} catch (ParseException e) {
+							e.printStackTrace();
+						}
+						String action = record.get(2);
+						String xml = record.get(8);
+						DataRow row = new DataRow(timestamp, xml);
+						if (row.snapshot != null && !action.equals("Block.grabbed")) {
+							rows.add(row);
+						}
+						
+					}
+					parser.close();
+					System.out.println("Parsed: " + logFile.getName());
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				return rows;
 			}
-		}
-		
-		ArrayList<DataRow> rows = new ArrayList<>();
-		CSVParser parser = new CSVParser(new FileReader(logFile), CSVFormat.EXCEL.withHeader());
-		
-		DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		
-		for (CSVRecord record : parser) {
-			String timestampString = record.get(1);
-			Date timestamp = null;
-			try {
-				timestamp = format.parse(timestampString);
-			} catch (ParseException e) {
-				e.printStackTrace();
-			}
-			String action = record.get(2);
-			String xml = record.get(8);
-			DataRow row = new DataRow(timestamp, xml);
-			if (row.snapshot != null && !action.equals("Block.grabbed")) {
-				rows.add(row);
-			}
-			
-		}
-		parser.close();
-		
-		if (cacheUse != CacheUse.Ignore) {
-			cached.delete();
-			try {
-				Output output = new Output(new FileOutputStream(cached));
-				kyro.writeObject(output, rows);
-				output.close();
-			} catch (Exception e) { }
-		}
-		
-		System.out.println("Parsed: " + logFile.getName());
-		return rows;
+		});
 	}
 	
 	
@@ -187,7 +164,7 @@ public class SnapParser {
 	
 	
 	public static void main(String[] args) throws IOException {
-		SnapParser parser = new SnapParser("../data/csc200/fall2015", CacheUse.Overwrite);
+		SnapParser parser = new SnapParser("../data/csc200/fall2015", Mode.Overwrite);
 //		parser.splitStudentRecords("../data/csc200/fall2015.csv");
 //		parser.parseRows(new File(parser.outputFolder + "/guess1Lab/0b368197-7d2d-4b11-be38-9111bbb9b475.csv"));
 //		parser.parseRows(new File(parser.outputFolder + "/guess1Lab/2a2da14b-58b5-4d9f-bb3e-68974c9baf45.csv"));
