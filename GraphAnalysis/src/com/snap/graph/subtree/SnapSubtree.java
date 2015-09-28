@@ -9,43 +9,35 @@ import java.util.List;
 import util.LblTree;
 
 import com.snap.graph.SimpleTreeBuilder;
-import com.snap.graph.subtree.Builder.Hint;
-import com.snap.graph.subtree.Builder.HintComparator;
+import com.snap.graph.data.Node;
+import com.snap.graph.subtree.SubtreeBuilder.Hint;
+import com.snap.graph.subtree.SubtreeBuilder.HintComparator;
 import com.snap.parser.DataRow;
 import com.snap.parser.SnapParser;
 
 public class SnapSubtree {
+	
 	public static void main(String[] args) throws IOException {
-		SnapParser parser = new SnapParser("../data/csc200/fall2015", SnapParser.CacheUse.Use);
-		HashMap<String,List<DataRow>> students = parser.parseAssignment("guess1Lab");
-		HashMap<String, List<Node>> nodeMap = new HashMap<String, List<Node>>();
-		
-		for (String student : students.keySet()) {
-			List<DataRow> rows = students.get(student);
-			List<Node> nodes = new ArrayList<>();
-			
-			for (DataRow row : rows) {
-				LblTree tree = SimpleTreeBuilder.toTree(row.snapshot, 0, true);
-				Node node = Node.fromTree(null, tree, true);
-				node.tag = row;
-				nodes.add(node);
-			}
-			nodeMap.put(student, nodes);
-		}
-
+		SnapSubtree subtree = new SnapSubtree("../data/csc200/fall2015", "guess1Lab");
+//		SubtreeBuilder graph = subtree.buildGraph(true);
+		subtree.analyze();
+	}
+	
+	private final HashMap<String, List<Node>> nodeMap;
+	
+	private SnapSubtree(String dataDir, String assignment) throws IOException {
+		this.nodeMap = parseStudents(dataDir, assignment);
+	}
+	
+	private void analyze() {
 		float total = 0;
 		int done = 0;
 		boolean subtree = true;
 		for (String testKey : nodeMap.keySet()) {
 			System.out.println(testKey);
 			List<Node> test = nodeMap.get(testKey);
-			Builder builder = new Builder();
-			for (List<Node> nodes : nodeMap.values()) {
-				if (nodes == test) continue;
-				builder.addStudent(nodes, subtree, false);
-			}
+			SubtreeBuilder builder = buildGraph(subtree, testKey);
 //			builder.graph.export(new PrintStream(new FileOutputStream("test" + done + ".graphml")), true, 1, true, true);
-
 
 			for (Node node : test) {
 				List<Hint> hints = builder.getHints(node);
@@ -72,5 +64,41 @@ public class SnapSubtree {
 		}
 		
 		System.out.println(total / done);
+	}
+
+	
+	public SubtreeBuilder buildGraph(boolean subtree) {
+		return buildGraph(subtree);
+	}
+	
+	public SubtreeBuilder buildGraph(boolean subtree, String testStudent) {
+		SubtreeBuilder builder = new SubtreeBuilder();
+		List<Node> test = nodeMap.get(testStudent);
+		for (List<Node> nodes : nodeMap.values()) {
+			if (nodes == test) continue;
+			builder.addStudent(nodes, subtree, false);
+		}
+		return builder;
+	}
+
+	private static HashMap<String, List<Node>> parseStudents(String dataDir, String assignment)
+			throws IOException {
+		SnapParser parser = new SnapParser(dataDir, SnapParser.CacheUse.Use);
+		HashMap<String,List<DataRow>> students = parser.parseAssignment(assignment);
+		HashMap<String, List<Node>> nodeMap = new HashMap<String, List<Node>>();
+		
+		for (String student : students.keySet()) {
+			List<DataRow> rows = students.get(student);
+			List<Node> nodes = new ArrayList<>();
+			
+			for (DataRow row : rows) {
+				LblTree tree = SimpleTreeBuilder.toTree(row.snapshot, 0, true);
+				Node node = Node.fromTree(null, tree, true);
+				node.tag = row;
+				nodes.add(node);
+			}
+			nodeMap.put(student, nodes);
+		}
+		return nodeMap;
 	}
 }
