@@ -26,6 +26,11 @@ public class GraphHintMap implements HintMap {
 	}
 
 	@Override
+	public int size() {
+		return graph.vertexMap.size();
+	}
+
+	@Override
 	public HintList getHints(Node node) {
 		List<Edge<Node, Void>> listTemp = graph.fromMap.get(node);
 		if (listTemp == null) listTemp = new LinkedList<Graph.Edge<Node,Void>>();
@@ -62,6 +67,6 @@ public class GraphHintMap implements HintMap {
 				return weights.get(to);
 			}
 		};
-	}	
+	}
 	
 }

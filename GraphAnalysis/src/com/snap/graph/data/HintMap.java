@@ -11,6 +11,8 @@ public interface HintMap {
 	boolean hasVertex(Node node);
 
 	HintList getHints(Node node);
+
+	int size();
 	
 	public interface HintList extends Iterable<Node> {
 		int getWeight(Node to);

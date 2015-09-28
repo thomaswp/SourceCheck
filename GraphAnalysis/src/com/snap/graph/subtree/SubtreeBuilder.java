@@ -10,10 +10,12 @@ import java.util.Set;
 
 import util.LblTree;
 
+import com.esotericsoftware.kryo.Kryo;
 import com.snap.graph.data.HintMap;
 import com.snap.graph.data.HintMap.HintList;
 import com.snap.graph.data.Node;
 import com.snap.graph.data.SimpleHintMap;
+import com.snap.graph.data.StringHashable;
 
 import distance.RTED_InfoTree_Opt;
 
@@ -269,5 +271,16 @@ public class SubtreeBuilder {
 			hash = hash * 31 + (y == null ? 0 : y.hashCode());
 			return hash;
 		}
+	}
+
+	public static Kryo getKryo() {
+		Kryo kryo = new Kryo();
+		kryo.register(SubtreeBuilder.class);
+		kryo.register(StringHashable.class);
+		kryo.register(Node.class);
+		kryo.register(HintMap.class);
+		kryo.register(HintMap.HintList.class);
+		kryo.register(SimpleHintMap.class);
+		return kryo;
 	}
 }

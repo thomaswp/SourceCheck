@@ -16,7 +16,7 @@ public abstract class Code implements Serializable {
 	}
 	
 	public List<Block> getAllBlocks(final boolean canon) {
-		final List<Block> blocks = new ArrayList<>();
+		final List<Block> blocks = new ArrayList<Block>();
 		if (this instanceof Block) {
 			blocks.add((Block) this);
 		}
@@ -43,7 +43,7 @@ public abstract class Code implements Serializable {
 	}
 	
 	public List<Code> getAllCode(final boolean canon) {
-		final List<Code> codes = new ArrayList<>();
+		final List<Code> codes = new ArrayList<Code>();
 		codes.add(this);
 		addChildren(canon, new Accumulator() {
 			@Override

@@ -27,6 +27,11 @@ public class SimpleHintMap implements HintMap {
 	public boolean hasVertex(Node node) {
 		return edges.containsKey(node.toCanonicalString());
 	}
+	
+	@Override
+	public int size() {
+		return edges.size();
+	}
 
 	@Override
 	public HintList getHints(Node node) {

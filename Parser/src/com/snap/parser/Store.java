@@ -19,6 +19,10 @@ public class Store {
 	private final static Kryo kryo = new Kryo();
 	
 	public static <T> T getCachedObject(String path, Class<T> clazz, Mode cacheUse, Loader<T> loader) {
+		return getCachedObject(kryo, path, clazz, cacheUse, loader);
+	}
+	
+	public static <T> T getCachedObject(Kryo kryo, String path, Class<T> clazz, Mode cacheUse, Loader<T> loader) {
 		File cached = new File(path);
 		if (cacheUse == Mode.Use && cached.exists()) {
 			try {

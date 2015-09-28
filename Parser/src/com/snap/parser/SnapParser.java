@@ -117,7 +117,7 @@ public class SnapParser {
 		return Store.getCachedObject(cachePath, ArrayList.class, storeMode, new Store.Loader<ArrayList>() {
 			@Override
 			public ArrayList load() {
-				ArrayList<DataRow> rows = new ArrayList<>();
+				ArrayList<DataRow> rows = new ArrayList<DataRow>();
 				try {
 					CSVParser parser = new CSVParser(new FileReader(logFile), CSVFormat.EXCEL.withHeader());
 					
@@ -151,7 +151,7 @@ public class SnapParser {
 	
 	
 	public HashMap<String, List<DataRow>> parseAssignment(String folder) throws IOException {
-		HashMap<String, List<DataRow>> students = new HashMap<>();
+		HashMap<String, List<DataRow>> students = new HashMap<String, List<DataRow>>();
 		for (File file : new File(outputFolder, folder).listFiles()) {
 			if (file.getName().endsWith(".cached")) continue;
 			List<DataRow> rows = parseRows(file);

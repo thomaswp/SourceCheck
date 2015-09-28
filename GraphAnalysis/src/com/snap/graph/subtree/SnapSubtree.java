@@ -45,7 +45,7 @@ public class SnapSubtree {
 		return nodeMapCache;
 	}
 	
-	private SnapSubtree(String dataDir, String assignment) {
+	public SnapSubtree(String dataDir, String assignment) {
 		this.dataDir = dataDir;
 		this.assignment = assignment;
 	}
@@ -89,7 +89,7 @@ public class SnapSubtree {
 	
 	public SubtreeBuilder buildGraph(Mode storeMode) {
 		String storePath = new File(dataDir, assignment + ".cached").getAbsolutePath();
-		return Store.getCachedObject(storePath, SubtreeBuilder.class, storeMode, new Store.Loader<SubtreeBuilder>() {
+		return Store.getCachedObject(SubtreeBuilder.getKryo(), storePath, SubtreeBuilder.class, storeMode, new Store.Loader<SubtreeBuilder>() {
 			@Override
 			public SubtreeBuilder load() {
 				return buildGraph((String)null);
@@ -114,7 +114,7 @@ public class SnapSubtree {
 		
 		for (String student : students.keySet()) {
 			List<DataRow> rows = students.get(student);
-			List<Node> nodes = new ArrayList<>();
+			List<Node> nodes = new ArrayList<Node>();
 			
 			for (DataRow row : rows) {
 				LblTree tree = SimpleTreeBuilder.toTree(row.snapshot, 0, true);
