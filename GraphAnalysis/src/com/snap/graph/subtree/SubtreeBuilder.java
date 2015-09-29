@@ -187,7 +187,7 @@ public class SubtreeBuilder {
 
 		public String toJson() {
 			return String.format(
-					"{'relevance': %d, 'context': %d, 'quality': %d, 'from': '%s', 'to': '%s'}", 
+					"{\"relevance\": %d, \"context\": %d, \"quality\": %d, \"from\": \"%s\", \"to\": \"%s\"}", 
 					relevance, context, quality, x.toString(), y.toString());
 		}
 		

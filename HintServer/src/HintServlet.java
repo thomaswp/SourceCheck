@@ -70,16 +70,20 @@ public class HintServlet extends HttpServlet {
 		
 		out.println("[");
 		int context = Integer.MAX_VALUE;
+		int thisContext = 0;
 		int printed = 0;
 		for (int i = 0; i < hints.size() && printed < 10; i++) {
 			Hint hint = hints.get(i);
 			if (hint.context == context) {
-				continue;
+				thisContext++;
+				if (thisContext > 2) continue;
+			} else {
+				thisContext = 0;
 			}
 			context = hint.context;
 			printed++;
+			if (i > 0) out.println(",");
 			out.print(hints.get(i).toJson());
-			out.println(",");
 		}
 		out.println("]");
 	}
