@@ -54,11 +54,9 @@ public class HintServlet extends HttpServlet {
 		
 		PrintStream out = new PrintStream(resp.getOutputStream());
 		
-		resp.setContentType("text/html");
-		out.println("<pre>");
+		resp.setContentType("text/json");
 //		out.println(snapshot.toCode());
 		getHint(snapshot, out);
-		out.println("</pre>");
 		
 //		resp.getOutputStream().println(builder.graph.size());
 	}
@@ -70,6 +68,7 @@ public class HintServlet extends HttpServlet {
 		List<Hint> hints = builder.getHints(node);
 		Collections.sort(hints, HintComparator.ByContext.then(HintComparator.ByQuality));
 		
+		out.println("[");
 		int context = Integer.MAX_VALUE;
 		int printed = 0;
 		for (int i = 0; i < hints.size() && printed < 10; i++) {
@@ -79,8 +78,10 @@ public class HintServlet extends HttpServlet {
 			}
 			context = hint.context;
 			printed++;
-			out.println(hints.get(i));
+			out.print(hints.get(i).toJson());
+			out.println(",");
 		}
+		out.println("]");
 	}
 	
 	private void loadBuilder() {
