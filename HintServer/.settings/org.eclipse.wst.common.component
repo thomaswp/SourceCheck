@@ -20,6 +20,9 @@
         <dependent-module archiveName="minlog-1.3.0.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/Parser/minlog-1.3.0.jar">
             <dependency-type>uses</dependency-type>
         </dependent-module>
+        <dependent-module archiveName="RTED_v1.1.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/GraphAnalysis/RTED_v1.1.jar">
+            <dependency-type>uses</dependency-type>
+        </dependent-module>
         <property name="context-root" value="HintServer"/>
         <property name="java-output-path" value="/HintServer/build/classes"/>
     </wb-module>
