@@ -91,7 +91,7 @@ public class HintServlet extends HttpServlet {
 	private void loadBuilder() {
 		if (builder == null) {
 			Kryo kryo = SubtreeBuilder.getKryo();
-			InputStream stream = getServletContext().getResourceAsStream("WEB-INF/data/guess1Lab.cached");
+			InputStream stream = getServletContext().getResourceAsStream("/WEB-INF/data/guess1Lab.cached");
 			builder = kryo.readObject(new Input(stream), SubtreeBuilder.class); 
 		}
 	}
