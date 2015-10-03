@@ -52,4 +52,9 @@ public class SimpleHintMap implements HintMap {
 		};
 	}
 
+	@Override
+	public void clear() {
+		edges.clear();
+	}
+
 }

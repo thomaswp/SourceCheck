@@ -68,5 +68,10 @@ public class GraphHintMap implements HintMap {
 			}
 		};
 	}
+
+	@Override
+	public void clear() {
+		graph = new NodeGraph();
+	}
 	
 }

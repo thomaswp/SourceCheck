@@ -2,6 +2,9 @@ package com.snap.graph.subtree;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -10,7 +13,9 @@ import java.util.List;
 import util.LblTree;
 
 import com.snap.graph.SimpleTreeBuilder;
+import com.snap.graph.data.MySQLHintMap;
 import com.snap.graph.data.Node;
+import com.snap.graph.data.SimpleHintMap;
 import com.snap.graph.subtree.SubtreeBuilder.Hint;
 import com.snap.graph.subtree.SubtreeBuilder.HintComparator;
 import com.snap.parser.DataRow;
@@ -20,11 +25,17 @@ import com.snap.parser.Store.Mode;
 
 public class SnapSubtree {
 	
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
 		SnapSubtree subtree = new SnapSubtree("../data/csc200/fall2015", "guess1Lab");
+		
+		Class.forName("com.mysql.jdbc.Driver").newInstance();
+		Connection con = DriverManager.getConnection("jdbc:mysql://localhost/snap", "root", "Game1+1Learn!");
+		MySQLHintMap hintMap = new MySQLHintMap(con, "guess1Lab");
+		hintMap.clear();
+		
 //		SubtreeBuilder graph = subtree.buildGraph(true);
 		System.out.println(System.currentTimeMillis());
-		subtree.buildGraph(Mode.Use);
+		subtree.buildGraph(new SubtreeBuilder(hintMap), null);
 //		subtree.analyze();
 		System.out.println(System.currentTimeMillis());
 	}
@@ -50,13 +61,14 @@ public class SnapSubtree {
 		this.assignment = assignment;
 	}
 	
+	@SuppressWarnings("unused")
 	private void analyze() {
 		float total = 0;
 		int done = 0;
 		for (String testKey : nodeMap().keySet()) {
 			System.out.println(testKey);
 			List<Node> test = nodeMap().get(testKey);
-			SubtreeBuilder builder = buildGraph(testKey);
+			SubtreeBuilder builder = buildGraph(new SubtreeBuilder(new SimpleHintMap()), testKey);
 //			builder.graph.export(new PrintStream(new FileOutputStream("test" + done + ".graphml")), true, 1, true, true);
 
 			for (Node node : test) {
@@ -92,13 +104,13 @@ public class SnapSubtree {
 		return Store.getCachedObject(SubtreeBuilder.getKryo(), storePath, SubtreeBuilder.class, storeMode, new Store.Loader<SubtreeBuilder>() {
 			@Override
 			public SubtreeBuilder load() {
-				return buildGraph((String)null);
+				return buildGraph(new SubtreeBuilder(new SimpleHintMap()), null);
 			}
 		});
 	}
 	
-	public SubtreeBuilder buildGraph(String testStudent) {
-		SubtreeBuilder builder = new SubtreeBuilder();
+	public SubtreeBuilder buildGraph(SubtreeBuilder builder, String testStudent) {
+		builder.startBuilding();
 		List<Node> test = nodeMap().get(testStudent);
 		for (List<Node> nodes : nodeMap().values()) {
 			if (nodes == test) continue;

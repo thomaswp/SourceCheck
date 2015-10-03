@@ -21,7 +21,20 @@ import distance.RTED_InfoTree_Opt;
 
 public class SubtreeBuilder {
 
-	public final HintMap graph = new SimpleHintMap();
+	public final HintMap hintMap;
+	
+	@SuppressWarnings("unused")
+	private SubtreeBuilder() {
+		this(null);
+	}
+	
+	public SubtreeBuilder(HintMap hintMap) {
+		this.hintMap = hintMap;
+	}
+	
+	public void startBuilding() {
+		hintMap.clear();
+	}
 	
 	@SuppressWarnings("unchecked")
 	public void addStudent(List<Node> path, boolean subtree, boolean duplicates) {
@@ -44,14 +57,14 @@ public class SubtreeBuilder {
 			
 			for (LblTree t : list) {
 				Node node = (Node) t.getUserObject();
-				graph.addVertex(node);
+				hintMap.addVertex(node);
 			}
 			
 			if (!subtree) {
 				if (last != null) {
 					if (!current.equals(last) && current.shallowEquals(last)) {
 						if (duplicates || placedEdges.add(new Tuple<Node,Node>(last, current))) {
-							graph.addEdge(last, current);
+							hintMap.addEdge(last, current);
 						}
 					}
 				}
@@ -71,7 +84,7 @@ public class SubtreeBuilder {
 
 						if (!n1.equals(n2) && n1.shallowEquals(n2)) {
 							if (duplicates || placedEdges.add(new Tuple<Node,Node>(n1, n2))) {
-								graph.addEdge(n1, n2);
+								hintMap.addEdge(n1, n2);
 							}
 						}
 					}
@@ -99,7 +112,7 @@ public class SubtreeBuilder {
 			if (!set.add(node)) continue;
 			size++;
 			
-			if (graph.hasVertex(node)) {
+			if (hintMap.hasVertex(node)) {
 				success++;
 				continue;
 			}
@@ -139,7 +152,7 @@ public class SubtreeBuilder {
 	}
 	
 	private void getHints(Node node, List<Hint> list) {
-		HintList edges = graph.getHints(node);
+		HintList edges = hintMap.getHints(node);
 		
 		int context = node.size();
 		
@@ -162,7 +175,7 @@ public class SubtreeBuilder {
 		
 		while (!toSearch.isEmpty()) {
 			Node next = toSearch.remove(0);
-			HintList edges = graph.getHints(node);
+			HintList edges = hintMap.getHints(node);
 			Iterator<Node> iterator = edges.iterator();
 			if (iterator.hasNext()) return true;
 			toSearch.addAll(next.children);
