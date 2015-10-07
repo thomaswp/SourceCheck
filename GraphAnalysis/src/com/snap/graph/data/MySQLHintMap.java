@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.HashMap;
 import java.util.Iterator;
 
 public class MySQLHintMap implements HintMap {
@@ -132,27 +133,41 @@ public class MySQLHintMap implements HintMap {
 
 	@Override
 	public HintList getHints(Node node) {
-		// TODO Auto-generated method stub
+		
+		final HashMap<Node, Integer> map = new HashMap<Node, Integer>();
+		
+		try {
+			Integer id = getVertexID(node);
+			if (id != null) {
+				PreparedStatement select = con.prepareStatement(
+						"SELECT value, weight FROM " + 
+								nodeTable + " AS `nodes`, " + edgeTable + " AS edges " +
+								" WHERE edges.fromID = ? AND nodes.id = edges.toID"
+						);
+				select.setInt(1, id);
+				ResultSet query = select.executeQuery();
+				while (query.next()) {
+					String hint = query.getString(1);
+					int weight = query.getInt(2);
+					map.put(new Node(null, hint), weight);
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
 		return new HintList() {
 			
 			@Override
 			public Iterator<Node> iterator() {
-				// TODO Auto-generated method stub
-				return null;
+				return map.keySet().iterator();
 			}
 			
 			@Override
 			public int getWeight(Node to) {
-				// TODO Auto-generated method stub
-				return 0;
+				return map.get(to);
 			}
 		};
-	}
-
-	@Override
-	public int size() {
-		// TODO Auto-generated method stub
-		return 0;
 	}
 
 }

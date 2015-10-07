@@ -28,7 +28,6 @@ public class SimpleHintMap implements HintMap {
 		return edges.containsKey(node.toCanonicalString());
 	}
 	
-	@Override
 	public int size() {
 		return edges.size();
 	}

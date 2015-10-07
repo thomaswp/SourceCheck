@@ -23,6 +23,9 @@
         <dependent-module archiveName="RTED_v1.1.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/GraphAnalysis/RTED_v1.1.jar">
             <dependency-type>uses</dependency-type>
         </dependent-module>
+        <dependent-module archiveName="mysql-connector-java-5.1.28.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/GraphAnalysis/mysql-connector-java-5.1.28.jar">
+            <dependency-type>uses</dependency-type>
+        </dependent-module>
         <property name="context-root" value="HintServer"/>
         <property name="java-output-path" value="/HintServer/build/classes"/>
     </wb-module>

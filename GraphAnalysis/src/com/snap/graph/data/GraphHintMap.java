@@ -25,7 +25,6 @@ public class GraphHintMap implements HintMap {
 		return graph.vertexMap.containsKey(node);
 	}
 
-	@Override
 	public int size() {
 		return graph.vertexMap.size();
 	}

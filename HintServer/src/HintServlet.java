@@ -1,6 +1,7 @@
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintStream;
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
@@ -11,10 +12,9 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
 import com.snap.data.Snapshot;
 import com.snap.graph.SimpleTreeBuilder;
+import com.snap.graph.data.MySQLHintMap;
 import com.snap.graph.data.Node;
 import com.snap.graph.subtree.SubtreeBuilder;
 import com.snap.graph.subtree.SubtreeBuilder.Hint;
@@ -90,9 +90,17 @@ public class HintServlet extends HttpServlet {
 	
 	private void loadBuilder() {
 		if (builder == null) {
-			Kryo kryo = SubtreeBuilder.getKryo();
-			InputStream stream = getServletContext().getResourceAsStream("/WEB-INF/data/guess1Lab.cached");
-			builder = kryo.readObject(new Input(stream), SubtreeBuilder.class); 
+//			Kryo kryo = SubtreeBuilder.getKryo();
+//			InputStream stream = getServletContext().getResourceAsStream("/WEB-INF/data/guess1Lab.cached");
+//			builder = kryo.readObject(new Input(stream), SubtreeBuilder.class);
+			try {
+				Class.forName("com.mysql.jdbc.Driver").newInstance();
+				Connection con = DriverManager.getConnection("jdbc:mysql://localhost/snap", "root", "Game1+1Learn!");
+				MySQLHintMap hintMap = new MySQLHintMap(con, "guess1Lab");
+				builder = new SubtreeBuilder(hintMap);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 	}
 }
