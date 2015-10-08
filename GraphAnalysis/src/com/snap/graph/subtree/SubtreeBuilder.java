@@ -2,6 +2,7 @@ package com.snap.graph.subtree;
 
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -79,7 +80,7 @@ public class SubtreeBuilder {
 			if (lastTree != null) {
 				LinkedList<int[]> editMap;
 				
-				List<LblTree> validNodes = new LinkedList<LblTree>();
+				HashSet<LblTree> validNodes = new HashSet<LblTree>();
 				
 				opt.init(tree, submittedTree);
 				editMap = opt.computeEditMapping();
@@ -88,13 +89,20 @@ public class SubtreeBuilder {
 					LblTree valid = list.get(a[0] - 1);
 					validNodes.add(valid);
 				}
-				String out = validNodes.size() + "/" + list.size();
-				if (path.size() - i < 6) out += ": " + current.toCanonicalString();
-				System.out.println(out);
+//				String out = validNodes.size() + "/" + list.size();
+//				if (path.size() - i < 6) out += ": " + current.toCanonicalString();
+//				System.out.println(out);
 				
 				opt.init(lastTree, tree);
 				editMap = opt.computeEditMapping();
 				
+				HashSet<LblTree> added = new HashSet<LblTree>();
+				for (int[] a : editMap) {
+					if (a[0] != 0 || a[1] == 0) continue;
+					added.add(list.get(a[1] - 1));
+				}
+				
+				int possible = 0, valid = 0;
 				for (int[] a : editMap) {
 					LblTree c1 = a[0] == 0 ? null : lastList.get(a[0] - 1);
 					LblTree c2 = a[1] == 0 ? null : list.get(a[1] - 1);
@@ -104,12 +112,28 @@ public class SubtreeBuilder {
 						Node n2 = (Node)c2.getUserObject();
 
 						if (!n1.equals(n2) && n1.shallowEquals(n2)) {
+							possible++;
+							
+							boolean badAdd = false;
+							Enumeration<LblTree> children = c2.depthFirstEnumeration();
+							while (children.hasMoreElements()) {
+								LblTree child = children.nextElement();
+								if (added.contains(child) && !validNodes.contains(child)) {
+									badAdd = true;
+									break;
+								}
+							}
+							if (badAdd) continue;
+							
+							
 							if (duplicates || placedEdges.add(new Tuple<Node,Node>(n1, n2))) {
+								valid++;
 								hintMap.addEdge(n1, n2);
 							}
 						}
 					}
 				}
+				System.out.println(valid + "/" + possible);
 			}
 			
 			lastList = list;

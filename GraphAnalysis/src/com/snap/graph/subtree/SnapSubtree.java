@@ -119,7 +119,7 @@ public class SnapSubtree {
 	}
 
 	private void parseStudents() throws IOException {
-		SnapParser parser = new SnapParser(dataDir, Store.Mode.Overwrite);
+		SnapParser parser = new SnapParser(dataDir, Store.Mode.Use);
 		HashMap<String, SolutionPath> students = parser.parseAssignment(assignment);
 		nodeMapCache = new HashMap<String, List<Node>>();
 		

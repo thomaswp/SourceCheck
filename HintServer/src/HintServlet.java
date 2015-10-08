@@ -92,7 +92,9 @@ public class HintServlet extends HttpServlet {
 		if (builder == null) {
 			Kryo kryo = SubtreeBuilder.getKryo();
 			InputStream stream = getServletContext().getResourceAsStream("/WEB-INF/data/guess1Lab.cached");
-			builder = kryo.readObject(new Input(stream), SubtreeBuilder.class);
+			Input input = new Input(stream);
+			builder = kryo.readObject(input, SubtreeBuilder.class);
+			input.close();
 //			try {
 //				Class.forName("com.mysql.jdbc.Driver").newInstance();
 //				Connection con = DriverManager.getConnection("jdbc:mysql://localhost/snap", "root", "Game1+1Learn!");
