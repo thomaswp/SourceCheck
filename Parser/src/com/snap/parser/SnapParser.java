@@ -7,18 +7,18 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 
+import com.esotericsoftware.kryo.Kryo;
 import com.snap.parser.Store.Mode;
 
 /**
@@ -110,18 +110,19 @@ public class SnapParser {
 		}
 	}
 	
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public List<DataRow> parseRows(final File logFile) throws IOException {
+	public SolutionPath parseRows(final File logFile) throws IOException {
 		String cachePath = logFile.getAbsolutePath() + ".cached";
 		
-		return Store.getCachedObject(cachePath, ArrayList.class, storeMode, new Store.Loader<ArrayList>() {
+		return Store.getCachedObject(new Kryo(), cachePath, SolutionPath.class, storeMode, new Store.Loader<SolutionPath>() {
 			@Override
-			public ArrayList load() {
-				ArrayList<DataRow> rows = new ArrayList<DataRow>();
+			public SolutionPath load() {
+				SolutionPath solution = new SolutionPath();
 				try {
 					CSVParser parser = new CSVParser(new FileReader(logFile), CSVFormat.EXCEL.withHeader());
 					
 					DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+					
+					String lastGrab = null;
 					
 					for (CSVRecord record : parser) {
 						String timestampString = record.get(1);
@@ -131,11 +132,24 @@ public class SnapParser {
 						} catch (ParseException e) {
 							e.printStackTrace();
 						}
+						
 						String action = record.get(2);
+						if (action.equals("IDE.exportProject")) {
+							solution.exported = true;
+						}
+						
 						String xml = record.get(8);
-						DataRow row = new DataRow(timestamp, xml);
-						if (row.snapshot != null && !action.equals("Block.grabbed")) {
-							rows.add(row);
+						if (action.equals("Block.grabbed")) {
+							if (xml.length() > 2) lastGrab = xml;
+							continue;
+						} else if (xml.length() <= 2 && lastGrab != null) {
+							xml = lastGrab;
+						}
+						DataRow row = new DataRow(timestamp, action, xml);
+						
+						if (row.snapshot != null) {
+							solution.add(row);
+							lastGrab = null;
 						}
 						
 					}
@@ -144,19 +158,39 @@ public class SnapParser {
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-				return rows;
+				return solution;
 			}
 		});
 	}
 	
 	
-	public HashMap<String, List<DataRow>> parseAssignment(String folder) throws IOException {
-		HashMap<String, List<DataRow>> students = new HashMap<String, List<DataRow>>();
+	public HashMap<String, SolutionPath> parseAssignment(String folder) {
+		final HashMap<String, SolutionPath> students = new HashMap<String, SolutionPath>();
+		final AtomicInteger threads = new AtomicInteger();
 		for (File file : new File(outputFolder, folder).listFiles()) {
 			if (file.getName().endsWith(".cached")) continue;
-			List<DataRow> rows = parseRows(file);
-			if (rows.size() > 3) {
-				students.put(file.getName(), rows);
+			final File fFile = file;
+			threads.incrementAndGet();
+			new Thread(new Runnable() {
+				@Override
+				public void run() {
+					try {
+						SolutionPath rows = parseRows(fFile);
+						if (rows.size() > 3) {
+							students.put(fFile.getName(), rows);
+						}
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+					threads.decrementAndGet();
+				}
+			}).start();
+		}
+		while (threads.get() != 0) {
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
 		}
 		return students;

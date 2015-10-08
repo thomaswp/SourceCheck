@@ -40,7 +40,7 @@ public class SubtreeBuilder {
 	public void addStudent(List<Node> path, boolean subtree, boolean duplicates) {
 		// duplicates allows multiple edges from the same student
 		
-		if (path.size() == 0) return;
+		if (path.size() <= 1) return;
 		
 		LblTree lastTree = null;
 		List<LblTree> lastList = null;
@@ -48,6 +48,10 @@ public class SubtreeBuilder {
 		
 		Set<Tuple<Node,Node>> placedEdges = new HashSet<Tuple<Node,Node>>();
 		
+		Node submitted = path.get(path.size() - 1);
+		LblTree submittedTree = submitted.toTree();
+		
+		int i = 0;
 		Node last = null;
 		for (Node current : path) {
 			current.cache();
@@ -73,8 +77,25 @@ public class SubtreeBuilder {
 			}
 			
 			if (lastTree != null) {
+				LinkedList<int[]> editMap;
+				
+				List<LblTree> validNodes = new LinkedList<LblTree>();
+				
+				opt.init(tree, submittedTree);
+				editMap = opt.computeEditMapping();
+				for (int[] a : editMap) {
+					if (a[0] == 0 || a[1] == 0) continue;
+					LblTree valid = list.get(a[0] - 1);
+					validNodes.add(valid);
+				}
+				String out = validNodes.size() + "/" + list.size();
+				if (path.size() - i < 6) out += ": " + current.toCanonicalString();
+				System.out.println(out);
+				
 				opt.init(lastTree, tree);
-				for (int[] a : opt.computeEditMapping()) {
+				editMap = opt.computeEditMapping();
+				
+				for (int[] a : editMap) {
 					LblTree c1 = a[0] == 0 ? null : lastList.get(a[0] - 1);
 					LblTree c2 = a[1] == 0 ? null : list.get(a[1] - 1);
 					
@@ -93,6 +114,7 @@ public class SubtreeBuilder {
 			
 			lastList = list;
 			lastTree = tree;
+			i++;
 		}
 	}
 

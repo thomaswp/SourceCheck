@@ -10,14 +10,16 @@ public class DataRow implements Serializable {
 	
 	public final Snapshot snapshot;
 	public final Date timestamp;
+	public final String action;
 	
 	@SuppressWarnings("unused")
 	private DataRow() { 
-		this(null, null);
+		this(null, null, null);
 	}
 	
-	public DataRow(Date timestamp, String snapshotXML) {
+	public DataRow(Date timestamp, String action, String snapshotXML) {
 		this.timestamp = timestamp;
+		this.action = action;
 		this.snapshot = Snapshot.parse(null, snapshotXML);
 	}
 	
