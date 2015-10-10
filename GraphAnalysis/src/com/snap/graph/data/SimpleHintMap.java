@@ -16,7 +16,7 @@ public class SimpleHintMap implements HintMap {
 	@Override
 	public void addEdge(Node from, Node to) {
 		addVertex(from);
-		addVertex(to);
+//		addVertex(to);
 		HashMap<Node, Integer> counts = edges.get(from);
 		int count = counts.containsKey(to) ? counts.get(to) : 0;
 		count++;

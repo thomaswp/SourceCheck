@@ -72,7 +72,7 @@ public class HintServlet extends HttpServlet {
 		int context = Integer.MAX_VALUE;
 		int thisContext = 0;
 		int printed = 0;
-		for (int i = 0; i < hints.size() && printed < 10; i++) {
+		for (int i = 0; i < hints.size(); i++) {
 			Hint hint = hints.get(i);
 			if (hint.context == context) {
 				thisContext++;

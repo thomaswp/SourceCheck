@@ -45,12 +45,13 @@ public class SubtreeBuilder {
 		
 		LblTree lastTree = null;
 		List<LblTree> lastList = null;
-		RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(1, 1, 100);
+		RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(1, 1, 10000);
 		
 		Set<Tuple<Node,Node>> placedEdges = new HashSet<Tuple<Node,Node>>();
 		
 		Node submitted = path.get(path.size() - 1);
 		LblTree submittedTree = submitted.toTree();
+		List<LblTree> submittedList = Collections.list(submittedTree.depthFirstEnumeration());
 		
 		int i = 0;
 		Node last = null;
@@ -60,10 +61,10 @@ public class SubtreeBuilder {
 			LblTree tree = current.toTree();
 			List<LblTree> list = Collections.list(tree.depthFirstEnumeration());
 			
-			for (LblTree t : list) {
-				Node node = (Node) t.getUserObject();
-				hintMap.addVertex(node);
-			}
+//			for (LblTree t : list) {
+//				Node node = (Node) t.getUserObject();
+//				hintMap.addVertex(node);
+//			}
 			
 			if (!subtree) {
 				if (last != null) {
@@ -81,14 +82,35 @@ public class SubtreeBuilder {
 				LinkedList<int[]> editMap;
 				
 				HashSet<LblTree> validNodes = new HashSet<LblTree>();
-				
+
+//				System.out.println(tree);
+//				System.out.println(submittedTree);
 				opt.init(tree, submittedTree);
+				opt.computeOptimalStrategy();
+//				editMap = opt.computeEditMapping();
+//				for (int[] a : editMap) {
+//					if (a[0] == 0) continue;
+//					LblTree c1 = a[0] == 0 ? null : list.get(a[0] - 1);
+//					LblTree c2 = a[1] == 0 ? null : submittedList.get(a[1] - 1);
+//					System.out.println(c1 + " <==> " + c2);
+//				}
+				double dis = opt.nonNormalizedTreeDist();
+//				System.out.println(dis);
 				editMap = opt.computeEditMapping();
+//				for (int[] a : editMap) {
+//					if (a[0] == 0) continue;
+//					LblTree c1 = a[0] == 0 ? null : list.get(a[0] - 1);
+//					LblTree c2 = a[1] == 0 ? null : submittedList.get(a[1] - 1);
+//					System.out.println(c1 + " <==> " + c2);
+//				}
 				for (int[] a : editMap) {
 					if (a[0] == 0 || a[1] == 0) continue;
 					LblTree valid = list.get(a[0] - 1);
 					validNodes.add(valid);
 				}
+//				System.out.println(validNodes);
+//				System.exit(0);
+				
 //				String out = validNodes.size() + "/" + list.size();
 //				if (path.size() - i < 6) out += ": " + current.toCanonicalString();
 //				System.out.println(out);
@@ -133,7 +155,7 @@ public class SubtreeBuilder {
 						}
 					}
 				}
-				System.out.println(valid + "/" + possible);
+//				System.out.println(valid + "/" + possible);
 			}
 			
 			lastList = list;

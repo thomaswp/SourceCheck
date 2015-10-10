@@ -4,8 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 
 import util.LblTree;
@@ -21,9 +23,30 @@ import com.snap.parser.SolutionPath;
 import com.snap.parser.Store;
 import com.snap.parser.Store.Mode;
 
+import distance.RTED_InfoTree_Opt;
+
 public class SnapSubtree {
 	
 	public static void main(String[] args) throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
+		
+//		RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(1, 1, 1000);
+//		LblTree t1 = LblTree.fromString("0:{1{2{3}}}");
+//		System.out.println(t1);
+//		LblTree t2 = LblTree.fromString("1:{1{2{3{4}}{q}}}");
+//		System.out.println(t2);
+//		opt.init(t1, t2);
+////		System.out.println(opt.nonNormalizedTreeDist());
+//		LinkedList<int[]> mapping = opt.computeEditMapping();
+//		ArrayList<LblTree> l1 = Collections.list(t1.depthFirstEnumeration());
+//		ArrayList<LblTree> l2 = Collections.list(t2.depthFirstEnumeration());
+//		for (int[] a : mapping) {
+//			LblTree c1 = a[0] == 0 ? null : l1.get(a[0] - 1);
+//			LblTree c2 = a[1] == 0 ? null : l2.get(a[1] - 1);
+//			System.out.println(c1 + " <==> " + c2);
+//		}
+//		System.exit(0);
+		
+		
 		SnapSubtree subtree = new SnapSubtree("../data/csc200/fall2015", "guess1Lab");
 		
 //		Class.forName("com.mysql.jdbc.Driver").newInstance();
@@ -114,6 +137,8 @@ public class SnapSubtree {
 			if (nodes == test) continue;
 			System.out.println("Adding " + student);
 			builder.addStudent(nodes, true, false);
+			if (nodes.size() == 0) continue;
+			builder.getHints(nodes.get(0));
 		}
 		return builder;
 	}
