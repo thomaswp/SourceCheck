@@ -4,12 +4,20 @@ function generateContent(data) {
 	for (var student in data) {
 		if (!data.hasOwnProperty(student)) continue;
 				
+		var name = student.substring(0, student.length - 4);
+				
 		var div = document.createElement("div");
 		content.appendChild(div);
 				
-		var html = "<h3>" + student + "</h3>";
+		var html = "<h3>" + name + "</h3>";
 		
 		var rows = data[student];
+		if (rows.length > 0) {
+			html += "<a target='_blank' href='http://arena.csc.ncsu.edu/snap/logging/view/display.php?id=" +
+					name + "&assignment=guess1Lab'>Submitted</a>: ";
+			html += "<code>" + rows[rows.length - 1].to + "</code><br />";
+		}
+		
 		html += "<table>";
 		for (var i = 0; i < rows.length; i++) {
 			var row = rows[i];
@@ -49,8 +57,8 @@ function createDiff(from, to) {
 	for (var j = 0; j < codeDiff.length; j++) {
 		var block = cssMap[codeDiff[j][0]];
 		var code = codeDiff[j][1].join("");
-		if (block == "equals" && code.length > 50) {
-			code = code.substring(0, 25) + "..." + code.substring(code.length - 25, code.length);
+		if (block == "equals" && code.length > 200) {
+			code = code.substring(0, 100) + "..." + code.substring(code.length - 100, code.length);
 		}
 		html += "<code class={0}>{1}</code>".format(block, code);
 	}
