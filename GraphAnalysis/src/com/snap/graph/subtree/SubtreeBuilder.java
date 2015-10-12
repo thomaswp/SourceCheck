@@ -1,5 +1,6 @@
 package com.snap.graph.subtree;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
@@ -38,10 +39,12 @@ public class SubtreeBuilder {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public void addStudent(List<Node> path, boolean subtree, boolean duplicates) {
+	public List<List<HintChoice>> addStudent(List<Node> path, boolean duplicates) {
 		// duplicates allows multiple edges from the same student
 		
-		if (path.size() <= 1) return;
+		List<List<HintChoice>> generatedHints = new LinkedList<List<HintChoice>>();
+		
+		if (path.size() <= 1) return generatedHints;
 		
 		LblTree lastTree = null;
 		List<LblTree> lastList = null;
@@ -58,6 +61,9 @@ public class SubtreeBuilder {
 		for (Node current : path) {
 			current.cache();
 			
+			List<HintChoice> hints = new ArrayList<HintChoice>();
+			generatedHints.add(hints);
+			
 			LblTree tree = current.toTree();
 			List<LblTree> list = Collections.list(tree.depthFirstEnumeration());
 			
@@ -65,19 +71,7 @@ public class SubtreeBuilder {
 //				Node node = (Node) t.getUserObject();
 //				hintMap.addVertex(node);
 //			}
-			
-			if (!subtree) {
-				if (last != null) {
-					if (!current.equals(last) && current.shallowEquals(last)) {
-						if (duplicates || placedEdges.add(new Tuple<Node,Node>(last, current))) {
-							hintMap.addEdge(last, current);
-						}
-					}
-				}
-				last = current;
-				continue;
-			}
-			
+					
 			if (lastTree != null) {
 				LinkedList<int[]> editMap;
 				
@@ -135,22 +129,30 @@ public class SubtreeBuilder {
 
 						if (!n1.equals(n2) && n1.shallowEquals(n2)) {
 							possible++;
+														
+							HintChoice hint = new HintChoice(n1, n2);
 							
-							boolean badAdd = false;
+							LblTree badAdd = null;
 							Enumeration<LblTree> children = c2.depthFirstEnumeration();
 							while (children.hasMoreElements()) {
 								LblTree child = children.nextElement();
 								if (added.contains(child) && !validNodes.contains(child)) {
-									badAdd = true;
+									badAdd = child;
 									break;
 								}
 							}
-							if (badAdd) continue;
+							
+							if (badAdd != null) {
+								hint.setStatus(false, "Not kept: " + badAdd);
+								hints.add(hint);
+								continue;
+							}
 							
 							
 							if (duplicates || placedEdges.add(new Tuple<Node,Node>(n1, n2))) {
 								valid++;
 								hintMap.addEdge(n1, n2);
+								hints.add(hint);
 							}
 						}
 					}
@@ -162,6 +164,8 @@ public class SubtreeBuilder {
 			lastTree = tree;
 			i++;
 		}
+		
+		return generatedHints;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -252,10 +256,30 @@ public class SubtreeBuilder {
 		return false;
 	}
 
+	public static class HintChoice extends Tuple<Node, Node> {
+
+		public boolean accepted = true;
+		public String status = "Good";
+		
+		public HintChoice(Node x, Node y) {
+			super(x, y);
+		}
+		
+		public void setStatus(boolean accepted, String status) {
+			this.accepted = accepted;
+			this.status = status;
+		}
+
+		public String toJson() {
+			return String.format(
+					"{\"accepted\": %s, \"status\": \"%s\", \"from\": \"%s\", \"to\": \"%s\"}", 
+					(accepted ? "true" : "false"), status, x.toString(), y.toString());
+		}
+	}
+	
 	public static class Hint extends Tuple<Node, Node> {
 
 		public int relevance, context, quality;
-		
 		
 		public Hint(Node x, Node y) {
 			super(x, y);

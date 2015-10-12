@@ -1,7 +1,9 @@
 package com.snap.graph.subtree;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,6 +18,7 @@ import com.snap.graph.SimpleTreeBuilder;
 import com.snap.graph.data.Node;
 import com.snap.graph.data.SimpleHintMap;
 import com.snap.graph.subtree.SubtreeBuilder.Hint;
+import com.snap.graph.subtree.SubtreeBuilder.HintChoice;
 import com.snap.graph.subtree.SubtreeBuilder.HintComparator;
 import com.snap.parser.DataRow;
 import com.snap.parser.SnapParser;
@@ -88,7 +91,7 @@ public class SnapSubtree {
 		for (String testKey : nodeMap().keySet()) {
 			System.out.println(testKey);
 			List<Node> test = nodeMap().get(testKey);
-			SubtreeBuilder builder = buildGraph(new SubtreeBuilder(new SimpleHintMap()), testKey);
+			SubtreeBuilder builder = buildGraph(new SubtreeBuilder(new SimpleHintMap()), testKey, null);
 //			builder.graph.export(new PrintStream(new FileOutputStream("test" + done + ".graphml")), true, 1, true, true);
 
 			for (Node node : test) {
@@ -124,23 +127,70 @@ public class SnapSubtree {
 		return Store.getCachedObject(SubtreeBuilder.getKryo(), storePath, SubtreeBuilder.class, storeMode, new Store.Loader<SubtreeBuilder>() {
 			@Override
 			public SubtreeBuilder load() {
-				return buildGraph(new SubtreeBuilder(new SimpleHintMap()), null);
+				File out = new File(dataDir, "view/" + assignment + ".json.js");
+				out.mkdirs();
+				out.delete();
+				PrintStream ps = null;
+				try {
+					ps = new PrintStream(out);
+					return buildGraph(new SubtreeBuilder(new SimpleHintMap()), null, ps);
+				} catch (FileNotFoundException e) {
+					e.printStackTrace();
+					return buildGraph(new SubtreeBuilder(new SimpleHintMap()), null, null);
+				} finally {
+					if (ps != null) ps.close();
+				}
 			}
 		});
 	}
 	
-	public SubtreeBuilder buildGraph(SubtreeBuilder builder, String testStudent) {
+	public SubtreeBuilder buildGraph(SubtreeBuilder builder) {
+		return buildGraph(builder, null, null);
+	}
+	
+	public SubtreeBuilder buildGraph(SubtreeBuilder builder, String testStudent, PrintStream out) {
 		builder.startBuilding();
 		List<Node> test = nodeMap().get(testStudent);
+		jsonStart(out);
 		for (String student : nodeMap().keySet()) {
 			List<Node> nodes = nodeMap().get(student);
-			if (nodes == test) continue;
+			if (nodes == test || nodes.size() == 0) continue;
 			System.out.println("Adding " + student);
-			builder.addStudent(nodes, true, false);
-			if (nodes.size() == 0) continue;
-			builder.getHints(nodes.get(0));
+			jsonStudent(out, student, nodes, builder.addStudent(nodes, false));
+			break;
 		}
+		jsonEnd(out);
 		return builder;
+	}
+	
+	private void jsonStart(PrintStream out) {
+		if (out == null) return;
+		out.println("var hintData = {");
+	}
+	
+	private void jsonStudent(PrintStream out, String student, List<Node> nodes, List<List<HintChoice>> hints) {
+		if (out == null) return;
+		out.printf("\"%s\": [\n", student);
+		for (int i = 1; i < nodes.size(); i++) {
+			out.println("{");
+			Node last = nodes.get(i - 1);
+			out.printf("\"from\": \"%s\",\n", last);
+			Node node = nodes.get(i);
+			out.printf("\"to\": \"%s\",\n", node);
+			out.println("\"hints\": [");
+			
+			for (HintChoice choice : hints.get(i)) {
+				out.println(choice.toJson() + ",");
+			}
+			out.println("]},");
+			
+		}
+		out.println("],");
+	}
+	
+	private void jsonEnd(PrintStream out) {
+		if (out == null) return;
+		out.println("};");
 	}
 
 	private void parseStudents() throws IOException {
