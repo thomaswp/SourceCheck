@@ -46,16 +46,14 @@ public class SubtreeBuilder {
 		
 		if (path.size() <= 1) return generatedHints;
 		
+		List<HashSet<Node>> keptNodes = keptNodes(path);
+		
 		LblTree lastTree = null;
 		List<LblTree> lastList = null;
 		RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(1, 1, 10000);
 		
 		Set<Tuple<Node,Node>> placedEdges = new HashSet<Tuple<Node,Node>>();
-		
-		Node submitted = path.get(path.size() - 1);
-		LblTree submittedTree = submitted.toTree();
-		List<LblTree> submittedList = Collections.list(submittedTree.depthFirstEnumeration());
-		
+				
 		int i = 0;
 		Node last = null;
 		for (Node current : path) {
@@ -66,51 +64,10 @@ public class SubtreeBuilder {
 			
 			LblTree tree = current.toTree();
 			List<LblTree> list = Collections.list(tree.depthFirstEnumeration());
-			
-//			for (LblTree t : list) {
-//				Node node = (Node) t.getUserObject();
-//				hintMap.addVertex(node);
-//			}
-					
+							
 			if (lastTree != null) {
-				LinkedList<int[]> editMap;
-				
-				HashSet<LblTree> validNodes = new HashSet<LblTree>();
-
-//				System.out.println(tree);
-//				System.out.println(submittedTree);
-				opt.init(tree, submittedTree);
-				opt.computeOptimalStrategy();
-//				editMap = opt.computeEditMapping();
-//				for (int[] a : editMap) {
-//					if (a[0] == 0) continue;
-//					LblTree c1 = a[0] == 0 ? null : list.get(a[0] - 1);
-//					LblTree c2 = a[1] == 0 ? null : submittedList.get(a[1] - 1);
-//					System.out.println(c1 + " <==> " + c2);
-//				}
-				double dis = opt.nonNormalizedTreeDist();
-//				System.out.println(dis);
-				editMap = opt.computeEditMapping();
-//				for (int[] a : editMap) {
-//					if (a[0] == 0) continue;
-//					LblTree c1 = a[0] == 0 ? null : list.get(a[0] - 1);
-//					LblTree c2 = a[1] == 0 ? null : submittedList.get(a[1] - 1);
-//					System.out.println(c1 + " <==> " + c2);
-//				}
-				for (int[] a : editMap) {
-					if (a[0] == 0 || a[1] == 0) continue;
-					LblTree valid = list.get(a[0] - 1);
-					validNodes.add(valid);
-				}
-//				System.out.println(validNodes);
-//				System.exit(0);
-				
-//				String out = validNodes.size() + "/" + list.size();
-//				if (path.size() - i < 6) out += ": " + current.toCanonicalString();
-//				System.out.println(out);
-				
-				opt.init(lastTree, tree);
-				editMap = opt.computeEditMapping();
+				opt.nonNormalizedTreeDist(lastTree, tree);
+				LinkedList<int[]> editMap = opt.computeEditMapping();
 				
 				HashSet<LblTree> added = new HashSet<LblTree>();
 				for (int[] a : editMap) {
@@ -134,16 +91,17 @@ public class SubtreeBuilder {
 							
 							LblTree badAdd = null;
 							Enumeration<LblTree> children = c2.depthFirstEnumeration();
+							HashSet<Node> kept = keptNodes.get(i);
 							while (children.hasMoreElements()) {
 								LblTree child = children.nextElement();
-								if (added.contains(child) && !validNodes.contains(child)) {
+								if (added.contains(child) && !kept.contains(child.getUserObject())) {
 									badAdd = child;
 									break;
 								}
 							}
 							
 							if (badAdd != null) {
-								hint.setStatus(false, "Not kept: " + badAdd);
+								hint.setStatus(false, "Not kept: " + ((Node) badAdd.getUserObject()).type);
 								hints.add(hint);
 								continue;
 							}
@@ -166,6 +124,77 @@ public class SubtreeBuilder {
 		}
 		
 		return generatedHints;
+	}
+	
+	@SuppressWarnings("unchecked")
+	private List<HashSet<Node>> keptNodes(List<Node> path) {
+		List<HashSet<Node>> keptList = new ArrayList<HashSet<Node>>();
+		if (path.size() == 0) return keptList;
+		
+		for (int i = 0; i < path.size(); i++) keptList.add(new HashSet<Node>());
+
+		RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(1, 1, 10000);
+		
+		LblTree lastTree = path.get(path.size() - 1).toTree();
+		
+		Node next = null;
+		LblTree nextTree = null;
+		List<LblTree> nextList = null;
+		for (int i = path.size() - 1; i >= 0; i--) {
+			Node node = path.get(i);
+			LblTree tree = node.toTree();
+			List<LblTree> list = Collections.list(tree.depthFirstEnumeration());
+			
+			HashSet<Node> kept = keptList.get(i);
+			
+			if (next != null) {
+				HashSet<Node> nextKept = keptList.get(i + 1); 
+				
+//				HashSet<LblTree> added = new HashSet<LblTree>();
+				
+				opt.init(tree, nextTree);
+				opt.computeOptimalStrategy();
+				opt.nonNormalizedTreeDist();
+				int keptCount = 0;
+				LinkedList<int[]> editMapping = opt.computeEditMapping();
+				for (int[] a : editMapping) {
+					if (a[0] != 0 && a[1] != 0) {
+						Node saved = (Node) nextList.get(a[1] - 1).getUserObject();
+						if (nextKept.contains(saved)) {
+							LblTree addedTree = list.get(a[0] - 1);
+//							added.add(addedTree);
+							kept.add((Node) addedTree.getUserObject());
+							keptCount++;
+						}
+					}
+				}
+				
+				opt.init(tree, lastTree);
+				opt.computeOptimalStrategy();
+				opt.nonNormalizedTreeDist();
+				editMapping = opt.computeEditMapping();
+				for (int[] a : editMapping) {
+					if (a[0] != 0 && a[1] != 0) {
+						LblTree addedTree = list.get(a[0] - 1);
+//						if (added.add(addedTree)) {
+							kept.add((Node) addedTree.getUserObject());
+							keptCount++;
+//						}
+					}
+				}	
+				
+//				System.out.println(i + ": " + keptCount + "/" + list.size());
+			} else {
+				for (LblTree t : list) {
+					kept.add((Node) t.getUserObject());
+				}
+			}
+			
+			next = node;
+			nextTree = tree;
+			nextList = list;
+		}
+		return keptList;
 	}
 
 	@SuppressWarnings("unchecked")

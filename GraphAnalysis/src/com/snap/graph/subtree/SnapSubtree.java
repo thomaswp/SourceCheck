@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -32,22 +31,7 @@ public class SnapSubtree {
 	
 	public static void main(String[] args) throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
 		
-//		RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(1, 1, 1000);
-//		LblTree t1 = LblTree.fromString("0:{1{2{3}}}");
-//		System.out.println(t1);
-//		LblTree t2 = LblTree.fromString("1:{1{2{3{4}}{q}}}");
-//		System.out.println(t2);
-//		opt.init(t1, t2);
-////		System.out.println(opt.nonNormalizedTreeDist());
-//		LinkedList<int[]> mapping = opt.computeEditMapping();
-//		ArrayList<LblTree> l1 = Collections.list(t1.depthFirstEnumeration());
-//		ArrayList<LblTree> l2 = Collections.list(t2.depthFirstEnumeration());
-//		for (int[] a : mapping) {
-//			LblTree c1 = a[0] == 0 ? null : l1.get(a[0] - 1);
-//			LblTree c2 = a[1] == 0 ? null : l2.get(a[1] - 1);
-//			System.out.println(c1 + " <==> " + c2);
-//		}
-//		System.exit(0);
+//		rtedTest();
 		
 		
 		SnapSubtree subtree = new SnapSubtree("../data/csc200/fall2015", "guess1Lab");
@@ -61,6 +45,27 @@ public class SnapSubtree {
 		subtree.buildGraph(Mode.Overwrite);
 //		subtree.analyze();
 		System.out.println(System.currentTimeMillis());
+	}
+
+	@SuppressWarnings({ "unused", "unchecked" })
+	private static void rtedTest() {
+		RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(100, 100, 100);
+		LblTree t1 = LblTree.fromString("0:{1{2{3}}}");
+		System.out.println(t1);
+		LblTree t2 = LblTree.fromString("1:{1{2{3{4}}{q}}}");
+		System.out.println(t2);
+		opt.init(t1, t2);
+		opt.computeOptimalStrategy();
+//		System.out.println(opt.nonNormalizedTreeDist());
+		LinkedList<int[]> mapping = opt.computeEditMapping();
+		ArrayList<LblTree> l1 = Collections.list(t1.depthFirstEnumeration());
+		ArrayList<LblTree> l2 = Collections.list(t2.depthFirstEnumeration());
+		for (int[] a : mapping) {
+			LblTree c1 = a[0] == 0 ? null : l1.get(a[0] - 1);
+			LblTree c2 = a[1] == 0 ? null : l2.get(a[1] - 1);
+			System.out.println(c1 + " <==> " + c2);
+		}
+		System.exit(0);
 	}
 	
 	public final String dataDir;

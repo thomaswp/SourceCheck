@@ -9,6 +9,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -19,6 +21,8 @@ import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 
 import com.esotericsoftware.kryo.Kryo;
+import com.snap.data.Block;
+import com.snap.data.Snapshot;
 import com.snap.parser.Store.Mode;
 
 /**
@@ -161,6 +165,27 @@ public class SnapParser {
 				return solution;
 			}
 		});
+	}
+	
+	private class Labeling {
+		public final Snapshot snapshot;
+		
+		public Labeling(Snapshot snapshot) {
+			this.snapshot = snapshot;
+		}
+		
+		public void load(Labeling last) {
+			
+		}
+	}
+	
+	private class Label {
+		public Block block;
+		public Label parent;
+		public List<Block> children = new LinkedList<Block>();
+		public int id;
+		
+		
 	}
 	
 	
