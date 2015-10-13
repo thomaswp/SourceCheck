@@ -50,6 +50,11 @@ public class Node extends StringHashable {
 		}
 		return size;
 	}
+	
+	public Node root() {
+		if (parent == null) return this;
+		return parent.root();
+	}
 
 	@Override
 	protected String toCanonicalStringInternal() {

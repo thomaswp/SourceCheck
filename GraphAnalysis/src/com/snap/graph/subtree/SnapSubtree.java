@@ -42,7 +42,7 @@ public class SnapSubtree {
 //		hintMap.clear();
 		
 		System.out.println(System.currentTimeMillis());
-		subtree.buildGraph(Mode.Overwrite, false);
+		subtree.buildGraph(Mode.Overwrite, true);
 //		subtree.analyze();
 		System.out.println(System.currentTimeMillis());
 	}
@@ -164,7 +164,7 @@ public class SnapSubtree {
 			if (nodes == test || nodes.size() == 0) continue;
 			System.out.println("Adding " + student);
 			jsonStudent(out, student, nodes, builder.addStudent(nodes, false));
-//			break;
+			if (out != null) break;
 		}
 		jsonEnd(out);
 		return builder;

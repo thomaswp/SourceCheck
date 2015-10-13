@@ -7,7 +7,6 @@ public class SimpleHintMap implements HintMap {
 
 	HashMap<Node, HashMap<Node, Integer>> edges = new HashMap<Node, HashMap<Node,Integer>>();
 	
-	@Override
 	public void addVertex(Node node) {
 		if (edges.containsKey(node)) return;
 		edges.put(node, new HashMap<Node, Integer>());

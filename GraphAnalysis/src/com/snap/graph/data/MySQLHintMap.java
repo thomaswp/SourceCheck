@@ -65,7 +65,6 @@ public class MySQLHintMap implements HintMap {
 		edgeTable = tablePrefix + "_edges";
 	}
 	
-	@Override
 	public void addVertex(Node node) {
 		getVertexIDAndInsert(node);
 	}

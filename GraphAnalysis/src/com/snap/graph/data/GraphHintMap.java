@@ -10,7 +10,6 @@ import com.snap.graph.data.Graph.Edge;
 public class GraphHintMap implements HintMap {
 	private NodeGraph graph = new NodeGraph();
 
-	@Override
 	public void addVertex(Node node) {
 		graph.addVertex(node);
 	}

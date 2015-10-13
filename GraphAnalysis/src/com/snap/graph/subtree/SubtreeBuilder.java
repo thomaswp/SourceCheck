@@ -3,7 +3,7 @@ package com.snap.graph.subtree;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -68,57 +68,77 @@ public class SubtreeBuilder {
 				opt.nonNormalizedTreeDist(lastTree, tree);
 				LinkedList<int[]> editMap = opt.computeEditMapping();
 				
-				HashSet<LblTree> added = new HashSet<LblTree>();
-				for (int[] a : editMap) {
-					if (a[0] != 0 || a[1] == 0) continue;
-					added.add(list.get(a[1] - 1));
-				}
-				
-				int possible = 0, valid = 0;
+				HashSet<LblTree> addedTrees = new HashSet<LblTree>();
+				HashSet<LblTree> removedTrees = new HashSet<LblTree>();
+				HashMap<LblTree, LblTree> sameTrees = new HashMap<LblTree, LblTree>();
 				for (int[] a : editMap) {
 					LblTree c1 = a[0] == 0 ? null : lastList.get(a[0] - 1);
 					LblTree c2 = a[1] == 0 ? null : list.get(a[1] - 1);
-					
-					if (c1 != null && c2 != null) {
-						Node n1 = (Node)c1.getUserObject();
-						Node n2 = (Node)c2.getUserObject();
-
-						if (!n1.equals(n2) && n1.shallowEquals(n2)) {
-							possible++;
-														
-							HintChoice hint = new HintChoice(n1, n2);
-							if (added.size() == 0) {
-								hint.setStatus(false, "Deletion");
-								hints.add(hint);
-								continue;
-							}
-							
-							LblTree badAdd = null;
-							Enumeration<LblTree> children = c2.depthFirstEnumeration();
-							HashSet<Node> kept = keptNodes.get(i);
-							while (children.hasMoreElements()) {
-								LblTree child = children.nextElement();
-								if (added.contains(child) && !kept.contains(child.getUserObject())) {
-									badAdd = child;
-									break;
-								}
-							}
-							
-							if (badAdd != null) {
-								hint.setStatus(false, "Not kept: " + ((Node) badAdd.getUserObject()).type);
-								hints.add(hint);
-								continue;
-							}
-							
-							
-							if (duplicates || placedEdges.add(new Tuple<Node,Node>(n1, n2))) {
-								valid++;
-								hintMap.addEdge(n1, n2);
-								hints.add(hint);
-							}
-						}
+					if (c1 == null && c2 != null) {
+						addedTrees.add(c2);
+					} else if (c1 != null && c2 == null) {
+						removedTrees.add(c1);
+					} else {
+						sameTrees.put(c2, c1);
 					}
 				}
+				for (LblTree t : addedTrees) {
+					LblTree parentTree = (LblTree) t.getParent();
+					if (addedTrees.contains(parentTree)) continue;
+					
+					Node added = (Node) t.getUserObject();
+					Node parent = (Node) parentTree.getUserObject();
+					Node previousParent = (Node) sameTrees.get(parentTree).getUserObject();
+					Node previous = new Node(previousParent, null);
+					hintMap.addEdge(previous, added);
+					hints.add(new HintChoice(previousParent, parent));
+				}
+				
+//				int possible = 0, valid = 0;
+//				for (int[] a : editMap) {
+//					LblTree c1 = a[0] == 0 ? null : lastList.get(a[0] - 1);
+//					LblTree c2 = a[1] == 0 ? null : list.get(a[1] - 1);
+//					
+//					if (c1 != null && c2 != null) {
+//						Node n1 = (Node)c1.getUserObject();
+//						Node n2 = (Node)c2.getUserObject();
+//
+//						if (!n1.equals(n2) && n1.shallowEquals(n2)) {
+//							possible++;
+//														
+//							HintChoice hint = new HintChoice(n1, n2);
+//							if (added.size() == 0) {
+//								hint.setStatus(false, "Deletion");
+//								hints.add(hint);
+//								continue;
+//							}
+//							
+//							LblTree badAdd = null;
+//							Enumeration<LblTree> children = c2.depthFirstEnumeration();
+//							HashSet<Node> kept = keptNodes.get(i);
+//							while (children.hasMoreElements()) {
+//								LblTree child = children.nextElement();
+//								if (added.contains(child) && !kept.contains(child.getUserObject())) {
+//									badAdd = child;
+//									break;
+//								}
+//							}
+//							
+//							if (badAdd != null) {
+//								hint.setStatus(false, "Not kept: " + ((Node) badAdd.getUserObject()).type);
+//								hints.add(hint);
+//								continue;
+//							}
+//							
+//							
+//							if (duplicates || placedEdges.add(new Tuple<Node,Node>(n1, n2))) {
+//								valid++;
+//								hintMap.addEdge(n1, n2);
+//								hints.add(hint);
+//							}
+//						}
+//					}
+//				}
 //				System.out.println(valid + "/" + possible);
 			}
 			

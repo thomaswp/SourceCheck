@@ -6,7 +6,7 @@ public interface HintMap {
 
 	void clear();
 	
-	void addVertex(Node node);
+//	void addVertex(Node node);
 
 	void addEdge(Node from, Node to);
 
