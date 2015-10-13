@@ -42,7 +42,7 @@ public class SnapSubtree {
 //		hintMap.clear();
 		
 		System.out.println(System.currentTimeMillis());
-		subtree.buildGraph(Mode.Overwrite);
+		subtree.buildGraph(Mode.Overwrite, false);
 //		subtree.analyze();
 		System.out.println(System.currentTimeMillis());
 	}
@@ -127,24 +127,26 @@ public class SnapSubtree {
 	}
 
 	
-	public SubtreeBuilder buildGraph(Mode storeMode) {
+	public SubtreeBuilder buildGraph(Mode storeMode, final boolean write) {
 		String storePath = new File(dataDir, assignment + ".cached").getAbsolutePath();
 		return Store.getCachedObject(SubtreeBuilder.getKryo(), storePath, SubtreeBuilder.class, storeMode, new Store.Loader<SubtreeBuilder>() {
 			@Override
 			public SubtreeBuilder load() {
-				File out = new File(dataDir, "view/" + assignment + ".json.js");
-				out.mkdirs();
-				out.delete();
-				PrintStream ps = null;
-				try {
-					ps = new PrintStream(out);
-					return buildGraph(new SubtreeBuilder(new SimpleHintMap()), null, ps);
-				} catch (FileNotFoundException e) {
-					e.printStackTrace();
-					return buildGraph(new SubtreeBuilder(new SimpleHintMap()), null, null);
-				} finally {
-					if (ps != null) ps.close();
+				if (write) {
+					File out = new File(dataDir, "view/" + assignment + ".json.js");
+					out.mkdirs();
+					out.delete();
+					PrintStream ps = null;
+					try {
+						ps = new PrintStream(out);
+						return buildGraph(new SubtreeBuilder(new SimpleHintMap()), null, ps);
+					} catch (FileNotFoundException e) {
+						e.printStackTrace();
+					} finally {
+						if (ps != null) ps.close();
+					}
 				}
+				return buildGraph(new SubtreeBuilder(new SimpleHintMap()), null, null);
 			}
 		});
 	}
@@ -162,7 +164,7 @@ public class SnapSubtree {
 			if (nodes == test || nodes.size() == 0) continue;
 			System.out.println("Adding " + student);
 			jsonStudent(out, student, nodes, builder.addStudent(nodes, false));
-			break;
+//			break;
 		}
 		jsonEnd(out);
 		return builder;

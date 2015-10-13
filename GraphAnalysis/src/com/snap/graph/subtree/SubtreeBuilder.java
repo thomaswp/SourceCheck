@@ -55,7 +55,6 @@ public class SubtreeBuilder {
 		Set<Tuple<Node,Node>> placedEdges = new HashSet<Tuple<Node,Node>>();
 				
 		int i = 0;
-		Node last = null;
 		for (Node current : path) {
 			current.cache();
 			
@@ -88,6 +87,11 @@ public class SubtreeBuilder {
 							possible++;
 														
 							HintChoice hint = new HintChoice(n1, n2);
+							if (added.size() == 0) {
+								hint.setStatus(false, "Deletion");
+								hints.add(hint);
+								continue;
+							}
 							
 							LblTree badAdd = null;
 							Enumeration<LblTree> children = c2.depthFirstEnumeration();
