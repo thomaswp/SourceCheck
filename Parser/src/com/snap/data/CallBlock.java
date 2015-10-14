@@ -55,6 +55,7 @@ public class CallBlock extends Block {
 	public String addChildren(boolean canon, Accumulator ac) {
 		ac.add(parameters);
 		ac.add(bodies);
+		if (canon && isCustom) return "doCustomBlock";
 		return name;
 	}
 }

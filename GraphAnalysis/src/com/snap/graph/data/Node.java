@@ -71,6 +71,17 @@ public class Node extends StringHashable {
 		return tree;
 	}
 	
+	public void recurse(Action<Node> action) {
+		action.run(this);
+		for (Node child : children) {
+			if (child != null) child.recurse(action);
+		}
+	}
+	
+	public interface Action<T> {
+		void run(T item);
+	}
+	
 	public static Node fromTree(Node parent, LblTree tree, boolean cache) {
 		Node node = new Node(parent, tree.getLabel());
 		int count = tree.getChildCount();

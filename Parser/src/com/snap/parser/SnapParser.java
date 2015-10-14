@@ -189,7 +189,7 @@ public class SnapParser {
 		final HashMap<String, SolutionPath> students = new HashMap<String, SolutionPath>();
 		final AtomicInteger threads = new AtomicInteger();
 		for (File file : new File(outputFolder, folder).listFiles()) {
-			if (file.getName().endsWith(".cached")) continue;
+			if (!file.getName().endsWith(".csv")) continue;
 			final File fFile = file;
 			threads.incrementAndGet();
 			new Thread(new Runnable() {

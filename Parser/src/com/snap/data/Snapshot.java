@@ -103,6 +103,6 @@ public class Snapshot extends Code {
 		ac.add(stage);
 		ac.add(blocks);
 		ac.add(canonicalizeVariables(variables, canon));
-		return "snapshot";
+		return canon ? "snapshot" : name;
 	}
 }

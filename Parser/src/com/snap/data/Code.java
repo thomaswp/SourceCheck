@@ -74,7 +74,7 @@ public abstract class Code implements Serializable {
 		void add(List<String> codes);
 	}
 	
-	protected final static Accumulator NOOP = new Accumulator() {
+	public final static Accumulator NOOP = new Accumulator() {
 		@Override public void add(List<String> codes) { }
 		@Override public void add(String code) { }
 		@Override public void add(Iterable<? extends Code> codes) { }
@@ -84,7 +84,7 @@ public abstract class Code implements Serializable {
 	protected static List<String> canonicalizeVariables(List<String> variables, boolean canon) {
 		if (!canon) return variables;
 		List<String> vars = new ArrayList<String>();
-		for (int i = 0; i < variables.size(); i++) vars.add("var" + i);
+		for (int i = 0; i < variables.size(); i++) vars.add("var");
 		return vars;
 	}
 	

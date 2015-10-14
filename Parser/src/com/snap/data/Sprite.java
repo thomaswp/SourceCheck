@@ -58,6 +58,6 @@ public class Sprite extends Code {
 		ac.add(canonicalizeVariables(variables, canon));
 		ac.add(scripts);
 		ac.add(blocks);
-		return name;
+		return canon ? "sprite" : name;
 	}
 }

@@ -57,6 +57,6 @@ public class BlockDefinition extends Block {
 	public String addChildren(boolean canon, Accumulator ac) {
 		ac.add(script);
 		ac.add(canonicalizeVariables(inputs, canon));
-		return name;
+		return canon ? "customBlock" : name;
 	}
 }
