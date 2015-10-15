@@ -1,11 +1,11 @@
 package com.snap.graph.data;
 
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
 import com.snap.graph.data.Graph.Edge;
+import com.snap.graph.subtree.SubtreeBuilder.Hint;
 
 public class GraphHintMap implements HintMap {
 	private NodeGraph graph = new NodeGraph();
@@ -29,28 +29,25 @@ public class GraphHintMap implements HintMap {
 	}
 
 	@Override
-	public HintList getHints(Node node) {
+	public Iterable<Hint> getHints(Node node) {
 		List<Edge<Node, Void>> listTemp = graph.fromMap.get(node);
 		if (listTemp == null) listTemp = new LinkedList<Graph.Edge<Node,Void>>();
 		final List<Edge<Node, Void>> list = listTemp;
 		
-		return new HintList() {
-			final HashMap<Node, Integer> weights = new HashMap<Node, Integer>();
-			
+		return new Iterable<Hint>() {			
 			@Override
-			public Iterator<Node> iterator() {
+			public Iterator<Hint> iterator() {
 				final Iterator<Edge<Node, Void>> iterator = list.iterator();
-				return new Iterator<Node>() {
+				return new Iterator<Hint>() {
 					@Override
 					public void remove() {
 						iterator.remove();
 					}
 					
 					@Override
-					public Node next() {
+					public Hint next() {
 						Edge<Node, Void> edge = iterator.next();
-						weights.put(edge.to, edge.weight);
-						return edge.to;
+						return new Hint(edge.from, edge.to);
 					}
 					
 					@Override
@@ -58,11 +55,6 @@ public class GraphHintMap implements HintMap {
 						return iterator.hasNext();
 					}
 				};
-			}
-			
-			@Override
-			public int getWeight(Node to) {
-				return weights.get(to);
 			}
 		};
 	}

@@ -14,9 +14,9 @@ import util.LblTree;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.snap.graph.data.HintMap;
-import com.snap.graph.data.HintMap.HintList;
 import com.snap.graph.data.Node;
 import com.snap.graph.data.SimpleHintMap;
+import com.snap.graph.data.SkeletonMap;
 import com.snap.graph.data.StringHashable;
 
 import distance.RTED_InfoTree_Opt;
@@ -90,7 +90,9 @@ public class SubtreeBuilder {
 					Node parent = (Node) parentTree.getUserObject();
 					Node previousParent = (Node) sameTrees.get(parentTree).getUserObject();
 					Node previous = new Node(previousParent, null);
-					hintMap.addEdge(previous, added);
+					synchronized (hintMap) {
+						hintMap.addEdge(previous, added);
+					}
 					hints.add(new HintChoice(previousParent, parent));
 				}
 				
@@ -270,22 +272,21 @@ public class SubtreeBuilder {
 		return perc;
 	}
 	
-	public List<Hint> getHints(Node parent) {
-		LinkedList<Hint> hints = new LinkedList<SubtreeBuilder.Hint>();
+	public List<WeightedHint> getHints(Node parent) {
+		LinkedList<WeightedHint> hints = new LinkedList<SubtreeBuilder.WeightedHint>();
 		getHints(parent, hints);
 		return hints;
 	}
 	
-	private void getHints(Node node, List<Hint> list) {
-		HintList edges = hintMap.getHints(node);
+	private void getHints(Node node, List<WeightedHint> list) {
+		Iterable<Hint> edges = hintMap.getHints(node);
 		
 		int context = node.size();
 		
 		if (edges != null) {
-			for (Node to : edges) {
-				Hint hint = new Hint(node, to);
+			for (Hint h : edges) {
+				WeightedHint hint = new WeightedHint(h.x, h.y);
 				hint.context = context;
-				hint.quality = edges.getWeight(to);
 				list.add(hint);
 			}
 		}
@@ -300,8 +301,8 @@ public class SubtreeBuilder {
 		
 		while (!toSearch.isEmpty()) {
 			Node next = toSearch.remove(0);
-			HintList edges = hintMap.getHints(node);
-			Iterator<Node> iterator = edges.iterator();
+			Iterable<Hint> edges = hintMap.getHints(node);
+			Iterator<Hint> iterator = edges.iterator();
 			if (iterator.hasNext()) return true;
 			toSearch.addAll(next.children);
 		}
@@ -309,7 +310,7 @@ public class SubtreeBuilder {
 		return false;
 	}
 
-	public static class HintChoice extends Tuple<Node, Node> {
+	public static class HintChoice extends Hint {
 
 		public boolean accepted = true;
 		public String status = "Good";
@@ -330,11 +331,11 @@ public class SubtreeBuilder {
 		}
 	}
 	
-	public static class Hint extends Tuple<Node, Node> {
+	public static class WeightedHint extends Hint {
 
 		public int relevance, context, quality;
 		
-		public Hint(Node x, Node y) {
+		public WeightedHint(Node x, Node y) {
 			super(x, y);
 		}
 		
@@ -351,24 +352,36 @@ public class SubtreeBuilder {
 		
 	}
 	
-	public static abstract class HintComparator implements Comparator<Hint> { 
+	public static class Hint extends Tuple<Node, Node> {
+
+		public Hint(Node x, Node y) {
+			super(x, y);
+		}
+		
+		@Override
+		public String toString() {
+			return String.format("%s -> %s", x.toString(), y.toString());
+		}
+	}
+	
+	public static abstract class HintComparator implements Comparator<WeightedHint> { 
 		public final static HintComparator ByRelevance = new HintComparator() {
 			@Override
-			public int compare(Hint o1, Hint o2) {
+			public int compare(WeightedHint o1, WeightedHint o2) {
 				return Integer.compare(o2.relevance, o1.relevance);
 			}
 		};
 		
 		public final static HintComparator ByContext = new HintComparator() {
 			@Override
-			public int compare(Hint o1, Hint o2) {
+			public int compare(WeightedHint o1, WeightedHint o2) {
 				return Integer.compare(o2.context, o1.context);
 			}
 		};
 		
 		public final static HintComparator ByQuality = new HintComparator() {
 			@Override
-			public int compare(Hint o1, Hint o2) {
+			public int compare(WeightedHint o1, WeightedHint o2) {
 				return Integer.compare(o2.quality, o1.quality);
 			}
 		};
@@ -376,7 +389,7 @@ public class SubtreeBuilder {
 		public HintComparator then(final HintComparator comparator) {
 			return new HintComparator() {
 				@Override
-				public int compare(Hint o1, Hint o2) {
+				public int compare(WeightedHint o1, WeightedHint o2) {
 					int first = HintComparator.this.compare(o1, o2);
 					if (first != 0) return first; 
 					return comparator.compare(o1, o2);
@@ -395,7 +408,7 @@ public class SubtreeBuilder {
 		public static HintComparator weighted(final double relevance, final double context, final double quality) {
 			return new HintComparator() {
 				@Override
-				public int compare(Hint o1, Hint o2) {
+				public int compare(WeightedHint o1, WeightedHint o2) {
 					return Double.compare(
 							o2.relevance * relevance + o2.context * context + o2.quality * quality,
 							o1.relevance * relevance + o1.context * context + o1.quality * quality);
@@ -443,8 +456,9 @@ public class SubtreeBuilder {
 		kryo.register(StringHashable.class);
 		kryo.register(Node.class);
 		kryo.register(HintMap.class);
-		kryo.register(HintMap.HintList.class);
+		kryo.register(Hint.class);
 		kryo.register(SimpleHintMap.class);
+		kryo.register(SkeletonMap.class);
 		return kryo;
 	}
 }

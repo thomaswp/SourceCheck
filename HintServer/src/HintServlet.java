@@ -17,7 +17,7 @@ import com.snap.data.Snapshot;
 import com.snap.graph.SimpleTreeBuilder;
 import com.snap.graph.data.Node;
 import com.snap.graph.subtree.SubtreeBuilder;
-import com.snap.graph.subtree.SubtreeBuilder.Hint;
+import com.snap.graph.subtree.SubtreeBuilder.WeightedHint;
 import com.snap.graph.subtree.SubtreeBuilder.HintComparator;
 
 
@@ -65,7 +65,7 @@ public class HintServlet extends HttpServlet {
 		loadBuilder();
 		Node node = Node.fromTree(null, SimpleTreeBuilder.toTree(snapshot, 0, true), true);
 		
-		List<Hint> hints = builder.getHints(node);
+		List<WeightedHint> hints = builder.getHints(node);
 		Collections.sort(hints, HintComparator.ByContext.then(HintComparator.ByQuality));
 		
 		out.println("[");
@@ -73,7 +73,7 @@ public class HintServlet extends HttpServlet {
 		int thisContext = 0;
 		int printed = 0;
 		for (int i = 0; i < hints.size(); i++) {
-			Hint hint = hints.get(i);
+			WeightedHint hint = hints.get(i);
 			if (hint.context == context) {
 				thisContext++;
 				if (thisContext > 2) continue;

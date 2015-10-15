@@ -5,8 +5,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.snap.graph.subtree.SubtreeBuilder.Hint;
 
 public class MySQLHintMap implements HintMap {
 
@@ -131,9 +133,9 @@ public class MySQLHintMap implements HintMap {
 	}
 
 	@Override
-	public HintList getHints(Node node) {
+	public Iterable<Hint> getHints(Node node) {
 		
-		final HashMap<Node, Integer> map = new HashMap<Node, Integer>();
+		final List<Hint> hints = new ArrayList<Hint>();
 		
 		try {
 			Integer id = getVertexID(node);
@@ -147,26 +149,15 @@ public class MySQLHintMap implements HintMap {
 				ResultSet query = select.executeQuery();
 				while (query.next()) {
 					String hint = query.getString(1);
-					int weight = query.getInt(2);
-					map.put(new Node(null, hint), weight);
+//					int weight = query.getInt(2);
+					hints.add(new Hint(node, new Node(null, hint)));
 				}
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-		
-		return new HintList() {
-			
-			@Override
-			public Iterator<Node> iterator() {
-				return map.keySet().iterator();
-			}
-			
-			@Override
-			public int getWeight(Node to) {
-				return map.get(to);
-			}
-		};
+
+		return hints;
 	}
 
 }

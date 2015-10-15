@@ -2,21 +2,20 @@ package com.snap.graph.data;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 
-import com.snap.graph.subtree.SubtreeBuilder.Tuple;
+import com.snap.graph.subtree.SubtreeBuilder.Hint;
 
 public class SkeletonMap implements HintMap {
 	
-	private HashMap<Node, List<Tuple<Node,Node>>> bones = new HashMap<Node, List<Tuple<Node,Node>>>();
+	private HashMap<Node, List<Hint>> bones = new HashMap<Node, List<Hint>>();
 
 	@Override
 	public void addEdge(Node from, Node to) {
 		Node backbone = toBackbone(from).root();
-		List<Tuple<Node, Node>> hints = bones.get(backbone);
+		List<Hint> hints = bones.get(backbone);
 		if (hints == null) {
-			hints = new ArrayList<Tuple<Node,Node>>();
+			hints = new ArrayList<Hint>();
 			bones.put(backbone, hints);
 		}
 	}
@@ -26,7 +25,7 @@ public class SkeletonMap implements HintMap {
 		
 		Node parent = toBackbone(node.parent);
 		Node child = new Node(parent, node.type);
-		parent.children.add(child);
+		if (parent != null) parent.children.add(child);
 		
 		return child;
 	}
@@ -37,36 +36,9 @@ public class SkeletonMap implements HintMap {
 	}
 
 	@Override
-	public HintList getHints(Node node) {
-		final List<Tuple<Node, Node>> hints = bones.get(toBackbone(node).root());
-		
-		return new HintList() {
-			@Override
-			public Iterator<Node> iterator() {
-				final Iterator<Tuple<Node,Node>> i = hints.iterator();
-				return new Iterator<Node>() {
-					@Override
-					public void remove() {
-						throw new UnsupportedOperationException();
-					}
-					
-					@Override
-					public Node next() {
-						return i.next().y;
-					}
-					
-					@Override
-					public boolean hasNext() {
-						return i.hasNext();
-					}
-				};
-			}
-			
-			@Override
-			public int getWeight(Node to) {
-				return 1;
-			}
-		};
+	public List<Hint> getHints(Node node) {
+		final List<Hint> hints = bones.get(toBackbone(node).root());
+		return hints;
 	}
 
 	@Override

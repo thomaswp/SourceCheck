@@ -11,14 +11,17 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import util.LblTree;
 
 import com.snap.data.Snapshot;
 import com.snap.graph.SimpleNodeBuilder;
-import com.snap.graph.SimpleTreeBuilder;
 import com.snap.graph.data.Node;
+import com.snap.graph.data.SkeletonMap;
 import com.snap.graph.data.Node.Action;
 import com.snap.graph.data.SimpleHintMap;
-import com.snap.graph.subtree.SubtreeBuilder.Hint;
+import com.snap.graph.subtree.SubtreeBuilder.WeightedHint;
 import com.snap.graph.subtree.SubtreeBuilder.HintChoice;
 import com.snap.graph.subtree.SubtreeBuilder.HintComparator;
 import com.snap.parser.DataRow;
@@ -28,7 +31,6 @@ import com.snap.parser.Store;
 import com.snap.parser.Store.Mode;
 
 import de.citec.tcs.alignment.csv.CSVExporter;
-import de.citec.tcs.alignment.csv.CSVImporter;
 import de.citec.tcs.alignment.sequence.Alphabet;
 import de.citec.tcs.alignment.sequence.KeywordSpecification;
 import de.citec.tcs.alignment.sequence.NodeSpecification;
@@ -36,7 +38,6 @@ import de.citec.tcs.alignment.sequence.Sequence;
 import de.citec.tcs.alignment.sequence.SymbolicKeywordSpecification;
 import de.citec.tcs.alignment.sequence.SymbolicValue;
 import distance.RTED_InfoTree_Opt;
-import util.LblTree;
 
 public class SnapSubtree {
 	
@@ -53,8 +54,8 @@ public class SnapSubtree {
 //		hintMap.clear();
 		
 		System.out.println(System.currentTimeMillis());
-//		subtree.buildGraph(Mode.Overwrite, true);
-		subtree.outputStudents();
+		subtree.buildGraph(Mode.Overwrite, false);
+//		subtree.outputStudents();
 //		subtree.analyze();
 		System.out.println(System.currentTimeMillis());
 	}
@@ -112,14 +113,14 @@ public class SnapSubtree {
 //			builder.graph.export(new PrintStream(new FileOutputStream("test" + done + ".graphml")), true, 1, true, true);
 
 			for (Node node : test) {
-				List<Hint> hints = builder.getHints(node);
+				List<WeightedHint> hints = builder.getHints(node);
 				Collections.sort(hints, HintComparator.ByContext.then(HintComparator.ByQuality));
 				System.out.println(((Snapshot)node.tag).name);
 				
 				int context = Integer.MAX_VALUE;
 				int printed = 0;
 				for (int i = 0; i < hints.size() && printed < 5; i++) {
-					Hint hint = hints.get(i);
+					WeightedHint hint = hints.get(i);
 					if (hint.context == context) {
 						continue;
 					}
@@ -158,7 +159,7 @@ public class SnapSubtree {
 						if (ps != null) ps.close();
 					}
 				}
-				return buildGraph(new SubtreeBuilder(new SimpleHintMap()), null, null);
+				return buildGraph(new SubtreeBuilder(new SkeletonMap()), null, null);
 			}
 		});
 	}
@@ -167,16 +168,36 @@ public class SnapSubtree {
 		return buildGraph(builder, null, null);
 	}
 	
-	public SubtreeBuilder buildGraph(SubtreeBuilder builder, String testStudent, PrintStream out) {
+	public SubtreeBuilder buildGraph(final SubtreeBuilder builder, String testStudent, PrintStream out) {
 		builder.startBuilding();
 		List<Node> test = nodeMap().get(testStudent);
 		jsonStart(out);
+		final AtomicInteger count = new AtomicInteger();
 		for (String student : nodeMap().keySet()) {
-			List<Node> nodes = nodeMap().get(student);
+			final List<Node> nodes = nodeMap().get(student);
+			final String fStudent = student;
+			
 			if (nodes == test || nodes.size() == 0) continue;
-			System.out.println("Adding " + student);
-			jsonStudent(out, student, nodes, builder.addStudent(nodes, false));
-			if (out != null) break;
+			count.incrementAndGet();
+			if (out != null) {
+				jsonStudent(out, student, nodes, builder.addStudent(nodes, false));
+				if (out != null) break;
+			}
+			new Thread(new Runnable() {
+				@Override
+				public void run() {
+					builder.addStudent(nodes, false);
+					System.out.println("Added " + fStudent);
+					count.decrementAndGet();
+				}
+			}).start();
+		}
+		while (count.get() != 0) {
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 		jsonEnd(out);
 		return builder;

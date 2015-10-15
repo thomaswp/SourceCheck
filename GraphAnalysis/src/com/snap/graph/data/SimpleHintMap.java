@@ -1,7 +1,11 @@
 package com.snap.graph.data;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+
+import com.snap.graph.subtree.SubtreeBuilder.Hint;
 
 public class SimpleHintMap implements HintMap {
 
@@ -32,22 +36,13 @@ public class SimpleHintMap implements HintMap {
 	}
 
 	@Override
-	public HintList getHints(Node node) {
+	public Iterable<Hint> getHints(Node node) {
 		HashMap<Node, Integer> mapTemp = edges.get(node);
 		if (mapTemp == null) mapTemp = new HashMap<Node, Integer>();
-		final HashMap<Node, Integer> map = mapTemp;
-		
-		return new HintList() {
-			@Override
-			public Iterator<Node> iterator() {
-				return map.keySet().iterator();
-			}
-			
-			@Override
-			public int getWeight(Node to) {
-				return map.get(to);
-			}
-		};
+		HashMap<Node, Integer> map = mapTemp;
+		List<Hint> hints = new ArrayList<Hint>();
+		for (Node key : map.keySet()) hints.add(new Hint(node, key));
+		return hints;
 	}
 
 	@Override

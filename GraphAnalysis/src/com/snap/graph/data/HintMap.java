@@ -1,5 +1,7 @@
 package com.snap.graph.data;
 
+import com.snap.graph.subtree.SubtreeBuilder.Hint;
+
 
 
 public interface HintMap {
@@ -12,10 +14,5 @@ public interface HintMap {
 
 	boolean hasVertex(Node node);
 
-	HintList getHints(Node node);
-	
-	public interface HintList extends Iterable<Node> {
-		int getWeight(Node to);
-	}
-
+	Iterable<Hint> getHints(Node node);
 }
