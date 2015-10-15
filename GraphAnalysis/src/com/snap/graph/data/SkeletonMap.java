@@ -19,6 +19,7 @@ public class SkeletonMap implements HintMap {
 			hints = new ArrayList<Hint>();
 			bones.put(backbone, hints);
 		}
+		hints.add(new Hint(from, to));
 		return new HintChoice(from, to);
 	}
 	

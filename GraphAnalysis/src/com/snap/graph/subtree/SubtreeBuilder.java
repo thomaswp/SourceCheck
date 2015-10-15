@@ -1,6 +1,7 @@
 package com.snap.graph.subtree;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
@@ -68,8 +69,7 @@ public class SubtreeBuilder {
 			List<LblTree> list = Collections.list(tree.depthFirstEnumeration());
 							
 			if (lastTree != null) {
-				double dis = opt.nonNormalizedTreeDist(lastTree, tree);
-				System.out.println(dis);
+				opt.nonNormalizedTreeDist(lastTree, tree);
 				LinkedList<int[]> editMap = opt.computeEditMapping();
 				
 				HashSet<LblTree> addedTrees = new HashSet<LblTree>();
@@ -91,19 +91,22 @@ public class SubtreeBuilder {
 					if (addedTrees.contains(parentTree)) continue;
 					
 					Node added = (Node) t.getUserObject();
-//					Node parent = (Node) parentTree.getUserObject();
+					Node parent = (Node) parentTree.getUserObject();
 					LblTree previousParentTree = sameTrees.get(parentTree);
 					Node previousParent = (Node) previousParentTree.getUserObject();
 					Node previous = null;
 					
-					for (Enumeration children = previousParentTree.children(); children.hasMoreElements();) {
+					int index = parent.children.indexOf(added);
+					int minDis = Integer.MAX_VALUE;
+					int childIndex = 0;
+					for (Enumeration children = previousParentTree.children(); children.hasMoreElements(); childIndex++) {
 						LblTree child = (LblTree) children.nextElement();
 						if (removedTrees.contains(child)) {
-							if (previous != null) {
-								System.out.println("!");
+							int d = Math.abs(index - childIndex);
+							if (d < minDis) {
+								previous = (Node) child.getUserObject();
+								minDis = d;
 							}
-							previous = (Node) child.getUserObject();
-//							break;
 						}
 					}
 					if (previous == null) previous = new Node(previousParent, null);
@@ -198,7 +201,7 @@ public class SubtreeBuilder {
 				opt.init(tree, nextTree);
 				opt.computeOptimalStrategy();
 				opt.nonNormalizedTreeDist();
-				int keptCount = 0;
+//				int keptCount = 0;
 				LinkedList<int[]> editMapping = opt.computeEditMapping();
 				for (int[] a : editMapping) {
 					if (a[0] != 0 && a[1] != 0) {
@@ -207,7 +210,7 @@ public class SubtreeBuilder {
 							LblTree addedTree = list.get(a[0] - 1);
 //							added.add(addedTree);
 							kept.add((Node) addedTree.getUserObject());
-							keptCount++;
+//							keptCount++;
 						}
 					}
 				}
@@ -221,7 +224,7 @@ public class SubtreeBuilder {
 						LblTree addedTree = list.get(a[0] - 1);
 //						if (added.add(addedTree)) {
 							kept.add((Node) addedTree.getUserObject());
-							keptCount++;
+//							keptCount++;
 //						}
 					}
 				}	
@@ -298,17 +301,72 @@ public class SubtreeBuilder {
 	private void getHints(Node node, List<WeightedHint> list) {
 		Iterable<Hint> edges = hintMap.getHints(node);
 		
-		int context = node.size();
+		int context = node.depth();
+		
+		// TODO: don't forget that really the skeleton need not match exactly,
+		// we should just be matching as much as possible
 		
 		if (edges != null) {
 			for (Hint h : edges) {
 				WeightedHint hint = new WeightedHint(h.x, h.y);
+				
+				hint.quality = skeletonDiff(node.parent, h.x.parent);
+				
 				hint.context = context;
 				list.add(hint);
 			}
 		}
 		
+		if (node.type != null) getHints(new Node(node, null), list);
 		for (Node child : node.children) getHints(child, list);
+	}
+	
+	public int skeletonDiff(Node x, Node y) {
+		if (x == null || y == null) return 0;
+		if (!x.type.equals(y.type)) {
+			return 0;
+		}
+
+		String[] xChildren = childrenTypes(x);
+		String[] yChildren = childrenTypes(y);
+		int d = alignCost(xChildren, yChildren);
+		System.out.println(d + ": " + Arrays.toString(xChildren) + " v " + Arrays.toString(yChildren));
+		d += skeletonDiff(x.parent, y.parent);
+		return d;
+	}
+	
+	private String[] childrenTypes(Node node) {
+		String[] types = new String[node.children.size()];
+		for (int i = 0; i < types.length; i++) types[i] = node.children.get(i).type;
+		return types;
+	}
+	
+	// Credit: http://introcs.cs.princeton.edu/java/96optimization/Diff.java.html
+	private int alignCost(String[] sequenceA, String[] sequenceB) {
+		// The penalties to apply
+		int gap = 1, substitution = 1, match = 0;
+
+		int[][] opt = new int[sequenceA.length + 1][sequenceB.length + 1];
+
+		// First of all, compute insertions and deletions at 1st row/column
+		for (int i = 1; i <= sequenceA.length; i++)
+		    opt[i][0] = opt[i - 1][0] + gap;
+		for (int j = 1; j <= sequenceB.length; j++)
+		    opt[0][j] = opt[0][j - 1] + gap;
+
+		for (int i = 1; i <= sequenceA.length; i++) {
+		    for (int j = 1; j <= sequenceB.length; j++) {
+		        int scoreDiag = opt[i - 1][j - 1] +
+		                (sequenceA[i-1].equals(sequenceB[j-1]) ?
+		                    match : // same symbol
+		                    substitution); // different symbol
+		        int scoreLeft = opt[i][j - 1] + gap; // insertion
+		        int scoreUp = opt[i - 1][j] + gap; // deletion
+		        // we take the minimum
+		        opt[i][j] = Math.min(Math.min(scoreDiag, scoreLeft), scoreUp);
+		    }
+		}
+		return opt[sequenceA.length][sequenceB.length];
 	}
 	
 	
@@ -371,6 +429,10 @@ public class SubtreeBuilder {
 	
 	public static class Hint extends Tuple<Node, Node> {
 
+		private Hint() {
+			super(null, null);
+		}
+		
 		public Hint(Node x, Node y) {
 			super(x, y);
 		}

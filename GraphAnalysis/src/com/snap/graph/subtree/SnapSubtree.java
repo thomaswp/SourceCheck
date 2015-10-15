@@ -19,6 +19,7 @@ import com.snap.graph.data.HintMap;
 import com.snap.graph.data.Node;
 import com.snap.graph.data.Node.Action;
 import com.snap.graph.data.SkeletonMap;
+import com.snap.graph.subtree.SubtreeBuilder.Hint;
 import com.snap.graph.subtree.SubtreeBuilder.HintChoice;
 import com.snap.graph.subtree.SubtreeBuilder.HintComparator;
 import com.snap.graph.subtree.SubtreeBuilder.WeightedHint;
@@ -53,7 +54,16 @@ public class SnapSubtree {
 //		hintMap.clear();
 		
 		System.out.println(System.currentTimeMillis());
-		subtree.buildGraph(Mode.Overwrite, true);
+		SubtreeBuilder builder = subtree.buildGraph(Mode.Use, false);
+		List<Node> student = subtree.nodeMap().values().iterator().next();
+		for (int i = 0; i < student.size(); i++) {
+			Node node = student.get(i);
+			System.out.println("State: " + node);
+			for (Hint hint : builder.getHints(node)) {
+				System.out.println(hint);
+			}		
+			if (i >= 1) break;
+		}
 //		subtree.outputStudents();
 //		subtree.analyze();
 		System.out.println(System.currentTimeMillis());
@@ -329,6 +339,7 @@ public class SnapSubtree {
 					nodes.clear();
 				}
 			}
+			if (submittedNodes.size() == 0) continue;
 			nodeMapCache.put(student, submittedNodes);
 		}
 	}
