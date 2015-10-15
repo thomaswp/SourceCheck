@@ -3,12 +3,15 @@ package com.snap.graph.subtree;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+
+import javax.swing.plaf.synth.SynthScrollBarUI;
 
 import util.LblTree;
 
@@ -38,7 +41,7 @@ public class SubtreeBuilder {
 		hintMap.clear();
 	}
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public List<List<HintChoice>> addStudent(List<Node> path, boolean duplicates) {
 		// duplicates allows multiple edges from the same student
 		
@@ -50,7 +53,7 @@ public class SubtreeBuilder {
 		
 		LblTree lastTree = null;
 		List<LblTree> lastList = null;
-		RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(1, 1, 10000);
+		RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(0.01, 0.01, 10000);
 		
 		Set<Tuple<Node,Node>> placedEdges = new HashSet<Tuple<Node,Node>>();
 				
@@ -65,7 +68,8 @@ public class SubtreeBuilder {
 			List<LblTree> list = Collections.list(tree.depthFirstEnumeration());
 							
 			if (lastTree != null) {
-				opt.nonNormalizedTreeDist(lastTree, tree);
+				double dis = opt.nonNormalizedTreeDist(lastTree, tree);
+				System.out.println(dis);
 				LinkedList<int[]> editMap = opt.computeEditMapping();
 				
 				HashSet<LblTree> addedTrees = new HashSet<LblTree>();
@@ -87,13 +91,26 @@ public class SubtreeBuilder {
 					if (addedTrees.contains(parentTree)) continue;
 					
 					Node added = (Node) t.getUserObject();
-					Node parent = (Node) parentTree.getUserObject();
-					Node previousParent = (Node) sameTrees.get(parentTree).getUserObject();
-					Node previous = new Node(previousParent, null);
-					synchronized (hintMap) {
-						hintMap.addEdge(previous, added);
+//					Node parent = (Node) parentTree.getUserObject();
+					LblTree previousParentTree = sameTrees.get(parentTree);
+					Node previousParent = (Node) previousParentTree.getUserObject();
+					Node previous = null;
+					
+					for (Enumeration children = previousParentTree.children(); children.hasMoreElements();) {
+						LblTree child = (LblTree) children.nextElement();
+						if (removedTrees.contains(child)) {
+							if (previous != null) {
+								System.out.println("!");
+							}
+							previous = (Node) child.getUserObject();
+//							break;
+						}
 					}
-					hints.add(new HintChoice(previousParent, parent));
+					if (previous == null) previous = new Node(previousParent, null);
+					
+					synchronized (hintMap) {
+						hints.add(hintMap.addEdge(previous, added));
+					}
 				}
 				
 //				int possible = 0, valid = 0;

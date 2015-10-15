@@ -2,10 +2,10 @@ package com.snap.graph.data;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 
 import com.snap.graph.subtree.SubtreeBuilder.Hint;
+import com.snap.graph.subtree.SubtreeBuilder.HintChoice;
 
 public class SimpleHintMap implements HintMap {
 
@@ -17,13 +17,14 @@ public class SimpleHintMap implements HintMap {
 	}
 
 	@Override
-	public void addEdge(Node from, Node to) {
+	public HintChoice addEdge(Node from, Node to) {
 		addVertex(from);
 //		addVertex(to);
 		HashMap<Node, Integer> counts = edges.get(from);
 		int count = counts.containsKey(to) ? counts.get(to) : 0;
 		count++;
 		counts.put(to, count);
+		return new HintChoice(from, to);
 	}
 
 	@Override
@@ -48,6 +49,11 @@ public class SimpleHintMap implements HintMap {
 	@Override
 	public void clear() {
 		edges.clear();
+	}
+
+	@Override
+	public HintMap instance() {
+		return new SimpleHintMap();
 	}
 
 }

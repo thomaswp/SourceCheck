@@ -7,9 +7,13 @@ import com.snap.data.Code.Accumulator;
 import com.snap.graph.data.Node;
 
 public class SimpleNodeBuilder {
-
+	
 	public static Node toTree(Code code, final boolean canon) {
-		final Node tree = new Node(null, code.addChildren(canon, Code.NOOP));
+		return toTree(code, canon, null);
+	}
+	
+	private static Node toTree(Code code, final boolean canon, Node parent) {
+		final Node tree = new Node(parent, code.addChildren(canon, Code.NOOP));
 		tree.tag = code;
 		code.addChildren(canon, new Accumulator() {
 			@Override
@@ -29,7 +33,7 @@ public class SimpleNodeBuilder {
 				if (code == null) {
 					add("null");
 				} else {
-					tree.children.add(toTree(code, canon));
+					tree.children.add(toTree(code, canon, tree));
 				}
 			}
 

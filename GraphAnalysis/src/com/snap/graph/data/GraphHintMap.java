@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.snap.graph.data.Graph.Edge;
 import com.snap.graph.subtree.SubtreeBuilder.Hint;
+import com.snap.graph.subtree.SubtreeBuilder.HintChoice;
 
 public class GraphHintMap implements HintMap {
 	private NodeGraph graph = new NodeGraph();
@@ -15,8 +16,9 @@ public class GraphHintMap implements HintMap {
 	}
 
 	@Override
-	public void addEdge(Node from, Node to) {
+	public HintChoice addEdge(Node from, Node to) {
 		graph.addEdge(from, to);
+		return new HintChoice(from, to);
 	}
 
 	@Override
@@ -62,6 +64,11 @@ public class GraphHintMap implements HintMap {
 	@Override
 	public void clear() {
 		graph = new NodeGraph();
+	}
+
+	@Override
+	public HintMap instance() {
+		return new GraphHintMap();
 	}
 	
 }

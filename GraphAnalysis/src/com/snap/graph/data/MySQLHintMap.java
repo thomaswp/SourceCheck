@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.snap.graph.subtree.SubtreeBuilder.Hint;
+import com.snap.graph.subtree.SubtreeBuilder.HintChoice;
 
 public class MySQLHintMap implements HintMap {
 
@@ -93,7 +94,7 @@ public class MySQLHintMap implements HintMap {
 	}
 
 	@Override
-	public void addEdge(Node from, Node to) {
+	public HintChoice addEdge(Node from, Node to) {
 		int fromID = getVertexIDAndInsert(from);
 		int toID = getVertexIDAndInsert(to);
 		try {
@@ -108,6 +109,7 @@ public class MySQLHintMap implements HintMap {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		return new HintChoice(from, to);
 	}
 
 	@Override
@@ -158,6 +160,11 @@ public class MySQLHintMap implements HintMap {
 		}
 
 		return hints;
+	}
+
+	@Override
+	public HintMap instance() {
+		return this;
 	}
 
 }

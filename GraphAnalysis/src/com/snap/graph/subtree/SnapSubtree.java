@@ -13,17 +13,15 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import util.LblTree;
-
 import com.snap.data.Snapshot;
 import com.snap.graph.SimpleNodeBuilder;
+import com.snap.graph.data.HintMap;
 import com.snap.graph.data.Node;
-import com.snap.graph.data.SkeletonMap;
 import com.snap.graph.data.Node.Action;
-import com.snap.graph.data.SimpleHintMap;
-import com.snap.graph.subtree.SubtreeBuilder.WeightedHint;
+import com.snap.graph.data.SkeletonMap;
 import com.snap.graph.subtree.SubtreeBuilder.HintChoice;
 import com.snap.graph.subtree.SubtreeBuilder.HintComparator;
+import com.snap.graph.subtree.SubtreeBuilder.WeightedHint;
 import com.snap.parser.DataRow;
 import com.snap.parser.SnapParser;
 import com.snap.parser.SolutionPath;
@@ -38,6 +36,7 @@ import de.citec.tcs.alignment.sequence.Sequence;
 import de.citec.tcs.alignment.sequence.SymbolicKeywordSpecification;
 import de.citec.tcs.alignment.sequence.SymbolicValue;
 import distance.RTED_InfoTree_Opt;
+import util.LblTree;
 
 public class SnapSubtree {
 	
@@ -46,7 +45,7 @@ public class SnapSubtree {
 //		rtedTest();
 		
 		
-		SnapSubtree subtree = new SnapSubtree("../data/csc200/fall2015", "guess1Lab");
+		SnapSubtree subtree = new SnapSubtree("../data/csc200/fall2015", "guess1Lab", new SkeletonMap());
 		
 //		Class.forName("com.mysql.jdbc.Driver").newInstance();
 //		Connection con = DriverManager.getConnection("jdbc:mysql://localhost/snap", "root", "Game1+1Learn!");
@@ -54,7 +53,7 @@ public class SnapSubtree {
 //		hintMap.clear();
 		
 		System.out.println(System.currentTimeMillis());
-		subtree.buildGraph(Mode.Overwrite, false);
+		subtree.buildGraph(Mode.Overwrite, true);
 //		subtree.outputStudents();
 //		subtree.analyze();
 		System.out.println(System.currentTimeMillis());
@@ -62,14 +61,14 @@ public class SnapSubtree {
 
 	@SuppressWarnings({ "unused", "unchecked" })
 	private static void rtedTest() {
-		RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(100, 100, 100);
-		LblTree t1 = LblTree.fromString("0:{1{2{3}}}");
+		RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(0.01, 0.01, 100);
+		LblTree t1 = LblTree.fromString("0:{A{B{C}}{B{D{E}}}}");
 		System.out.println(t1);
-		LblTree t2 = LblTree.fromString("1:{1{2{3{4}}{q}}}");
+		LblTree t2 = LblTree.fromString("0:{A{B{C}{D{E}}}}");
 		System.out.println(t2);
 		opt.init(t1, t2);
 		opt.computeOptimalStrategy();
-//		System.out.println(opt.nonNormalizedTreeDist());
+		System.out.println(opt.nonNormalizedTreeDist());
 		LinkedList<int[]> mapping = opt.computeEditMapping();
 		ArrayList<LblTree> l1 = Collections.list(t1.depthFirstEnumeration());
 		ArrayList<LblTree> l2 = Collections.list(t2.depthFirstEnumeration());
@@ -83,6 +82,7 @@ public class SnapSubtree {
 	
 	public final String dataDir;
 	public final String assignment;
+	private final HintMap hintMap;
 	
 	private HashMap<String, List<Node>> nodeMapCache;
 	
@@ -97,9 +97,10 @@ public class SnapSubtree {
 		return nodeMapCache;
 	}
 	
-	public SnapSubtree(String dataDir, String assignment) {
+	public SnapSubtree(String dataDir, String assignment, HintMap hintMap) {
 		this.dataDir = dataDir;
 		this.assignment = assignment;
+		this.hintMap = hintMap;
 	}
 	
 	@SuppressWarnings("unused")
@@ -109,7 +110,7 @@ public class SnapSubtree {
 		for (String testKey : nodeMap().keySet()) {
 			System.out.println(testKey);
 			List<Node> test = nodeMap().get(testKey);
-			SubtreeBuilder builder = buildGraph(new SubtreeBuilder(new SimpleHintMap()), testKey, null);
+			SubtreeBuilder builder = buildGraph(new SubtreeBuilder(hintMap.instance()), testKey, null);
 //			builder.graph.export(new PrintStream(new FileOutputStream("test" + done + ".graphml")), true, 1, true, true);
 
 			for (Node node : test) {
@@ -152,14 +153,14 @@ public class SnapSubtree {
 					PrintStream ps = null;
 					try {
 						ps = new PrintStream(out);
-						return buildGraph(new SubtreeBuilder(new SimpleHintMap()), null, ps);
+						return buildGraph(new SubtreeBuilder(hintMap.instance()), null, ps);
 					} catch (FileNotFoundException e) {
 						e.printStackTrace();
 					} finally {
 						if (ps != null) ps.close();
 					}
 				}
-				return buildGraph(new SubtreeBuilder(new SkeletonMap()), null, null);
+				return buildGraph(new SubtreeBuilder(hintMap.instance()), null, null);
 			}
 		});
 	}
@@ -178,11 +179,11 @@ public class SnapSubtree {
 			final String fStudent = student;
 			
 			if (nodes == test || nodes.size() == 0) continue;
-			count.incrementAndGet();
 			if (out != null) {
 				jsonStudent(out, student, nodes, builder.addStudent(nodes, false));
 				if (out != null) break;
 			}
+			count.incrementAndGet();
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
@@ -233,6 +234,7 @@ public class SnapSubtree {
 		out.println("};");
 	}
 	
+	@SuppressWarnings("unused")
 	private void outputStudents() {
 		
 		HashMap<String,List<Node>> nodeMap = nodeMap();
