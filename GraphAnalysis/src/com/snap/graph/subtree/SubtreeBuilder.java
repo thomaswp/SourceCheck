@@ -1,20 +1,14 @@
 package com.snap.graph.subtree;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-
-import javax.swing.plaf.synth.SynthScrollBarUI;
-
-import util.LblTree;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.snap.graph.data.HintMap;
@@ -24,6 +18,7 @@ import com.snap.graph.data.SkeletonMap;
 import com.snap.graph.data.StringHashable;
 
 import distance.RTED_InfoTree_Opt;
+import util.LblTree;
 
 public class SubtreeBuilder {
 
@@ -71,10 +66,12 @@ public class SubtreeBuilder {
 			if (lastTree != null) {
 				opt.nonNormalizedTreeDist(lastTree, tree);
 				LinkedList<int[]> editMap = opt.computeEditMapping();
+			
 				
 				HashSet<LblTree> addedTrees = new HashSet<LblTree>();
 				HashSet<LblTree> removedTrees = new HashSet<LblTree>();
 				HashMap<LblTree, LblTree> sameTrees = new HashMap<LblTree, LblTree>();
+				HashMap<LblTree, LblTree> sameTreesRev = new HashMap<LblTree, LblTree>();
 				for (int[] a : editMap) {
 					LblTree c1 = a[0] == 0 ? null : lastList.get(a[0] - 1);
 					LblTree c2 = a[1] == 0 ? null : list.get(a[1] - 1);
@@ -84,37 +81,66 @@ public class SubtreeBuilder {
 						removedTrees.add(c1);
 					} else {
 						sameTrees.put(c2, c1);
+						sameTreesRev.put(c1, c2);
 					}
 				}
+				
+				HashMap<LblTree, LblTree> toAdd = new HashMap<LblTree, LblTree>();
 				for (LblTree t : addedTrees) {
 					LblTree parentTree = (LblTree) t.getParent();
-					if (addedTrees.contains(parentTree)) continue;
-					
-					Node added = (Node) t.getUserObject();
-					Node parent = (Node) parentTree.getUserObject();
-					LblTree previousParentTree = sameTrees.get(parentTree);
-					Node previousParent = (Node) previousParentTree.getUserObject();
-					Node previous = null;
-					
-					int index = parent.children.indexOf(added);
-					int minDis = Integer.MAX_VALUE;
-					int childIndex = 0;
-					for (Enumeration children = previousParentTree.children(); children.hasMoreElements(); childIndex++) {
-						LblTree child = (LblTree) children.nextElement();
-						if (removedTrees.contains(child)) {
-							int d = Math.abs(index - childIndex);
-							if (d < minDis) {
-								previous = (Node) child.getUserObject();
-								minDis = d;
-							}
-						}
-					}
-					if (previous == null) previous = new Node(previousParent, null);
-					
-					synchronized (hintMap) {
-						hints.add(hintMap.addEdge(previous, added));
-					}
+					if (parentTree == null) continue;
+					LblTree parentPair = sameTrees.get(parentTree);
+					if (parentPair == null) continue;
+					toAdd.put(parentPair, parentTree);
 				}
+				for (LblTree t : removedTrees) {
+					LblTree parentTree = (LblTree) t.getParent();
+					if (parentTree == null) continue;
+					LblTree parentPair = sameTreesRev.get(parentTree);
+					if (parentPair == null) continue;
+					toAdd.put(parentTree, parentPair);
+				}
+				for (LblTree from : toAdd.keySet()) {
+					LblTree to = toAdd.get(from);
+					hints.add(hintMap.addEdge((Node) from.getUserObject(), (Node) to.getUserObject()));
+				}
+				
+//				HashSet<LblTree> markedRemoved = new HashSet<LblTree>();
+//				for (LblTree t : addedTrees) {
+//					LblTree parentTree = (LblTree) t.getParent();
+//					if (addedTrees.contains(parentTree)) continue;
+//					
+//					Node added = (Node) t.getUserObject();
+//					Node parent = (Node) parentTree.getUserObject();
+//					LblTree previousParentTree = sameTrees.get(parentTree);
+//					Node previousParent = (Node) previousParentTree.getUserObject();
+//					LblTree previousTree = null;
+//					
+//					int index = parent.children.indexOf(added);
+//					int minDis = Integer.MAX_VALUE;
+//					int childIndex = 0;
+//					for (Enumeration children = previousParentTree.children(); children.hasMoreElements(); childIndex++) {
+//						LblTree child = (LblTree) children.nextElement();
+//						if (removedTrees.contains(child)) {
+//							int d = Math.abs(index - childIndex);
+//							if (d < minDis) {
+//								previousTree = child;
+//								minDis = d;
+//							}
+//						}
+//					}
+//					Node previous;
+//					if (previousTree == null) {
+//						previous = new Node(previousParent, "null");
+//					} else {
+//						markedRemoved.add(previousTree);
+//						previous = (Node) previousTree.getUserObject();
+//					}
+//					
+//					synchronized (hintMap) {
+//						hints.add(hintMap.addEdge(previous, added));
+//					}
+//				}
 				
 //				int possible = 0, valid = 0;
 //				for (int[] a : editMap) {
@@ -306,22 +332,53 @@ public class SubtreeBuilder {
 		// TODO: don't forget that really the skeleton need not match exactly,
 		// we should just be matching as much as possible
 		
+		HashMap<Node, Tuple<Double,Integer>> seen = new HashMap<Node, Tuple<Double,Integer>>();
+		HashMap<Node, Double> ted = new HashMap<Node, Double>();
+		
+		LblTree tree = node.root().toTree();
+		RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(1, 1, 1000);
+		
 		if (edges != null) {
 			for (Hint h : edges) {
-				WeightedHint hint = new WeightedHint(h.x, h.y);
+				Tuple<Double, Integer> count = seen.get(h.y);
+				Double t = ted.get(h.y);
+				if (count == null) {
+					count = new Tuple<Double, Integer>(0.0, 0);
+					seen.put(h.y, count);
+					t = 0.0;
+				}
+				count.x += skeletonDiff(node.parent, h.x.parent);
+				count.y ++;
 				
-				hint.quality = skeletonDiff(node.parent, h.x.parent);
-				
-				hint.context = context;
-				list.add(hint);
+				opt.init(h.x.root().toTree(), tree);
+				opt.computeOptimalStrategy();
+				t += opt.nonNormalizedTreeDist();
+				ted.put(h.y, t);
 			}
+		}
+		
+		for (Node to : seen.keySet()) {
+			WeightedHint hint = new WeightedHint(node, to);
+			Tuple<Double, Integer> count = seen.get(to);
+			if (count.y < 5) continue;
+			
+			Double t = ted.get(to);
+			hint.alignment =  count.x / count.y;
+			hint.context = context;
+			hint.relevance = count.y;
+			hint.ted = t / count.y;
+			list.add(hint);
 		}
 		
 		if (node.type != null) getHints(new Node(node, null), list);
 		for (Node child : node.children) getHints(child, list);
 	}
 	
-	public int skeletonDiff(Node x, Node y) {
+	public double skeletonDiff(Node x, Node y) {
+		return skeletonDiff(x, y, 0.5);
+	}
+	
+	public double skeletonDiff(Node x, Node y, double decay) {
 		if (x == null || y == null) return 0;
 		if (!x.type.equals(y.type)) {
 			return 0;
@@ -329,9 +386,9 @@ public class SubtreeBuilder {
 
 		String[] xChildren = childrenTypes(x);
 		String[] yChildren = childrenTypes(y);
-		int d = alignCost(xChildren, yChildren);
-		System.out.println(d + ": " + Arrays.toString(xChildren) + " v " + Arrays.toString(yChildren));
-		d += skeletonDiff(x.parent, y.parent);
+		double d = normalizedAlignScore(xChildren, yChildren);
+//		System.out.println(d + ": " + Arrays.toString(xChildren) + " v " + Arrays.toString(yChildren));
+		d += decay * skeletonDiff(x.parent, y.parent, decay);
 		return d;
 	}
 	
@@ -341,8 +398,15 @@ public class SubtreeBuilder {
 		return types;
 	}
 	
+	public static double normalizedAlignScore(String[] sequenceA, String[] sequenceB) {
+		int cost = alignCost(sequenceA, sequenceB);
+		int maxLength = Math.max(sequenceA.length, sequenceB.length);
+		int aligned = maxLength - cost;
+		return (double) (aligned + 1) / (maxLength + 1);
+	}
+	
 	// Credit: http://introcs.cs.princeton.edu/java/96optimization/Diff.java.html
-	private int alignCost(String[] sequenceA, String[] sequenceB) {
+	public static int alignCost(String[] sequenceA, String[] sequenceB) {
 		// The penalties to apply
 		int gap = 1, substitution = 1, match = 0;
 
@@ -408,7 +472,8 @@ public class SubtreeBuilder {
 	
 	public static class WeightedHint extends Hint {
 
-		public int relevance, context, quality;
+		public int relevance, context;
+		public double alignment, ted;
 		
 		public WeightedHint(Node x, Node y) {
 			super(x, y);
@@ -416,13 +481,13 @@ public class SubtreeBuilder {
 		
 		@Override
 		public String toString() {
-			return String.format("[%d,%d,%d]: %s -> %s", relevance, context, quality, x.toString(), y.toString());
+			return String.format("[%02d,%02d,%.3f,%.3f]: %s -> %s", relevance, context, alignment, ted, x.toString(), y.toString());
 		}
 
 		public String toJson() {
 			return String.format(
-					"{\"relevance\": %d, \"context\": %d, \"quality\": %d, \"from\": \"%s\", \"to\": \"%s\"}", 
-					relevance, context, quality, x.toString(), y.toString());
+					"{\"relevance\": %d, \"context\": %d, \"alignment\": %.3f, \"from\": \"%s\", \"to\": \"%s\"}", 
+					relevance, context, alignment, x.toString(), y.toString());
 		}
 		
 	}
@@ -458,10 +523,17 @@ public class SubtreeBuilder {
 			}
 		};
 		
-		public final static HintComparator ByQuality = new HintComparator() {
+		public final static HintComparator ByTED = new HintComparator() {
 			@Override
 			public int compare(WeightedHint o1, WeightedHint o2) {
-				return Integer.compare(o2.quality, o1.quality);
+				return Double.compare(o1.ted, o2.ted);
+			}
+		};
+		
+		public final static HintComparator ByAlignment = new HintComparator() {
+			@Override
+			public int compare(WeightedHint o1, WeightedHint o2) {
+				return Double.compare(o2.alignment, o1.alignment);
 			}
 		};
 		
@@ -489,16 +561,16 @@ public class SubtreeBuilder {
 				@Override
 				public int compare(WeightedHint o1, WeightedHint o2) {
 					return Double.compare(
-							o2.relevance * relevance + o2.context * context + o2.quality * quality,
-							o1.relevance * relevance + o1.context * context + o1.quality * quality);
+							o2.relevance * relevance + o2.context * context + o2.alignment * quality,
+							o1.relevance * relevance + o1.context * context + o1.alignment * quality);
 				}
 			};
 		}
 	}
 	
 	public static class Tuple<T1,T2> {
-		public final T1 x;
-		public final T2 y;
+		public T1 x;
+		public T2 y;
 		
 		public Tuple(T1 x, T2 y) {
 			this.x = x;

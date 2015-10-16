@@ -9,7 +9,7 @@ import com.snap.graph.subtree.SubtreeBuilder.Hint;
 import com.snap.graph.subtree.SubtreeBuilder.HintChoice;
 
 public class GraphHintMap implements HintMap {
-	private NodeGraph graph = new NodeGraph();
+	private OutGraph<Node> graph = new OutGraph<Node>();
 
 	public void addVertex(Node node) {
 		graph.addVertex(node);
@@ -63,7 +63,7 @@ public class GraphHintMap implements HintMap {
 
 	@Override
 	public void clear() {
-		graph = new NodeGraph();
+		graph = new OutGraph<Node>();
 	}
 
 	@Override

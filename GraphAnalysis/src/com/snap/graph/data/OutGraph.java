@@ -4,9 +4,9 @@ import java.io.PrintStream;
 import java.util.HashSet;
 import java.util.Set;
 
-public class NodeGraph extends Graph<Node, Void> {
+public class OutGraph<T> extends Graph<T, Void> {
 	
-	public boolean addEdge(Node from , Node to) {
+	public boolean addEdge(T from , T to) {
 		return addEdge(from, to, null, 0, 1);
 	}
 	
@@ -38,8 +38,8 @@ public class NodeGraph extends Graph<Node, Void> {
 			ps.println("<key for='edge' id='edges' yfiles.type='edgegraphics'/>");
 		}
 		
-		Set<Node> ignoreNs = new HashSet<Node>();
-		for (Node state : vertices()) {
+		Set<T> ignoreNs = new HashSet<T>();
+		for (T state : vertices()) {
 			int inWeight = inWeight(state, true), outWeight = outWeight(state, true);
 			if (inWeight <= prune && outWeight <= prune) ignoreNs.add(state);
 		}
@@ -47,7 +47,7 @@ public class NodeGraph extends Graph<Node, Void> {
 		ps.println("<graph id='G' edgedefault='directed'>");			
 		
 		int n = 1;
-		for (Node state : vertices()) {
+		for (T state : vertices()) {
 			if (ignoreNs.contains(state)) continue;
 			
 			int inWeight = inWeight(state, false), outWeight = outWeight(state, false);
@@ -56,8 +56,8 @@ public class NodeGraph extends Graph<Node, Void> {
 //			if (state.quit()) color = "#DD0000";
 
 			
-			ps.printf("<node id='%s'>", state.hexHash());
-			ps.printf("<data key='descN'><![CDATA[%s]]></data>", state.toDisplayString());
+			ps.printf("<node id='%s'>", state.hashCode());
+			ps.printf("<data key='descN'><![CDATA[%s]]></data>", state.toString());
 			ps.printf("<data key='weightN'>%d</data>", inWeight(state, true));
 			ps.printf("<data key='value'>%.04f</data>", vertexMap.get(state).bValue);
 			
@@ -87,7 +87,7 @@ public class NodeGraph extends Graph<Node, Void> {
 		
 
 		int i = 0;
-		for (Graph.Edge<Node,Void> edge : edges()) {
+		for (Graph.Edge<T,Void> edge : edges()) {
 			if (!showLoops && edge.from.equals(edge.to)) continue;
 			if (edge.isLoop() && edge.weight <= prune) continue;
 			if (ignoreNs.contains(edge.to) || ignoreNs.contains(edge.from)) continue;
@@ -99,7 +99,7 @@ public class NodeGraph extends Graph<Node, Void> {
 			}
 			
 			String id = "" + i++;
-			ps.printf("<edge id='%s' source='%s' target='%s'>", id, edge.from.hexHash(), edge.to.hexHash());
+			ps.printf("<edge id='%s' source='%s' target='%s'>", id, edge.from.hashCode(), edge.to.hashCode());
 			ps.printf("<data key='weightE'>%d</data>", edge.weight);
 			ps.printf("<data key='prob'>%.04f</data>", edge.bRelativeWeight);
 			ps.printf("<data key='best'>%d</data>", edge.bBest ? 1 : 0);

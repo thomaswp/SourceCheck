@@ -66,7 +66,7 @@ public class HintServlet extends HttpServlet {
 		Node node = Node.fromTree(null, SimpleTreeBuilder.toTree(snapshot, 0, true), true);
 		
 		List<WeightedHint> hints = builder.getHints(node);
-		Collections.sort(hints, HintComparator.ByContext.then(HintComparator.ByQuality));
+		Collections.sort(hints, HintComparator.ByContext.then(HintComparator.ByAlignment));
 		
 		out.println("[");
 		int context = Integer.MAX_VALUE;

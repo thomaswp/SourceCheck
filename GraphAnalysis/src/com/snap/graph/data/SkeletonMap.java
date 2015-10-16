@@ -23,7 +23,7 @@ public class SkeletonMap implements HintMap {
 		return new HintChoice(from, to);
 	}
 	
-	private Node toBackbone(Node node) {
+	public static Node toBackbone(Node node) {
 		if (node == null) return null;
 		
 		Node parent = toBackbone(node.parent);
