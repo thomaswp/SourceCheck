@@ -167,4 +167,9 @@ public class MySQLHintMap implements HintMap {
 		return this;
 	}
 
+	@Override
+	public void setSolution(Node solution) {
+		
+	}
+
 }

@@ -54,4 +54,9 @@ public class SkeletonMap implements HintMap {
 		return new SkeletonMap();
 	}
 
+	@Override
+	public void setSolution(Node solution) {
+		
+	}
+
 }

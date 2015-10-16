@@ -2,6 +2,7 @@ package com.snap.graph.data;
 
 import java.util.HashMap;
 
+import com.snap.graph.data.Node.Action;
 import com.snap.graph.subtree.SubtreeBuilder.Hint;
 import com.snap.graph.subtree.SubtreeBuilder.HintChoice;
 
@@ -55,6 +56,20 @@ public class HintFactoryMap implements HintMap {
 	@Override
 	public HintMap instance() {
 		return new HintFactoryMap();
+	}
+
+	@Override
+	public void setSolution(Node solution) {
+		solution.recurse(new Action<Node>() {
+			@Override
+			public void run(Node item) {
+				Node backbone = SkeletonMap.toBackbone(item).root();
+				OutGraph<String> graph = map.get(backbone);
+				if (graph == null) return;
+				String children = childrenState(item);
+				graph.setGoal(children, true);
+			}
+		});
 	}
 	
 	

@@ -70,5 +70,10 @@ public class GraphHintMap implements HintMap {
 	public HintMap instance() {
 		return new GraphHintMap();
 	}
+
+	@Override
+	public void setSolution(Node solution) {
+		
+	}
 	
 }

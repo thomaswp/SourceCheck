@@ -52,8 +52,6 @@ public class OutGraph<T> extends Graph<T, Void> {
 			
 			int inWeight = inWeight(state, false), outWeight = outWeight(state, false);
 			
-			String color = String.format("#%x", vertexColor(state));
-//			if (state.quit()) color = "#DD0000";
 
 			
 			ps.printf("<node id='%s'>", state.hashCode());
@@ -62,6 +60,11 @@ public class OutGraph<T> extends Graph<T, Void> {
 			ps.printf("<data key='value'>%.04f</data>", vertexMap.get(state).bValue);
 			
 			if (yEd) {
+				String color = String.format("#%x", vertexColor(state));
+				if (vertexMap.get(state).isGoal()) {
+					color = "#00DD00";
+				}
+			
 				ps.print("<data key='graphics'>");
 				ps.print("<y:ShapeNode>");
 				ps.printf("<y:NodeLabel>%d</y:NodeLabel>", n++);

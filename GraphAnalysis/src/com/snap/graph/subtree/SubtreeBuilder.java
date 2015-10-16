@@ -13,6 +13,7 @@ import java.util.Set;
 import com.esotericsoftware.kryo.Kryo;
 import com.snap.graph.data.HintMap;
 import com.snap.graph.data.Node;
+import com.snap.graph.data.Node.Action;
 import com.snap.graph.data.SimpleHintMap;
 import com.snap.graph.data.SkeletonMap;
 import com.snap.graph.data.StringHashable;
@@ -102,7 +103,9 @@ public class SubtreeBuilder {
 				}
 				for (LblTree from : toAdd.keySet()) {
 					LblTree to = toAdd.get(from);
-					hints.add(hintMap.addEdge((Node) from.getUserObject(), (Node) to.getUserObject()));
+					synchronized (hintMap) {
+						hints.add(hintMap.addEdge((Node) from.getUserObject(), (Node) to.getUserObject()));
+					}
 				}
 				
 //				HashSet<LblTree> markedRemoved = new HashSet<LblTree>();
@@ -193,6 +196,11 @@ public class SubtreeBuilder {
 			lastList = list;
 			lastTree = tree;
 			i++;
+		}
+		
+		Node submission = path.get(path.size() - 1);
+		synchronized (hintMap) {
+			hintMap.setSolution(submission);
 		}
 		
 		return generatedHints;

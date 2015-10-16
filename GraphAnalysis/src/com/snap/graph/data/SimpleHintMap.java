@@ -56,4 +56,10 @@ public class SimpleHintMap implements HintMap {
 		return new SimpleHintMap();
 	}
 
+	@Override
+	public void setSolution(Node solution) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

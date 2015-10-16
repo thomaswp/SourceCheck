@@ -40,6 +40,12 @@ public class Graph<N,E> {
 		return vertices.size();
 	}
 	
+	public void setGoal(N node, boolean goal) {
+		Vertex<N> v = vertexMap.get(node);
+		if (v == null) return;
+		v.isGoal = goal;
+	}
+	
 	public boolean addEdge(N from , N to, E edgeData, int color, double colorWeight) {
 		addVertex(from);
 		addVertex(to);
@@ -142,10 +148,15 @@ public class Graph<N,E> {
 	
 	public static class Vertex<N> {
 		public final N data;
+		private boolean isGoal;
 		protected double bValue;
 
 		public final HashMap<Integer, Double> colorWeights = new HashMap<Integer, Double>();
 
+		public boolean isGoal() {
+			return isGoal;
+		}
+		
 		@SuppressWarnings("unused")
 		private Vertex() {
 			this(null);

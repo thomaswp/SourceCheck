@@ -18,4 +18,6 @@ public interface HintMap {
 	Iterable<Hint> getHints(Node node);
 	
 	HintMap instance();
+
+	void setSolution(Node solution);
 }
