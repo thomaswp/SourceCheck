@@ -60,7 +60,7 @@ public class SnapSubtree {
 		System.out.println(System.currentTimeMillis());
 		SubtreeBuilder builder = subtree.buildGraph(Mode.Use, false);
 		
-		Node n = Node.fromTree(null, LblTree.fromString("{snapshot{stage{sprite{script}}}}"), true);
+		Node n = Node.fromTree(null, LblTree.fromString("{snapshot{stage{sprite{script{doSayFor}}}}}"), true);
 		OutGraph<String> graph = ((HintFactoryMap)builder.hintMap).map.get(n);
 		graph.export(new PrintStream(new FileOutputStream("test.graphml")), true, 1, false, true);
 		

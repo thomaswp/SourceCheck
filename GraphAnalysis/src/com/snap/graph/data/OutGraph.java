@@ -31,7 +31,7 @@ public class OutGraph<T> extends Graph<T, Void> {
 		for (Vertex<T> v : vertexMap.values()) {
 			if (!fromMap.containsKey(v.data)) continue;
 			Edge<T,?> best = null;
-			double bestValue = Double.NEGATIVE_INFINITY;
+			double bestValue = v.bValue;
 			for (Edge<T,?> e : fromMap.get(v.data)) {
 				if (e.isLoop()) continue;
 				double value = vertexMap.get(e.to).bValue;
@@ -59,6 +59,7 @@ public class OutGraph<T> extends Graph<T, Void> {
 	
 	private boolean updateNode(Vertex<T> v) {
 		if (!fromMap.containsKey(v.data)) return false;
+		if (v.goalCount() > 0) return false;
 		double value = v.bValue;
 		double newValue = 0;
 		boolean counted = false;
