@@ -206,6 +206,10 @@ public class SubtreeBuilder {
 		return generatedHints;
 	}
 	
+	public void finishedAdding() {
+		hintMap.finsh();
+	}
+	
 	@SuppressWarnings("unchecked")
 	private List<HashSet<Node>> keptNodes(List<Node> path) {
 		List<HashSet<Node>> keptList = new ArrayList<HashSet<Node>>();
@@ -340,45 +344,52 @@ public class SubtreeBuilder {
 		// TODO: don't forget that really the skeleton need not match exactly,
 		// we should just be matching as much as possible
 		
-		HashMap<Node, Tuple<Double,Integer>> seen = new HashMap<Node, Tuple<Double,Integer>>();
-		HashMap<Node, Double> ted = new HashMap<Node, Double>();
-		
-		LblTree tree = node.root().toTree();
-		RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(1, 1, 1000);
-		
-		if (edges != null) {
-			for (Hint h : edges) {
-				Tuple<Double, Integer> count = seen.get(h.y);
-				Double t = ted.get(h.y);
-				if (count == null) {
-					count = new Tuple<Double, Integer>(0.0, 0);
-					seen.put(h.y, count);
-					t = 0.0;
-				}
-				count.x += skeletonDiff(node.parent, h.x.parent);
-				count.y ++;
-				
-				opt.init(h.x.root().toTree(), tree);
-				opt.computeOptimalStrategy();
-				t += opt.nonNormalizedTreeDist();
-				ted.put(h.y, t);
-			}
+
+		for (Hint hint : edges) {
+			WeightedHint wh = new WeightedHint(hint.x, hint.y);
+			wh.context = context;
+			list.add(wh);
 		}
 		
-		for (Node to : seen.keySet()) {
-			WeightedHint hint = new WeightedHint(node, to);
-			Tuple<Double, Integer> count = seen.get(to);
-			if (count.y < 5) continue;
-			
-			Double t = ted.get(to);
-			hint.alignment =  count.x / count.y;
-			hint.context = context;
-			hint.relevance = count.y;
-			hint.ted = t / count.y;
-			list.add(hint);
-		}
+//		HashMap<Node, Tuple<Double,Integer>> seen = new HashMap<Node, Tuple<Double,Integer>>();
+//		HashMap<Node, Double> ted = new HashMap<Node, Double>();
+//		
+//		LblTree tree = node.root().toTree();
+//		RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(1, 1, 1000);
+//		
+//		if (edges != null) {
+//			for (Hint h : edges) {
+//				Tuple<Double, Integer> count = seen.get(h.y);
+//				Double t = ted.get(h.y);
+//				if (count == null) {
+//					count = new Tuple<Double, Integer>(0.0, 0);
+//					seen.put(h.y, count);
+//					t = 0.0;
+//				}
+//				count.x += skeletonDiff(node.parent, h.x.parent);
+//				count.y ++;
+//				
+//				opt.init(h.x.root().toTree(), tree);
+//				opt.computeOptimalStrategy();
+//				t += opt.nonNormalizedTreeDist();
+//				ted.put(h.y, t);
+//			}
+//		}
+//		
+//		for (Node to : seen.keySet()) {
+//			WeightedHint hint = new WeightedHint(node, to);
+//			Tuple<Double, Integer> count = seen.get(to);
+////			if (count.y < 5) continue;
+//			
+//			Double t = ted.get(to);
+//			hint.alignment =  count.x / count.y;
+//			hint.context = context;
+//			hint.relevance = count.y;
+//			hint.ted = t / count.y;
+//			list.add(hint);
+//		}
 		
-		if (node.type != null) getHints(new Node(node, null), list);
+//		if (node.type != null) getHints(new Node(node, null), list);
 		for (Node child : node.children) getHints(child, list);
 	}
 	

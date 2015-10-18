@@ -20,4 +20,6 @@ public interface HintMap {
 	HintMap instance();
 
 	void setSolution(Node solution);
+	
+	void finsh();
 }

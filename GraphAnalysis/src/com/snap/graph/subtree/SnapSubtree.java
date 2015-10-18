@@ -14,15 +14,15 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import util.LblTree;
+
 import com.snap.data.Snapshot;
 import com.snap.graph.SimpleNodeBuilder;
-import com.snap.graph.data.Graph;
 import com.snap.graph.data.HintFactoryMap;
 import com.snap.graph.data.HintMap;
 import com.snap.graph.data.Node;
 import com.snap.graph.data.Node.Action;
 import com.snap.graph.data.OutGraph;
-import com.snap.graph.data.SkeletonMap;
 import com.snap.graph.subtree.SubtreeBuilder.Hint;
 import com.snap.graph.subtree.SubtreeBuilder.HintChoice;
 import com.snap.graph.subtree.SubtreeBuilder.HintComparator;
@@ -41,7 +41,6 @@ import de.citec.tcs.alignment.sequence.Sequence;
 import de.citec.tcs.alignment.sequence.SymbolicKeywordSpecification;
 import de.citec.tcs.alignment.sequence.SymbolicValue;
 import distance.RTED_InfoTree_Opt;
-import util.LblTree;
 
 public class SnapSubtree {
 	
@@ -61,21 +60,21 @@ public class SnapSubtree {
 		System.out.println(System.currentTimeMillis());
 		SubtreeBuilder builder = subtree.buildGraph(Mode.Use, false);
 		
-		Node n = Node.fromTree(null, LblTree.fromString("{snapshot{stage{sprite{script{doIfElse{reportEquals}}}}}}"), true);
+		Node n = Node.fromTree(null, LblTree.fromString("{snapshot{stage{sprite{script}}}}"), true);
 		OutGraph<String> graph = ((HintFactoryMap)builder.hintMap).map.get(n);
 		graph.export(new PrintStream(new FileOutputStream("test.graphml")), true, 1, false, true);
 		
-//		List<Node> student = subtree.nodeMap().values().iterator().next();
-//		for (int i = 0; i < student.size(); i++) {
-//			Node node = student.get(i);
-//			System.out.println("State: " + node);
-//			List<WeightedHint> hints = builder.getHints(node);
-//			hints.sort(HintComparator.compose(HintComparator.ByContext, HintComparator.ByTED, HintComparator.weighted(0.05, 0, 1)));
-//			for (Hint hint : hints) {
-//				System.out.println(hint);
-//			}		
-//			if (i >= 1) break;
-//		}
+		List<Node> student = subtree.nodeMap().values().iterator().next();
+		for (int i = 0; i < student.size(); i++) {
+			Node node = student.get(i);
+			System.out.println("State: " + node);
+			List<WeightedHint> hints = builder.getHints(node);
+			hints.sort(HintComparator.compose(HintComparator.ByContext, HintComparator.ByTED, HintComparator.weighted(0.05, 0, 1)));
+			for (Hint hint : hints) {
+				System.out.println(hint);
+			}		
+			if (i >= 5) break;
+		}
 //		subtree.outputStudents();
 //		subtree.analyze();
 		System.out.println(System.currentTimeMillis());
@@ -222,6 +221,7 @@ public class SnapSubtree {
 				e.printStackTrace();
 			}
 		}
+		builder.finishedAdding();
 		jsonEnd(out);
 		return builder;
 	}

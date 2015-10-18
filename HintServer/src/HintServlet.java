@@ -17,8 +17,8 @@ import com.snap.data.Snapshot;
 import com.snap.graph.SimpleTreeBuilder;
 import com.snap.graph.data.Node;
 import com.snap.graph.subtree.SubtreeBuilder;
-import com.snap.graph.subtree.SubtreeBuilder.WeightedHint;
 import com.snap.graph.subtree.SubtreeBuilder.HintComparator;
+import com.snap.graph.subtree.SubtreeBuilder.WeightedHint;
 
 
 @SuppressWarnings("serial")

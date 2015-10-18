@@ -10,6 +10,67 @@ public class OutGraph<T> extends Graph<T, Void> {
 		return addEdge(from, to, null, 0, 1);
 	}
 	
+	public void bellmanBackup() {
+		calculateProbabilities();
+		for (Vertex<T> v : vertexMap.values()) {
+			v.bValue = v.goalCount() * 100;
+		}
+		int i;
+		for (i = 0; i < 1000; i++) {
+			boolean updated = false;
+			for (Vertex<T> v : vertexMap.values()) {
+				updated |= updateNode(v);
+			}
+			if (!updated) break;
+		}
+		if (i == 1000) System.err.println("Maxed bellman backup");
+		setBest();
+	}
+
+	public void setBest() {
+		for (Vertex<T> v : vertexMap.values()) {
+			if (!fromMap.containsKey(v.data)) continue;
+			Edge<T,?> best = null;
+			double bestValue = Double.NEGATIVE_INFINITY;
+			for (Edge<T,?> e : fromMap.get(v.data)) {
+				if (e.isLoop()) continue;
+				double value = vertexMap.get(e.to).bValue;
+				if (value > bestValue) {
+					bestValue = value;
+					best = e;
+				}
+			}
+			if (best != null) best.bBest = true;
+		}
+	}
+	
+	private void calculateProbabilities() {
+		for (T node : vertices) {
+			if (!fromMap.containsKey(node)) continue;
+			double outWeight = outWeight(node, true);
+			for (Edge<T,?> e : fromMap.get(node)) {
+				if (e.isLoop()) continue;
+				e.bRelativeWeight = e.weight / outWeight;
+//				e.bR = e.data.error() ? -5 : -1;
+				e.bBest = false;
+			}
+		}
+	}
+	
+	private boolean updateNode(Vertex<T> v) {
+		if (!fromMap.containsKey(v.data)) return false;
+		double value = v.bValue;
+		double newValue = 0;
+		boolean counted = false;
+		for (Edge<T,?> edge : fromMap.get(v.data)) {
+			if (edge.isLoop()) continue;
+			counted = true;
+			newValue += edge.bRelativeWeight * (edge.bR + 0.99 * vertexMap.get(edge.to).bValue);
+		}
+		if (counted) v.bValue = Math.round(newValue * 64) / 64.0;
+		return value != v.bValue;
+	}
+	
 	public void export(PrintStream ps, boolean showLoops, int prune, boolean colorEdges, boolean yEd) {
 				
 		ps.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
@@ -52,18 +113,16 @@ public class OutGraph<T> extends Graph<T, Void> {
 			
 			int inWeight = inWeight(state, false), outWeight = outWeight(state, false);
 			
-
+			Vertex<T> vertex = vertexMap.get(state);
 			
 			ps.printf("<node id='%s'>", state.hashCode());
 			ps.printf("<data key='descN'><![CDATA[%s]]></data>", state.toString());
 			ps.printf("<data key='weightN'>%d</data>", inWeight(state, true));
-			ps.printf("<data key='value'>%.04f</data>", vertexMap.get(state).bValue);
+			ps.printf("<data key='value'>%.04f</data>", vertex.bValue);
+			ps.printf("<data key='goal'>%d</data>", vertex.goalCount());
 			
 			if (yEd) {
 				String color = String.format("#%x", vertexColor(state));
-				if (vertexMap.get(state).isGoal()) {
-					color = "#00DD00";
-				}
 			
 				ps.print("<data key='graphics'>");
 				ps.print("<y:ShapeNode>");
@@ -73,8 +132,11 @@ public class OutGraph<T> extends Graph<T, Void> {
 				int exit = inWeight - outWeight;
 				
 				String borderColor = "#000000";
-				double borderWidth = 1; 
-				if (exit > 0) {
+				double borderWidth = 1;
+				if (vertex.goalCount() > 0) {
+					borderColor = "#00DD00";
+					borderWidth = Math.log(Math.max(1, vertex.goalCount())) + 1;
+				} else if (exit > 0) {
 					borderColor = "#DD0000";
 					borderWidth = Math.log(Math.max(1, exit)) + 1;
 				}
@@ -113,7 +175,7 @@ public class OutGraph<T> extends Graph<T, Void> {
 						color,
 						"line",
 						Math.log(edge.weight) + 1,
-						"standard");
+						edge.bBest ? "standard" : "transparent_circle");
 			}
 			
 			ps.println("</edge>");

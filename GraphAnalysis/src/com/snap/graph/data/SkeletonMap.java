@@ -59,4 +59,9 @@ public class SkeletonMap implements HintMap {
 		
 	}
 
+	@Override
+	public void finsh() {
+		
+	}
+
 }
