@@ -14,12 +14,12 @@ public class VarBlock extends Block {
 	}
 	
 	@Override
-	public String toCode() {
-		return name;
+	public String toCode(boolean canon) {
+		return canon ? "var" : name;
 	}
 
 	@Override
 	public String addChildren(boolean canon, Accumulator ac) {
-		return canon ? "var" : name;
+		return toCode(canon);
 	}
 }

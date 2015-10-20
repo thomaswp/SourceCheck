@@ -8,8 +8,12 @@ import java.util.List;
 public abstract class Code implements Serializable {
 	private static final long serialVersionUID = 1L;
 
-	public abstract String toCode();
+	public abstract String toCode(boolean canon);
 	public abstract String addChildren(boolean canon, Accumulator ac);
+
+	public String toCode() {
+		return toCode(false);
+	}
 	
 	public String name() {
 		return addChildren(true, NOOP);

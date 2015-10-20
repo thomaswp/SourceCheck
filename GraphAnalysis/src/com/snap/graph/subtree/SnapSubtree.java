@@ -64,17 +64,26 @@ public class SnapSubtree {
 		OutGraph<String> graph = ((HintFactoryMap)builder.hintMap).map.get(n);
 		graph.export(new PrintStream(new FileOutputStream("test.graphml")), true, 1, false, true);
 		
-		List<Node> student = subtree.nodeMap().values().iterator().next();
-		for (int i = 0; i < student.size(); i++) {
-			Node node = student.get(i);
-			System.out.println("State: " + node);
-			List<WeightedHint> hints = builder.getHints(node);
-			hints.sort(HintComparator.compose(HintComparator.ByContext, HintComparator.ByTED, HintComparator.weighted(0.05, 0, 1)));
-			for (Hint hint : hints) {
-				System.out.println(hint);
-			}		
-			if (i >= 5) break;
+		HashMap<String,List<Node>> map = subtree.nodeMap();
+		for (String student : map.keySet()) {
+			List<Node> nodes = map.get(student);
+			Node submitted = nodes.get(nodes.size() - 1);
+			Snapshot snapshot = (Snapshot) submitted.tag;
+			System.out.println(student);
+			System.out.println(snapshot.toCode(true));
 		}
+		
+//		List<Node> student = subtree.nodeMap().values().iterator().next();
+//		for (int i = 0; i < student.size(); i++) {
+//			Node node = student.get(i);
+//			System.out.println("State: " + node);
+//			List<WeightedHint> hints = builder.getHints(node);
+//			hints.sort(HintComparator.compose(HintComparator.ByContext, HintComparator.ByTED, HintComparator.weighted(0.05, 0, 1)));
+//			for (Hint hint : hints) {
+//				System.out.println(hint);
+//			}		
+//			if (i >= 5) break;
+//		}
 //		subtree.outputStudents();
 //		subtree.analyze();
 		System.out.println(System.currentTimeMillis());

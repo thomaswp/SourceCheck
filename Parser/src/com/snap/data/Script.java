@@ -21,8 +21,8 @@ public class Script extends Code {
 	}
 
 	@Override
-	public String toCode() {
-		 return new CodeBuilder()
+	public String toCode(boolean canon) {
+		 return new CodeBuilder(canon)
 		 .indent()
 		 .add(blocks)
 		 .end();

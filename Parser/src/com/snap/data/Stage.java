@@ -26,8 +26,8 @@ public class Stage extends Sprite {
 	}
 	
 	@Override
-	public String toCode() {
-		return new CodeBuilder()
+	public String toCode(boolean canon) {
+		return new CodeBuilder(canon)
 		.add("Stage")
 		.indent()
 		.add(sprites)

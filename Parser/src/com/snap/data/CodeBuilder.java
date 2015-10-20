@@ -7,10 +7,15 @@ public class CodeBuilder {
 	
 	private String code = "";
 	private int indent = 0;
+	private boolean canon;
 	
+	public CodeBuilder(boolean canon) {
+		this.canon = canon;
+	}
+
 	public CodeBuilder add(Code code) {
 		addIndent();
-		String content = code.toCode();
+		String content = code.toCode(canon);
 		if (content.endsWith("\n")) {
 			content = content.trim();
 			content = content.replace("\n", "\n" + i());
@@ -57,16 +62,20 @@ public class CodeBuilder {
 		return indent;
 	}
 
-	public CodeBuilder add(String content) {
+	public CodeBuilder add(String content, String canonical) {
 		if (content == null) return this;
 		addIndent();
-		code += content;
+		code += canon ? canonical : content;
 		return this;
+	}
+	
+	public CodeBuilder add(String content) {
+		return add(content, content);
 	}
 
 	public CodeBuilder addParameters(List<? extends Code> parameters) {
 		List<String> strings = new ArrayList<String>();
-		for (Code c : parameters) strings.add(c.toCode());
+		for (Code c : parameters) strings.add(c.toCode(canon));
 		return addSParameters(strings);
 	}
 
@@ -99,9 +108,10 @@ public class CodeBuilder {
 	
 	public CodeBuilder add(List<? extends Code> codes, boolean nl) {
 		if (codes.size() == 0) return this;
-		for (Code code : codes) {
-			add(code);
+		for (int i = 0; i < codes.size(); i++) {
+			add(codes.get(i));
 			if (nl) cnl();
+			else if (i < codes.size() - 1) code += ", ";
 		}
 		return this;
 	}

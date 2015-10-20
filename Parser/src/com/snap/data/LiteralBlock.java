@@ -39,12 +39,12 @@ public class LiteralBlock extends Block {
 	}
 	
 	@Override
-	public String toCode() {
-		return value;
+	public String toCode(boolean canon) {
+		return canon ? "literal" : value;
 	}
 
 	@Override
 	public String addChildren(boolean canon, Accumulator ac) {
-		return canon ? "literal" : value;
+		return toCode(canon);
 	}
 }

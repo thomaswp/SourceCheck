@@ -81,8 +81,8 @@ public class Snapshot extends Code {
 		return null;
 	}
 	
-	public String toCode() {
-		return new CodeBuilder()
+	public String toCode(boolean canon) {
+		return new CodeBuilder(canon)
 		.add("Snapshot")
 		.indent()
 		.add(stage)
@@ -90,7 +90,7 @@ public class Snapshot extends Code {
 		.indent()
 		.add(blocks)
 		.close()
-		.add(variables.size() == 0 ? null : ("variables: " + variables.toString() + "\n"))
+		.add(variables.size() == 0 ? null : ("variables: " + canonicalizeVariables(variables, canon).toString() + "\n"))
 		.add("editing:")
 		.indent()
 		.add(editing)

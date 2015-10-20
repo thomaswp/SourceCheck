@@ -25,8 +25,8 @@ public class ListBlock extends Block {
 	}
 	
 	@Override
-	public String toCode() {
-		return new CodeBuilder()
+	public String toCode(boolean canon) {
+		return new CodeBuilder(canon)
 		.add("[")
 		.add(list, false)
 		.add("]")

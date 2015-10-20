@@ -41,10 +41,15 @@ public class CallBlock extends Block {
 		return block;
 	}
 
+	private String name(boolean canon) {
+		if (canon && isCustom) return "doCustomBlock";
+		return name;
+	}
+	
 	@Override
-	public String toCode() {
-		return new CodeBuilder()
-		.add(name)
+	public String toCode(boolean canon) {
+		return new CodeBuilder(canon)
+		.add(name(canon))
 		.addParameters(parameters)
 		.add(bodies.size() > 0 ? " " : "")
 		.add(bodies)
@@ -55,7 +60,6 @@ public class CallBlock extends Block {
 	public String addChildren(boolean canon, Accumulator ac) {
 		ac.add(parameters);
 		ac.add(bodies);
-		if (canon && isCustom) return "doCustomBlock";
-		return name;
+		return name(canon);
 	}
 }

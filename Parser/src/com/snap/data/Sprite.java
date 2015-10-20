@@ -43,11 +43,11 @@ public class Sprite extends Code {
 	}
 
 	@Override
-	public String toCode() {
-		return new CodeBuilder()
+	public String toCode(boolean canon) {
+		return new CodeBuilder(canon)
 		.add(name)
 		.indent()
-		.add(variables.size() == 0 ? null : ("variables: " + variables.toString() + "\n"))
+		.add(variables.size() == 0 ? null : ("variables: " + canonicalizeVariables(variables, canon).toString() + "\n"))
 		.add(blocks)
 		.add(scripts)
 		.end();

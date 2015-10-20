@@ -44,10 +44,10 @@ public class BlockDefinition extends Block {
 	}
 	
 	@Override
-	public String toCode() {
-		return new CodeBuilder()
-		.add(name)
-		.addSParameters(inputs)
+	public String toCode(boolean canon) {
+		return new CodeBuilder(canon)
+		.add(name, "customBlock")
+		.addSParameters(canonicalizeVariables(inputs, canon))
 		.add(" ")
 		.add(script)
 		.end();
