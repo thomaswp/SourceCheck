@@ -13,7 +13,7 @@ public class SkeletonMap implements HintMap {
 
 	@Override
 	public HintChoice addEdge(Node from, Node to) {
-		Node backbone = toBackbone(from).root();
+		Node backbone = toBackbone(from, false).root();
 		List<Hint> hints = bones.get(backbone);
 		if (hints == null) {
 			hints = new ArrayList<Hint>();
@@ -23,11 +23,22 @@ public class SkeletonMap implements HintMap {
 		return new HintChoice(from, to);
 	}
 	
-	public static Node toBackbone(Node node) {
+	public static Node toBackbone(Node node, boolean indices) {
 		if (node == null) return null;
 		
-		Node parent = toBackbone(node.parent);
-		Node child = new Node(parent, node.type);
+		Node parent = toBackbone(node.parent, indices);
+		String type = node.type;
+		if (indices && node.parent != null) {
+			int index = 0;
+			List<Node> siblings = node.parent.children;
+			for (int i = 0; i < siblings.size(); i++) {
+				Node sibling = siblings.get(i);
+				if (sibling == node) break;
+				if (sibling.type.equals(type)) index++;
+			}
+			type += index;
+		}
+		Node child = new Node(parent, type);
 		if (parent != null) parent.children.add(child);
 		
 		return child;
@@ -35,12 +46,12 @@ public class SkeletonMap implements HintMap {
 
 	@Override
 	public boolean hasVertex(Node node) {
-		return bones.containsKey(toBackbone(node).root());
+		return bones.containsKey(toBackbone(node, false).root());
 	}
 
 	@Override
 	public List<Hint> getHints(Node node) {
-		final List<Hint> hints = bones.get(toBackbone(node).root());
+		final List<Hint> hints = bones.get(toBackbone(node, false).root());
 		return hints;
 	}
 

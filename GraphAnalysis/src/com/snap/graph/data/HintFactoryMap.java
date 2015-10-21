@@ -20,15 +20,23 @@ public class HintFactoryMap implements HintMap {
 
 	@Override
 	public HintChoice addEdge(Node from, Node to) {
-		Node backbone = SkeletonMap.toBackbone(from).root();
+		
+		String fromState = childrenState(from);
+		String toState = childrenState(to);
+		getGraph(from, true).addEdge(fromState, toState);
+		getGraph(from, false).addEdge(fromState, toState);
+		
+		return new HintChoice(from, to);
+	}
+	
+	private OutGraph<String> getGraph(Node node, boolean indices) {
+		Node backbone = SkeletonMap.toBackbone(node, indices).root();
 		OutGraph<String> graph = map.get(backbone); 
 		if (graph == null) {
 			graph = new OutGraph<String>();
 			map.put(backbone, graph);
 		}
-		graph.addEdge(childrenState(from), childrenState(to));
-		
-		return new HintChoice(from, to);
+		return graph;
 	}
 	
 	private String childrenState(Node node) {
@@ -54,15 +62,18 @@ public class HintFactoryMap implements HintMap {
 	@Override
 	public Iterable<Hint> getHints(Node node) {
 		List<Hint> hints = new ArrayList<Hint>();
-		Node backbone = SkeletonMap.toBackbone(node).root();
-		OutGraph<String> graph = map.get(backbone);
-		if (graph == null) return hints;
-		String children = childrenState(node);
-		List<Edge<String, Void>> edges = graph.fromMap.get(children);
-		if (edges == null) return hints;
-		for (Edge<String, Void> edge : edges) {
-			if (edge.bBest) {
-				hints.add(new Hint(new Node(null, backbone + ": " + edge.from), new Node(null, backbone + ": " + edge.to)));
+		
+		for (int i = 0; i < 2; i++) {
+			Node backbone = SkeletonMap.toBackbone(node, i != 0).root();
+			OutGraph<String> graph = map.get(backbone);
+			if (graph == null) continue;
+			String children = childrenState(node);
+			List<Edge<String, Void>> edges = graph.fromMap.get(children);
+			if (edges == null) return hints;
+			for (Edge<String, Void> edge : edges) {
+				if (edge.bBest) {
+					hints.add(new Hint(new Node(null, backbone + ": " + edge.from), new Node(null, backbone + ": " + edge.to)));
+				}
 			}
 		}
 		return hints;
@@ -82,17 +93,19 @@ public class HintFactoryMap implements HintMap {
 			@Override
 			public void run(Node item) {
 				if (item.children.size() == 0) return;
-				Node backbone = SkeletonMap.toBackbone(item).root();
-				OutGraph<String> graph = map.get(backbone);
-				total.incrementAndGet();
-				String children = childrenState(item);
-				if (graph == null) {
-//					System.out.println(backbone + ": " + children);
-					return;
-				}
-				good.incrementAndGet();
-				if (graph.setGoal(children, true)) {
-					set.incrementAndGet();
+				for (int i = 0; i < 2; i++) {
+					Node backbone = SkeletonMap.toBackbone(item, i != 0).root();
+					OutGraph<String> graph = map.get(backbone);
+					total.incrementAndGet();
+					String children = childrenState(item);
+					if (graph == null) {
+	//					System.out.println(backbone + ": " + children);
+						return;
+					}
+					good.incrementAndGet();
+					if (graph.setGoal(children, true)) {
+						set.incrementAndGet();
+					}
 				}
 			}
 		});

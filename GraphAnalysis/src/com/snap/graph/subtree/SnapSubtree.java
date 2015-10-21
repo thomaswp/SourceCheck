@@ -14,8 +14,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import util.LblTree;
-
 import com.snap.data.Snapshot;
 import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.HintFactoryMap;
@@ -23,7 +21,6 @@ import com.snap.graph.data.HintMap;
 import com.snap.graph.data.Node;
 import com.snap.graph.data.Node.Action;
 import com.snap.graph.data.OutGraph;
-import com.snap.graph.subtree.SubtreeBuilder.Hint;
 import com.snap.graph.subtree.SubtreeBuilder.HintChoice;
 import com.snap.graph.subtree.SubtreeBuilder.HintComparator;
 import com.snap.graph.subtree.SubtreeBuilder.WeightedHint;
@@ -41,6 +38,7 @@ import de.citec.tcs.alignment.sequence.Sequence;
 import de.citec.tcs.alignment.sequence.SymbolicKeywordSpecification;
 import de.citec.tcs.alignment.sequence.SymbolicValue;
 import distance.RTED_InfoTree_Opt;
+import util.LblTree;
 
 public class SnapSubtree {
 	
@@ -58,17 +56,17 @@ public class SnapSubtree {
 
 		
 		System.out.println(System.currentTimeMillis());
-		SubtreeBuilder builder = subtree.buildGraph(Mode.Use, false);
+		SubtreeBuilder builder = subtree.buildGraph(Mode.Overwrite, false);
 		subtree.saveGraphs(builder, 3);
-		
-		HashMap<String,List<Node>> map = subtree.nodeMap();
-		for (String student : map.keySet()) {
-			List<Node> nodes = map.get(student);
-			Node submitted = nodes.get(nodes.size() - 1);
-			Snapshot snapshot = (Snapshot) submitted.tag;
-			System.out.println(student);
-			System.out.println(snapshot.toCode(true));
-		}
+//		
+//		HashMap<String,List<Node>> map = subtree.nodeMap();
+//		for (String student : map.keySet()) {
+//			List<Node> nodes = map.get(student);
+//			Node submitted = nodes.get(nodes.size() - 1);
+//			Snapshot snapshot = (Snapshot) submitted.tag;
+//			System.out.println(student);
+//			System.out.println(snapshot.toCode(true));
+//		}
 		
 //		List<Node> student = subtree.nodeMap().values().iterator().next();
 //		for (int i = 0; i < student.size(); i++) {
@@ -123,6 +121,7 @@ public class SnapSubtree {
 		for (Node node : map.keySet()) {
 			OutGraph<String> graph = map.get(node);
 			if (graph.nVertices() < minVertices) continue;
+			if (!graph.hasGoal()) continue;
 			
 			String dir = dataDir + "/graphs/" + assignment + "/";
 			Node child = node;

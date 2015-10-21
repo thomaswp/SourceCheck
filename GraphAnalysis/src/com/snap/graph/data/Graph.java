@@ -14,6 +14,12 @@ public class Graph<N,E> {
 	protected final HashMap<N, List<Edge<N,E>>> toMap = new HashMap<N, List<Edge<N,E>>>();
 	protected final HashMap<N, Vertex<N>> vertexMap = new HashMap<N, Vertex<N>>();
 	
+	private boolean hasGoal;
+	
+	public boolean hasGoal() {
+		return hasGoal;
+	}
+	
 	public Iterable<N> vertices() {
 		return vertices;
 	}
@@ -43,6 +49,7 @@ public class Graph<N,E> {
 	public boolean setGoal(N node, boolean goal) {
 		Vertex<N> v = vertexMap.get(node);
 		if (v == null) return false;
+		hasGoal = true;
 		v.goalCount++;
 		return true;
 	}
