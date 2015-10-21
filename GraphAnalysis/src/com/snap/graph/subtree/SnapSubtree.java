@@ -59,10 +59,7 @@ public class SnapSubtree {
 		
 		System.out.println(System.currentTimeMillis());
 		SubtreeBuilder builder = subtree.buildGraph(Mode.Use, false);
-		
-		Node n = Node.fromTree(null, LblTree.fromString("{snapshot{stage{sprite{script{doSayFor}}}}}"), true);
-		OutGraph<String> graph = ((HintFactoryMap)builder.hintMap).map.get(n);
-		graph.export(new PrintStream(new FileOutputStream("test.graphml")), true, 1, false, true);
+		subtree.saveGraphs(builder, 3);
 		
 		HashMap<String,List<Node>> map = subtree.nodeMap();
 		for (String student : map.keySet()) {
@@ -115,6 +112,30 @@ public class SnapSubtree {
 	private final HintMap hintMap;
 	
 	private HashMap<String, List<Node>> nodeMapCache;
+	
+	public void saveGraphs(SubtreeBuilder builder, int minVertices) throws FileNotFoundException {
+		if (!(hintMap instanceof HintFactoryMap)) {
+			System.out.println("No Hint Factory Map");
+			return;
+		}
+		
+		HashMap<Node, OutGraph<String>> map = ((HintFactoryMap) builder.hintMap).map;
+		for (Node node : map.keySet()) {
+			OutGraph<String> graph = map.get(node);
+			if (graph.nVertices() < minVertices) continue;
+			
+			String dir = dataDir + "/graphs/" + assignment + "/";
+			Node child = node;
+			while (child.children.size() > 0) {
+				dir += child.type + "/";
+				child = child.children.get(0);
+			}
+			new File(dir).mkdirs();
+			File file = new File(dir, child.type);
+			
+			graph.export(new PrintStream(new FileOutputStream(file + ".graphml")), true, 1, false, true);
+		}
+	}
 	
 	private HashMap<String, List<Node>> nodeMap() {
 		if (nodeMapCache == null) {
