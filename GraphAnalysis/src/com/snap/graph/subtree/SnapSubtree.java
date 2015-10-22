@@ -14,6 +14,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.esotericsoftware.kryo.Kryo;
 import com.snap.data.Snapshot;
 import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.HintFactoryMap;
@@ -194,7 +195,8 @@ public class SnapSubtree {
 	
 	public SubtreeBuilder buildGraph(Mode storeMode, final boolean write) {
 		String storePath = new File(dataDir, assignment + ".cached").getAbsolutePath();
-		return Store.getCachedObject(SubtreeBuilder.getKryo(), storePath, SubtreeBuilder.class, storeMode, new Store.Loader<SubtreeBuilder>() {
+		Kryo kryo = SubtreeBuilder.getKryo();
+		SubtreeBuilder builder = Store.getCachedObject(SubtreeBuilder.getKryo(), storePath, SubtreeBuilder.class, storeMode, new Store.Loader<SubtreeBuilder>() {
 			@Override
 			public SubtreeBuilder load() {
 				if (write) {
@@ -214,6 +216,7 @@ public class SnapSubtree {
 				return buildGraph(new SubtreeBuilder(hintMap.instance()), null, null);
 			}
 		});
+		return builder;
 	}
 	
 	public SubtreeBuilder buildGraph(SubtreeBuilder builder) {

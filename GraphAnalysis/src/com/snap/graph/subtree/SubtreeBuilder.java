@@ -12,11 +12,14 @@ import java.util.Set;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.snap.graph.Alignment;
+import com.snap.graph.data.Graph;
+import com.snap.graph.data.HintFactoryMap;
 import com.snap.graph.data.HintMap;
 import com.snap.graph.data.Node;
-import com.snap.graph.data.SimpleHintMap;
 import com.snap.graph.data.SkeletonMap;
 import com.snap.graph.data.StringHashable;
+import com.snap.graph.data.VectorGraph;
+import com.snap.graph.data.VectorState;
 
 import distance.RTED_InfoTree_Opt;
 import util.LblTree;
@@ -38,7 +41,7 @@ public class SubtreeBuilder {
 		hintMap.clear();
 	}
 	
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings({ "unchecked" })
 	public List<List<HintChoice>> addStudent(List<Node> path, boolean duplicates) {
 		// duplicates allows multiple edges from the same student
 		
@@ -46,15 +49,14 @@ public class SubtreeBuilder {
 		
 		if (path.size() <= 1) return generatedHints;
 		
-		List<HashSet<Node>> keptNodes = keptNodes(path);
+//		List<HashSet<Node>> keptNodes = keptNodes(path);
 		
 		LblTree lastTree = null;
 		List<LblTree> lastList = null;
 		RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(0.01, 0.01, 10000);
 		
-		Set<Tuple<Node,Node>> placedEdges = new HashSet<Tuple<Node,Node>>();
+		HintMap hintMap = this.hintMap.instance();
 				
-		int i = 0;
 		for (Node current : path) {
 			current.cache();
 			
@@ -103,12 +105,7 @@ public class SubtreeBuilder {
 				}
 				for (LblTree from : toAdd.keySet()) {
 					LblTree to = toAdd.get(from);
-					Tuple<Node, Node> edge = new Tuple<Node, Node>((Node) from.getUserObject(), (Node) to.getUserObject());
-					if (placedEdges.add(edge)) {
-						synchronized (hintMap) {
-							hints.add(hintMap.addEdge(edge.x, edge.y));
-						}	
-					}
+					hints.add(hintMap.addEdge((Node) from.getUserObject(), (Node) to.getUserObject()));
 				}
 				
 //				HashSet<LblTree> markedRemoved = new HashSet<LblTree>();
@@ -198,12 +195,13 @@ public class SubtreeBuilder {
 			
 			lastList = list;
 			lastTree = tree;
-			i++;
+//			i++;
 		}
 		
 		Node submission = path.get(path.size() - 1);
-		synchronized (hintMap) {
-			hintMap.setSolution(submission);
+		hintMap.setSolution(submission);
+		synchronized (this.hintMap) {
+			this.hintMap.addMap(hintMap);
 		}
 		
 		return generatedHints;
@@ -213,7 +211,7 @@ public class SubtreeBuilder {
 		hintMap.finsh();
 	}
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "unused" })
 	private List<HashSet<Node>> keptNodes(List<Node> path) {
 		List<HashSet<Node>> keptList = new ArrayList<HashSet<Node>>();
 		if (path.size() == 0) return keptList;
@@ -599,8 +597,13 @@ public class SubtreeBuilder {
 		kryo.register(Node.class);
 		kryo.register(HintMap.class);
 		kryo.register(Hint.class);
-		kryo.register(SimpleHintMap.class);
+//		kryo.register(SimpleHintMap.class);
 		kryo.register(SkeletonMap.class);
+		kryo.register(HintFactoryMap.class);
+		kryo.register(VectorState.class);
+		kryo.register(VectorGraph.class);
+		kryo.register(Graph.Vertex.class);
+		kryo.register(Graph.Edge.class);
 		return kryo;
 	}
 }

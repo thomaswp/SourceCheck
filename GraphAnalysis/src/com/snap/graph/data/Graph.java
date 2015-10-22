@@ -38,10 +38,6 @@ public class Graph<N,E> {
 		return false;
 	}
 	
-	public boolean addVertex(N v, int color, double colorWeight) {
-		return addVertex(v);
-	}
-	
 	public int nVertices() {
 		return vertices.size();
 	}
@@ -59,13 +55,13 @@ public class Graph<N,E> {
 		return list != null && list.contains(to);
 	}
 	
-	public boolean addEdge(N from , N to, E edgeData) {
-		return addAndGetEdge(from, to, edgeData) != null;
+	public void addEdge(N from , N to, E edgeData) {
+		addOrGetEdge(from, to, edgeData);
 	}
 	
-	protected Edge<N,E> addAndGetEdge(N from , N to, E edgeData) {
-		addVertex(from);
-		addVertex(to);
+	protected Edge<N,E> addOrGetEdge(N from , N to, E edgeData) {
+		if (!vertices.contains(from)) addVertex(from);
+		if (!vertices.contains(to)) addVertex(to);
 		Edge<N,E> edge = new Edge<N,E>(from, to, edgeData);
 		boolean added = edges.add(edge);
 		if (added) {
@@ -86,10 +82,26 @@ public class Graph<N,E> {
 			for (Edge<N,E> e : edges) {
 				if (e.equals(edge)) {
 					e.weight++;
+					return e;
 				}
 			}	
 		}
 		return null;
+	}
+
+
+	public void addGraph(Graph<N,E> graph, boolean atomicWeight) {
+		for (Vertex<N> v : graph.vertexMap.values()) {
+			addVertex(v.data);
+			Vertex<N> myVertex = vertexMap.get(v.data);
+			myVertex.goalCount += v.goalCount;
+			if (!atomicWeight) myVertex.weight += v.weight - 1;
+		}
+		for (Edge<N, E> edge : graph.edges) {
+			Edge<N, E> myEdge = addOrGetEdge(edge.from, edge.to, edge.data);
+			if (!atomicWeight) myEdge.weight += edge.weight - 1;
+		}
+		hasGoal |= graph.hasGoal;
 	}
 	
 	public int outWeight(N vertex, boolean ignoreLoops) {
@@ -117,8 +129,10 @@ public class Graph<N,E> {
 	public void prune(int minVertexWeight) {
 		List<N> toRemove = new ArrayList<N>();
 		for (N n : vertices) {
-			if (vertexMap.get(n).weight < minVertexWeight) {
-				toRemove.addAll(toRemove);
+			Vertex<N> vertex = vertexMap.get(n);
+			if (vertex.goalCount > 0) continue;
+			if (vertex.weight < minVertexWeight) {
+				toRemove.add(n);
 			}
 		}
 		for (N n : toRemove) {
@@ -131,11 +145,23 @@ public class Graph<N,E> {
 		vertexMap.remove(n);
 
 		List<Edge<N, E>> from = fromMap.get(n);
-		if (from != null) edges.removeAll(from);
+		if (from != null) {
+			edges.removeAll(from);
+			for (Edge<N, E> edge : from) {
+				List<Edge<N, E>> list = toMap.get(edge.to);
+				if (list != null) list.remove(edge);
+			}
+		}
 		fromMap.remove(n);
 		
 		List<Edge<N, E>> to = toMap.get(n);
-		if (to != null) edges.removeAll(to);
+		if (to != null) {
+			edges.removeAll(to);
+			for (Edge<N, E> edge : to) {
+				List<Edge<N, E>> list = fromMap.get(edge.from);
+				if (list != null) list.remove(edge);
+			}
+		}
 		toMap.remove(n);
 	}
 	

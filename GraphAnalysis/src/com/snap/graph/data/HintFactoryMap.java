@@ -112,8 +112,22 @@ public class HintFactoryMap implements HintMap {
 	public void finsh() {
 		for (VectorGraph graph : map.values()) {
 			graph.prune(2);
-			graph.generateEdges();
+//			graph.generateEdges();
 			graph.bellmanBackup();
+		}
+	}
+
+	@Override
+	public void addMap(HintMap hintMap) {
+		HashMap<Node,VectorGraph> addMap = ((HintFactoryMap) hintMap).map;
+		for (Node backbone : addMap.keySet()) {
+			VectorGraph graph = addMap.get(backbone);
+			VectorGraph myGraph = map.get(backbone);
+			if (myGraph == null) {
+				myGraph = new VectorGraph();
+				map.put(backbone, myGraph);
+			}
+			myGraph.addGraph(graph, true);
 		}
 	}
 	

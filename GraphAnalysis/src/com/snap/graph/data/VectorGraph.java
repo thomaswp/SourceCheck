@@ -17,10 +17,8 @@ public class VectorGraph extends OutGraph<VectorState> {
 				VectorState b = vertices[j];
 				Tuple<Integer,Double> distances = VectorState.distances(a, b);
 				if (distances.x <= maxDis || distances.y <= maxNDis) {
-					Edge<VectorState, Void> edge1 = addAndGetEdge(a, b, null);
-					if (edge1 != null) edge1.synthetic = true;
-					Edge<VectorState, Void> edge2 = addAndGetEdge(b, a, null);
-					if (edge2 != null) edge2.synthetic = true;
+					if (!hasEdge(a, b)) addOrGetEdge(a, b, null).synthetic = true;
+					if (!hasEdge(b, a)) addOrGetEdge(b, a, null).synthetic = true;
 				}
 			}
 		}

@@ -6,8 +6,8 @@ import java.util.Set;
 
 public class OutGraph<T> extends Graph<T, Void> {
 	
-	public boolean addEdge(T from , T to) {
-		return addEdge(from, to, null);
+	public void addEdge(T from , T to) {
+		addEdge(from, to, null);
 	}
 	
 	public void bellmanBackup() {

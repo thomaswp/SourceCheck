@@ -22,4 +22,6 @@ public interface HintMap {
 	void setSolution(Node solution);
 	
 	void finsh();
+
+	void addMap(HintMap hintMap);
 }

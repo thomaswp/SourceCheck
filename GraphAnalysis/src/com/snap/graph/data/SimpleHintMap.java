@@ -66,4 +66,9 @@ public class SimpleHintMap implements HintMap {
 		
 	}
 
+	@Override
+	public void addMap(HintMap hintMap) {
+		
+	}
+
 }

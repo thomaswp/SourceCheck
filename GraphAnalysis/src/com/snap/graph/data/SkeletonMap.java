@@ -75,4 +75,17 @@ public class SkeletonMap implements HintMap {
 		
 	}
 
+	@Override
+	public void addMap(HintMap hintMap) {
+		HashMap<Node,List<Hint>> addBones = ((SkeletonMap) hintMap).bones;
+		for (Node backbone : addBones.keySet()) {
+			List<Hint> hints = bones.get(backbone);
+			if (hints == null) {
+				hints = new ArrayList<Hint>();
+				bones.put(backbone, hints);
+			}
+			hints.addAll(addBones.get(backbone));
+		}
+	}
+
 }
