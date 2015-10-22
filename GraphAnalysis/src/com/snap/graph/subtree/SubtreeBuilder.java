@@ -11,9 +11,9 @@ import java.util.List;
 import java.util.Set;
 
 import com.esotericsoftware.kryo.Kryo;
+import com.snap.graph.Alignment;
 import com.snap.graph.data.HintMap;
 import com.snap.graph.data.Node;
-import com.snap.graph.data.Node.Action;
 import com.snap.graph.data.SimpleHintMap;
 import com.snap.graph.data.SkeletonMap;
 import com.snap.graph.data.StringHashable;
@@ -103,8 +103,11 @@ public class SubtreeBuilder {
 				}
 				for (LblTree from : toAdd.keySet()) {
 					LblTree to = toAdd.get(from);
-					synchronized (hintMap) {
-						hints.add(hintMap.addEdge((Node) from.getUserObject(), (Node) to.getUserObject()));
+					Tuple<Node, Node> edge = new Tuple<Node, Node>((Node) from.getUserObject(), (Node) to.getUserObject());
+					if (placedEdges.add(edge)) {
+						synchronized (hintMap) {
+							hints.add(hintMap.addEdge(edge.x, edge.y));
+						}	
 					}
 				}
 				
@@ -405,7 +408,7 @@ public class SubtreeBuilder {
 
 		String[] xChildren = childrenTypes(x);
 		String[] yChildren = childrenTypes(y);
-		double d = normalizedAlignScore(xChildren, yChildren);
+		double d = Alignment.normalizedAlignScore(xChildren, yChildren);
 //		System.out.println(d + ": " + Arrays.toString(xChildren) + " v " + Arrays.toString(yChildren));
 		d += decay * skeletonDiff(x.parent, y.parent, decay);
 		return d;
@@ -416,42 +419,6 @@ public class SubtreeBuilder {
 		for (int i = 0; i < types.length; i++) types[i] = node.children.get(i).type;
 		return types;
 	}
-	
-	public static double normalizedAlignScore(String[] sequenceA, String[] sequenceB) {
-		int cost = alignCost(sequenceA, sequenceB);
-		int maxLength = Math.max(sequenceA.length, sequenceB.length);
-		int aligned = maxLength - cost;
-		return (double) (aligned + 1) / (maxLength + 1);
-	}
-	
-	// Credit: http://introcs.cs.princeton.edu/java/96optimization/Diff.java.html
-	public static int alignCost(String[] sequenceA, String[] sequenceB) {
-		// The penalties to apply
-		int gap = 1, substitution = 1, match = 0;
-
-		int[][] opt = new int[sequenceA.length + 1][sequenceB.length + 1];
-
-		// First of all, compute insertions and deletions at 1st row/column
-		for (int i = 1; i <= sequenceA.length; i++)
-		    opt[i][0] = opt[i - 1][0] + gap;
-		for (int j = 1; j <= sequenceB.length; j++)
-		    opt[0][j] = opt[0][j - 1] + gap;
-
-		for (int i = 1; i <= sequenceA.length; i++) {
-		    for (int j = 1; j <= sequenceB.length; j++) {
-		        int scoreDiag = opt[i - 1][j - 1] +
-		                (sequenceA[i-1].equals(sequenceB[j-1]) ?
-		                    match : // same symbol
-		                    substitution); // different symbol
-		        int scoreLeft = opt[i][j - 1] + gap; // insertion
-		        int scoreUp = opt[i - 1][j] + gap; // deletion
-		        // we take the minimum
-		        opt[i][j] = Math.min(Math.min(scoreDiag, scoreLeft), scoreUp);
-		    }
-		}
-		return opt[sequenceA.length][sequenceB.length];
-	}
-	
 	
 	public boolean hasHint(Node node) {
 		List<Node> toSearch = new LinkedList<Node>();
@@ -617,6 +584,11 @@ public class SubtreeBuilder {
 			hash = hash * 31 + (x == null ? 0 : x.hashCode());
 			hash = hash * 31 + (y == null ? 0 : y.hashCode());
 			return hash;
+		}
+		
+		@Override
+		public String toString() {
+			return "[" + x + "," + y + "]";
 		}
 	}
 

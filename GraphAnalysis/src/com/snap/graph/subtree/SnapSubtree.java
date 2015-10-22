@@ -20,7 +20,7 @@ import com.snap.graph.data.HintFactoryMap;
 import com.snap.graph.data.HintMap;
 import com.snap.graph.data.Node;
 import com.snap.graph.data.Node.Action;
-import com.snap.graph.data.OutGraph;
+import com.snap.graph.data.VectorGraph;
 import com.snap.graph.subtree.SubtreeBuilder.HintChoice;
 import com.snap.graph.subtree.SubtreeBuilder.HintComparator;
 import com.snap.graph.subtree.SubtreeBuilder.WeightedHint;
@@ -57,6 +57,7 @@ public class SnapSubtree {
 		
 		System.out.println(System.currentTimeMillis());
 		SubtreeBuilder builder = subtree.buildGraph(Mode.Overwrite, false);
+//		builder.finishedAdding();
 		subtree.saveGraphs(builder, 3);
 //		
 //		HashMap<String,List<Node>> map = subtree.nodeMap();
@@ -117,9 +118,9 @@ public class SnapSubtree {
 			return;
 		}
 		
-		HashMap<Node, OutGraph<String>> map = ((HintFactoryMap) builder.hintMap).map;
+		HashMap<Node, VectorGraph> map = ((HintFactoryMap) builder.hintMap).map;
 		for (Node node : map.keySet()) {
-			OutGraph<String> graph = map.get(node);
+			VectorGraph graph = map.get(node);
 			if (graph.nVertices() < minVertices) continue;
 			if (!graph.hasGoal()) continue;
 			
@@ -132,7 +133,7 @@ public class SnapSubtree {
 			new File(dir).mkdirs();
 			File file = new File(dir, child.type);
 			
-			graph.export(new PrintStream(new FileOutputStream(file + ".graphml")), true, 1, false, true);
+			graph.export(new PrintStream(new FileOutputStream(file + ".graphml")), true, 0, false, true);
 		}
 	}
 	

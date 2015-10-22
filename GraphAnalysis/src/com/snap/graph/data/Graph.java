@@ -32,14 +32,14 @@ public class Graph<N,E> {
 		if (vertices.add(v)) {
 			vertexMap.put(v, new Vertex<N>(v));
 			return true;
+		} else {
+			vertexMap.get(v).weight++;
 		}
 		return false;
 	}
 	
 	public boolean addVertex(N v, int color, double colorWeight) {
-		boolean result = addVertex(v);
-		addWeight(vertexMap.get(v).colorWeights, color, colorWeight);
-		return result;
+		return addVertex(v);
 	}
 	
 	public int nVertices() {
@@ -54,7 +54,16 @@ public class Graph<N,E> {
 		return true;
 	}
 	
-	public boolean addEdge(N from , N to, E edgeData, int color, double colorWeight) {
+	public boolean hasEdge(N from, N to) {
+		List<Edge<N, E>> list = fromMap.get(from);
+		return list != null && list.contains(to);
+	}
+	
+	public boolean addEdge(N from , N to, E edgeData) {
+		return addAndGetEdge(from, to, edgeData) != null;
+	}
+	
+	protected Edge<N,E> addAndGetEdge(N from , N to, E edgeData) {
 		addVertex(from);
 		addVertex(to);
 		Edge<N,E> edge = new Edge<N,E>(from, to, edgeData);
@@ -71,64 +80,16 @@ public class Graph<N,E> {
 				toMap.put(to, edges = new ArrayList<Edge<N,E>>());
 			}
 			edges.add(edge);
+			return edge;
+		} else {
+			List<Edge<N,E>> edges = fromMap.get(from);
+			for (Edge<N,E> e : edges) {
+				if (e.equals(edge)) {
+					e.weight++;
+				}
+			}	
 		}
-		List<Edge<N,E>> edges = fromMap.get(from);
-		for (Edge<N,E> e : edges) {
-			if (e.equals(edge)) {
-				if (!added) e.weight++;
-				addWeight(e.colorWeights, color, colorWeight);
-				break;
-			}
-		}
-		return added;
-	}
-	
-	public void addGraph(Graph<N, E> graph) {
-		for (Vertex<N> v : graph.vertexMap.values()) {
-			for (Integer color : v.colorWeights.keySet()) {
-				addVertex(v.data, color, v.colorWeights.get(color));
-			}
-			if (v.colorWeights.size() == 0) {
-				addVertex(v.data);
-			}
-		}
-		for (Edge<N,E> e : graph.edges) {
-			for (Integer color : e.colorWeights.keySet()) {
-				addEdge(e.from, e.to, e.data, color, e.colorWeights.get(color));
-			}
-		}
-	}
-	
-	private void addWeight(HashMap<Integer, Double> colorWeights, int color, double weight) {
-		double value = 0;
-		if (colorWeights.containsKey(color)) {
-			value = colorWeights.get(color);
-		}
-		colorWeights.put(color, value + weight);
-	}
-	
-	public int vertexColor(N v) {
-		return color(vertexMap.get(v).colorWeights);
-	}
-	
-	public boolean hasMultipleColors(N v) {
-		return vertexMap.get(v).colorWeights.size() > 1;
-	}
-	
-	private static int color(HashMap<Integer, Double> colorWeights) {
-		if (colorWeights.size() == 0) return 0x999999;
-		double r = 0, b = 0, g = 0;
-		double weightTotal = 0;
-		for (int color : colorWeights.keySet()) {
-			double weight = colorWeights.get(color);
-			r += ((color & 0x00ff0000) >> 16) * weight;
-			g += ((color & 0x0000ff00) >> 8) * weight;
-			b += (color & 0x000000ff) * weight;
-			weightTotal += weight;
-		}
-		return ((int)(r / weightTotal) << 16) |
-				((int)(g / weightTotal) << 8) |
-				(int)(b / weightTotal);
+		return null;
 	}
 	
 	public int outWeight(N vertex, boolean ignoreLoops) {
@@ -153,14 +114,41 @@ public class Graph<N,E> {
 		return w;
 	}
 	
+	public void prune(int minVertexWeight) {
+		List<N> toRemove = new ArrayList<N>();
+		for (N n : vertices) {
+			if (vertexMap.get(n).weight < minVertexWeight) {
+				toRemove.addAll(toRemove);
+			}
+		}
+		for (N n : toRemove) {
+			removeVertex(n);
+		}
+	}
+	
+	public void removeVertex(N n) {
+		vertices.remove(n);
+		vertexMap.remove(n);
+
+		List<Edge<N, E>> from = fromMap.get(n);
+		if (from != null) edges.removeAll(from);
+		fromMap.remove(n);
+		
+		List<Edge<N, E>> to = toMap.get(n);
+		if (to != null) edges.removeAll(to);
+		toMap.remove(n);
+	}
 	
 	public static class Vertex<N> {
 		public final N data;
 		private int goalCount;
+		private int weight = 1;
 		protected double bValue;
 
-		public final HashMap<Integer, Double> colorWeights = new HashMap<Integer, Double>();
-
+		public int weight() {
+			return weight;
+		}
+		
 		public int goalCount() {
 			return goalCount;
 		}
@@ -179,7 +167,7 @@ public class Graph<N,E> {
 		public final N from, to;
 		public final E data;
 		public int weight = 1;
-		public final HashMap<Integer, Double> colorWeights = new HashMap<Integer, Double>();
+		public boolean synthetic;
 		protected double bRelativeWeight, bR;
 		protected boolean bBest;
 		
@@ -192,10 +180,6 @@ public class Graph<N,E> {
 			this.from = from;
 			this.to = to;
 			this.data = data;
-		}
-		
-		public int color() {
-			return Graph.color(colorWeights);
 		}
 		
 		public boolean isLoop() {

@@ -7,7 +7,7 @@ import java.util.Set;
 public class OutGraph<T> extends Graph<T, Void> {
 	
 	public boolean addEdge(T from , T to) {
-		return addEdge(from, to, null, 0, 1);
+		return addEdge(from, to, null);
 	}
 	
 	public void bellmanBackup() {
@@ -123,7 +123,7 @@ public class OutGraph<T> extends Graph<T, Void> {
 			ps.printf("<data key='goal'>%d</data>", vertex.goalCount());
 			
 			if (yEd) {
-				String color = String.format("#%x", vertexColor(state));
+				String color = "#888888";
 			
 				ps.print("<data key='graphics'>");
 				ps.print("<y:ShapeNode>");
@@ -143,7 +143,6 @@ public class OutGraph<T> extends Graph<T, Void> {
 				}
 
 				ps.printf("<y:BorderStyle color='%s' type='line' width='%.04f'/>", borderColor, borderWidth);
-				if (hasMultipleColors(state)) ps.print("<y:Shape type=\"roundrectangle\"/>");
 				ps.print("</y:ShapeNode>");
 				ps.print("</data>");
 			}
@@ -160,10 +159,6 @@ public class OutGraph<T> extends Graph<T, Void> {
 			
 			String color = "#000000";
 			
-			if (colorEdges) {
-				color = String.format("#%x", edge.color());
-			}
-			
 			String id = "" + i++;
 			ps.printf("<edge id='%s' source='%s' target='%s'>", id, edge.from.hashCode(), edge.to.hashCode());
 			ps.printf("<data key='weightE'>%d</data>", edge.weight);
@@ -174,7 +169,7 @@ public class OutGraph<T> extends Graph<T, Void> {
 				ps.printf("<data key='edges'><y:PolyLineEdge><y:LineStyle color='%s' type='%s' width='%.02f'/>"
 						+ "<y:Arrows source='none' target='%s'/></y:PolyLineEdge></data>",
 						color,
-						"line",
+						edge.synthetic ? "dashed" : "line",
 						Math.log(edge.weight) + 1,
 						edge.bBest ? "standard" : "transparent_circle");
 			}
