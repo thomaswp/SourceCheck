@@ -11,9 +11,15 @@ public class OutGraph<T> extends Graph<T, Void> {
 	}
 	
 	public void bellmanBackup() {
+		bellmanBackup(1);
+	}
+	
+	public void bellmanBackup(int minGoalCount) {
 		calculateProbabilities();
 		for (Vertex<T> v : vertexMap.values()) {
-			v.bValue = v.goalCount() * 100;
+			if (v.goalCount() >= minGoalCount) {
+				v.bValue = v.goalCount() * 100;
+			}
 		}
 		int i;
 		for (i = 0; i < 1000; i++) {

@@ -112,8 +112,8 @@ public class HintFactoryMap implements HintMap {
 	public void finsh() {
 		for (VectorGraph graph : map.values()) {
 			graph.prune(2);
-//			graph.generateEdges();
-			graph.bellmanBackup();
+			graph.generateEdges();
+			graph.bellmanBackup(2);
 		}
 	}
 
