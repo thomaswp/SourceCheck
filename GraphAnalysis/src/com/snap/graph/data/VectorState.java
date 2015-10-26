@@ -15,6 +15,10 @@ public class VectorState extends StringHashable {
 		items = null;
 	}
 	
+	public VectorState(String[] items) {
+		this.items = items;
+	}
+	
 	public VectorState(Collection<String> items) {
 		this.items = items.toArray(new String[items.size()]);
 		cache();
@@ -30,7 +34,7 @@ public class VectorState extends StringHashable {
 	}
 	
 	public static int distance(VectorState a, VectorState b) {
-		return Alignment.alignCost(a.items, b.items, 1, 2);
+		return Alignment.alignCost(a.items, b.items, 1, 1);
 	}
 	
 	public static Tuple<Integer, Double> distances(VectorState a, VectorState b) {

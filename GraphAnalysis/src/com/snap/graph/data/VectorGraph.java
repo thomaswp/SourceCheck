@@ -24,4 +24,22 @@ public class VectorGraph extends OutGraph<VectorState> {
 		}
 	}
 	
+	public VectorState getNearestNeighbor(VectorState state, int maxDis) {
+		Vertex<VectorState> nearest = null;
+		int nearestDistance = maxDis;
+		for (Vertex<VectorState> vertex : vertexMap.values()) {
+			if (vertex.equals(state)) continue; // Ignore exact matches (they're not neighbors)
+			int distance = VectorState.distance(state, vertex.data);
+			if (distance > nearestDistance) continue;
+			if (distance == nearestDistance && nearest != null && 
+					vertex.bValue <= nearest.bValue) {
+				continue;
+			}
+			
+			nearest = vertex;
+			nearestDistance = distance;
+		}
+		return nearest == null ? null : nearest.data;
+	}
+	
 }

@@ -161,6 +161,7 @@ public class OutGraph<T> extends Graph<T, Void> {
 		for (Graph.Edge<T,Void> edge : edges()) {
 			if (!showLoops && edge.from.equals(edge.to)) continue;
 			if (edge.isLoop() && edge.weight <= prune) continue;
+			if (edge.synthetic) continue;
 			if (ignoreNs.contains(edge.to) || ignoreNs.contains(edge.from)) continue;
 			
 			String color = "#000000";

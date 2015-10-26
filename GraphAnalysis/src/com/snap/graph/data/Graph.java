@@ -49,10 +49,19 @@ public class Graph<N,E> {
 		v.goalCount++;
 		return true;
 	}
+
+	public boolean isGoal(N node) {
+		Vertex<N> vertex = vertexMap.get(node);
+		return vertex != null && vertex.goalCount > 0;
+	}
 	
 	public boolean hasEdge(N from, N to) {
 		List<Edge<N, E>> list = fromMap.get(from);
-		return list != null && list.contains(to);
+		if (list == null) return false;
+		for (Edge<N,E> edge : list) {
+			if (edge.to.equals(to)) return true;
+		}
+		return false;
 	}
 	
 	public void addEdge(N from , N to, E edgeData) {

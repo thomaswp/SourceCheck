@@ -14,6 +14,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import util.LblTree;
+
 import com.esotericsoftware.kryo.Kryo;
 import com.snap.data.Snapshot;
 import com.snap.graph.SimpleNodeBuilder;
@@ -39,7 +41,6 @@ import de.citec.tcs.alignment.sequence.Sequence;
 import de.citec.tcs.alignment.sequence.SymbolicKeywordSpecification;
 import de.citec.tcs.alignment.sequence.SymbolicValue;
 import distance.RTED_InfoTree_Opt;
-import util.LblTree;
 
 public class SnapSubtree {
 	
@@ -57,10 +58,18 @@ public class SnapSubtree {
 
 		
 		System.out.println(System.currentTimeMillis());
-		SubtreeBuilder builder = subtree.buildGraph(Mode.Overwrite, false);
-//		builder.finishedAdding();
-		subtree.saveGraphs(builder, 3);
-//		
+
+		
+		SubtreeBuilder builder = subtree.buildGraph(Mode.Use, false);
+		Node node = Node.fromTree(null, LblTree.fromString("0:{snapshot{stage{sprite{script{receiveGo}{doSetVar}{doSayFor}{doAsk}{doSayFor}{doSayFor}{abc}}}}{var}}"), true);
+		HashMap<Node,VectorGraph> map = ((HintFactoryMap)builder.hintMap).map;
+		List<WeightedHint> hints = builder.getHints(node);
+		for (WeightedHint hint : hints) {
+			System.out.println(hint);
+		}
+		
+//		subtree.saveGraphs(builder, 1);
+		
 //		HashMap<String,List<Node>> map = subtree.nodeMap();
 //		for (String student : map.keySet()) {
 //			List<Node> nodes = map.get(student);
