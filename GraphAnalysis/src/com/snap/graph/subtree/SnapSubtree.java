@@ -58,26 +58,13 @@ public class SnapSubtree {
 
 		
 		System.out.println(System.currentTimeMillis());
-
-		
 		SubtreeBuilder builder = subtree.buildGraph(Mode.Use, false);
-		Node node = Node.fromTree(null, LblTree.fromString("0:{snapshot{stage{sprite{script{receiveGo}{doSetVar}{doSayFor}{doAsk}{doSayFor}{doSayFor}{abc}}}}{var}}"), true);
-		HashMap<Node,VectorGraph> map = ((HintFactoryMap)builder.hintMap).map;
-		List<WeightedHint> hints = builder.getHints(node);
-		for (WeightedHint hint : hints) {
-			System.out.println(hint);
-		}
+		
+//		subtree.getHints(builder, "0:{snapshot{stage{sprite{script{receiveGo}{doSetVar}{doSayFor}{doAsk}{doSayFor}{doSayFor}{abc}}}}{var}}");
 		
 //		subtree.saveGraphs(builder, 1);
 		
-//		HashMap<String,List<Node>> map = subtree.nodeMap();
-//		for (String student : map.keySet()) {
-//			List<Node> nodes = map.get(student);
-//			Node submitted = nodes.get(nodes.size() - 1);
-//			Snapshot snapshot = (Snapshot) submitted.tag;
-//			System.out.println(student);
-//			System.out.println(snapshot.toCode(true));
-//		}
+		subtree.printFinalSolutions();
 		
 //		List<Node> student = subtree.nodeMap().values().iterator().next();
 //		for (int i = 0; i < student.size(); i++) {
@@ -93,6 +80,25 @@ public class SnapSubtree {
 //		subtree.outputStudents();
 //		subtree.analyze();
 		System.out.println(System.currentTimeMillis());
+	}
+	
+	public void getHints(SubtreeBuilder builder, String state) {
+		Node node = Node.fromTree(null, LblTree.fromString(state), true);
+		List<WeightedHint> hints = builder.getHints(node);
+		for (WeightedHint hint : hints) {
+			System.out.println(hint);
+		}
+	}
+	
+	public void printFinalSolutions() {
+		HashMap<String,List<Node>> map = nodeMap();
+		for (String student : map.keySet()) {
+			List<Node> nodes = map.get(student);
+			Node submitted = nodes.get(nodes.size() - 1);
+			Snapshot snapshot = (Snapshot) submitted.tag;
+			System.out.println(student);
+			System.out.println(snapshot.toCode(true));
+		}
 	}
 
 	@SuppressWarnings({ "unused", "unchecked" })
