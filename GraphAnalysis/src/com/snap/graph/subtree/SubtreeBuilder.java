@@ -41,8 +41,27 @@ public class SubtreeBuilder {
 		hintMap.clear();
 	}
 	
-	@SuppressWarnings({ "unchecked" })
 	public List<List<HintChoice>> addStudent(List<Node> path, boolean duplicates) {
+		List<List<HintChoice>> generatedHints = new LinkedList<List<HintChoice>>();
+		if (path.size() <= 1) return generatedHints;
+
+		HintMap hintMap = this.hintMap.instance();
+		for (Node current : path) {
+			current.cache();
+			hintMap.addState(current);
+		}
+		
+		Node submission = path.get(path.size() - 1);
+		hintMap.setSolution(submission);
+		synchronized (this.hintMap) {
+			this.hintMap.addMap(hintMap);
+		}
+		
+		return generatedHints;
+	}
+	
+	@SuppressWarnings({ "unchecked" })
+	public List<List<HintChoice>> addStudent2(List<Node> path, boolean duplicates) {
 		// duplicates allows multiple edges from the same student
 		
 		List<List<HintChoice>> generatedHints = new LinkedList<List<HintChoice>>();

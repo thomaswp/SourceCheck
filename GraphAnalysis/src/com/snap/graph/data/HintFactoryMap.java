@@ -18,6 +18,18 @@ public class HintFactoryMap implements HintMap {
 	}
 
 	@Override
+	public void addState(Node node) {
+		node.recurse(new Action<Node>() {
+			@Override
+			public void run(Node item) {
+				VectorState children = childrenState(item);
+				getGraph(item, true).addPathNode(children, null);
+				getGraph(item, false).addPathNode(children, null);
+			}
+		});
+	}
+	
+	@Override
 	public HintChoice addEdge(Node from, Node to) {
 		
 		VectorState fromState = childrenState(from);

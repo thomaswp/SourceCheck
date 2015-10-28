@@ -88,4 +88,9 @@ public class SkeletonMap implements HintMap {
 		}
 	}
 
+	@Override
+	public void addState(Node node) {
+		throw new RuntimeException(); 
+	}
+
 }

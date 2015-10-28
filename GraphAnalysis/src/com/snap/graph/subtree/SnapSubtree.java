@@ -24,6 +24,7 @@ import com.snap.graph.data.HintMap;
 import com.snap.graph.data.Node;
 import com.snap.graph.data.Node.Action;
 import com.snap.graph.data.VectorGraph;
+import com.snap.graph.subtree.SubtreeBuilder.Hint;
 import com.snap.graph.subtree.SubtreeBuilder.HintChoice;
 import com.snap.graph.subtree.SubtreeBuilder.HintComparator;
 import com.snap.graph.subtree.SubtreeBuilder.WeightedHint;
@@ -45,42 +46,42 @@ import distance.RTED_InfoTree_Opt;
 public class SnapSubtree {
 	
 	public static void main(String[] args) throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
+
+		System.out.println(System.currentTimeMillis());
+		
+//		subtree.outputStudents();
 		
 //		rtedTest();
 		
-
-		System.out.println(System.currentTimeMillis());
 		SnapSubtree subtree = new SnapSubtree("../data/csc200/fall2015", "guess1Lab", new HintFactoryMap());
-		subtree.outputStudents();
-		
-//		Class.forName("com.mysql.jdbc.Driver").newInstance();
-//		Connection con = DriverManager.getConnection("jdbc:mysql://localhost/snap", "root", "Game1+1Learn!");
-//		MySQLHintMap hintMap = new MySQLHintMap(con, "guess1Lab");
-//		hintMap.clear();
-
-		
+				
 		SubtreeBuilder builder = subtree.buildGraph(Mode.Use, false);
 		
 //		subtree.getHints(builder, "0:{snapshot{stage{sprite{script{receiveGo}{doSetVar}{doSayFor}{doAsk}{doSayFor}{doSayFor}{abc}}}}{var}}");
 		
-//		subtree.saveGraphs(builder, 1);
+		subtree.saveGraphs(builder, 1);
 		
 //		subtree.printFinalSolutions();
 		
-//		List<Node> student = subtree.nodeMap().values().iterator().next();
-//		for (int i = 0; i < student.size(); i++) {
-//			Node node = student.get(i);
-//			System.out.println("State: " + node);
-//			List<WeightedHint> hints = builder.getHints(node);
-//			hints.sort(HintComparator.compose(HintComparator.ByContext, HintComparator.ByTED, HintComparator.weighted(0.05, 0, 1)));
-//			for (Hint hint : hints) {
-//				System.out.println(hint);
-//			}		
-//			if (i >= 5) break;
-//		}
-//		subtree.outputStudents();
+//		subtree.printSomeHints(builder);
+		
 //		subtree.analyze();
+		
 		System.out.println(System.currentTimeMillis());
+	}
+
+	private void printSomeHints(SubtreeBuilder builder) {
+		List<Node> student = nodeMap().values().iterator().next();
+		for (int i = 0; i < student.size(); i++) {
+			Node node = student.get(i);
+			System.out.println("State: " + node);
+			List<WeightedHint> hints = builder.getHints(node);
+			hints.sort(HintComparator.compose(HintComparator.ByContext, HintComparator.ByTED, HintComparator.weighted(0.05, 0, 1)));
+			for (Hint hint : hints) {
+				System.out.println(hint);
+			}		
+			if (i >= 5) break;
+		}
 	}
 	
 	public void getHints(SubtreeBuilder builder, String state) {

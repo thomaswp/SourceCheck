@@ -10,6 +10,8 @@ public interface HintMap {
 	void clear();
 	
 //	void addVertex(Node node);
+	
+	void addState(Node node);
 
 	HintChoice addEdge(Node from, Node to);
 

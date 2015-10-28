@@ -16,6 +16,8 @@ public class Graph<N,E> {
 	
 	private boolean hasGoal;
 	
+	private transient N lastPathNode;
+	
 	public boolean hasGoal() {
 		return hasGoal;
 	}
@@ -36,6 +38,25 @@ public class Graph<N,E> {
 			vertexMap.get(v).weight++;
 		}
 		return false;
+	}
+	
+	
+	public void endPath() {
+		this.lastPathNode = null;
+	}
+	
+	public Edge<N,E> addPathNode(N n, E edgeData) {
+		if (n.equals(lastPathNode)) return null;
+		addVertex(n);
+		
+		Edge<N,E> edge = null;
+		if (lastPathNode != null) {
+			edge = addOrGetEdge(lastPathNode, n, edgeData);
+		}
+		
+		lastPathNode = n;
+		
+		return edge;
 	}
 	
 	public int nVertices() {
