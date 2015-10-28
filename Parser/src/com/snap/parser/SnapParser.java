@@ -120,7 +120,7 @@ public class SnapParser {
 				try {
 					CSVParser parser = new CSVParser(new FileReader(logFile), CSVFormat.EXCEL.withHeader());
 					
-					DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+					DateFormat format = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
 					
 					String lastGrab = null;
 					

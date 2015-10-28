@@ -24,7 +24,10 @@ public class DataRow implements Serializable {
 	public DataRow(Date timestamp, String action, String snapshotXML) {
 		this.timestamp = timestamp;
 		this.action = action;
-		String name = timestamp == null ? null : format.format(timestamp);
+		String name;
+		synchronized (format) {
+			name = timestamp == null ? null : format.format(timestamp);
+		}
 		this.snapshot = Snapshot.parse(name, snapshotXML);
 	}
 	

@@ -48,8 +48,10 @@ public class SnapSubtree {
 		
 //		rtedTest();
 		
-		
+
+		System.out.println(System.currentTimeMillis());
 		SnapSubtree subtree = new SnapSubtree("../data/csc200/fall2015", "guess1Lab", new HintFactoryMap());
+		subtree.outputStudents();
 		
 //		Class.forName("com.mysql.jdbc.Driver").newInstance();
 //		Connection con = DriverManager.getConnection("jdbc:mysql://localhost/snap", "root", "Game1+1Learn!");
@@ -57,14 +59,13 @@ public class SnapSubtree {
 //		hintMap.clear();
 
 		
-		System.out.println(System.currentTimeMillis());
 		SubtreeBuilder builder = subtree.buildGraph(Mode.Use, false);
 		
 //		subtree.getHints(builder, "0:{snapshot{stage{sprite{script{receiveGo}{doSetVar}{doSayFor}{doAsk}{doSayFor}{doSayFor}{abc}}}}{var}}");
 		
 //		subtree.saveGraphs(builder, 1);
 		
-		subtree.printFinalSolutions();
+//		subtree.printFinalSolutions();
 		
 //		List<Node> student = subtree.nodeMap().values().iterator().next();
 //		for (int i = 0; i < student.size(); i++) {
