@@ -133,7 +133,8 @@ public class OutGraph<T> extends Graph<T, Void> {
 			
 				ps.print("<data key='graphics'>");
 				ps.print("<y:ShapeNode>");
-				ps.printf("<y:NodeLabel>%d</y:NodeLabel>", n++);
+//				ps.printf("<y:NodeLabel>%d</y:NodeLabel>", n++);
+				ps.printf("<y:NodeLabel fontSize=\"9\">%s</y:NodeLabel>", state.toString());
 				ps.printf("<y:Fill color='%s' transparent='false'/>", color);
 
 				int exit = inWeight - outWeight;
