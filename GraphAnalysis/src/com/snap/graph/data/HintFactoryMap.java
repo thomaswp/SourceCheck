@@ -171,6 +171,16 @@ public class HintFactoryMap implements HintMap {
 		}
 	}
 	
-	
+	private static class VectorHint extends Hint {
+		
+		public VectorHint(Node x, Node y) {
+			super(x, y);
+		}
+		
+		public static String getNodeReference(Node node) {
+			return "";
+		}
+		
+	}
 	
 }

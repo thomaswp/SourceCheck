@@ -76,6 +76,14 @@ public class Node extends StringHashable {
 		return tree;
 	}
 	
+	public int index() {
+		if (parent == null) return -1;
+		for (int i = 0; i < parent.children.size(); i++) {
+			if (parent.children.get(i) == this) return i;
+		}
+		return -1;
+	}
+	
 	public void recurse(Action<Node> action) {
 		action.run(this);
 		for (Node child : children) {
