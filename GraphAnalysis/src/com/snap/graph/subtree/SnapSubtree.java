@@ -14,9 +14,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import util.LblTree;
-
-import com.esotericsoftware.kryo.Kryo;
 import com.snap.data.Snapshot;
 import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.HintFactoryMap;
@@ -26,8 +23,6 @@ import com.snap.graph.data.Node.Action;
 import com.snap.graph.data.VectorGraph;
 import com.snap.graph.subtree.SubtreeBuilder.Hint;
 import com.snap.graph.subtree.SubtreeBuilder.HintChoice;
-import com.snap.graph.subtree.SubtreeBuilder.HintComparator;
-import com.snap.graph.subtree.SubtreeBuilder.WeightedHint;
 import com.snap.parser.DataRow;
 import com.snap.parser.SnapParser;
 import com.snap.parser.SolutionPath;
@@ -42,6 +37,7 @@ import de.citec.tcs.alignment.sequence.Sequence;
 import de.citec.tcs.alignment.sequence.SymbolicKeywordSpecification;
 import de.citec.tcs.alignment.sequence.SymbolicValue;
 import distance.RTED_InfoTree_Opt;
+import util.LblTree;
 
 public class SnapSubtree {
 	
@@ -70,13 +66,13 @@ public class SnapSubtree {
 		System.out.println(System.currentTimeMillis());
 	}
 
+	@SuppressWarnings("unused")
 	private void printSomeHints(SubtreeBuilder builder) {
 		List<Node> student = nodeMap().values().iterator().next();
 		for (int i = 0; i < student.size(); i++) {
 			Node node = student.get(i);
 			System.out.println("State: " + node);
-			List<WeightedHint> hints = builder.getHints(node);
-			hints.sort(HintComparator.compose(HintComparator.ByContext, HintComparator.ByTED, HintComparator.weighted(0.05, 0, 1)));
+			List<Hint> hints = builder.getHints(node);
 			for (Hint hint : hints) {
 				System.out.println(hint);
 			}		
@@ -86,8 +82,8 @@ public class SnapSubtree {
 	
 	public void getHints(SubtreeBuilder builder, String state) {
 		Node node = Node.fromTree(null, LblTree.fromString(state), true);
-		List<WeightedHint> hints = builder.getHints(node);
-		for (WeightedHint hint : hints) {
+		List<Hint> hints = builder.getHints(node);
+		for (Hint hint : hints) {
 			System.out.println(hint);
 		}
 	}
@@ -172,47 +168,8 @@ public class SnapSubtree {
 		this.hintMap = hintMap;
 	}
 	
-	@SuppressWarnings("unused")
-	private void analyze() {
-		float total = 0;
-		int done = 0;
-		for (String testKey : nodeMap().keySet()) {
-			System.out.println(testKey);
-			List<Node> test = nodeMap().get(testKey);
-			SubtreeBuilder builder = buildGraph(new SubtreeBuilder(hintMap.instance()), testKey, null);
-//			builder.graph.export(new PrintStream(new FileOutputStream("test" + done + ".graphml")), true, 1, true, true);
-
-			for (Node node : test) {
-				List<WeightedHint> hints = builder.getHints(node);
-				Collections.sort(hints, HintComparator.ByContext.then(HintComparator.ByAlignment));
-				System.out.println(((Snapshot)node.tag).name);
-				
-				int context = Integer.MAX_VALUE;
-				int printed = 0;
-				for (int i = 0; i < hints.size() && printed < 5; i++) {
-					WeightedHint hint = hints.get(i);
-					if (hint.context == context) {
-						continue;
-					}
-					context = hint.context;
-					printed++;
-					System.out.println(hints.get(i));
-				}
-				System.out.println("---------------------------");
-			}
-			
-			done++;
-			
-			if (done == 1) break;
-		}
-		
-		System.out.println(total / done);
-	}
-
-	
 	public SubtreeBuilder buildGraph(Mode storeMode, final boolean write) {
 		String storePath = new File(dataDir, assignment + ".cached").getAbsolutePath();
-		Kryo kryo = SubtreeBuilder.getKryo();
 		SubtreeBuilder builder = Store.getCachedObject(SubtreeBuilder.getKryo(), storePath, SubtreeBuilder.class, storeMode, new Store.Loader<SubtreeBuilder>() {
 			@Override
 			public SubtreeBuilder load() {
@@ -293,7 +250,7 @@ public class SnapSubtree {
 			out.println("\"hints\": [");
 			
 			for (HintChoice choice : hints.get(i)) {
-				out.println(choice.toJson() + ",");
+				out.println(SubtreeBuilder.hintToJson(choice) + ",");
 			}
 			out.println("]},");
 			

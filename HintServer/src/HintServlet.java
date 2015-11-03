@@ -1,7 +1,6 @@
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
 
@@ -17,8 +16,7 @@ import com.snap.data.Snapshot;
 import com.snap.graph.SimpleTreeBuilder;
 import com.snap.graph.data.Node;
 import com.snap.graph.subtree.SubtreeBuilder;
-import com.snap.graph.subtree.SubtreeBuilder.HintComparator;
-import com.snap.graph.subtree.SubtreeBuilder.WeightedHint;
+import com.snap.graph.subtree.SubtreeBuilder.Hint;
 
 
 @SuppressWarnings("serial")
@@ -65,25 +63,13 @@ public class HintServlet extends HttpServlet {
 		loadBuilder();
 		Node node = Node.fromTree(null, SimpleTreeBuilder.toTree(snapshot, 0, true), true);
 		
-		List<WeightedHint> hints = builder.getHints(node);
-		Collections.sort(hints, HintComparator.ByContext.then(HintComparator.ByAlignment));
+		List<Hint> hints = builder.getHints(node);
+//		Collections.sort(hints, HintComparator.ByContext.then(HintComparator.ByAlignment));
 		
 		out.println("[");
-		int context = Integer.MAX_VALUE;
-		int thisContext = 0;
-		int printed = 0;
 		for (int i = 0; i < hints.size(); i++) {
-			WeightedHint hint = hints.get(i);
-			if (hint.context == context) {
-				thisContext++;
-				if (thisContext > 2) continue;
-			} else {
-				thisContext = 0;
-			}
-			context = hint.context;
-			printed++;
 			if (i > 0) out.println(",");
-			out.print(hints.get(i).toJson());
+			out.print(SubtreeBuilder.hintToJson(hints.get(i)));
 		}
 		out.println("]");
 	}
@@ -95,14 +81,6 @@ public class HintServlet extends HttpServlet {
 			Input input = new Input(stream);
 			builder = kryo.readObject(input, SubtreeBuilder.class);
 			input.close();
-//			try {
-//				Class.forName("com.mysql.jdbc.Driver").newInstance();
-//				Connection con = DriverManager.getConnection("jdbc:mysql://localhost/snap", "root", "Game1+1Learn!");
-//				MySQLHintMap hintMap = new MySQLHintMap(con, "guess1Lab");
-//				builder = new SubtreeBuilder(hintMap);
-//			} catch (Exception e) {
-//				e.printStackTrace();
-//			}
 		}
 	}
 }

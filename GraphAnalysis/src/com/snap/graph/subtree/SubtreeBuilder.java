@@ -350,25 +350,25 @@ public class SubtreeBuilder {
 		return perc;
 	}
 	
-	public List<WeightedHint> getHints(Node parent) {
-		LinkedList<WeightedHint> hints = new LinkedList<SubtreeBuilder.WeightedHint>();
+	public List<Hint> getHints(Node parent) {
+		LinkedList<Hint> hints = new LinkedList<Hint>();
 		getHints(parent, hints);
 		return hints;
 	}
 	
-	private void getHints(Node node, List<WeightedHint> list) {
+	private void getHints(Node node, List<Hint> list) {
 		Iterable<Hint> edges = hintMap.getHints(node);
 		
-		int context = node.depth();
+//		int context = node.depth();
 		
 		// TODO: don't forget that really the skeleton need not match exactly,
 		// we should just be matching as much as possible
 		
 
 		for (Hint hint : edges) {
-			WeightedHint wh = new WeightedHint(hint.x, hint.y);
-			wh.context = context;
-			list.add(wh);
+//			WeightedHint wh = new WeightedHint(hint.x, hint.y);
+//			wh.context = context;
+			list.add(hint);
 		}
 		
 //		HashMap<Node, Tuple<Double,Integer>> seen = new HashMap<Node, Tuple<Double,Integer>>();
@@ -452,7 +452,7 @@ public class SubtreeBuilder {
 		return false;
 	}
 
-	public static class HintChoice extends Hint {
+	public static class HintChoice extends PairHint {
 
 		public boolean accepted = true;
 		public String status = "Good";
@@ -465,15 +465,15 @@ public class SubtreeBuilder {
 			this.accepted = accepted;
 			this.status = status;
 		}
-
-		public String toJson() {
-			return String.format(
-					"{\"accepted\": %s, \"status\": \"%s\", \"from\": \"%s\", \"to\": \"%s\"}", 
-					(accepted ? "true" : "false"), status, x.toString(), y.toString());
+		
+		@Override
+		public String data() {
+			return String.format("{\"accepted\": %s, \"status\": \"%s\"}", 
+					(accepted ? "true" : "false"), status);
 		}
 	}
 	
-	public static class WeightedHint extends Hint {
+	public static class WeightedHint extends PairHint {
 
 		public int relevance, context;
 		public double alignment, ted;
@@ -486,28 +486,54 @@ public class SubtreeBuilder {
 		public String toString() {
 			return String.format("[%02d,%02d,%.3f,%.3f]: %s -> %s", relevance, context, alignment, ted, x.toString(), y.toString());
 		}
-
-		public String toJson() {
+		
+		@Override
+		public String data() {
 			return String.format(
-					"{\"relevance\": %d, \"context\": %d, \"alignment\": %.3f, \"from\": \"%s\", \"to\": \"%s\"}", 
-					relevance, context, alignment, x.toString(), y.toString());
+					"{\"relevance\": %d, \"context\": %d, \"alignment\": %.3f}", 
+					relevance, context, alignment);
 		}
 		
 	}
 	
-	public static class Hint extends Tuple<Node, Node> {
+	public static interface Hint {
+		String from();
+		String to();
+		String data();
+	}
+	
+	public static String hintToJson(Hint hint) {
+		return String.format("{\"from\": \"%s\", \"to\": \"%s\", \"data\": %s}", hint.from(), hint.to(), hint.data());
+	}
+	
+	public static class PairHint extends Tuple<Node, Node> implements Hint {
 
-		private Hint() {
+		private PairHint() {
 			super(null, null);
 		}
 		
-		public Hint(Node x, Node y) {
+		public PairHint(Node x, Node y) {
 			super(x, y);
 		}
 		
 		@Override
 		public String toString() {
 			return String.format("%s -> %s", x.toString(), y.toString());
+		}
+
+		@Override
+		public String from() {
+			return x.toString();
+		}
+
+		@Override
+		public String to() {
+			return y.toString();
+		}
+
+		@Override
+		public String data() {
+			return "null";
 		}
 	}
 	
@@ -615,7 +641,7 @@ public class SubtreeBuilder {
 		kryo.register(StringHashable.class);
 		kryo.register(Node.class);
 		kryo.register(HintMap.class);
-		kryo.register(Hint.class);
+		kryo.register(PairHint.class);
 //		kryo.register(SimpleHintMap.class);
 		kryo.register(SkeletonMap.class);
 		kryo.register(HintFactoryMap.class);

@@ -81,7 +81,7 @@ public class HintFactoryMap implements HintMap {
 			
 			if (next != null) {
 				// If we find one, go there
-				hints.add(createHint(backbone, children, next));
+				hints.add(createHint(node, backbone, children, next));
 				continue;
 			}
 			// If we're at a goal with no better place to go, stay here
@@ -98,13 +98,13 @@ public class HintFactoryMap implements HintMap {
 					int disHF = VectorState.distance(children, hintFrom);
 					if (disHF <= disNN) {
 						// Use it insead
-						hints.add(createHint(backbone, children, hintFrom));
+						hints.add(createHint(node, backbone, children, hintFrom));
 						continue;
 					}
 				}
 				
 				// Otherwise hint to go to the nearest neighbor
-				hints.add(createHint(backbone, children, nearestNeighbor));
+				hints.add(createHint(node, backbone, children, nearestNeighbor));
 			}
 		}
 		return hints;
@@ -121,8 +121,8 @@ public class HintFactoryMap implements HintMap {
 		return null;
 	}
 	
-	private static Hint createHint(Node backbone, VectorState from, VectorState to) {
-		return new Hint(new Node(null, backbone + ": " + from), new Node(null, backbone + ": " + to));
+	private static VectorHint createHint(Node parent, Node backbone, VectorState from, VectorState to) {
+		return new VectorHint(parent, backbone, from, to);
 	}
 
 	@Override
@@ -171,14 +171,41 @@ public class HintFactoryMap implements HintMap {
 		}
 	}
 	
-	private static class VectorHint extends Hint {
+	private static class VectorHint implements Hint {
 		
-		public VectorHint(Node x, Node y) {
-			super(x, y);
+		public final String parent;
+		public final String from, to;
+		
+		public VectorHint(Node parent, Node backbone, VectorState from, VectorState to) {
+			this.parent = getNodeReference(parent);
+			this.from = backbone.toString() + ": " + from;
+			this.to = backbone.toString() + ": " + to;
+		}
+		
+		@Override
+		public String from() {
+			return from;
+		}
+		
+		@Override
+		public String to() {
+			return to;
+		}
+		
+		@Override
+		public String data() {
+			return parent;
 		}
 		
 		public static String getNodeReference(Node node) {
-			return "";
+			if (node == null) return null;
+			
+			String label = node.type;
+			int index = node.index();
+			String parent = getNodeReference(node.parent);
+			
+			return String.format("{\"label\": \"%s\", \"index\": %d, \"parent\": %s}",
+					label, index, parent);
 		}
 		
 	}

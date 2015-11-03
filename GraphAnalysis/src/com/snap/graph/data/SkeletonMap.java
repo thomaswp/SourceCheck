@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.snap.graph.subtree.SubtreeBuilder.Hint;
 import com.snap.graph.subtree.SubtreeBuilder.HintChoice;
+import com.snap.graph.subtree.SubtreeBuilder.PairHint;
 
 public class SkeletonMap implements HintMap {
 	
@@ -19,7 +20,7 @@ public class SkeletonMap implements HintMap {
 			hints = new ArrayList<Hint>();
 			bones.put(backbone, hints);
 		}
-		hints.add(new Hint(from, to));
+		hints.add(new PairHint(from, to));
 		return new HintChoice(from, to);
 	}
 	
