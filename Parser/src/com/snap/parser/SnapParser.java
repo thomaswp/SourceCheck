@@ -221,9 +221,9 @@ public class SnapParser {
 	public static void main(String[] args) throws IOException {
 		SnapParser parser = new SnapParser("../data/csc200/fall2015", Mode.Overwrite);
 //		parser.splitStudentRecords("../data/csc200/fall2015.csv");
-//		parser.parseRows(new File(parser.outputFolder + "/guess1Lab/0b368197-7d2d-4b11-be38-9111bbb9b475.csv"));
-//		parser.parseRows(new File(parser.outputFolder + "/guess1Lab/2a2da14b-58b5-4d9f-bb3e-68974c9baf45.csv"));
 		parser.parseAssignment("guess1Lab");
+		parser.parseAssignment("guess2HW");
+		parser.parseAssignment("guess3Lab");
 	}
 }
 

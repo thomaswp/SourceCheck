@@ -172,29 +172,32 @@ public class HintFactoryMap implements HintMap {
 	}
 	
 	private static class VectorHint implements Hint {
+
+		public final Node root;
+		public final String backbone;
+		public final VectorState from, to;
 		
-		public final String parent;
-		public final String from, to;
-		
-		public VectorHint(Node parent, Node backbone, VectorState from, VectorState to) {
-			this.parent = getNodeReference(parent);
-			this.from = backbone.toString() + ": " + from;
-			this.to = backbone.toString() + ": " + to;
+		public VectorHint(Node root, Node backbone, VectorState from, VectorState to) {
+			this.root = root;
+			this.backbone = backbone.toString();
+			this.from = from;
+			this.to = to;
 		}
 		
 		@Override
 		public String from() {
-			return from;
+			return backbone + ": " + from;
 		}
 		
 		@Override
 		public String to() {
-			return to;
+			return backbone + ": " + to;
 		}
 		
 		@Override
 		public String data() {
-			return parent;
+			return String.format("{\"root\": %s, \"from\": %s, \"to\": %s}", 
+					getNodeReference(root), from.toJson(), to.toJson());
 		}
 		
 		public static String getNodeReference(Node node) {

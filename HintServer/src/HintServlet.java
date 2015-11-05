@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
 
@@ -23,14 +24,17 @@ import com.snap.graph.subtree.SubtreeBuilder.Hint;
 @WebServlet(name="hints", urlPatterns="/hints")
 public class HintServlet extends HttpServlet {
 
-	private static SubtreeBuilder builder;
+	private final static String DEFAULT_ASSIGNMENT = "guess1Lab";
+	
+	private static HashMap<String, SubtreeBuilder> builders = 
+			new HashMap<String, SubtreeBuilder>();
 	
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
-		loadBuilder();
+		loadBuilder(null);
 		resp.setContentType("text");
-		resp.getOutputStream().println("Loaded cache");
+		resp.getOutputStream().println("Loaded cache for " + DEFAULT_ASSIGNMENT);
 	}
 	
 	@Override
@@ -51,16 +55,21 @@ public class HintServlet extends HttpServlet {
 		Snapshot snapshot = Snapshot.parse(null, xml);
 		
 		PrintStream out = new PrintStream(resp.getOutputStream());
-		
+				
 		resp.setContentType("text/json");
 //		out.println(snapshot.toCode());
-		getHint(snapshot, out);
+		getHint(snapshot, req.getParameter("assignmentID"), out);
 		
 //		resp.getOutputStream().println(builder.graph.size());
 	}
 	
-	private void getHint(Snapshot snapshot, PrintStream out) {
-		loadBuilder();
+	private void getHint(Snapshot snapshot, String assignment, PrintStream out) {
+		SubtreeBuilder builder = loadBuilder(assignment);
+		if (builder == null) {
+			out.println("[]");
+			return;
+		}
+		
 		Node node = Node.fromTree(null, SimpleTreeBuilder.toTree(snapshot, 0, true), true);
 		
 		List<Hint> hints = builder.getHints(node);
@@ -74,13 +83,19 @@ public class HintServlet extends HttpServlet {
 		out.println("]");
 	}
 	
-	private void loadBuilder() {
+	private SubtreeBuilder loadBuilder(String assignment) {
+		if (assignment == null || "test".equals(assignment)) assignment = DEFAULT_ASSIGNMENT;
+		SubtreeBuilder builder = builders.get(assignment);
 		if (builder == null) {
 			Kryo kryo = SubtreeBuilder.getKryo();
-			InputStream stream = getServletContext().getResourceAsStream("/WEB-INF/data/guess1Lab.cached");
+			InputStream stream = getServletContext().getResourceAsStream("/WEB-INF/data/" + assignment + ".cached");
+			if (stream == null) return null;
 			Input input = new Input(stream);
 			builder = kryo.readObject(input, SubtreeBuilder.class);
 			input.close();
+			
+			builders.put(assignment, builder);
 		}
+		return builder;
 	}
 }

@@ -43,4 +43,14 @@ public class VectorState extends StringHashable {
 		double ndd = length == 0 ? 0 : (double)distance / length;
 		return new Tuple<Integer, Double>(distance, ndd);
 	}
+	
+	public String toJson() {
+		String out = "[";
+		for (String item : items) {
+			if (out.length() > 1) out += ", ";
+			out += "\"" + item + "\"";
+		}
+		out += "]";
+		return out;
+	}
 }
