@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import com.snap.data.Canonicalization;
+import com.snap.data.Canonicalization.InvertOp;
+import com.snap.data.Canonicalization.SwapArgs;
 import com.snap.graph.data.Graph.Edge;
 import com.snap.graph.data.Node.Action;
 import com.snap.graph.subtree.SubtreeBuilder.Hint;
@@ -185,6 +188,8 @@ public class HintFactoryMap implements HintMap {
 		public final boolean loop;
 		public final boolean indexed;
 		
+		private final boolean swap;
+		
 		public VectorHint(Node root, Node backbone, VectorState from, VectorState to, boolean indexed) {
 			this.root = root;
 			this.backbone = backbone.toString();
@@ -192,6 +197,16 @@ public class HintFactoryMap implements HintMap {
 			this.to = to;
 			this.loop = from.equals(to);
 			this.indexed = indexed;
+			
+			boolean swap = false;
+			for (Canonicalization c : root.canonicalizations) {
+				if (c instanceof InvertOp) {
+					swap = true;
+					break;
+				}
+			}
+			this.swap = swap;
+			
 			cache();
 		}
 		
@@ -208,14 +223,32 @@ public class HintFactoryMap implements HintMap {
 		@Override
 		public String data() {
 			return String.format("{\"root\": %s, \"from\": %s, \"to\": %s}", 
-					getNodeReference(root), from.toJson(), to.toJson());
+					getNodeReference(root), from.toJson(swap), to.toJson(swap));
 		}
 		
 		public static String getNodeReference(Node node) {
 			if (node == null) return null;
 			
 			String label = node.type;
+			for (Canonicalization c : node.canonicalizations) {
+				if (c instanceof InvertOp) {
+					System.out.println("Invert: " + node);
+					label = ((InvertOp) c).name;
+					break;
+				}
+			}
+			
 			int index = node.index();
+			if (node.parent != null) {
+				for (Canonicalization c : node.parent.canonicalizations) {
+					if (c instanceof SwapArgs) {
+						System.out.println("Swapping children of: " + node.parent);
+						index = node.parent.children.size() - 1 - index;
+						break;
+					}
+				}
+			}
+			
 			String parent = getNodeReference(node.parent);
 			
 			return String.format("{\"label\": \"%s\", \"index\": %d, \"parent\": %s}",

@@ -2,6 +2,7 @@ package com.snap.graph;
 
 import java.util.List;
 
+import com.snap.data.Canonicalization;
 import com.snap.data.Code;
 import com.snap.data.Code.Accumulator;
 import com.snap.graph.data.Node;
@@ -13,12 +14,12 @@ public class SimpleNodeBuilder {
 	}
 	
 	private static Node toTree(Code code, final boolean canon, Node parent) {
-		final Node tree = new Node(parent, code.addChildren(canon, Code.NOOP));
-		tree.tag = code;
+		final Node node = new Node(parent, code.addChildren(canon, Code.NOOP));
+		node.tag = code;
 		code.addChildren(canon, new Accumulator() {
 			@Override
 			public void add(String code) {
-				tree.children.add(new Node(tree, code));
+				node.children.add(new Node(node, code));
 			}
 			
 			@Override
@@ -33,7 +34,7 @@ public class SimpleNodeBuilder {
 				if (code == null) {
 					add("null");
 				} else {
-					tree.children.add(toTree(code, canon, tree));
+					node.children.add(toTree(code, canon, node));
 				}
 			}
 
@@ -43,8 +44,14 @@ public class SimpleNodeBuilder {
 					add(code);
 				}
 			}
+
+			@Override
+			public void add(Canonicalization canon) {
+				System.out.println(canon);
+				node.canonicalizations.add(canon);
+			}
 		});
 		
-		return tree;
+		return node;
 	}
 }

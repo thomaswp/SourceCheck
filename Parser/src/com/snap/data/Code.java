@@ -15,8 +15,8 @@ public abstract class Code implements Serializable {
 		return toCode(false);
 	}
 	
-	public String name() {
-		return addChildren(true, NOOP);
+	public String name(boolean canon) {
+		return addChildren(canon, NOOP);
 	}
 	
 	public List<Block> getAllBlocks(final boolean canon) {
@@ -42,6 +42,9 @@ public abstract class Code implements Serializable {
 			public void add(Code code) {
 				blocks.addAll(code.getAllBlocks(canon));
 			}
+
+			@Override
+			public void add(Canonicalization canon) { }
 		});
 		return blocks;
 	}
@@ -67,12 +70,16 @@ public abstract class Code implements Serializable {
 			public void add(Code code) {
 				codes.addAll(code.getAllCode(canon));
 			}
+
+			@Override
+			public void add(Canonicalization canon) { }
 		});
 		return codes;
 	}
 	
 	public interface Accumulator {
 		void add(Code code);
+		void add(Canonicalization canon);
 		void add(Iterable<? extends Code> codes);
 		void add(String code);
 		void add(List<String> codes);
@@ -83,6 +90,7 @@ public abstract class Code implements Serializable {
 		@Override public void add(String code) { }
 		@Override public void add(Iterable<? extends Code> codes) { }
 		@Override public void add(Code code) { }
+		@Override public void add(Canonicalization canon) { }
 	};
 	
 	protected static List<String> canonicalizeVariables(List<String> variables, boolean canon) {

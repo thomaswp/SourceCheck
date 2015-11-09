@@ -45,12 +45,27 @@ public class VectorState extends StringHashable {
 	}
 	
 	public String toJson() {
+		return toJson(false);
+	}
+	
+	public String toJson(boolean reverseArgs) {
 		String out = "[";
-		for (String item : items) {
-			if (out.length() > 1) out += ", ";
-			out += "\"" + item + "\"";
+		if (reverseArgs) {
+			for (int i = items.length - 1; i >= 0; i--) {
+				out = addItem(out, i);
+			}
+		} else {
+			for (int i = 0; i < items.length; i++) {
+				out = addItem(out, i);
+			}
 		}
 		out += "]";
+		return out;
+	}
+
+	private String addItem(String out, int i) {
+		if (out.length() > 1) out += ", ";
+		out += "\"" + items[i] + "\"";
 		return out;
 	}
 }

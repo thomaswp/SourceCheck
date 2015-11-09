@@ -4,6 +4,7 @@ import java.util.List;
 
 import util.LblTree;
 
+import com.snap.data.Canonicalization;
 import com.snap.data.Code;
 import com.snap.data.Code.Accumulator;
 
@@ -39,6 +40,9 @@ public class SimpleTreeBuilder {
 					add(code);
 				}
 			}
+
+			@Override
+			public void add(Canonicalization canon) { }
 		}));
 		return tree;
 	}

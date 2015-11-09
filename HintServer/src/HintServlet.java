@@ -14,7 +14,7 @@ import javax.servlet.http.HttpServletResponse;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.snap.data.Snapshot;
-import com.snap.graph.SimpleTreeBuilder;
+import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.Node;
 import com.snap.graph.subtree.SubtreeBuilder;
 import com.snap.graph.subtree.SubtreeBuilder.Hint;
@@ -70,7 +70,8 @@ public class HintServlet extends HttpServlet {
 			return;
 		}
 		
-		Node node = Node.fromTree(null, SimpleTreeBuilder.toTree(snapshot, 0, true), true);
+//		System.out.println(snapshot.toCode(true));
+		Node node = SimpleNodeBuilder.toTree(snapshot, true);
 		
 		List<Hint> hints = builder.getHints(node);
 //		Collections.sort(hints, HintComparator.ByContext.then(HintComparator.ByAlignment));

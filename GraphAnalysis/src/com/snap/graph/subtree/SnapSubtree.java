@@ -51,13 +51,13 @@ public class SnapSubtree {
 		
 		SnapSubtree subtree = new SnapSubtree("../data/csc200/fall2015", "guess1Lab", new HintFactoryMap());
 				
-		SubtreeBuilder builder = subtree.buildGraph(Mode.Overwrite, false);
+		SubtreeBuilder builder = subtree.buildGraph(Mode.Use, false);
 		
 //		subtree.getHints(builder, "0:{snapshot{stage{sprite{script{receiveGo}{doSetVar}{doSayFor}{doAsk}{doSayFor}{doSayFor}{abc}}}}{var}}");
 		
 		subtree.saveGraphs(builder, 1);
 		
-//		subtree.printFinalSolutions();
+		subtree.printFinalSolutions();
 		
 //		subtree.printSomeHints(builder);
 		

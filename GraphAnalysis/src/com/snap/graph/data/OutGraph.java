@@ -107,9 +107,8 @@ public class OutGraph<T> extends Graph<T, Void> {
 		}
 		
 		Set<T> ignoreNs = new HashSet<T>();
-		for (T state : vertices()) {
-			int inWeight = inWeight(state, true), outWeight = outWeight(state, true);
-			if (inWeight <= prune && outWeight <= prune) ignoreNs.add(state);
+		for (Vertex<T> v : vertexMap.values()) {
+			if (v.weight() < prune) ignoreNs.add(v.data);
 		}
 		
 		ps.println("<graph id='G' edgedefault='directed'>");			
