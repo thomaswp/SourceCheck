@@ -65,50 +65,6 @@ public class HintFactoryMap implements HintMap {
 		// TODO Auto-generated method stub
 		return false;
 	}
-
-	@Override
-	public Iterable<Hint> getHints(Node node) {
-		List<Hint> hints = new ArrayList<Hint>();
-		
-		for (int i = 0; i < 2; i++) {
-			Node backbone = SkeletonMap.toBackbone(node, i != 0).root();
-			VectorGraph graph = map.get(backbone);
-			if (graph == null) continue;
-			
-			VectorState children = childrenState(node);
-			// Get the best successor state from our current state
-			VectorState next = bestEdge(graph, children);
-			
-			if (next != null) {
-				// If we find one, go there
-				hints.add(createHint(node, backbone, children, next));
-				continue;
-			}
-			// If we're at a goal with no better place to go, stay here
-			if (graph.isGoal(children)) continue;
-			
-			// Look for a nearest neighbor in the graph
-			VectorState nearestNeighbor = graph.getNearestNeighbor(children, 3);
-			if (nearestNeighbor != null) { 
-				// If we find one, get the hint from there
-				VectorState hintFrom = bestEdge(graph, nearestNeighbor);
-				if (hintFrom != null) {
-					// If it exists, and it's at least as close as the nearest neighbor...
-					int disNN = VectorState.distance(children, nearestNeighbor);
-					int disHF = VectorState.distance(children, hintFrom);
-					if (disHF <= disNN) {
-						// Use it insead
-						hints.add(createHint(node, backbone, children, hintFrom));
-						continue;
-					}
-				}
-				
-				// Otherwise hint to go to the nearest neighbor
-				hints.add(createHint(node, backbone, children, nearestNeighbor));
-			}
-		}
-		return hints;
-	}
 	
 	private static VectorState bestEdge(VectorGraph graph, VectorState state) {
 		List<Edge<VectorState, Void>> edges = graph.fromMap.get(state);
@@ -119,10 +75,6 @@ public class HintFactoryMap implements HintMap {
 			}
 		}
 		return null;
-	}
-	
-	private static VectorHint createHint(Node parent, Node backbone, VectorState from, VectorState to) {
-		return new VectorHint(parent, backbone, from, to);
 	}
 
 	@Override
@@ -149,6 +101,60 @@ public class HintFactoryMap implements HintMap {
 	}
 
 	@Override
+	public Iterable<Hint> getHints(Node node) {
+		List<Hint> hints = new ArrayList<Hint>();
+		
+		for (int i = 0; i < 2; i++) {
+			boolean indexed = i != 0;
+			Node backbone = SkeletonMap.toBackbone(node, indexed).root();
+			VectorGraph graph = map.get(backbone);
+			if (graph == null) continue;
+			
+			VectorState children = childrenState(node);
+			// Get the best successor state from our current state
+			VectorState next = bestEdge(graph, children);
+			
+			if (next != null) {
+				// If we find one, go there
+				hints.add(createHint(node, backbone, children, next, indexed));
+				continue;
+			}
+			
+			// If we're at a goal with no better place to go, stay here
+			if (graph.isGoal(children)) {
+				// We create a dead-end hint, just so we know we want to stay here
+				hints.add(createHint(node, backbone, children, children, indexed));
+				continue;
+			}
+			
+			// Look for a nearest neighbor in the graph
+			VectorState nearestNeighbor = graph.getNearestNeighbor(children, 3);
+			if (nearestNeighbor != null) { 
+				// If we find one, get the hint from there
+				VectorState hintFrom = bestEdge(graph, nearestNeighbor);
+				if (hintFrom != null) {
+					// If it exists, and it's at least as close as the nearest neighbor...
+					int disNN = VectorState.distance(children, nearestNeighbor);
+					int disHF = VectorState.distance(children, hintFrom);
+					if (disHF <= disNN) {
+						// Use it insead
+						hints.add(createHint(node, backbone, children, hintFrom, indexed));
+						continue;
+					}
+				}
+				
+				// Otherwise hint to go to the nearest neighbor
+				hints.add(createHint(node, backbone, children, nearestNeighbor, indexed));
+			}
+		}
+		return hints;
+	}
+	
+	private static VectorHint createHint(Node parent, Node backbone, VectorState from, VectorState to, boolean indexed) {
+		return new VectorHint(parent, backbone, from, to, indexed);
+	}
+
+	@Override
 	public void finsh() {
 		for (VectorGraph graph : map.values()) {
 			graph.prune(2);
@@ -171,17 +177,22 @@ public class HintFactoryMap implements HintMap {
 		}
 	}
 	
-	private static class VectorHint implements Hint {
+	private static class VectorHint extends StringHashable implements Hint {
 
 		public final Node root;
 		public final String backbone;
 		public final VectorState from, to;
+		public final boolean loop;
+		public final boolean indexed;
 		
-		public VectorHint(Node root, Node backbone, VectorState from, VectorState to) {
+		public VectorHint(Node root, Node backbone, VectorState from, VectorState to, boolean indexed) {
 			this.root = root;
 			this.backbone = backbone.toString();
 			this.from = from;
 			this.to = to;
+			this.loop = from.equals(to);
+			this.indexed = indexed;
+			cache();
 		}
 		
 		@Override
@@ -209,6 +220,20 @@ public class HintFactoryMap implements HintMap {
 			
 			return String.format("{\"label\": \"%s\", \"index\": %d, \"parent\": %s}",
 					label, index, parent);
+		}
+
+		@Override
+		protected String toCanonicalStringInternal() {
+			return data();
+		}
+
+		@Override
+		public boolean overrides(Hint hint) {
+			if (!indexed) return false;
+			if (!(hint instanceof VectorHint)) return false;
+			
+			return from.equals(((VectorHint)hint).from);
+//			return false;
 		}
 		
 	}

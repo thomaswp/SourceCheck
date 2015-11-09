@@ -353,6 +353,11 @@ public class SubtreeBuilder {
 	public List<Hint> getHints(Node parent) {
 		LinkedList<Hint> hints = new LinkedList<Hint>();
 		getHints(parent, hints);
+		Iterator<Hint> iterator = hints.iterator();
+		while (iterator.hasNext()) {
+			Hint next = iterator.next();
+			if (next.from().equals(next.to())) iterator.remove();
+		}
 		return hints;
 	}
 	
@@ -368,6 +373,21 @@ public class SubtreeBuilder {
 		for (Hint hint : edges) {
 //			WeightedHint wh = new WeightedHint(hint.x, hint.y);
 //			wh.context = context;
+			if (list.contains(hint)) continue;
+			boolean override = false;
+			for (Hint h : list) {
+				if (h.overrides(hint)) {
+					override = true;
+					break;
+				}
+			}
+			if (override) continue;
+			
+			Iterator<Hint> iterator = list.iterator();
+			while (iterator.hasNext()) {
+				if (hint.overrides(iterator.next())) iterator.remove();
+			}
+			
 			list.add(hint);
 		}
 		
@@ -500,6 +520,7 @@ public class SubtreeBuilder {
 		String from();
 		String to();
 		String data();
+		boolean overrides(Hint hint);
 	}
 	
 	public static String hintToJson(Hint hint) {
@@ -534,6 +555,11 @@ public class SubtreeBuilder {
 		@Override
 		public String data() {
 			return "null";
+		}
+
+		@Override
+		public boolean overrides(Hint hint) {
+			return false;
 		}
 	}
 	
