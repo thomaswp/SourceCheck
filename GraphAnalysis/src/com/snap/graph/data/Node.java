@@ -3,10 +3,9 @@ package com.snap.graph.data;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.snap.data.Canonicalization;
-import com.snap.data.Canonicalization.SwapArgs;
-
 import util.LblTree;
+
+import com.snap.data.Canonicalization;
 
 public class Node extends StringHashable {
 

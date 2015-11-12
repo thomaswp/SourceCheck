@@ -47,7 +47,6 @@ public class SimpleNodeBuilder {
 
 			@Override
 			public void add(Canonicalization canon) {
-				System.out.println(canon);
 				node.canonicalizations.add(canon);
 			}
 		});

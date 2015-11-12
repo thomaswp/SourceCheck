@@ -232,7 +232,7 @@ public class HintFactoryMap implements HintMap {
 			String label = node.type;
 			for (Canonicalization c : node.canonicalizations) {
 				if (c instanceof InvertOp) {
-					System.out.println("Invert: " + node);
+//					System.out.println("Invert: " + node);
 					label = ((InvertOp) c).name;
 					break;
 				}
@@ -242,7 +242,7 @@ public class HintFactoryMap implements HintMap {
 			if (node.parent != null) {
 				for (Canonicalization c : node.parent.canonicalizations) {
 					if (c instanceof SwapArgs) {
-						System.out.println("Swapping children of: " + node.parent);
+//						System.out.println("Swapping children of: " + node.parent);
 						index = node.parent.children.size() - 1 - index;
 						break;
 					}
