@@ -10,11 +10,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import util.LblTree;
+
 import com.esotericsoftware.kryo.Kryo;
 import com.snap.graph.Alignment;
 import com.snap.graph.data.Graph;
 import com.snap.graph.data.HintFactoryMap;
 import com.snap.graph.data.HintMap;
+import com.snap.graph.data.IndexedVectorState;
 import com.snap.graph.data.Node;
 import com.snap.graph.data.SkeletonMap;
 import com.snap.graph.data.StringHashable;
@@ -22,11 +25,12 @@ import com.snap.graph.data.VectorGraph;
 import com.snap.graph.data.VectorState;
 
 import distance.RTED_InfoTree_Opt;
-import util.LblTree;
 
 public class SubtreeBuilder {
 
 	public final HintMap hintMap;
+	
+	private final transient List<HintMap> studentMaps = new ArrayList<HintMap>();
 	
 	@SuppressWarnings("unused")
 	private SubtreeBuilder() {
@@ -219,7 +223,7 @@ public class SubtreeBuilder {
 		
 		Node submission = path.get(path.size() - 1);
 		hintMap.setSolution(submission);
-		synchronized (this.hintMap) {
+		synchronized (this.studentMaps) {
 			this.hintMap.addMap(hintMap);
 		}
 		
@@ -227,7 +231,7 @@ public class SubtreeBuilder {
 	}
 	
 	public void finishedAdding() {
-		hintMap.finsh();
+		hintMap.finish();
 	}
 	
 	@SuppressWarnings({ "unchecked", "unused" })
@@ -672,6 +676,7 @@ public class SubtreeBuilder {
 		kryo.register(SkeletonMap.class);
 		kryo.register(HintFactoryMap.class);
 		kryo.register(VectorState.class);
+		kryo.register(IndexedVectorState.class);
 		kryo.register(VectorGraph.class);
 		kryo.register(Graph.Vertex.class);
 		kryo.register(Graph.Edge.class);

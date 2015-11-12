@@ -2,6 +2,7 @@ package com.snap.graph.data;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 import com.snap.data.Canonicalization;
@@ -13,8 +14,21 @@ import com.snap.graph.subtree.SubtreeBuilder.Hint;
 import com.snap.graph.subtree.SubtreeBuilder.HintChoice;
 
 public class HintFactoryMap implements HintMap {
+	
+	private final static int ROUNDS = 1;
+	
+	// TODO: stop cheating!
+	private final static HashSet<String> BAD_CONTEXT = new HashSet<String>();
+	static {
+		for (String c : new String[] {
+				"doIf",
+		}) {
+			BAD_CONTEXT.add(c);
+		}
+	}
+	
 	public final HashMap<Node, VectorGraph> map = new HashMap<Node, VectorGraph>();
-
+	
 	@Override
 	public void clear() {
 		map.clear();
@@ -25,7 +39,7 @@ public class HintFactoryMap implements HintMap {
 		node.recurse(new Action<Node>() {
 			@Override
 			public void run(Node item) {
-				VectorState children = childrenState(item);
+				VectorState children = getVectorState(item);
 				getGraph(item, true).addPathNode(children, null);
 				getGraph(item, false).addPathNode(children, null);
 			}
@@ -35,8 +49,8 @@ public class HintFactoryMap implements HintMap {
 	@Override
 	public HintChoice addEdge(Node from, Node to) {
 		
-		VectorState fromState = childrenState(from);
-		VectorState toState = childrenState(to);
+		VectorState fromState = getVectorState(from);
+		VectorState toState = getVectorState(to);
 		getGraph(from, true).addEdge(fromState, toState);
 		getGraph(from, false).addEdge(fromState, toState);
 		
@@ -53,14 +67,18 @@ public class HintFactoryMap implements HintMap {
 		return graph;
 	}
 	
-	private VectorState childrenState(Node node) {
+	private static VectorState getVectorState(Node node) {
+		return new VectorState(getChildren(node));
+	}
+
+	private static List<String> getChildren(Node node) {
 		List<String> children = new ArrayList<String>();
-		if (node == null) return new VectorState(children);
+		if (node == null) return children;
 		for (Node child : node.children) {
 			if ("null".equals(child.type)) continue;
 			children.add(child.type);
 		}
-		return new VectorState(children);
+		return children;
 	}
 
 	@Override
@@ -91,31 +109,41 @@ public class HintFactoryMap implements HintMap {
 			@Override
 			public void run(Node item) {
 				if (item.children.size() == 0) return;
-				for (int i = 0; i < 2; i++) {
+				for (int i = 0; i < ROUNDS; i++) {
 					VectorGraph graph = getGraph(item, i != 0);
-					VectorState children = childrenState(item);
+					VectorState children = getVectorState(item);
 					if (!graph.vertices.contains(children)) {
 						graph.addVertex(children);
 					}
-					graph.setGoal(children, true);
+					graph.setGoal(children, getContext(item));
 				}
 			}
 		});
+	}
+
+	private static IndexedVectorState getContext(Node item) {
+		Node contextChild = item;
+		while (contextChild.parent != null && BAD_CONTEXT.contains(contextChild.parent.type)) contextChild = contextChild.parent;
+		int index = contextChild.index(); 
+		return new IndexedVectorState(getChildren(contextChild.parent), index);
 	}
 
 	@Override
 	public Iterable<Hint> getHints(Node node) {
 		List<Hint> hints = new ArrayList<Hint>();
 		
-		for (int i = 0; i < 2; i++) {
+		for (int i = 0; i < ROUNDS; i++) {
 			boolean indexed = i != 0;
 			Node backbone = SkeletonMap.toBackbone(node, indexed).root();
 			VectorGraph graph = map.get(backbone);
 			if (graph == null) continue;
 			
-			VectorState children = childrenState(node);
+			VectorState children = getVectorState(node);
 			// Get the best successor state from our current state
 			VectorState next = bestEdge(graph, children);
+			
+			VectorState goal = graph.getContextualGoal(getContext(node));
+			if (goal != null) System.out.println(backbone + ": " + goal);
 			
 			if (next != null) {
 				// If we find one, go there
@@ -158,7 +186,7 @@ public class HintFactoryMap implements HintMap {
 	}
 
 	@Override
-	public void finsh() {
+	public void finish() {		
 		for (VectorGraph graph : map.values()) {
 			graph.prune(2);
 			graph.generateEdges();

@@ -51,13 +51,15 @@ public class SnapSubtree {
 		
 		SnapSubtree subtree = new SnapSubtree("../data/csc200/fall2015", "guess1Lab", new HintFactoryMap());
 				
-		SubtreeBuilder builder = subtree.buildGraph(Mode.Use, false);
+		SubtreeBuilder builder = subtree.buildGraph(Mode.Overwrite, false);
 		
 //		subtree.getHints(builder, "0:{snapshot{stage{sprite{script{receiveGo}{doSetVar}{doSayFor}{doAsk}{doSayFor}{doSayFor}{abc}}}}{var}}");
 		
 		subtree.saveGraphs(builder, 1);
 		
-		subtree.printFinalSolutions();
+//		subtree.printGoalMaps(builder);
+		
+//		subtree.printFinalSolutions();
 		
 //		subtree.printSomeHints(builder);
 		
@@ -65,6 +67,14 @@ public class SnapSubtree {
 		
 		System.out.println(System.currentTimeMillis());
 	}
+
+//	private void printGoalMaps(SubtreeBuilder builder) {
+//		HintFactoryMap map = (HintFactoryMap) builder.hintMap;
+//		for (Node root : map.map.keySet()) {
+//			VectorGraph vectorGraph = map.map.get(root);
+//			
+//		}
+//	}
 
 	@SuppressWarnings("unused")
 	private void printSomeHints(SubtreeBuilder builder) {
@@ -148,6 +158,7 @@ public class SnapSubtree {
 			File file = new File(dir, child.type);
 			
 			graph.export(new PrintStream(new FileOutputStream(file + ".graphml")), true, 0, false, true);
+			graph.exportGoalContexts(new PrintStream(file + ".txt"));
 		}
 	}
 	

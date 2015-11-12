@@ -72,7 +72,7 @@ public class SkeletonMap implements HintMap {
 	}
 
 	@Override
-	public void finsh() {
+	public void finish() {
 		
 	}
 

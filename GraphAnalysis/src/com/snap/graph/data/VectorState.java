@@ -1,6 +1,5 @@
 package com.snap.graph.data;
 
-import java.util.Arrays;
 import java.util.Collection;
 
 import com.snap.graph.Alignment;
@@ -17,16 +16,22 @@ public class VectorState extends StringHashable {
 	
 	public VectorState(String[] items) {
 		this.items = items;
+		cache();
 	}
 	
 	public VectorState(Collection<String> items) {
-		this.items = items.toArray(new String[items.size()]);
-		cache();
+		this(items.toArray(new String[items.size()]));
 	}
 	
 	@Override
 	protected String toCanonicalStringInternal() {
-		return Arrays.toString(items);
+		String out = "[";
+		for (int i = 0; i < items.length; i++) {
+			if (i > 0) out += ", ";
+			out += getItem(i);
+		}
+		out += "]";
+		return out;
 	}
 	
 	public static double normalizedDirectionalDistance(VectorState a, VectorState b) {
@@ -65,7 +70,11 @@ public class VectorState extends StringHashable {
 
 	private String addItem(String out, int i) {
 		if (out.length() > 1) out += ", ";
-		out += "\"" + items[i] + "\"";
+		out += "\"" + getItem(i) + "\"";
 		return out;
+	}
+	
+	protected String getItem(int index) {
+		return items[index];
 	}
 }
