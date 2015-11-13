@@ -12,6 +12,12 @@ public class Alignment {
 		return alignCost(sequenceA, sequenceB, 1, 1);
 	}
 	
+	public static double normAlignCost(String[] sequenceA, String[] sequenceB, int gapCost, int subCost) {
+		int cost = alignCost(sequenceA, sequenceB, gapCost, subCost);
+		int length = Math.max(sequenceA.length, sequenceB.length);
+		return length == 0 ? 0 : ((double) cost / length);
+	}
+	
 	// Credit: http://introcs.cs.princeton.edu/java/96optimization/Diff.java.html
 	public static int alignCost(String[] sequenceA, String[] sequenceB, int gapCost, int subCost) {
 		// The penalties to apply

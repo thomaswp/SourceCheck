@@ -41,9 +41,10 @@ public class VectorGraph extends OutGraph<VectorState> {
 	
 	public VectorState getContextualGoal(IndexedVectorState context) {
 //		int minDis = Integer.MAX_VALUE;
-		HashMap<VectorState, Integer> cachedDistances = new HashMap<VectorState, Integer>();
+		HashMap<VectorState, Double> cachedDistances = new HashMap<VectorState, Double>();
 		VectorState best = null;
-		double bestAvgDis = Integer.MAX_VALUE;
+		double nextBest = Double.MAX_VALUE;
+		double bestAvgDis = Double.MAX_VALUE;
 		
 		for (VectorState goal : goalContextMap.keySet()) {
 			List<IndexedVectorState> list = goalContextMap.get(goal);
@@ -51,7 +52,7 @@ public class VectorGraph extends OutGraph<VectorState> {
 			double totalDis = 0;
 			for (IndexedVectorState state : list) {
 				state.cache();
-				Integer dis = cachedDistances.get(state);
+				Double dis = cachedDistances.get(state);
 				if (dis == null) {
 					dis = IndexedVectorState.distance(context, state);
 					cachedDistances.put(state, dis);
@@ -60,11 +61,16 @@ public class VectorGraph extends OutGraph<VectorState> {
 //				minDis = Math.min(minDis, dis);
 			}
 			double avg = totalDis / list.size();
+			if (avg < nextBest) {
+				nextBest = avg;
+			}
 			if (avg < bestAvgDis) {
 				best = goal;
+				nextBest = bestAvgDis;
 				bestAvgDis = avg;
 			}
 		}
+		System.out.println(bestAvgDis + " > " + nextBest);
 		
 //		int bestVotes = Integer.MIN_VALUE;
 //		for (VectorState goal : goalContextMap.keySet()) {

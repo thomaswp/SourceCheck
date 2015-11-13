@@ -33,9 +33,9 @@ public class IndexedVectorState extends VectorState {
 		cache();
 	}
 	
-	public static int distance(IndexedVectorState a, IndexedVectorState b) {
-		return Alignment.alignCost(a.itemsBefore, b.itemsBefore, 1, 1) + 
-				Alignment.alignCost(a.itemsAfter, b.itemsAfter, 1, 1);
+	public static double distance(IndexedVectorState a, IndexedVectorState b) {
+		return (Alignment.normAlignCost(a.itemsBefore, b.itemsBefore, 1, 1) + 
+				Alignment.normAlignCost(a.itemsAfter, b.itemsAfter, 1, 1)) / 2;
 	}
 	
 	@Override
