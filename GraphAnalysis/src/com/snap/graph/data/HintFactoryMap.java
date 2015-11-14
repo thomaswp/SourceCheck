@@ -8,7 +8,6 @@ import java.util.List;
 import com.snap.data.Canonicalization;
 import com.snap.data.Canonicalization.InvertOp;
 import com.snap.data.Canonicalization.SwapArgs;
-import com.snap.graph.data.Graph.Edge;
 import com.snap.graph.data.Node.Action;
 import com.snap.graph.subtree.SubtreeBuilder.Hint;
 import com.snap.graph.subtree.SubtreeBuilder.HintChoice;
@@ -87,17 +86,6 @@ public class HintFactoryMap implements HintMap {
 		// TODO Auto-generated method stub
 		return false;
 	}
-	
-	private static VectorState bestEdge(VectorGraph graph, VectorState state) {
-		List<Edge<VectorState, Void>> edges = graph.fromMap.get(state);
-		if (edges == null) return null;
-		for (Edge<VectorState, Void> edge : edges) {
-			if (edge.bBest) {
-				return edge.to;
-			}
-		}
-		return null;
-	}
 
 	@Override
 	public HintMap instance() {
@@ -140,11 +128,12 @@ public class HintFactoryMap implements HintMap {
 			if (graph == null) continue;
 			
 			VectorState children = getVectorState(node);
+			IndexedVectorState context = getContext(node);
 			// Get the best successor state from our current state
-			VectorState next = bestEdge(graph, children);
+			VectorState next = graph.getHint(children, context);
 			
-			VectorState goal = graph.getContextualGoal(getContext(node));
-			if (goal != null) System.out.println(backbone + ": " + goal);
+//			VectorState goal = graph.getContextualGoal(getContext(node));
+//			System.out.println(backbone + ": " + goal);
 			
 			if (next != null) {
 				// If we find one, go there
@@ -163,7 +152,7 @@ public class HintFactoryMap implements HintMap {
 			VectorState nearestNeighbor = graph.getNearestNeighbor(children, 3);
 			if (nearestNeighbor != null) { 
 				// If we find one, get the hint from there
-				VectorState hintFrom = bestEdge(graph, nearestNeighbor);
+				VectorState hintFrom = graph.getHint(nearestNeighbor, context);
 				if (hintFrom != null) {
 					// If it exists, and it's at least as close as the nearest neighbor...
 					int disNN = VectorState.distance(children, nearestNeighbor);
@@ -214,7 +203,7 @@ public class HintFactoryMap implements HintMap {
 		public final Node root;
 		public final String backbone;
 		public final VectorState from, to;
-		public final boolean loop;
+//		public final boolean loop;
 		public final boolean indexed;
 		
 		private final boolean swap;
@@ -224,7 +213,7 @@ public class HintFactoryMap implements HintMap {
 			this.backbone = backbone.toString();
 			this.from = from;
 			this.to = to;
-			this.loop = from.equals(to);
+//			this.loop = from.equals(to);
 			this.indexed = indexed;
 			
 			boolean swap = false;

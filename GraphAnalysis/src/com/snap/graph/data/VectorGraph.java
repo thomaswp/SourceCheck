@@ -16,6 +16,9 @@ public class VectorGraph extends OutGraph<VectorState> {
 	private final HashMap<VectorState, List<IndexedVectorState>> goalContextMap = 
 			new HashMap<VectorState, List<IndexedVectorState>>();
 	
+	private transient HashMap<VectorState, Double> tmpGoalValues = 
+			new HashMap<VectorState, Double>();
+	
 	public boolean setGoal(VectorState goal, IndexedVectorState context) {
 		List<IndexedVectorState> list = getContext(goal);
 		list.add(context);
@@ -39,14 +42,40 @@ public class VectorGraph extends OutGraph<VectorState> {
 		}
 	}
 	
+	@Override
+	protected double getGoalValue(Vertex<VectorState> vertex) {
+		double value = 0;
+		if (tmpGoalValues.containsKey(vertex.data)) {
+			value = tmpGoalValues.get(vertex.data);
+		}
+//		double alternate = super.getGoalValue(vertex);
+//		System.out.println(vertex.data + ": " + value + " vs " + alternate);
+		return value;
+	}
+	
+	public VectorState getHint(VectorState state, IndexedVectorState context) {
+		getContextualGoal(context);
+		bellmanBackup(2);
+		List<Edge<VectorState, Void>> edges = fromMap.get(state);
+		if (edges == null) return null;
+		for (Edge<VectorState, Void> edge : edges) {
+			if (edge.bBest) {
+				return edge.to;
+			}
+		}
+		return null;
+	}
+	
 	public VectorState getContextualGoal(IndexedVectorState context) {
 //		int minDis = Integer.MAX_VALUE;
 		HashMap<VectorState, Double> cachedDistances = new HashMap<VectorState, Double>();
 		
+		tmpGoalValues.clear();
+		
 		for (VectorState goal : goalContextMap.keySet()) {
 			List<IndexedVectorState> list = goalContextMap.get(goal);
 			if (list.size() < 2) continue;
-			double totalDis = 0;
+//			double totalDis = 0;
 			for (IndexedVectorState state : list) {
 				state.cache();
 				Double dis = cachedDistances.get(state);
@@ -54,10 +83,10 @@ public class VectorGraph extends OutGraph<VectorState> {
 					dis = IndexedVectorState.distance(context, state);
 					cachedDistances.put(state, dis);
 				}
-				totalDis += dis;
+//				totalDis += dis;
 //				minDis = Math.min(minDis, dis);
 			}
-			double avg = totalDis / list.size();
+//			double avg = totalDis / list.size();
 			
 		}
 
@@ -78,6 +107,7 @@ public class VectorGraph extends OutGraph<VectorState> {
 				}
 				weight += 1 / Math.pow(0.5f + dis, 2);
 			}
+			tmpGoalValues.put(goal, weight * 10);
 			if (weight > nextBest) {
 				nextBest = weight;
 			}
@@ -87,7 +117,7 @@ public class VectorGraph extends OutGraph<VectorState> {
 				bestAvgDis = weight;
 			}
 		}
-		System.out.println(bestAvgDis + " > " + nextBest);
+//		System.out.println(bestAvgDis + " > " + nextBest);
 		
 //		int bestVotes = Integer.MIN_VALUE;
 //		for (VectorState goal : goalContextMap.keySet()) {

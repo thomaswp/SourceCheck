@@ -14,18 +14,22 @@ public class OutGraph<T> extends Graph<T, Void> {
 		bellmanBackup(1);
 	}
 	
+	protected double getGoalValue(Vertex<T> vertex) {
+		return vertex.goalCount() * 100;
+	}
+	
 	public void bellmanBackup(int minGoalCount) {
 		calculateProbabilities();
 		for (Vertex<T> v : vertexMap.values()) {
 			if (v.goalCount() >= minGoalCount) {
-				v.bValue = v.goalCount() * 100;
+				v.bValue = getGoalValue(v);
 			}
 		}
 		int i;
 		for (i = 0; i < 1000; i++) {
 			boolean updated = false;
 			for (Vertex<T> v : vertexMap.values()) {
-				updated |= updateNode(v);
+				updated |= updateNode(v, minGoalCount);
 			}
 			if (!updated) break;
 		}
@@ -63,9 +67,9 @@ public class OutGraph<T> extends Graph<T, Void> {
 		}
 	}
 	
-	private boolean updateNode(Vertex<T> v) {
+	private boolean updateNode(Vertex<T> v, int minGoalCount) {
 		if (!fromMap.containsKey(v.data)) return false;
-		if (v.goalCount() > 0) return false;
+		if (v.goalCount() >= minGoalCount) return false;
 		double value = v.bValue;
 		double newValue = 0;
 		boolean counted = false;
@@ -113,7 +117,6 @@ public class OutGraph<T> extends Graph<T, Void> {
 		
 		ps.println("<graph id='G' edgedefault='directed'>");			
 		
-		int n = 1;
 		for (T state : vertices()) {
 			if (ignoreNs.contains(state)) continue;
 			
