@@ -111,10 +111,14 @@ public class HintFactoryMap implements HintMap {
 	}
 
 	private static IndexedVectorState getContext(Node item) {
+		return getContext(item, 3);
+	}
+	
+	private static IndexedVectorState getContext(Node item, int maxLength) {
 		Node contextChild = item;
 		while (contextChild.parent != null && BAD_CONTEXT.contains(contextChild.parent.type)) contextChild = contextChild.parent;
 		int index = contextChild.index(); 
-		return new IndexedVectorState(getChildren(contextChild.parent), index);
+		return new IndexedVectorState(getChildren(contextChild.parent), index, maxLength);
 	}
 
 	@Override

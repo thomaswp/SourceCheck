@@ -32,7 +32,7 @@ public class IndexedVectorState extends VectorState {
 		} else {
 			int before = Math.min(index, maxSize);
 			int after = Math.min(items.length - index - 1, maxSize);
-			itemsBefore = Arrays.copyOfRange(items, index - before, before);
+			itemsBefore = Arrays.copyOfRange(items, index - before, index);
 			itemsAfter = Arrays.copyOfRange(items, index + 1, index + 1 + after);
 		}
 		
