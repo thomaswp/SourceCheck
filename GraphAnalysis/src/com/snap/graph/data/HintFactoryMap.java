@@ -22,6 +22,7 @@ public class HintFactoryMap implements HintMap {
 	static {
 		for (String c : new String[] {
 				"doIf",
+				"doUntil"
 		}) {
 			BAD_CONTEXT.add(c);
 		}

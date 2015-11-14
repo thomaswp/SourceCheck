@@ -12,22 +12,28 @@ public class IndexedVectorState extends VectorState {
 	
 	@SuppressWarnings("unused")
 	private IndexedVectorState() {
-		this(new String[0], -1);
+		this(new String[0], -1, 0);
 	}
 	
 	public IndexedVectorState(Collection<String> items, int index) {
-		this(items.toArray(new String[items.size()]), index);
+		this(items, index, Integer.MAX_VALUE);
 	}
 	
-	public IndexedVectorState(String[] items, int index) {
+	public IndexedVectorState(Collection<String> items, int index, int maxSize) {
+		this(items.toArray(new String[items.size()]), index, maxSize);
+	}
+	
+	public IndexedVectorState(String[] items, int index, int maxSize) {
 		super(items);
 		this.index = index;
 		
 		if (index < 0) {
 			itemsBefore = itemsAfter = new String[0];
 		} else {
-			itemsBefore = Arrays.copyOfRange(items, 0, index);
-			itemsAfter = Arrays.copyOfRange(items, index, items.length);
+			int before = Math.min(index, maxSize);
+			int after = Math.min(items.length - index - 1, maxSize);
+			itemsBefore = Arrays.copyOfRange(items, index - before, before);
+			itemsAfter = Arrays.copyOfRange(items, index + 1, index + 1 + after);
 		}
 		
 		cache();
