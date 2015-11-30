@@ -16,7 +16,6 @@ public class Node extends StringHashable {
 	public transient Object tag;
 	public final transient List<Canonicalization> canonicalizations = new ArrayList<Canonicalization>();
 
-	private String arg;
 	private transient int cachedSize = -1;
 	
 	@SuppressWarnings("unused")
@@ -37,13 +36,8 @@ public class Node extends StringHashable {
 	}
 	
 	public Node(Node parent, String type) {
-		this(parent, type, null);
-	}
-	
-	public Node(Node parent, String type, String arg) {
 		this.parent = parent;
 		this.type = type;
-		this.arg = arg;
 	}
 	
 	public int size() {
@@ -67,9 +61,8 @@ public class Node extends StringHashable {
 
 	@Override
 	protected String toCanonicalStringInternal() {
-		return String.format("%s%s%s", 
+		return String.format("%s%s", 
 				type, 
-				arg == null ? "" : ("(" + arg + ")"), 
 				children.size() == 0 ? "" : (":" + toCannonicalString(children)));
 	}
 	
@@ -90,15 +83,56 @@ public class Node extends StringHashable {
 		return -1;
 	}
 	
-	public void recurse(Action<Node> action) {
+	public void recurse(Action action) {
 		action.run(this);
 		for (Node child : children) {
 			if (child != null) child.recurse(action);
 		}
 	}
 	
-	public interface Action<T> {
-		void run(T item);
+	public boolean hasAncestor(Predicate pred) {
+		return pred.eval(this) || hasProperAncestor(pred);
+	}
+	
+	public boolean hasProperAncestor(Predicate pred) {
+		return parent != null && parent.hasAncestor(pred);
+	}
+	
+	public boolean exists(Predicate pred) {
+		return search(pred) != null;
+	}
+	
+	public Node search(Predicate pred) {
+		if (pred.eval(this)) return this;
+		for (Node node : children) {
+			Node found = node.search(pred);
+			if (found != null) return found;
+		}
+		return null;
+	}
+	
+	public interface Action {
+		void run(Node node);
+	}
+	
+	public interface Predicate {
+		boolean eval(Node node);
+	}
+	
+	public static class TypePredicate implements Predicate {
+		private final String[] types;
+		
+		public TypePredicate(String... types) {
+			this.types = types;
+		}
+
+		@Override
+		public boolean eval(Node node) {
+			for (String type : types) {
+				if (type.equals(node.type)) return true;
+			}
+			return false;
+		}		
 	}
 	
 	public static Node fromTree(Node parent, LblTree tree, boolean cache) {
@@ -114,7 +148,7 @@ public class Node extends StringHashable {
 
 	public boolean shallowEquals(Node node) {
 		if (node == null) return false;
-		return eq(type, node.type) && eq(arg, node.arg);
+		return eq(type, node.type);
 	}
 	
 	private boolean eq(String a, String b) {

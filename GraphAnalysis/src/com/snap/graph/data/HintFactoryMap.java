@@ -36,7 +36,7 @@ public class HintFactoryMap implements HintMap {
 
 	@Override
 	public void addState(Node node) {
-		node.recurse(new Action<Node>() {
+		node.recurse(new Action() {
 			@Override
 			public void run(Node item) {
 				VectorState children = getVectorState(item);
@@ -94,7 +94,7 @@ public class HintFactoryMap implements HintMap {
 
 	@Override
 	public void setSolution(Node solution) {
-		solution.recurse(new Action<Node>() {
+		solution.recurse(new Action() {
 			@Override
 			public void run(Node item) {
 				if (item.children.size() == 0) return;

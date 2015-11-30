@@ -55,7 +55,7 @@ public class SnapSubtree {
 		
 //		subtree.getHints(builder, "0:{snapshot{stage{sprite{script{receiveGo}{doSetVar}{doSayFor}{doAsk}{doSayFor}{doSayFor}{abc}}}}{var}}");
 		
-		subtree.saveGraphs(builder, 1);
+//		subtree.saveGraphs(builder, 1);
 		
 //		subtree.printGoalMaps(builder);
 		
@@ -281,7 +281,7 @@ public class SnapSubtree {
 		final HashSet<String> labels = new HashSet<String>();
 		for (List<Node> nodes : nodeMap.values()) {
 			for (Node node : nodes) {
-				node.recurse(new Action<Node>() {
+				node.recurse(new Action() {
 					@Override
 					public void run(Node item) {
 						labels.add(item.type);
@@ -370,6 +370,7 @@ public class SnapSubtree {
 				}
 			}
 			if (submittedNodes.size() == 0) continue;
+			if (path.grade == null) System.err.println("No grade for: " + student);
 			nodeMapCache.put(student, submittedNodes);
 		}
 	}

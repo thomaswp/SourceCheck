@@ -110,19 +110,22 @@ public class SnapParser {
 		}
 	}
 	
-	public SolutionPath parseRows(final File logFile) throws IOException {
+	public SolutionPath parseRows(final File logFile, final Grade grade) throws IOException {
 		String cachePath = logFile.getAbsolutePath() + ".cached";
 		
 		return Store.getCachedObject(new Kryo(), cachePath, SolutionPath.class, storeMode, new Store.Loader<SolutionPath>() {
 			@Override
 			public SolutionPath load() {
-				SolutionPath solution = new SolutionPath();
+				SolutionPath solution = new SolutionPath(grade);
 				try {
 					CSVParser parser = new CSVParser(new FileReader(logFile), CSVFormat.EXCEL.withHeader());
 					
 					DateFormat format = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
 					
 					String lastGrab = null;
+					
+					String gradedID = grade == null ? null : grade.gradedID;
+					boolean foundGraded = false;
 					
 					for (CSVRecord record : parser) {
 						String timestampString = record.get(1);
@@ -152,8 +155,19 @@ public class SnapParser {
 							lastGrab = null;
 						}
 						
+						String id = record.get(0);
+						if (id.equals(gradedID)) {
+							foundGraded = true;
+							break;
+						}
+						
 					}
 					parser.close();
+					
+					if (gradedID != null && !foundGraded) {
+						System.err.println("No graded row for: " + logFile.getName());
+					}
+					
 					System.out.println("Parsed: " + logFile.getName());
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -186,17 +200,20 @@ public class SnapParser {
 	
 	
 	public HashMap<String, SolutionPath> parseAssignment(String folder) {
+		HashMap<String, Grade> grades = parseGrades(folder);
+		
 		final HashMap<String, SolutionPath> students = new HashMap<String, SolutionPath>();
 		final AtomicInteger threads = new AtomicInteger();
 		for (File file : new File(outputFolder, folder).listFiles()) {
 			if (!file.getName().endsWith(".csv")) continue;
 			final File fFile = file;
+			final Grade grade = grades.get(file.getName().replace(".csv", ""));
 			threads.incrementAndGet();
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
 					try {
-						SolutionPath rows = parseRows(fFile);
+						SolutionPath rows = parseRows(fFile, grade);
 						if (rows.size() > 3) {
 							students.put(fFile.getName(), rows);
 						}
@@ -218,6 +235,26 @@ public class SnapParser {
 	}
 	
 	
+	private HashMap<String, Grade> parseGrades(String folder) {
+		HashMap<String, Grade> grades = new HashMap<String, Grade>();
+		
+		File file = new File(outputFolder, "grades/" + folder + ".csv");
+		if (!file.exists()) return grades;
+		
+		try {
+			CSVParser parser = new CSVParser(new FileReader(file), CSVFormat.DEFAULT.withHeader());
+			for (CSVRecord record : parser) {
+				Grade grade = new Grade(record);
+				grades.put(grade.id, grade);
+			}
+			parser.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		return grades;
+	}
+
 	public static void main(String[] args) throws IOException {
 		SnapParser parser = new SnapParser("../data/csc200/fall2015", Mode.Overwrite);
 //		parser.splitStudentRecords("../data/csc200/fall2015.csv");
