@@ -111,6 +111,13 @@ public class Node extends StringHashable {
 		return null;
 	}
 	
+	public int searchChildren(Predicate pred) {
+		for (int i = 0; i < children.size(); i++) {
+			if (pred.eval(children.get(i))) return i;
+		}
+		return -1;
+	}
+	
 	public interface Action {
 		void run(Node node);
 	}
@@ -135,6 +142,41 @@ public class Node extends StringHashable {
 		}		
 	}
 	
+	public static class BackbonePredicate implements Predicate {
+		private final String[] backbone;
+		
+		public BackbonePredicate(String... backbone) {
+			this.backbone = backbone;
+		}
+		
+		@Override
+		public boolean eval(Node node) {
+			for (int i = backbone.length - 1; i >= 0; i--) {
+				if (node == null || !backbone[i].equals(node.type)) return false;
+				node = node.parent;
+			}
+			return true;
+		}
+	}
+	
+	public static class ConjunctionPredicate implements Predicate {
+		private final Predicate predicates[];
+		private final boolean and;
+		
+		public ConjunctionPredicate(boolean and, Predicate... predicates) {
+			this.and = and;
+			this.predicates = predicates;
+		}
+		
+		@Override
+		public boolean eval(Node node) {
+			for (Predicate pred : predicates) {
+				if (pred.eval(node) != and) return !and;
+			}
+			return and;
+		}
+	}
+	
 	public static Node fromTree(Node parent, LblTree tree, boolean cache) {
 		Node node = new Node(parent, tree.getLabel());
 		int count = tree.getChildCount();
@@ -154,5 +196,13 @@ public class Node extends StringHashable {
 	private boolean eq(String a, String b) {
 		if (a == null) return b == null;
 		return a.equals(b);
+	}
+
+	public boolean hasType(String type) {
+		return type.equals(this.type);
+	}
+	
+	public boolean childHasType(String type, int index) {
+		return index < children.size() && children.get(index).hasType(type);
 	}
 }

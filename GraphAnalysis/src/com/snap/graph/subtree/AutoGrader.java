@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 import com.snap.data.Snapshot;
 import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.Node;
+import com.snap.graph.data.Node.Predicate;
 import com.snap.parser.DataRow;
 import com.snap.parser.Grade;
 import com.snap.parser.SnapParser;
@@ -55,9 +56,11 @@ public class AutoGrader {
 			if (pass == null) continue;
 			
 			total++;
-			if (pass == grader.pass(node)) correct++;
+			boolean graderPass = grader.pass(node);
+			if (pass == graderPass) correct++;
 			else {
-				System.out.println(grader.name() + " (fail): " + grade.id);
+				System.out.println(grader.name() + " (" + pass + " vs " + graderPass + "): " + grade.id + " (" + grade.gradedID + ")");
+				System.out.println(((Snapshot)node.tag).toCode(true));
 			}
 		}
 		
@@ -75,10 +78,29 @@ public class AutoGrader {
 		public String name() {
 			return "Welcome player";
 		}
-
+		
+		private final static Predicate backbone = 
+				new Node.BackbonePredicate("snapshot", "stage", "sprite", "script");
+		private final static Predicate isGreeting = new Predicate() {
+			@Override
+			public boolean eval(Node node) {
+				return node.hasType("doSayFor") && node.childHasType("literal", 0);
+				
+			}
+		};
+		private final static Predicate hasGreeting = new Predicate() {
+			@Override
+			public boolean eval(Node node) {
+				int ask = node.searchChildren(new Node.TypePredicate("doAsk"));
+				int say = node.searchChildren(isGreeting);
+				return say >= 0 && (ask <= 0 || say < ask); 
+			}
+		};
+		private final static Predicate test = new Node.ConjunctionPredicate(true, backbone, hasGreeting); 
+		
 		@Override
 		public boolean pass(Node node) {
-			return true;
+			return node.exists(test);
 		}
 		
 	}
