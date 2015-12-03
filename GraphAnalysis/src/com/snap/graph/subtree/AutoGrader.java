@@ -110,10 +110,10 @@ public class AutoGrader {
 		}
 	}
 	
-	private static class AskName implements Grader {
+	private static class GreetByName implements Grader {
 		@Override
 		public String name() {
-			return "Ask name";
+			return "Greet by name";
 		}
 		
 		// TODO: check for two say statements (14113)
@@ -185,7 +185,7 @@ public class AutoGrader {
 		
 		Grader[] graders = new Grader[] {
 				new WelcomePlayer(),
-				new AskName(),
+				new GreetByName(),
 		};
 		
 		for (Grader g : graders) {
