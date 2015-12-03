@@ -112,7 +112,16 @@ public class Node extends StringHashable {
 	}
 	
 	public int searchChildren(Predicate pred) {
-		for (int i = 0; i < children.size(); i++) {
+		return searchChildren(pred, 0);
+	}
+	
+	public int searchChildren(Predicate pred, int startIndex) {
+		return searchChildren(pred, 0, children.size());
+	}
+	
+	public int searchChildren(Predicate pred, int startIndex, int endIndexExclusive) {
+		endIndexExclusive = Math.min(endIndexExclusive, children.size());
+		for (int i = startIndex; i < endIndexExclusive; i++) {
 			if (pred.eval(children.get(i))) return i;
 		}
 		return -1;

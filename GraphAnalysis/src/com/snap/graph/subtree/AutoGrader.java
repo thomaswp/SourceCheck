@@ -32,8 +32,14 @@ public class AutoGrader {
 		
 		for (String student : students.keySet()) {
 			SolutionPath path = students.get(student);
-			if (path.grade == null) continue;
+			if (!path.exported) continue;
+			if (path.grade == null) {
+				System.err.println("No grade for: " + student);
+				continue;
+			}
 
+			if (path.grade.outlier) continue;
+			
 			Snapshot last = null;
 			for (DataRow row : path) {
 				last = row.snapshot;
@@ -60,7 +66,7 @@ public class AutoGrader {
 			if (pass == graderPass) correct++;
 			else {
 				System.out.println(grader.name() + " (" + pass + " vs " + graderPass + "): " + grade.id + " (" + grade.gradedID + ")");
-				System.out.println(((Snapshot)node.tag).toCode(true));
+//				System.out.println(((Snapshot)node.tag).toCode(true));
 			}
 		}
 		
@@ -102,7 +108,76 @@ public class AutoGrader {
 		public boolean pass(Node node) {
 			return node.exists(test);
 		}
+	}
+	
+	private static class AskName implements Grader {
+		@Override
+		public String name() {
+			return "Ask name";
+		}
 		
+		// TODO: check for two say statements (14113)
+		
+		private final static Predicate backbone = 
+				new Node.BackbonePredicate("snapshot", "stage", "sprite", "script");
+		private final static Predicate isJoin = new Predicate() {
+			@Override
+			public boolean eval(Node node) {
+				if (!node.hasType("reportJoinWords") || node.children.size() != 1) return false;
+				Node list = node.children.get(0);
+				return list.childHasType("literal", 0) && list.childHasType("getLastAnswer", 1);
+			}
+			
+		};
+		private final static Predicate isSetVariableToAnswer = new Predicate() {
+			@Override
+			public boolean eval(Node node) {
+				return node.hasType("doSetVar") && node.childHasType("getLastAnswer", 1);
+			}
+		};
+		private final static Predicate isJoinVariable = new Predicate() {
+			@Override
+			public boolean eval(Node node) {
+				if (!node.hasType("reportJoinWords") || node.children.size() != 1) return false;
+				Node list = node.children.get(0);
+				return list.childHasType("literal", 0) && list.childHasType("var", 1);
+			}
+			
+		};
+		private final static Predicate isGreetByName = new Predicate() {
+			@Override
+			public boolean eval(Node node) {
+				return node.hasType("doSayFor") && isJoin.eval(node.children.get(0));
+				
+			}
+		};
+		private final static Predicate isGreetByNameVariable = new Predicate() {
+			@Override
+			public boolean eval(Node node) {
+				return node.hasType("doSayFor") && isJoinVariable.eval(node.children.get(0));
+				
+			}
+		};
+		private final static Predicate hasGreeting = new Predicate() {
+			@Override
+			public boolean eval(Node node) {
+				int ask = node.searchChildren(new Node.TypePredicate("doAsk"));
+				if (ask < 0) return false;
+				int say = node.searchChildren(isGreetByName, ask + 1);
+				if (say > ask) return true;
+				
+				int var = node.searchChildren(isSetVariableToAnswer);
+				if (var < ask) return false;
+				say = node.searchChildren(isGreetByNameVariable, ask + 1);
+				return say > var;
+			}
+		};
+		private final static Predicate test = new Node.ConjunctionPredicate(true, backbone, hasGreeting); 
+		
+		@Override
+		public boolean pass(Node node) {
+			return node.exists(test);
+		}
 	}
 	
 	public static void main(String[] args) throws IOException {
@@ -110,6 +185,7 @@ public class AutoGrader {
 		
 		Grader[] graders = new Grader[] {
 				new WelcomePlayer(),
+				new AskName(),
 		};
 		
 		for (Grader g : graders) {
