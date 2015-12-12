@@ -310,6 +310,7 @@ public class SnapSubtree {
 		final NodeSpecification nodeSpec = new NodeSpecification(
 				new KeywordSpecification[]{labelAttribute});
 		// and we can write that NodeSpecification to a JSON file.
+		
 		try {
 			CSVExporter.exportNodeSpecification(nodeSpec, baseDir + "nodeSpec.json");
 		} catch (IOException ex) {
@@ -357,6 +358,7 @@ public class SnapSubtree {
 		for (String student : students.keySet()) {
 			SolutionPath path = students.get(student);
 			if (!path.exported) continue;
+			if (path.grade != null && path.grade.outlier) continue;
 			List<Node> nodes = new ArrayList<Node>();
 			List<Node> submittedNodes = new ArrayList<Node>();
 			
