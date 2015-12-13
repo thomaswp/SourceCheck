@@ -52,4 +52,13 @@ public class Grade {
 			tests.put(key, pass);
 		}
 	}
+
+	public double average() {
+		if (tests.size() == 0) return 0;
+		int passed = 0;
+		for (Boolean test : tests.values()) {
+			if (test) passed++;
+		}
+		return (double) passed / tests.size();
+	}
 }

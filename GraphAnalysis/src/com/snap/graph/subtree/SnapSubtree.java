@@ -24,6 +24,7 @@ import com.snap.graph.data.VectorGraph;
 import com.snap.graph.subtree.SubtreeBuilder.Hint;
 import com.snap.graph.subtree.SubtreeBuilder.HintChoice;
 import com.snap.parser.DataRow;
+import com.snap.parser.Grade;
 import com.snap.parser.SnapParser;
 import com.snap.parser.SolutionPath;
 import com.snap.parser.Store;
@@ -36,45 +37,49 @@ import de.citec.tcs.alignment.sequence.NodeSpecification;
 import de.citec.tcs.alignment.sequence.Sequence;
 import de.citec.tcs.alignment.sequence.SymbolicKeywordSpecification;
 import de.citec.tcs.alignment.sequence.SymbolicValue;
+import de.unibi.citec.fit.objectgraphs.Graph;
+import de.unibi.citec.fit.objectgraphs.api.factories.TreeFactory;
+import de.unibi.citec.fit.objectgraphs.api.matlab.print.PlainTextPrintModule;
 import distance.RTED_InfoTree_Opt;
 import util.LblTree;
 
 public class SnapSubtree {
-	
+
 	public static void main(String[] args) throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
 
 		System.out.println(System.currentTimeMillis());
-		
-//		subtree.outputStudents();
-		
-//		rtedTest();
-		
+
+
+		//		rtedTest();
+
 		SnapSubtree subtree = new SnapSubtree("../data/csc200/fall2015", "guess1Lab", new HintFactoryMap());
-				
-		SubtreeBuilder builder = subtree.buildGraph(Mode.Overwrite, false);
-		
-//		subtree.getHints(builder, "0:{snapshot{stage{sprite{script{receiveGo}{doSetVar}{doSayFor}{doAsk}{doSayFor}{doSayFor}{abc}}}}{var}}");
-		
-		subtree.saveGraphs(builder, 1);
-		
-//		subtree.printGoalMaps(builder);
-		
-//		subtree.printFinalSolutions();
-		
-//		subtree.printSomeHints(builder);
-		
-//		subtree.analyze();
-		
+
+		subtree.outputStudentsFOG();
+
+//		SubtreeBuilder builder = subtree.buildGraph(Mode.Overwrite, false);
+
+		//		subtree.getHints(builder, "0:{snapshot{stage{sprite{script{receiveGo}{doSetVar}{doSayFor}{doAsk}{doSayFor}{doSayFor}{abc}}}}{var}}");
+
+//		subtree.saveGraphs(builder, 1);
+
+		//		subtree.printGoalMaps(builder);
+
+		//		subtree.printFinalSolutions();
+
+		//		subtree.printSomeHints(builder);
+
+		//		subtree.analyze();
+
 		System.out.println(System.currentTimeMillis());
 	}
 
-//	private void printGoalMaps(SubtreeBuilder builder) {
-//		HintFactoryMap map = (HintFactoryMap) builder.hintMap;
-//		for (Node root : map.map.keySet()) {
-//			VectorGraph vectorGraph = map.map.get(root);
-//			
-//		}
-//	}
+	//	private void printGoalMaps(SubtreeBuilder builder) {
+	//		HintFactoryMap map = (HintFactoryMap) builder.hintMap;
+	//		for (Node root : map.map.keySet()) {
+	//			VectorGraph vectorGraph = map.map.get(root);
+	//			
+	//		}
+	//	}
 
 	@SuppressWarnings("unused")
 	private void printSomeHints(SubtreeBuilder builder) {
@@ -89,7 +94,7 @@ public class SnapSubtree {
 			if (i >= 5) break;
 		}
 	}
-	
+
 	public void getHints(SubtreeBuilder builder, String state) {
 		Node node = Node.fromTree(null, LblTree.fromString(state), true);
 		List<Hint> hints = builder.getHints(node);
@@ -97,7 +102,7 @@ public class SnapSubtree {
 			System.out.println(hint);
 		}
 	}
-	
+
 	public void printFinalSolutions() {
 		HashMap<String,List<Node>> map = nodeMap();
 		for (String student : map.keySet()) {
@@ -129,25 +134,26 @@ public class SnapSubtree {
 		}
 		System.exit(0);
 	}
-	
+
 	public final String dataDir;
 	public final String assignment;
 	private final HintMap hintMap;
-	
+
 	private HashMap<String, List<Node>> nodeMapCache;
-	
+	private HashMap<String, Grade> gradeMap;
+
 	public void saveGraphs(SubtreeBuilder builder, int minVertices) throws FileNotFoundException {
 		if (!(hintMap instanceof HintFactoryMap)) {
 			System.out.println("No Hint Factory Map");
 			return;
 		}
-		
+
 		HashMap<Node, VectorGraph> map = ((HintFactoryMap) builder.hintMap).map;
 		for (Node node : map.keySet()) {
 			VectorGraph graph = map.get(node);
 			if (graph.nVertices() < minVertices) continue;
 			if (!graph.hasGoal()) continue;
-			
+
 			String dir = dataDir + "/graphs/" + assignment + "/";
 			Node child = node;
 			while (child.children.size() > 0) {
@@ -156,12 +162,12 @@ public class SnapSubtree {
 			}
 			new File(dir).mkdirs();
 			File file = new File(dir, child.type);
-			
+
 			graph.export(new PrintStream(new FileOutputStream(file + ".graphml")), true, 0, false, true);
 			graph.exportGoalContexts(new PrintStream(file + ".txt"));
 		}
 	}
-	
+
 	private HashMap<String, List<Node>> nodeMap() {
 		if (nodeMapCache == null) {
 			try {
@@ -172,13 +178,13 @@ public class SnapSubtree {
 		}
 		return nodeMapCache;
 	}
-	
+
 	public SnapSubtree(String dataDir, String assignment, HintMap hintMap) {
 		this.dataDir = dataDir;
 		this.assignment = assignment;
 		this.hintMap = hintMap;
 	}
-	
+
 	public SubtreeBuilder buildGraph(Mode storeMode, final boolean write) {
 		String storePath = new File(dataDir, assignment + ".cached").getAbsolutePath();
 		SubtreeBuilder builder = Store.getCachedObject(SubtreeBuilder.getKryo(), storePath, SubtreeBuilder.class, storeMode, new Store.Loader<SubtreeBuilder>() {
@@ -203,11 +209,11 @@ public class SnapSubtree {
 		});
 		return builder;
 	}
-	
+
 	public SubtreeBuilder buildGraph(SubtreeBuilder builder) {
 		return buildGraph(builder, null, null);
 	}
-	
+
 	public SubtreeBuilder buildGraph(final SubtreeBuilder builder, String testStudent, PrintStream out) {
 		builder.startBuilding();
 		List<Node> test = nodeMap().get(testStudent);
@@ -216,7 +222,7 @@ public class SnapSubtree {
 		for (String student : nodeMap().keySet()) {
 			final List<Node> nodes = nodeMap().get(student);
 			final String fStudent = student;
-			
+
 			if (nodes == test || nodes.size() == 0) continue;
 			if (out != null) {
 				jsonStudent(out, student, nodes, builder.addStudent(nodes, false));
@@ -243,12 +249,12 @@ public class SnapSubtree {
 		jsonEnd(out);
 		return builder;
 	}
-	
+
 	private void jsonStart(PrintStream out) {
 		if (out == null) return;
 		out.println("var hintData = {");
 	}
-	
+
 	private void jsonStudent(PrintStream out, String student, List<Node> nodes, List<List<HintChoice>> hints) {
 		if (out == null) return;
 		out.printf("\"%s\": [\n", student);
@@ -259,24 +265,70 @@ public class SnapSubtree {
 			Node node = nodes.get(i);
 			out.printf("\"to\": \"%s\",\n", node);
 			out.println("\"hints\": [");
-			
+
 			for (HintChoice choice : hints.get(i)) {
 				out.println(SubtreeBuilder.hintToJson(choice) + ",");
 			}
 			out.println("]},");
-			
+
 		}
 		out.println("],");
 	}
-	
+
 	private void jsonEnd(PrintStream out) {
 		if (out == null) return;
 		out.println("};");
 	}
-	
+
+	private void outputStudentsFOG() {
+		String baseDir = dataDir + "/" + assignment + "/chf-fog/";
+		new File(baseDir).mkdirs();
+
+		HashMap<String,List<Node>> nodeMap = nodeMap();
+		for (String student : nodeMap.keySet()) {
+			Grade grade = gradeMap.get(student);
+			List<Node> nodes = nodeMap.get(student);
+			String dir  = baseDir + student + "/";
+			new File(dir).mkdirs();
+			for (Node node : nodes) {
+				// Let's transform that to the .fog format by transforming it to a
+				// Graph object. For that I have some API classes provided that make
+				// life easier. In this case we need a TreeFactory
+				final TreeFactory factory = new TreeFactory();
+				final Graph convertedTree = factory.createGraph();
+				if (grade != null) factory.addMetaInformation(convertedTree, "grade", grade.average());
+				// convert the tree recursively
+				transform(node, convertedTree, null, factory);
+				// and then we can serialize it to a .fog format string
+				final PlainTextPrintModule print = new PlainTextPrintModule();
+				String name = ((Snapshot)node.tag).name;
+				try {
+					FileOutputStream fos = new FileOutputStream(dir + name + ".fog");
+					print.printGraph(convertedTree, fos);
+					fos.close();
+				} catch (IOException ex) {
+					throw new RuntimeException(ex);
+				}
+			}
+		}		
+	}
+
+	private static void transform(Node node, Graph convertedTree, de.unibi.citec.fit.objectgraphs.Node convertedParent, TreeFactory factory) {
+		final de.unibi.citec.fit.objectgraphs.Node convertedNode;
+		if (convertedParent == null) {
+			convertedNode = factory.createNode(convertedTree);
+		} else {
+			convertedNode = factory.createChild(convertedParent);
+		}
+		factory.addMetaInformation(convertedNode, "label", node.type);
+		for (final Node child : node.children) {
+			transform(child, convertedTree, convertedNode, factory);
+		}
+	}
+
 	@SuppressWarnings("unused")
 	private void outputStudents() {
-		
+
 		HashMap<String,List<Node>> nodeMap = nodeMap();
 		final HashSet<String> labels = new HashSet<String>();
 		for (List<Node> nodes : nodeMap.values()) {
@@ -289,10 +341,10 @@ public class SnapSubtree {
 				});
 			}
 		}
-		
+
 		String baseDir = dataDir + "/" + assignment + "/chf/";
 		new File(baseDir).mkdirs();
-		
+
 		// this we want to transform to a Sequence in my format. For that we
 		// need to specify the attributes of our nodes in the Sequence first.
 		// our nodes have only one attribute, namely the label.
@@ -305,12 +357,12 @@ public class SnapSubtree {
 		final Alphabet alpha = new Alphabet(labels.toArray(new String[labels.size()]));
 		// the KeywordSpecification specifies the attribute overall.
 		final SymbolicKeywordSpecification labelAttribute
-				= new SymbolicKeywordSpecification(alpha, "label");
+		= new SymbolicKeywordSpecification(alpha, "label");
 		// the NodeSpecification specifies all attributes of a node.
 		final NodeSpecification nodeSpec = new NodeSpecification(
 				new KeywordSpecification[]{labelAttribute});
 		// and we can write that NodeSpecification to a JSON file.
-		
+
 		try {
 			CSVExporter.exportNodeSpecification(nodeSpec, baseDir + "nodeSpec.json");
 		} catch (IOException ex) {
@@ -326,7 +378,7 @@ public class SnapSubtree {
 				appendNode(seq, alpha, node);
 				String name = ((Snapshot)node.tag).name;
 				// show it for fun
-//				System.out.println(name + ": " + seq.toString());
+				//				System.out.println(name + ": " + seq.toString());
 				// and then we can write it to a file.
 				try {
 					CSVExporter.exportSequence(seq, dir + name + ".csv");
@@ -354,26 +406,28 @@ public class SnapSubtree {
 		SnapParser parser = new SnapParser(dataDir, Store.Mode.Use);
 		HashMap<String, SolutionPath> students = parser.parseAssignment(assignment);
 		nodeMapCache = new HashMap<String, List<Node>>();
-		
+		gradeMap = new HashMap<String, Grade>();
+
 		for (String student : students.keySet()) {
 			SolutionPath path = students.get(student);
 			if (!path.exported) continue;
 			if (path.grade != null && path.grade.outlier) continue;
 			List<Node> nodes = new ArrayList<Node>();
 			List<Node> submittedNodes = new ArrayList<Node>();
-			
+
 			for (DataRow row : path) {
 				Node node = SimpleNodeBuilder.toTree(row.snapshot, true);
 				nodes.add(node);
-				
+
 				if (row.action.equals("IDE.exportProject")) {
 					submittedNodes.addAll(nodes);
 					nodes.clear();
 				}
 			}
 			if (submittedNodes.size() == 0) continue;
-//			if (path.grade == null) System.err.println("No grade for: " + student);
+			//			if (path.grade == null) System.err.println("No grade for: " + student);
 			nodeMapCache.put(student, submittedNodes);
+			gradeMap.put(student, path.grade);
 		}
 	}
 }
