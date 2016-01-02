@@ -161,7 +161,14 @@ public class Node extends StringHashable {
 		@Override
 		public boolean eval(Node node) {
 			for (int i = backbone.length - 1; i >= 0; i--) {
-				if (node == null || !backbone[i].equals(node.type)) return false;
+				String toMatch = backbone[i];
+				if (toMatch.equals("...")) {
+					if (i == 0) break;
+					toMatch = backbone[i - 1];
+					while (node != null && !toMatch.equals(node.type)) node = node.parent;
+					continue;
+				}
+				if (node == null || !toMatch.equals(node.type)) return false;
 				node = node.parent;
 			}
 			return true;
