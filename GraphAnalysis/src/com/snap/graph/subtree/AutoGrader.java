@@ -8,7 +8,6 @@ import com.snap.data.Snapshot;
 import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.Node;
 import com.snap.graph.data.Node.Predicate;
-import com.snap.graph.data.Node.TypePredicate;
 import com.snap.parser.DataRow;
 import com.snap.parser.Grade;
 import com.snap.parser.SnapParser;
@@ -289,9 +288,9 @@ public class AutoGrader {
 				"snapshot", "stage", "sprite", "...", "script", "doUntil", "...", "script", "...");
 		private final static Predicate backboneDoForever = new Node.BackbonePredicate(
 				"snapshot", "stage", "sprite", "...", "script", "doForever", "...", "script", "...");
-		private final static Predicate backbone = new Node.ConjunctionPredicate(false, backboneDoForever, backboneDoUntil);
+		protected final static Predicate backbone = new Node.ConjunctionPredicate(false, backboneDoForever, backboneDoUntil);
 		
-		private final static Predicate isResponse = new Node.TypePredicate("doSayFor", "doAsk");
+		protected final static Predicate isResponse = new Node.TypePredicate("doSayFor", "doAsk");
 		
 		private static boolean isTooHighLow(Node node, boolean tooHigh) {
 			if (node.children.size() != 2) return false;
@@ -309,7 +308,7 @@ public class AutoGrader {
 					node.childHasType("getLastAnswer", answerIndex);
 		}
 		
-		private final static Predicate correctCondition = new Predicate() {
+		protected final static Predicate correctCondition = new Predicate() {
 			@Override
 			public boolean eval(Node node) {
 				if (node.children.size() != 2) return false;
@@ -341,7 +340,7 @@ public class AutoGrader {
 			return "Tell if too high (in loop)";
 		};
 		
-		private final static Predicate tooHighCondition = new Predicate() {
+		private final static Predicate test = new Predicate() {
 			@Override
 			public boolean eval(Node node) {
 				return saysTooHighLow(node, true);
@@ -350,7 +349,7 @@ public class AutoGrader {
 		
 		@Override
 		public boolean pass(Node node) {
-			return node.exists(tooHighCondition);
+			return node.exists(test);
 		}
 	}
 	
@@ -359,7 +358,7 @@ public class AutoGrader {
 			return "Tell if too low (in loop)";
 		};
 		
-		private final static Predicate tooHighCondition = new Predicate() {
+		private final static Predicate test = new Predicate() {
 			@Override
 			public boolean eval(Node node) {
 				return saysTooHighLow(node, false);
@@ -368,9 +367,34 @@ public class AutoGrader {
 		
 		@Override
 		public boolean pass(Node node) {
-			return node.exists(tooHighCondition);
+			return node.exists(test);
 		}
 	}
+	
+	private static class ReportCorrect extends FeedbackGrader {
+
+		@Override
+		public String name() {
+			return "Tell if correct";
+		}
+		
+		private final static Predicate test = new Predicate() {
+			public boolean eval(Node node) {
+				if (!(node.hasType("doIf") || node.hasType("doIfElse"))) return false;
+				if (!backbone.eval(node)) return false;
+				if (node.children.size() < 2) return false;
+				return correctCondition.eval(node.children.get(0)) &&
+						node.children.get(1).searchChildren(isResponse) != -1;
+			};
+		};
+
+		@Override
+		public boolean pass(Node node) {
+			return node.exists(test);
+		}
+		
+	}
+	
 	public static void main(String[] args) throws IOException {
 		AutoGrader grader = new AutoGrader("../data/csc200/fall2015", "guess1Lab");
 		
@@ -381,6 +405,8 @@ public class AutoGrader {
 				new LoopUntilGuessed(),
 				new GetGuess(),
 				new TooHigh(),
+				new TooLow(),
+				new ReportCorrect(),
 		};
 		
 		for (Grader g : graders) {
