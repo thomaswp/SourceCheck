@@ -212,13 +212,79 @@ public class AutoGrader {
 		}
 	}
 	
+	private static class LoopUntilGuessed implements Grader {
+		@Override
+		public String name() {
+			return "Loop until it's guessed";
+		}
+		
+		private final static Predicate doUntilbackbone = new Node.BackbonePredicate("snapshot", "stage", "sprite", "...", "script", "doUntil", "reportEquals");
+		private final static Predicate doForeverbackbone = new Node.BackbonePredicate("snapshot", "stage", "sprite", "...", "script", "doForever", "script");
+		
+		private final static Predicate isDoAsk = new Node.TypePredicate("doAsk");
+		private final static Predicate isScript = new Node.TypePredicate("script");
+		private final static Predicate isDoIfElse = new Node.TypePredicate("doIf", "doIfElse");
+		private final static Predicate isDoStopThis = new Node.TypePredicate("doStopThis");
+		
+		private final static Predicate getsNewAnswer = new Predicate() {
+			@Override
+			public boolean eval(Node node) {
+				return node.exists(isDoAsk);
+			}
+		};
+		
+		private final static Predicate isStopCondition = new Predicate() {
+			@Override
+			public boolean eval(Node node) {
+				if (!node.hasType("reportEquals")) return false;
+				if (node.children.size() != 2) return false;
+				
+				String t1 = node.children.get(0).type;
+				String t2 = node.children.get(1).type;
+				return ("var".equals(t1) && "getLastAnswer".equals(t2)) ||
+						("var".equals(t2) && "getLastAnswer".equals(t1));
+			}
+		};
+		
+		private final static Predicate doUntilCondition = new Predicate() {
+			public boolean eval(Node node) {
+				Node script = node.parent.search(isScript);
+				if (script == null || !script.exists(getsNewAnswer)) return false;
+				return isStopCondition.eval(node);
+			};
+		};
+						
+		private final static Predicate doForeverCondition = new Predicate() {
+			public boolean eval(Node node) {
+				if (!node.exists(getsNewAnswer)) return false;
+				return node.exists(new Predicate() {
+					@Override
+					public boolean eval(Node node) {
+						return isDoIfElse.eval(node) &&
+								node.exists(isStopCondition) &&
+								node.exists(isDoStopThis);
+					}
+				});
+			};
+		};
+		
+		private final static Predicate doUntilTest = new Node.ConjunctionPredicate(true, doUntilbackbone, doUntilCondition);
+		private final static Predicate doForeverTest = new Node.ConjunctionPredicate(true, doForeverbackbone, doForeverCondition);
+		
+		@Override
+		public boolean pass(Node node) {
+			return node.exists(doUntilTest) || node.exists(doForeverTest);
+		}
+	}
+	
 	public static void main(String[] args) throws IOException {
 		AutoGrader grader = new AutoGrader("../data/csc200/fall2015", "guess1Lab");
 		
 		Grader[] graders = new Grader[] {
 				new WelcomePlayer(),
 				new GreetByName(),
-				new AskName()
+				new AskName(),
+				new LoopUntilGuessed(),
 		};
 		
 		for (Grader g : graders) {
