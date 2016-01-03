@@ -35,8 +35,16 @@ public class Grade {
 	public Grade(CSVRecord record) {
 		id = record.get(1);
 		gradedID = record.get(2);
-		extraCode = "yes".equalsIgnoreCase(record.get("Extra code"));
-		outlier = "yes".equalsIgnoreCase(record.get("Outlier"));
+		if (record.isSet("Extra code")) {
+			extraCode = "yes".equalsIgnoreCase(record.get("Extra code"));
+		} else {
+			extraCode = false;
+		}
+		if (record.isSet("Outlier")) {
+			outlier = "yes".equalsIgnoreCase(record.get("Outlier"));
+		} else {
+			outlier = false;
+		}
 
 		Map<String, String> map = record.toMap();
 		for (Entry<String, String> entry : map.entrySet()) {
