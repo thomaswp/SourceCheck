@@ -221,17 +221,8 @@ public class AutoGrader {
 		private final static Predicate doUntilbackbone = new Node.BackbonePredicate("snapshot", "stage", "sprite", "...", "script", "doUntil", "reportEquals");
 		private final static Predicate doForeverbackbone = new Node.BackbonePredicate("snapshot", "stage", "sprite", "...", "script", "doForever", "script");
 		
-		private final static Predicate isDoAsk = new Node.TypePredicate("doAsk");
-		private final static Predicate isScript = new Node.TypePredicate("script");
 		private final static Predicate isDoIfElse = new Node.TypePredicate("doIf", "doIfElse");
 		private final static Predicate isDoStopThis = new Node.TypePredicate("doStopThis");
-		
-		private final static Predicate getsNewAnswer = new Predicate() {
-			@Override
-			public boolean eval(Node node) {
-				return node.exists(isDoAsk);
-			}
-		};
 		
 		private final static Predicate isStopCondition = new Predicate() {
 			@Override
@@ -248,15 +239,12 @@ public class AutoGrader {
 		
 		private final static Predicate doUntilCondition = new Predicate() {
 			public boolean eval(Node node) {
-				Node script = node.parent.search(isScript);
-				if (script == null || !script.exists(getsNewAnswer)) return false;
 				return isStopCondition.eval(node);
 			};
 		};
 						
 		private final static Predicate doForeverCondition = new Predicate() {
 			public boolean eval(Node node) {
-				if (!node.exists(getsNewAnswer)) return false;
 				return node.exists(new Predicate() {
 					@Override
 					public boolean eval(Node node) {
@@ -277,14 +265,122 @@ public class AutoGrader {
 		}
 	}
 	
+	private static class GetGuess implements Grader {
+		@Override
+		public String name() {
+			return "Ask player for guess (in loop)";
+		}
+		
+		private final static Predicate backboneDoUntil = new Node.BackbonePredicate(
+				"snapshot", "stage", "sprite", "...", "script", "doUntil", "...", "script", "doAsk");
+		private final static Predicate backboneDoForever = new Node.BackbonePredicate(
+				"snapshot", "stage", "sprite", "...", "script", "doForever", "...", "script", "doAsk");
+		private final static Predicate test = new Node.ConjunctionPredicate(false, backboneDoForever, backboneDoUntil);
+		
+		@Override
+		public boolean pass(Node node) {
+			return node.exists(test);
+		}
+	}
+	
+	private abstract static class FeedbackGrader implements Grader {
+	
+		private final static Predicate backboneDoUntil = new Node.BackbonePredicate(
+				"snapshot", "stage", "sprite", "...", "script", "doUntil", "...", "script", "...");
+		private final static Predicate backboneDoForever = new Node.BackbonePredicate(
+				"snapshot", "stage", "sprite", "...", "script", "doForever", "...", "script", "...");
+		private final static Predicate backbone = new Node.ConjunctionPredicate(false, backboneDoForever, backboneDoUntil);
+		
+		private final static Predicate isResponse = new Node.TypePredicate("doSayFor", "doAsk");
+		
+		private static boolean isTooHighLow(Node node, boolean tooHigh) {
+			if (node.children.size() != 2) return false;
+			int varIndex, answerIndex;
+			if (node.hasType("reportLessThan")) {
+				varIndex = tooHigh ? 0 : 1;
+				answerIndex = tooHigh ? 1 : 0;
+			} else if (node.hasType("reportGreaterThan")) {
+				varIndex = tooHigh ? 1 : 0;
+				answerIndex = tooHigh ? 0 : 1;
+			} else {
+				return false;
+			}
+			return node.childHasType("var", varIndex) &&
+					node.childHasType("getLastAnswer", answerIndex);
+		}
+		
+		private final static Predicate correctCondition = new Predicate() {
+			@Override
+			public boolean eval(Node node) {
+				if (node.children.size() != 2) return false;
+				if (!node.hasType("reportEquals")) return false;
+				return (node.childHasType("var", 0) && node.childHasType("getLastAnswer", 1)) ||
+						(node.childHasType("var", 1) && node.childHasType("getLastAnswer", 0));
+			}
+		};
+		
+		protected final static boolean saysTooHighLow(Node node, boolean tooHigh) {
+			if (!(node.hasType("doIf") || node.hasType("doIfElse"))) return false;
+			if (!backbone.eval(node)) return false;
+			if (node.children.size() < 2) return false;
+			Node condition = node.children.get(0);
+			boolean hasCondition = isTooHighLow(condition, tooHigh);
+			boolean hasInvCondition = isTooHighLow(condition, !tooHigh);
+			if (hasCondition && node.children.get(1).searchChildren(isResponse) != -1) {
+				return true;
+			}
+			if (node.hasType("doIfElse")) {
+				return hasInvCondition && node.children.get(2).searchChildren(isResponse) != -1;
+			}
+			return false;
+		}
+	}
+	
+	private static class TooHigh extends FeedbackGrader {
+		public String name() {
+			return "Tell if too high (in loop)";
+		};
+		
+		private final static Predicate tooHighCondition = new Predicate() {
+			@Override
+			public boolean eval(Node node) {
+				return saysTooHighLow(node, true);
+			}
+		};
+		
+		@Override
+		public boolean pass(Node node) {
+			return node.exists(tooHighCondition);
+		}
+	}
+	
+	private static class TooLow extends FeedbackGrader {
+		public String name() {
+			return "Tell if too low (in loop)";
+		};
+		
+		private final static Predicate tooHighCondition = new Predicate() {
+			@Override
+			public boolean eval(Node node) {
+				return saysTooHighLow(node, false);
+			}
+		};
+		
+		@Override
+		public boolean pass(Node node) {
+			return node.exists(tooHighCondition);
+		}
+	}
 	public static void main(String[] args) throws IOException {
 		AutoGrader grader = new AutoGrader("../data/csc200/fall2015", "guess1Lab");
 		
 		Grader[] graders = new Grader[] {
 				new WelcomePlayer(),
-				new GreetByName(),
 				new AskName(),
+				new GreetByName(),
 				new LoopUntilGuessed(),
+				new GetGuess(),
+				new TooHigh(),
 		};
 		
 		for (Grader g : graders) {
