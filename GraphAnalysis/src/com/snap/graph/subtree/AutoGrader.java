@@ -8,6 +8,7 @@ import com.snap.data.Snapshot;
 import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.Node;
 import com.snap.graph.data.Node.Predicate;
+import com.snap.graph.data.Node.TypePredicate;
 import com.snap.parser.DataRow;
 import com.snap.parser.Grade;
 import com.snap.parser.SnapParser;
@@ -110,6 +111,37 @@ public class AutoGrader {
 		}
 	}
 	
+	private static class AskName implements Grader {
+		@Override
+		public String name() {
+			return "Ask name";
+		}
+		
+		private final static Predicate backbone = 
+				new Node.BackbonePredicate("snapshot", "stage", "sprite", "script");
+		
+		private final static Predicate hasAskName = new Predicate() {
+			@Override
+			public boolean eval(Node node) {
+				int ask = node.searchChildren(new Node.TypePredicate("doAsk"));
+				int doUntil = node.searchChildren(new Node.TypePredicate("doUntil"));
+				
+				if (doUntil >= 0) {
+					return ask >= 0 && ask < doUntil;
+				} else {
+					return ask >= 0;
+				}
+			}
+		};
+		
+		private final static Predicate test = new Node.ConjunctionPredicate(true, backbone, hasAskName);
+		
+		@Override
+		public boolean pass(Node node) {
+			return node.exists(test);
+		}
+	}
+	
 	private static class GreetByName implements Grader {
 		@Override
 		public String name() {
@@ -186,6 +218,7 @@ public class AutoGrader {
 		Grader[] graders = new Grader[] {
 				new WelcomePlayer(),
 				new GreetByName(),
+				new AskName()
 		};
 		
 		for (Grader g : graders) {
