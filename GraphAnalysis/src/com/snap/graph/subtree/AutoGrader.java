@@ -65,7 +65,7 @@ public class AutoGrader {
 			boolean graderPass = grader.pass(node);
 			if (pass == graderPass) correct++;
 			else {
-				System.out.println(grader.name() + " (" + pass + " vs " + graderPass + "): " + grade.id + " (" + grade.gradedID + ")");
+				System.out.println(" > " + grader.name() + " (" + pass + " vs " + graderPass + "): " + grade.id + " (" + grade.gradedID + ")");
 //				System.out.println(((Snapshot)node.tag).toCode(true));
 			}
 		}
@@ -434,7 +434,7 @@ public class AutoGrader {
 			return "Tell if correct";
 		}
 		
-		private final static Predicate test = new Predicate() {
+		private final static Predicate hasInLoop = new Predicate() {
 			public boolean eval(Node node) {
 				if (!(node.hasType("doIf") || node.hasType("doIfElse"))) return false;
 				if (!backbone.eval(node)) return false;
@@ -443,10 +443,24 @@ public class AutoGrader {
 						node.children.get(1).searchChildren(isResponse) != -1;
 			};
 		};
+		
+		private final Predicate hasOutOfLoop = new Predicate() {
+			public boolean eval(Node node) {
+				if (!LoopUntilGuessed.doUntilCondition.eval(node)) return false;
+				Node loop = node.parent;
+				if (loop.exists(LoopUntilGuessed.isDoStopThis)) return false;
+				int loopIndex = loop.parent.children.indexOf(loop);
+				return loop.parent.searchChildren(isResponse, loopIndex + 1) != -1;
+			};
+		};
+		
+		private final Predicate test = new Node.ConjunctionPredicate(false, hasInLoop, hasOutOfLoop);
 
+		private final static LoopUntilGuessed loopGrader = new LoopUntilGuessed();
+		
 		@Override
 		public boolean pass(Node node) {
-			return node.exists(test);
+			return loopGrader.pass(node) && node.exists(test);
 		}
 		
 	}
