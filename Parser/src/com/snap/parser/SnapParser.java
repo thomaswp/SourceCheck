@@ -7,8 +7,10 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -127,6 +129,8 @@ public class SnapParser {
 					String gradedID = grade == null ? null : grade.gradedID;
 					boolean foundGraded = false;
 					
+					List<DataRow> currentWork = new ArrayList<DataRow>();
+					
 					for (CSVRecord record : parser) {
 						String timestampString = record.get(1);
 						Date timestamp = null;
@@ -137,9 +141,6 @@ public class SnapParser {
 						}
 						
 						String action = record.get(2);
-						if (action.equals("IDE.exportProject")) {
-							solution.exported = true;
-						}
 						
 						String xml = record.get(8);
 						if (action.equals("Block.grabbed")) {
@@ -151,14 +152,21 @@ public class SnapParser {
 						DataRow row = new DataRow(timestamp, action, xml);
 						
 						if (row.snapshot != null) {
-							solution.add(row);
+							currentWork.add(row);
 							lastGrab = null;
 						}
 						
 						String id = record.get(0);
 						if (id.equals(gradedID)) {
 							foundGraded = true;
-							break;
+						}
+						
+						if (action.equals("IDE.exportProject")) {
+							solution.exported = true;
+							for (DataRow r : currentWork) {
+								solution.add(r);
+							}
+							if (foundGraded) break;
 						}
 						
 					}

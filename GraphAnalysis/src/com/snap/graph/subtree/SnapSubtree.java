@@ -7,12 +7,17 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.swing.plaf.synth.SynthScrollBarUI;
 
 import com.snap.data.Snapshot;
 import com.snap.graph.SimpleNodeBuilder;
@@ -52,7 +57,8 @@ public class SnapSubtree {
 
 		//		rtedTest();
 
-		SnapSubtree subtree = new SnapSubtree("../data/csc200/fall2015", "guess1Lab", new HintFactoryMap());
+		Date maxTime = new GregorianCalendar(2015, 8, 18).getTime();
+		SnapSubtree subtree = new SnapSubtree("../data/csc200/fall2015", "guess1Lab", maxTime, new HintFactoryMap());
 
 		subtree.outputStudentsFOG();
 
@@ -137,6 +143,7 @@ public class SnapSubtree {
 
 	public final String dataDir;
 	public final String assignment;
+	private final Date maxTime;
 	private final HintMap hintMap;
 
 	private HashMap<String, List<Node>> nodeMapCache;
@@ -179,9 +186,10 @@ public class SnapSubtree {
 		return nodeMapCache;
 	}
 
-	public SnapSubtree(String dataDir, String assignment, HintMap hintMap) {
+	public SnapSubtree(String dataDir, String assignment, Date maxTime, HintMap hintMap) {
 		this.dataDir = dataDir;
 		this.assignment = assignment;
+		this.maxTime = maxTime;
 		this.hintMap = hintMap;
 	}
 
@@ -281,12 +289,14 @@ public class SnapSubtree {
 	}
 
 	private void outputStudentsFOG() {
+		int totalNodes = 0;
 		String baseDir = dataDir + "/" + assignment + "/chf-fog/";
 		new File(baseDir).mkdirs();
 
 		HashMap<String,List<Node>> nodeMap = nodeMap();
 		for (String student : nodeMap.keySet()) {
 			Grade grade = gradeMap.get(student);
+			totalNodes++;
 			List<Node> nodes = nodeMap.get(student);
 			String dir  = baseDir + student + "/";
 			new File(dir).mkdirs();
@@ -306,11 +316,15 @@ public class SnapSubtree {
 					FileOutputStream fos = new FileOutputStream(dir + name + ".fog");
 					print.printGraph(convertedTree, fos);
 					fos.close();
+					totalNodes++;
 				} catch (IOException ex) {
 					throw new RuntimeException(ex);
 				}
 			}
-		}		
+		}
+		
+		System.out.println("Total students: " + nodeMap.size());
+		System.out.println("Total nodes: " + totalNodes);
 	}
 
 	private static void transform(Node node, Graph convertedTree, de.unibi.citec.fit.objectgraphs.Node convertedParent, TreeFactory factory) {
@@ -413,20 +427,18 @@ public class SnapSubtree {
 			if (!path.exported) continue;
 			if (path.grade != null && path.grade.outlier) continue;
 			List<Node> nodes = new ArrayList<Node>();
-			List<Node> submittedNodes = new ArrayList<Node>();
 
 			for (DataRow row : path) {
+				if (maxTime.before(row.timestamp)) {
+//					System.out.println("Cutoff: " + student);
+					break;
+				}
 				Node node = SimpleNodeBuilder.toTree(row.snapshot, true);
 				nodes.add(node);
-
-				if (row.action.equals("IDE.exportProject")) {
-					submittedNodes.addAll(nodes);
-					nodes.clear();
-				}
 			}
-			if (submittedNodes.size() == 0) continue;
-			//			if (path.grade == null) System.err.println("No grade for: " + student);
-			nodeMapCache.put(student, submittedNodes);
+			if (nodes.size() == 0) continue;
+			if (path.grade == null) System.err.println("No grade for: " + student);
+			nodeMapCache.put(student, nodes);
 			gradeMap.put(student, path.grade);
 		}
 	}
