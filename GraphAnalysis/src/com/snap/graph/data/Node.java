@@ -165,13 +165,25 @@ public class Node extends StringHashable {
 				if (toMatch.equals("...")) {
 					if (i == 0) break;
 					toMatch = backbone[i - 1];
-					while (node != null && !toMatch.equals(node.type)) node = node.parent;
+					while (node != null && !matches(toMatch, node.type)) node = node.parent;
 					continue;
 				}
-				if (node == null || !toMatch.equals(node.type)) return false;
+				if (node == null || !matches(toMatch, node.type)) return false;
 				node = node.parent;
 			}
 			return true;
+		}
+		
+		private static boolean matches(String toMatch, String type) {
+			if (toMatch.contains("|")) {
+				String[] parts = toMatch.split("\\|");
+				for (String part : parts) {
+					if (part.equals(type)) return true;
+				}
+				return false;
+			} else {
+				return toMatch.equals(type);
+			}
 		}
 	}
 	

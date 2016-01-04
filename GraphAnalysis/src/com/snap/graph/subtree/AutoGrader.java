@@ -86,7 +86,7 @@ public class AutoGrader {
 		}
 		
 		private final static Predicate backbone = 
-				new Node.BackbonePredicate("snapshot", "stage", "sprite", "script");
+				new Node.BackbonePredicate("sprite|customBlock", "script");
 		private final static Predicate isGreeting = new Predicate() {
 			@Override
 			public boolean eval(Node node) {
@@ -117,7 +117,7 @@ public class AutoGrader {
 		}
 		
 		private final static Predicate backbone = 
-				new Node.BackbonePredicate("snapshot", "stage", "sprite", "script");
+				new Node.BackbonePredicate("sprite|customBlock", "script");
 		
 		private final static Predicate hasAskName = new Predicate() {
 			@Override
@@ -153,7 +153,7 @@ public class AutoGrader {
 		// TODO: check for two say statements (14113)
 		
 		private final static Predicate backbone = 
-				new Node.BackbonePredicate("snapshot", "stage", "sprite", "script");
+				new Node.BackbonePredicate("sprite|customBlock", "script");
 		private final static Predicate isJoin = new Predicate() {
 			@Override
 			public boolean eval(Node node) {
@@ -222,7 +222,7 @@ public class AutoGrader {
 		}
 
 		private final static Predicate backbone = 
-				new Node.BackbonePredicate("snapshot", "stage", "sprite", "script");
+				new Node.BackbonePredicate("sprite|customBlock", "script");
 		
 		private final static Predicate isReportRandom = new Predicate() {
 			@Override
@@ -273,8 +273,8 @@ public class AutoGrader {
 			return "Loop until it's guessed";
 		}
 		
-		private final static Predicate doUntilbackbone = new Node.BackbonePredicate("snapshot", "stage", "sprite", "...", "script", "doUntil", "reportEquals");
-		private final static Predicate doForeverbackbone = new Node.BackbonePredicate("snapshot", "stage", "sprite", "...", "script", "doForever", "script");
+		private final static Predicate doUntilbackbone = new Node.BackbonePredicate("sprite|customBlock", "...", "script", "doUntil", "reportEquals");
+		private final static Predicate doForeverbackbone = new Node.BackbonePredicate("sprite|customBlock", "...", "script", "doForever", "script");
 		
 		private final static Predicate isDoIfElse = new Node.TypePredicate("doIf", "doIfElse");
 		private final static Predicate isDoStopThis = new Node.TypePredicate("doStopThis");
@@ -327,9 +327,9 @@ public class AutoGrader {
 		}
 		
 		private final static Predicate backboneDoUntil = new Node.BackbonePredicate(
-				"snapshot", "stage", "sprite", "...", "script", "doUntil", "...", "script", "doAsk");
+				"sprite|customBlock", "...", "script", "doUntil", "...", "script", "doAsk");
 		private final static Predicate backboneDoForever = new Node.BackbonePredicate(
-				"snapshot", "stage", "sprite", "...", "script", "doForever", "...", "script", "doAsk");
+				"sprite|customBlock", "...", "script", "doForever", "...", "script", "doAsk");
 		private final static Predicate test = new Node.ConjunctionPredicate(false, backboneDoForever, backboneDoUntil);
 		
 		@Override
@@ -341,9 +341,9 @@ public class AutoGrader {
 	private abstract static class FeedbackGrader implements Grader {
 	
 		private final static Predicate backboneDoUntil = new Node.BackbonePredicate(
-				"snapshot", "stage", "sprite", "...", "script", "doUntil", "...", "script", "...");
+				"sprite|customBlock", "...", "script", "doUntil", "...", "script", "...");
 		private final static Predicate backboneDoForever = new Node.BackbonePredicate(
-				"snapshot", "stage", "sprite", "...", "script", "doForever", "...", "script", "...");
+				"sprite|customBlock", "...", "script", "doForever", "...", "script", "...");
 		protected final static Predicate backbone = new Node.ConjunctionPredicate(false, backboneDoForever, backboneDoUntil);
 		
 		protected final static Predicate isResponse = new Node.TypePredicate("doSayFor", "doAsk");

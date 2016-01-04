@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -16,8 +15,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.swing.plaf.synth.SynthScrollBarUI;
 
 import com.snap.data.Snapshot;
 import com.snap.graph.SimpleNodeBuilder;
