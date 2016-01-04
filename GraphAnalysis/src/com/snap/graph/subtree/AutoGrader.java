@@ -125,13 +125,16 @@ public class AutoGrader {
 			public boolean eval(Node node) {
 				int ask = node.searchChildren(new Node.TypePredicate("doAsk"));
 				int doUntil = node.searchChildren(new Node.TypePredicate("doUntil"));
+				int doForever = node.searchChildren(new Node.TypePredicate("doForever"));
 				
 				if (doUntil >= 0) {
 					return ask >= 0 && ask < doUntil;
+				} else if (doForever >= 0){
+					return ask >= 0 && ask < doForever;
 				} else {
 					return ask >= 0;
-				}
-			}
+				}}
+			
 		};
 		
 		private final static Predicate test = new Node.ConjunctionPredicate(true, backbone, hasAskName);
@@ -211,6 +214,59 @@ public class AutoGrader {
 			return node.exists(test);
 		}
 	}
+	
+	private static class StoreRandomNumber implements Grader {
+
+		@Override
+		public String name() {
+			return "Store random number";
+		}
+
+		private final static Predicate backbone = 
+				new Node.BackbonePredicate("snapshot", "stage", "sprite", "script");
+		
+		private final static Predicate isReportRandom = new Predicate() {
+			@Override
+			public boolean eval(Node node) {
+				return node.hasType("reportRandom");
+			}
+		};
+		
+		private final static Predicate isStoreRandomNumber = new Predicate() {
+			@Override
+			public boolean eval(Node node) {
+				return node.hasType("doSetVar") && isReportRandom.eval(node.children.get(1));
+			}
+		};
+		
+		private final static Predicate hasStoreRandomNumber = new Predicate() {
+
+			@Override
+			public boolean eval(Node node) {
+				int doSetVar = node.searchChildren(isStoreRandomNumber);
+				int doUntil = node.searchChildren(new Node.TypePredicate("doUntil"));
+				int doForever = node.searchChildren(new Node.TypePredicate("doForever"));
+				
+				if (doUntil >= 0) {
+					return doSetVar >= 0 && doSetVar < doUntil;
+				} else if (doForever >= 0){
+					return doSetVar >= 0 && doSetVar < doForever;
+				} else {
+					return doSetVar >= 0;
+				}
+			}
+			
+		};
+		
+		private final static Predicate test = new Node.ConjunctionPredicate(true, backbone, hasStoreRandomNumber);
+		
+		@Override
+		public boolean pass(Node node) {
+			return node.exists(test);
+		}
+		
+	}
+	
 	
 	private static class LoopUntilGuessed implements Grader {
 		@Override
@@ -378,6 +434,7 @@ public class AutoGrader {
 				new WelcomePlayer(),
 				new AskName(),
 				new GreetByName(),
+				new StoreRandomNumber(),
 				new LoopUntilGuessed(),
 				new GetGuess(),
 				new TooHigh(),
