@@ -290,6 +290,31 @@ public class HintFactoryMap implements HintMap {
 			return from.equals(((VectorHint)hint).from);
 //			return false;
 		}
+
+		@Override
+		public Node outcome() {
+			Node nRoot = root.copy();
+			
+			List<Node> children = new ArrayList<Node>();
+			children.addAll(nRoot.children);
+			
+			nRoot.children.clear();
+			for (String type : to.items) {
+				boolean added = false;
+				for (int i = 0; i < children.size(); i++) {
+					if (children.get(i).hasType(type)) {
+						added = true;
+						nRoot.children.add(children.remove(i));
+						break;
+					}
+				}
+				if (!added) {
+					nRoot.children.add(new Node(nRoot, type));
+				}
+			}
+			
+			return nRoot;
+		}
 		
 	}
 	

@@ -15,15 +15,45 @@ import com.snap.parser.SolutionPath;
 import com.snap.parser.Store;
 
 public class AutoGrader {
+	
+	public static void main(String[] args) throws IOException {
+		AutoGrader grader = new AutoGrader("../data/csc200/fall2015", "guess1Lab");
+		
+		for (Grader g : graders) {
+			System.out.println(g.name() + ": " + grader.verify(g));
+		}
+		
+	}
+	
+	public final static Grader[] graders = new Grader[] {
+		new WelcomePlayer(),
+		new AskName(),
+		new GreetByName(),
+		new StoreRandomNumber(),
+		new LoopUntilGuessed(),
+		new GetGuess(),
+		new TooHigh(),
+		new TooLow(),
+		new ReportCorrect(),
+	};
+	
 	public final String dataDir, assignment;
 	
 	private final HashMap<Grade, Node> graded = new HashMap<Grade, Node>();
-			
+	
 	public AutoGrader(String dataDir, String assignment) throws IOException {
 		this.dataDir = dataDir;
 		this.assignment = assignment;
 		
 		parseStudents();
+	}
+	
+	public static HashMap<String, Boolean> grade(Node node) {
+		HashMap<String, Boolean> grades = new HashMap<String, Boolean>();
+		for (Grader g : graders) {
+			grades.put(g.name(), g.pass(node));
+		}
+		return grades;
 	}
 	
 	private void parseStudents() throws IOException {
@@ -181,14 +211,14 @@ public class AutoGrader {
 		private final static Predicate isGreetByName = new Predicate() {
 			@Override
 			public boolean eval(Node node) {
-				return node.hasType("doSayFor") && isJoin.eval(node.children.get(0));
+				return node.hasType("doSayFor") && node.children.size() > 0 && isJoin.eval(node.children.get(0));
 				
 			}
 		};
 		private final static Predicate isGreetByNameVariable = new Predicate() {
 			@Override
 			public boolean eval(Node node) {
-				return node.hasType("doSayFor") && isJoinVariable.eval(node.children.get(0));
+				return node.hasType("doSayFor") && node.children.size() > 0 && isJoinVariable.eval(node.children.get(0));
 				
 			}
 		};
@@ -234,7 +264,7 @@ public class AutoGrader {
 		private final static Predicate isStoreRandomNumber = new Predicate() {
 			@Override
 			public boolean eval(Node node) {
-				return node.hasType("doSetVar") && isReportRandom.eval(node.children.get(1));
+				return node.hasType("doSetVar") && node.children.size() > 1  && isReportRandom.eval(node.children.get(1));
 			}
 		};
 		
@@ -461,27 +491,6 @@ public class AutoGrader {
 		@Override
 		public boolean pass(Node node) {
 			return loopGrader.pass(node) && node.exists(test);
-		}
-		
-	}
-	
-	public static void main(String[] args) throws IOException {
-		AutoGrader grader = new AutoGrader("../data/csc200/fall2015", "guess1Lab");
-		
-		Grader[] graders = new Grader[] {
-				new WelcomePlayer(),
-				new AskName(),
-				new GreetByName(),
-				new StoreRandomNumber(),
-				new LoopUntilGuessed(),
-				new GetGuess(),
-				new TooHigh(),
-				new TooLow(),
-				new ReportCorrect(),
-		};
-		
-		for (Grader g : graders) {
-			System.out.println(g.name() + ": " + grader.verify(g));
 		}
 		
 	}

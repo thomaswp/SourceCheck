@@ -525,6 +525,7 @@ public class SubtreeBuilder {
 		String to();
 		String data();
 		boolean overrides(Hint hint);
+		Node outcome();
 	}
 	
 	public static String hintToJson(Hint hint) {
@@ -564,6 +565,11 @@ public class SubtreeBuilder {
 		@Override
 		public boolean overrides(Hint hint) {
 			return false;
+		}
+
+		@Override
+		public Node outcome() {
+			return y;
 		}
 	}
 	

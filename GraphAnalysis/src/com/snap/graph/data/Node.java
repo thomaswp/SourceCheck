@@ -233,4 +233,24 @@ public class Node extends StringHashable {
 	public boolean childHasType(String type, int index) {
 		return index < children.size() && children.get(index).hasType(type);
 	}
+
+	public Node copy() {
+		Node rootCopy = root().childrenCopy(null);
+		return findParallelNode(rootCopy, this);
+	}
+	
+	private Node childrenCopy(Node parent) {
+		Node copy = new Node(parent, type);
+		for (Node child : children) {
+			copy.children.add(child.childrenCopy(copy));
+		}
+		return copy;
+	}
+	
+	private static Node findParallelNode(Node root, Node child) {
+		if (child.parent == null) return root;
+		
+		Node parent = findParallelNode(root, child.parent);
+		return parent.children.get(child.index());
+	}
 }

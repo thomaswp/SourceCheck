@@ -172,7 +172,7 @@ public class SnapSubtree {
 		}
 	}
 
-	private HashMap<String, List<Node>> nodeMap() {
+	protected HashMap<String, List<Node>> nodeMap() {
 		if (nodeMapCache == null) {
 			try {
 				parseStudents();
@@ -202,24 +202,21 @@ public class SnapSubtree {
 					PrintStream ps = null;
 					try {
 						ps = new PrintStream(out);
-						return buildGraph(new SubtreeBuilder(hintMap.instance()), null, ps);
+						return buildGraph(null, ps);
 					} catch (FileNotFoundException e) {
 						e.printStackTrace();
 					} finally {
 						if (ps != null) ps.close();
 					}
 				}
-				return buildGraph(new SubtreeBuilder(hintMap.instance()), null, null);
+				return buildGraph(null, null);
 			}
 		});
 		return builder;
 	}
 
-	public SubtreeBuilder buildGraph(SubtreeBuilder builder) {
-		return buildGraph(builder, null, null);
-	}
-
-	public SubtreeBuilder buildGraph(final SubtreeBuilder builder, String testStudent, PrintStream out) {
+	public SubtreeBuilder buildGraph(String testStudent, PrintStream out) {
+		final SubtreeBuilder builder = new SubtreeBuilder(hintMap.instance());
 		builder.startBuilding();
 		List<Node> test = nodeMap().get(testStudent);
 		jsonStart(out);
