@@ -5,14 +5,21 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 
+import com.snap.data.Snapshot;
+import com.snap.graph.Alignment;
 import com.snap.graph.data.HintFactoryMap;
+import com.snap.graph.data.HintFactoryMap.VectorHint;
 import com.snap.graph.data.Node;
+import com.snap.graph.data.Node.Predicate;
 import com.snap.graph.subtree.AutoGrader.Grader;
 import com.snap.graph.subtree.SubtreeBuilder.Hint;
 import com.snap.graph.subtree.SubtreeBuilder.Tuple;
 
 public class GradeEval {
 	public static void main(String[] args) {
+		
+		Alignment.makeAlignmentEdits(1, new String[] { "A", "B", "C", "D" }, new String[] { "A", "C", "E", "D" }, 1, 1);
+		if (true) return;
 
 		Date maxTime = new GregorianCalendar(2015, 8, 18).getTime();
 		SnapSubtree subtree = new SnapSubtree("../data/csc200/fall2015", "guess1Lab", maxTime, new HintFactoryMap());
@@ -23,6 +30,8 @@ public class GradeEval {
 		}
 		
 		int total = 0;
+		
+		Predicate ignoreHints = new Node.TypePredicate("stage", "sprite", "customBlock");
 		
 		HashMap<String,List<Node>> nodeMap = subtree.nodeMap();
 		for (String student : nodeMap.keySet()) {
@@ -37,7 +46,9 @@ public class GradeEval {
 				
 				List<Hint> hints = builder.getHints(node);
 				for (Hint hint : hints) {
-										
+					VectorHint vHint = (VectorHint) hint;
+					if (ignoreHints.eval(vHint.root)) continue;
+					
 					Node next = hint.outcome().root();
 
 					boolean p = false;
@@ -53,26 +64,25 @@ public class GradeEval {
 							p = true;
 						} else if (a == false && b == true) {
 							outcomes.get(obj).y++;
-							System.out.println("Complete: " + obj);
-							p = true;
+//							System.out.println("Complete: " + obj);
+//							p = true;
 						}
 					}
 					total++;
 
 					if (p) {
-						System.out.println("Hint: " + hint.from() + " -> " + hint.to());
+//						System.out.println("Hint: " + hint.from() + " -> " + hint.to());
+						System.out.println(((Snapshot)node.tag).name);
 						System.out.println("From: " + node);
-						System.out.println("To: " + next);
+						System.out.println("To:   " + next);
 						System.out.println();
 					}
 				}
 			}
 			
 			for (String obj : outcomes.keySet()) {
-				System.out.println(obj + ":");
 				Tuple<Integer, Integer> outcome = outcomes.get(obj);
-				System.out.println("Regressed: " + outcome.x);
-				System.out.println("Completed: " + outcome.y);
+				System.out.println(obj + ": " + outcome);
 			}
 			
 			System.out.println("Total: " + total);

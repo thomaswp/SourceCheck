@@ -202,7 +202,7 @@ public class HintFactoryMap implements HintMap {
 		}
 	}
 	
-	private static class VectorHint extends StringHashable implements Hint {
+	public static class VectorHint extends StringHashable implements Hint {
 
 		public final Node root;
 		public final String backbone;
