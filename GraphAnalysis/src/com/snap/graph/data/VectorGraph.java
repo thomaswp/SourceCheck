@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.TreeMap;
 
+import com.snap.graph.Alignment;
 import com.snap.graph.subtree.SubtreeBuilder.Tuple;
 
 public class VectorGraph extends OutGraph<VectorState> {
@@ -53,15 +54,21 @@ public class VectorGraph extends OutGraph<VectorState> {
 		return value;
 	}
 	
-	public VectorState getHint(VectorState state, IndexedVectorState context) {
-		getContextualGoal(context);
-		bellmanBackup(2);
-		List<Edge<VectorState, Void>> edges = fromMap.get(state);
-		if (edges == null) return null;
-		for (Edge<VectorState, Void> edge : edges) {
-			if (edge.bBest) {
-				return edge.to;
+	public VectorState getHint(VectorState state, IndexedVectorState context, boolean useMap) {
+		VectorState goal = getContextualGoal(context);
+		if (useMap) {
+			bellmanBackup(2);
+			List<Edge<VectorState, Void>> edges = fromMap.get(state);
+			if (edges == null) return null;
+			for (Edge<VectorState, Void> edge : edges) {
+				if (edge.bBest) {
+					return edge.to;
+				}
 			}
+		} else if (goal != null) {
+			String[] items = Alignment.smartScriptEdit(state.items, goal.items);
+			if (items == null) return null;
+			return new VectorState(items);
 		}
 		return null;
 	}

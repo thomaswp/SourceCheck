@@ -57,13 +57,13 @@ public class SnapSubtree {
 		Date maxTime = new GregorianCalendar(2015, 8, 18).getTime();
 		SnapSubtree subtree = new SnapSubtree("../data/csc200/fall2015", "guess1Lab", maxTime, new HintFactoryMap());
 
-		subtree.outputStudentsFOG();
+//		subtree.outputStudentsFOG();
 
-//		SubtreeBuilder builder = subtree.buildGraph(Mode.Overwrite, false);
+		SubtreeBuilder builder = subtree.buildGraph(Mode.Overwrite, false);
 
 		//		subtree.getHints(builder, "0:{snapshot{stage{sprite{script{receiveGo}{doSetVar}{doSayFor}{doAsk}{doSayFor}{doSayFor}{abc}}}}{var}}");
 
-//		subtree.saveGraphs(builder, 1);
+		subtree.saveGraphs(builder, 1);
 
 		//		subtree.printGoalMaps(builder);
 

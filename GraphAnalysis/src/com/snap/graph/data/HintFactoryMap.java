@@ -27,6 +27,8 @@ public class HintFactoryMap implements HintMap {
 		}
 	}
 	
+	private final static String SCRIPT = "script";
+	
 	public final HashMap<Node, VectorGraph> map = new HashMap<Node, VectorGraph>();
 	
 	@Override
@@ -131,10 +133,12 @@ public class HintFactoryMap implements HintMap {
 			VectorGraph graph = map.get(backbone);
 			if (graph == null) continue;
 			
+			boolean useGraph = !node.hasType(SCRIPT);
+			
 			VectorState children = getVectorState(node);
 			IndexedVectorState context = getContext(node);
 			// Get the best successor state from our current state
-			VectorState next = graph.getHint(children, context);
+			VectorState next = graph.getHint(children, context, useGraph);
 			
 //			VectorState goal = graph.getContextualGoal(getContext(node));
 //			System.out.println(backbone + ": " + goal);
@@ -156,7 +160,7 @@ public class HintFactoryMap implements HintMap {
 			VectorState nearestNeighbor = graph.getNearestNeighbor(children, 3);
 			if (nearestNeighbor != null) { 
 				// If we find one, get the hint from there
-				VectorState hintFrom = graph.getHint(nearestNeighbor, context);
+				VectorState hintFrom = graph.getHint(nearestNeighbor, context, useGraph);
 				if (hintFrom != null) {
 					// If it exists, and it's at least as close as the nearest neighbor...
 					int disNN = VectorState.distance(children, nearestNeighbor);

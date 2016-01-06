@@ -1,5 +1,6 @@
 package com.snap.graph.subtree;
 
+import java.util.Arrays;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -18,7 +19,7 @@ import com.snap.graph.subtree.SubtreeBuilder.Tuple;
 public class GradeEval {
 	public static void main(String[] args) {
 		
-		Alignment.makeAlignmentEdits(1, new String[] { "A", "B", "C", "D" }, new String[] { "A", "C", "E", "D" }, 1, 1);
+		editTest();
 		if (true) return;
 
 		Date maxTime = new GregorianCalendar(2015, 8, 18).getTime();
@@ -88,6 +89,21 @@ public class GradeEval {
 			System.out.println("Total: " + total);
 			
 			break;
+		}
+	}
+
+	private static void editTest() {
+		String[] seqA = new String[] { "A", "A", "C", "D" };
+		String[] seqB = new String[] { "A", "D", "D", "C" };
+//		List<int[]> pairs = Alignment.alignPairs(seqA, seqB, 1, 1);
+//		for (int[] pair : pairs) {
+//			String a = pair[0] == -1 ? null : seqA[pair[0]];
+//			String b = pair[1] == -1 ? null : seqB[pair[1]];
+//			System.out.println(a + " <-> " + b);
+//		}
+		while (seqA != null) {
+			System.out.println(Arrays.toString(seqA));
+			seqA = Alignment.smartScriptEdit(seqA, seqB);
 		}
 	}
 }
