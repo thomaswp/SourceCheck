@@ -93,14 +93,8 @@ public class GradeEval {
 	}
 
 	private static void editTest() {
-		String[] seqA = new String[] { "A", "A", "C", "D" };
-		String[] seqB = new String[] { "A", "D", "D", "C" };
-//		List<int[]> pairs = Alignment.alignPairs(seqA, seqB, 1, 1);
-//		for (int[] pair : pairs) {
-//			String a = pair[0] == -1 ? null : seqA[pair[0]];
-//			String b = pair[1] == -1 ? null : seqB[pair[1]];
-//			System.out.println(a + " <-> " + b);
-//		}
+		String[] seqA = new String[] { "A", "B",};
+		String[] seqB = new String[] { "A", "B", "C", "B"};
 		while (seqA != null) {
 			System.out.println(Arrays.toString(seqA));
 			seqA = Alignment.smartScriptEdit(seqA, seqB);

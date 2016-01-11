@@ -8,6 +8,7 @@ import java.util.List;
 import com.snap.data.Canonicalization;
 import com.snap.data.Canonicalization.InvertOp;
 import com.snap.data.Canonicalization.SwapArgs;
+import com.snap.graph.Alignment;
 import com.snap.graph.data.Node.Action;
 import com.snap.graph.subtree.SubtreeBuilder.Hint;
 import com.snap.graph.subtree.SubtreeBuilder.HintChoice;
@@ -15,6 +16,7 @@ import com.snap.graph.subtree.SubtreeBuilder.HintChoice;
 public class HintFactoryMap implements HintMap {
 	
 	private final static int ROUNDS = 1;
+	private final static int MAX_EDITS_PER_HINT = 1;
 	
 	// TODO: stop cheating!
 	private final static HashSet<String> BAD_CONTEXT = new HashSet<String>();
@@ -180,6 +182,11 @@ public class HintFactoryMap implements HintMap {
 	}
 	
 	private static VectorHint createHint(Node parent, Node backbone, VectorState from, VectorState to, boolean indexed) {
+		if (parent.hasType(SCRIPT) && VectorState.distance(from, to) > MAX_EDITS_PER_HINT) {
+//			System.out.print(to);
+			to = new VectorState(Alignment.smartScriptEdit(from.items, to.items));
+//			System.out.println(" => " + to);
+		}
 		return new VectorHint(parent, backbone, from, to, indexed);
 	}
 

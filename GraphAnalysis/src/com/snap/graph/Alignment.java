@@ -1,7 +1,6 @@
 package com.snap.graph;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class Alignment {
@@ -24,64 +23,67 @@ public class Alignment {
 	
 	// Credit: http://introcs.cs.princeton.edu/java/96optimization/Diff.java.html
 	public static int alignCost(String[] sequenceA, String[] sequenceB, int gapCost, int subCost) {
-		int[][] opt = createAlignmentMatrix(sequenceA, sequenceB, gapCost, subCost);
+		int[][] opt = createAlignmentMatrix(sequenceA, sequenceB, gapCost, subCost, false);
 		return opt[sequenceA.length][sequenceB.length];
 	}
 	
 	public static List<int[]> alignPairs(String[] sequenceA, String[] sequenceB, int gapCost, int subCost) {
-		int[][] opt = createAlignmentMatrix(sequenceA, sequenceB, gapCost, subCost);
+		int[][] opt = createAlignmentMatrix(sequenceA, sequenceB, gapCost, subCost, true);
 		ArrayList<int[]> pairs = new ArrayList<int[]>();
 //		
 //		for (int[] row : opt) {
 //			System.out.println(Arrays.toString(row));
 //		}
-		int i = sequenceA.length, j = sequenceB.length;
-		while (i > 0 && j > 0) {
-			int cost = opt[i][j];
-//			int replaceCost = opt[i-1][j-1];
-			int skipACost = opt[i-1][j];
-			int skipBCost = opt[i][j-1];
+		int i = 0, j = 0;
+		while (i < sequenceA.length && j < sequenceB.length) {
+			int replaceCost = opt[i+1][j+1];
+			int skipACost = opt[i+1][j];
+			int skipBCost = opt[i][j+1];
 //			int min = Math.min(replaceCost, Math.min(skipACost, skipBCost));
 			
-			if (sequenceA[i-1].equals(sequenceB[j-1])) {
-				i--; j--;
+			if (sequenceA[i].equals(sequenceB[j]) && replaceCost >= 0) {
 				pairs.add(new int[] {i, j});
+				i++; j++;
 				continue;
 			}
 			
-			if (cost - skipBCost == gapCost && skipBCost <= skipACost) {
-				j--;
+			if (skipBCost >= 0) {
 				pairs.add(new int[] {-1, j});
+				j++;
 				continue;
 			}
 			
-			if (cost - skipACost == gapCost) {
-				i--;
+			if (skipACost >= 0) {
 				pairs.add(new int[] {i, -1});
+				i++;
 				continue;
 			}
 
-			i--; j--;
+			i++; j++;
 			pairs.add(new int[] {i, j});
 		}
 		
-		while (i > 0) {
-			i--;
-			pairs.add(new int[] {i, -1});	
+		while (i < sequenceA.length) {
+			pairs.add(new int[] {i, -1});
+			i++;	
 		}
 		
-		while (j > 0) {
-			j--;
-			pairs.add(new int[] {-1, j});	
+		while (j < sequenceB.length) {
+			pairs.add(new int[] {-1, j});
+			j++;
 		}
 		
-		Collections.reverse(pairs);
 		return pairs;
 		
 	}
 	
 	public static String[] smartScriptEdit(String[] sequenceA, String[] sequenceB) {
 		List<int[]> pairs = alignPairs(sequenceA, sequenceB, 1, 100);
+//		for (int[] pair : pairs) {
+//			String a = pair[0] == -1 ? null : sequenceA[pair[0]];
+//			String b = pair[1] == -1 ? null : sequenceB[pair[1]];
+//			System.out.println(a + " <-> " + b);
+//		}
 		List<String> sequence = new ArrayList<String>();
 		for (String s : sequenceA) sequence.add(s);
 		if (!moveEdit(sequenceA, sequenceB, pairs, sequence)) {
@@ -176,20 +178,21 @@ public class Alignment {
 		return closestA;
 	}
 
-	private static int[][] createAlignmentMatrix(String[] sequenceA, String[] sequenceB, int gapCost, int subCost) {
+	private static int[][] createAlignmentMatrix(String[] sequenceA, String[] sequenceB, int gapCost, int subCost, boolean flipInvalid) {
 		// The penalties to apply
 		int matchCost = 0;
+		int aLength = sequenceA.length, bLength = sequenceB.length;
 
-		int[][] opt = new int[sequenceA.length + 1][sequenceB.length + 1];
+		int[][] opt = new int[aLength + 1][bLength + 1];
 
 		// First of all, compute insertions and deletions at 1st row/column
-		for (int i = 1; i <= sequenceA.length; i++)
+		for (int i = 1; i <= aLength; i++)
 		    opt[i][0] = opt[i - 1][0] + gapCost;
-		for (int j = 1; j <= sequenceB.length; j++)
+		for (int j = 1; j <= bLength; j++)
 		    opt[0][j] = opt[0][j - 1] + gapCost;
 
-		for (int i = 1; i <= sequenceA.length; i++) {
-		    for (int j = 1; j <= sequenceB.length; j++) {
+		for (int i = 1; i <= aLength; i++) {
+		    for (int j = 1; j <= bLength; j++) {
 		        int scoreDiag = opt[i - 1][j - 1] +
 		                (sequenceA[i-1].equals(sequenceB[j-1]) ?
 		                    matchCost : // same symbol
@@ -200,6 +203,36 @@ public class Alignment {
 		        opt[i][j] = Math.min(Math.min(scoreDiag, scoreLeft), scoreUp);
 		    }
 		}
+		
+		if (flipInvalid) {
+			for (int i = aLength - 1; i >= 0; i--) {
+				if (opt[i + 1][bLength] - opt[i][bLength] != gapCost) {
+					opt[i][bLength] *= -1;
+				}
+			}
+			for (int j = bLength - 1; j >= 0; j--) {
+				if (opt[aLength][j + 1] - opt[aLength][j] != gapCost) {
+					opt[aLength][j] *= -1;
+				}
+			}
+			for (int i = aLength - 1; i >= 0; i--) {
+				for (int j = bLength - 1; j >= 0; j--) {
+					int value = opt[i][j];
+					int skipI = opt[i + 1][j];
+					int skipJ = opt[i][j + 1];
+					int sub = opt[i + 1][j + 1];
+					boolean equal = sequenceA[i].equals(sequenceB[j]);
+					
+					if (skipI - value == gapCost) continue;
+					if (skipJ - value == gapCost) continue;
+					if (equal && sub == value) continue;
+					if (!equal && sub - value == subCost) continue;
+					
+					opt[i][j] *= -1;
+				}
+			}
+		}
+		
 		return opt;
 	}
 }
