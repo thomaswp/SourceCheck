@@ -133,7 +133,7 @@ public class HintFactoryMap implements HintMap {
 			VectorGraph graph = map.get(backbone);
 			if (graph == null) continue;
 			
-			boolean useGraph = !node.hasType(SCRIPT);
+			boolean useGraph = true; //!node.hasType(SCRIPT);
 			
 			VectorState children = getVectorState(node);
 			IndexedVectorState context = getContext(node);

@@ -158,6 +158,7 @@ public class SnapSubtree {
 			if (graph.nVertices() < minVertices) continue;
 			if (!graph.hasGoal()) continue;
 
+			graph.bellmanBackup(2);
 			String dir = dataDir + "/graphs/" + assignment + "/";
 			Node child = node;
 			while (child.children.size() > 0) {

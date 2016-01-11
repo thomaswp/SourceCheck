@@ -22,7 +22,7 @@ public class OutGraph<T> extends Graph<T, Void> {
 		calculateProbabilities();
 		for (Vertex<T> v : vertexMap.values()) {
 			if (v.goalCount() >= minGoalCount) {
-				v.bValue = getGoalValue(v);
+				v.bValue = v.data == null ? 0 : getGoalValue(v);
 			}
 		}
 		int i;

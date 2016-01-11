@@ -48,6 +48,8 @@ public class VectorGraph extends OutGraph<VectorState> {
 		double value = 0;
 		if (tmpGoalValues.containsKey(vertex.data)) {
 			value = tmpGoalValues.get(vertex.data);
+		} else {
+			return super.getGoalValue(vertex);
 		}
 //		double alternate = super.getGoalValue(vertex);
 //		System.out.println(vertex.data + ": " + value + " vs " + alternate);
@@ -208,7 +210,7 @@ public class VectorGraph extends OutGraph<VectorState> {
 		Vertex<VectorState> nearest = null;
 		int nearestDistance = maxDis;
 		for (Vertex<VectorState> vertex : vertexMap.values()) {
-			if (vertex.equals(state)) continue; // Ignore exact matches (they're not neighbors)
+			if (vertex.equals(state) || vertex.data == null) continue; // Ignore exact matches (they're not neighbors)
 			int distance = VectorState.distance(state, vertex.data);
 			if (distance > nearestDistance) continue;
 			if (distance == nearestDistance && nearest != null && 

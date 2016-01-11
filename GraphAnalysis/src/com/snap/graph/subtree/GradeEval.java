@@ -19,8 +19,8 @@ import com.snap.graph.subtree.SubtreeBuilder.Tuple;
 public class GradeEval {
 	public static void main(String[] args) {
 		
-		editTest();
-		if (true) return;
+//		editTest();
+//		if (true) return;
 
 		Date maxTime = new GregorianCalendar(2015, 8, 18).getTime();
 		SnapSubtree subtree = new SnapSubtree("../data/csc200/fall2015", "guess1Lab", maxTime, new HintFactoryMap());
