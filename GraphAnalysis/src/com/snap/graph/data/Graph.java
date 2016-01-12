@@ -124,8 +124,11 @@ public class Graph<N,E> {
 		for (Vertex<N> v : graph.vertexMap.values()) {
 			addVertex(v.data);
 			Vertex<N> myVertex = vertexMap.get(v.data);
-			myVertex.goalCount += v.goalCount;
+			myVertex.goalCount += Math.min(v.goalCount, atomicWeight ? 1 : Integer.MAX_VALUE);
 			if (!atomicWeight) myVertex.weight += v.weight - 1;
+			if (myVertex.weight < myVertex.goalCount) {
+				System.out.println("!");
+			}
 		}
 		for (Edge<N, E> edge : graph.edges) {
 			Edge<N, E> myEdge = addOrGetEdge(edge.from, edge.to, edge.data);

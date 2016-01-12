@@ -37,7 +37,7 @@ public class OutGraph<T> extends Graph<T, Void> {
 		setBest();
 	}
 
-	public void setBest() {
+	private void setBest() {
 		for (Vertex<T> v : vertexMap.values()) {
 			if (!fromMap.containsKey(v.data)) continue;
 			Edge<T,?> best = null;
@@ -126,7 +126,7 @@ public class OutGraph<T> extends Graph<T, Void> {
 			
 			ps.printf("<node id='%s'>", state.hashCode());
 			ps.printf("<data key='descN'><![CDATA[%s]]></data>", state.toString());
-			ps.printf("<data key='weightN'>%d</data>", inWeight(state, true));
+			ps.printf("<data key='weightN'>%d</data>", vertex.weight());
 			ps.printf("<data key='value'>%.04f</data>", vertex.bValue);
 			ps.printf("<data key='goal'>%d</data>", vertex.goalCount());
 			

@@ -131,7 +131,7 @@ public class VectorGraph extends OutGraph<VectorState> {
 			edits += Alignment.doEdits(stateItems, goalItems, Alignment.MoveEditor, 1 - edits);
 			edits += Alignment.doEdits(stateItems, nextItems, Alignment.AddEditor, 1 - edits);
 			edits += Alignment.doEdits(stateItems, goalItems, Alignment.MoveEditor, 1 - edits);
-			edits += Alignment.doEdits(stateItems, goalItems, Alignment.DeleteEditor, 2 - edits);
+			edits += Alignment.doEdits(stateItems, goalItems, Alignment.DeleteEditor, 2 - edits); // deletes get an extra edit
 			
 			if (edits > 0) {
 				VectorState hint = new VectorState(stateItems); 
@@ -313,6 +313,12 @@ public class VectorGraph extends OutGraph<VectorState> {
 			nearestDistance = distance;
 		}
 		return nearest == null ? null : nearest.data;
+	}
+
+	public double getProportionStayed(VectorState children) {
+		Vertex<VectorState> vertex = vertexMap.get(children);
+		if (vertex == null || vertex.weight() == 0) return 0;
+		return (vertex.weight() - outWeight(vertex.data, true)) / (double)vertex.weight(); 
 	}
 	
 }

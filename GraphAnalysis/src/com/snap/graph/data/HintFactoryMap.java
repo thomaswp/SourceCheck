@@ -8,6 +8,7 @@ import java.util.List;
 import com.snap.data.Canonicalization;
 import com.snap.data.Canonicalization.InvertOp;
 import com.snap.data.Canonicalization.SwapArgs;
+import com.snap.graph.data.HintFactoryMap.VectorHint;
 import com.snap.graph.data.Node.Action;
 import com.snap.graph.subtree.SubtreeBuilder.Hint;
 import com.snap.graph.subtree.SubtreeBuilder.HintChoice;
@@ -15,6 +16,7 @@ import com.snap.graph.subtree.SubtreeBuilder.HintChoice;
 public class HintFactoryMap implements HintMap {
 	
 	private final static int ROUNDS = 1;
+	private final static double STAY_PROPORTION = 0.75;
 	
 	// TODO: stop cheating!
 	private final static HashSet<String> BAD_CONTEXT = new HashSet<String>();
@@ -140,7 +142,11 @@ public class HintFactoryMap implements HintMap {
 			VectorState next = graph.getHint(children, context, 3, useGraph);
 			// If there is none, we create a dead-end hint, just so we know we want to stay here
 			if (next == null) next = children;
-			hints.add(new VectorHint(node, backbone, children, next, indexed));
+			
+			double stayed = graph.getProportionStayed(children);
+			VectorHint hint = new VectorHint(node, backbone, children, next, indexed, stayed > STAY_PROPORTION);
+			if (!next.equals(children) && hint.caution) System.out.println(hint);
+			hints.add(hint);
 		}
 		return hints;
 	}
@@ -175,16 +181,18 @@ public class HintFactoryMap implements HintMap {
 		public final VectorState from, to;
 //		public final boolean loop;
 		public final boolean indexed;
+		public final boolean caution;
 		
 		private final boolean swap;
 		
-		public VectorHint(Node root, Node backbone, VectorState from, VectorState to, boolean indexed) {
+		public VectorHint(Node root, Node backbone, VectorState from, VectorState to, boolean indexed, boolean caution) {
 			this.root = root;
 			this.backbone = backbone.toString();
 			this.from = from;
 			this.to = to;
 //			this.loop = from.equals(to);
 			this.indexed = indexed;
+			this.caution = caution;
 			
 			boolean swap = false;
 			for (Canonicalization c : root.canonicalizations) {
@@ -210,8 +218,8 @@ public class HintFactoryMap implements HintMap {
 		
 		@Override
 		public String data() {
-			return String.format("{\"root\": %s, \"from\": %s, \"to\": %s}", 
-					getNodeReference(root), from.toJson(swap), to.toJson(swap));
+			return String.format("{\"root\": %s, \"from\": %s, \"to\": %s, \"caution\": %s}", 
+					getNodeReference(root), from.toJson(swap), to.toJson(swap), String.valueOf(caution));
 		}
 		
 		public static String getNodeReference(Node node) {
