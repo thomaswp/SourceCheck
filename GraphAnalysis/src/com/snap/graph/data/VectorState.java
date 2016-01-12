@@ -39,7 +39,11 @@ public class VectorState extends StringHashable {
 	}
 	
 	public static int distance(VectorState a, VectorState b) {
-		return Alignment.alignCost(a.items, b.items, 1, 1);
+		return distance(a, b, 1, 1, 1);
+	}
+	
+	public static int distance(VectorState a, VectorState b, int insCost, int delCost, int subCost) {
+		return Alignment.alignCost(a.items, b.items, insCost, delCost, subCost);
 	}
 	
 	public static Tuple<Integer, Double> distances(VectorState a, VectorState b) {

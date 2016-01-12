@@ -8,7 +8,6 @@ import java.util.List;
 import com.snap.data.Canonicalization;
 import com.snap.data.Canonicalization.InvertOp;
 import com.snap.data.Canonicalization.SwapArgs;
-import com.snap.graph.Alignment;
 import com.snap.graph.data.Node.Action;
 import com.snap.graph.subtree.SubtreeBuilder.Hint;
 import com.snap.graph.subtree.SubtreeBuilder.HintChoice;
@@ -16,7 +15,6 @@ import com.snap.graph.subtree.SubtreeBuilder.HintChoice;
 public class HintFactoryMap implements HintMap {
 	
 	private final static int ROUNDS = 1;
-	private final static int MAX_EDITS_PER_HINT = 1;
 	
 	// TODO: stop cheating!
 	private final static HashSet<String> BAD_CONTEXT = new HashSet<String>();
@@ -87,7 +85,6 @@ public class HintFactoryMap implements HintMap {
 
 	@Override
 	public boolean hasVertex(Node node) {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
@@ -135,59 +132,17 @@ public class HintFactoryMap implements HintMap {
 			VectorGraph graph = map.get(backbone);
 			if (graph == null) continue;
 			
-			boolean useGraph = true; //!node.hasType(SCRIPT);
+			boolean useGraph = !node.hasType(SCRIPT);
 			
 			VectorState children = getVectorState(node);
 			IndexedVectorState context = getContext(node);
 			// Get the best successor state from our current state
-			VectorState next = graph.getHint(children, context, useGraph);
-			
-//			VectorState goal = graph.getContextualGoal(getContext(node));
-//			System.out.println(backbone + ": " + goal);
-			
-			if (next != null) {
-				// If we find one, go there
-				hints.add(createHint(node, backbone, children, next, indexed));
-				continue;
-			}
-			
-			// If we're at a goal with no better place to go, stay here
-			if (graph.isGoal(children)) {
-				// We create a dead-end hint, just so we know we want to stay here
-				hints.add(createHint(node, backbone, children, children, indexed));
-				continue;
-			}
-			
-			// Look for a nearest neighbor in the graph
-			VectorState nearestNeighbor = graph.getNearestNeighbor(children, 3);
-			if (nearestNeighbor != null) { 
-				// If we find one, get the hint from there
-				VectorState hintFrom = graph.getHint(nearestNeighbor, context, useGraph);
-				if (hintFrom != null) {
-					// If it exists, and it's at least as close as the nearest neighbor...
-					int disNN = VectorState.distance(children, nearestNeighbor);
-					int disHF = VectorState.distance(children, hintFrom);
-					if (disHF <= disNN) {
-						// Use it insead
-						hints.add(createHint(node, backbone, children, hintFrom, indexed));
-						continue;
-					}
-				}
-				
-				// Otherwise hint to go to the nearest neighbor
-				hints.add(createHint(node, backbone, children, nearestNeighbor, indexed));
-			}
+			VectorState next = graph.getHint(children, context, 3, useGraph);
+			// If there is none, we create a dead-end hint, just so we know we want to stay here
+			if (next == null) next = children;
+			hints.add(new VectorHint(node, backbone, children, next, indexed));
 		}
 		return hints;
-	}
-	
-	private static VectorHint createHint(Node parent, Node backbone, VectorState from, VectorState to, boolean indexed) {
-		if (parent.hasType(SCRIPT) && VectorState.distance(from, to) > MAX_EDITS_PER_HINT) {
-//			System.out.print(to);
-			to = new VectorState(Alignment.smartScriptEdit(from.items, to.items));
-//			System.out.println(" => " + to);
-		}
-		return new VectorHint(parent, backbone, from, to, indexed);
 	}
 
 	@Override

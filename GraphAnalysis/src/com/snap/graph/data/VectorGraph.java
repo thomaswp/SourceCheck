@@ -3,9 +3,11 @@ package com.snap.graph.data;
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.TreeMap;
 
@@ -27,6 +29,12 @@ public class VectorGraph extends OutGraph<VectorState> {
 		return super.setGoal(goal, true);
 	}
 
+	@Override
+	public boolean addVertex(VectorState v) {
+		if (v == null) throw new RuntimeException("Vertex cannot be null");
+		return super.addVertex(v);
+	}
+	
 	private List<IndexedVectorState> getContext(VectorState goal) {
 		List<IndexedVectorState> list = goalContextMap.get(goal);
 		if (list == null) {
@@ -51,15 +59,35 @@ public class VectorGraph extends OutGraph<VectorState> {
 		} else {
 			return super.getGoalValue(vertex);
 		}
-//		double alternate = super.getGoalValue(vertex);
-//		System.out.println(vertex.data + ": " + value + " vs " + alternate);
 		return value;
 	}
 	
-	public VectorState getHint(VectorState state, IndexedVectorState context, boolean useMap) {
-		VectorState goal = getContextualGoal(context);
-		if (useMap) {
-			bellmanBackup(2);
+	public VectorState getHint(VectorState state, IndexedVectorState context, int maxNN, boolean naturalEdges) {
+		calculateContextualGoalValues(context);
+		bellmanBackup(2);
+		
+		boolean connectedToGoal = connectedToGoal(state);
+		
+		if (naturalEdges) {
+			if (!connectedToGoal) {
+				// Look for a nearest neighbor in the graph
+				VectorState nearestNeighbor = getNearestNeighbor(state, maxNN, true);
+				if (nearestNeighbor == null) return null;
+				// If we find one, get the hint from there
+				VectorState hintState = getHint(nearestNeighbor, context, maxNN, naturalEdges);
+				if (hintState != null) {
+					// If it exists, and it's at least as close as the nearest neighbor...
+					int disNN = VectorState.distance(state, nearestNeighbor);
+					int disHF = VectorState.distance(state, hintState);
+					if (disHF <= disNN) {
+						// Use it instead
+						return hintState;
+					}
+				}
+				// Otherwise hint to go to the nearest neighbor
+				return nearestNeighbor;
+			}
+			
 			List<Edge<VectorState, Void>> edges = fromMap.get(state);
 			if (edges == null) return null;
 			for (Edge<VectorState, Void> edge : edges) {
@@ -67,15 +95,76 @@ public class VectorGraph extends OutGraph<VectorState> {
 					return edge.to;
 				}
 			}
-		} else if (goal != null) {
-			String[] items = Alignment.smartScriptEdit(state.items, goal.items);
-			if (items == null) return null;
-			return new VectorState(items);
+		} else {
+			VectorState nearestNeighbor = state;
+			if (!connectedToGoal) {
+				nearestNeighbor = getNearestNeighbor(state, maxNN, true);
+			}
+			return getSmartHint(state, nearestNeighbor);
 		}
 		return null;
 	}
+
+	private boolean connectedToGoal(VectorState state) {
+		Vertex<VectorState> vertex = vertexMap.get(state);
+		// TODO: Technically it could just be /very/ far away... but maybe that's ok
+		boolean connectedToGoal = vertex != null && vertex.bValue > 0;
+		return connectedToGoal;
+	}
+
 	
-	public VectorState getContextualGoal(IndexedVectorState context) {
+	private VectorState getSmartHint(VectorState state, VectorState nearestNeighbor) {
+		List<VectorState> goalPath = getMDPGoalPath(nearestNeighbor);
+		if (goalPath == null) return null;
+		VectorState goal = goalPath.get(goalPath.size() - 1);
+		if (!isGoal(goal)) return null;
+		
+		List<String> stateItems = new LinkedList<String>();
+		for (String item : state.items) stateItems.add(item);
+		
+		String[] goalItems = goal.items;
+		int index = 1;
+		while (index < goalPath.size() - 1) {
+			String[] nextItems = goalPath.get(index++).items;
+			int edits = 0;
+
+			edits += Alignment.doEdits(stateItems, goalItems, Alignment.MoveEditor, 1 - edits);
+			edits += Alignment.doEdits(stateItems, nextItems, Alignment.AddEditor, 1 - edits);
+			edits += Alignment.doEdits(stateItems, goalItems, Alignment.MoveEditor, 1 - edits);
+			edits += Alignment.doEdits(stateItems, goalItems, Alignment.DeleteEditor, 2 - edits);
+			
+			if (edits > 0) {
+				VectorState hint = new VectorState(stateItems); 
+				System.out.printf("State: %s\nNeighbor: %s\nNext: %s\nGoal: %s\nHint: %s\n\n", state, nearestNeighbor, Arrays.toString(nextItems), goal, hint);
+				return hint;
+			}
+		}
+		System.out.printf("State: %s\nNeighbor: %s\nGoal: %s\n\n", state, nearestNeighbor, goal);
+		return goal;
+	}
+	
+	private List<VectorState> getMDPGoalPath(VectorState state) {
+		List<VectorState> path = new LinkedList<VectorState>();
+		while (true) {
+			path.add(state);
+			List<Edge<VectorState, Void>> edges = fromMap.get(state);
+			boolean found = false;
+			if (edges != null) {
+				for (Edge<VectorState, Void> edge : edges) {
+					if (edge.bBest) {
+						found = true;
+						state = edge.to;
+						break;
+					}
+				}
+			}
+			if (!found) break;
+		}
+		if (!isGoal(state)) return null;
+		return path;		
+	}
+	
+	private void calculateContextualGoalValues(IndexedVectorState context) {
 //		int minDis = Integer.MAX_VALUE;
 		HashMap<VectorState, Double> cachedDistances = new HashMap<VectorState, Double>();
 		
@@ -96,10 +185,9 @@ public class VectorGraph extends OutGraph<VectorState> {
 //				minDis = Math.min(minDis, dis);
 			}
 //			double avg = totalDis / list.size();
-			
 		}
 
-		VectorState best = null;
+//		VectorState best = null;
 		double nextBest = Double.MIN_VALUE;
 		double bestAvgDis = Double.MIN_VALUE;
 		for (VectorState goal : goalContextMap.keySet()) {
@@ -121,7 +209,7 @@ public class VectorGraph extends OutGraph<VectorState> {
 				nextBest = weight;
 			}
 			if (weight > bestAvgDis) {
-				best = goal;
+//				best = goal;
 				nextBest = bestAvgDis;
 				bestAvgDis = weight;
 			}
@@ -142,7 +230,7 @@ public class VectorGraph extends OutGraph<VectorState> {
 //		}
 //		System.out.println(minDis + " " + bestVotes);
 		
-		return best;
+//		return best;
 	}
 		
 	public void exportGoalContexts(PrintStream out) throws FileNotFoundException {
@@ -206,12 +294,15 @@ public class VectorGraph extends OutGraph<VectorState> {
 		}
 	}
 	
-	public VectorState getNearestNeighbor(VectorState state, int maxDis) {
+	public VectorState getNearestNeighbor(VectorState state, int maxDis, boolean connectToGoalOnly) {
+		// TODO: must be goalConnected, must be not rep, add = 1, del = 0.1, should have highest score
+		maxDis *= 10; // scale to be an integer
 		Vertex<VectorState> nearest = null;
 		int nearestDistance = maxDis;
 		for (Vertex<VectorState> vertex : vertexMap.values()) {
-			if (vertex.equals(state) || vertex.data == null) continue; // Ignore exact matches (they're not neighbors)
-			int distance = VectorState.distance(state, vertex.data);
+			if (vertex.data == null || vertex.equals(state)) continue; // Ignore exact matches (they're not neighbors)
+			if (connectToGoalOnly && !connectedToGoal(vertex.data)) continue;
+			int distance = VectorState.distance(state, vertex.data, 10, 1, 10000); // Favor deletions over insertions, but forbid subs
 			if (distance > nearestDistance) continue;
 			if (distance == nearestDistance && nearest != null && 
 					vertex.bValue <= nearest.bValue) {
