@@ -135,11 +135,11 @@ public class VectorGraph extends OutGraph<VectorState> {
 			
 			if (edits > 0) {
 				VectorState hint = new VectorState(stateItems); 
-				System.out.printf("State: %s\nNeighbor: %s\nNext: %s\nGoal: %s\nHint: %s\n\n", state, nearestNeighbor, Arrays.toString(nextItems), goal, hint);
+//				System.out.printf("State: %s\nNeighbor: %s\nNext: %s\nGoal: %s\nHint: %s\n\n", state, nearestNeighbor, Arrays.toString(nextItems), goal, hint);
 				return hint;
 			}
 		}
-		System.out.printf("State: %s\nNeighbor: %s\nGoal: %s\n\n", state, nearestNeighbor, goal);
+//		System.out.printf("State: %s\nNeighbor: %s\nGoal: %s\n\n", state, nearestNeighbor, goal);
 		return goal;
 	}
 	

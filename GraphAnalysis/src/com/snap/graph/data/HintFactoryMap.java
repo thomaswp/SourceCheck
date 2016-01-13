@@ -8,7 +8,6 @@ import java.util.List;
 import com.snap.data.Canonicalization;
 import com.snap.data.Canonicalization.InvertOp;
 import com.snap.data.Canonicalization.SwapArgs;
-import com.snap.graph.data.HintFactoryMap.VectorHint;
 import com.snap.graph.data.Node.Action;
 import com.snap.graph.subtree.SubtreeBuilder.Hint;
 import com.snap.graph.subtree.SubtreeBuilder.HintChoice;
@@ -145,7 +144,6 @@ public class HintFactoryMap implements HintMap {
 			
 			double stayed = graph.getProportionStayed(children);
 			VectorHint hint = new VectorHint(node, backbone, children, next, indexed, stayed > STAY_PROPORTION);
-			if (!next.equals(children) && hint.caution) System.out.println(hint);
 			hints.add(hint);
 		}
 		return hints;
@@ -183,7 +181,7 @@ public class HintFactoryMap implements HintMap {
 		public final boolean indexed;
 		public final boolean caution;
 		
-		private final boolean swap;
+		private final boolean swapArgs;
 		
 		public VectorHint(Node root, Node backbone, VectorState from, VectorState to, boolean indexed, boolean caution) {
 			this.root = root;
@@ -196,12 +194,12 @@ public class HintFactoryMap implements HintMap {
 			
 			boolean swap = false;
 			for (Canonicalization c : root.canonicalizations) {
-				if (c instanceof InvertOp) {
+				if (c instanceof InvertOp || c instanceof SwapArgs) {
 					swap = true;
 					break;
 				}
 			}
-			this.swap = swap;
+			this.swapArgs = swap;
 			
 			cache();
 		}
@@ -219,7 +217,7 @@ public class HintFactoryMap implements HintMap {
 		@Override
 		public String data() {
 			return String.format("{\"root\": %s, \"from\": %s, \"to\": %s, \"caution\": %s}", 
-					getNodeReference(root), from.toJson(swap), to.toJson(swap), String.valueOf(caution));
+					getNodeReference(root), from.toJson(swapArgs), to.toJson(swapArgs), String.valueOf(caution));
 		}
 		
 		public static String getNodeReference(Node node) {

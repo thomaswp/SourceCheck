@@ -94,7 +94,9 @@ public class CallBlock extends Block {
 	@Override
 	public String addChildren(boolean canon, Accumulator ac) {
 		List<Block> params = params(canon);
-		if (params != parameters) ac.add(new Canonicalization.SwapArgs());
+		if (params != parameters) {
+			ac.add(new Canonicalization.SwapArgs());
+		}
 		ac.add(params);
 		ac.add(bodies);
 		if (OPPOSITES.containsKey(name)) ac.add(new Canonicalization.InvertOp(name));
