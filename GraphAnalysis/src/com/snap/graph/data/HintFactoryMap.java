@@ -16,6 +16,8 @@ public class HintFactoryMap implements HintMap {
 	
 	private final static int ROUNDS = 1;
 	private final static double STAY_PROPORTION = 0.75;
+	private final static int PRUNE_NODES = 2;
+	private final static int PRUNE_GOALS = 2;
 	
 	// TODO: stop cheating!
 	private final static HashSet<String> BAD_CONTEXT = new HashSet<String>();
@@ -144,6 +146,7 @@ public class HintFactoryMap implements HintMap {
 			
 			double stayed = graph.getProportionStayed(children);
 			VectorHint hint = new VectorHint(node, backbone, children, next, indexed, stayed > STAY_PROPORTION);
+//			if (stayed > 0) System.out.printf("%.04f: %s\n", stayed, hint.toString());
 			hints.add(hint);
 		}
 		return hints;
@@ -152,9 +155,9 @@ public class HintFactoryMap implements HintMap {
 	@Override
 	public void finish() {		
 		for (VectorGraph graph : map.values()) {
-			graph.prune(2);
+			graph.prune(PRUNE_NODES);
 			graph.generateEdges();
-			graph.bellmanBackup(2);
+			graph.bellmanBackup(PRUNE_GOALS);
 		}
 	}
 

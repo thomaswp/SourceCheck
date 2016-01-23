@@ -3,7 +3,6 @@ package com.snap.graph.data;
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -318,7 +317,7 @@ public class VectorGraph extends OutGraph<VectorState> {
 	public double getProportionStayed(VectorState children) {
 		Vertex<VectorState> vertex = vertexMap.get(children);
 		if (vertex == null || vertex.weight() == 0) return 0;
-		return (vertex.weight() - outWeight(vertex.data, true)) / (double)vertex.weight(); 
+		return (vertex.weight() - outWeight(vertex.data, true, true)) / (double)vertex.weight(); 
 	}
 	
 }

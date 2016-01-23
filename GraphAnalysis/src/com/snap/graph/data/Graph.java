@@ -137,23 +137,20 @@ public class Graph<N,E> {
 		hasGoal |= graph.hasGoal;
 	}
 	
-	public int outWeight(N vertex, boolean ignoreLoops) {
-		List<Edge<N,E>> vertices = fromMap.get(vertex);
-		if (vertices == null) return 0;
-		int w = 0;
-		for (Edge<N,E> edge : vertices) {
-			if (ignoreLoops && edge.isLoop()) continue;
-			w += edge.weight;
-		}
-		return w;
+	public int outWeight(N vertex, boolean ignoreLoops, boolean ignoreSynthetic) {
+		return getEdgeWeight(ignoreLoops, ignoreSynthetic, fromMap.get(vertex));
 	}
 	
-	public int inWeight(N vertex, boolean ignoreLoops) {
-		List<Edge<N, E>> vertices = toMap.get(vertex);
+	public int inWeight(N vertex, boolean ignoreLoops, boolean ignoreSynthetic) {
+		return getEdgeWeight(ignoreLoops, ignoreSynthetic, toMap.get(vertex));
+	}
+
+	private int getEdgeWeight(boolean ignoreLoops, boolean ignoreSynthetic, List<Edge<N, E>> vertices) {
 		if (vertices == null) return 0;
 		int w = 0;
 		for (Edge<N,E> edge : vertices) {
 			if (ignoreLoops && edge.isLoop()) continue;
+			if (ignoreSynthetic && edge.synthetic) continue;
 			w += edge.weight;
 		}
 		return w;

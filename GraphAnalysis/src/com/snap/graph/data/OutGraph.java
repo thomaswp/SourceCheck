@@ -21,8 +21,10 @@ public class OutGraph<T> extends Graph<T, Void> {
 	public void bellmanBackup(int minGoalCount) {
 		calculateProbabilities();
 		for (Vertex<T> v : vertexMap.values()) {
-			if (v.goalCount() >= minGoalCount) {
-				v.bValue = v.data == null ? 0 : getGoalValue(v);
+			if (v.goalCount() >= minGoalCount && v.data != null) {
+				v.bValue = getGoalValue(v);
+			} else {
+				v.bValue = 0;
 			}
 		}
 		int i;
@@ -57,7 +59,7 @@ public class OutGraph<T> extends Graph<T, Void> {
 	private void calculateProbabilities() {
 		for (T node : vertices) {
 			if (!fromMap.containsKey(node)) continue;
-			double outWeight = outWeight(node, true);
+			double outWeight = outWeight(node, true, false);
 			for (Edge<T,?> e : fromMap.get(node)) {
 				if (e.isLoop()) continue;
 				e.bRelativeWeight = e.weight / outWeight;
@@ -120,7 +122,7 @@ public class OutGraph<T> extends Graph<T, Void> {
 		for (T state : vertices()) {
 			if (ignoreNs.contains(state)) continue;
 			
-			int inWeight = inWeight(state, false), outWeight = outWeight(state, false);
+			int inWeight = inWeight(state, false, true), outWeight = outWeight(state, false, true);
 			
 			Vertex<T> vertex = vertexMap.get(state);
 			
