@@ -76,6 +76,11 @@ public class Graph<N,E> {
 		return vertex != null && vertex.goalCount > 0;
 	}
 	
+	public int getGoalCount(N node) {
+		Vertex<N> vertex = vertexMap.get(node);
+		return vertex != null ? vertex.goalCount : 0;
+	}
+	
 	public boolean hasEdge(N from, N to) {
 		List<Edge<N, E>> list = fromMap.get(from);
 		if (list == null) return false;

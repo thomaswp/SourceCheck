@@ -145,8 +145,10 @@ public class HintFactoryMap implements HintMap {
 			if (next == null) next = children;
 			
 			double stayed = graph.getProportionStayed(children);
-			VectorHint hint = new VectorHint(node, backbone, children, next, indexed, stayed > STAY_PROPORTION);
-//			if (stayed > 0) System.out.printf("%.04f: %s\n", stayed, hint.toString());
+			boolean caution = 
+					graph.getGoalCount(children) >= PRUNE_GOALS && 
+					stayed >= STAY_PROPORTION; 
+			VectorHint hint = new VectorHint(node, backbone, children, next, indexed, caution);
 			hints.add(hint);
 		}
 		return hints;
