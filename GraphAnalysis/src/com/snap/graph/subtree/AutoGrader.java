@@ -129,7 +129,7 @@ public class AutoGrader {
 			public boolean eval(Node node) {
 				int ask = node.searchChildren(new Node.TypePredicate("doAsk"));
 				int say = node.searchChildren(isGreeting);
-				return say >= 0 && (ask <= 0 || say < ask); 
+				return say >= 0 && (ask < 0 || say < ask); 
 			}
 		};
 		private final static Predicate test = new Node.ConjunctionPredicate(true, backbone, hasGreeting); 
