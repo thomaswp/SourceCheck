@@ -14,6 +14,11 @@ public class VectorState extends StringHashable {
 		items = null;
 	}
 	
+	@Override
+	protected boolean autoCache() {
+		return true;
+	}
+	
 	public VectorState(String[] items) {
 		this.items = items;
 		cache();

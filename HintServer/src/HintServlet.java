@@ -70,6 +70,8 @@ public class HintServlet extends HttpServlet {
 			return;
 		}
 		
+//		long time = System.currentTimeMillis();
+		
 //		System.out.println(snapshot.toCode(true));
 		Node node = SimpleNodeBuilder.toTree(snapshot, true);
 		
@@ -82,6 +84,9 @@ public class HintServlet extends HttpServlet {
 			out.print(SubtreeBuilder.hintToJson(hints.get(i)));
 		}
 		out.println("]");
+		
+//		long elapsed = System.currentTimeMillis() - time;
+//		System.out.println(elapsed);
 	}
 	
 	private SubtreeBuilder loadBuilder(String assignment) {

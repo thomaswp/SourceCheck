@@ -9,6 +9,16 @@ public abstract class StringHashable implements Comparable<StringHashable> {
 	private transient String cachedCanonicalString;
 	private transient int cachedHashCode;
 	
+	private final transient boolean autoCache;
+
+	public StringHashable() {
+		autoCache = autoCache();
+	}
+	
+	protected boolean autoCache() {
+		return false;
+	}
+	
 	public void cache() {
 		clearCache();
 		cachedCanonicalString = toCanonicalStringInternal();
@@ -29,11 +39,6 @@ public abstract class StringHashable implements Comparable<StringHashable> {
 		return toCanonicalString().equals(((StringHashable)obj).toCanonicalString());
 	}
 	
-	@Override
-	public int hashCode() {
-		return cachedCanonicalString == null ? toCanonicalString().hashCode() : cachedHashCode;
-	}
-	
 	public String hexHash() {
 		return String.format("%x", hashCode());
 	}
@@ -46,8 +51,19 @@ public abstract class StringHashable implements Comparable<StringHashable> {
 	
 	protected abstract String toCanonicalStringInternal();
 	
+	@Override
+	public final int hashCode() {
+		return cachedCanonicalString == null ? toCanonicalString().hashCode() : cachedHashCode;
+	}
+	
 	public final String toCanonicalString() {
-		return cachedCanonicalString == null ? toCanonicalStringInternal() : cachedCanonicalString;
+		if (cachedCanonicalString != null) {
+			return cachedCanonicalString;
+		} else if (autoCache) {
+			cache();
+			return cachedCanonicalString;
+		}
+		return toCanonicalStringInternal();
 	}
 	
 	public String toDisplayString() {
