@@ -18,7 +18,7 @@ public class VectorGraph extends OutGraph<VectorState> {
 	private final HashMap<VectorState, List<IndexedVectorState>> goalContextMap = 
 			new HashMap<VectorState, List<IndexedVectorState>>();
 	
-	private transient HashMap<VectorState, Double> tmpGoalValues = 
+	private final transient HashMap<VectorState, Double> tmpGoalValues = 
 			new HashMap<VectorState, Double>();
 	
 	public boolean setGoal(VectorState goal, IndexedVectorState context) {

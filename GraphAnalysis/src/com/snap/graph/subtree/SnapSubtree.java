@@ -203,40 +203,45 @@ public class SnapSubtree {
 					PrintStream ps = null;
 					try {
 						ps = new PrintStream(out);
-						return buildGraph(null, ps);
+						return buildGraph(null, 0, ps);
 					} catch (FileNotFoundException e) {
 						e.printStackTrace();
 					} finally {
 						if (ps != null) ps.close();
 					}
 				}
-				return buildGraph(null, null);
+				return buildGraph(null, 0, null);
 			}
 		});
 		return builder;
 	}
 
-	public SubtreeBuilder buildGraph(String testStudent, PrintStream out) {
+	public SubtreeBuilder buildGraph(String testStudent, double minGrade, PrintStream out) {
 		final SubtreeBuilder builder = new SubtreeBuilder(hintMap.instance());
 		builder.startBuilding();
-		List<Node> test = nodeMap().get(testStudent);
 		jsonStart(out);
 		final AtomicInteger count = new AtomicInteger();
 		for (String student : nodeMap().keySet()) {
+			if (student.equals(testStudent)) continue;
+			
+			Grade grade = gradeMap.get(student);
+			if (grade != null && grade.average() < minGrade) continue;
+			
 			final List<Node> nodes = nodeMap().get(student);
-			final String fStudent = student;
+			if (nodes.size() == 0) continue;
 
-			if (nodes == test || nodes.size() == 0) continue;
 			if (out != null) {
 				jsonStudent(out, student, nodes, builder.addStudent(nodes, false));
 				if (out != null) break;
 			}
+			
 			count.incrementAndGet();
+//			final String fStudent = student;
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
 					builder.addStudent(nodes, false);
-					System.out.println("Added " + fStudent);
+//					System.out.println("Added " + fStudent);
 					count.decrementAndGet();
 				}
 			}).start();
@@ -283,6 +288,7 @@ public class SnapSubtree {
 		out.println("};");
 	}
 
+	@SuppressWarnings("unused")
 	private void outputStudentsFOG() {
 		int totalNodes = 0;
 		String baseDir = dataDir + "/" + assignment + "/chf-fog/";

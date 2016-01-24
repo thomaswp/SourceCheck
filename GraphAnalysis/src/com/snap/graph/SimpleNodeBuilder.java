@@ -9,6 +9,27 @@ import com.snap.graph.data.Node;
 
 public class SimpleNodeBuilder {
 	
+//	public static Code fromTree(Node node) {
+//		List<Code> children = new ArrayList<Code>();
+//		for (Node child : node.children) {
+//			children.add(fromTree(child));
+//		}
+//		
+//		Code code;
+//		switch (node.type) {
+//		case "snapshot": 
+//			Snapshot s = new Snapshot("", (Stage) children.get(0));
+//			for (int i = 1; i < children.size(); i++) {
+//				s.
+//				if (s instanceof Variable)
+//			}
+//			code = s;
+//			break;
+//		case "stage":
+//			code = new Stage();
+//		}
+//	}
+	
 	public static Node toTree(Code code, final boolean canon) {
 		return toTree(code, canon, null);
 	}

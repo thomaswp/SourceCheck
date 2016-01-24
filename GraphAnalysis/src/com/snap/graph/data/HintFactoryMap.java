@@ -18,6 +18,7 @@ public class HintFactoryMap implements HintMap {
 	private final static double STAY_PROPORTION = 0.75;
 	private final static int PRUNE_NODES = 2;
 	private final static int PRUNE_GOALS = 2;
+	private final static int MAX_NN = 3;
 	
 	// TODO: stop cheating!
 	private final static HashSet<String> BAD_CONTEXT = new HashSet<String>();
@@ -140,7 +141,7 @@ public class HintFactoryMap implements HintMap {
 			VectorState children = getVectorState(node);
 			IndexedVectorState context = getContext(node);
 			// Get the best successor state from our current state
-			VectorState next = graph.getHint(children, context, 3, useGraph);
+			VectorState next = graph.getHint(children, context, MAX_NN, useGraph);
 			// If there is none, we create a dead-end hint, just so we know we want to stay here
 			if (next == null) next = children;
 			
@@ -207,6 +208,11 @@ public class HintFactoryMap implements HintMap {
 			this.swapArgs = swap;
 			
 			cache();
+		}
+		
+		@Override
+		protected boolean autoCache() {
+			return true;
 		}
 		
 		@Override
