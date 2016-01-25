@@ -24,7 +24,6 @@ import com.snap.graph.data.Node;
 import com.snap.graph.data.Node.Action;
 import com.snap.graph.data.VectorGraph;
 import com.snap.graph.subtree.SubtreeBuilder.Hint;
-import com.snap.graph.subtree.SubtreeBuilder.HintChoice;
 import com.snap.parser.DataRow;
 import com.snap.parser.Grade;
 import com.snap.parser.SnapParser;
@@ -59,7 +58,9 @@ public class SnapSubtree {
 
 //		subtree.outputStudentsFOG();
 
-		SubtreeBuilder builder = subtree.buildGraph(Mode.Overwrite, false);
+		double minGrade = 0;
+		
+		SubtreeBuilder builder = subtree.buildGraph(Mode.Overwrite, minGrade);
 
 		//		subtree.getHints(builder, "0:{snapshot{stage{sprite{script{receiveGo}{doSetVar}{doSayFor}{doAsk}{doSayFor}{doSayFor}{abc}}}}{var}}");
 
@@ -159,7 +160,7 @@ public class SnapSubtree {
 			if (!graph.hasGoal()) continue;
 
 			graph.bellmanBackup(2);
-			String dir = dataDir + "/graphs/" + assignment + "/";
+			String dir = String.format("%s/graphs/%s-g%03d/", dataDir, assignment, Math.round(builder.minGrade * 100));
 			Node child = node;
 			while (child.children.size() > 0) {
 				dir += child.type + "/";
@@ -191,35 +192,26 @@ public class SnapSubtree {
 		this.hintMap = hintMap;
 	}
 
-	public SubtreeBuilder buildGraph(Mode storeMode, final boolean write) {
-		String storePath = new File(dataDir, assignment + ".cached").getAbsolutePath();
+	public SubtreeBuilder buildGraph(Mode storeMode) {
+		return buildGraph(storeMode, 0);
+	}
+	
+	public SubtreeBuilder buildGraph(Mode storeMode, final double minGrade) {
+		String storePath = new File(dataDir, String.format("%s-g%03d.cached", assignment, Math.round(minGrade * 100))).getAbsolutePath();
 		SubtreeBuilder builder = Store.getCachedObject(SubtreeBuilder.getKryo(), storePath, SubtreeBuilder.class, storeMode, new Store.Loader<SubtreeBuilder>() {
 			@Override
 			public SubtreeBuilder load() {
-				if (write) {
-					File out = new File(dataDir, "view/" + assignment + ".json.js");
-					out.mkdirs();
-					out.delete();
-					PrintStream ps = null;
-					try {
-						ps = new PrintStream(out);
-						return buildGraph(null, 0, ps);
-					} catch (FileNotFoundException e) {
-						e.printStackTrace();
-					} finally {
-						if (ps != null) ps.close();
-					}
-				}
-				return buildGraph(null, 0, null);
+				return buildGraph((String)null, minGrade);
 			}
 		});
 		return builder;
 	}
 
-	public SubtreeBuilder buildGraph(String testStudent, double minGrade, PrintStream out) {
-		final SubtreeBuilder builder = new SubtreeBuilder(hintMap.instance());
+	private final HashMap<String, HintMap> studentSubtreeCache = new HashMap<String, HintMap>();
+	
+	public SubtreeBuilder buildGraph(String testStudent, double minGrade) {
+		final SubtreeBuilder builder = new SubtreeBuilder(hintMap.instance(), minGrade);
 		builder.startBuilding();
-		jsonStart(out);
 		final AtomicInteger count = new AtomicInteger();
 		for (String student : nodeMap().keySet()) {
 			if (student.equals(testStudent)) continue;
@@ -229,19 +221,25 @@ public class SnapSubtree {
 			
 			final List<Node> nodes = nodeMap().get(student);
 			if (nodes.size() == 0) continue;
-
-			if (out != null) {
-				jsonStudent(out, student, nodes, builder.addStudent(nodes, false));
-				if (out != null) break;
-			}
+			
+			final String fStudent = student;
 			
 			count.incrementAndGet();
-//			final String fStudent = student;
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
-					builder.addStudent(nodes, false);
-//					System.out.println("Added " + fStudent);
+					HintMap studentMap;
+					synchronized (studentSubtreeCache) {
+						studentMap = studentSubtreeCache.get(fStudent);
+					}
+					if (studentMap == null) {
+						studentMap = builder.addStudent(nodes);
+						synchronized (studentSubtreeCache) {
+							studentSubtreeCache.put(fStudent, studentMap);
+						}
+					} else {
+						builder.addStudentMap(studentMap);
+					}
 					count.decrementAndGet();
 				}
 			}).start();
@@ -254,38 +252,7 @@ public class SnapSubtree {
 			}
 		}
 		builder.finishedAdding();
-		jsonEnd(out);
 		return builder;
-	}
-
-	private void jsonStart(PrintStream out) {
-		if (out == null) return;
-		out.println("var hintData = {");
-	}
-
-	private void jsonStudent(PrintStream out, String student, List<Node> nodes, List<List<HintChoice>> hints) {
-		if (out == null) return;
-		out.printf("\"%s\": [\n", student);
-		for (int i = 1; i < nodes.size(); i++) {
-			out.println("{");
-			Node last = nodes.get(i - 1);
-			out.printf("\"from\": \"%s\",\n", last);
-			Node node = nodes.get(i);
-			out.printf("\"to\": \"%s\",\n", node);
-			out.println("\"hints\": [");
-
-			for (HintChoice choice : hints.get(i)) {
-				out.println(SubtreeBuilder.hintToJson(choice) + ",");
-			}
-			out.println("]},");
-
-		}
-		out.println("],");
-	}
-
-	private void jsonEnd(PrintStream out) {
-		if (out == null) return;
-		out.println("};");
 	}
 
 	@SuppressWarnings("unused")

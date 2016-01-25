@@ -29,48 +29,29 @@ import distance.RTED_InfoTree_Opt;
 public class SubtreeBuilder {
 
 	public final HintMap hintMap;
-	
-	private final transient List<HintMap> studentMaps = new ArrayList<HintMap>();
+	public final double minGrade;
 	
 	@SuppressWarnings("unused")
 	private SubtreeBuilder() {
-		this(null);
+		this(null, 0);
 	}
 	
-	public SubtreeBuilder(HintMap hintMap) {
+	public SubtreeBuilder(HintMap hintMap, double minGrade) {
 		this.hintMap = hintMap;
+		this.minGrade = minGrade;
 	}
 	
 	public void startBuilding() {
 		hintMap.clear();
 	}
 	
-	public List<List<HintChoice>> addStudent2(List<Node> path, boolean duplicates) {
-		List<List<HintChoice>> generatedHints = new LinkedList<List<HintChoice>>();
-		if (path.size() <= 1) return generatedHints;
-
-		HintMap hintMap = this.hintMap.instance();
-		for (Node current : path) {
-			current.cache();
-			hintMap.addState(current);
-		}
-		
-		Node submission = path.get(path.size() - 1);
-		hintMap.setSolution(submission);
-		synchronized (this.hintMap) {
-			this.hintMap.addMap(hintMap);
-		}
-		
-		return generatedHints;
-	}
-	
 	@SuppressWarnings({ "unchecked" })
-	public List<List<HintChoice>> addStudent(List<Node> path, boolean duplicates) {
+	public HintMap addStudent(List<Node> path) {
 		// duplicates allows multiple edges from the same student
 		
-		List<List<HintChoice>> generatedHints = new LinkedList<List<HintChoice>>();
-		
-		if (path.size() <= 1) return generatedHints;
+
+		HintMap hintMap = this.hintMap.instance();
+		if (path.size() <= 1) return hintMap;
 		
 //		List<HashSet<Node>> keptNodes = keptNodes(path);
 		
@@ -78,13 +59,9 @@ public class SubtreeBuilder {
 		List<LblTree> lastList = null;
 		RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(0.01, 0.01, 10000);
 		
-		HintMap hintMap = this.hintMap.instance();
 				
 		for (Node current : path) {
 			current.cache();
-			
-			List<HintChoice> hints = new ArrayList<HintChoice>();
-			generatedHints.add(hints);
 			
 			LblTree tree = current.toTree();
 			List<LblTree> list = Collections.list(tree.depthFirstEnumeration());
@@ -128,7 +105,7 @@ public class SubtreeBuilder {
 				}
 				for (LblTree from : toAdd.keySet()) {
 					LblTree to = toAdd.get(from);
-					hints.add(hintMap.addEdge((Node) from.getUserObject(), (Node) to.getUserObject()));
+					hintMap.addEdge((Node) from.getUserObject(), (Node) to.getUserObject());
 				}
 				
 //				HashSet<LblTree> markedRemoved = new HashSet<LblTree>();
@@ -223,11 +200,15 @@ public class SubtreeBuilder {
 		
 		Node submission = path.get(path.size() - 1);
 		hintMap.setSolution(submission);
-		synchronized (this.studentMaps) {
+		addStudentMap(hintMap);
+		
+		return hintMap;
+	}
+	
+	public void addStudentMap(HintMap hintMap) {
+		synchronized (this.hintMap) {
 			this.hintMap.addMap(hintMap);
 		}
-		
-		return generatedHints;
 	}
 	
 	public void finishedAdding() {

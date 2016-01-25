@@ -58,7 +58,7 @@ public class GradeEval {
 			System.out.println(student);
 			
 			List<Node> nodes = nodeMap.get(student);		
-			SubtreeBuilder builder = subtree.buildGraph(student, minGrade, null);
+			SubtreeBuilder builder = subtree.buildGraph(student, minGrade);
 			
 			
 			Set<Tuple<VectorHint, Boolean>> seen = new HashSet<Tuple<VectorHint, Boolean>>();
