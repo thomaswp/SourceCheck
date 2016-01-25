@@ -25,6 +25,7 @@ import com.snap.graph.subtree.SubtreeBuilder.Hint;
 public class HintServlet extends HttpServlet {
 
 	private final static String DEFAULT_ASSIGNMENT = "guess1Lab";
+	private final static int DEFAULT_MIN_GRADE = 100;
 	
 	private static HashMap<String, SubtreeBuilder> builders = 
 			new HashMap<String, SubtreeBuilder>();
@@ -32,7 +33,7 @@ public class HintServlet extends HttpServlet {
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
-		loadBuilder(null);
+		loadBuilder(DEFAULT_ASSIGNMENT, DEFAULT_MIN_GRADE);
 		resp.setContentType("text");
 		resp.getOutputStream().println("Loaded cache for " + DEFAULT_ASSIGNMENT);
 	}
@@ -56,15 +57,23 @@ public class HintServlet extends HttpServlet {
 		
 		PrintStream out = new PrintStream(resp.getOutputStream());
 				
+		int minGrade = DEFAULT_MIN_GRADE;
+		String mgs = req.getParameter("minGrade");
+		if (mgs != null) {
+			try {
+				minGrade = Integer.parseInt(mgs);
+			} catch (Exception e) { }
+		}
+				
 		resp.setContentType("text/json");
 //		out.println(snapshot.toCode());
-		getHint(snapshot, req.getParameter("assignmentID"), out);
+		getHint(snapshot, req.getParameter("assignmentID"), minGrade, out);
 		
 //		resp.getOutputStream().println(builder.graph.size());
 	}
 	
-	private void getHint(Snapshot snapshot, String assignment, PrintStream out) {
-		SubtreeBuilder builder = loadBuilder(assignment);
+	private void getHint(Snapshot snapshot, String assignment, int minGrade, PrintStream out) {
+		SubtreeBuilder builder = loadBuilder(assignment, minGrade);
 		if (builder == null) {
 			out.println("[]");
 			return;
@@ -89,12 +98,12 @@ public class HintServlet extends HttpServlet {
 //		System.out.println(elapsed);
 	}
 	
-	private SubtreeBuilder loadBuilder(String assignment) {
+	private SubtreeBuilder loadBuilder(String assignment, int minGrade) {
 		if (assignment == null || "test".equals(assignment)) assignment = DEFAULT_ASSIGNMENT;
 		SubtreeBuilder builder = builders.get(assignment);
 		if (builder == null) {
 			Kryo kryo = SubtreeBuilder.getKryo();
-			InputStream stream = getServletContext().getResourceAsStream("/WEB-INF/data/" + assignment + ".cached");
+			InputStream stream = getServletContext().getResourceAsStream(String.format("/WEB-INF/data/%s-g%03d.cached", assignment, minGrade));
 			if (stream == null) return null;
 			Input input = new Input(stream);
 			builder = kryo.readObject(input, SubtreeBuilder.class);
