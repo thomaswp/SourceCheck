@@ -47,15 +47,15 @@ public class Alignment {
 				continue;
 			}
 			
-			if (skipBCost >= 0) {
-				pairs.add(new int[] {-1, j});
-				j++;
-				continue;
-			}
-			
 			if (skipACost >= 0) {
 				pairs.add(new int[] {i, -1});
 				i++;
+				continue;
+			}
+			
+			if (skipBCost >= 0) {
+				pairs.add(new int[] {-1, j});
+				j++;
 				continue;
 			}
 
@@ -111,6 +111,7 @@ public class Alignment {
 	}
 	
 	public static int doEdits(List<String> sequence, String[] sequenceB, Editor editor, int maxEdits) {
+		if (maxEdits <= 0) return 0;
 		int edits = 0;
 		while (maxEdits < 0 || edits < maxEdits) {
 			String[] sequenceA = sequence.toArray(new String[sequence.size()]); 

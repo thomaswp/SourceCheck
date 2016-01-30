@@ -128,9 +128,12 @@ public class VectorGraph extends OutGraph<VectorState> {
 			int edits = 0;
 
 			edits += Alignment.doEdits(stateItems, goalItems, Alignment.MoveEditor, 1 - edits);
-			edits += Alignment.doEdits(stateItems, nextItems, Alignment.AddEditor, 1 - edits);
-			edits += Alignment.doEdits(stateItems, goalItems, Alignment.MoveEditor, 1 - edits);
-			edits += Alignment.doEdits(stateItems, goalItems, Alignment.DeleteEditor, 2 - edits); // deletes get an extra edit
+			int addEdits = Alignment.doEdits(stateItems, nextItems, Alignment.AddEditor, 1 - edits);
+			edits += addEdits;
+			if (addEdits > 0) {
+				edits += Alignment.doEdits(stateItems, goalItems, Alignment.MoveEditor, 1); // If we added, rearrange for free 
+			}
+			edits += Alignment.doEdits(stateItems, goalItems, Alignment.DeleteEditor, 2 - edits); // delete gets an extra edit
 			
 			if (edits > 0) {
 				VectorState hint = new VectorState(stateItems); 

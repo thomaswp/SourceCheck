@@ -58,7 +58,8 @@ public class SnapSubtree {
 
 //		subtree.outputStudentsFOG();
 
-		double minGrade = 0;
+		// [0.0 - 1.0]
+		double minGrade = 1;
 		
 		SubtreeBuilder builder = subtree.buildGraph(Mode.Overwrite, minGrade);
 
