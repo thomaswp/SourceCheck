@@ -9,44 +9,35 @@ import com.snap.data.Canonicalization;
 
 public class Node extends StringHashable {
 
-	public final String type;
+	private String type;
 	public final Node parent;
 	public final List<Node> children = new ArrayList<Node>();
 	
 	public transient Object tag;
 	public final transient List<Canonicalization> canonicalizations = new ArrayList<Canonicalization>();
-
-	private transient int cachedSize = -1;
+	
+	public String type() {
+		return type;
+	}
+	
+	public void setType(String type) {
+		this.type = type;
+		recache();
+	}
+	
+	private void recache() {
+		clearCache();
+		if (parent != null) parent.recache();
+	}
 	
 	@SuppressWarnings("unused")
 	private Node() {
 		this(null, null);
 	}
 	
-	@Override
-	public void cache() {
-		super.cache();
-		cachedSize = size();
-	}
-	
-	@Override
-	public void clearCache() {
-		super.clearCache();
-		cachedSize = -1;
-	}
-	
 	public Node(Node parent, String type) {
 		this.parent = parent;
 		this.type = type;
-	}
-	
-	public int size() {
-		if (cachedSize != -1) return cachedSize;
-		int size = 1;
-		for (Node node : children) {
-			size += node.size();
-		}
-		return size;
 	}
 	
 	public Node root() {
@@ -234,8 +225,8 @@ public class Node extends StringHashable {
 		return index < children.size() && children.get(index).hasType(type);
 	}
 
-	public Node copy() {
-		Node rootCopy = root().childrenCopy(null);
+	public Node copy(boolean setParent) {
+		Node rootCopy = root().childrenCopy(setParent ? parent : null);
 		return findParallelNode(rootCopy, this);
 	}
 	

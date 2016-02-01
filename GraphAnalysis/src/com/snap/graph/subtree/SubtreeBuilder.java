@@ -424,7 +424,7 @@ public class SubtreeBuilder {
 	
 	public double skeletonDiff(Node x, Node y, double decay) {
 		if (x == null || y == null) return 0;
-		if (!x.type.equals(y.type)) {
+		if (!x.type().equals(y.type())) {
 			return 0;
 		}
 
@@ -438,7 +438,7 @@ public class SubtreeBuilder {
 	
 	private String[] childrenTypes(Node node) {
 		String[] types = new String[node.children.size()];
-		for (int i = 0; i < types.length; i++) types[i] = node.children.get(i).type;
+		for (int i = 0; i < types.length; i++) types[i] = node.children.get(i).type();
 		return types;
 	}
 	

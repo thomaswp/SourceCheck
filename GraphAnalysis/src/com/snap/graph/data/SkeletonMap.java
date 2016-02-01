@@ -28,14 +28,14 @@ public class SkeletonMap implements HintMap {
 		if (node == null) return null;
 		
 		Node parent = toBackbone(node.parent, indices);
-		String type = node.type;
+		String type = node.type();
 		if (indices && node.parent != null) {
 			int index = 0;
 			List<Node> siblings = node.parent.children;
 			for (int i = 0; i < siblings.size(); i++) {
 				Node sibling = siblings.get(i);
 				if (sibling == node) break;
-				if (sibling.type.equals(type)) index++;
+				if (sibling.type().equals(type)) index++;
 			}
 			type += index;
 		}

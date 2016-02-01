@@ -164,11 +164,11 @@ public class SnapSubtree {
 			String dir = String.format("%s/graphs/%s-g%03d/", dataDir, assignment, Math.round(builder.minGrade * 100));
 			Node child = node;
 			while (child.children.size() > 0) {
-				dir += child.type + "/";
+				dir += child.type() + "/";
 				child = child.children.get(0);
 			}
 			new File(dir).mkdirs();
-			File file = new File(dir, child.type);
+			File file = new File(dir, child.type());
 
 			graph.export(new PrintStream(new FileOutputStream(file + ".graphml")), true, 0, false, true);
 			graph.exportGoalContexts(new PrintStream(file + ".txt"));
@@ -303,7 +303,7 @@ public class SnapSubtree {
 		} else {
 			convertedNode = factory.createChild(convertedParent);
 		}
-		factory.addMetaInformation(convertedNode, "label", node.type);
+		factory.addMetaInformation(convertedNode, "label", node.type());
 		for (final Node child : node.children) {
 			transform(child, convertedTree, convertedNode, factory);
 		}
@@ -319,7 +319,7 @@ public class SnapSubtree {
 				node.recurse(new Action() {
 					@Override
 					public void run(Node item) {
-						labels.add(item.type);
+						labels.add(item.type());
 					}
 				});
 			}
@@ -376,7 +376,7 @@ public class SnapSubtree {
 		// create a node for the sequence.
 		final de.citec.tcs.alignment.sequence.Node n = new de.citec.tcs.alignment.sequence.Node(seq);
 		// set its label
-		n.setValue("label", new SymbolicValue(alpha, node.type));
+		n.setValue("label", new SymbolicValue(alpha, node.type()));
 		// add it to the sequence.
 		seq.getNodes().add(n);
 		// recurse to the children.

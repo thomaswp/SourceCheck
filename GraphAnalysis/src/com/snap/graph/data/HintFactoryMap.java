@@ -81,8 +81,8 @@ public class HintFactoryMap implements HintMap {
 		List<String> children = new ArrayList<String>();
 		if (node == null) return children;
 		for (Node child : node.children) {
-			if ("null".equals(child.type)) continue;
-			children.add(child.type);
+			if ("null".equals(child.type())) continue;
+			children.add(child.type());
 		}
 		return children;
 	}
@@ -121,7 +121,7 @@ public class HintFactoryMap implements HintMap {
 	
 	private static IndexedVectorState getContext(Node item, int maxLength) {
 		Node contextChild = item;
-		while (contextChild.parent != null && BAD_CONTEXT.contains(contextChild.parent.type)) contextChild = contextChild.parent;
+		while (contextChild.parent != null && BAD_CONTEXT.contains(contextChild.parent.type())) contextChild = contextChild.parent;
 		int index = contextChild.index(); 
 		return new IndexedVectorState(getChildren(contextChild.parent), index, maxLength);
 	}
@@ -234,7 +234,7 @@ public class HintFactoryMap implements HintMap {
 		public static String getNodeReference(Node node) {
 			if (node == null) return null;
 			
-			String label = node.type;
+			String label = node.type();
 			for (Canonicalization c : node.canonicalizations) {
 				if (c instanceof InvertOp) {
 //					System.out.println("Invert: " + node);
@@ -276,7 +276,7 @@ public class HintFactoryMap implements HintMap {
 
 		@Override
 		public Node outcome() {
-			Node nRoot = root.copy();
+			Node nRoot = root.copy(false);
 			
 			List<Node> children = new ArrayList<Node>();
 			children.addAll(nRoot.children);

@@ -20,7 +20,7 @@ public class PQGram {
 		
 		Node t = new Node(null, "A");
 		t.addChild("X");
-		t.addChild("Y").addChild("C");
+		t.addChild("C").addChild("Y");
 		
 		Profile ps = new Profile(s);
 		System.out.println(s);
@@ -34,12 +34,53 @@ public class PQGram {
 
 		Set<Tuple<Node,Node>> insertions = new HashSet<>(), deletions = new HashSet<>();
 		HashMap<Node, Node> relabels = new HashMap<>();
-		ps.addEdits(pt, insertions, deletions, relabels);
+		BiMap<Node, Node> mapping = new BiMap<>();
+		ps.addEdits(pt, insertions, deletions, relabels, mapping);
 		System.out.println(ps.editDistance(pt));
 		System.out.println(insertions);
 		System.out.println(deletions);
 		System.out.println(relabels);
+		System.out.println(mapping);
 		
+	}
+	
+	public static void insert(Tuple<Node, Node> insertion, BiMap<Node, Node> mapping) {
+		Node toParent = insertion.x;
+		Node fromParent = mapping.getTo(toParent);
+		
+		// Walk through the both parents' children
+		int toIndex = 0, fromIndex = 0;
+		while (true) {
+			if (fromIndex == fromParent.children.size()) {
+				// If we reach the end of from's children, we must break
+				break;
+			}
+			if (toParent.children.get(toIndex) == insertion.y) {
+				// If we reach the node we want to insert, we break
+				break;
+			}
+			if (toParent.children.get(toIndex).hasType(
+					fromParent.children.get(fromIndex).type())) {
+				// Otherwise, if the two nodes have the same label, increment both
+				fromIndex++;
+				toIndex++;
+			} else {
+				// Otherwise, skip one of the (presumably to be deleted) from children
+				fromIndex++;
+			}
+		}
+		
+		Node insert = new Node(fromParent, insertion.y.type());
+		fromParent.children.add(fromIndex, insert);
+		
+	}
+	
+	public static void delete(Tuple<Node, Node> deletion) {
+		deletion.x.children.remove(deletion.y);
+	}
+	
+	public static void relabel(Tuple<Node, Node> relabel) {
+		relabel.x.setType(relabel.y.type());
 	}
 	
 	static class Profile {
@@ -143,7 +184,7 @@ public class PQGram {
 //              j += 1
 //      return intersect
 		
-		public void addEdits(Profile other, Set<Tuple<Node, Node>> insertions, Set<Tuple<Node, Node>> deletions, Map<Node, Node> relabels) {
+		public void addEdits(Profile other, Set<Tuple<Node, Node>> insertions, Set<Tuple<Node, Node>> deletions, Map<Node, Node> relabels, BiMap<Node,Node> mapping) {
 			
 			List<ShiftRegister> missing = new LinkedList<>(), extra = new LinkedList<>(), common = new LinkedList<>();
 			
@@ -152,6 +193,8 @@ public class PQGram {
 			while (i1 < list.size() && i2 < other.list.size()) {
 				if (list.get(i1).equals(other.list.get(i2))) {
 					common.add(list.get(i1));
+					mapping.put(list.get(i1).register.get(p - 1), 
+							other.list.get(i2).register.get(p - 1));
 					i1++;
 					i2++;
 				} else if (list.get(i1).compareTo(other.list.get(i2)) < 0) {
@@ -237,6 +280,10 @@ public class PQGram {
 			for (Tuple<Node, Node> r : toRemove) {
 				insertions.remove(r);
 				deletions.remove(r);
+			}
+			
+			for (Node key : relabels.keySet()) {
+				mapping.put(key, relabels.get(key));
 			}
 		}
 
@@ -351,7 +398,7 @@ public class PQGram {
 		}
 		
 		public static String nodeToString(Node node) {
-			return node == null ? "*" : node.type;
+			return node == null ? "*" : node.type();
 		}
 		
 		public static boolean nodesEqual(Node a, Node b) {

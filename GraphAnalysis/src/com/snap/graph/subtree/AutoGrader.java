@@ -315,8 +315,8 @@ public class AutoGrader {
 				if (!node.hasType("reportEquals")) return false;
 				if (node.children.size() != 2) return false;
 				
-				String t1 = node.children.get(0).type;
-				String t2 = node.children.get(1).type;
+				String t1 = node.children.get(0).type();
+				String t2 = node.children.get(1).type();
 				return ("var".equals(t1) && "getLastAnswer".equals(t2)) ||
 						("var".equals(t2) && "getLastAnswer".equals(t1));
 			}
