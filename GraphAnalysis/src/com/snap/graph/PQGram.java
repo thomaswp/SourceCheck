@@ -15,10 +15,11 @@ public class PQGram {
 	public static void main(String[] args) {
 		Node s = new Node(null, "A");
 		s.addChild("B");
-		s.addChild("C");
+		s.addChild("C").addChild("Q");
+		
 		
 		Node t = new Node(null, "Z");
-		t.addChild("Y");
+		t.addChild("Q");
 		t.addChild("C").addChild("Y");
 		
 		testEdits(s, t);
@@ -292,17 +293,25 @@ public class PQGram {
 				Set<Deletion> deletions, Set<Relabel> relabels, 
 				BiMap<Node,Node> mapping) {
 			
-			List<ShiftRegister> missing = new LinkedList<>(), extra = new LinkedList<>(), common = new LinkedList<>();
+			List<ShiftRegister> missing = new LinkedList<>(), extra = new LinkedList<>();
+
+			Set<Node> commonRoots = new HashSet<>();
+			commonRoots.add(null);
 			
 			// Construct list of extra and missing registers
 			int i1 = 0, i2 = 0;
 			while (i1 < list.size() && i2 < other.list.size()) {
 				if (list.get(i1).equals(other.list.get(i2))) {
-					common.add(list.get(i1));
-					for (int i = p - 1; i < p + q; i++) {
+					for (int i = 0; i < p + q; i++) {
 						Node n1 = list.get(i1).register.get(i);
 						Node n2 = other.list.get(i2).register.get(i);
-						if (n1 != null && n2 != null) mapping.put(n1, n2);
+						if (n1 != null && n2 != null) {
+							if (i >= p - 1) {
+								mapping.put(n1, n2);
+							}
+							commonRoots.add(n1);
+							commonRoots.add(n2);
+						}
 					}
 					i1++;
 					i2++;
@@ -322,20 +331,6 @@ public class PQGram {
 				missing.add(other.list.get(i2));
 				i2++;
 			}
-						
-			Set<String> commonRoots = new HashSet<>();
-			for (ShiftRegister reg : common) {
-//				commonRoots.add(ShiftRegister.nodeToString(reg.register.get(p - 1)));
-//				for (int i = p; i < p + q; i++) {
-//					commonRoots.remove(ShiftRegister.nodeToString(reg.register.get(i)));
-//				}
-				for (Node node : reg.register) {
-					commonRoots.add(ShiftRegister.nodeToString(node));
-				}
-			}
-			commonRoots.add(ShiftRegister.nodeToString(null));
-//			System.out.println(common);
-//			System.out.println(commonRoots);
 			
 			for (ShiftRegister reg : missing) {
 				extractEdits(insertions, commonRoots, reg, mapping, Insertion.constructor);
@@ -399,17 +394,17 @@ public class PQGram {
 		}
 
 		private <T extends Tuple<Node, Node>> void extractEdits(Set<T> registers, 
-				Set<String> commonRoots, ShiftRegister reg, BiMap<Node, Node> mapping, 
+				Set<Node> commonRoots, ShiftRegister reg, BiMap<Node, Node> mapping, 
 				Constructor<T> constructor) {
 			for (int i = 1; i < p; i++) {
 				Node ai = reg.register.get(i);
-				if (!commonRoots.contains(ShiftRegister.nodeToString(ai))) {
+				if (!commonRoots.contains(ai)) {
 					registers.add(constructor.construct(reg.register.get(i - 1), ai, mapping));
 				}
 			}
 			for (int i = 0; i < q; i++) {
 				Node ci = reg.register.get(p + i);
-				if (!commonRoots.contains(ShiftRegister.nodeToString(ci))) {
+				if (!commonRoots.contains(ci)) {
 					registers.add(constructor.construct(reg.register.get(p - 1), ci, mapping));
 				}
 			}
