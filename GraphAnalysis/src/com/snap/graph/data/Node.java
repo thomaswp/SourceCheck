@@ -239,6 +239,12 @@ public class Node extends StringHashable {
 		return findParallelNode(rootCopy, this);
 	}
 	
+	public Node addChild(String type) {
+		Node child = new Node(this, type);
+		children.add(child);
+		return child;
+	}
+	
 	private Node childrenCopy(Node parent) {
 		Node copy = new Node(parent, type);
 		for (Node child : children) {
