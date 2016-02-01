@@ -630,8 +630,8 @@ public class SubtreeBuilder {
 				if (x == null) { 
 					if (tuple.x != null) return false; 
 				} else if (!x.equals(tuple.x)) return false;
-				if (y == null && tuple.y != null) {
-					return false;
+				if (y == null) {
+					if (tuple.y != null) return false;
 				} else if (!y.equals(tuple.y)) return false;
 				return true;
 			}
@@ -648,7 +648,7 @@ public class SubtreeBuilder {
 		
 		@Override
 		public String toString() {
-			return "[" + x + "," + y + "]";
+			return "{" + x + "," + y + "}";
 		}
 	}
 

@@ -20,7 +20,7 @@ public class PQGram {
 		
 		Node t = new Node(null, "A");
 		t.addChild("X");
-		t.addChild("C").addChild("Y");
+		t.addChild("Y").addChild("C");
 		
 		Profile ps = new Profile(s);
 		System.out.println(s);
@@ -32,8 +32,8 @@ public class PQGram {
 		System.out.println(t);
 		System.out.println(pt);
 
-		Set<Tuple<String,String>> insertions = new HashSet<>(), deletions = new HashSet<>();
-		HashMap<String, String> relabels = new HashMap<>();
+		Set<Tuple<Node,Node>> insertions = new HashSet<>(), deletions = new HashSet<>();
+		HashMap<Node, Node> relabels = new HashMap<>();
 		ps.addEdits(pt, insertions, deletions, relabels);
 		System.out.println(ps.editDistance(pt));
 		System.out.println(insertions);
@@ -94,19 +94,19 @@ public class PQGram {
 //              siblings.shift("*")
 //              self.append(ancestors.concatenate(siblings))
 		private void profile(Node root, ShiftRegister ancestors) {
-			ancestors.shift(root.type);
+			ancestors.shift(root);
 			ShiftRegister siblings = new ShiftRegister(q);
 			
 			if (root.children.isEmpty()) {
 				list.add(ancestors.concatenate(siblings));
 			} else {
 				for (Node child : root.children) {
-					siblings.shift(child.type);
+					siblings.shift(child);
 					list.add(ancestors.concatenate(siblings));
 					profile(child, ancestors.copy());
 				}
 				for (int i = 0; i < q - 1; i++) {
-					siblings.shift("*");
+					siblings.shift(null);
 					list.add(ancestors.concatenate(siblings));
 				}
 			}
@@ -143,7 +143,7 @@ public class PQGram {
 //              j += 1
 //      return intersect
 		
-		public void addEdits(Profile other, Set<Tuple<String, String>> insertions, Set<Tuple<String, String>> deletions, Map<String, String> relabels) {
+		public void addEdits(Profile other, Set<Tuple<Node, Node>> insertions, Set<Tuple<Node, Node>> deletions, Map<Node, Node> relabels) {
 			
 			List<ShiftRegister> missing = new LinkedList<>(), extra = new LinkedList<>(), common = new LinkedList<>();
 			
@@ -171,49 +171,86 @@ public class PQGram {
 				i2++;
 			}
 						
-			Set<String> cs = new HashSet<>();
+			Set<String> commonRoots = new HashSet<>();
 			for (ShiftRegister reg : common) {
-				cs.addAll(reg.register);
+//				commonRoots.add(ShiftRegister.nodeToString(reg.register.get(p - 1)));
+//				for (int i = p; i < p + q; i++) {
+//					commonRoots.remove(ShiftRegister.nodeToString(reg.register.get(i)));
+//				}
+				for (Node node : reg.register) {
+					commonRoots.add(ShiftRegister.nodeToString(node));
+				}
 			}
+			commonRoots.add(ShiftRegister.nodeToString(null));
+			System.out.println(common);
+			System.out.println(commonRoots);
 			
 			for (ShiftRegister reg : missing) {
-				extractEdits(insertions, cs, reg);
+				extractEdits(insertions, commonRoots, reg);
 			}
 			
 			for (ShiftRegister reg : extra) {
-				extractEdits(deletions, cs, reg);
+				extractEdits(deletions, commonRoots, reg);
 			}
 			
-			HashSet<Tuple<String, String>> toRemove = new HashSet<>();
-			for (Tuple<String, String> ins : insertions) {
-				for (Tuple<String, String> del : deletions) {
-					if (ins.x.equals(del.x)) {
+			HashSet<Tuple<Node, Node>> toRemove = new HashSet<>();
+			for (Tuple<Node, Node> ins : insertions) {
+				for (Tuple<Node, Node> del : deletions) {
+					if (ShiftRegister.nodesEqual(ins.x, del.x)) {
 						relabels.put(del.y, ins.y);
-						toRemove.add(ins);
-						toRemove.add(del);
-					} else if (ins.y.equals(del.y) && ins.x.equals(relabels.get(del.x))) {
 						toRemove.add(ins);
 						toRemove.add(del);
 					}
 				}
 			}
-			for (Tuple<String, String> r : toRemove) {
+			for (Tuple<Node, Node> r : toRemove) {
+				insertions.remove(r);
+				deletions.remove(r);
+			}
+			
+			
+			toRemove.clear();
+			for (Tuple<Node, Node> ins : insertions) {
+				for (Tuple<Node, Node> del : deletions) {
+					if (ShiftRegister.nodesEqual(relabels.get(del.x), ins.x)) {
+						relabels.put(del.y, ins.y);
+						toRemove.add(ins);
+						toRemove.add(del);
+					}
+				}
+			}
+			for (Tuple<Node, Node> r : toRemove) {
+				insertions.remove(r);
+				deletions.remove(r);
+			}
+			
+			toRemove.clear();
+			for (Tuple<Node, Node> ins : insertions) {
+				for (Tuple<Node, Node> del : deletions) {
+					if (ShiftRegister.nodesEqual(ins.y, del.y) && 
+							ShiftRegister.nodesEqual(ins.x, relabels.get(del.x))) {
+						toRemove.add(ins);
+						toRemove.add(del);
+					}
+				}
+			}
+			for (Tuple<Node, Node> r : toRemove) {
 				insertions.remove(r);
 				deletions.remove(r);
 			}
 		}
 
-		private void extractEdits(Set<Tuple<String, String>> registers, Set<String> cs, ShiftRegister reg) {
+		private void extractEdits(Set<Tuple<Node, Node>> registers, Set<String> commonRoots, ShiftRegister reg) {
 			for (int i = 1; i < p; i++) {
-				String ai = reg.register.get(i);
-				if (!cs.contains(ai)) {
-					registers.add(new Tuple<String, String>(reg.register.get(i - 1), ai));
+				Node ai = reg.register.get(i);
+				if (!commonRoots.contains(ShiftRegister.nodeToString(ai))) {
+					registers.add(new Tuple<Node, Node>(reg.register.get(i - 1), ai));
 				}
 			}
 			for (int i = 0; i < q; i++) {
-				String ci = reg.register.get(p + i);
-				if (!cs.contains(ci)) {
-					registers.add(new Tuple<String, String>(reg.register.get(p - 1), ci));
+				Node ci = reg.register.get(p + i);
+				if (!commonRoots.contains(ShiftRegister.nodeToString(ci))) {
+					registers.add(new Tuple<Node, Node>(reg.register.get(p - 1), ci));
 				}
 			}
 		}
@@ -279,7 +316,7 @@ public class PQGram {
 //    PQ-Gram Profiles.
 	private static class ShiftRegister implements Comparable<ShiftRegister> {
 		
-		private final List<String> register = new LinkedList<String>();
+		private final List<Node> register = new LinkedList<Node>();
 		
 		private transient String str;
 		
@@ -294,14 +331,32 @@ public class PQGram {
 //            self.register.append("*")
 		public ShiftRegister(int size) {
 			for (int i = 0; i < size; i++) {
-				register.add("*");
+				register.add(null);
 			}
-			str = register.toString();
+			updateStr();
 		}
 		
 		private void add(ShiftRegister reg) {
 			this.register.addAll(reg.register);
-			str = register.toString();
+			updateStr();
+		}
+		
+		private void updateStr() {
+			String s = "[";
+			for (int i = 0; i < register.size(); i++) {
+				if (i > 0) s += ", ";
+				s += nodeToString(register.get(i));
+			}
+			str = s + "]";
+		}
+		
+		public static String nodeToString(Node node) {
+			return node == null ? "*" : node.type;
+		}
+		
+		public static boolean nodesEqual(Node a, Node b) {
+			if (a == null) return b == null;
+			return a.shallowEquals(b);
 		}
 		 
 //    def concatenate(self, reg):
@@ -327,10 +382,10 @@ public class PQGram {
 //        """
 //        self.register.pop(0)
 //        self.register.append(el)
-		public void shift(String el) {
+		public void shift(Node el) {
 			register.remove(0);
 			register.add(el);
-			str = register.toString();
+			updateStr();
 		}
 		
 		public ShiftRegister copy() {
