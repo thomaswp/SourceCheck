@@ -1,13 +1,12 @@
 package com.snap.graph;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
+import com.snap.graph.PQGram.Profile.Constructor;
 import com.snap.graph.data.Node;
 import com.snap.graph.subtree.SubtreeBuilder.Tuple;
 
@@ -18,69 +17,174 @@ public class PQGram {
 		s.addChild("B");
 		s.addChild("C");
 		
-		Node t = new Node(null, "A");
-		t.addChild("X");
+		Node t = new Node(null, "Z");
+		t.addChild("Y");
 		t.addChild("C").addChild("Y");
 		
-		Profile ps = new Profile(s);
-		System.out.println(s);
-		System.out.println(ps);
-
-		System.out.println();
+		testEdits(s, t);
 		
-		Profile pt = new Profile(t);
-		System.out.println(t);
-		System.out.println(pt);
-
-		Set<Tuple<Node,Node>> insertions = new HashSet<>(), deletions = new HashSet<>();
-		HashMap<Node, Node> relabels = new HashMap<>();
-		BiMap<Node, Node> mapping = new BiMap<>();
-		ps.addEdits(pt, insertions, deletions, relabels, mapping);
-		System.out.println(ps.editDistance(pt));
-		System.out.println(insertions);
-		System.out.println(deletions);
-		System.out.println(relabels);
-		System.out.println(mapping);
-		
+//		Profile ps = new Profile(s);
+//		System.out.println(s);
+//		System.out.println(ps);
+//
+//		System.out.println();
+//		
+//		Profile pt = new Profile(t);
+//		System.out.println(t);
+//		System.out.println(pt);
+//
+//		Set<Insertion> insertions = new HashSet<>();
+//		Set<Deletion> deletions = new HashSet<>();
+//		Set<Relabel> relabels = new HashSet<>();
+//		BiMap<Node, Node> mapping = new BiMap<>();
+//		ps.addEdits(pt, insertions, deletions, relabels, mapping);
+//		System.out.println(ps.editDistance(pt));
+//		System.out.println(insertions);
+//		System.out.println(deletions);
+//		System.out.println(relabels);
+//		System.out.println(mapping);
 	}
 	
-	public static void insert(Tuple<Node, Node> insertion, BiMap<Node, Node> mapping) {
-		Node toParent = insertion.x;
-		Node fromParent = mapping.getTo(toParent);
+	private static void testEdits(Node from, Node to) {
 		
-		// Walk through the both parents' children
-		int toIndex = 0, fromIndex = 0;
-		while (true) {
-			if (fromIndex == fromParent.children.size()) {
-				// If we reach the end of from's children, we must break
-				break;
+		List<Node> edits = edits(from, to);
+		if (edits.size() == 0) {
+			if (!from.equals(to)) { 
+				System.err.println(from + " =!= " + to);
 			}
-			if (toParent.children.get(toIndex) == insertion.y) {
-				// If we reach the node we want to insert, we break
-				break;
-			}
-			if (toParent.children.get(toIndex).hasType(
-					fromParent.children.get(fromIndex).type())) {
-				// Otherwise, if the two nodes have the same label, increment both
-				fromIndex++;
-				toIndex++;
-			} else {
-				// Otherwise, skip one of the (presumably to be deleted) from children
-				fromIndex++;
-			}
+			return;
+		}
+
+		System.out.println(from + " --> " + to);
+		for (Node edit : edits) {
+			System.out.println(" + " + edit);
 		}
 		
-		Node insert = new Node(fromParent, insertion.y.type());
-		fromParent.children.add(fromIndex, insert);
+		for (Node edit : edits) {
+			testEdits(edit, to);
+		}
+	}
+	
+	public static List<Node> edits(Node from, Node to) {
+		Profile pFrom = new Profile(from), pTo = new Profile(to);
+
+		Set<Insertion> insertions = new HashSet<>();
+		Set<Deletion> deletions = new HashSet<>();
+		Set<Relabel> relabels = new HashSet<>();
+		BiMap<Node, Node> mapping = new BiMap<>();
+		pFrom.addEdits(pTo, insertions, deletions, relabels, mapping);
+		
+		List<Node> outcomes = new LinkedList<>();
+		for (NodeEdit edit : insertions) {
+			Node outcome = edit.outcome();
+			if (outcome != null) outcomes.add(outcome);
+		}
+		for (NodeEdit edit : deletions) {
+			Node outcome = edit.outcome();
+			if (outcome != null) outcomes.add(outcome);
+		}
+		for (NodeEdit edit : relabels) {
+			Node outcome = edit.outcome();
+			if (outcome != null) outcomes.add(outcome);
+		}
+		
+		return outcomes;
+	}
+	
+	public interface NodeEdit {
+		Node outcome();
+	}
+	
+	public static class Insertion extends Tuple<Node, Node> implements NodeEdit {
+
+		private BiMap<Node, Node> mapping;
+		
+		public final static Constructor<Insertion> constructor = new Constructor<Insertion>() {
+			@Override
+			public Insertion construct(Node x, Node y, BiMap<Node, Node> mapping) {
+				return new Insertion(x, y, mapping);
+			}
+			
+		};
+		
+		public Insertion(Node x, Node y, BiMap<Node, Node> mapping) {
+			super(x, y);
+			this.mapping = mapping;
+		}
+
+		@Override
+		public Node outcome() {
+			Node toParent = x;
+			Node fromParent = mapping.getTo(toParent);
+			if (fromParent == null) return null;
+			fromParent = fromParent.copy(false);
+			
+			// Walk through the both parents' children
+			int toIndex = 0, fromIndex = 0;
+			while (true) {
+				if (fromIndex == fromParent.children.size()) {
+					// If we reach the end of from's children, we must break
+					break;
+				}
+				if (toParent.children.get(toIndex) == y) {
+					// If we reach the node we want to insert, we break
+					break;
+				}
+				if (toParent.children.get(toIndex).hasType(
+						fromParent.children.get(fromIndex).type())) {
+					// Otherwise, if the two nodes have the same label, increment both
+					fromIndex++;
+					toIndex++;
+				} else {
+					// Otherwise, skip one of the (presumably to be deleted) from children
+					fromIndex++;
+				}
+			}
+			
+			
+			Node insert = new Node(fromParent, y.type());
+			fromParent.children.add(fromIndex, insert);
+			return fromParent.root();
+		}
 		
 	}
 	
-	public static void delete(Tuple<Node, Node> deletion) {
-		deletion.x.children.remove(deletion.y);
+	public static class Deletion extends Tuple<Node, Node> implements NodeEdit {
+
+		public final static Constructor<Deletion> constructor = new Constructor<Deletion>() {
+			@Override
+			public Deletion construct(Node x, Node y, BiMap<Node, Node> mapping) {
+				return new Deletion(x, y);
+			}
+			
+		};
+		
+		public Deletion(Node x, Node y) {
+			super(x, y);
+		}
+
+		@Override
+		public Node outcome() {
+			Node copy = y.copy(false);
+			copy.parent.children.remove(copy.index());
+			return copy.root();
+		}
+		
 	}
 	
-	public static void relabel(Tuple<Node, Node> relabel) {
-		relabel.x.setType(relabel.y.type());
+	public static class Relabel extends Tuple<Node, Node> implements NodeEdit {
+
+		public Relabel(Node x, Node y) {
+			super(x, y);
+		}
+
+		@Override
+		public Node outcome() {
+			Node copy = x.copy(false);
+			copy.setType(y.type());
+			return copy.root();
+		}
+		
 	}
 	
 	static class Profile {
@@ -184,7 +288,9 @@ public class PQGram {
 //              j += 1
 //      return intersect
 		
-		public void addEdits(Profile other, Set<Tuple<Node, Node>> insertions, Set<Tuple<Node, Node>> deletions, Map<Node, Node> relabels, BiMap<Node,Node> mapping) {
+		public void addEdits(Profile other, Set<Insertion> insertions, 
+				Set<Deletion> deletions, Set<Relabel> relabels, 
+				BiMap<Node,Node> mapping) {
 			
 			List<ShiftRegister> missing = new LinkedList<>(), extra = new LinkedList<>(), common = new LinkedList<>();
 			
@@ -193,8 +299,11 @@ public class PQGram {
 			while (i1 < list.size() && i2 < other.list.size()) {
 				if (list.get(i1).equals(other.list.get(i2))) {
 					common.add(list.get(i1));
-					mapping.put(list.get(i1).register.get(p - 1), 
-							other.list.get(i2).register.get(p - 1));
+					for (int i = p - 1; i < p + q; i++) {
+						Node n1 = list.get(i1).register.get(i);
+						Node n2 = other.list.get(i2).register.get(i);
+						if (n1 != null && n2 != null) mapping.put(n1, n2);
+					}
 					i1++;
 					i2++;
 				} else if (list.get(i1).compareTo(other.list.get(i2)) < 0) {
@@ -225,22 +334,23 @@ public class PQGram {
 				}
 			}
 			commonRoots.add(ShiftRegister.nodeToString(null));
-			System.out.println(common);
-			System.out.println(commonRoots);
+//			System.out.println(common);
+//			System.out.println(commonRoots);
 			
 			for (ShiftRegister reg : missing) {
-				extractEdits(insertions, commonRoots, reg);
+				extractEdits(insertions, commonRoots, reg, mapping, Insertion.constructor);
 			}
 			
 			for (ShiftRegister reg : extra) {
-				extractEdits(deletions, commonRoots, reg);
+				extractEdits(deletions, commonRoots, reg, mapping, Deletion.constructor);
 			}
 			
 			HashSet<Tuple<Node, Node>> toRemove = new HashSet<>();
 			for (Tuple<Node, Node> ins : insertions) {
 				for (Tuple<Node, Node> del : deletions) {
 					if (ShiftRegister.nodesEqual(ins.x, del.x)) {
-						relabels.put(del.y, ins.y);
+						relabels.add(new Relabel(del.y, ins.y));
+						mapping.put(del.y, ins.y);
 						toRemove.add(ins);
 						toRemove.add(del);
 					}
@@ -252,26 +362,27 @@ public class PQGram {
 			}
 			
 			
-			toRemove.clear();
-			for (Tuple<Node, Node> ins : insertions) {
-				for (Tuple<Node, Node> del : deletions) {
-					if (ShiftRegister.nodesEqual(relabels.get(del.x), ins.x)) {
-						relabels.put(del.y, ins.y);
-						toRemove.add(ins);
-						toRemove.add(del);
-					}
-				}
-			}
-			for (Tuple<Node, Node> r : toRemove) {
-				insertions.remove(r);
-				deletions.remove(r);
-			}
+//			toRemove.clear();
+//			for (Tuple<Node, Node> ins : insertions) {
+//				for (Tuple<Node, Node> del : deletions) {
+//					if (ShiftRegister.nodesEqual(mapping.getFrom(del.x), ins.x)) {
+//						relabels.add(new Relabel(del.y, ins.y));
+//						mapping.put(del.y, ins.y);
+//						toRemove.add(ins);
+//						toRemove.add(del);
+//					}
+//				}
+//			}
+//			for (Tuple<Node, Node> r : toRemove) {
+//				insertions.remove(r);
+//				deletions.remove(r);
+//			}
 			
 			toRemove.clear();
 			for (Tuple<Node, Node> ins : insertions) {
 				for (Tuple<Node, Node> del : deletions) {
 					if (ShiftRegister.nodesEqual(ins.y, del.y) && 
-							ShiftRegister.nodesEqual(ins.x, relabels.get(del.x))) {
+							ShiftRegister.nodesEqual(ins.x, mapping.getFrom(del.x))) {
 						toRemove.add(ins);
 						toRemove.add(del);
 					}
@@ -281,23 +392,25 @@ public class PQGram {
 				insertions.remove(r);
 				deletions.remove(r);
 			}
-			
-			for (Node key : relabels.keySet()) {
-				mapping.put(key, relabels.get(key));
-			}
+		}
+		
+		interface Constructor<T> {
+			T construct(Node x, Node y, BiMap<Node, Node> mapping);
 		}
 
-		private void extractEdits(Set<Tuple<Node, Node>> registers, Set<String> commonRoots, ShiftRegister reg) {
+		private <T extends Tuple<Node, Node>> void extractEdits(Set<T> registers, 
+				Set<String> commonRoots, ShiftRegister reg, BiMap<Node, Node> mapping, 
+				Constructor<T> constructor) {
 			for (int i = 1; i < p; i++) {
 				Node ai = reg.register.get(i);
 				if (!commonRoots.contains(ShiftRegister.nodeToString(ai))) {
-					registers.add(new Tuple<Node, Node>(reg.register.get(i - 1), ai));
+					registers.add(constructor.construct(reg.register.get(i - 1), ai, mapping));
 				}
 			}
 			for (int i = 0; i < q; i++) {
 				Node ci = reg.register.get(p + i);
 				if (!commonRoots.contains(ShiftRegister.nodeToString(ci))) {
-					registers.add(new Tuple<Node, Node>(reg.register.get(p - 1), ci));
+					registers.add(constructor.construct(reg.register.get(p - 1), ci, mapping));
 				}
 			}
 		}
