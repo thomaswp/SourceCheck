@@ -46,8 +46,12 @@ public class Insertion extends PositionalEdit {
 	@Override
 	public Node outcome(Map<String, Tree> map) {
 		Node copy = map.get(a).tag.copy(false);
-		Node ins = new Node(copy, bG.getLabel());
-		copy.children.add(start - 1, ins);
-		return copy.root();
+		int index = start - 1;
+		if (index >= 0 && index <= copy.children.size()) {
+			Node ins = new Node(copy, bG.getLabel());
+			copy.children.add(index, ins);
+			return copy.root();
+		}
+		return null;
 	}
 }

@@ -38,8 +38,8 @@ public class PQGramRecommendation {
 		Profile missing = profile2.difference(common);
 		Profile extra = profile1.difference(common);
 
-		System.out.println("Common");
-		System.out.println(common);
+//		System.out.println("Common");
+//		System.out.println(common);
 		
 		Map<String, Tree> built = new HashMap<String, Tree>();
 		Map<String, String> childToParent = new HashMap<String, String>();
@@ -47,9 +47,9 @@ public class PQGramRecommendation {
 		buildCommonTrees(common, built, childToParent);
 		
 		List<Deletion> deletions = getDeletions(extra, built, childToParent);
-		System.out.println("Number of deletions = " + deletions.size());
+//		System.out.println("Number of deletions = " + deletions.size());
 		List<Insertion> insertions = getInsertions(missing, built, childToParent);
-		System.out.println("Number of insertions = " + insertions.size());
+//		System.out.println("Number of insertions = " + insertions.size());
 		
 		// minimizing deletions/insertions by finding eligible relabelings and matching up pairs due to relabeling propagations
 		List<Relabeling> relabelingEdits = new ArrayList<Relabeling>();
@@ -57,8 +57,8 @@ public class PQGramRecommendation {
 		RecommendationMinimizer.minimizeDeletions(insertions, deletions, relabelings);
 		RecommendationMinimizer.minimizeInsertions(insertions, deletions, relabelings);
 		
-		System.out.println("Number of deletions = " + deletions.size());
-		System.out.println("Number of insertions = " + insertions.size());
+//		System.out.println("Number of deletions = " + deletions.size());
+//		System.out.println("Number of insertions = " + insertions.size());
 				
 		List<Edit> edits = new ArrayList<Edit>();
 		edits.addAll(relabelingEdits);
@@ -92,7 +92,7 @@ public class PQGramRecommendation {
 					insertion.setEndPosition(insertions.get(i - 1).getEndPosition());
 				}
 			}
-			System.out.println(insertion + ", " + insertion.getLineNumber());
+//			System.out.println(insertion + ", " + insertion.getLineNumber());
 		}
 		
 		edits.addAll(deletions);

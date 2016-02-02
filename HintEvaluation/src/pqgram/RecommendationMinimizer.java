@@ -50,7 +50,7 @@ public class RecommendationMinimizer {
 					String secondInsertionPart = getOriginalLabel(insertion.getB());
 					if (firstInsertionPart.equals(newParentLabel) && secondInsertionPart.equals(secondDeletionPart)) { // if the deletion and insertion are inverses, we don't need them
 						insertionsToRemove.add(insertion);
-						System.out.println(deletion + ", " + insertion);
+//						System.out.println(deletion + ", " + insertion);
 						hasMatchingInsertion = true;
 					}
 				}

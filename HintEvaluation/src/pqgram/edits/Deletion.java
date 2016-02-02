@@ -22,7 +22,7 @@ public class Deletion extends PositionalEdit {
 	
 	@Override
 	public Node outcome(Map<String, Tree> map) {
-		Node copy = map.get(a).tag.copy(false);
+		Node copy = map.get(b).tag.copy(false);
 		copy.parent.children.remove(copy.index());
 		return copy.root();
 	}
