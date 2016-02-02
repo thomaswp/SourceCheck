@@ -3,6 +3,8 @@ package pqgram.edits;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import com.snap.graph.data.Node;
+
 import astrecognition.model.Graph;
 
 public class Insertion extends PositionalEdit {
@@ -37,5 +39,10 @@ public class Insertion extends PositionalEdit {
 			inheritedChildrenList += inheritedChild + ", ";
 		}
 		return String.format(INSERTION_STRING, this.lineNumber, this.b, this.a, this.start, this.end, inheritedChildrenList);
+	}
+	
+	@Override
+	public Node outcome() {
+		return super.outcome();
 	}
 }

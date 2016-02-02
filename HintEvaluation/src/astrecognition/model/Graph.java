@@ -2,8 +2,12 @@ package astrecognition.model;
 
 import java.util.Collection;
 
-public abstract class Graph implements Comparable<Graph> {
+import com.snap.graph.data.Node;
 
+public abstract class Graph implements Comparable<Graph> {
+	
+	public transient Node tag;
+	
 	@Override
 	public abstract int compareTo(Graph graph);
 	

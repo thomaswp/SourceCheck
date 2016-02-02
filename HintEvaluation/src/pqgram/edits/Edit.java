@@ -1,5 +1,7 @@
 package pqgram.edits;
 
+import com.snap.graph.data.Node;
+
 import astrecognition.model.Graph;
 
 /**
@@ -27,6 +29,8 @@ public abstract class Edit {
 		this.startPosition = startPosition;
 		this.endPosition = endPosition;
 	}
+	
+	public abstract Node outcome();
 	
 	public Graph getAG() {
 		return this.aG;

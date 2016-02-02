@@ -15,10 +15,10 @@ public class Test {
 		tree1.addChild(new Tree(tree1, "B"));
 		tree1.addChild(new Tree(tree1, "C"));
 		
-		Tree tree2 = new Tree("Q");
+		Tree tree2 = new Tree("A");
 		tree2.addChild(new Tree(tree2, "X"));
-		Tree child = new Tree(tree2, "Q");
-		child.addChild(new Tree(child, "C"));
+		Tree child = new Tree(tree2, "C");
+		child.addChild(new Tree(child, "Y"));
 		tree2.addChild(child);
 		
 		tree1.makeLabelsUnique(map);

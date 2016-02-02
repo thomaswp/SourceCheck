@@ -1,5 +1,7 @@
 package pqgram.edits;
 
+import com.snap.graph.data.Node;
+
 import astrecognition.model.Graph;
 
 /**
@@ -15,5 +17,10 @@ public class PositionalEdit extends Edit {
 	
 	public int getPosition() {
 		return this.start;
+	}
+
+	@Override
+	public Node outcome() {
+		throw new UnsupportedOperationException();
 	}
 }
