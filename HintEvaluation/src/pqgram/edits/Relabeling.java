@@ -1,8 +1,11 @@
 package pqgram.edits;
 
+import java.util.Map;
+
 import com.snap.graph.data.Node;
 
 import astrecognition.model.Graph;
+import astrecognition.model.Tree;
 
 
 public class Relabeling extends Edit {
@@ -19,8 +22,8 @@ public class Relabeling extends Edit {
 	}
 
 	@Override
-	public Node outcome() {
-		Node copy = aG.tag.copy(false);
+	public Node outcome(Map<String, Tree> map) {
+		Node copy = map.get(a).tag.copy(false);
 		copy.setType(bG.getLabel());
 		return copy.root();
 	}

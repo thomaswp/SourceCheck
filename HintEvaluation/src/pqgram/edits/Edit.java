@@ -1,8 +1,11 @@
 package pqgram.edits;
 
+import java.util.Map;
+
 import com.snap.graph.data.Node;
 
 import astrecognition.model.Graph;
+import astrecognition.model.Tree;
 
 /**
  * Base class for tree edits
@@ -30,7 +33,7 @@ public abstract class Edit {
 		this.endPosition = endPosition;
 	}
 	
-	public abstract Node outcome();
+	public abstract Node outcome(Map<String, Tree> map);
 	
 	public Graph getAG() {
 		return this.aG;

@@ -2,10 +2,12 @@ package pqgram.edits;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
 
 import com.snap.graph.data.Node;
 
 import astrecognition.model.Graph;
+import astrecognition.model.Tree;
 
 public class Insertion extends PositionalEdit {
 	
@@ -42,7 +44,10 @@ public class Insertion extends PositionalEdit {
 	}
 	
 	@Override
-	public Node outcome() {
-		return super.outcome();
+	public Node outcome(Map<String, Tree> map) {
+		Node copy = map.get(a).tag.copy(false);
+		Node ins = new Node(copy, bG.getLabel());
+		copy.children.add(start - 1, ins);
+		return copy.root();
 	}
 }

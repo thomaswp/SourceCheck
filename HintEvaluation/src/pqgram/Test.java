@@ -12,25 +12,30 @@ public class Test {
 		HashMap<String, Integer> map = new HashMap<>();
 		
 		Tree tree1 = new Tree("A");
-		tree1.addChild(new Tree(tree1, "B"));
-		tree1.addChild(new Tree(tree1, "C"));
 		
 		Tree tree2 = new Tree("A");
-		tree2.addChild(new Tree(tree2, "X"));
-		Tree child = new Tree(tree2, "C");
-		child.addChild(new Tree(child, "Y"));
-		tree2.addChild(child);
+		Tree child1 = new Tree("X");
+		tree2.addChild(child1);
+		Tree child2 = new Tree("C");
+		tree2.addChild(child2);
+		
+		child2.addChild(new Tree("A"));
+		
 		
 		tree1.makeLabelsUnique(map);
 		tree2.makeLabelsUnique(map);
 		
-		System.out.println(toString(tree1));
-		System.out.println(toString(tree2));
+//		System.out.println(toString(tree1));
+//		System.out.println(toString(tree2));
 		
-		int p = 3, q = 2;
+		int p = 2, q = 3;
 		
 		Profile p1 = PQGram.getProfile(tree1, p, q);
 		Profile p2 = PQGram.getProfile(tree2, p, q);
+
+		System.out.println(p1);
+		System.out.println(p2);
+		
 		List<Edit> edits = PQGramRecommendation.getEdits(p1, p2, tree1, tree2);
 		
 		System.out.println("Edits:");
@@ -42,7 +47,7 @@ public class Test {
 	public static String toString(Tree t) {
 		String s = t.toString();
 		if (!t.isLeaf()) {
-			s += ": [";
+			s += ":[";
 			boolean first = true;
 			for (Tree child : t.getChildren()) {
 				if (!first) s += ", ";

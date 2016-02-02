@@ -9,24 +9,38 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import astrecognition.Settings;
+import astrecognition.model.Graph;
+import astrecognition.model.Tree;
 import pqgram.edits.Deletion;
 import pqgram.edits.Edit;
 import pqgram.edits.Insertion;
 import pqgram.edits.PositionalEdit;
 import pqgram.edits.Relabeling;
-import astrecognition.Settings;
-import astrecognition.model.Graph;
-import astrecognition.model.Tree;
 /**
  * Attempts to find minimal number of steps to transform a source tree to the given target via insertions, deletions, and relabelings
  */
 public class PQGramRecommendation {
 
+	public static Map<Graph, Graph> getMapping(Profile profile1, Profile profile2, Tree sourceTree, Tree targetTree) {
+		HashMap<Graph, Graph> map = new HashMap<>();
+		for (Tuple<Graph> t1 : profile1.getAllElements()) {
+			for (Tuple<Graph> t2 : profile2.getAllElements()) {
+				if (t1.equals(t2)) {
+				}
+			}
+		}
+		return map;
+	}
+	
 	public static List<Edit> getEdits(Profile profile1, Profile profile2, Tree sourceTree, Tree targetTree) {
 		Profile common = profile1.intersect(profile2);
 		Profile missing = profile2.difference(common);
 		Profile extra = profile1.difference(common);
 
+		System.out.println("Common");
+		System.out.println(common);
+		
 		Map<String, Tree> built = new HashMap<String, Tree>();
 		Map<String, String> childToParent = new HashMap<String, String>();
 
@@ -135,10 +149,11 @@ public class PQGramRecommendation {
 			Tree parent = ancestor;
 			int position;
 			for (int i = 1; i < Settings.P; i++) {
-				parent = getTree(tup.get(1), built);
+				parent = getTree(tup.get(i), built);
 				position = addChildToParent(ancestor, parent, childToParent);
 				if (position >= 0) {
 					PositionalEdit positionalEdit = new PositionalEdit(ancestor.getUniqueLabel(), parent.getUniqueLabel(), ancestor, parent, position);
+//					System.out.println("Ancestor: " + positionalEdit.getA());
 					positionalEdit.setLineNumber(ancestor.getLineNumber());
 					positionalEdit.setStartPosition(ancestor.getStartPosition());
 					positionalEdit.setEndPosition(ancestor.getEndPosition());
@@ -152,6 +167,7 @@ public class PQGramRecommendation {
 				position = addChildToParent(parent, currentTree, childToParent);
 				if (position >= 0 && !currentGraph.equals(PQGram.STAR_LABEL)) {
 					PositionalEdit positionalEdit = new PositionalEdit(parent.getUniqueLabel(), currentGraph.getUniqueLabel(), parent, currentGraph, position);
+//					System.out.println("Parent: " + positionalEdit.getA());
 					positionalEdit.setLineNumber(parent.getLineNumber());
 					positionalEdit.setStartPosition(parent.getStartPosition());
 					positionalEdit.setEndPosition(parent.getEndPosition());

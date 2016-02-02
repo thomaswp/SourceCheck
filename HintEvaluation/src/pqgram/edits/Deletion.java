@@ -1,6 +1,11 @@
 package pqgram.edits;
 
+import java.util.Map;
+
+import com.snap.graph.data.Node;
+
 import astrecognition.model.Graph;
+import astrecognition.model.Tree;
 
 public class Deletion extends PositionalEdit {
 	
@@ -13,5 +18,12 @@ public class Deletion extends PositionalEdit {
 	@Override
 	public String toString() {
 		return String.format(DELETION_STRING, this.lineNumber, this.b, this.a, this.start);
+	}
+	
+	@Override
+	public Node outcome(Map<String, Tree> map) {
+		Node copy = map.get(a).tag.copy(false);
+		copy.parent.children.remove(copy.index());
+		return copy.root();
 	}
 }
