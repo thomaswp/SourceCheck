@@ -1,4 +1,4 @@
-package com.snap.graph;
+package com.snap.eval.util;
 
 import java.util.HashMap;
 

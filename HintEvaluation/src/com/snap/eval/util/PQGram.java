@@ -1,4 +1,4 @@
-package com.snap.graph;
+package com.snap.eval.util;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -6,7 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import com.snap.graph.PQGram.Profile.Constructor;
+import com.snap.eval.util.PQGram.Profile.Constructor;
 import com.snap.graph.data.Node;
 import com.snap.graph.subtree.SubtreeBuilder.Tuple;
 

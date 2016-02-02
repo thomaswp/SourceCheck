@@ -1,4 +1,4 @@
-package com.snap.graph.subtree;
+package com.snap.eval.grades;
 
 import java.util.Arrays;
 import java.util.Date;
@@ -9,12 +9,14 @@ import java.util.List;
 import java.util.Set;
 
 import com.snap.data.Snapshot;
+import com.snap.eval.grades.AutoGrader.Grader;
 import com.snap.graph.Alignment;
 import com.snap.graph.data.HintFactoryMap;
 import com.snap.graph.data.HintFactoryMap.VectorHint;
 import com.snap.graph.data.Node;
 import com.snap.graph.data.Node.Predicate;
-import com.snap.graph.subtree.AutoGrader.Grader;
+import com.snap.graph.subtree.SnapSubtree;
+import com.snap.graph.subtree.SubtreeBuilder;
 import com.snap.graph.subtree.SubtreeBuilder.Hint;
 import com.snap.graph.subtree.SubtreeBuilder.Tuple;
 

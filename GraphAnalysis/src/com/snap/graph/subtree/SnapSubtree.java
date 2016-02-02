@@ -11,7 +11,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -21,7 +20,6 @@ import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.HintFactoryMap;
 import com.snap.graph.data.HintMap;
 import com.snap.graph.data.Node;
-import com.snap.graph.data.Node.Action;
 import com.snap.graph.data.VectorGraph;
 import com.snap.graph.subtree.SubtreeBuilder.Hint;
 import com.snap.parser.DataRow;
@@ -31,16 +29,6 @@ import com.snap.parser.SolutionPath;
 import com.snap.parser.Store;
 import com.snap.parser.Store.Mode;
 
-import de.citec.tcs.alignment.csv.CSVExporter;
-import de.citec.tcs.alignment.sequence.Alphabet;
-import de.citec.tcs.alignment.sequence.KeywordSpecification;
-import de.citec.tcs.alignment.sequence.NodeSpecification;
-import de.citec.tcs.alignment.sequence.Sequence;
-import de.citec.tcs.alignment.sequence.SymbolicKeywordSpecification;
-import de.citec.tcs.alignment.sequence.SymbolicValue;
-import de.unibi.citec.fit.objectgraphs.Graph;
-import de.unibi.citec.fit.objectgraphs.api.factories.TreeFactory;
-import de.unibi.citec.fit.objectgraphs.api.matlab.print.PlainTextPrintModule;
 import distance.RTED_InfoTree_Opt;
 import util.LblTree;
 
@@ -55,8 +43,6 @@ public class SnapSubtree {
 
 		Date maxTime = new GregorianCalendar(2015, 8, 18).getTime();
 		SnapSubtree subtree = new SnapSubtree("../data/csc200/fall2015", "guess1Lab", maxTime, new HintFactoryMap());
-
-//		subtree.outputStudentsFOG();
 
 		// [0.0 - 1.0]
 		double minGrade = 1;
@@ -85,6 +71,37 @@ public class SnapSubtree {
 	//			
 	//		}
 	//	}
+
+
+	public final String dataDir;
+	public final String assignment;
+	private final Date maxTime;
+	private final HintMap hintMap;
+
+	private HashMap<String, List<Node>> nodeMapCache;
+	private HashMap<String, Grade> gradeMap;
+
+	public HashMap<String, List<Node>> nodeMap() {
+		if (nodeMapCache == null) {
+			try {
+				parseStudents();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		return nodeMapCache;
+	}
+	
+	public HashMap<String, Grade> gradeMap() {
+		return gradeMap;
+	}
+
+	public SnapSubtree(String dataDir, String assignment, Date maxTime, HintMap hintMap) {
+		this.dataDir = dataDir;
+		this.assignment = assignment;
+		this.maxTime = maxTime;
+		this.hintMap = hintMap;
+	}
 
 	@SuppressWarnings("unused")
 	private void printSomeHints(SubtreeBuilder builder) {
@@ -140,14 +157,6 @@ public class SnapSubtree {
 		System.exit(0);
 	}
 
-	public final String dataDir;
-	public final String assignment;
-	private final Date maxTime;
-	private final HintMap hintMap;
-
-	private HashMap<String, List<Node>> nodeMapCache;
-	private HashMap<String, Grade> gradeMap;
-
 	public void saveGraphs(SubtreeBuilder builder, int minVertices) throws FileNotFoundException {
 		if (!(hintMap instanceof HintFactoryMap)) {
 			System.out.println("No Hint Factory Map");
@@ -173,24 +182,6 @@ public class SnapSubtree {
 			graph.export(new PrintStream(new FileOutputStream(file + ".graphml")), true, 0, false, true);
 			graph.exportGoalContexts(new PrintStream(file + ".txt"));
 		}
-	}
-
-	protected HashMap<String, List<Node>> nodeMap() {
-		if (nodeMapCache == null) {
-			try {
-				parseStudents();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-		return nodeMapCache;
-	}
-
-	public SnapSubtree(String dataDir, String assignment, Date maxTime, HintMap hintMap) {
-		this.dataDir = dataDir;
-		this.assignment = assignment;
-		this.maxTime = maxTime;
-		this.hintMap = hintMap;
 	}
 
 	public SubtreeBuilder buildGraph(Mode storeMode) {
@@ -254,135 +245,6 @@ public class SnapSubtree {
 		}
 		builder.finishedAdding();
 		return builder;
-	}
-
-	@SuppressWarnings("unused")
-	private void outputStudentsFOG() {
-		int totalNodes = 0;
-		String baseDir = dataDir + "/" + assignment + "/chf-fog/";
-		new File(baseDir).mkdirs();
-
-		HashMap<String,List<Node>> nodeMap = nodeMap();
-		for (String student : nodeMap.keySet()) {
-			Grade grade = gradeMap.get(student);
-			totalNodes++;
-			List<Node> nodes = nodeMap.get(student);
-			String dir  = baseDir + student + "/";
-			new File(dir).mkdirs();
-			for (Node node : nodes) {
-				// Let's transform that to the .fog format by transforming it to a
-				// Graph object. For that I have some API classes provided that make
-				// life easier. In this case we need a TreeFactory
-				final TreeFactory factory = new TreeFactory();
-				final Graph convertedTree = factory.createGraph();
-				if (grade != null) factory.addMetaInformation(convertedTree, "grade", grade.average());
-				// convert the tree recursively
-				transform(node, convertedTree, null, factory);
-				// and then we can serialize it to a .fog format string
-				final PlainTextPrintModule print = new PlainTextPrintModule();
-				String name = ((Snapshot)node.tag).name;
-				try {
-					FileOutputStream fos = new FileOutputStream(dir + name + ".fog");
-					print.printGraph(convertedTree, fos);
-					fos.close();
-					totalNodes++;
-				} catch (IOException ex) {
-					throw new RuntimeException(ex);
-				}
-			}
-		}
-		
-		System.out.println("Total students: " + nodeMap.size());
-		System.out.println("Total nodes: " + totalNodes);
-	}
-
-	private static void transform(Node node, Graph convertedTree, de.unibi.citec.fit.objectgraphs.Node convertedParent, TreeFactory factory) {
-		final de.unibi.citec.fit.objectgraphs.Node convertedNode;
-		if (convertedParent == null) {
-			convertedNode = factory.createNode(convertedTree);
-		} else {
-			convertedNode = factory.createChild(convertedParent);
-		}
-		factory.addMetaInformation(convertedNode, "label", node.type());
-		for (final Node child : node.children) {
-			transform(child, convertedTree, convertedNode, factory);
-		}
-	}
-
-	@SuppressWarnings("unused")
-	private void outputStudents() {
-
-		HashMap<String,List<Node>> nodeMap = nodeMap();
-		final HashSet<String> labels = new HashSet<String>();
-		for (List<Node> nodes : nodeMap.values()) {
-			for (Node node : nodes) {
-				node.recurse(new Action() {
-					@Override
-					public void run(Node item) {
-						labels.add(item.type());
-					}
-				});
-			}
-		}
-
-		String baseDir = dataDir + "/" + assignment + "/chf/";
-		new File(baseDir).mkdirs();
-
-		// this we want to transform to a Sequence in my format. For that we
-		// need to specify the attributes of our nodes in the Sequence first.
-		// our nodes have only one attribute, namely the label.
-		// In my toolbox, there are three different kinds of attributes for
-		// nodes, symbolic data, vectorial data and string data. A label in our
-		// case is probably symbolic, meaning: There is only a finite set of
-		// different possible labels. Symbolic, in that sense, is something like
-		// an enum.
-		// the alphabet specifies the different possible values.
-		final Alphabet alpha = new Alphabet(labels.toArray(new String[labels.size()]));
-		// the KeywordSpecification specifies the attribute overall.
-		final SymbolicKeywordSpecification labelAttribute
-		= new SymbolicKeywordSpecification(alpha, "label");
-		// the NodeSpecification specifies all attributes of a node.
-		final NodeSpecification nodeSpec = new NodeSpecification(
-				new KeywordSpecification[]{labelAttribute});
-		// and we can write that NodeSpecification to a JSON file.
-
-		try {
-			CSVExporter.exportNodeSpecification(nodeSpec, baseDir + "nodeSpec.json");
-		} catch (IOException ex) {
-			throw new RuntimeException(ex);
-		}
-
-		for (String student : nodeMap.keySet()) {
-			List<Node> nodes = nodeMap.get(student);
-			String dir  = baseDir + student + "/";
-			new File(dir).mkdirs();
-			for (Node node : nodes) {
-				final Sequence seq = new Sequence(nodeSpec);
-				appendNode(seq, alpha, node);
-				String name = ((Snapshot)node.tag).name;
-				// show it for fun
-				//				System.out.println(name + ": " + seq.toString());
-				// and then we can write it to a file.
-				try {
-					CSVExporter.exportSequence(seq, dir + name + ".csv");
-				} catch (IOException ex) {
-					throw new RuntimeException(ex);
-				}
-			}
-		}		
-	}
-
-	private static void appendNode(Sequence seq, Alphabet alpha, Node node) {
-		// create a node for the sequence.
-		final de.citec.tcs.alignment.sequence.Node n = new de.citec.tcs.alignment.sequence.Node(seq);
-		// set its label
-		n.setValue("label", new SymbolicValue(alpha, node.type()));
-		// add it to the sequence.
-		seq.getNodes().add(n);
-		// recurse to the children.
-		for (final Node child : node.children) {
-			appendNode(seq, alpha, child);
-		}
 	}
 
 	private void parseStudents() throws IOException {
