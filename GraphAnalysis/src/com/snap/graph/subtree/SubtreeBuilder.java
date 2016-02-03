@@ -335,7 +335,7 @@ public class SubtreeBuilder {
 		return perc;
 	}
 	
-	public List<Hint> getHints(Node parent) {
+	public synchronized List<Hint> getHints(Node parent) {
 		LinkedList<Hint> hints = new LinkedList<Hint>();
 		getHints(parent, hints);
 		Iterator<Hint> iterator = hints.iterator();

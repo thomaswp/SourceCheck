@@ -7,6 +7,7 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.snap.data.Snapshot;
 import com.snap.eval.grades.AutoGrader.Grader;
@@ -48,12 +49,11 @@ public class GradeEval {
 		
 		HashMap<String,List<Node>> nodeMap = subtree.nodeMap();
 		for (String student : nodeMap.keySet()) {
-			if (--max <= 0) break;
-			
-			if (skip > 0) {
-				skip--;
+			if (skip-- > 0) {
 				continue;
 			}
+			
+			if (--max < 0) break;
 			
 			System.out.println(student);
 			
@@ -69,13 +69,30 @@ public class GradeEval {
 					new Score("Student Next", new StudentPolicy(nodes))
 			};
 			
-			for (Node node : nodes) {
+			AtomicInteger count = new AtomicInteger(0);
+			int total = 0;
+			
+			for (int i = 0; i < nodes.size(); i++) {
+				Node node = nodes.get(i);
 				HashMap<String,Boolean> grade = AutoGrader.grade(node);
 				
 				for (Score score : scores) {
-					score.update(node, grade);
+//					score.update(node, grade);
+					score.updateAsync(node, grade, count);
+					total++;
 				}
 			}
+			
+			Updater updater = new Updater(40);
+			while (count.get() > 0) {
+				try {
+					Thread.sleep(100);
+					updater.update((total - (double)count.get()) / total);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+			System.out.println();
 
 			for (int i = 0; i < scores.length; i++) {
 				Score score = scores[i];
@@ -86,6 +103,21 @@ public class GradeEval {
 		
 		for (Score score : scoreTotals) {
 			score.print();
+		}
+	}
+	
+	private static class Updater {
+		private final int maxCount;
+		private int count;
+		
+		public Updater(int maxCount) {
+			this.maxCount = maxCount;
+		}
+		
+		public void update(double progress) {
+			int newCount = (int) Math.round(maxCount * progress);
+			for (int i = count; i < newCount; i++) System.out.print("+");
+			count = newCount;
 		}
 	}
 	
@@ -128,7 +160,18 @@ public class GradeEval {
 			totalSteps += score.totalSteps;
 		}
 		
-		private void update(Node node, HashMap<String,Boolean> grade) {
+		public void updateAsync(final Node node, final HashMap<String,Boolean> grade, AtomicInteger count) {
+			count.incrementAndGet();
+			new Thread(new Runnable() {
+				@Override
+				public void run() {
+					update(node, grade);
+					count.decrementAndGet();
+				}
+			}).start();
+		}
+		
+		public void update(Node node, HashMap<String,Boolean> grade) {
 			Set<Node> steps = policy.nextSteps(node);
 			
 			for (Node next : steps) {				
@@ -137,19 +180,26 @@ public class GradeEval {
 					boolean a = grade.get(obj);
 					boolean b = nextGrade.get(obj);
 					
+					Tuple<Integer, Integer> outcome = outcomes.get(obj);
 					if (a == true && b == false) {
 //						Tuple<VectorHint, Boolean> record = new Tuple<VectorHint, Boolean>(vHint, false);
 //						if (seen.add(record)) {
-							outcomes.get(obj).x++;
+							synchronized (outcome) {
+								outcome.x++;
+							}
 //						}
 					} else if (a == false && b == true) {
 //						Tuple<VectorHint, Boolean> record = new Tuple<VectorHint, Boolean>(vHint, true);
 //						if (seen.add(record)) {
-							outcomes.get(obj).y++;
+							synchronized (outcome) {
+								outcome.y++;
+							}
 //						}
 					}
 				}
-				totalSteps++;
+				synchronized (this) {
+					totalSteps++;
+				}
 			}
 		}
 	}

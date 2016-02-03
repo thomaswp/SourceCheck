@@ -414,7 +414,7 @@ public class AutoGrader {
 			if (hasCondition && node.children.get(1).searchChildren(isResponse) != -1) {
 				return true;
 			}
-			if (node.hasType("doIfElse")) {
+			if (node.hasType("doIfElse") && node.children.size() > 2) {
 				return hasInvCondition && node.children.get(2).searchChildren(isResponse) != -1;
 			}
 			return false;
