@@ -28,12 +28,18 @@ public class RecommendationMinimizer {
 			if (secondDeletionPart.contains(":")) {
 				secondDeletionPart = secondDeletionPart.substring(0, secondDeletionPart.indexOf(':'));
 			}
-			if (relabelings.containsKey(deletion.getA())) {
-				deletion.setA(relabelings.get(deletion.getA()));
+			String newA = deletion.getA(), newB = deletion.getB();
+			if (relabelings.containsKey(newA)) {
+				newA = relabelings.get(newA);
 			}
-			if (relabelings.containsKey(deletion.getB())) {
-				deletion.setB(relabelings.get(deletion.getB()));
+			if (relabelings.containsKey(newB)) {
+				newB = relabelings.get(newB);
 			}
+			if (!newA.equals(newB)) {
+				deletion.setA(newA);
+				deletion.setB(newB);
+			}
+			
 			if (!relabelings.containsKey(deletion.getB())) { // not a relabeling
 				deletedToParent.put(deletion.getB(), deletion.getA()); // add to deleted -> parent mapping
 				String newParentLabel = deletion.getA();

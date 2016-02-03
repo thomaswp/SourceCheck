@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.swing.plaf.synth.SynthScrollBarUI;
+
 import com.snap.data.Snapshot;
 import com.snap.eval.grades.AutoGrader.Grader;
 import com.snap.eval.policy.DirectEditPolicy;
@@ -174,7 +176,7 @@ public class GradeEval {
 		public void update(Node node, HashMap<String,Boolean> grade) {
 			Set<Node> steps = policy.nextSteps(node);
 			
-			for (Node next : steps) {				
+			for (Node next : steps) {
 				HashMap<String,Boolean> nextGrade = AutoGrader.grade(next);
 				for (String obj : nextGrade.keySet()) {
 					boolean a = grade.get(obj);
