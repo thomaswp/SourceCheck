@@ -23,7 +23,7 @@ public class PositionalEdit extends Edit {
 	}
 
 	@Override
-	public Node outcome(Map<String, Tree> map) {
+	public Node outcome(Map<String, Tree> fromMap, Map<String, Tree> toMap) {
 		throw new UnsupportedOperationException();
 	}
 }

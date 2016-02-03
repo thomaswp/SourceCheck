@@ -21,8 +21,9 @@ public class Deletion extends PositionalEdit {
 	}
 	
 	@Override
-	public Node outcome(Map<String, Tree> map) {
-		Node copy = map.get(b).tag.copy(false);
+	public Node outcome(Map<String, Tree> fromMap, Map<String, Tree> toMap) {
+		if (!fromMap.containsKey(b)) return null;
+		Node copy = fromMap.get(b).tag.copy(false);
 		copy.parent.children.remove(copy.index());
 		return copy.root();
 	}

@@ -44,14 +44,39 @@ public class Insertion extends PositionalEdit {
 	}
 	
 	@Override
-	public Node outcome(Map<String, Tree> map) {
-		Node copy = map.get(a).tag.copy(false);
-		int index = start - 1;
-		if (index >= 0 && index <= copy.children.size()) {
-			Node ins = new Node(copy, bG.getLabel());
-			copy.children.add(index, ins);
-			return copy.root();
+	public Node outcome(Map<String, Tree> fromMap, Map<String, Tree> toMap) {
+		if (!fromMap.containsKey(a)) return null;
+		Node fromParent = fromMap.get(a).tag.copy(false);
+		Node to = toMap.get(b).tag;
+		Node toParent = to.parent;
+		if (fromParent == null || toParent == null) return null;
+		fromParent = fromParent.copy(false);
+		
+		// Walk through the both parents' children
+		int toIndex = 0, fromIndex = 0;
+		while (true) {
+			if (fromIndex == fromParent.children.size()) {
+				// If we reach the end of from's children, we must break
+				break;
+			}
+			if (toParent.children.get(toIndex) == to) {
+				// If we reach the node we want to insert, we break
+				break;
+			}
+			if (toParent.children.get(toIndex).hasType(
+					fromParent.children.get(fromIndex).type())) {
+				// Otherwise, if the two nodes have the same label, increment both
+				fromIndex++;
+				toIndex++;
+			} else {
+				// Otherwise, skip one of the (presumably to be deleted) from children
+				fromIndex++;
+			}
 		}
-		return null;
+		
+		
+		Node insert = new Node(fromParent, to.type());
+		fromParent.children.add(fromIndex, insert);
+		return fromParent.root();
 	}
 }

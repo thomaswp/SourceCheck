@@ -67,7 +67,7 @@ public class Snapshot extends Code {
 				snapshot.variables.add(variable.getAttribute("name"));
 			}
 			Element editing = XML.getFirstChildByTagName(project, "editing");
-			if (editing.hasChildNodes()) {
+			if (editing != null && editing.hasChildNodes()) {
 				for (Code script : XML.getCodeInFirstChild(editing, "scripts")) {
 					snapshot.editing.add((Script)script);
 				}

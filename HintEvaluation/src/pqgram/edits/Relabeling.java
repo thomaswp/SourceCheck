@@ -22,8 +22,9 @@ public class Relabeling extends Edit {
 	}
 
 	@Override
-	public Node outcome(Map<String, Tree> map) {
-		Node copy = map.get(a).tag.copy(false);
+	public Node outcome(Map<String, Tree> fromMap, Map<String, Tree> toMap) {
+		if (!fromMap.containsKey(a)) return null;
+		Node copy = fromMap.get(a).tag.copy(false);
 		copy.setType(bG.getLabel());
 		return copy.root();
 	}

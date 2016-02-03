@@ -33,7 +33,7 @@ public abstract class Edit {
 		this.endPosition = endPosition;
 	}
 	
-	public abstract Node outcome(Map<String, Tree> map);
+	public abstract Node outcome(Map<String, Tree> fromMap, Map<String, Tree> toMap);
 	
 	public Graph getAG() {
 		return this.aG;
