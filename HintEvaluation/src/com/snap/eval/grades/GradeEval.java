@@ -1,6 +1,7 @@
 package com.snap.eval.grades;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Date;
@@ -29,35 +30,72 @@ import com.snap.graph.subtree.SubtreeBuilder.Tuple;
 
 public class GradeEval {
 	
+	private final static int SKIP = 1;
+	private final static int MAX = 100;
+	
 	public static void main(String[] args) throws IOException {
-		
+				
 		String dir = "../data/csc200/fall2015";
 		String assignment = "guess1Lab";
+		
+//		policyGradeEval(dir, assignment);
+		hintChainEval(dir, assignment);
+	}
+
+	public static void hintChainEval(String dir, String assignment) throws FileNotFoundException, IOException {
+			
+		eval(dir, assignment, "chain", new ScoreConstructor() {
+			@Override
+			public Score[] construct(String student, List<Node> nodes, SnapSubtree subtree) {
+				SubtreeBuilder builder0 = subtree.buildGraph(student, 0);
+				SubtreeBuilder builder1 = subtree.buildGraph(student, 1);
+				return new Score[] {
+						new Score("All 2", new HintFactoryPolicy(builder0, 2)),
+						new Score("Exemplar 2", new HintFactoryPolicy(builder1, 2)),
+						new Score("All 3", new HintFactoryPolicy(builder0, 3)),
+						new Score("Exemplar 3", new HintFactoryPolicy(builder1, 3)),
+						new Score("All End", new HintFactoryPolicy(builder0, Integer.MAX_VALUE)),
+						new Score("Exemplar End", new HintFactoryPolicy(builder1, Integer.MAX_VALUE)),
+				};
+			}
+		});
+	}
+	
+	public static void policyGradeEval(String dir, String assignment) throws FileNotFoundException, IOException {
+		Snapshot solution = Snapshot.parse(new File(dir + "/solutions/", assignment + ".xml"));
+		Node solutionNode = SimpleNodeBuilder.toTree(solution, true);
+		DirectEditPolicy solutionPolicy = new DirectEditPolicy(solutionNode);
+				
+		eval(dir, assignment, "grade", new ScoreConstructor() {
+			@Override
+			public Score[] construct(String student, List<Node> nodes, SnapSubtree subtree) {
+				SubtreeBuilder builder0 = subtree.buildGraph(student, 0);
+				SubtreeBuilder builder1 = subtree.buildGraph(student, 1);
+				return new Score[] {
+						new Score("Hint All", new HintFactoryPolicy(builder0)),
+						new Score("Hint Exemplar", new HintFactoryPolicy(builder1)),
+						new Score("Direct Ideal", solutionPolicy),
+						new Score("Direct Student", new DirectEditPolicy(nodes.get(nodes.size() - 1))),
+						new Score("Student Next", new StudentPolicy(nodes))
+				};
+			}
+		});
+	}
+	
+	private static void eval(String dir, String assignment, String test, ScoreConstructor constructor) throws IOException {
 		
 		Date maxTime = new GregorianCalendar(2015, 8, 18).getTime();
 		SnapSubtree subtree = new SnapSubtree(dir, assignment, maxTime, new HintFactoryMap());
 		
-		Snapshot solution = Snapshot.parse(new File(dir + "/solutions/", assignment + ".xml"));
-		Node solutionNode = SimpleNodeBuilder.toTree(solution, true);
-		DirectEditPolicy solutionPolicy = new DirectEditPolicy(solutionNode);
-		
-		File outFile = new File(dir + "/anlysis/" + assignment + "/grade.csv");
+		File outFile = new File(dir + "/anlysis/" + assignment + "/" + test + ".csv");
 		outFile.getParentFile().mkdirs();
 		List<String> headers = new LinkedList<>();
 		headers.add("policy"); headers.add("student"); headers.add("action"); headers.add("total");
 		for (int i = 0; i < AutoGrader.graders.length; i++) headers.add("test" + i);
 		CSVPrinter printer = new CSVPrinter(new PrintStream(outFile), CSVFormat.DEFAULT.withHeader(headers.toArray(new String[headers.size()])));
 		
-		Score[] scoreTotals = new Score[] {
-				new Score("Hint All", null),
-				new Score("Hint Exemplar", null),
-				new Score("Direct Ideal", null),
-				new Score("Direct Student", null),
-				new Score("Student Next", null)
-		};
-		
-		int skip = 1;
-		int max = 100;
+		int skip = SKIP;
+		int max = MAX;
 		
 		HashMap<String,List<Node>> nodeMap = subtree.nodeMap();
 		for (String student : nodeMap.keySet()) {
@@ -69,17 +107,9 @@ public class GradeEval {
 			
 			System.out.println(student);
 			
-			List<Node> nodes = nodeMap.get(student);		
-			SubtreeBuilder builder0 = subtree.buildGraph(student, 0);
-			SubtreeBuilder builder1 = subtree.buildGraph(student, 1);
+			List<Node> nodes = nodeMap.get(student);
 			
-			Score[] scores = new Score[] {
-					new Score("Hint All", new HintFactoryPolicy(builder0)),
-					new Score("Hint Exemplar", new HintFactoryPolicy(builder1)),
-					new Score("Direct Ideal", solutionPolicy),
-					new Score("Direct Student", new DirectEditPolicy(nodes.get(nodes.size() - 1))),
-					new Score("Student Next", new StudentPolicy(nodes))
-			};
+			Score[] scores = constructor.construct(student, nodes, subtree);
 			
 			AtomicInteger count = new AtomicInteger(0);
 			int total = 0;
@@ -110,13 +140,8 @@ public class GradeEval {
 			for (int i = 0; i < scores.length; i++) {
 				Score score = scores[i];
 				score.writeRow(printer, student);
-				scoreTotals[i].add(score);
 //				score.print();
 			}
-		}
-		
-		for (Score score : scoreTotals) {
-			score.print();
 		}
 		
 		printer.close();
@@ -137,7 +162,11 @@ public class GradeEval {
 		}
 	}
 	
-	private static class Score {
+	public interface ScoreConstructor {
+		Score[] construct(String student, List<Node> nodes, SnapSubtree subtree);
+	}
+	
+	public static class Score {
 		public final HashMap<String, Tuple<Integer, Integer>> outcomes = 
 				new HashMap<String, Tuple<Integer, Integer>>();
 		public int totalSteps;
@@ -181,7 +210,7 @@ public class GradeEval {
 			System.out.println();
 		}
 
-		private void add(Score score) {
+		public void add(Score score) {
 			for (String key : score.outcomes.keySet()) {
 				Tuple<Integer, Integer> outcome = outcomes.get(key);
 				Tuple<Integer, Integer> otherOutcome = score.outcomes.get(key);

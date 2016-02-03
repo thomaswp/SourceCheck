@@ -13,12 +13,18 @@ import com.snap.graph.subtree.SubtreeBuilder.Hint;
 public class HintFactoryPolicy implements HintPolicy {
 
 	public final SubtreeBuilder builder;
-
+	public int chain;
+	
 	// TODO: Don't forget you're not evaluating these hints
 	private final static Predicate ignoreHints = new Node.TypePredicate("stage", "sprite", "customBlock");
 	
 	public HintFactoryPolicy(SubtreeBuilder builder) {
+		this(builder, 1);
+	}
+	
+	public HintFactoryPolicy(SubtreeBuilder builder, int chain) {
 		this.builder = builder;
+		this.chain = chain;
 	}
 	
 	
@@ -26,7 +32,7 @@ public class HintFactoryPolicy implements HintPolicy {
 	public Set<Node> nextSteps(Node node) {
 		HashSet<Node> steps = new HashSet<>();
 		
-		List<Hint> hints = builder.getHints(node);
+		List<Hint> hints = builder.getHints(node, chain);
 		for (Hint hint : hints) {
 			VectorHint vHint = (VectorHint) hint;
 			if (vHint.caution) continue;

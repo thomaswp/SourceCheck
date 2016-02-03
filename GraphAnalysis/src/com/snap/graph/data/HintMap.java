@@ -17,7 +17,7 @@ public interface HintMap {
 
 	boolean hasVertex(Node node);
 
-	Iterable<Hint> getHints(Node node);
+	Iterable<Hint> getHints(Node node, int chain);
 	
 	HintMap instance();
 

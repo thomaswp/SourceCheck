@@ -334,10 +334,14 @@ public class SubtreeBuilder {
 		
 		return perc;
 	}
-	
+		
 	public synchronized List<Hint> getHints(Node parent) {
+		return getHints(parent, 1);
+	}
+	
+	public synchronized List<Hint> getHints(Node parent, int chain) {
 		LinkedList<Hint> hints = new LinkedList<Hint>();
-		getHints(parent, hints);
+		getHints(parent, hints, chain);
 		Iterator<Hint> iterator = hints.iterator();
 		while (iterator.hasNext()) {
 			Hint next = iterator.next();
@@ -345,9 +349,9 @@ public class SubtreeBuilder {
 		}
 		return hints;
 	}
-	
-	private void getHints(Node node, List<Hint> list) {
-		Iterable<Hint> edges = hintMap.getHints(node);
+		
+	private void getHints(Node node, List<Hint> list, int chain) {
+		Iterable<Hint> edges = hintMap.getHints(node, chain);
 		
 //		int context = node.depth();
 		
@@ -415,7 +419,7 @@ public class SubtreeBuilder {
 //		}
 		
 //		if (node.type != null) getHints(new Node(node, null), list);
-		for (Node child : node.children) getHints(child, list);
+		for (Node child : node.children) getHints(child, list, chain);
 	}
 	
 	public double skeletonDiff(Node x, Node y) {
@@ -448,7 +452,7 @@ public class SubtreeBuilder {
 		
 		while (!toSearch.isEmpty()) {
 			Node next = toSearch.remove(0);
-			Iterable<Hint> edges = hintMap.getHints(node);
+			Iterable<Hint> edges = hintMap.getHints(node, 1);
 			Iterator<Hint> iterator = edges.iterator();
 			if (iterator.hasNext()) return true;
 			toSearch.addAll(next.children);

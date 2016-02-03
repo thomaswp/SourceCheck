@@ -51,7 +51,7 @@ public class SkeletonMap implements HintMap {
 	}
 
 	@Override
-	public List<Hint> getHints(Node node) {
+	public List<Hint> getHints(Node node, int chain) {
 		final List<Hint> hints = bones.get(toBackbone(node, false).root());
 		return hints;
 	}

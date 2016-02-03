@@ -127,7 +127,7 @@ public class HintFactoryMap implements HintMap {
 	}
 
 	@Override
-	public Iterable<Hint> getHints(Node node) {
+	public Iterable<Hint> getHints(Node node, int chain) {
 		List<Hint> hints = new ArrayList<Hint>();
 		
 		for (int i = 0; i < ROUNDS; i++) {
@@ -140,15 +140,22 @@ public class HintFactoryMap implements HintMap {
 			
 			VectorState children = getVectorState(node);
 			IndexedVectorState context = getContext(node);
-			// Get the best successor state from our current state
-			VectorState next = graph.getHint(children, context, MAX_NN, useGraph);
-			// If there is none, we create a dead-end hint, just so we know we want to stay here
-			if (next == null) next = children;
+			VectorState next = children;
 			
+			for (int j = 0; j < chain; j++) {
+				// Get the best successor state from our current state
+				VectorState hint = graph.getHint(next, context, MAX_NN, useGraph);  
+				// If there is none, we stop where we are
+				if (hint == null || hint.equals(next)) break;
+				// Otherwise, chain to the next hint
+				next = hint;
+			}
+
 			double stayed = graph.getProportionStayed(children);
 			boolean caution = 
 					graph.getGoalCount(children) >= PRUNE_GOALS && 
-					stayed >= STAY_PROPORTION; 
+					stayed >= STAY_PROPORTION;		
+					
 			VectorHint hint = new VectorHint(node, backbone, children, next, indexed, caution);
 			hints.add(hint);
 		}
