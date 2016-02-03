@@ -1,15 +1,18 @@
 package com.snap.eval.grades;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.swing.plaf.synth.SynthScrollBarUI;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 
 import com.snap.data.Snapshot;
 import com.snap.eval.grades.AutoGrader.Grader;
@@ -26,7 +29,7 @@ import com.snap.graph.subtree.SubtreeBuilder.Tuple;
 
 public class GradeEval {
 	
-	public static void main(String[] args) throws FileNotFoundException {
+	public static void main(String[] args) throws IOException {
 		
 		String dir = "../data/csc200/fall2015";
 		String assignment = "guess1Lab";
@@ -38,6 +41,13 @@ public class GradeEval {
 		Node solutionNode = SimpleNodeBuilder.toTree(solution, true);
 		DirectEditPolicy solutionPolicy = new DirectEditPolicy(solutionNode);
 		
+		File outFile = new File(dir + "/anlysis/" + assignment + "/grade.csv");
+		outFile.getParentFile().mkdirs();
+		List<String> headers = new LinkedList<>();
+		headers.add("policy"); headers.add("student"); headers.add("action"); headers.add("total");
+		for (int i = 0; i < AutoGrader.graders.length; i++) headers.add("test" + i);
+		CSVPrinter printer = new CSVPrinter(new PrintStream(outFile), CSVFormat.DEFAULT.withHeader(headers.toArray(new String[headers.size()])));
+		
 		Score[] scoreTotals = new Score[] {
 				new Score("Hint All", null),
 				new Score("Hint Exemplar", null),
@@ -47,7 +57,7 @@ public class GradeEval {
 		};
 		
 		int skip = 1;
-		int max = 10;
+		int max = 100;
 		
 		HashMap<String,List<Node>> nodeMap = subtree.nodeMap();
 		for (String student : nodeMap.keySet()) {
@@ -79,6 +89,7 @@ public class GradeEval {
 				HashMap<String,Boolean> grade = AutoGrader.grade(node);
 				
 				for (Score score : scores) {
+//					System.out.println(score.name);
 //					score.update(node, grade);
 					score.updateAsync(node, grade, count);
 					total++;
@@ -98,6 +109,7 @@ public class GradeEval {
 
 			for (int i = 0; i < scores.length; i++) {
 				Score score = scores[i];
+				score.writeRow(printer, student);
 				scoreTotals[i].add(score);
 //				score.print();
 			}
@@ -106,6 +118,8 @@ public class GradeEval {
 		for (Score score : scoreTotals) {
 			score.print();
 		}
+		
+		printer.close();
 	}
 	
 	private static class Updater {
@@ -142,9 +156,24 @@ public class GradeEval {
 			}
 		}
 		
+		public void writeRow(CSVPrinter printer, String student) throws IOException {
+			int extraCols = 4;
+			for (int i = 0; i < 2; i++) {
+				Object[] row = new Object[AutoGrader.graders.length + extraCols];
+				row[0] = name; row[1] = student; row[2] = i == 0 ? "do" : "undo"; row[3] = totalSteps;
+				for (int j = 0; j < AutoGrader.graders.length; j++) {
+					Tuple<Integer, Integer> outcome = outcomes.get(AutoGrader.graders[j].name());
+					row[j + extraCols] = i == 0 ? outcome.y : outcome.x;
+				}
+				printer.printRecord(row);
+			}
+			printer.flush();
+		}
+
 		public void print() {
 			System.out.println(name + ":");
-			for (String obj : outcomes.keySet()) {
+			for (int i = 0; i < AutoGrader.graders.length; i++) {
+				String obj = AutoGrader.graders[i].name();
 				Tuple<Integer, Integer> outcome = outcomes.get(obj);
 				System.out.println(obj + ": " + outcome);
 			}
@@ -177,6 +206,7 @@ public class GradeEval {
 			Set<Node> steps = policy.nextSteps(node);
 			
 			for (Node next : steps) {
+//				System.out.println(next);
 				HashMap<String,Boolean> nextGrade = AutoGrader.grade(next);
 				for (String obj : nextGrade.keySet()) {
 					boolean a = grade.get(obj);

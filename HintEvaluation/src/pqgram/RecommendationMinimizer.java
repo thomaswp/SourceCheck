@@ -44,9 +44,12 @@ public class RecommendationMinimizer {
 				deletedToParent.put(deletion.getB(), deletion.getA()); // add to deleted -> parent mapping
 				String newParentLabel = deletion.getA();
 				if (deletedToParent.containsKey(newParentLabel)) { // parent has already been deleted
-					while (deletedToParent.containsKey(newParentLabel)) {
+					int limit = 30;
+					while (deletedToParent.containsKey(newParentLabel) && limit > 0) {
 						newParentLabel = deletedToParent.get(newParentLabel);
+						limit--;
 					}
+					if (limit == 0) continue; // TODO: figure out how the heck this even happens
 					deletion.setA(newParentLabel);
 				}
 				newParentLabel = getOriginalLabel(newParentLabel);
