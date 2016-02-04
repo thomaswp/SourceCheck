@@ -5,7 +5,7 @@ se <- function(x) sqrt(var(x)/length(x))
 
 loadData <- function() {
   maxTest <<- 8;
-  complete <<- read.csv("~/GitHub/SnapHints/data/csc200/fall2015/anlysis/guess1Lab/complete.csv")
+  complete <<- read.csv("../data/csc200/fall2015/anlysis/guess1Lab/complete.csv")
   tests <<- sapply(0:maxTest, function(i) paste("test", i, sep=""))
   complete$grade <<- rowSums(complete[,tests]) / 9
   combined <<- ddply(complete, .(policy, slice), summarize, 

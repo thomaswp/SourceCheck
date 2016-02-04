@@ -29,7 +29,7 @@ import com.snap.parser.Grade;
 
 public class PredictionEval {
 
-	private final static int SKIP = 1, MAX = 3, LOOK_AHEAD = 5;
+	private final static int SKIP = 1, MAX = 100, LOOK_AHEAD = 5;
 	
 	public static void main(String[] args) throws IOException {
 		
@@ -172,6 +172,7 @@ public class PredictionEval {
 				if (steps.contains(node)) {
 					steps.remove(node);
 					pred++;
+					break;
 				}
 			}
 			
