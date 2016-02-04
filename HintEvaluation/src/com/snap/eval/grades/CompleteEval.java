@@ -123,7 +123,7 @@ public class CompleteEval {
 			row[4] = "H" + endState.hashCode(); row[5] = steps;
 			
 			for (int i = 0; i < AutoGrader.graders.length; i++) {
-				row[i + extraCols] = grade.get(AutoGrader.graders[i].name());
+				row[i + extraCols] = String.valueOf(grade.get(AutoGrader.graders[i].name())).toUpperCase();
 			}
 			printer.printRecord(row);
 			printer.flush();
