@@ -23,7 +23,7 @@ import com.snap.graph.subtree.SubtreeBuilder.Hint;
 
 public class CompleteEval {
 	
-	private final static int SKIP = 1, MAX = 100, MAX_STEPS = 100, SLICES = 50;
+	private final static int SKIP = 1, MAX = 100, MAX_STEPS = 250, SLICES = 50;
 	
 	public static void main(String[] args) throws IOException {
 		String dir = "../data/csc200/fall2015";
@@ -66,7 +66,7 @@ public class CompleteEval {
 
 			List<Completion> completions = new ArrayList<>();
 			for (int i = 0; i < grades.length; i++) {
-				SubtreeBuilder builder = subtree.buildGraph(student, grades[0]);
+				SubtreeBuilder builder = subtree.buildGraph(student, grades[i]);
 
 				for (int slice = 0; slice < SLICES; slice++) {
 					int index = nodes.size() * slice / SLICES;
