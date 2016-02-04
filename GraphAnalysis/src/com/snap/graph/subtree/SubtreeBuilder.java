@@ -335,91 +335,38 @@ public class SubtreeBuilder {
 		return perc;
 	}
 		
+	public synchronized Hint getFirstHint(Node node) {
+		LinkedList<Hint> hints = new LinkedList<Hint>();
+		getHints(node, hints, 1, 1);
+		return hints.size() > 0 ? hints.getFirst() : null;
+	}
+	
 	public synchronized List<Hint> getHints(Node parent) {
 		return getHints(parent, 1);
 	}
 	
 	public synchronized List<Hint> getHints(Node parent, int chain) {
 		LinkedList<Hint> hints = new LinkedList<Hint>();
-		getHints(parent, hints, chain);
-		Iterator<Hint> iterator = hints.iterator();
-		while (iterator.hasNext()) {
-			Hint next = iterator.next();
-			if (next.from().equals(next.to())) iterator.remove();
-		}
+		getHints(parent, hints, chain, Integer.MAX_VALUE);
 		return hints;
 	}
 		
-	private void getHints(Node node, List<Hint> list, int chain) {
-		Iterable<Hint> edges = hintMap.getHints(node, chain);
+	private void getHints(Node node, List<Hint> list, int chain, int limit) {
+		if (list.size() >= limit) return;
 		
-//		int context = node.depth();
+		Iterable<Hint> edges = hintMap.getHints(node, chain);
 		
 		// TODO: don't forget that really the skeleton need not match exactly,
 		// we should just be matching as much as possible
 		
-
 		for (Hint hint : edges) {
-//			WeightedHint wh = new WeightedHint(hint.x, hint.y);
-//			wh.context = context;
-			if (list.contains(hint)) continue;
-			boolean override = false;
-			for (Hint h : list) {
-				if (h.overrides(hint)) {
-					override = true;
-					break;
-				}
-			}
-			if (override) continue;
-			
-			Iterator<Hint> iterator = list.iterator();
-			while (iterator.hasNext()) {
-				if (hint.overrides(iterator.next())) iterator.remove();
-			}
-			
+			if (list.contains(hint)) continue;	
+			if (hint.from().equals(hint.to())) continue;
 			list.add(hint);
+			if (list.size() >= limit) return;
 		}
 		
-//		HashMap<Node, Tuple<Double,Integer>> seen = new HashMap<Node, Tuple<Double,Integer>>();
-//		HashMap<Node, Double> ted = new HashMap<Node, Double>();
-//		
-//		LblTree tree = node.root().toTree();
-//		RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(1, 1, 1000);
-//		
-//		if (edges != null) {
-//			for (Hint h : edges) {
-//				Tuple<Double, Integer> count = seen.get(h.y);
-//				Double t = ted.get(h.y);
-//				if (count == null) {
-//					count = new Tuple<Double, Integer>(0.0, 0);
-//					seen.put(h.y, count);
-//					t = 0.0;
-//				}
-//				count.x += skeletonDiff(node.parent, h.x.parent);
-//				count.y ++;
-//				
-//				opt.init(h.x.root().toTree(), tree);
-//				opt.computeOptimalStrategy();
-//				t += opt.nonNormalizedTreeDist();
-//				ted.put(h.y, t);
-//			}
-//		}
-//		
-//		for (Node to : seen.keySet()) {
-//			WeightedHint hint = new WeightedHint(node, to);
-//			Tuple<Double, Integer> count = seen.get(to);
-////			if (count.y < 5) continue;
-//			
-//			Double t = ted.get(to);
-//			hint.alignment =  count.x / count.y;
-//			hint.context = context;
-//			hint.relevance = count.y;
-//			hint.ted = t / count.y;
-//			list.add(hint);
-//		}
-		
-//		if (node.type != null) getHints(new Node(node, null), list);
-		for (Node child : node.children) getHints(child, list, chain);
+		for (Node child : node.children) getHints(child, list, chain, limit);
 	}
 	
 	public double skeletonDiff(Node x, Node y) {
@@ -509,7 +456,6 @@ public class SubtreeBuilder {
 		String from();
 		String to();
 		String data();
-		boolean overrides(Hint hint);
 		Node outcome();
 	}
 	
@@ -545,11 +491,6 @@ public class SubtreeBuilder {
 		@Override
 		public String data() {
 			return "null";
-		}
-
-		@Override
-		public boolean overrides(Hint hint) {
-			return false;
 		}
 
 		@Override

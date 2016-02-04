@@ -14,7 +14,6 @@ import com.snap.graph.subtree.SubtreeBuilder.HintChoice;
 
 public class HintFactoryMap implements HintMap {
 	
-	private final static int ROUNDS = 1;
 	private final static double STAY_PROPORTION = 0.75;
 	private final static int PRUNE_NODES = 2;
 	private final static int PRUNE_GOALS = 2;
@@ -103,14 +102,12 @@ public class HintFactoryMap implements HintMap {
 			@Override
 			public void run(Node item) {
 				if (item.children.size() == 0) return;
-				for (int i = 0; i < ROUNDS; i++) {
-					VectorGraph graph = getGraph(item, i != 0);
-					VectorState children = getVectorState(item);
-					if (!graph.vertices.contains(children)) {
-						graph.addVertex(children);
-					}
-					graph.setGoal(children, getContext(item));
+				VectorGraph graph = getGraph(item, false);
+				VectorState children = getVectorState(item);
+				if (!graph.vertices.contains(children)) {
+					graph.addVertex(children);
 				}
+				graph.setGoal(children, getContext(item));
 			}
 		});
 	}
@@ -130,35 +127,33 @@ public class HintFactoryMap implements HintMap {
 	public Iterable<Hint> getHints(Node node, int chain) {
 		List<Hint> hints = new ArrayList<Hint>();
 		
-		for (int i = 0; i < ROUNDS; i++) {
-			boolean indexed = i != 0;
-			Node backbone = SkeletonMap.toBackbone(node, indexed).root();
-			VectorGraph graph = map.get(backbone);
-			if (graph == null) continue;
-			
-			boolean useGraph = !node.hasType(SCRIPT);
-			
-			VectorState children = getVectorState(node);
-			IndexedVectorState context = getContext(node);
-			VectorState next = children;
-			
-			for (int j = 0; j < chain; j++) {
-				// Get the best successor state from our current state
-				VectorState hint = graph.getHint(next, context, MAX_NN, useGraph);  
-				// If there is none, we stop where we are
-				if (hint == null || hint.equals(next)) break;
-				// Otherwise, chain to the next hint
-				next = hint;
-			}
-
-			double stayed = graph.getProportionStayed(children);
-			boolean caution = 
-					graph.getGoalCount(children) >= PRUNE_GOALS && 
-					stayed >= STAY_PROPORTION;		
-					
-			VectorHint hint = new VectorHint(node, backbone, children, next, indexed, caution);
-			hints.add(hint);
+		Node backbone = SkeletonMap.toBackbone(node, false).root();
+		VectorGraph graph = map.get(backbone);
+		if (graph == null) return hints;
+		
+		boolean useGraph = !node.hasType(SCRIPT);
+		
+		VectorState children = getVectorState(node);
+		IndexedVectorState context = getContext(node);
+		VectorState next = children;
+		
+		for (int j = 0; j < chain; j++) {
+			// Get the best successor state from our current state
+			VectorState hint = graph.getHint(next, context, MAX_NN, useGraph);  
+			// If there is none, we stop where we are
+			if (hint == null || hint.equals(next)) break;
+			// Otherwise, chain to the next hint
+			next = hint;
 		}
+
+		double stayed = graph.getProportionStayed(children);
+		boolean caution = 
+				graph.getGoalCount(children) >= PRUNE_GOALS && 
+				stayed >= STAY_PROPORTION;		
+				
+		VectorHint hint = new VectorHint(node, backbone, children, next, caution);
+		hints.add(hint);
+			
 		return hints;
 	}
 
@@ -190,19 +185,15 @@ public class HintFactoryMap implements HintMap {
 		public final Node root;
 		public final String backbone;
 		public final VectorState from, to;
-//		public final boolean loop;
-		public final boolean indexed;
 		public final boolean caution;
 		
 		private final boolean swapArgs;
 		
-		public VectorHint(Node root, Node backbone, VectorState from, VectorState to, boolean indexed, boolean caution) {
+		public VectorHint(Node root, Node backbone, VectorState from, VectorState to, boolean caution) {
 			this.root = root;
 			this.backbone = backbone.toString();
 			this.from = from;
 			this.to = to;
-//			this.loop = from.equals(to);
-			this.indexed = indexed;
 			this.caution = caution;
 			
 			boolean swap = false;
@@ -270,15 +261,6 @@ public class HintFactoryMap implements HintMap {
 		@Override
 		protected String toCanonicalStringInternal() {
 			return data();
-		}
-
-		@Override
-		public boolean overrides(Hint hint) {
-			if (!indexed) return false;
-			if (!(hint instanceof VectorHint)) return false;
-			
-			return from.equals(((VectorHint)hint).from);
-//			return false;
 		}
 
 		@Override

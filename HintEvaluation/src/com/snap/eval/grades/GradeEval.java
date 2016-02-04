@@ -21,6 +21,7 @@ import com.snap.eval.policy.DirectEditPolicy;
 import com.snap.eval.policy.HintFactoryPolicy;
 import com.snap.eval.policy.HintPolicy;
 import com.snap.eval.policy.StudentPolicy;
+import com.snap.eval.util.PrintUpdater;
 import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.HintFactoryMap;
 import com.snap.graph.data.Node;
@@ -54,8 +55,8 @@ public class GradeEval {
 						new Score("Exemplar 2", new HintFactoryPolicy(builder1, 2)),
 						new Score("All 3", new HintFactoryPolicy(builder0, 3)),
 						new Score("Exemplar 3", new HintFactoryPolicy(builder1, 3)),
-						new Score("All End", new HintFactoryPolicy(builder0, Integer.MAX_VALUE)),
-						new Score("Exemplar End", new HintFactoryPolicy(builder1, Integer.MAX_VALUE)),
+						new Score("All End", new HintFactoryPolicy(builder0, 25)),
+						new Score("Exemplar End", new HintFactoryPolicy(builder1, 25)),
 				};
 			}
 		});
@@ -126,7 +127,7 @@ public class GradeEval {
 				}
 			}
 			
-			Updater updater = new Updater(40);
+			PrintUpdater updater = new PrintUpdater(40);
 			while (count.get() > 0) {
 				try {
 					Thread.sleep(100);
@@ -145,21 +146,6 @@ public class GradeEval {
 		}
 		
 		printer.close();
-	}
-	
-	private static class Updater {
-		private final int maxCount;
-		private int count;
-		
-		public Updater(int maxCount) {
-			this.maxCount = maxCount;
-		}
-		
-		public void update(double progress) {
-			int newCount = (int) Math.round(maxCount * progress);
-			for (int i = count; i < newCount; i++) System.out.print("+");
-			count = newCount;
-		}
 	}
 	
 	public interface ScoreConstructor {

@@ -7,29 +7,38 @@ loadData <- function() {
   tests <<- sapply(0:maxTest, function(i) paste("test", i, sep=""))
   percs <<- sapply(0:maxTest, function(i) paste("perc", i, sep=""))
     
-  grades <<- read.csv("~/GitHub/SnapHints/data/csc200/fall2015/anlysis/guess1Lab/grade.csv")
+  grade <<- read.csv("~/GitHub/SnapHints/data/csc200/fall2015/anlysis/guess1Lab/grade.csv")
   for (i in 1:(maxTest+1)) {
-    grades[,percs[i]] <<- grades[,tests[i]] / grades$total
+    grade[,percs[i]] <<- grade[,tests[i]] / grade$total
   }
   
-  policies <<- sapply(unique(grades$policy), as.character)
+  chain <<- read.csv("~/GitHub/SnapHints/data/csc200/fall2015/anlysis/guess1Lab/chain.csv")
+  chain <<- rbind(grade[grade$policy=="Hint All" | grade$policy=="Hint Exemplar",], chain)
+  for (i in 1:(maxTest+1)) {
+    chain[,percs[i]] <<- chain[,tests[i]] / chain$total
+  }
+  
   students <<- sapply(unique(grades$student), as.character)
 }
 
-compare <- function(action) {
-  sapply(policies, function(policy) {
+policies <- function(grades) {
+  sapply(unique(grades$policy), as.character)
+}
+
+compare <- function(grades, action) {
+  sapply(policies(grades), function(policy) {
     colSums(grades[grades$policy==policy & grades$action==action, percs]) / length(students)
   })
 }
 
-compareSign <- function(action) {
-  sapply(policies, function(policy) {
+compareSign <- function(grades, action) {
+  sapply(policies(grades), function(policy) {
     colSums(sign(grades[grades$policy==policy & grades$action==action, percs])) / length(students)
   })
 }
 
-compareHelpful <- function(action) {
-  sapply(policies, function(policy) {
+compareHelpful <- function(grades) {
+  sapply(policies(grades), function(policy) {
     do <- grades[grades$policy==policy & grades$action=="do", percs]
     undo <- grades[grades$policy==policy & grades$action=="undo", percs]
     return (colSums(do > undo) / length(students))
