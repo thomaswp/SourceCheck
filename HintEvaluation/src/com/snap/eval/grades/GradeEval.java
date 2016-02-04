@@ -152,7 +152,7 @@ public class GradeEval {
 		Score[] construct(String student, List<Node> nodes, SnapSubtree subtree);
 	}
 	
-	public static class Score {
+	protected static class Score {
 		public final HashMap<String, Tuple<Integer, Integer>> outcomes = 
 				new HashMap<String, Tuple<Integer, Integer>>();
 		public int totalSteps;

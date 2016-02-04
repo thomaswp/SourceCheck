@@ -79,7 +79,7 @@ public class SnapSubtree {
 	private final HintMap hintMap;
 
 	private HashMap<String, List<Node>> nodeMapCache;
-	private HashMap<String, Grade> gradeMap;
+	private HashMap<String, Grade> gradeMapCache;
 
 	public HashMap<String, List<Node>> nodeMap() {
 		if (nodeMapCache == null) {
@@ -93,7 +93,14 @@ public class SnapSubtree {
 	}
 	
 	public HashMap<String, Grade> gradeMap() {
-		return gradeMap;
+		if (gradeMapCache == null) {
+			try {
+				parseStudents();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		return gradeMapCache;
 	}
 
 	public SnapSubtree(String dataDir, String assignment, Date maxTime, HintMap hintMap) {
@@ -208,7 +215,7 @@ public class SnapSubtree {
 		for (String student : nodeMap().keySet()) {
 			if (student.equals(testStudent)) continue;
 			
-			Grade grade = gradeMap.get(student);
+			Grade grade = gradeMapCache.get(student);
 			if (grade != null && grade.average() < minGrade) continue;
 			
 			final List<Node> nodes = nodeMap().get(student);
@@ -251,7 +258,7 @@ public class SnapSubtree {
 		SnapParser parser = new SnapParser(dataDir, Store.Mode.Use);
 		HashMap<String, SolutionPath> students = parser.parseAssignment(assignment);
 		nodeMapCache = new HashMap<String, List<Node>>();
-		gradeMap = new HashMap<String, Grade>();
+		gradeMapCache = new HashMap<String, Grade>();
 
 		for (String student : students.keySet()) {
 			SolutionPath path = students.get(student);
@@ -270,7 +277,7 @@ public class SnapSubtree {
 			if (nodes.size() == 0) continue;
 			if (path.grade == null) System.err.println("No grade for: " + student);
 			nodeMapCache.put(student, nodes);
-			gradeMap.put(student, path.grade);
+			gradeMapCache.put(student, path.grade);
 		}
 	}
 }
