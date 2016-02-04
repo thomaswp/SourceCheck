@@ -12,7 +12,7 @@ import com.snap.graph.subtree.SubtreeBuilder.Hint;
 
 public class HintFactoryPolicy implements HintPolicy {
 
-	public SubtreeBuilder builder;
+	public final SubtreeBuilder builder;
 	public final int chain;
 	
 	// TODO: Don't forget you're not evaluating these hints

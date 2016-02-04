@@ -27,9 +27,9 @@ import com.snap.graph.subtree.SnapSubtree;
 import com.snap.graph.subtree.SubtreeBuilder;
 import com.snap.parser.Grade;
 
-public class Prediction {
+public class PredictionEval {
 
-	private final static int SKIP = 1, MAX = 1;
+	private final static int SKIP = 1, MAX = 3, LOOK_AHEAD = 5;
 	
 	public static void main(String[] args) throws IOException {
 		
@@ -95,20 +95,14 @@ public class Prediction {
 			AtomicInteger count = new AtomicInteger(0);
 			int total = 0;
 			
-//			SubtreeBuilder builder0 = subtree.buildGraph(student, 0);
-			
 			for (int i = 0; i < nodes.size() - 1; i++) {
 				Node node = nodes.get(i);
 				Node next = nodes.get(i + 1);
 				if (node.equals(next)) continue;
 				
 				for (Score score : scores) {
-					if (score.policy instanceof HintFactoryPolicy) {
-//						((HintFactoryPolicy)score.policy).builder = builder0;
-					}
-					score.update(node, next);
-//					score.updateAsync(node.copy(false), next.copy(false), count);
-//					score.updateAsync(node, next, count);
+//					score.update(nodes, i);
+					score.updateAsync(nodes, i, count);
 					total++;
 				}
 			}
@@ -127,7 +121,6 @@ public class Prediction {
 			for (int i = 0; i < scores.length; i++) {
 				Score score = scores[i];
 				score.writeRow(printer, student, grade.average());
-//				score.print();
 			}
 		}
 		
@@ -139,7 +132,7 @@ public class Prediction {
 	}
 	
 	protected static class Score {
-		public HintPolicy policy;
+		public final HintPolicy policy;
 		public final String name;
 		
 		private int predicted;
@@ -156,28 +149,30 @@ public class Prediction {
 			printer.flush();
 		}
 		
-		public void updateAsync(final Node node, final Node next, AtomicInteger count) {
+		public void updateAsync(final List<Node> nodes, final int index, AtomicInteger count) {
 			count.incrementAndGet();
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
-					update(node, next);
+					update(nodes, index);
 					count.decrementAndGet();
 				}
-			}).run();
+			}).start();
 		}
 		
-		public void update(Node node, Node next) {
-			Set<Node> steps = policy.nextSteps(node);
+		public void update(List<Node> nodes, int index) {
+			Set<Node> steps = policy.nextSteps(nodes.get(index));
 			
 			int pred = 0;
-			int hints = 0;
-			for (Node hint : steps) {
-				if (hint.equals(next)) {
+			int hints = steps.size();
+			
+			int end = Math.min(index + LOOK_AHEAD + 1, nodes.size());
+			for (int i = index + 1; i < end; i++) {
+				Node node = nodes.get(i);
+				if (steps.contains(node)) {
+					steps.remove(node);
 					pred++;
-					break;
 				}
-				hints++;
 			}
 			
 			synchronized (this) {

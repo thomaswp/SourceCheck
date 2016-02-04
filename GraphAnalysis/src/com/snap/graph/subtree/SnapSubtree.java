@@ -241,7 +241,7 @@ public class SnapSubtree {
 					}
 					count.decrementAndGet();
 				}
-			}).start();
+			}).run(); // Threading this causes bugs
 		}
 		while (count.get() != 0) {
 			try {
