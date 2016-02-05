@@ -29,7 +29,7 @@ import com.snap.parser.Grade;
 
 public class Prediction {
 
-	private final static int SKIP = 1, MAX = 100;
+	private final static int SKIP = 1, MAX = 1;
 	
 	public static void main(String[] args) throws IOException {
 		
@@ -95,14 +95,20 @@ public class Prediction {
 			AtomicInteger count = new AtomicInteger(0);
 			int total = 0;
 			
+//			SubtreeBuilder builder0 = subtree.buildGraph(student, 0);
+			
 			for (int i = 0; i < nodes.size() - 1; i++) {
 				Node node = nodes.get(i);
 				Node next = nodes.get(i + 1);
 				if (node.equals(next)) continue;
 				
 				for (Score score : scores) {
-//					score.update(node, next);
-					score.updateAsync(node, next, count);
+					if (score.policy instanceof HintFactoryPolicy) {
+//						((HintFactoryPolicy)score.policy).builder = builder0;
+					}
+					score.update(node, next);
+//					score.updateAsync(node.copy(false), next.copy(false), count);
+//					score.updateAsync(node, next, count);
 					total++;
 				}
 			}
@@ -133,7 +139,7 @@ public class Prediction {
 	}
 	
 	protected static class Score {
-		public final HintPolicy policy;
+		public HintPolicy policy;
 		public final String name;
 		
 		private int predicted;
@@ -158,7 +164,7 @@ public class Prediction {
 					update(node, next);
 					count.decrementAndGet();
 				}
-			}).start();
+			}).run();
 		}
 		
 		public void update(Node node, Node next) {

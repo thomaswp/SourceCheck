@@ -12,8 +12,8 @@ import com.snap.graph.subtree.SubtreeBuilder.Hint;
 
 public class HintFactoryPolicy implements HintPolicy {
 
-	public final SubtreeBuilder builder;
-	public int chain;
+	public SubtreeBuilder builder;
+	public final int chain;
 	
 	// TODO: Don't forget you're not evaluating these hints
 	private final static Predicate ignoreHints = new Node.TypePredicate("stage", "sprite", "customBlock");
