@@ -228,21 +228,28 @@ public class PredictionEval {
 			
 			int closerStep = 0, closerFinal = 0, closerStepN = 0, closerFinalN = 0;
 			
+//			System.out.println("Fin: " + fin);
+//			System.out.println("Node " + nodeFinDis + ": " + now);
+			
 			for (Node hint : hints) {
 				LblTree hintTree = hint.toTree();
 				
 				double hintStepDis1 = opt.nonNormalizedTreeDist(hintTree, stepTree);
+				double hintStepDisN1 = hintStepDis1 / nowSize;
 				double hintFinDis1 = opt.nonNormalizedTreeDist(hintTree, finTree);
+				double hintFinDisN1 = hintFinDis1 / nowSize;
+
+//				System.out.println("Hint " + hintFinDis1 + ": " + hint);
 				
 				hintStepDis += hintStepDis1;
-				hintStepDisN += hintStepDis1 / nowSize;
+				hintStepDisN += hintStepDisN1;
 				hintFinDis += hintFinDis1;
-				hintFinDisN += hintFinDis1 / nowSize;
+				hintFinDisN += hintFinDisN1;
 				
-				if (hintStepDis < nodeStepDis) closerStep++;
-				if (hintStepDisN < nodeStepDisN) closerStepN++;
-				if (hintFinDis < nodeFinDis) closerFinal++;
-				if (hintFinDisN < nodeFinDisN) closerFinalN++;
+				if (hintStepDis1 < nodeStepDis) closerStep++;
+				if (hintStepDisN1 < nodeStepDisN) closerStepN++;
+				if (hintFinDis1 < nodeFinDis) closerFinal++;
+				if (hintFinDisN1 < nodeFinDisN) closerFinalN++;
 			}
 			
 			synchronized (this) {
