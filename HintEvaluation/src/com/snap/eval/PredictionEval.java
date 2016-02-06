@@ -170,6 +170,8 @@ public class PredictionEval {
 		private int closerStep, closerFinal, closerStepN, closerFinalN;
 		private int totalHints, totalActions;
 		
+		private final transient HashMap<String, Double> cachedDistances = new HashMap<>(); 
+		
 		public DistanceScore(String name, HintPolicy policy) {
 			super(name, policy);
 		}
@@ -196,6 +198,22 @@ public class PredictionEval {
 					nodeFinalDisN, hintFinalDisN, closerFinalN,
 					totalHints, totalActions);
 		}
+		
+		private double dis(RTED_InfoTree_Opt opt, Node n1, Node n2, LblTree t1, LblTree t2) {
+			String key = n1 + "+" + n2;
+			synchronized (cachedDistances) {
+				if (cachedDistances.containsKey(key)) {
+					return cachedDistances.get(key);
+				}	
+			}
+			if (t1 == null) t1 = n1.toTree();
+			if (t2 == null) t2 = n2.toTree();
+			double dis = opt.nonNormalizedTreeDist(t1, t2);
+			synchronized (cachedDistances) {
+				cachedDistances.put(key, dis);
+			}
+			return dis;
+		}
 
 		@Override
 		public void update(List<Node> nodes, int index) {
@@ -216,9 +234,9 @@ public class PredictionEval {
 			
 			int nowSize = now.size();
 			
-			double nodeStepDis = opt.nonNormalizedTreeDist(nowTree, stepTree);
+			double nodeStepDis = dis(opt, now, step, nowTree, stepTree);
 			double nodeStepDisN = nodeStepDis / nowSize;
-			double nodeFinDis = opt.nonNormalizedTreeDist(nowTree, finTree);
+			double nodeFinDis = dis(opt, now, fin, nowTree, finTree);
 			double nodeFinDisN = nodeFinDis / nowSize;
 			
 			double hintStepDis = 0;
@@ -234,9 +252,9 @@ public class PredictionEval {
 			for (Node hint : hints) {
 				LblTree hintTree = hint.toTree();
 				
-				double hintStepDis1 = opt.nonNormalizedTreeDist(hintTree, stepTree);
+				double hintStepDis1 = dis(opt, hint, step, hintTree, stepTree);
 				double hintStepDisN1 = hintStepDis1 / nowSize;
-				double hintFinDis1 = opt.nonNormalizedTreeDist(hintTree, finTree);
+				double hintFinDis1 = dis(opt, hint, fin, hintTree, finTree);
 				double hintFinDisN1 = hintFinDis1 / nowSize;
 
 //				System.out.println("Hint " + hintFinDis1 + ": " + hint);
