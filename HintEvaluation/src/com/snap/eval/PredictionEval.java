@@ -178,7 +178,7 @@ public class PredictionEval {
 
 		public static String[] headers() {
 			return new String[] {
-				"policy", "student", "grade", "normalized", "target",
+				"student", "policy", "grade", "normalized", "target",
 				"nodeDis", "hintDis", "closer", "totalHints", "totalAction"
 			};
 		}
