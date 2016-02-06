@@ -31,7 +31,7 @@ import util.LblTree;
 
 public class PredictionEval {
 
-	private final static int SKIP = 1, MAX = 3, LOOK_AHEAD = 5, STEP = 5;
+	private final static int SKIP = 1, MAX = 100, LOOK_AHEAD = 5, STEP = 5;
 	
 	public static void main(String[] args) throws IOException {
 		
@@ -199,6 +199,10 @@ public class PredictionEval {
 
 		@Override
 		public void update(List<Node> nodes, int index) {
+			Set<Node> hints = policy.nextSteps(nodes.get(index));
+			int nHints = hints.size();
+			if (nHints == 0) return;
+			
 			RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(1, 1, 1);
 			
 			Node now = nodes.get(index);
@@ -224,8 +228,6 @@ public class PredictionEval {
 			
 			int closerStep = 0, closerFinal = 0, closerStepN = 0, closerFinalN = 0;
 			
-			Set<Node> hints = policy.nextSteps(nodes.get(index));
-			int nHints = hints.size();
 			for (Node hint : hints) {
 				LblTree hintTree = hint.toTree();
 				
