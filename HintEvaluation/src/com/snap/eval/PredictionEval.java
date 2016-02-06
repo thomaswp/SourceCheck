@@ -167,10 +167,10 @@ public class PredictionEval {
 
 		private double nodeStepDis, nodeFinalDis, hintStepDis, hintFinalDis;
 		private double nodeStepDisN, nodeFinalDisN, hintStepDisN, hintFinalDisN;
-		private int closerStep, closerFinal, closerStepN, closerFinalN;
+		private int closerStep, closerFinal, fartherStep, fartherFinal;
 		private int totalHints, totalActions;
 		
-		private final transient HashMap<String, Double> cachedDistances = new HashMap<>(); 
+		private final static HashMap<String, Double> cachedDistances = new HashMap<>(); 
 		
 		public DistanceScore(String name, HintPolicy policy) {
 			super(name, policy);
@@ -179,23 +179,24 @@ public class PredictionEval {
 		public static String[] headers() {
 			return new String[] {
 				"student", "policy", "grade", "normalized", "target",
-				"nodeDis", "hintDis", "closer", "totalHints", "totalAction"
+				"nodeDis", "hintDis", "closer", "farther",
+				"totalHints", "totalAction"
 			};
 		}
 	
 		@Override
 		public void writeRow(CSVPrinter printer, String student, double grade) throws IOException {
 			printer.printRecord(student, name, grade, "FALSE", "step",
-					nodeStepDis, hintStepDis, closerStep,
+					nodeStepDis, hintStepDis, closerStep, fartherStep,
 					totalHints, totalActions);
 			printer.printRecord(student, name, grade, "TRUE", "step",
-					nodeStepDisN, hintStepDisN, closerStepN,
+					nodeStepDisN, hintStepDisN, closerStep, fartherStep,
 					totalHints, totalActions);
 			printer.printRecord(student, name, grade, "FALSE", "final",
-					nodeFinalDis, hintFinalDis, closerFinal,
+					nodeFinalDis, hintFinalDis, closerFinal, fartherFinal,
 					totalHints, totalActions);
 			printer.printRecord(student, name, grade, "TRUE", "final",
-					nodeFinalDisN, hintFinalDisN, closerFinalN,
+					nodeFinalDisN, hintFinalDisN, closerFinal, fartherFinal,
 					totalHints, totalActions);
 		}
 		
@@ -244,7 +245,7 @@ public class PredictionEval {
 			double hintFinDis = 0;
 			double hintFinDisN = 0;
 			
-			int closerStep = 0, closerFinal = 0, closerStepN = 0, closerFinalN = 0;
+			int closerStep = 0, closerFinal = 0, fartherStep = 0, fartherFinal = 0;
 			
 //			System.out.println("Fin: " + fin);
 //			System.out.println("Node " + nodeFinDis + ": " + now);
@@ -265,9 +266,9 @@ public class PredictionEval {
 				hintFinDisN += hintFinDisN1;
 				
 				if (hintStepDis1 < nodeStepDis) closerStep++;
-				if (hintStepDisN1 < nodeStepDisN) closerStepN++;
+				else if (hintStepDis1 > nodeStepDis) fartherStep++;
 				if (hintFinDis1 < nodeFinDis) closerFinal++;
-				if (hintFinDisN1 < nodeFinDisN) closerFinalN++;
+				else if (hintFinDis1 > nodeFinDis) fartherFinal++;
 			}
 			
 			synchronized (this) {
@@ -282,9 +283,9 @@ public class PredictionEval {
 				this.hintFinalDisN += hintFinDisN / nHints;
 				
 				this.closerStep += closerStep;
-				this.closerStepN += closerStepN;
+				this.fartherStep += fartherStep;
 				this.closerFinal += closerFinal;
-				this.closerFinalN += closerFinalN;
+				this.fartherFinal += fartherFinal;
 				
 				this.totalActions++;
 				this.totalHints += nHints;
