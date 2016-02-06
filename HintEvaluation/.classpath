@@ -9,5 +9,6 @@
 	<classpathentry kind="lib" path="FITObjectGraphs-3.0.1.jar"/>
 	<classpathentry kind="lib" path="FITValidators-2.0.0.jar"/>
 	<classpathentry kind="lib" path="/Parser/commons-csv-1.2.jar"/>
+	<classpathentry kind="lib" path="/GraphAnalysis/RTED_v1.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

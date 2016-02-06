@@ -1,4 +1,4 @@
-package com.snap.eval.grades;
+package com.snap.eval;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -16,7 +16,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
 import com.snap.data.Snapshot;
-import com.snap.eval.grades.AutoGrader.Grader;
+import com.snap.eval.AutoGrader.Grader;
 import com.snap.eval.policy.DirectEditPolicy;
 import com.snap.eval.policy.HintFactoryPolicy;
 import com.snap.eval.policy.HintPolicy;

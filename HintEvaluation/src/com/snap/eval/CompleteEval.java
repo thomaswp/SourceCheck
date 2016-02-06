@@ -1,4 +1,4 @@
-package com.snap.eval.grades;
+package com.snap.eval;
 
 import java.io.File;
 import java.io.IOException;

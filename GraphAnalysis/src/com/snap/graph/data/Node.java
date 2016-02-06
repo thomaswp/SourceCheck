@@ -250,4 +250,10 @@ public class Node extends StringHashable {
 		Node parent = findParallelNode(root, child.parent);
 		return parent.children.get(child.index());
 	}
+
+	public int size() {
+		int size = 1;
+		for (Node child : children) size += child.size();
+		return size;
+	}
 }
