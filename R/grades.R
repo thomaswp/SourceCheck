@@ -30,10 +30,14 @@ policies <- function(grades) {
   sapply(unique(grades$policy), as.character)
 }
 
-compareBoth <- function(grades) {
+compareBoth <- function(grades, useSign) {
   grades <- grades[,c("policy", "action", percs)]
   grades <- melt(grades, id=c("policy", "action"))
-  combined <- ddply(grades, .(policy, action, variable), summarize, mean=mean(sign(value)))
+  if (useSign) {
+    combined <- ddply(grades, .(policy, action, variable), summarize, mean=mean(sign(value)))
+  } else {
+    combined <- ddply(grades, .(policy, action, variable), summarize, mean=median(value))
+  }
   ggplot(combined, aes(policy, mean, fill=variable)) +
     #geom_bar(aes(fill = action), position = "dodge", stat="identity") +
     geom_bar(stat='identity') +
