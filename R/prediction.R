@@ -44,6 +44,20 @@ plotCloser <- function() {
   ggplot(d, aes(x = percCloser, color=policy)) + geom_density()
 }
 
+testCloser <- function() {
+  d <- distance[distance$target=="final" & distance$normalized == TRUE,]
+  
+  print(summary(aov(percCloser ~ policy, distance[distance$target=="final" & distance$normalized == TRUE,])))
+  
+  hintAll <- distance[distance$policy=="Hint All",]$percCloser
+  hintExemplar <- distance[distance$policy=="Hint Exemplar",]$percCloser
+  directIdeal <- distance[distance$policy=="Direct Ideal",]$percCloser
+  
+  
+  print(t.test(hintAll, directIdeal, paired = TRUE))
+  print(t.test(hintExemplar, directIdeal, paired = TRUE))
+}
+
 plotFarther <- function() {
   d <- distance[distance$target=="final" & distance$normalized == TRUE,]
   ggplot(d, aes(x = percFarther, color=policy)) + geom_density()

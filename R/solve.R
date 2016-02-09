@@ -10,7 +10,7 @@ loadData <- function() {
   tests <<- sapply(0:maxTest, function(i) paste("test", i, sep=""))
   percs <<- sapply(0:maxTest, function(i) paste("perc", i, sep=""))
   
-  steps <<- read.csv("../data/csc200/fall2015/anlysis/guess1Lab/solve5.csv")
+  steps <<- read.csv("../data/csc200/fall2015/anlysis/guess1Lab/solve2.csv")
   steps$avgHints <<- steps$hints / steps$actions
   
   students <<- sapply(unique(steps$student), as.character)

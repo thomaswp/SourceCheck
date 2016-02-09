@@ -18,6 +18,7 @@ import com.snap.data.Snapshot;
 import com.snap.eval.policy.DirectEditPolicy;
 import com.snap.eval.policy.HintFactoryPolicy;
 import com.snap.eval.policy.HintPolicy;
+import com.snap.eval.policy.StudentPolicy;
 import com.snap.eval.util.PrintUpdater;
 import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.HintFactoryMap;
@@ -82,6 +83,7 @@ public class PredictionEval {
 						new DistanceScore("Hint Exemplar", new HintFactoryPolicy(builder1)),
 						new DistanceScore("Direct Ideal", solutionPolicy),
 						new DistanceScore("Direct Student", new DirectEditPolicy(nodes.get(nodes.size() - 1))),
+						new DistanceScore("Student Next", new StudentPolicy(nodes)),
 				};
 			}
 
