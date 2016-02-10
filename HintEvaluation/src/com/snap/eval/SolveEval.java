@@ -37,8 +37,10 @@ public class SolveEval {
 	private final static int MAX = 100;
 	
 	private final static int SEED = 1234;
-	private final static int MAX_HINTS = 5;
+	private final static int MAX_HINTS = 1;
 		
+	private final static int ROUNDS = 10;
+	
 	private final static Random rand = new Random(SEED);
 	
 	public static void main(String[] args) throws IOException {
@@ -46,13 +48,13 @@ public class SolveEval {
 		String dir = "../data/csc200/fall2015";
 		String assignment = "guess1Lab";
 		
-//		policyGradeEval(dir, assignment);
-		hintChainEval(dir, assignment);
+		policyGradeEval(dir, assignment);
+//		hintChainEval(dir, assignment);
 	}
 
 	public static void hintChainEval(String dir, String assignment) throws FileNotFoundException, IOException {
 			
-		eval(dir, assignment, "solve-chain", new ScoreConstructor() {
+		eval(dir, assignment, "solve-chain" + MAX_HINTS, new ScoreConstructor() {
 			@Override
 			public Score[] construct(String student, List<Node> nodes, SnapSubtree subtree) {
 				SubtreeBuilder builder0 = subtree.buildGraph(student, 0);
@@ -99,60 +101,65 @@ public class SolveEval {
 		outFile.getParentFile().mkdirs();
 		CSVPrinter printer = new CSVPrinter(new PrintStream(outFile), CSVFormat.DEFAULT.withHeader(Score.headers()));
 		
-		int skip = SKIP;
-		int max = MAX;
-		
-		HashMap<String,List<Node>> nodeMap = subtree.nodeMap();
-		for (String student : nodeMap.keySet()) {
-			if (skip-- > 0) {
-				continue;
-			}
-			
-			if (--max < 0) break;
-			
-			System.out.println(student);
-			
-			List<Node> nodes = nodeMap.get(student);
-			
-			Score[] scores = constructor.construct(student, nodes, subtree);
-			
-			AtomicInteger count = new AtomicInteger(0);
-			int total = 0;
-			
-			HashMap<String, Integer> solveSteps = new HashMap<>();
-			for (int i = 0; i < nodes.size(); i++) {
-				Node node = nodes.get(i);
 
-				for (Grader grader : AutoGrader.graders) {
-					String name = grader.name();
-					if (!solveSteps.containsKey(name) && grader.pass(node)) {
-						solveSteps.put(name, i);
+		
+		for (int round = 0; round < ROUNDS; round++) {
+		
+			int skip = SKIP;
+			int max = MAX;
+			
+			HashMap<String,List<Node>> nodeMap = subtree.nodeMap();
+			for (String student : nodeMap.keySet()) {
+				if (skip-- > 0) {
+					continue;
+				}
+				
+				if (--max < 0) break;
+				
+				System.out.println(student);
+				
+				List<Node> nodes = nodeMap.get(student);
+				
+				Score[] scores = constructor.construct(student, nodes, subtree);
+				
+				AtomicInteger count = new AtomicInteger(0);
+				int total = 0;
+				
+				HashMap<String, Integer> solveSteps = new HashMap<>();
+				for (int i = 0; i < nodes.size(); i++) {
+					Node node = nodes.get(i);
+	
+					for (Grader grader : AutoGrader.graders) {
+						String name = grader.name();
+						if (!solveSteps.containsKey(name) && grader.pass(node)) {
+							solveSteps.put(name, i);
+						}
+					}
+					
+					for (Score score : scores) {
+	//					System.out.println(score.name);
+	//					score.update(node, i, rand.nextInt());
+						score.updateAsync(node, i, rand.nextInt(), count);
+						total++;
 					}
 				}
 				
-				for (Score score : scores) {
-//					System.out.println(score.name);
-//					score.update(node, i, rand.nextInt());
-					score.updateAsync(node, i, rand.nextInt(), count);
-					total++;
+				PrintUpdater updater = new PrintUpdater(40);
+				while (count.get() > 0) {
+					try {
+						Thread.sleep(100);
+						updater.update((total - (double)count.get()) / total);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
 				}
-			}
-			
-			PrintUpdater updater = new PrintUpdater(40);
-			while (count.get() > 0) {
-				try {
-					Thread.sleep(100);
-					updater.update((total - (double)count.get()) / total);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
+				System.out.println();
+	
+				for (int i = 0; i < scores.length; i++) {
+					Score score = scores[i];
+					score.writeRow(printer, student, solveSteps, round);
+	//				score.print();
 				}
-			}
-			System.out.println();
-
-			for (int i = 0; i < scores.length; i++) {
-				Score score = scores[i];
-				score.writeRow(printer, student, solveSteps);
-//				score.print();
 			}
 		}
 		
@@ -178,17 +185,17 @@ public class SolveEval {
 		
 		public static String[] headers() {
 			List<String> headers = new LinkedList<>();
-			headers.add("policy"); headers.add("student"); headers.add("limited"); headers.add("hints"); headers.add("actions");
+			headers.add("policy"); headers.add("student"); headers.add("round"); headers.add("limited"); headers.add("hints"); headers.add("actions");
 			for (int i = 0; i < AutoGrader.graders.length; i++) headers.add("test" + i);
 			return headers.toArray(new String[headers.size()]);
 		}
 		
-		public void writeRow(CSVPrinter printer, String student, HashMap<String, Integer> studentSolveSteps) throws IOException {
-			int extraCols = 5;
+		public void writeRow(CSVPrinter printer, String student, HashMap<String, Integer> studentSolveSteps, int round) throws IOException {
+			int extraCols = 6;
 			for (int i = 0; i < 2; i++) {
 				Object[] row = new Object[AutoGrader.graders.length + extraCols];
-				row[0] = name; row[1] = student; row[2] = i == 0 ? "FALSE" : "TRUE"; 
-				row[3] = (i == 0 ? hints : selectHints); row[4] = actions;
+				row[0] = name; row[1] = student; row[2] = round; row[3] = i == 0 ? "FALSE" : "TRUE"; 
+				row[4] = (i == 0 ? hints : selectHints); row[5] = actions;
 				for (int j = 0; j < AutoGrader.graders.length; j++) {
 					Integer solveStep = (i == 0 ? solveSteps : solveStepsSelect).get(AutoGrader.graders[j].name());
 					Integer studentSolveStep = studentSolveSteps.get(AutoGrader.graders[j].name());
