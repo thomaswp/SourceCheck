@@ -48,7 +48,7 @@ plotBetter <- function(better, limited) {
   title = ifelse(!limited, "Objectives Completed (All Hints)", "Objectives Completed (Random Hint)")
   ggplot(data, aes(variable, value, fill=policy)) +
     geom_bar(stat='identity', position='dodge') + 
-    labs(title=title, subtitle="!", x="Objective", y="Percent Completed as Fast", fill="Policy") +
+    labs(title=title, x="Objective", y="Percent Completed as Fast", fill="Policy") +
     scale_y_continuous(labels=percent, limits=c(0,1)) +
     scale_x_discrete(labels=xlabels) +
     theme_bw() + 
