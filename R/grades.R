@@ -1,5 +1,6 @@
 library("plyr")
 library("ggplot2")
+#library("ggthemes")
 library("reshape2")
 library("scales")
 
@@ -56,10 +57,12 @@ plotStacked <- function(grades, action) {
   ggplot(data, aes(policy, mean, fill=variable)) +
     geom_bar(stat='identity') + 
     labs(title=title, x="Policy", y="Percent of Hints", fill="Objective") +
-    scale_x_discrete() +
+    scale_x_discrete(labels=c("NA", "NE", "DI", "DS", "SN")) +
     scale_y_continuous(labels=percent) +
     theme_bw() + 
     scale_fill_grey(labels=xlabels)
+    #scale_fill_brewer(palette="RdYlGn", labels=xlabels)
+    #scale_fill_manual(labels=xlabels, values=brewer_pal(palette="OrRd", direction=-1)(11)[2:10])
 }
 
 compareBoth <- function(grades, useSign) {

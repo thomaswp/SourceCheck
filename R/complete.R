@@ -15,6 +15,7 @@ loadData <- function() {
                      stepsMean = mean(steps), stepsSE = se(steps), 
                      studentStepsMean = mean(studentSteps), studentStepsSE = se(studentSteps), 
                      hashCount = length(unique(hash)))
+  twoColors <<- c("#a1d99b","#2c7fb8")
 }
 
 idealSolutions <- function(minGrade) {
@@ -27,26 +28,30 @@ idealSolutions <- function(minGrade) {
 }
 
 plotHash <- function() {
-  ggplot(combined, aes(x=slice, y=hashCount, colour=policy)) + 
+  ggplot(combined, aes(x=slice+1, y=hashCount, colour=policy)) + 
     labs(title="Unique Solutions", x="Slice", y="Unique Solutions", colour="Policy") +
     geom_line() +
     geom_point() +
+    scale_color_manual(values=twoColors, labels=c("NA", "NE")) +
     theme_bw()
 }
 
 
 plotGrade <- function() {
-  ggplot(combined, aes(x=slice, y=gradeMean, color=policy)) + 
-    labs(title="Final Solution Grade", x="Slice", y="Grade", fill="Policy") +
+  ggplot(combined, aes(x=slice+1, y=gradeMean, color=policy)) + 
+    labs(title="Final Solution Grade", x="Slice", y="Grade", color="Policy") +
     geom_line() +
-    geom_ribbon(aes(x=slice, ymin=gradeMean-gradeSE, ymax=gradeMean+gradeSE, fill=policy), color=NA, alpha=.3)+guides(colour=FALSE) +
+    geom_ribbon(aes(x=slice+1, ymin=gradeMean-gradeSE, ymax=gradeMean+gradeSE, fill=policy), color=NA, alpha=.3) +
+    guides(fill=FALSE) +
     geom_point() +
     theme_bw() + 
+    scale_fill_manual(values=twoColors) +
+    scale_color_manual(values=twoColors, labels=c("NA", "NE")) +
     scale_y_continuous(limits=c(0.85, 1), label=percent)
 }
 
 plotPerfect <- function() {
-  ggplot(combined, aes(x=slice, y=perfect, color=policy)) + 
+  ggplot(combined, aes(x=slice+1, y=perfect, color=policy)) + 
     labs(title="Final Solution Grade", x="Slice", y="Grade", fill="Policy") +
     geom_line() +
     geom_point() +
@@ -55,11 +60,14 @@ plotPerfect <- function() {
 }
 
 plotSteps <- function() {
-  ggplot(combined, aes(x=slice, y=stepsMean, colour=policy)) + 
-    labs(title="Hints to Final Solution", x="Slice", y="Hints", fill="Policy") +
+  ggplot(combined, aes(x=slice+1, y=stepsMean, colour=policy)) + 
+    labs(title="Hints to Final Solution", x="Slice", y="Hints", color="Policy") +
     geom_line() +
-    geom_ribbon(aes(x=slice, ymin=stepsMean-stepsSE, ymax=stepsMean+stepsSE, fill=policy), color=NA, alpha=.3)+guides(colour=FALSE) +
+    geom_ribbon(aes(x=slice+1, ymin=stepsMean-stepsSE, ymax=stepsMean+stepsSE, fill=policy), color=NA, alpha=.3) +
+    guides(fill=FALSE) +
     geom_point() +
+    scale_fill_manual(values=twoColors) +
+    scale_color_manual(values=twoColors, labels=c("NA", "NE")) +
     theme_bw()
 }
 
