@@ -10,6 +10,7 @@ import java.util.Set;
 import com.snap.graph.data.HintFactoryMap;
 import com.snap.graph.data.Node;
 import com.snap.graph.subtree.SnapSubtree;
+import com.snap.graph.subtree.SubtreeBuilder.Tuple;
 
 import astrecognition.model.Convert;
 import astrecognition.model.Tree;
@@ -149,5 +150,10 @@ public class DirectEditPolicy implements HintPolicy {
 		for (Node edit : edits) {
 			testEdits(edit, to);
 		}
+	}
+
+	@Override
+	public Tuple<Node, Integer> solution(Node node, int maxSteps) {
+		return new Tuple<Node, Integer>(target, -1);
 	}
 }

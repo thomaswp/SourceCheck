@@ -14,12 +14,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
+import com.snap.data.Snapshot;
+import com.snap.eval.policy.DirectEditPolicy;
+import com.snap.eval.policy.HintFactoryPolicy;
+import com.snap.eval.policy.HintPolicy;
 import com.snap.eval.util.PrintUpdater;
+import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.HintFactoryMap;
 import com.snap.graph.data.Node;
 import com.snap.graph.subtree.SnapSubtree;
-import com.snap.graph.subtree.SubtreeBuilder;
-import com.snap.graph.subtree.SubtreeBuilder.Hint;
+import com.snap.graph.subtree.SubtreeBuilder.Tuple;
+
+import distance.RTED_InfoTree_Opt;
 
 public class CompleteEval {
 	
@@ -36,18 +42,21 @@ public class CompleteEval {
 		Date maxTime = new GregorianCalendar(2015, 8, 18).getTime();
 		SnapSubtree subtree = new SnapSubtree(dir, assignment, maxTime, new HintFactoryMap());
 
+		Snapshot solution = Snapshot.parse(new File(dir + "/solutions/", assignment + ".xml"));
+		Node solutionNode = SimpleNodeBuilder.toTree(solution, true);
+		DirectEditPolicy solutionPolicy = new DirectEditPolicy(solutionNode);
+		
 		File outFile = new File(dir + "/anlysis/" + assignment + "/complete.csv");
 		outFile.getParentFile().mkdirs();
 		List<String> headers = new LinkedList<>();
-		headers.add("policy"); headers.add("student"); headers.add("slice"); headers.add("studentSteps"); headers.add("hash"); headers.add("steps");
+		headers.add("policy"); headers.add("student"); headers.add("slice"); headers.add("studentSteps"); headers.add("hash"); headers.add("steps"); headers.add("deletions");
 		for (int i = 0; i < AutoGrader.graders.length; i++) headers.add("test" + i);
 		CSVPrinter printer = new CSVPrinter(new PrintStream(outFile), CSVFormat.DEFAULT.withHeader(headers.toArray(new String[headers.size()])));
 
 		int skip = SKIP;
 		int max = MAX;
 		
-		double[] grades = new double[] { 0, 1 };
-		String[] names = new String[] { "Hint All", "Hint Exemplar" };
+		String[] names = new String[] { "Hint All", "Hint Exemplar", "Direct Ideal", "Direct Student" };
 		
 		HashMap<String,List<Node>> nodeMap = subtree.nodeMap();
 		for (String student : nodeMap.keySet()) {
@@ -64,14 +73,20 @@ public class CompleteEval {
 			AtomicInteger count = new AtomicInteger(0);
 			int total = 0;
 
+			HintPolicy[] policies = new HintPolicy[] {
+					new HintFactoryPolicy(subtree.buildGraph(student, 0)),
+					new HintFactoryPolicy(subtree.buildGraph(student, 1)),
+					solutionPolicy,
+					new DirectEditPolicy(nodes.get(nodes.size() - 1)),
+			};
+			
 			List<Completion> completions = new ArrayList<>();
-			for (int i = 0; i < grades.length; i++) {
-				SubtreeBuilder builder = subtree.buildGraph(student, grades[i]);
+			for (int i = 0; i < policies.length; i++) {
 
 				for (int slice = 0; slice < SLICES; slice++) {
 					int index = nodes.size() * slice / SLICES;
 					Node node = nodes.get(index);
-					Completion completion = new Completion(builder, node, slice, nodes.size() - index - 1, names[i]);
+					Completion completion = new Completion(node, slice, nodes.size() - index - 1, policies[i], names[i]);
 					completions.add(completion);
 //					completion.calculate();
 					completion.calculateAsync(count);
@@ -99,34 +114,23 @@ public class CompleteEval {
 	}
 	
 	private static class Completion {
-		private final SubtreeBuilder builder;
+
 		private final Node startState;
 		private final int slice, studentSteps;
-		private final String policy;
+		private final HintPolicy policy; 
+		private final String name;
 		
-		public Node endState;
-		public HashMap<String, Boolean> grade;
-		public int steps;
+		private Node endState;
+		private HashMap<String, Boolean> grade;
+		private int steps;
+		private int deletions;
 		
-		public Completion(SubtreeBuilder builder, Node startState, int slice, int studentSteps, String policy) {
-			this.builder = builder;
+		public Completion(Node startState, int slice, int studentSteps, HintPolicy policy, String name) {
 			this.startState = startState;
 			this.slice = slice;
 			this.studentSteps = studentSteps;
 			this.policy = policy;
-		}
-		
-		public void writeCSV(CSVPrinter printer, String student) throws IOException {
-			int extraCols = 6;
-			Object[] row = new Object[AutoGrader.graders.length + extraCols];
-			row[0] = policy; row[1] = student; row[2] = slice; row[3] = studentSteps;
-			row[4] = "H" + endState.hashCode(); row[5] = steps;
-			
-			for (int i = 0; i < AutoGrader.graders.length; i++) {
-				row[i + extraCols] = String.valueOf(grade.get(AutoGrader.graders[i].name())).toUpperCase();
-			}
-			printer.printRecord(row);
-			printer.flush();
+			this.name = name;
 		}
 		
 		public void calculateAsync(AtomicInteger count) {
@@ -139,20 +143,30 @@ public class CompleteEval {
 				}
 			}).start();
 		}
-		
+	
 		public void calculate() {
-			steps = 0;
-			Node state = startState;
-			while (steps < MAX_STEPS) {
-//				System.out.println(state);
-				Hint hint = builder.getFirstHint(state);
-				if (hint == null) break;
-				state = hint.outcome().root();
-				steps++;
-			}
+			Tuple<Node,Integer> solution = policy.solution(startState, MAX_STEPS);
 			
-			endState = state;
+			steps = solution.y;
+			endState = solution.x;
 			grade = AutoGrader.grade(endState);
+			
+			RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(1, 0, 1);
+			deletions = (int)Math.round(opt.nonNormalizedTreeDist(startState.toTree(), endState.toTree()));
 		}
+		
+		public void writeCSV(CSVPrinter printer, String student) throws IOException {
+			int extraCols = 7;
+			Object[] row = new Object[AutoGrader.graders.length + extraCols];
+			row[0] = name; row[1] = student; row[2] = slice; row[3] = studentSteps;
+			row[4] = "H" + endState.hashCode(); row[5] = steps; row[6] = deletions;
+			
+			for (int i = 0; i < AutoGrader.graders.length; i++) {
+				row[i + extraCols] = String.valueOf(grade.get(AutoGrader.graders[i].name())).toUpperCase();
+			}
+			printer.printRecord(row);
+			printer.flush();
+		}
+		
 	}
 }

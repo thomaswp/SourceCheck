@@ -9,6 +9,7 @@ import com.snap.graph.data.HintFactoryMap.VectorHint;
 import com.snap.graph.data.Node.Predicate;
 import com.snap.graph.subtree.SubtreeBuilder;
 import com.snap.graph.subtree.SubtreeBuilder.Hint;
+import com.snap.graph.subtree.SubtreeBuilder.Tuple;
 
 public class HintFactoryPolicy implements HintPolicy {
 
@@ -43,6 +44,19 @@ public class HintFactoryPolicy implements HintPolicy {
 		}
 		
 		return steps;
+	}
+
+	@Override
+	public Tuple<Node, Integer> solution(Node node, int maxSteps) {
+		int steps = 0;
+		Node state = node;
+		while (steps < maxSteps) {
+			Hint hint = builder.getFirstHint(state);
+			if (hint == null) break;
+			state = hint.outcome().root();
+			steps++;
+		}
+		return new Tuple<Node, Integer>(state, steps);
 	}
 
 }

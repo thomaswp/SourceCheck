@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.snap.graph.data.Node;
+import com.snap.graph.subtree.SubtreeBuilder.Tuple;
 
 public class StudentPolicy implements HintPolicy {
 	
@@ -26,5 +27,15 @@ public class StudentPolicy implements HintPolicy {
 		}
 		
 		return set;
+	}
+
+	@Override
+	public Tuple<Node, Integer> solution(Node node, int maxSteps) {
+		for (int i = 0; i < nodes.size(); i++) {
+			if (nodes.get(i) == node) {
+				return new Tuple<Node, Integer>(nodes.get(nodes.size() - 1), nodes.size() - i);
+			}
+		}
+		return new Tuple<Node, Integer>(nodes.get(nodes.size() - 1), -1);
 	}
 }
