@@ -19,6 +19,7 @@ import com.snap.eval.policy.DirectEditPolicy;
 import com.snap.eval.policy.HintFactoryPolicy;
 import com.snap.eval.policy.HintPolicy;
 import com.snap.eval.util.PrintUpdater;
+import com.snap.eval.util.Prune;
 import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.HintFactoryMap;
 import com.snap.graph.data.Node;
@@ -30,11 +31,73 @@ import distance.RTED_InfoTree_Opt;
 public class CompleteEval {
 	
 	private final static int SKIP = 1, MAX = 100, MAX_STEPS = 250, SLICES = 50;
+	private final static boolean PRUNE = true;
 	
 	public static void main(String[] args) throws IOException {
 		String dir = "../data/csc200/fall2015";
 		String assignment = "guess1Lab";
 		eval(dir, assignment);
+//		test(dir, assignment);
+	}
+	
+	@SuppressWarnings("unused")
+	private static void test(String dir, String assignment) throws IOException {
+
+		Date maxTime = new GregorianCalendar(2015, 8, 18).getTime();
+		SnapSubtree subtree = new SnapSubtree(dir, assignment, maxTime, new HintFactoryMap());
+
+		Snapshot solution = Snapshot.parse(new File(dir + "/solutions/", assignment + ".xml"));
+		Node solutionNode = SimpleNodeBuilder.toTree(solution, true);
+		DirectEditPolicy solutionPolicy = new DirectEditPolicy(solutionNode);
+		
+		String[] names = new String[] { "Hint All", "Hint Exemplar", "Direct Ideal", "Direct Student" };
+		
+		HashMap<String,List<Node>> nodeMap = subtree.nodeMap();
+		
+		int skip = 1, max = 2;
+		
+		for (String student : nodeMap.keySet()) {
+			if (skip-- > 0) {
+				continue;
+			}
+
+			if (--max < 0) break;
+
+			System.out.println(student);
+
+			List<Node> nodes = nodeMap.get(student);
+
+			HintPolicy[] policies = new HintPolicy[] {
+					new HintFactoryPolicy(subtree.buildGraph(student, 0)),
+					new HintFactoryPolicy(subtree.buildGraph(student, 1)),
+					solutionPolicy,
+					new DirectEditPolicy(nodes.get(nodes.size() - 1)),
+			};
+			
+			int slice = (int) (Math.random() * SLICES);
+			int index = nodes.size() * slice / SLICES;
+			System.out.println("Slice: " + slice + " (" + index + ")");
+
+			Node node = nodes.get(index);
+			System.out.println(node.prettyPrint());
+			node = Prune.removeSmallerScripts(node);
+			System.out.println("Norm:\n" + node.prettyPrint());
+			System.out.println("-------------");
+			
+			
+			for (int i = 0; i < policies.length; i++) {
+				System.out.println(names[i] + ":");
+				Tuple<Node,Integer> s = policies[i].solution(node, MAX_STEPS);
+				System.out.println("Steps: " + s.y);
+				RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(1, 0, 1);
+				int deletions = (int)Math.round(opt.nonNormalizedTreeDist(node.toTree(), s.x.toTree()));
+				System.out.println("Deletions: " + deletions);
+				System.out.println();
+				System.out.println(s.x.prettyPrint());
+				System.out.println("-------------");
+				
+			}
+		}
 	}
 	
 	private static void eval(String dir, String assignment) throws IOException {
@@ -46,7 +109,7 @@ public class CompleteEval {
 		Node solutionNode = SimpleNodeBuilder.toTree(solution, true);
 		DirectEditPolicy solutionPolicy = new DirectEditPolicy(solutionNode);
 		
-		File outFile = new File(dir + "/anlysis/" + assignment + "/complete.csv");
+		File outFile = new File(dir + "/anlysis/" + assignment + "/complete" + (PRUNE ? "-p" : "") + ".csv");
 		outFile.getParentFile().mkdirs();
 		List<String> headers = new LinkedList<>();
 		headers.add("policy"); headers.add("student"); headers.add("slice"); headers.add("studentSteps"); headers.add("hash"); headers.add("steps"); headers.add("deletions");
@@ -86,6 +149,7 @@ public class CompleteEval {
 				for (int slice = 0; slice < SLICES; slice++) {
 					int index = nodes.size() * slice / SLICES;
 					Node node = nodes.get(index);
+					if (PRUNE) node = Prune.removeSmallerScripts(node);
 					Completion completion = new Completion(node, slice, nodes.size() - index - 1, policies[i], names[i]);
 					completions.add(completion);
 //					completion.calculate();

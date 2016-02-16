@@ -256,4 +256,41 @@ public class Node extends StringHashable {
 		for (Node child : children) size += child.size();
 		return size;
 	}
+	
+	private final static String[] HAS_BODY = new String[] {
+			"snapshot", "stage", "sprite", "script", "customBlock",
+	};
+	
+	public String prettyPrint() {
+		return prettyPrint("");
+	}
+	
+	private String prettyPrint(String indent) {
+		boolean inline = true;
+		for (String hasBody : HAS_BODY) {
+			if (type.equals(hasBody)) {
+				inline = false;
+				break;
+			}
+		}
+		String out = type;
+		if (children.size() > 0) {
+			if (inline) {
+				out += "(";
+				for (int i = 0; i < children.size(); i++) {
+					if (i > 0) out += ", ";
+					out += children.get(i).prettyPrint(indent);
+				}
+				out += ")";
+			} else {
+				out += " {\n";
+				String indentMore = indent + "  ";
+				for (int i = 0; i < children.size(); i++) {
+					out += indentMore + children.get(i).prettyPrint(indentMore) + "\n";
+				}
+				out += indent + "}";
+			}
+		}
+		return out;
+	}
 }
