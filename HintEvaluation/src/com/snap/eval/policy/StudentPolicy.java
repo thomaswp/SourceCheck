@@ -21,7 +21,8 @@ public class StudentPolicy implements HintPolicy {
 
 		for (int i = 0; i < nodes.size() - 1; i++) {
 			if (nodes.get(i) == node) {
-				set.add(nodes.get(i + 1));
+				Node hint = nodes.get(i + 1);
+				set.add(hint);
 				break;
 			}
 		}

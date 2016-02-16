@@ -22,6 +22,7 @@ import com.snap.eval.policy.HintFactoryPolicy;
 import com.snap.eval.policy.HintPolicy;
 import com.snap.eval.policy.StudentPolicy;
 import com.snap.eval.util.PrintUpdater;
+import com.snap.eval.util.Prune;
 import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.HintFactoryMap;
 import com.snap.graph.data.Node;
@@ -33,14 +34,15 @@ public class GradeEval {
 	
 	private final static int SKIP = 1;
 	private final static int MAX = 100;
+	private final static boolean PRUNE = true;
 	
 	public static void main(String[] args) throws IOException {
 				
 		String dir = "../data/csc200/fall2015";
 		String assignment = "guess1Lab";
 		
-//		policyGradeEval(dir, assignment);
-		hintChainEval(dir, assignment);
+		policyGradeEval(dir, assignment);
+//		hintChainEval(dir, assignment);
 	}
 
 	public static void hintChainEval(String dir, String assignment) throws FileNotFoundException, IOException {
@@ -72,11 +74,12 @@ public class GradeEval {
 			public Score[] construct(String student, List<Node> nodes, SnapSubtree subtree) {
 				SubtreeBuilder builder0 = subtree.buildGraph(student, 0);
 				SubtreeBuilder builder1 = subtree.buildGraph(student, 1);
+				Node studentLast = nodes.get(nodes.size() - 1);
 				return new Score[] {
 						new Score("Hint All", new HintFactoryPolicy(builder0)),
 						new Score("Hint Exemplar", new HintFactoryPolicy(builder1)),
 						new Score("Direct Ideal", solutionPolicy),
-						new Score("Direct Student", new DirectEditPolicy(nodes.get(nodes.size() - 1))),
+						new Score("Direct Student", new DirectEditPolicy(studentLast)),
 						new Score("Student Next", new StudentPolicy(nodes))
 				};
 			}
@@ -88,7 +91,7 @@ public class GradeEval {
 		Date maxTime = new GregorianCalendar(2015, 8, 18).getTime();
 		SnapSubtree subtree = new SnapSubtree(dir, assignment, maxTime, new HintFactoryMap());
 		
-		File outFile = new File(dir + "/anlysis/" + assignment + "/" + test + ".csv");
+		File outFile = new File(dir + "/anlysis/" + assignment + "/" + test + (PRUNE ? "-p" : "") + ".csv");
 		outFile.getParentFile().mkdirs();
 		List<String> headers = new LinkedList<>();
 		headers.add("policy"); headers.add("student"); headers.add("action"); headers.add("total");
@@ -109,6 +112,7 @@ public class GradeEval {
 			System.out.println(student);
 			
 			List<Node> nodes = nodeMap.get(student);
+			if (PRUNE) nodes = Prune.removeSmallerScripts(nodes);
 			
 			Score[] scores = constructor.construct(student, nodes, subtree);
 			

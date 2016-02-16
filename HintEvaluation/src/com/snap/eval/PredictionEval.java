@@ -20,6 +20,7 @@ import com.snap.eval.policy.HintFactoryPolicy;
 import com.snap.eval.policy.HintPolicy;
 import com.snap.eval.policy.StudentPolicy;
 import com.snap.eval.util.PrintUpdater;
+import com.snap.eval.util.Prune;
 import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.HintFactoryMap;
 import com.snap.graph.data.Node;
@@ -33,14 +34,15 @@ import util.LblTree;
 public class PredictionEval {
 
 	private final static int SKIP = 1, MAX = 100, LOOK_AHEAD = 5, STEP = 5;
+	private final static boolean PRUNE = true;
 	
 	public static void main(String[] args) throws IOException {
 		
 		String dir = "../data/csc200/fall2015";
 		String assignment = "guess1Lab";
 		
-//		predictionEval(dir, assignment);
-		distanceEval(dir, assignment);
+		predictionEval(dir, assignment);
+//		distanceEval(dir, assignment);
 	}
 	
 	public static void predictionEval(String dir, String assignment) throws FileNotFoundException, IOException {
@@ -78,11 +80,12 @@ public class PredictionEval {
 			public Score[] construct(String student, List<Node> nodes, SnapSubtree subtree) {
 				SubtreeBuilder builder0 = subtree.buildGraph(student, 0);
 				SubtreeBuilder builder1 = subtree.buildGraph(student, 1);
+				Node studentLast = nodes.get(nodes.size() - 1);
 				return new Score[] {
 						new DistanceScore("Hint All", new HintFactoryPolicy(builder0)),
 						new DistanceScore("Hint Exemplar", new HintFactoryPolicy(builder1)),
 						new DistanceScore("Direct Ideal", solutionPolicy),
-						new DistanceScore("Direct Student", new DirectEditPolicy(nodes.get(nodes.size() - 1))),
+						new DistanceScore("Direct Student", new DirectEditPolicy(studentLast)),
 						new DistanceScore("Student Next", new StudentPolicy(nodes)),
 				};
 			}
@@ -99,7 +102,7 @@ public class PredictionEval {
 		Date maxTime = new GregorianCalendar(2015, 8, 18).getTime();
 		SnapSubtree subtree = new SnapSubtree(dir, assignment, maxTime, new HintFactoryMap());
 		
-		File outFile = new File(dir + "/anlysis/" + assignment + "/" + test + ".csv");
+		File outFile = new File(dir + "/anlysis/" + assignment + "/" + test + (PRUNE ? "-p" : "") + ".csv");
 		outFile.getParentFile().mkdirs();
 		CSVPrinter printer = new CSVPrinter(new PrintStream(outFile), CSVFormat.DEFAULT.withHeader(constructor.headers()));
 				
@@ -122,6 +125,7 @@ public class PredictionEval {
 			System.out.println(student);
 			
 			List<Node> nodes = nodeMap.get(student);
+			if (PRUNE) nodes = Prune.removeSmallerScripts(nodes);
 			
 			Score[] scores = constructor.construct(student, nodes, subtree);
 			

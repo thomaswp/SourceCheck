@@ -40,6 +40,83 @@ public class CompleteEval {
 //		test(dir, assignment);
 	}
 	
+	private static void eval(String dir, String assignment) throws IOException {
+
+		Date maxTime = new GregorianCalendar(2015, 8, 18).getTime();
+		SnapSubtree subtree = new SnapSubtree(dir, assignment, maxTime, new HintFactoryMap());
+
+		Snapshot solution = Snapshot.parse(new File(dir + "/solutions/", assignment + ".xml"));
+		Node solutionNode = SimpleNodeBuilder.toTree(solution, true);
+		DirectEditPolicy solutionPolicy = new DirectEditPolicy(solutionNode);
+		
+		File outFile = new File(dir + "/anlysis/" + assignment + "/complete" + (PRUNE ? "-p" : "") + ".csv");
+		outFile.getParentFile().mkdirs();
+		List<String> headers = new LinkedList<>();
+		headers.add("policy"); headers.add("student"); headers.add("slice"); headers.add("studentSteps"); headers.add("hash"); headers.add("steps"); headers.add("deletions");
+		for (int i = 0; i < AutoGrader.graders.length; i++) headers.add("test" + i);
+		CSVPrinter printer = new CSVPrinter(new PrintStream(outFile), CSVFormat.DEFAULT.withHeader(headers.toArray(new String[headers.size()])));
+
+		int skip = SKIP;
+		int max = MAX;
+		
+		String[] names = new String[] { "Hint All", "Hint Exemplar", "Direct Ideal", "Direct Student" };
+		
+		HashMap<String,List<Node>> nodeMap = subtree.nodeMap();
+		for (String student : nodeMap.keySet()) {
+			if (skip-- > 0) {
+				continue;
+			}
+
+			if (--max < 0) break;
+
+			System.out.println(student);
+
+			List<Node> nodes = nodeMap.get(student);
+			if (PRUNE) nodes = Prune.removeSmallerScripts(nodes);
+
+			AtomicInteger count = new AtomicInteger(0);
+			int total = 0;
+
+			HintPolicy[] policies = new HintPolicy[] {
+					new HintFactoryPolicy(subtree.buildGraph(student, 0)),
+					new HintFactoryPolicy(subtree.buildGraph(student, 1)),
+					solutionPolicy,
+					new DirectEditPolicy(nodes.get(nodes.size() - 1)),
+			};
+			
+			List<Completion> completions = new ArrayList<>();
+			for (int i = 0; i < policies.length; i++) {
+
+				for (int slice = 0; slice < SLICES; slice++) {
+					int index = nodes.size() * slice / SLICES;
+					Node node = nodes.get(index);
+					Completion completion = new Completion(node, slice, nodes.size() - index - 1, policies[i], names[i]);
+					completions.add(completion);
+//					completion.calculate();
+					completion.calculateAsync(count);
+					total++;
+				}
+			}
+
+			PrintUpdater updater = new PrintUpdater(40);
+			while (count.get() > 0) {
+				try {
+					Thread.sleep(100);
+					updater.update((total - (double)count.get()) / total);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+			System.out.println();
+
+			for (Completion completion : completions) {
+				completion.writeCSV(printer, student);
+			}
+		}
+
+		printer.close();
+	}
+	
 	@SuppressWarnings("unused")
 	private static void test(String dir, String assignment) throws IOException {
 
@@ -98,83 +175,6 @@ public class CompleteEval {
 				
 			}
 		}
-	}
-	
-	private static void eval(String dir, String assignment) throws IOException {
-
-		Date maxTime = new GregorianCalendar(2015, 8, 18).getTime();
-		SnapSubtree subtree = new SnapSubtree(dir, assignment, maxTime, new HintFactoryMap());
-
-		Snapshot solution = Snapshot.parse(new File(dir + "/solutions/", assignment + ".xml"));
-		Node solutionNode = SimpleNodeBuilder.toTree(solution, true);
-		DirectEditPolicy solutionPolicy = new DirectEditPolicy(solutionNode);
-		
-		File outFile = new File(dir + "/anlysis/" + assignment + "/complete" + (PRUNE ? "-p" : "") + ".csv");
-		outFile.getParentFile().mkdirs();
-		List<String> headers = new LinkedList<>();
-		headers.add("policy"); headers.add("student"); headers.add("slice"); headers.add("studentSteps"); headers.add("hash"); headers.add("steps"); headers.add("deletions");
-		for (int i = 0; i < AutoGrader.graders.length; i++) headers.add("test" + i);
-		CSVPrinter printer = new CSVPrinter(new PrintStream(outFile), CSVFormat.DEFAULT.withHeader(headers.toArray(new String[headers.size()])));
-
-		int skip = SKIP;
-		int max = MAX;
-		
-		String[] names = new String[] { "Hint All", "Hint Exemplar", "Direct Ideal", "Direct Student" };
-		
-		HashMap<String,List<Node>> nodeMap = subtree.nodeMap();
-		for (String student : nodeMap.keySet()) {
-			if (skip-- > 0) {
-				continue;
-			}
-
-			if (--max < 0) break;
-
-			System.out.println(student);
-
-			List<Node> nodes = nodeMap.get(student);
-
-			AtomicInteger count = new AtomicInteger(0);
-			int total = 0;
-
-			HintPolicy[] policies = new HintPolicy[] {
-					new HintFactoryPolicy(subtree.buildGraph(student, 0)),
-					new HintFactoryPolicy(subtree.buildGraph(student, 1)),
-					solutionPolicy,
-					new DirectEditPolicy(nodes.get(nodes.size() - 1)),
-			};
-			
-			List<Completion> completions = new ArrayList<>();
-			for (int i = 0; i < policies.length; i++) {
-
-				for (int slice = 0; slice < SLICES; slice++) {
-					int index = nodes.size() * slice / SLICES;
-					Node node = nodes.get(index);
-					if (PRUNE) node = Prune.removeSmallerScripts(node);
-					Completion completion = new Completion(node, slice, nodes.size() - index - 1, policies[i], names[i]);
-					completions.add(completion);
-//					completion.calculate();
-					completion.calculateAsync(count);
-					total++;
-				}
-			}
-
-			PrintUpdater updater = new PrintUpdater(40);
-			while (count.get() > 0) {
-				try {
-					Thread.sleep(100);
-					updater.update((total - (double)count.get()) / total);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-			}
-			System.out.println();
-
-			for (Completion completion : completions) {
-				completion.writeCSV(printer, student);
-			}
-		}
-
-		printer.close();
 	}
 	
 	private static class Completion {

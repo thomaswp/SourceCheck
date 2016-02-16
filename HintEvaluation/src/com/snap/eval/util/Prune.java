@@ -1,9 +1,18 @@
 package com.snap.eval.util;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.snap.graph.data.Node;
 import com.snap.graph.data.Node.Action;
 
 public class Prune {
+	
+	public static List<Node> removeSmallerScripts(List<Node> nodes) {
+		List<Node> list = new ArrayList<>();
+		for (Node node : nodes) list.add(removeSmallerScripts(node));
+		return list;
+	}
 	
 	public static Node removeSmallerScripts(Node node) {
 		node = node.copy(false);

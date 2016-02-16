@@ -12,7 +12,7 @@ loadData <- function() {
   tests <<- sapply(0:maxTest, function(i) paste("test", i, sep=""))
   percs <<- sapply(0:maxTest, function(i) paste("perc", i, sep=""))
     
-  grade <<- read.csv("../data/csc200/fall2015/anlysis/guess1Lab/grade.csv")
+  grade <<- read.csv("../data/csc200/fall2015/anlysis/guess1Lab/grade-p.csv")
   grade$policy <<- factor(grade$policy, levels = c("Hint All", "Hint Exemplar", "Direct Ideal", "Direct Student", "Student Next"))
   
   chain <<- read.csv("../data/csc200/fall2015/anlysis/guess1Lab/chain.csv")

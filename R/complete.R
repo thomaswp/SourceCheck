@@ -7,7 +7,7 @@ se <- function(x) sqrt(var(x)/length(x))
 loadData <- function() {
   rm(list=ls())
   maxTest <<- 8;
-  complete <<- read.csv("../data/csc200/fall2015/anlysis/guess1Lab/complete.csv")
+  complete <<- read.csv("../data/csc200/fall2015/anlysis/guess1Lab/complete-p.csv")
   complete$policy <<- factor(complete$policy, levels = c("Hint All", "Hint Exemplar", "Direct Ideal", "Direct Student"))
   tests <<- sapply(0:maxTest, function(i) paste("test", i, sep=""))
   complete$grade <<- rowSums(complete[,tests]) / 9
@@ -61,7 +61,7 @@ plotGrade <- function() {
 plotDeletions <- function() {
   ggplot(combinedAll, aes(x=slice+1, y=deletionsMean, color=policy)) + 
     labs(title="Final Solution Grade", x="Slice", y="Grade", color="Policy") +
-    geom_ribbon(aes(x=slice+1, ymin=deletionsMean-deletionsSE, ymax=deletionsMean+deletionsSE, fill=policy), color=NA, alpha=.3) +
+    #geom_ribbon(aes(x=slice+1, ymin=deletionsMean-deletionsSE, ymax=deletionsMean+deletionsSE, fill=policy), color=NA, alpha=.3) +
     geom_line() +
     guides(fill=FALSE) +
     geom_point() +

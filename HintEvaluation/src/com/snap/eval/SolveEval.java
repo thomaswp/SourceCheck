@@ -25,6 +25,7 @@ import com.snap.eval.policy.HintFactoryPolicy;
 import com.snap.eval.policy.HintPolicy;
 import com.snap.eval.policy.StudentPolicy;
 import com.snap.eval.util.PrintUpdater;
+import com.snap.eval.util.Prune;
 import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.HintFactoryMap;
 import com.snap.graph.data.Node;
@@ -35,11 +36,12 @@ public class SolveEval {
 	
 	private final static int SKIP = 1;
 	private final static int MAX = 100;
+	private final static boolean PRUNE = true;
 	
 	private final static int SEED = 1234;
 	private final static int MAX_HINTS = 1;
 		
-	private final static int ROUNDS = 10;
+	private final static int ROUNDS = 1;
 	
 	private final static Random rand = new Random(SEED);
 	
@@ -81,11 +83,12 @@ public class SolveEval {
 			public Score[] construct(String student, List<Node> nodes, SnapSubtree subtree) {
 				SubtreeBuilder builder0 = subtree.buildGraph(student, 0);
 				SubtreeBuilder builder1 = subtree.buildGraph(student, 1);
+				Node studentLast = nodes.get(nodes.size() - 1);
 				return new Score[] {
 						new Score("Hint All", new HintFactoryPolicy(builder0)),
 						new Score("Hint Exemplar", new HintFactoryPolicy(builder1)),
 						new Score("Direct Ideal", solutionPolicy),
-						new Score("Direct Student", new DirectEditPolicy(nodes.get(nodes.size() - 1))),
+						new Score("Direct Student", new DirectEditPolicy(studentLast)),
 						new Score("Student Next", new StudentPolicy(nodes))
 				};
 			}
@@ -97,7 +100,7 @@ public class SolveEval {
 		Date maxTime = new GregorianCalendar(2015, 8, 18).getTime();
 		SnapSubtree subtree = new SnapSubtree(dir, assignment, maxTime, new HintFactoryMap());
 		
-		File outFile = new File(dir + "/anlysis/" + assignment + "/" + test + ".csv");
+		File outFile = new File(dir + "/anlysis/" + assignment + "/" + test + (PRUNE ? "-p" : "") + ".csv");
 		outFile.getParentFile().mkdirs();
 		CSVPrinter printer = new CSVPrinter(new PrintStream(outFile), CSVFormat.DEFAULT.withHeader(Score.headers()));
 		
@@ -119,6 +122,7 @@ public class SolveEval {
 				System.out.println(student);
 				
 				List<Node> nodes = nodeMap.get(student);
+				if (PRUNE) nodes = Prune.removeSmallerScripts(nodes);
 				
 				Score[] scores = constructor.construct(student, nodes, subtree);
 				
