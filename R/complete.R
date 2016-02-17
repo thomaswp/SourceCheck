@@ -2,7 +2,7 @@ library("plyr")
 library("ggplot2")
 library("scales")
 
-se <- function(x) sqrt(var(x)/length(x))
+se <- function(x) sqrt(var(x, na.rm=TRUE)/sum(!is.na(x)))
 
 loadData <- function() {
   rm(list=ls())
@@ -11,9 +11,10 @@ loadData <- function() {
   complete$policy <<- factor(complete$policy, levels = c("Hint All", "Hint Exemplar", "Direct Ideal", "Direct Student"))
   tests <<- sapply(0:maxTest, function(i) paste("test", i, sep=""))
   complete$grade <<- rowSums(complete[,tests]) / 9
+  complete$steps = ifelse(complete$steps == 250, NA, complete$steps)
   combined <<- ddply(complete, .(policy, slice), summarize, 
                      gradeMean = mean(grade), gradeSE = se(grade), perfect=mean(grade==1),
-                     stepsMean = mean(steps), stepsSE = se(steps), 
+                     stepsMean = mean(steps, na.rm=TRUE), stepsSE = se(steps), 
                      deletionsMean = mean(deletions), deletionsSE = se(deletions),
                      studentStepsMean = mean(studentSteps), studentStepsSE = se(studentSteps), 
                      hashCount = length(unique(hash)))
@@ -62,10 +63,11 @@ plotDeletions <- function() {
   ggplot(combinedAll, aes(x=slice+1, y=deletionsMean, color=policy)) + 
     labs(title="Final Solution Grade", x="Slice", y="Grade", color="Policy") +
     #geom_ribbon(aes(x=slice+1, ymin=deletionsMean-deletionsSE, ymax=deletionsMean+deletionsSE, fill=policy), color=NA, alpha=.3) +
-    geom_line() +
+    #geom_line() +
     guides(fill=FALSE) +
-    geom_point() +
+    #geom_point() +
     theme_bw() + 
+    stat_smooth(aes(fill=policy), alpha = 0.3) +
     #scale_x_continuous(limits = c(40, 50)) + 
     #scale_fill_brewer() +
     #scale_color_brewer() + #, labels=c("NA", "NE", "DI", "DS")) +

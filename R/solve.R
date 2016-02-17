@@ -13,7 +13,7 @@ loadData <- function() {
   tests <<- sapply(0:maxTest, function(i) paste("test", i, sep=""))
   percs <<- sapply(0:maxTest, function(i) paste("perc", i, sep=""))
   
-  steps <<- read.csv("../data/csc200/fall2015/anlysis/guess1Lab/solve1.csv")
+  steps <<- read.csv("../data/csc200/fall2015/anlysis/guess1Lab/solve1-p.csv")
   steps$policy <<- factor(steps$policy, levels = c("Hint All", "Hint Exemplar", "Direct Ideal", "Direct Student", "Student Next"))
   steps <<- steps[steps$round <= 5,]
   steps$avgHints <<- steps$hints / steps$actions
