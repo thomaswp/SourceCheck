@@ -4,6 +4,14 @@ library("ggplot2")
 library("reshape2")
 library("scales")
 
+iqMean <- function(x) {
+  n <- length(x)
+  start <- floor(n / 4) + 1
+  end <- floor(3 * n / 4)
+  subset <- sort(x)[start:end]
+  return (2 * sum(subset) / n)
+}
+
 loadData <- function() {
   rm(list=ls())
   

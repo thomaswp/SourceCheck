@@ -41,8 +41,8 @@ public class PredictionEval {
 		String dir = "../data/csc200/fall2015";
 		String assignment = "guess1Lab";
 		
-		predictionEval(dir, assignment);
-//		distanceEval(dir, assignment);
+//		predictionEval(dir, assignment);
+		distanceEval(dir, assignment);
 	}
 	
 	public static void predictionEval(String dir, String assignment) throws FileNotFoundException, IOException {
@@ -174,6 +174,7 @@ public class PredictionEval {
 		private double nodeStepDis, nodeFinalDis, hintStepDis, hintFinalDis;
 		private double nodeStepDisN, nodeFinalDisN, hintStepDisN, hintFinalDisN;
 		private int closerStep, closerFinal, fartherStep, fartherFinal;
+		private int deletions;
 		private int totalHints, totalActions;
 		
 		private final static HashMap<String, Double> cachedDistances = new HashMap<>(); 
@@ -186,7 +187,7 @@ public class PredictionEval {
 			return new String[] {
 				"student", "policy", "grade", "normalized", "target",
 				"nodeDis", "hintDis", "closer", "farther",
-				"totalHints", "totalAction"
+				"deletions", "totalHints", "totalAction"
 			};
 		}
 	
@@ -194,16 +195,16 @@ public class PredictionEval {
 		public void writeRow(CSVPrinter printer, String student, double grade) throws IOException {
 			printer.printRecord(student, name, grade, "FALSE", "step",
 					nodeStepDis, hintStepDis, closerStep, fartherStep,
-					totalHints, totalActions);
+					deletions, totalHints, totalActions);
 			printer.printRecord(student, name, grade, "TRUE", "step",
 					nodeStepDisN, hintStepDisN, closerStep, fartherStep,
-					totalHints, totalActions);
+					deletions, totalHints, totalActions);
 			printer.printRecord(student, name, grade, "FALSE", "final",
 					nodeFinalDis, hintFinalDis, closerFinal, fartherFinal,
-					totalHints, totalActions);
+					deletions, totalHints, totalActions);
 			printer.printRecord(student, name, grade, "TRUE", "final",
 					nodeFinalDisN, hintFinalDisN, closerFinal, fartherFinal,
-					totalHints, totalActions);
+					deletions, totalHints, totalActions);
 		}
 		
 		private double dis(RTED_InfoTree_Opt opt, Node n1, Node n2, LblTree t1, LblTree t2) {
@@ -229,6 +230,7 @@ public class PredictionEval {
 			if (nHints == 0) return;
 			
 			RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(1, 1, 1);
+			RTED_InfoTree_Opt optDel = new RTED_InfoTree_Opt(1, 0, 1);
 			
 			Node now = nodes.get(index);
 			int end = nodes.size() - 1;
@@ -256,6 +258,8 @@ public class PredictionEval {
 //			System.out.println("Fin: " + fin);
 //			System.out.println("Node " + nodeFinDis + ": " + now);
 			
+			int nDeletions = 0;
+			
 			for (Node hint : hints) {
 				LblTree hintTree = hint.toTree();
 				
@@ -275,6 +279,9 @@ public class PredictionEval {
 				else if (hintStepDis1 > nodeStepDis) fartherStep++;
 				if (hintFinDis1 < nodeFinDis) closerFinal++;
 				else if (hintFinDis1 > nodeFinDis) fartherFinal++;
+				
+				double deletions = optDel.nonNormalizedTreeDist(nowTree, hintTree);
+				if (deletions > 0) nDeletions++;
 			}
 			
 			synchronized (this) {
@@ -294,6 +301,7 @@ public class PredictionEval {
 				this.fartherFinal += fartherFinal;
 				
 				this.totalActions++;
+				this.deletions += nDeletions;
 				this.totalHints += nHints;
 			}
 		}		

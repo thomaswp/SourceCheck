@@ -23,10 +23,12 @@ loadData <- function() {
   distance$mHintDis <<- distance$hintDis / distance$totalAction
   distance$percCloser <<- distance$closer / distance$totalHints
   distance$percFarther <<- distance$farther / distance$totalHints
+  distance$percDel <<- distance$deletions / distance$totalHints
   
   distanceSummary <<- ddply(distance, .(target, normalized, policy), summarize, 
                             percCloserMean = mean(percCloser), percCloserSD = sd(percCloser),
                             percFartherMean = mean(percFarther), percFartherSD = sd(percFarther),
+                            percDelMean = mean(percDel), percDelSD = sd(percDel),
                             mNodeDisMean = mean(mNodeDis), mNodeDisSD = sd(mNodeDis),
                             mHintDisMean = mean(mHintDis), mHintDisSD = sd(mHintDis),
                             corCloser = cor(percCloser, grade), corMHintDis = cor(mHintDis, grade))
