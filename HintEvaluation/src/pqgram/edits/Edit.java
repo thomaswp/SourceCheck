@@ -34,6 +34,7 @@ public abstract class Edit {
 	}
 	
 	public abstract Node outcome(Map<String, Tree> fromMap, Map<String, Tree> toMap);
+	public abstract Node getParentNode(Map<String, Tree> fromMap);
 	
 	public Graph getAG() {
 		return this.aG;

@@ -21,6 +21,11 @@ public class PositionalEdit extends Edit {
 	public int getPosition() {
 		return this.start;
 	}
+	
+	public Node getParentNode(Map<String, Tree> fromMap) {
+		if (!fromMap.containsKey(a)) return null;
+		return fromMap.get(a).tag;
+	}
 
 	@Override
 	public Node outcome(Map<String, Tree> fromMap, Map<String, Tree> toMap) {

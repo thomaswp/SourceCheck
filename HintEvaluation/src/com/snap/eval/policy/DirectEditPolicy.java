@@ -1,5 +1,6 @@
 package com.snap.eval.policy;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -31,18 +32,38 @@ public class DirectEditPolicy implements HintPolicy {
 	
 	@Override
 	public Set<Node> nextSteps(Node node) {
-		return getEdits(node, target);
+		return nextSteps(node, target);
 	}
 	
-	public static Set<Node> getEdits(Node from, Node to) {
+	public static Set<Node> nextSteps(Node from, Node to) {
+		HashMap<String, Tree> fromMap = new HashMap<>();
+		HashMap<String, Tree> toMap = new HashMap<>();
 		
+		List<Edit> edits = getEdits(from, to, fromMap, toMap);
+		
+		Set<Node> outcomes = new HashSet<>();
+		for (Edit edit : edits) {
+			Node outcome = edit.outcome(fromMap, toMap);
+			if (outcome == null) {
+				continue;
+			}
+			outcomes.add(outcome);
+		}
+		
+		return outcomes;
+		
+	}
+
+	private static List<Edit> getEdits(Node from, Node to, HashMap<String, Tree> fromMap, HashMap<String, Tree> toMap) {
 		Tree fromTree = Convert.nodeToTree(from).makeLabelsUnique(new HashMap<>());
 		Tree toTree = Convert.nodeToTree(to).makeLabelsUnique(new HashMap<>());
 		
-		HashMap<String, Tree> fromMap = new HashMap<>();
+		return getEdits(fromTree, toTree, fromMap, toMap);
+	}
+
+	private static List<Edit> getEdits(Tree fromTree, Tree toTree, HashMap<String, Tree> fromMap,
+			HashMap<String, Tree> toMap) {
 		addToMap(fromTree, fromMap);
-		
-		HashMap<String, Tree> toMap = new HashMap<>();
 		addToMap(toTree, toMap);
 		
 		Profile fromProfile = PQGram.getProfile(fromTree, P, Q);
@@ -69,18 +90,7 @@ public class DirectEditPolicy implements HintPolicy {
 				}
 			}
 		}
-		
-		Set<Node> outcomes = new HashSet<>();
-		for (Edit edit : edits) {
-			Node outcome = edit.outcome(fromMap, toMap);
-			if (outcome == null) {
-				continue;
-			}
-			outcomes.add(outcome);
-		}
-		
-		return outcomes;
-		
+		return edits;
 	}
 	
 	private static void addToMap(Tree tree, HashMap<String, Tree> map) {
@@ -120,10 +130,11 @@ public class DirectEditPolicy implements HintPolicy {
 			int count = 0;
 			for (Node node : nodes) {
 				System.out.println("> " + node);
-				Set<Node> edits = getEdits(node, last);
-				for (Node edit : edits) {
-					System.out.println("    " + node + " --> " + edit);
-				}
+				testEditsTopLevel(node, last);
+//				Set<Node> edits = nextSteps(node, last);
+//				for (Node edit : edits) {
+//					System.out.println("    " + node + " --> " + edit);
+//				}
 				if (count++ > 20) break;
 			}
 			
@@ -132,9 +143,93 @@ public class DirectEditPolicy implements HintPolicy {
 		}
 	}
 	
+	private static void pruneChildren(Tree fromTree, Tree toTree) {
+		
+		List<Tree> fromQueue = new ArrayList<>();
+		fromQueue.add(fromTree);
+		List<Tree> toQueue = new ArrayList<>();
+		toQueue.add(toTree);
+		
+		while (!fromQueue.isEmpty()) {
+			Tree f = fromQueue.remove(0);
+			Tree t = toQueue.remove(0);
+
+			boolean eq = false;
+			if (f.getChildren().size() == t.getChildren().size()) {
+				eq = true;
+				for (int i = 0; i < f.getChildren().size(); i++) {
+					if (!f.getChildren().get(i).getLabel().equals(t.getChildren().get(i).getLabel())) {
+						eq = false;
+						break;
+					}
+				}
+			}
+			fromQueue.addAll(f.getChildren());
+			toQueue.addAll(t.getChildren());
+			if (!eq) {
+				break;
+			}
+		}
+		
+		for (Tree t : fromQueue) t.getChildren().clear();
+		for (Tree t : toQueue) t.getChildren().clear();
+	}
+	
+	private static void testEditsTopLevel(Node from, Node to) {
+		if (from.equals(to)) return;
+				
+		HashMap<String, Tree> fromMap = new HashMap<>(), toMap = new HashMap<>();
+		Tree fromTree = Convert.nodeToTree(from);
+		Tree toTree = Convert.nodeToTree(to);
+		pruneChildren(fromTree, toTree);
+		fromTree.makeLabelsUnique(new HashMap<>());
+		toTree.makeLabelsUnique(new HashMap<>());
+//		String fromS = toString(fromTree);
+//		String toS = toString(toTree);
+		List<Edit> edits = getEdits(fromTree, toTree, fromMap, toMap);
+		
+		Node best = null;
+		int bestDepth = Integer.MAX_VALUE;
+		for (Edit edit : edits) {
+			Node parent = edit.getParentNode(fromMap);
+			if (parent == null) continue;
+			int depth = parent.depth();
+			if (depth < bestDepth) {
+				Node outcome = edit.outcome(fromMap, toMap);
+				if (outcome == null) continue;
+				best = outcome;
+				bestDepth = depth;
+			}
+		}
+		
+		if (best == null) {
+			if (!from.equals(to)) { 
+				System.err.println(from.prettyPrint() + "\n=!=\n" + to.prettyPrint());
+			}
+			return;
+		}
+		
+//		System.out.println(fromS);
+		testEditsTopLevel(best, to);
+	}
+	
+	public static String toString(Tree tree) {
+		String s = tree.getLabel();
+		if (tree.getChildren().size() == 0) return s;
+		s += "[";
+		boolean space = false;
+		for (Tree c : tree.getChildren()) {
+			if (space) s += ", ";
+			space = true;
+			s += toString(c);
+		}
+		s += "]";
+		return s;
+	}
+
 	private static void testEdits(Node from, Node to) {
 		
-		Set<Node> edits = getEdits(from, to);
+		Set<Node> edits = nextSteps(from, to);
 		if (edits.size() == 0) {
 			if (!from.equals(to)) { 
 				System.err.println(from + " =!= " + to);

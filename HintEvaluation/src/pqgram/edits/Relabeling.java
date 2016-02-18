@@ -20,6 +20,11 @@ public class Relabeling extends Edit {
 	public String toString() {
 		return String.format(RELABELING_STRING, this.lineNumber, this.a, this.b);
 	}
+	
+	public Node getParentNode(Map<String, Tree> fromMap) {
+		if (!fromMap.containsKey(a)) return null;
+		return fromMap.get(a).tag;
+	}
 
 	@Override
 	public Node outcome(Map<String, Tree> fromMap, Map<String, Tree> toMap) {
