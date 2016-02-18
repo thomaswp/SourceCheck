@@ -11,11 +11,13 @@ loadData <- function() {
   complete$policy <<- factor(complete$policy, levels = c("Hint All", "Hint Exemplar", "Direct Ideal", "Direct Student"))
   tests <<- sapply(0:maxTest, function(i) paste("test", i, sep=""))
   complete$grade <<- rowSums(complete[,tests]) / 9
-  complete$steps = ifelse(complete$steps == 250, NA, complete$steps)
+  failed <<- complete[complete$steps == 250, ]
+  complete <<- complete[complete$steps != 250, ]
   combined <<- ddply(complete, .(policy, slice), summarize, 
                      gradeMean = mean(grade), gradeSE = se(grade), perfect=mean(grade==1),
                      stepsMean = mean(steps, na.rm=TRUE), stepsSE = se(steps), 
                      deletionsMean = mean(deletions), deletionsSE = se(deletions),
+                     hintsMean = mean(firstHints), hintsSE = se(firstHints),
                      studentStepsMean = mean(studentSteps), studentStepsSE = se(studentSteps), 
                      hashCount = length(unique(hash)))
   twoColors <<- c("#a1d99b","#2c7fb8")
@@ -57,6 +59,22 @@ plotGrade <- function() {
     scale_fill_manual(values=twoColors) +
     scale_color_manual(values=twoColors, labels=c("NA", "NE")) +
     scale_y_continuous(limits=c(0.85, 1), label=percent)
+}
+
+plotHints <- function() {
+  ggplot(combinedAll, aes(x=slice+1, y=hintsMean, color=policy)) + 
+    labs(title="Mean Hints Given", x="Slice", y="Hints", color="Policy") +
+    geom_ribbon(aes(x=slice+1, ymin=hintsMean-hintsSE, ymax=hintsMean+hintsSE, fill=policy), color=NA, alpha=.3) +
+    geom_line() +
+    guides(fill=FALSE) +
+    geom_point() +
+    theme_bw() + 
+    #stat_smooth(aes(fill=policy), alpha = 0.3) +
+    #scale_x_continuous(limits = c(40, 50)) + 
+    #scale_fill_brewer() +
+    #scale_color_brewer() + #, labels=c("NA", "NE", "DI", "DS")) +
+    scale_color_discrete(labels=c("NA", "NE", "DI", "DS")) +
+    scale_y_continuous()
 }
 
 plotDeletions <- function() {

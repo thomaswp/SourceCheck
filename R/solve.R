@@ -51,9 +51,9 @@ plotBetter <- function(better, limited) {
     labs(title=title, x="Objective", y="Students with Satisfying Hint", fill="Policy") +
     scale_y_continuous(labels=percent, limits=c(0,1)) +
     scale_x_discrete(labels=xlabels) +
-    theme_bw() + 
+    theme_bw() +
     #theme_dark() +
     scale_fill_grey(labels=c("NA", "NE", "DI", "DS", "SN"))
-    #scale_fill_brewer(palette="RdYlGn")
+    #scale_fill_brewer(palette="Set3", labels=c("NA", "NE", "DI", "DS", "SN"))
     #scale_fill_manual(labels=c("NA", "NE", "DI", "DS", "SN"), values=brewer_pal(palette="OrRd", direction=-1)(6)[c(2,4,3,5)])
 }

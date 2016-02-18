@@ -19,21 +19,29 @@ loadData <- function() {
   
   tests <<- sapply(0:maxTest, function(i) paste("test", i, sep=""))
   percs <<- sapply(0:maxTest, function(i) paste("perc", i, sep=""))
+  perAct <<- sapply(0:maxTest, function(i) paste("perAct", i, sep=""))
     
   grade <<- read.csv("../data/csc200/fall2015/anlysis/guess1Lab/grade-p.csv")
   grade$policy <<- factor(grade$policy, levels = c("Hint All", "Hint Exemplar", "Direct Ideal", "Direct Student", "Student Next"))
   
-  chain <<- read.csv("../data/csc200/fall2015/anlysis/guess1Lab/chain.csv")
-  chain$policy <<- factor(chain$policy, levels = c("Hint All", "Hint Exemplar", "Direct Ideal", "Direct Student", "Student Next"))
-  chain <<- rbind(grade[grade$policy=="Hint All" | grade$policy=="Hint Exemplar",], chain)
+  solve <- read.csv("../data/csc200/fall2015/anlysis/guess1Lab/solve1-p.csv")
+  grade$actions <<- solve$actions
+  
+  #chain <<- read.csv("../data/csc200/fall2015/anlysis/guess1Lab/chain.csv")
+  #chain$policy <<- factor(chain$policy, levels = c("Hint All", "Hint Exemplar", "Direct Ideal", "Direct Student", "Student Next"))
+  #chain <<- rbind(grade[grade$policy=="Hint All" | grade$policy=="Hint Exemplar",], chain)
   
   for (i in 1:(maxTest+1)) {
     grade[,percs[i]] <<- grade[,tests[i]] / grade$total
   }
   
   for (i in 1:(maxTest+1)) {
-    chain[,percs[i]] <<- chain[,tests[i]] / chain$total
+    grade[,perAct[i]] <<- grade[,tests[i]] / grade$actions
   }
+  
+  #for (i in 1:(maxTest+1)) {
+  #  chain[,percs[i]] <<- chain[,tests[i]] / chain$total
+  #}
   
   students <<- sapply(unique(grade$student), as.character)
 }
@@ -43,30 +51,31 @@ policies <- function(grades) {
 }
 
 plotUndo <- function(grades) {
-  data <- grades[grades$action=="undo", c("policy", percs)]
+  data <- grades[grades$action=="undo" & grades$policy != "Student Next", c("policy", percs)]
   data <- melt(data, id=c("policy"))
-  data <- ddply(data, .(policy, variable), summarize, mean=median(value))
+  data <- ddply(data, .(policy, variable), summarize, mean=mean(sign(value)))
   xlabels = sapply(1:9, function(i) paste("O", i, sep=""))
-  title = "Hints Undoing Objective"
+  title = "Students Getting Hint to Undo Objective"
   ggplot(data, aes(variable, mean, fill=policy)) +
     geom_bar(stat='identity', position='dodge') + 
-    labs(title=title, x="Objective", y="Percent Completed as Fast", fill="Policy") +
+    labs(title=title, x="Objective", y="Percent of Students", fill="Policy") +
     scale_x_discrete(labels=xlabels) +
+    scale_y_continuous(labels=percent) +
     theme_bw() + 
-    scale_fill_grey()
+    scale_fill_grey(labels=xlabels)
 }
 
 plotStacked <- function(grades, action) {
-  data <- grades[grades$action==action, c("policy", percs)]
+  data <- grades[grades$action==action & grades$policy != "Student Next", c("policy", perAct)]
   data <- melt(data, id=c("policy"))
-  data <- ddply(data, .(policy, variable), summarize, mean=median(value))
+  data <- ddply(data, .(policy, variable), summarize, mean=mean(sign(value)))
   xlabels = sapply(1:9, function(i) paste("O", i, sep=""))
   title = "Median Hints Undoing Objectives"
   ggplot(data, aes(policy, mean, fill=variable)) +
     geom_bar(stat='identity') + 
     labs(title=title, x="Policy", y="Percent of Hints", fill="Objective") +
-    scale_x_discrete(labels=c("NA", "NE", "DI", "DS", "SN")) +
-    scale_y_continuous(labels=percent) +
+    # scale_x_discrete(labels=c("NA", "NE", "DI", "DS", "SN")) +
+    # scale_y_continuous(labels=percent) +
     theme_bw() + 
     scale_fill_grey(labels=xlabels)
     #scale_fill_brewer(palette="RdYlGn", labels=xlabels)
