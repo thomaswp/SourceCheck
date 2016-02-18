@@ -137,6 +137,7 @@ public class VectorGraph extends OutGraph<VectorState> {
 			
 			if (edits > 0) {
 				VectorState hint = new VectorState(stateItems); 
+				if (hint.equals(state)) continue;
 //				System.out.printf("State: %s\nNeighbor: %s\nNext: %s\nGoal: %s\nHint: %s\n\n", state, nearestNeighbor, Arrays.toString(nextItems), goal, hint);
 				return hint;
 			}
