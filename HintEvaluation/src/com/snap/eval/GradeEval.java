@@ -43,6 +43,7 @@ public class GradeEval {
 		
 		policyGradeEval(dir, assignment);
 //		hintChainEval(dir, assignment);
+//		pruneTest(dir, assignment);
 	}
 
 	public static void hintChainEval(String dir, String assignment) throws FileNotFoundException, IOException {
@@ -84,6 +85,69 @@ public class GradeEval {
 				};
 			}
 		});
+	}
+	
+	@SuppressWarnings("unused")
+	private static void pruneTest(String dir, String assignment) throws IOException {
+		
+		Date maxTime = new GregorianCalendar(2015, 8, 18).getTime();
+		SnapSubtree subtree = new SnapSubtree(dir, assignment, maxTime, new HintFactoryMap());
+		
+		int skip = SKIP;
+		int max = 1;
+		
+		HashMap<String,List<Node>> nodeMap = subtree.nodeMap();
+		for (String student : nodeMap.keySet()) {
+			if (skip-- > 0) {
+				continue;
+			}
+			
+			if (--max < 0) break;
+			
+			System.out.println(student);
+			
+			List<Node> nodes = nodeMap.get(student);
+			List<Node> nodesPruned = Prune.removeSmallerScripts(nodes);
+			
+			DirectEditPolicy policy = new DirectEditPolicy(nodes.get(nodes.size() - 1));
+			DirectEditPolicy policyPruned = new DirectEditPolicy(nodesPruned.get(nodesPruned.size() - 1));
+			
+			for (int i = 0; i < nodes.size(); i++) {
+				Node node = nodes.get(i);
+				Node nodePruned = nodesPruned.get(i);
+				
+				Grader grader = AutoGrader.graders[3];
+				boolean grade = grader.pass(node);
+				boolean gradePruned = grader.pass(nodePruned);
+				
+				if (grade && gradePruned) {					
+					Set<Node> nextStepsPruned = policyPruned.nextSteps(nodePruned);
+					
+					boolean failed = false;
+					for (Node n : nextStepsPruned) {
+						if (!grader.pass(n)) {
+							failed = true;
+							break;
+						}
+					}
+					if (failed) continue;
+					
+					Set<Node> nextSteps = policy.nextSteps(node);
+					for (Node n : nextSteps) {
+						if (!grader.pass(n)) {
+							System.out.println("Node");
+							System.out.println(node.prettyPrint());
+							System.out.println("Node Pruned");
+							System.out.println(nodePruned.prettyPrint());
+							System.out.println("Node Hint");
+							System.out.println(n.prettyPrint());
+							System.out.println("-----------------------");
+							break;
+						}
+					}					
+				}
+			}
+		}
 	}
 	
 	private static void eval(String dir, String assignment, String test, ScoreConstructor constructor) throws IOException {
