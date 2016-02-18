@@ -52,7 +52,7 @@ public class CompleteEval {
 		File outFile = new File(dir + "/anlysis/" + assignment + "/complete" + (PRUNE ? "-p" : "") + ".csv");
 		outFile.getParentFile().mkdirs();
 		List<String> headers = new LinkedList<>();
-		headers.add("policy"); headers.add("student"); headers.add("slice"); headers.add("studentSteps"); headers.add("hash"); headers.add("steps"); headers.add("deletions");
+		headers.add("policy"); headers.add("student"); headers.add("slice"); headers.add("studentSteps"); headers.add("hash"); headers.add("steps"); headers.add("deletions");  headers.add("firstHints");
 		for (int i = 0; i < AutoGrader.graders.length; i++) headers.add("test" + i);
 		CSVPrinter printer = new CSVPrinter(new PrintStream(outFile), CSVFormat.DEFAULT.withHeader(headers.toArray(new String[headers.size()])));
 
@@ -188,6 +188,7 @@ public class CompleteEval {
 		private HashMap<String, Boolean> grade;
 		private int steps;
 		private int deletions;
+		private int firstHints;
 		
 		public Completion(Node startState, int slice, int studentSteps, HintPolicy policy, String name) {
 			this.startState = startState;
@@ -217,13 +218,15 @@ public class CompleteEval {
 			
 			RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(1, 0, 1);
 			deletions = (int)Math.round(opt.nonNormalizedTreeDist(startState.toTree(), endState.toTree()));
+			
+			firstHints = policy.nextSteps(startState).size();
 		}
 		
 		public void writeCSV(CSVPrinter printer, String student) throws IOException {
-			int extraCols = 7;
+			int extraCols = 8;
 			Object[] row = new Object[AutoGrader.graders.length + extraCols];
 			row[0] = name; row[1] = student; row[2] = slice; row[3] = studentSteps;
-			row[4] = "H" + endState.hashCode(); row[5] = steps; row[6] = deletions;
+			row[4] = "H" + endState.hashCode(); row[5] = steps; row[6] = deletions; row[7] = firstHints;
 			
 			for (int i = 0; i < AutoGrader.graders.length; i++) {
 				row[i + extraCols] = String.valueOf(grade.get(AutoGrader.graders[i].name())).toUpperCase();
