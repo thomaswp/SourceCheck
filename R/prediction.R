@@ -23,12 +23,12 @@ loadData <- function() {
   distance$mHintDis <<- distance$hintDis / distance$totalAction
   distance$percCloser <<- distance$closer / distance$totalHints
   distance$percFarther <<- distance$farther / distance$totalHints
-  distance$percDel <<- distance$deletions / distance$totalHints
+  #distance$percDel <<- distance$deletions / distance$totalHints
   
   distanceSummary <<- ddply(distance, .(target, normalized, policy), summarize, 
                             percCloserMean = mean(percCloser), percCloserSD = sd(percCloser),
                             percFartherMean = mean(percFarther), percFartherSD = sd(percFarther),
-                            percDelMean = mean(percDel), percDelSD = sd(percDel),
+                            #percDelMean = mean(percDel), percDelSD = sd(percDel),
                             mNodeDisMean = mean(mNodeDis), mNodeDisSD = sd(mNodeDis),
                             mHintDisMean = mean(mHintDis), mHintDisSD = sd(mHintDis),
                             corCloser = cor(percCloser, grade), corMHintDis = cor(mHintDis, grade))
@@ -54,10 +54,13 @@ testCloser <- function() {
   hintAll <- distance[distance$policy=="Hint All",]$percCloser
   hintExemplar <- distance[distance$policy=="Hint Exemplar",]$percCloser
   directIdeal <- distance[distance$policy=="Direct Ideal",]$percCloser
+  directStudent <- distance[distance$policy=="Direct Student",]$percCloser
   
   
   print(t.test(hintAll, directIdeal, paired = TRUE))
   print(t.test(hintExemplar, directIdeal, paired = TRUE))
+  print(t.test(hintExemplar, directStudent, paired = TRUE))
+  print(t.test(hintAll, directStudent, paired = TRUE))
 }
 
 plotFarther <- function() {
