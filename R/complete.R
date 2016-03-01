@@ -109,7 +109,7 @@ plotSteps <- function() {
   #data <- rbind(combined, student)
   data <- combined
   ggplot(data, aes(x=slice+1, y=stepsMean, colour=policy)) + 
-    labs(title="Hints to Final Solution", x="Slice", y="Hints", color="Policy") +
+    labs(title="Hints Chain Length over Time", x="Slice", y="Hint Chain Length", color="Policy") +
     geom_line() +
     geom_ribbon(aes(x=slice+1, ymin=stepsMean-stepsSE, ymax=stepsMean+stepsSE, fill=policy), color=NA, alpha=.3) +
     guides(fill=FALSE) +
