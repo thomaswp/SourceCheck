@@ -102,12 +102,21 @@ plotPerfect <- function() {
 }
 
 plotSteps <- function() {
-  ggplot(combined, aes(x=slice+1, y=stepsMean, colour=policy)) + 
+  student <- combined[1:50,]
+  student$policy <- "StudentNext"
+  student$stepsMean <- student$studentStepsMean
+  student$stepsSE <- student$studentStepsSE
+  #data <- rbind(combined, student)
+  data <- combined
+  ggplot(data, aes(x=slice+1, y=stepsMean, colour=policy)) + 
     labs(title="Hints to Final Solution", x="Slice", y="Hints", color="Policy") +
     geom_line() +
     geom_ribbon(aes(x=slice+1, ymin=stepsMean-stepsSE, ymax=stepsMean+stepsSE, fill=policy), color=NA, alpha=.3) +
     guides(fill=FALSE) +
     geom_point() +
+    #scale_fill_brewer() +
+    #scale_color_brewer(labels=c("NA", "NE", "St")) +
+    scale_y_continuous(limits=c(0, 37)) +
     scale_fill_manual(values=twoColors) +
     scale_color_manual(values=twoColors, labels=c("NA", "NE")) +
     theme_bw()
