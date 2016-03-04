@@ -20,7 +20,7 @@ loadData <- function() {
                      hintsMean = mean(firstHints), hintsSE = se(firstHints),
                      studentStepsMean = mean(studentSteps), studentStepsSE = se(studentSteps), 
                      hashCount = length(unique(hash)))
-  twoColors <<- c("#a1d99b","#2c7fb8")
+  twoColors <<- c("#2c7fb8", "#DB9C99")
   
   completeAll <<- complete
   combinedAll <<- combined
@@ -118,7 +118,7 @@ plotSteps <- function() {
     #scale_color_brewer(labels=c("NA", "NE", "St")) +
     scale_y_continuous(limits=c(0, 37)) +
     scale_fill_manual(values=twoColors) +
-    scale_color_manual(values=twoColors, labels=c("NA", "NE")) +
+    scale_color_manual(values=twoColors, labels=c("CA", "CE")) +
     theme_bw()
 }
 

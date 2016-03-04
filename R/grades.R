@@ -62,7 +62,7 @@ plotUndo <- function(grades) {
     scale_x_discrete(labels=xlabels) +
     scale_y_continuous(labels=percent) +
     theme_bw() + 
-    scale_fill_grey(labels=c("NA", "NE", "DI", "DS", "SN"))
+    scale_fill_grey(labels=c("CA", "CE", "DE", "DS", "SN"))
 }
 
 plotStacked <- function(grades, action) {
