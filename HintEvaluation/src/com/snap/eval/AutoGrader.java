@@ -58,7 +58,7 @@ public class AutoGrader {
 	
 	private void parseStudents() throws IOException {
 		SnapParser parser = new SnapParser(dataDir, Store.Mode.Use);
-		HashMap<String, SolutionPath> students = parser.parseAssignment(assignment);
+		HashMap<String, SolutionPath> students = parser.parseAssignment(assignment, true);
 		
 		for (String student : students.keySet()) {
 			SolutionPath path = students.get(student);

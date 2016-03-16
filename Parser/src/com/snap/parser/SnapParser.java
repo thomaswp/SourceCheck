@@ -52,14 +52,19 @@ public class SnapParser {
 	 * @param snapCSVfileName
 	 * @throws IOException
 	 */
-	public void splitStudentRecords(String snapCSVfileName) throws IOException{
-		CSVParser parser = new CSVParser(new FileReader(snapCSVfileName), CSVFormat.DEFAULT.withHeader());
+	public void splitStudentRecords() throws IOException{
+		CSVParser parser = new CSVParser(new FileReader(outputFolder + ".csv"), CSVFormat.DEFAULT.withHeader());
+		int i = 0;
+		System.out.println("Splitting records:");
 		for (CSVRecord record : parser) {
 			String assignmentID = record.get(4);
 			String projectID = record.get(5);
 			writeRecord(assignmentID,projectID, record);
+			if (i++ % 1000 == 0) System.out.print("+"); 
+			if (i % 50000 == 0) System.out.println();
 		}
 		//close out all the writers in hashmap
+		System.out.println();
 		parser.close();
 		cleanUpSplit();
 	}
@@ -91,6 +96,8 @@ public class SnapParser {
 				cols[i] = record.get(i);
 			}
 			printer.printRecord(cols);
+			
+			if (Math.random() < 0.1) printer.flush();
 		}
 	}
 	
@@ -98,7 +105,9 @@ public class SnapParser {
 	 * code taken from StackOverflow to close out BufferedWriters
 	 */
 	private void cleanUpSplit(){
+		System.out.println("Cleaning up:");
 		Set<String> keySet = csvPrinters.keySet();
+		int i = 0;
 		for(String key : keySet){
 			CSVPrinter writer = csvPrinters.get(key);
 			if(writer != null){
@@ -109,11 +118,13 @@ public class SnapParser {
 				}
 				writer = null;
 			}
+			if (i++ % 10 == 0) System.out.print("+");
+			if (i % 500 == 0) System.out.println();
 		}
 	}
 	
-	public SolutionPath parseRows(final File logFile, final Grade grade) throws IOException {
-		String cachePath = logFile.getAbsolutePath() + ".cached";
+	public SolutionPath parseRows(final File logFile, final Grade grade, final boolean snapshotsOnly, final Date minDate, final Date maxDate) throws IOException {
+		String cachePath = logFile.getAbsolutePath() + (snapshotsOnly ? "" :  "-data") + "-d" + (maxDate.hashCode() + minDate.hashCode()) + ".cached";
 		
 		return Store.getCachedObject(new Kryo(), cachePath, SolutionPath.class, storeMode, new Store.Loader<SolutionPath>() {
 			@Override
@@ -140,18 +151,26 @@ public class SnapParser {
 							e.printStackTrace();
 						}
 						
+						if (timestamp != null && (
+								(minDate != null && timestamp.before(minDate)) || 
+								(maxDate != null && timestamp.after(maxDate)))
+								) {
+							continue;
+						}
+						
 						String action = record.get(2);
+						String data = record.get(3);
 						
 						String xml = record.get(8);
-						if (action.equals("Block.grabbed")) {
+						if (snapshotsOnly && action.equals("Block.grabbed")) {
 							if (xml.length() > 2) lastGrab = xml;
 							continue;
 						} else if (xml.length() <= 2 && lastGrab != null) {
 							xml = lastGrab;
 						}
-						DataRow row = new DataRow(timestamp, action, xml);
+						DataRow row = new DataRow(timestamp, action, data, xml);
 						
-						if (row.snapshot != null) {
+						if (!snapshotsOnly || row.snapshot != null) {
 							currentWork.add(row);
 							lastGrab = null;
 						}
@@ -207,7 +226,12 @@ public class SnapParser {
 //	}
 	
 	
-	public HashMap<String, SolutionPath> parseAssignment(String folder) {
+	public HashMap<String, SolutionPath> parseAssignment(String folder, final boolean snapshotsOnly) {
+		return parseAssignment(folder, snapshotsOnly, null, null);
+	}
+	
+	public HashMap<String, SolutionPath> parseAssignment(String folder, final boolean snapshotsOnly,
+			final Date minDate, final Date maxDate) {
 		HashMap<String, Grade> grades = parseGrades(folder);
 		
 		final HashMap<String, SolutionPath> students = new HashMap<String, SolutionPath>();
@@ -221,7 +245,7 @@ public class SnapParser {
 				@Override
 				public void run() {
 					try {
-						SolutionPath rows = parseRows(fFile, grade);
+						SolutionPath rows = parseRows(fFile, grade, snapshotsOnly, minDate, maxDate);
 						if (rows.size() > 3) {
 							students.put(fFile.getName(), rows);
 						}
@@ -265,10 +289,10 @@ public class SnapParser {
 
 	public static void main(String[] args) throws IOException {
 		SnapParser parser = new SnapParser("../data/csc200/fall2015", Mode.Overwrite);
-//		parser.splitStudentRecords("../data/csc200/fall2015.csv");
-		parser.parseAssignment("guess1Lab");
-		parser.parseAssignment("guess2HW");
-		parser.parseAssignment("guess3Lab");
+		parser.splitStudentRecords();
+		parser.parseAssignment("guess1Lab", true);
+		parser.parseAssignment("guess2HW", true);
+		parser.parseAssignment("guess3Lab", true);
 	}
 }
 

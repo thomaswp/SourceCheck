@@ -14,16 +14,17 @@ public class DataRow implements Serializable {
 	
 	public final Snapshot snapshot;
 	public final Date timestamp;
-	public final String action;
+	public final String action, data;
 	
 	@SuppressWarnings("unused")
 	private DataRow() { 
-		this(null, null, null);
+		this(null, null, null, null);
 	}
 	
-	public DataRow(Date timestamp, String action, String snapshotXML) {
+	public DataRow(Date timestamp, String action, String data, String snapshotXML) {
 		this.timestamp = timestamp;
 		this.action = action;
+		this.data = data;
 		String name;
 		synchronized (format) {
 			name = timestamp == null ? null : format.format(timestamp);

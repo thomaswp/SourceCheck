@@ -256,7 +256,7 @@ public class SnapSubtree {
 
 	private void parseStudents() throws IOException {
 		SnapParser parser = new SnapParser(dataDir, Store.Mode.Use);
-		HashMap<String, SolutionPath> students = parser.parseAssignment(assignment);
+		HashMap<String, SolutionPath> students = parser.parseAssignment(assignment, true);
 		nodeMapCache = new HashMap<String, List<Node>>();
 		gradeMapCache = new HashMap<String, Grade>();
 
