@@ -16,10 +16,10 @@ import com.snap.parser.SolutionPath;
 
 public class CheckHintUsage {
 	
+	// Actions of interest
 	private final static String SHOW_SCRIPT_HINT = "SnapDisplay.showScriptHint";
 	private final static String SHOW_BLOCK_HINT = "SnapDisplay.showBlockHint";
 	private final static String SHOW_STRUCTURE_HINT = "SnapDisplay.showStructureHint";
-	
 	private final static String HINT_DIALOG_DONE = "HintDialogBox.done";
 	
 	private final static List<String> SHOW_HINT_MESSAGES = Arrays.asList(new String[] {
@@ -52,10 +52,15 @@ public class CheckHintUsage {
 				if (SHOW_HINT_MESSAGES.contains(action)) {
 					nHints++;
 					
+					// Get the data from this event
 					JSONObject data = new JSONObject(row.data);
+					
+					// Get the student's current code and turn it into a tree
 					Node node = SimpleNodeBuilder.toTree(code, true);
 					
+					// Find the parent node that this hint affects
 					Node parent = findParent(node, data);
+					// It shouldn't be null (and isn't for this dataset)
 					if (parent == null) {
 						System.out.println(node.prettyPrint());
 						System.out.println(data);
@@ -63,15 +68,20 @@ public class CheckHintUsage {
 						throw new RuntimeException("Parent shouldn't be null :/");
 					}
 					
+					// Read the list of nodes that the hint is telling to use for the parent's new children
 					JSONArray toArray = data.getJSONArray("to");
 					String[] to = new String[toArray.length()];
-					for (int j = 0; j < to.length; j++) to[j] = toArray.getString(j); 
+					for (int j = 0; j < to.length; j++) to[j] = toArray.getString(j);
+					// And apply this to get a new parent node
 					Node hintOutcome = VectorHint.applyHint(parent, to);
 					
-					System.out.println(parent + "\n->" + hintOutcome + "\n");
+					// For debugging these hints
+//					System.out.println("  " + parent + "\n->" + hintOutcome + "\n");
 										
+					// Look ahead for hint application in the student's code
 					int steps = 0;
 					for (int j = i; j < path.size(); j++) {
+						// Get the next row with a new snapshot
 						DataRow nextRow = path.rows.get(j);
 						Snapshot nextCode = nextRow.snapshot;
 						if (nextCode == null) continue;
@@ -80,10 +90,13 @@ public class CheckHintUsage {
 						// If we've looked more than n (10) steps in the future, give up
 						if (steps > 10) break;
 						
+						// Find the same parent node and see if it matches the hint state
 						Node nextNode = SimpleNodeBuilder.toTree(nextCode, true);
 						Node nextParent = findParent(nextNode, data);
 						if (nextParent == null) continue;
 
+						// TODO: Rather than just looking for an exact match, check if the student's code gets
+						// closer to the hint or farther. 
 						if (nextParent.equals(hintOutcome)) {
 							nHintsTaken++;
 							break;
@@ -103,6 +116,7 @@ public class CheckHintUsage {
 			}
 		}
 		
+		// Print our results
 		System.out.println("Total Hints Selected: " + nHints);
 		System.out.println("Thumbs Up: " + nThumbsUp + "/" + nHints);
 		System.out.println("Thumbs Down: " + nThumbsDown + "/" + nHints);
@@ -115,18 +129,40 @@ public class CheckHintUsage {
 		return obj.get(key);
 	}
 	
+	/**
+	 * Finds the Node that was the parent for this hint, i.e. the hint
+	 * is telling us to change this node's children.
+	 * @param root The root node of the student's whole code
+	 * @param data The data from the showHint event
+	 * @return The node for the parent
+	 */
 	public static Node findParent(Node root, JSONObject data) {
 		String[] ids = new String[] {
 				"parentID", "rootID", "rootType"
 		};
 		
+		Node parent = null;
 		for (String id : ids) {
 			Object parentID = getValue(data, id);
 			if (parentID != null) {
-				return root.searchForNodeWithID(parentID);
+				parent = root.searchForNodeWithID(parentID);
+				break;
 			}	
 		}
 		
-		return null;
+		if (parent != null && data.has("index")) {
+			if (!data.isNull("parentID")) {
+				int index = data.getInt("index");
+				parent = parent.children.get(index);
+			} else {
+				parent = parent.parent;
+			}
+		}
+		
+		if (parent != null && parent.children.size() == 1 && parent.children.get(0).hasType("list")) {
+			return parent.children.get(0);
+		}
+		
+		return parent;
 	}
 }
