@@ -39,4 +39,9 @@ public class Stage extends Sprite {
 		ac.add(sprites);
 		return "stage";
 	}
+	
+	@Override
+	public Object getID() {
+		return "stage";
+	}
 }

@@ -2,11 +2,11 @@ package com.snap.graph;
 
 import java.util.List;
 
-import util.LblTree;
-
 import com.snap.data.Canonicalization;
 import com.snap.data.Code;
 import com.snap.data.Code.Accumulator;
+
+import util.LblTree;
 
 public class SimpleTreeBuilder {
 
@@ -30,7 +30,8 @@ public class SimpleTreeBuilder {
 				if (code == null) {
 					add("null");
 				} else {
-					tree.add(toTree(code, id, canon));
+					LblTree child = toTree(code, id, canon);
+					tree.add(child);
 				}
 			}
 

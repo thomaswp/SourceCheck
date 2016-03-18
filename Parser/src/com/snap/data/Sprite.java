@@ -7,7 +7,7 @@ import org.w3c.dom.Element;
 
 import com.snap.XML;
 
-public class Sprite extends Code {
+public class Sprite extends Code implements IHasID {
 	private static final long serialVersionUID = 1L;
 	
 	public final String name;
@@ -59,5 +59,10 @@ public class Sprite extends Code {
 		ac.add(scripts);
 		ac.add(blocks);
 		return canon ? "sprite" : name;
+	}
+
+	@Override
+	public Object getID() {
+		return name;
 	}
 }

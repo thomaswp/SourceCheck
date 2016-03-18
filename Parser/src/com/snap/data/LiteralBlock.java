@@ -20,11 +20,11 @@ public class LiteralBlock extends Block {
 
 	@SuppressWarnings("unused")
 	private LiteralBlock() {
-		this(null, null, false);
+		this(null, -1, null, false);
 	}
 	
-	public LiteralBlock(String type, String value, boolean isVarRef) {
-		super(type);
+	public LiteralBlock(String type, int id, String value, boolean isVarRef) {
+		super(type, id);
 		this.value = value;
 		this.isVarRef = isVarRef;
 	}
@@ -35,7 +35,11 @@ public class LiteralBlock extends Block {
 		if (parent.getChildNodes().item(0) == element) {
 			isVarRef = setVarBlocks.contains(parent.getAttribute("s"));
 		}
-		return new LiteralBlock(element.getTagName(), element.getTextContent(), isVarRef);
+		return new LiteralBlock(
+				element.getTagName(), 
+				getID(element),
+				element.getTextContent(), 
+				isVarRef);
 	}
 	
 	@Override

@@ -7,7 +7,7 @@ import org.w3c.dom.Element;
 
 import com.snap.XML;
 
-// TODO: Local script variables!
+// TODO: Local script variables! Also, why is it a block?
 public class BlockDefinition extends Block {
 	private static final long serialVersionUID = 1L;
 	
@@ -26,7 +26,7 @@ public class BlockDefinition extends Block {
 	}
 	
 	public BlockDefinition(String name, String type, Script script) {
-		super(steralizeName(name));
+		super(steralizeName(name), -1);
 		this.type = type;
 		this.script = script;
 	}

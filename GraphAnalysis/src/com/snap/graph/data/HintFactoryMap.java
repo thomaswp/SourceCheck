@@ -265,13 +265,17 @@ public class HintFactoryMap implements HintMap {
 
 		@Override
 		public Node outcome() {
+			return applyHint(root, to.items);
+		}
+		
+		public static Node applyHint(Node root, String[] to) {
 			Node nRoot = root.copy(false);
 			
 			List<Node> children = new ArrayList<Node>();
 			children.addAll(nRoot.children);
 			
 			nRoot.children.clear();
-			for (String type : to.items) {
+			for (String type : to) {
 				boolean added = false;
 				for (int i = 0; i < children.size(); i++) {
 					if (children.get(i).hasType(type)) {

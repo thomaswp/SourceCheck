@@ -15,7 +15,7 @@ import org.xml.sax.InputSource;
 
 import com.snap.XML;
 
-public class Snapshot extends Code {
+public class Snapshot extends Code implements IHasID {
 	private static final long serialVersionUID = 1L;
 	
 	private final static String META = 
@@ -104,5 +104,10 @@ public class Snapshot extends Code {
 		ac.add(blocks);
 		ac.add(canonicalizeVariables(variables, canon));
 		return canon ? "snapshot" : name;
+	}
+	
+	@Override
+	public Object getID() {
+		return "snapshot";
 	}
 }

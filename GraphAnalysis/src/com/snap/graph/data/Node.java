@@ -3,9 +3,10 @@ package com.snap.graph.data;
 import java.util.ArrayList;
 import java.util.List;
 
-import util.LblTree;
-
 import com.snap.data.Canonicalization;
+import com.snap.data.IHasID;
+
+import util.LblTree;
 
 public class Node extends StringHashable {
 
@@ -116,6 +117,16 @@ public class Node extends StringHashable {
 			if (pred.eval(children.get(i))) return i;
 		}
 		return -1;
+	}
+	
+	public Node searchForNodeWithID(final Object id) {
+		return search(new Predicate() {
+			@Override
+			public boolean eval(Node node) {
+				if (!(node.tag instanceof IHasID)) return false;
+				return id.equals(((IHasID) node.tag).getID());
+			}
+		});
 	}
 	
 	public interface Action {

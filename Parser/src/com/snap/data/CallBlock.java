@@ -31,19 +31,25 @@ public class CallBlock extends Block {
 
 	@SuppressWarnings("unused")
 	private CallBlock() {
-		this(null, false);
+		this(null, -1, false);
 	}
 	
-	public CallBlock(String type, boolean isCustom) {
-		super(type);
+	public CallBlock(String type, int id, boolean isCustom) {
+		super(type, id);
 		this.isCustom = isCustom;
 	}
 	
 	public static Block parse(Element element) {
 		if (element.hasAttribute("var")) {
-			return new VarBlock(element.getAttribute("var"));
+			return new VarBlock(
+					element.getAttribute("var"),
+					getID(element));
 		}
-		CallBlock block = new CallBlock(element.getAttribute("s").replace("%n", "%s"), element.getTagName().equals("custom-block"));
+		
+		CallBlock block = new CallBlock(
+				element.getAttribute("s").replace("%n", "%s"), 
+				getID(element),
+				element.getTagName().equals("custom-block"));
 		for (Code code : XML.getCode(element)) {
 			if (code instanceof Block) {
 				block.parameters.add((Block) code);

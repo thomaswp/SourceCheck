@@ -55,7 +55,8 @@ public class SimpleNodeBuilder {
 				if (code == null) {
 					add("null");
 				} else {
-					node.children.add(toTree(code, canon, node));
+					Node child = toTree(code, canon, node);
+					node.children.add(child);
 				}
 			}
 
