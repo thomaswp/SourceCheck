@@ -33,7 +33,7 @@ public class SnapParser {
 			"id","time","message","jsonData","assignmentID","projectID","sessionID","browserID","code"
 	};
 	
-	private final Map<String, CSVPrinter> csvPrinters = new HashMap<String, CSVPrinter>();
+	private final static Map<String, CSVPrinter> csvPrinters = new HashMap<String, CSVPrinter>();
 	
 	private final String outputFolder;
 	private final Mode storeMode;
@@ -52,14 +52,16 @@ public class SnapParser {
 	 * @param snapCSVfileName
 	 * @throws IOException
 	 */
-	public void splitStudentRecords() throws IOException{
-		CSVParser parser = new CSVParser(new FileReader(outputFolder + ".csv"), CSVFormat.DEFAULT.withHeader());
+	public static void splitStudentRecords(String file) throws IOException{
+		String outputFolder = file.substring(0, file.lastIndexOf("."));
+		new File(outputFolder).mkdirs();
+		CSVParser parser = new CSVParser(new FileReader(file), CSVFormat.DEFAULT.withHeader());
 		int i = 0;
 		System.out.println("Splitting records:");
 		for (CSVRecord record : parser) {
 			String assignmentID = record.get(4);
 			String projectID = record.get(5);
-			writeRecord(assignmentID,projectID, record);
+			writeRecord(assignmentID,projectID, outputFolder, record);
 			if (i++ % 1000 == 0) System.out.print("+"); 
 			if (i % 50000 == 0) System.out.println();
 		}
@@ -75,7 +77,7 @@ public class SnapParser {
 	 * @param userId
 	 * @throws IOException 
 	 */
-	private void writeRecord(String assignmentID, String projectID, CSVRecord record) throws IOException{
+	private static void writeRecord(String assignmentID, String projectID, String outputFolder, CSVRecord record) throws IOException{
 		//rows without projectID are skipped. these are the logger.started lines
 		if(!projectID.equals("")){
 			//check to see if folder for assignment such as GuessLab3 already exists, if not - create folder
@@ -104,7 +106,7 @@ public class SnapParser {
 	/**
 	 * code taken from StackOverflow to close out BufferedWriters
 	 */
-	private void cleanUpSplit(){
+	private static void cleanUpSplit(){
 		System.out.println("Cleaning up:");
 		Set<String> keySet = csvPrinters.keySet();
 		int i = 0;
@@ -121,6 +123,7 @@ public class SnapParser {
 			if (i++ % 10 == 0) System.out.print("+");
 			if (i % 500 == 0) System.out.println();
 		}
+		csvPrinters.clear();
 	}
 	
 	public SolutionPath parseRows(final File logFile, final Grade grade, final boolean snapshotsOnly, final Date minDate, final Date maxDate) throws IOException {
@@ -288,8 +291,8 @@ public class SnapParser {
 	}
 
 	public static void main(String[] args) throws IOException {
+//		SnapParser.splitStudentRecords("../data/csc200/fall2015");
 		SnapParser parser = new SnapParser("../data/csc200/fall2015", Mode.Overwrite);
-		parser.splitStudentRecords();
 		parser.parseAssignment("guess1Lab", true);
 		parser.parseAssignment("guess2HW", true);
 		parser.parseAssignment("guess3Lab", true);

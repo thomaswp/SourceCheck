@@ -7,6 +7,7 @@ import org.w3c.dom.Element;
 
 import com.snap.XML;
 
+// TODO: Local script variables!
 public class BlockDefinition extends Block {
 	private static final long serialVersionUID = 1L;
 	

@@ -84,7 +84,8 @@ public class XML {
 	public final static Predicate spritePredicate = new TagsPredicate("sprite");
 	
 	//TODO: autolambda should have a structure
-	public final static Predicate ignorePredicate = new TagsPredicate("watcher", "comment", "autolambda");
+	// Variables for some reason show up in calls to custom blocks..
+	public final static Predicate ignorePredicate = new TagsPredicate("watcher", "comment", "autolambda", "variables");
 	
 	public static List<Code> getCodeInFirstChild(Element element, String childTag) {
 		return getCode(getFirstChildByTagName(element, childTag));
