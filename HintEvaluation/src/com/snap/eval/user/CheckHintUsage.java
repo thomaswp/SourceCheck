@@ -4,10 +4,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
+import javax.swing.plaf.synth.SynthScrollBarUI;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.snap.data.Snapshot;
+import com.snap.graph.Alignment;
 import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.Node;
 import com.snap.graph.data.HintFactoryMap.VectorHint;
@@ -31,7 +34,7 @@ public class CheckHintUsage {
 		// Get the name-path pairs of all projects we logged
 		HashMap<String, SolutionPath> guessingGame = Assignment.Spring2016.GuessingGame1.load();
 		
-		int nHints = 0, nThumbsUp = 0, nThumbsDown = 0, nHintsTaken = 0;
+		int nStudents = 0, nHints = 0, nThumbsUp = 0, nThumbsDown = 0, nHintsTaken = 0, nHintsParial = 0, nHintsCloser = 0;
 		
 		// Iterate over all submissions
 		for (String submission : guessingGame.keySet()) {
@@ -39,6 +42,8 @@ public class CheckHintUsage {
 			
 			// Ignore any that weren't exported (and thus couldn't have been submitted)
 			if (!path.exported) continue;
+			
+			nStudents++;
 			
 			Snapshot code = null;
 			for (int i = 0; i < path.size(); i++) {
@@ -75,9 +80,14 @@ public class CheckHintUsage {
 					// And apply this to get a new parent node
 					Node hintOutcome = VectorHint.applyHint(parent, to);
 					
+					int origianlHintDistance = Alignment.alignCost(parent.getChildArray(), to);
+					
 					// For debugging these hints
 //					System.out.println("  " + parent + "\n->" + hintOutcome + "\n");
 										
+					boolean gotCloser = false;
+					boolean gotPartial = false;
+					
 					// Look ahead for hint application in the student's code
 					int steps = 0;
 					for (int j = i; j < path.size(); j++) {
@@ -88,13 +98,20 @@ public class CheckHintUsage {
 						steps++;
 						
 						// If we've looked more than n (10) steps in the future, give up
-						if (steps > 10) break;
+						if (steps > 5) break;
 						
 						// Find the same parent node and see if it matches the hint state
 						Node nextNode = SimpleNodeBuilder.toTree(nextCode, true);
 						Node nextParent = findParent(nextNode, data);
 						if (nextParent == null) continue;
 
+						int newDistance = Alignment.alignCost(nextParent.getChildArray(), to);
+						if (newDistance < origianlHintDistance) gotCloser = true;
+						
+						if (Arrays.equals(nextParent.getChildArray(), to)) {
+							gotPartial = true;
+						}
+						
 						// TODO: Rather than just looking for an exact match, check if the student's code gets
 						// closer to the hint or farther. 
 						if (nextParent.equals(hintOutcome)) {
@@ -102,6 +119,8 @@ public class CheckHintUsage {
 							break;
 						}
 					}
+					if (gotCloser) nHintsCloser++; 
+					if (gotPartial) nHintsParial++;
 				}
 				
 				// Check if this action was dismissing a hint
@@ -117,10 +136,13 @@ public class CheckHintUsage {
 		}
 		
 		// Print our results
+		System.out.println("Submissions: " + nStudents);
 		System.out.println("Total Hints Selected: " + nHints);
 		System.out.println("Thumbs Up: " + nThumbsUp + "/" + nHints);
 		System.out.println("Thumbs Down: " + nThumbsDown + "/" + nHints);
 		System.out.println("Hints Taken: " + nHintsTaken + "/" + nHints);
+		System.out.println("Hints Partial: " + nHintsParial + "/" + nHints);
+		System.out.println("Hints Closer: " + nHintsCloser + "/" + nHints);
 		
 	}
 	

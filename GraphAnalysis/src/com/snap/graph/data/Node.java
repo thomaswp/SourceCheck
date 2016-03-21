@@ -268,6 +268,14 @@ public class Node extends StringHashable {
 		return size;
 	}
 	
+	public String[] getChildArray() {
+		String[] array = new String[children.size()];
+		for (int i = 0; i < array.length; i++) {
+			array[i] = children.get(i).type;
+		}
+		return array;
+	}
+	
 	private final static String[] HAS_BODY = new String[] {
 			"snapshot", "stage", "sprite", "script", "customBlock",
 	};
