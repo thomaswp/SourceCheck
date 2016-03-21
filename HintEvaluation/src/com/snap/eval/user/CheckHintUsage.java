@@ -10,6 +10,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.snap.data.Snapshot;
+import com.snap.eval.AutoGrader;
+import com.snap.eval.AutoGrader.Grader;
 import com.snap.graph.Alignment;
 import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.Node;
@@ -25,6 +27,8 @@ public class CheckHintUsage {
 	private final static String SHOW_STRUCTURE_HINT = "SnapDisplay.showStructureHint";
 	private final static String HINT_DIALOG_DONE = "HintDialogBox.done";
 	
+	private final static String PROCESS_HINTS = "HintProvider.processHints";
+	
 	private final static List<String> SHOW_HINT_MESSAGES = Arrays.asList(new String[] {
 			SHOW_SCRIPT_HINT, SHOW_BLOCK_HINT, SHOW_STRUCTURE_HINT
 	});
@@ -35,6 +39,7 @@ public class CheckHintUsage {
 		HashMap<String, SolutionPath> guessingGame = Assignment.Spring2016.GuessingGame1.load();
 		
 		int nStudents = 0, nHints = 0, nThumbsUp = 0, nThumbsDown = 0, nHintsTaken = 0, nHintsParial = 0, nHintsCloser = 0;
+		int nObjectiveHints = 0, nObjectiveHintsTaken = 0;
 		
 		// Iterate over all submissions
 		for (String submission : guessingGame.keySet()) {
@@ -63,6 +68,8 @@ public class CheckHintUsage {
 					// Get the student's current code and turn it into a tree
 					Node node = SimpleNodeBuilder.toTree(code, true);
 					
+					HashMap<String,Boolean> grade = AutoGrader.grade(node);
+					
 					// Find the parent node that this hint affects
 					Node parent = findParent(node, data);
 					// It shouldn't be null (and isn't for this dataset)
@@ -80,6 +87,20 @@ public class CheckHintUsage {
 					// And apply this to get a new parent node
 					Node hintOutcome = VectorHint.applyHint(parent, to);
 					
+					HashMap<String, Boolean> hintGrade = AutoGrader.grade(hintOutcome.root());
+					
+					String objective = null; 
+					for (String key : grade.keySet()) {
+						if (!grade.get(key) && hintGrade.get(key)) {
+							objective = key;
+							break;
+						}
+					}
+					if (objective != null) nObjectiveHints++;
+					
+					Grader objectiveGrader = null;
+					for (Grader g : AutoGrader.graders) if (g.name().equals(objective)) objectiveGrader = g;
+					
 					int origianlHintDistance = Alignment.alignCost(parent.getChildArray(), to);
 					
 					// For debugging these hints
@@ -87,6 +108,7 @@ public class CheckHintUsage {
 										
 					boolean gotCloser = false;
 					boolean gotPartial = false;
+					boolean gotObjective = false;
 					
 					// Look ahead for hint application in the student's code
 					int steps = 0;
@@ -112,6 +134,10 @@ public class CheckHintUsage {
 							gotPartial = true;
 						}
 						
+						if (objectiveGrader != null && objectiveGrader.pass(nextNode)) {
+							gotObjective = true;
+						}
+						
 						// TODO: Rather than just looking for an exact match, check if the student's code gets
 						// closer to the hint or farther. 
 						if (nextParent.equals(hintOutcome)) {
@@ -121,6 +147,7 @@ public class CheckHintUsage {
 					}
 					if (gotCloser) nHintsCloser++; 
 					if (gotPartial) nHintsParial++;
+					if (gotObjective) nObjectiveHintsTaken++;
 				}
 				
 				// Check if this action was dismissing a hint
@@ -143,6 +170,8 @@ public class CheckHintUsage {
 		System.out.println("Hints Taken: " + nHintsTaken + "/" + nHints);
 		System.out.println("Hints Partial: " + nHintsParial + "/" + nHints);
 		System.out.println("Hints Closer: " + nHintsCloser + "/" + nHints);
+		System.out.println("Objective Hints: " + nObjectiveHints + "/" + nHints);
+		System.out.println("Objective Hints Taken: " + nObjectiveHintsTaken + "/" + nObjectiveHints);
 		
 	}
 	
