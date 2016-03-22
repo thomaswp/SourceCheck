@@ -48,9 +48,11 @@ public class CheckHintUsage {
 			// Ignore any that weren't exported (and thus couldn't have been submitted)
 			if (!path.exported) continue;
 			
+			// The number of student who exported project (presumably number of submissions)
 			nStudents++;
 			
 			Snapshot code = null;
+			// Iterate through each row of the solution path
 			for (int i = 0; i < path.size(); i++) {
 				DataRow row = path.rows.get(i);
 				
