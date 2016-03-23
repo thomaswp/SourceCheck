@@ -80,12 +80,15 @@ public class CheckHintUsage {
 					nHints++;
 					nStudentHints++;
 					
-					
 					// Get the data from this event
 					JSONObject data = new JSONObject(row.data);
 					
 					// Get the student's current code and turn it into a tree
 					Node node = SimpleNodeBuilder.toTree(code, true);
+
+//					System.out.println("S" + nStudents + "H" + studentTrees.size());
+//					System.out.println(code.toCode());
+//					System.out.println(node.prettyPrint());
 					
 					LblTree tree = Prune.removeSmallerScripts(node).toTree();
 					studentTrees.add(tree);
@@ -221,9 +224,9 @@ public class CheckHintUsage {
 		Collections.reverse(studentHintCounts);
 		System.out.println("Students Hint count: " + studentHintCounts);
 		
-		PrintStream ps = new PrintStream(Assignment.Spring2016.GuessingGame1.dataDir + "/hintsDis.csv");
-		outputMatrix(ps, hintCodeTrees);
-		ps.close();
+//		PrintStream ps = new PrintStream(Assignment.Spring2016.GuessingGame1.dataDir + "/hintsDis.csv");
+//		outputMatrix(ps, hintCodeTrees);
+//		ps.close();
 	}
 	
 	private static void outputMatrix(PrintStream out, HashMap<String, LblTree> trees) {
