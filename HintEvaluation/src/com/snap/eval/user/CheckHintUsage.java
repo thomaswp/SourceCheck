@@ -1,12 +1,13 @@
 package com.snap.eval.user;
 
+import java.io.FileNotFoundException;
+import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
-
-import javax.swing.plaf.synth.SynthScrollBarUI;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -14,12 +15,16 @@ import org.json.JSONObject;
 import com.snap.data.Snapshot;
 import com.snap.eval.AutoGrader;
 import com.snap.eval.AutoGrader.Grader;
+import com.snap.eval.util.Prune;
 import com.snap.graph.Alignment;
 import com.snap.graph.SimpleNodeBuilder;
-import com.snap.graph.data.Node;
 import com.snap.graph.data.HintFactoryMap.VectorHint;
+import com.snap.graph.data.Node;
 import com.snap.parser.DataRow;
 import com.snap.parser.SolutionPath;
+
+import distance.RTED_InfoTree_Opt;
+import util.LblTree;
 
 public class CheckHintUsage {
 	
@@ -35,7 +40,7 @@ public class CheckHintUsage {
 			SHOW_SCRIPT_HINT, SHOW_BLOCK_HINT, SHOW_STRUCTURE_HINT
 	});
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws FileNotFoundException {
 		
 		// Get the name-path pairs of all projects we logged
 		HashMap<String, SolutionPath> guessingGame = Assignment.Spring2016.GuessingGame1.load();
@@ -44,6 +49,8 @@ public class CheckHintUsage {
 		int nObjectiveHints = 0, nObjectiveHintsTaken = 0;
 		int nStudentHint1 = 0, nStudentHint3 = 0;
 		List<Integer> studentHintCounts = new LinkedList<Integer>();
+		
+		HashMap<String, LblTree> hintCodeTrees = new LinkedHashMap<>();
 		
 		// Iterate over all submissions
 		for (String submission : guessingGame.keySet()) {
@@ -56,6 +63,8 @@ public class CheckHintUsage {
 			nStudents++;
 			// number of hints requested by this student
 			int nStudentHints = 0;
+			
+			List<LblTree> studentTrees = new LinkedList<LblTree>();
 			
 			Snapshot code = null;
 			// Iterate through each row of the solution path
@@ -71,11 +80,15 @@ public class CheckHintUsage {
 					nHints++;
 					nStudentHints++;
 					
+					
 					// Get the data from this event
 					JSONObject data = new JSONObject(row.data);
 					
 					// Get the student's current code and turn it into a tree
 					Node node = SimpleNodeBuilder.toTree(code, true);
+					
+					LblTree tree = Prune.removeSmallerScripts(node).toTree();
+					studentTrees.add(tree);
 					
 					HashMap<String,Boolean> grade = AutoGrader.grade(node);
 					
@@ -183,7 +196,14 @@ public class CheckHintUsage {
 			if (nStudentHints > 2) nStudentHint3++;
 			if (nStudentHints > 30) System.out.println(submission);
 			studentHintCounts.add(nStudentHints);
+			
+			if (nStudentHints <= 30) {
+				for (int j = 0; j < studentTrees.size(); j++) {
+					hintCodeTrees.put("S" + nStudents + "H" + j, studentTrees.get(j));
+				}
+			}
 		}
+		
 		
 		// Print our results
 		System.out.println("Submissions: " + nStudents);
@@ -201,9 +221,31 @@ public class CheckHintUsage {
 		Collections.reverse(studentHintCounts);
 		System.out.println("Students Hint count: " + studentHintCounts);
 		
-		
+		PrintStream ps = new PrintStream(Assignment.Spring2016.GuessingGame1.dataDir + "/hintsDis.csv");
+		outputMatrix(ps, hintCodeTrees);
+		ps.close();
 	}
 	
+	private static void outputMatrix(PrintStream out, HashMap<String, LblTree> trees) {
+		String[] labels = trees.keySet().toArray(new String[trees.size()]);
+		for (String label : labels) {
+			out.print("," + label);
+		}
+		out.println();
+		RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(1, 1, 1);
+		for (String label1 : labels) {
+			out.print(label1);
+			LblTree tree1 = trees.get(label1);
+			for (String label2 : labels) {
+				LblTree tree2 = trees.get(label2);
+				double dis = opt.nonNormalizedTreeDist(tree1, tree2);
+				int disInt = (int)(Math.round(dis));
+				out.print("," + disInt);
+			}
+			out.println();
+		}
+	}
+
 	private static Object getValue(JSONObject obj, String key) {
 		if (!obj.has(key) || obj.isNull(key)) return null;
 		return obj.get(key);
