@@ -1,7 +1,9 @@
 package com.snap.eval.user;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.swing.plaf.synth.SynthScrollBarUI;
@@ -26,7 +28,7 @@ public class CheckHintUsage {
 	private final static String SHOW_BLOCK_HINT = "SnapDisplay.showBlockHint";
 	private final static String SHOW_STRUCTURE_HINT = "SnapDisplay.showStructureHint";
 	private final static String HINT_DIALOG_DONE = "HintDialogBox.done";
-	
+
 	private final static String PROCESS_HINTS = "HintProvider.processHints";
 	
 	private final static List<String> SHOW_HINT_MESSAGES = Arrays.asList(new String[] {
@@ -40,6 +42,8 @@ public class CheckHintUsage {
 		
 		int nStudents = 0, nHints = 0, nThumbsUp = 0, nThumbsDown = 0, nHintsTaken = 0, nHintsParial = 0, nHintsCloser = 0;
 		int nObjectiveHints = 0, nObjectiveHintsTaken = 0;
+		int nStudentHint1 = 0, nStudentHint3 = 0;
+		List<Integer> studentHintCounts = new LinkedList<Integer>();
 		
 		// Iterate over all submissions
 		for (String submission : guessingGame.keySet()) {
@@ -50,6 +54,8 @@ public class CheckHintUsage {
 			
 			// The number of student who exported project (presumably number of submissions)
 			nStudents++;
+			// number of hints requested by this student
+			int nStudentHints = 0;
 			
 			Snapshot code = null;
 			// Iterate through each row of the solution path
@@ -63,6 +69,7 @@ public class CheckHintUsage {
 				String action = row.action;
 				if (SHOW_HINT_MESSAGES.contains(action)) {
 					nHints++;
+					nStudentHints++;
 					
 					// Get the data from this event
 					JSONObject data = new JSONObject(row.data);
@@ -89,21 +96,28 @@ public class CheckHintUsage {
 					// And apply this to get a new parent node
 					Node hintOutcome = VectorHint.applyHint(parent, to);
 					
+					// Grade the node after applying the hint
 					HashMap<String, Boolean> hintGrade = AutoGrader.grade(hintOutcome.root());
 					
 					String objective = null; 
+					// Check if applying a hint will complete an objective
 					for (String key : grade.keySet()) {
 						if (!grade.get(key) && hintGrade.get(key)) {
 							objective = key;
 							break;
 						}
 					}
+					// record the number of hints requested that can complete an objective
 					if (objective != null) nObjectiveHints++;
 					
+					// get the corresponding grader for the objective completed by hint
 					Grader objectiveGrader = null;
-					for (Grader g : AutoGrader.graders) if (g.name().equals(objective)) objectiveGrader = g;
+					for (Grader g : AutoGrader.graders) 
+						if (g.name().equals(objective)) 
+							objectiveGrader = g;
 					
-					int origianlHintDistance = Alignment.alignCost(parent.getChildArray(), to);
+					// Calculate original distance between student's code with the hint
+					int originalHintDistance = Alignment.alignCost(parent.getChildArray(), to);
 					
 					// For debugging these hints
 //					System.out.println("  " + parent + "\n->" + hintOutcome + "\n");
@@ -114,14 +128,16 @@ public class CheckHintUsage {
 					
 					// Look ahead for hint application in the student's code
 					int steps = 0;
-					for (int j = i; j < path.size(); j++) {
+					for (int j = i+1; j < path.size(); j++) {
 						// Get the next row with a new snapshot
 						DataRow nextRow = path.rows.get(j);
 						Snapshot nextCode = nextRow.snapshot;
-						if (nextCode == null) continue;
+						// if the row does not have a snapshot, skip this row and do not count into steps
+						if (nextCode == null)
+							continue;
 						steps++;
 						
-						// If we've looked more than n (10) steps in the future, give up
+						// If we've looked more than n (5) steps in the future, give up
 						if (steps > 5) break;
 						
 						// Find the same parent node and see if it matches the hint state
@@ -130,7 +146,7 @@ public class CheckHintUsage {
 						if (nextParent == null) continue;
 
 						int newDistance = Alignment.alignCost(nextParent.getChildArray(), to);
-						if (newDistance < origianlHintDistance) gotCloser = true;
+						if (newDistance < originalHintDistance) gotCloser = true;
 						
 						if (Arrays.equals(nextParent.getChildArray(), to)) {
 							gotPartial = true;
@@ -152,6 +168,7 @@ public class CheckHintUsage {
 					if (gotObjective) nObjectiveHintsTaken++;
 				}
 				
+				
 				// Check if this action was dismissing a hint
 				if (HINT_DIALOG_DONE.equals(action)) {
 					// TODO: inspect good and bad hints
@@ -162,6 +179,10 @@ public class CheckHintUsage {
 					}
 				}
 			}
+			if (nStudentHints > 0) nStudentHint1++;
+			if (nStudentHints > 2) nStudentHint3++;
+			if (nStudentHints > 30) System.out.println(submission);
+			studentHintCounts.add(nStudentHints);
 		}
 		
 		// Print our results
@@ -174,6 +195,12 @@ public class CheckHintUsage {
 		System.out.println("Hints Closer: " + nHintsCloser + "/" + nHints);
 		System.out.println("Objective Hints: " + nObjectiveHints + "/" + nHints);
 		System.out.println("Objective Hints Taken: " + nObjectiveHintsTaken + "/" + nObjectiveHints);
+		System.out.println("Students got more than 1 hint: " + nStudentHint1 + "/" + nStudents);
+		System.out.println("Students got more than 3 hint: " + nStudentHint3 + "/" + nStudents);
+		Collections.sort(studentHintCounts);
+		Collections.reverse(studentHintCounts);
+		System.out.println("Students Hint count: " + studentHintCounts);
+		
 		
 	}
 	
