@@ -1,10 +1,12 @@
 package com.snap;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import com.snap.data.BlockDefinition;
 import com.snap.data.CallBlock;
@@ -15,6 +17,33 @@ import com.snap.data.Script;
 import com.snap.data.Sprite;
 
 public class XML {
+	
+	private static HashMap<String, Code> refMap = new HashMap<String, Code>();
+	
+	public static void buildRefMap(Element root, String... tags) {
+		for (String tag : tags) {
+			NodeList list = root.getElementsByTagName(tag);
+			for (int i = 0; i < list.getLength(); i++) {
+				Element item = as(list.item(i), Element.class);
+				if (item != null) {
+					String id = item.getAttribute("id");
+					if (id != null) refMap.put(id, (Code) getCodeElement(item));
+				}
+			}
+		}
+	}
+	
+	public static void clearRefMap() {
+		refMap.clear();
+	}
+	
+	@SuppressWarnings("unchecked")
+	private static <T> T as(Object obj, Class<T> clazz) {
+		if (obj == null) return null;
+		if (clazz.isAssignableFrom(obj.getClass())) return (T) obj;
+		return null;
+	}
+	
 	public static Iterable<Element> getChildrenByTagName(Element e, String... tags) {
 		return getChildrenByTagName(e, new TagsPredicate(tags));
 	}
@@ -82,10 +111,11 @@ public class XML {
 	public final static Predicate blockDefinitionPredicate = new TagsPredicate("block-definition");
 	public final static Predicate scriptPredicate = new TagsPredicate("script");
 	public final static Predicate spritePredicate = new TagsPredicate("sprite");
+	public final static Predicate refPredicate = new TagsPredicate("ref");
 	
 	//TODO: autolambda should have a structure
 	// Variables for some reason show up in calls to custom blocks..
-	public final static Predicate ignorePredicate = new TagsPredicate("watcher", "comment", "autolambda", "variables");
+	public final static Predicate ignorePredicate = new TagsPredicate("watcher", "comment", "autolambda", "variables", "receiver");
 	
 	public static List<Code> getCodeInFirstChild(Element element, String childTag) {
 		return getCode(getFirstChildByTagName(element, childTag));
@@ -97,25 +127,37 @@ public class XML {
 		while (child != null) {
 			if (child instanceof Element) {
 				Element childElement = (Element) child;
-				if (callBlockPredicate.is(childElement)) {
-					children.add(CallBlock.parse(childElement));
-				} else if (literalBlockPredicate.is(childElement)) {
-					children.add(LiteralBlock.parse(childElement));
-				} else if (listBlockPredicate.is(childElement)) {
-					children.add(ListBlock.parse(childElement));
-				} else if (blockDefinitionPredicate.is(childElement)) {
-					children.add(BlockDefinition.parse(childElement));
-				} else if (scriptPredicate.is(childElement)) {
-					children.add(Script.parse(childElement));
-				} else if (spritePredicate.is(childElement)) {
-					children.add(Sprite.parse(childElement));
-				} else if (!ignorePredicate.is(childElement)) {
-					throw new RuntimeException("No data-structure for: " + childElement.getTagName());
-				}
+				Code code = getCodeElement(childElement);
+				if (code != null) children.add(code);
 			}
 			child = child.getNextSibling();
 		}
 		return children;
+	}
+
+	public static Code getCodeElement(Element childElement) {
+		if (callBlockPredicate.is(childElement)) {
+			return CallBlock.parse(childElement);
+		} else if (literalBlockPredicate.is(childElement)) {
+			return LiteralBlock.parse(childElement);
+		} else if (listBlockPredicate.is(childElement)) {
+			return ListBlock.parse(childElement);
+		} else if (blockDefinitionPredicate.is(childElement)) {
+			return BlockDefinition.parse(childElement);
+		} else if (scriptPredicate.is(childElement)) {
+			return Script.parse(childElement);
+		} else if (spritePredicate.is(childElement)) {
+			return Sprite.parse(childElement);
+		} else if (refPredicate.is(childElement)) {
+			String id = childElement.getAttribute("id");
+			if (!refMap.containsKey(id)) {
+				throw new RuntimeException("No ref for: " + id);
+			}
+			return refMap.get(id);
+		} else if (!ignorePredicate.is(childElement)) {
+			throw new RuntimeException("No data-structure for: " + childElement.getTagName());
+		}
+		return null;
 	}
 	
 	public static void ensureEmpty(Element element, String... tags) {

@@ -58,6 +58,9 @@ public class Snapshot extends Code implements IHasID {
 			doc.getDocumentElement().normalize();
 			Element project = (Element) doc.getElementsByTagName("project").item(0);
 			if (project == null) return null;
+			
+			XML.buildRefMap(project, "sprite");
+			
 			Element stage = XML.getFirstChildByTagName(project, "stage");
 			Snapshot snapshot = new Snapshot(name, Stage.parse(stage));
 			for (Code code : XML.getCodeInFirstChild(project, "blocks")) {
@@ -76,6 +79,7 @@ public class Snapshot extends Code implements IHasID {
 			// TODO: what is in <hidden>?
 			return snapshot;
 		} catch (Exception e) {
+			System.out.println("Error parsing: " + name);
 			e.printStackTrace();
 		}
 		return null;
