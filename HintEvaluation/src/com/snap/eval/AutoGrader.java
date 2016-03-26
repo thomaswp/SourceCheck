@@ -56,6 +56,17 @@ public class AutoGrader {
 		return grades;
 	}
 	
+	public static double numberGrade(Node node) {
+		return numberGrade(grade(node));
+	}
+	
+	public static double numberGrade(HashMap<String, Boolean> grade) {
+		double g = 0;
+		for (Boolean b : grade.values()) if (b) g++;
+		g /= grade.size();
+		return g;
+	}
+	
 	private void parseStudents() throws IOException {
 		SnapParser parser = new SnapParser(dataDir, Store.Mode.Use);
 		HashMap<String, SolutionPath> students = parser.parseAssignment(assignment, true);

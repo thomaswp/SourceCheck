@@ -1,6 +1,6 @@
 package com.snap.eval.user;
 
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Collections;
@@ -9,6 +9,8 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -40,7 +42,7 @@ public class CheckHintUsage {
 			SHOW_SCRIPT_HINT, SHOW_BLOCK_HINT, SHOW_STRUCTURE_HINT
 	});
 	
-	public static void main(String[] args) throws FileNotFoundException {
+	public static void main(String[] args) throws IOException {
 		
 		// Get the name-path pairs of all projects we logged
 		HashMap<String, SolutionPath> guessingGame = Assignment.Spring2016.GuessingGame1.load();
@@ -48,7 +50,7 @@ public class CheckHintUsage {
 		int nStudents = 0, nHints = 0, nThumbsUp = 0, nThumbsDown = 0, nHintsTaken = 0, nHintsParial = 0, nHintsCloser = 0;
 		int nObjectiveHints = 0, nObjectiveHintsTaken = 0;
 		int nStudentHint1 = 0, nStudentHint3 = 0;
-		List<Integer> studentHintCounts = new LinkedList<Integer>();
+		List<Integer> studentHintCounts = new LinkedList<Integer>(), studentFollowedCounts = new LinkedList<>();
 		
 		HashMap<String, LblTree> hintCodeTrees = new LinkedHashMap<>();
 		
@@ -62,7 +64,7 @@ public class CheckHintUsage {
 			// The number of student who exported project (presumably number of submissions)
 			nStudents++;
 			// number of hints requested by this student
-			int nStudentHints = 0;
+			int nStudentHints = 0, nStudentFollowed = 0;
 			
 			List<LblTree> studentTrees = new LinkedList<LblTree>();
 			
@@ -180,7 +182,10 @@ public class CheckHintUsage {
 						}
 					}
 					if (gotCloser) nHintsCloser++; 
-					if (gotPartial) nHintsParial++;
+					if (gotPartial) {
+						nHintsParial++;
+						nStudentFollowed++;
+					}
 					if (gotObjective) nObjectiveHintsTaken++;
 				}
 				
@@ -199,6 +204,7 @@ public class CheckHintUsage {
 			if (nStudentHints > 2) nStudentHint3++;
 			if (nStudentHints > 30) System.out.println(submission);
 			studentHintCounts.add(nStudentHints);
+			studentFollowedCounts.add(nStudentFollowed);
 			
 			if (nStudentHints <= 30) {
 				for (int j = 0; j < studentTrees.size(); j++) {
@@ -206,7 +212,11 @@ public class CheckHintUsage {
 				}
 			}
 		}
+
 		
+		PrintStream ps = new PrintStream(Assignment.Spring2016.GuessingGame1.dataDir + "/grades.csv");
+		outputGrades(ps, guessingGame, studentHintCounts, studentFollowedCounts);
+		ps.close();
 		
 		// Print our results
 		System.out.println("Submissions: " + nStudents);
@@ -229,6 +239,46 @@ public class CheckHintUsage {
 //		ps.close();
 	}
 	
+	private static void outputGrades(PrintStream ps, HashMap<String, SolutionPath> submissions, List<Integer> studentHintCounts,
+			List<Integer> studentFollowedCounts) throws IOException {
+		List<String> header = new LinkedList<>(); 
+		header.addAll(Arrays.asList("id", "requested", "followed", "grade"));
+		for (Grader g : AutoGrader.graders)	header.add(g.name());
+		
+		CSVPrinter printer = new CSVPrinter(ps, CSVFormat.DEFAULT.withHeader(header.toArray(new String[header.size()])));
+		int i = 0;
+		for (String key : submissions.keySet()) {
+			SolutionPath path = submissions.get(key);
+			if (!path.exported) continue;
+			
+			Node code = null;
+			for (int j = path.size() - 1; j >= 0; j--) {
+				Snapshot snapshot = path.rows.get(j).snapshot;
+				if (snapshot != null) {
+					code = SimpleNodeBuilder.toTree(snapshot, true);
+					break;
+				}
+			}
+			HashMap<String, Boolean> grade = AutoGrader.grade(code);
+			double numberGrade = AutoGrader.numberGrade(grade);
+			
+			Object[] row = new Object[grade.size() + 4];
+			int col = 0;
+			row[col++] = key; row[col++] = studentHintCounts.get(i); 
+			row[col++] = studentFollowedCounts.get(i); row[col++] = numberGrade;
+			
+			for (Grader g : AutoGrader.graders) {
+				row[col++] = grade.get(g.name()) ? 1 : 0;
+			}
+			printer.printRecord(row);
+			
+			i++;
+		}
+		
+		printer.close();
+		
+	}
+
 	private static void outputMatrix(PrintStream out, HashMap<String, LblTree> trees) {
 		String[] labels = trees.keySet().toArray(new String[trees.size()]);
 		for (String label : labels) {
