@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -247,33 +248,92 @@ public class CheckHintUsage {
 //		ps.close();
 	}
 	
-	private static void outputDistance(PrintStream psSnapshot, PrintStream psHint, HashMap<String, SolutionPath> guessingGame) throws IOException{
+	private static void outputDistance(PrintStream psSnapshot, PrintStream psHint, HashMap<String, SolutionPath> submissions) throws IOException{
 		// create column names
 		List<String> headerSnapshot = new LinkedList<String>();
 		headerSnapshot.addAll(Arrays.asList("id","time","distance"));
-		
 		List<String> headerHint = new LinkedList<String>();
 		headerHint.addAll(Arrays.asList("id","time","distance","isTaken"));
 		
 		// create printer
-		
+		CSVPrinter prtSnapshot = new CSVPrinter(psSnapshot, CSVFormat.DEFAULT.withHeader(headerSnapshot.toArray(new String[headerSnapshot.size()])));
+		CSVPrinter prtHint = new CSVPrinter(psHint, CSVFormat.DEFAULT.withHeader(headerHint.toArray(new String[headerHint.size()])));
 		// loop through the submissions
-		
+		for (String key: submissions.keySet()) {
+			SolutionPath path = submissions.get(key);
 			// if not exported, continue
-		
+			if (!path.exported) continue;
+			
 			// for each submission, get initial time, final submission
-		
+			Node finalSubmission = null;
+			Date initTime = null;
+			
+			// find final submission
+			for (int j = path.size() - 1; j >= 0; j--) {
+				Snapshot snapshot = path.rows.get(j).snapshot;
+				if (snapshot != null) {
+					finalSubmission = SimpleNodeBuilder.toTree(snapshot, true);
+					break;
+				}
+			}
+			
+			LblTree lblFinalSubmission = Prune.removeSmallerScripts(finalSubmission).toTree();
+			
+			// get timestamp for the first row as initial time
+			initTime = path.rows.get(0).timestamp;
+			
+			
 			// loop through rows
-		
+			Snapshot code = null;
+			double dis = 1000.0;
+			RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(1, 1, 1);
+			for (int i = 0; i < path.size(); i++) {
+				DataRow row = path.rows.get(i);
+				
 				// if snapshot update, calculate distance, record distance, time difference, etc.
-		
+				if (row.snapshot != null) {
+					code = row.snapshot;
+					Node node = SimpleNodeBuilder.toTree(code, true);
+					
+					LblTree lblTree = Prune.removeSmallerScripts(node).toTree();
+					dis = opt.nonNormalizedTreeDist(lblFinalSubmission, lblTree);
+					
+					Date snapshotTime = row.timestamp;
+					long diffTime = snapshotTime.getTime() - initTime.getTime();
+					long diffTimeSec = diffTime / 1000;
+					int elTime = (int) diffTimeSec;
+					
+					Object[] rowSnapshot = new Object[3];
+					rowSnapshot[0] = key;
+					rowSnapshot[1] = elTime;
+					rowSnapshot[2] = dis;
+					
+					// System.out.println("key: " + key + "; dis: " + dis + "; elTime: " + elTime + ";");
+					// print record
+					prtSnapshot.printRecord(rowSnapshot);
+				}
+				
 				// if this is a hint, record time difference, distance (is Taken)
-		
-			// print record
-		
-		
+				if (SHOW_HINT_MESSAGES.contains(row.action)) {
+					Date hintTime = row.timestamp;
+					long diffTime = hintTime.getTime() - initTime.getTime();
+					long diffTimeSec = diffTime / 1000;
+					int elTime = (int) diffTimeSec;
+					
+					Object[] rowHint = new Object[4];
+					rowHint[0] = key;
+					rowHint[1] = elTime;
+					rowHint[2] = dis;
+					rowHint[3] = "null";
+					
+					//System.out.println("key: " + key + "; dis: " + dis + "; elTime: " + elTime + ";");
+					
+					prtHint.printRecord(rowHint);
+				}
+			}
+		}
 		// close printer
-		
+		prtSnapshot.close();
 	}
 
 	private static void outputGrades(PrintStream ps, HashMap<String, SolutionPath> submissions, List<Integer> studentHintCounts,
