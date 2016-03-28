@@ -27,6 +27,30 @@ public class Assignment {
 		return new SnapParser(dataDir, mode).parseAssignment(name, snapshotsOnly, start, end);
 	}
 	
+	// TODO: Find end times
+	public static class Fall2015 {
+		private final static Date start = new GregorianCalendar(2015, 7, 10).getTime();
+		private final static String dataDir = "../data/csc200/fall2015";
+		
+		public final static Assignment LightsCameraAction = new Assignment(dataDir, 
+				"lightsCameraActionHW", start, null);
+		public final static Assignment PolygonMaker = new Assignment(dataDir, 
+				"polygonMakerLab", start, null);
+		public final static Assignment Squiral = new Assignment(dataDir, 
+				"squiralHW", start, null);
+		public final static Assignment GuessingGame1 = new Assignment(dataDir, 
+				"guess1Lab", start,  new GregorianCalendar(2015, 8, 18).getTime());
+		public final static Assignment GuessingGame2 = new Assignment(dataDir, 
+				"guess2HW", start, null);
+		public final static Assignment GuessingGame3 = new Assignment(dataDir, 
+				"guess3Lab", start, null);
+		
+		public final static Assignment[] All = {
+			LightsCameraAction, PolygonMaker, Squiral,
+			GuessingGame1, GuessingGame2, GuessingGame3
+		};
+	}
+	
 	public static class Spring2016 {
 		private final static Date start = new GregorianCalendar(2016, 0, 1).getTime();
 		private final static String dataDir = "../data/csc200/spring2016";

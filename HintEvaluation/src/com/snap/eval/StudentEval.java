@@ -1,33 +1,30 @@
 package com.snap.eval;
 
 import java.io.IOException;
-import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 
+import com.snap.eval.user.Assignment;
 import com.snap.eval.util.Prune;
-import com.snap.graph.data.HintFactoryMap;
+import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.Node;
-import com.snap.graph.subtree.SnapSubtree;
+import com.snap.parser.DataRow;
+import com.snap.parser.SolutionPath;
+import com.snap.parser.Store.Mode;
 
 public class StudentEval {
 	
 	public final static int SKIP = 1, MAX = 100;
 	
 	public static void main(String[] args) throws IOException {
-		String dir = "../data/csc200/fall2015";
-		String assignment = "guess1Lab";
-		eval(dir, assignment);
+		eval(Assignment.Fall2015.GuessingGame1);
 	}
 	
-	private static void eval(String dir, String assignment) throws IOException {
+	private static void eval(Assignment assignment) throws IOException {
 
-		Date maxTime = new GregorianCalendar(2015, 8, 18).getTime();
-		SnapSubtree subtree = new SnapSubtree(dir, assignment, maxTime, new HintFactoryMap());
-
-		HashMap<String,List<Node>> nodeMap = subtree.nodeMap();
+		HashMap<String, SolutionPath> paths = assignment.load(Mode.Use, true);
 		
 		for (int i = 0; i < 2; i++) {
 			int skip = SKIP;
@@ -41,14 +38,17 @@ public class StudentEval {
 			
 			int pass0 = 0;
 			
-			for (String student : nodeMap.keySet()) {
+			for (String student : paths.keySet()) {
 				if (skip-- > 0) {
 					continue;
 				}
 	
 				if (--max < 0) break;
 				
-				List<Node> nodes = nodeMap.get(student);
+				SolutionPath solutionPath = paths.get(student);
+				List<Node> nodes = new LinkedList<>();
+				for (DataRow r : solutionPath) nodes.add(SimpleNodeBuilder.toTree(r.snapshot, true));
+				
 				if (i == 1) nodes = Prune.removeSmallerScripts(nodes);
 				HashSet<String> studentSet = new HashSet<>();
 				

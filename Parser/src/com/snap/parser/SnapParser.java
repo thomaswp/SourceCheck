@@ -127,7 +127,12 @@ public class SnapParser {
 	}
 	
 	public SolutionPath parseRows(final File logFile, final Grade grade, final boolean snapshotsOnly, final Date minDate, final Date maxDate) throws IOException {
-		String cachePath = logFile.getAbsolutePath() + (snapshotsOnly ? "" :  "-data") + "-d" + (maxDate.hashCode() + minDate.hashCode()) + ".cached";
+		String cachePath = logFile.getAbsolutePath() + (snapshotsOnly ? "" :  "-data");
+		int hash = 0;
+		if (minDate != null) hash += minDate.hashCode();
+		if (maxDate != null) hash += maxDate.hashCode();
+		if (hash != 0) cachePath += "-d" + (maxDate.hashCode() + minDate.hashCode()); 
+		cachePath += ".cached";
 		
 		return Store.getCachedObject(new Kryo(), cachePath, SolutionPath.class, storeMode, new Store.Loader<SolutionPath>() {
 			@Override
@@ -249,8 +254,10 @@ public class SnapParser {
 				public void run() {
 					try {
 						SolutionPath rows = parseRows(fFile, grade, snapshotsOnly, minDate, maxDate);
-						if (rows.size() > 3) {
-							students.put(fFile.getName(), rows);
+						if (rows.grade == null || !rows.grade.outlier) {
+							if (rows.size() > 3) {
+								students.put(fFile.getName(), rows);
+							}							
 						}
 					} catch (IOException e) {
 						e.printStackTrace();

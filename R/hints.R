@@ -17,9 +17,9 @@ binGrade <- function(grade) {
 tests <- function() {
   
   # all significantly correlate to performance
-  cor(grades$requested, grades$grade)
-  cor(grades$followed, grades$grade)
-  cor(grades$pFollowed, grades$grade)
+  cor.test(grades$requested, grades$grade)
+  cor.test(grades$followed, grades$grade)
+  cor.test(grades$pFollowed, grades$grade) # only this is significant, though
   
   # students following 1+ hinst do significantly better
   wilcox.test(grades[grades$followed > 1, "grade"], grades[grades$followed <= 1, "grade"])
