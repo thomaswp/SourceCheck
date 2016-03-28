@@ -42,6 +42,7 @@ public class CheckHintUsage {
 			SHOW_SCRIPT_HINT, SHOW_BLOCK_HINT, SHOW_STRUCTURE_HINT
 	});
 	
+	
 	public static void main(String[] args) throws IOException {
 		
 		// Get the name-path pairs of all projects we logged
@@ -218,6 +219,13 @@ public class CheckHintUsage {
 		outputGrades(ps, guessingGame, studentHintCounts, studentFollowedCounts);
 		ps.close();
 		
+		// output distance between snapshots and final submission
+		PrintStream psSnapshot = new PrintStream(Assignment.Spring2016.GuessingGame1.dataDir + "/snapshot.csv");
+		PrintStream psHint = new PrintStream(Assignment.Spring2016.GuessingGame1.dataDir + "/hint.csv");
+		outputDistance(psSnapshot,psHint,guessingGame);
+		psSnapshot.close();
+		psHint.close();
+		
 		// Print our results
 		System.out.println("Submissions: " + nStudents);
 		System.out.println("Total Hints Selected: " + nHints);
@@ -239,6 +247,35 @@ public class CheckHintUsage {
 //		ps.close();
 	}
 	
+	private static void outputDistance(PrintStream psSnapshot, PrintStream psHint, HashMap<String, SolutionPath> guessingGame) throws IOException{
+		// create column names
+		List<String> headerSnapshot = new LinkedList<String>();
+		headerSnapshot.addAll(Arrays.asList("id","time","distance"));
+		
+		List<String> headerHint = new LinkedList<String>();
+		headerHint.addAll(Arrays.asList("id","time","distance","isTaken"));
+		
+		// create printer
+		
+		// loop through the submissions
+		
+			// if not exported, continue
+		
+			// for each submission, get initial time, final submission
+		
+			// loop through rows
+		
+				// if snapshot update, calculate distance, record distance, time difference, etc.
+		
+				// if this is a hint, record time difference, distance (is Taken)
+		
+			// print record
+		
+		
+		// close printer
+		
+	}
+
 	private static void outputGrades(PrintStream ps, HashMap<String, SolutionPath> submissions, List<Integer> studentHintCounts,
 			List<Integer> studentFollowedCounts) throws IOException {
 		List<String> header = new LinkedList<>(); 
