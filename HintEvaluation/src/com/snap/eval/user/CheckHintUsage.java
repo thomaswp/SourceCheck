@@ -285,23 +285,35 @@ public class CheckHintUsage {
 			
 			// loop through rows
 			Snapshot code = null;
+			Node snapshotNode = null;
 			double dis = 1000.0;
 			RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(1, 1, 1);
 			for (int i = 0; i < path.size(); i++) {
 				DataRow row = path.rows.get(i);
 				
-				// if snapshot update, calculate distance, record distance, time difference, etc.
+				// check if snapshot is changed.
+				boolean isSnapshotChanged = false;
 				if (row.snapshot != null) {
+					if (snapshotNode == null) {
+						isSnapshotChanged = true;
+					} else {
+						Node node = SimpleNodeBuilder.toTree(row.snapshot, true);
+						if (!snapshotNode.equals(node)) isSnapshotChanged = true;
+					}
+				}
+				
+				// if snapshot is changed, calculate distance, record distance, time difference, etc.
+				if (isSnapshotChanged) {
 					code = row.snapshot;
-					Node node = SimpleNodeBuilder.toTree(code, true);
+					snapshotNode = SimpleNodeBuilder.toTree(code, true);
 					
-					LblTree lblTree = Prune.removeSmallerScripts(node).toTree();
+					LblTree lblTree = Prune.removeSmallerScripts(snapshotNode).toTree();
 					dis = opt.nonNormalizedTreeDist(lblFinalSubmission, lblTree);
 					
 					Date snapshotTime = row.timestamp;
 					long diffTime = snapshotTime.getTime() - initTime.getTime();
-					long diffTimeSec = diffTime / 1000;
-					int elTime = (int) diffTimeSec;
+					double diffTimeSec = diffTime / 1000.0;
+					double elTime = (double) diffTimeSec;
 					
 					Object[] rowSnapshot = new Object[3];
 					rowSnapshot[0] = key;
@@ -317,8 +329,8 @@ public class CheckHintUsage {
 				if (SHOW_HINT_MESSAGES.contains(row.action)) {
 					Date hintTime = row.timestamp;
 					long diffTime = hintTime.getTime() - initTime.getTime();
-					long diffTimeSec = diffTime / 1000;
-					int elTime = (int) diffTimeSec;
+					double diffTimeSec = diffTime / 1000.0;
+					double elTime = (double) diffTimeSec;
 					
 					Object[] rowHint = new Object[4];
 					rowHint[0] = key;
