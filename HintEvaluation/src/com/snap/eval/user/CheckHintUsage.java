@@ -301,6 +301,7 @@ public class CheckHintUsage {
 						if (!snapshotNode.equals(node)) isSnapshotChanged = true;
 					}
 				}
+				if (row.action.equals("Block.grabbed")) isSnapshotChanged = false;
 				
 				// if snapshot is changed, calculate distance, record distance, time difference, etc.
 				if (isSnapshotChanged) {
