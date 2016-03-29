@@ -13,6 +13,7 @@ public class SetupData {
 		SnapParser.splitStudentRecords("../data/csc200/spring2016.csv");
 		// Go ahead and pre-load (cache) the assignments we'll be working with
 		for (Assignment assignment : Assignment.Spring2016.All) {
+			System.out.println("Loading: " + assignment.name);
 			assignment.load(Mode.Overwrite, false);
 		}
 	}

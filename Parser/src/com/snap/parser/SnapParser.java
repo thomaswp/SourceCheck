@@ -8,6 +8,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -208,6 +209,9 @@ public class SnapParser {
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
+				
+				Collections.sort(solution.rows);
+				
 				return solution;
 			}
 		});
@@ -297,13 +301,22 @@ public class SnapParser {
 		
 		return grades;
 	}
+	
+	public static void clean(String path) {
+		for (String file : new File(path).list()) {
+			File f = new File(path, file);
+			if (f.isDirectory()) clean(f.getAbsolutePath());
+			else if (f.getName().endsWith(".cached")) f.delete();
+		}
+	}
 
 	public static void main(String[] args) throws IOException {
 //		SnapParser.splitStudentRecords("../data/csc200/fall2015");
-		SnapParser parser = new SnapParser("../data/csc200/fall2015", Mode.Overwrite);
-		parser.parseAssignment("guess1Lab", true);
-		parser.parseAssignment("guess2HW", true);
-		parser.parseAssignment("guess3Lab", true);
+//		SnapParser parser = new SnapParser("../data/csc200/fall2015", Mode.Overwrite);
+//		parser.parseAssignment("guess1Lab", true);
+//		parser.parseAssignment("guess2HW", true);
+//		parser.parseAssignment("guess3Lab", true);
+		clean("../data/csc200/");
 	}
 }
 
