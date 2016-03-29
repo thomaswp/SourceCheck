@@ -43,6 +43,7 @@ public class CheckHintUsage {
 			SHOW_SCRIPT_HINT, SHOW_BLOCK_HINT, SHOW_STRUCTURE_HINT
 	});
 	
+	private static final long MIN_DURATON = 5 * 60 * 1000;
 	
 	public static void main(String[] args) throws IOException {
 		
@@ -63,13 +64,18 @@ public class CheckHintUsage {
 			// Ignore any that weren't exported (and thus couldn't have been submitted)
 			if (!path.exported) continue;
 			
+			// Also ignore any that are shorted than then minimum duration (5m) 
+			long duration = path.rows.getLast().timestamp.getTime() - 
+					path.rows.getFirst().timestamp.getTime();
+			if (duration < MIN_DURATON) continue;
+			
 			// The number of student who exported project (presumably number of submissions)
 			nStudents++;
 			// number of hints requested by this student
 			int nStudentHints = 0, nStudentFollowed = 0;
 			
 			List<LblTree> studentTrees = new LinkedList<LblTree>();
-			
+						
 			Snapshot code = null;
 			// Iterate through each row of the solution path
 			for (int i = 0; i < path.size(); i++) {
@@ -302,6 +308,7 @@ public class CheckHintUsage {
 					}
 				}
 				if (row.action.equals("Block.grabbed")) isSnapshotChanged = false;
+				
 				
 				// if snapshot is changed, calculate distance, record distance, time difference, etc.
 				if (isSnapshotChanged) {

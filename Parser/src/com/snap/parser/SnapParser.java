@@ -127,7 +127,7 @@ public class SnapParser {
 	}
 	
 	public SolutionPath parseRows(final File logFile, final Grade grade, final boolean snapshotsOnly, final Date minDate, final Date maxDate) throws IOException {
-		String cachePath = logFile.getAbsolutePath() + (snapshotsOnly ? "" :  "-data");
+		String cachePath = logFile.getAbsolutePath().replace(".csv", "") + (snapshotsOnly ? "" :  "-data");
 		int hash = 0;
 		if (minDate != null) hash += minDate.hashCode();
 		if (maxDate != null) hash += maxDate.hashCode();
@@ -193,6 +193,7 @@ public class SnapParser {
 							for (DataRow r : currentWork) {
 								solution.add(r);
 							}
+							currentWork.clear();
 							if (foundGraded) break;
 						}
 						
