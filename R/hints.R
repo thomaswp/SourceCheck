@@ -1,4 +1,5 @@
 library(ggplot2)
+library(plyr)
 
 loadData <- function() {
   rm(list=ls())
@@ -6,6 +7,7 @@ loadData <- function() {
   grades <<- read.csv("../data/csc200/spring2016/grades.csv")  
   grades$letter <<- sapply(grades$grade, binGrade)
   grades$pFollowed <<- ifelse(grades$requested == 0, 0, grades$followed / grades$requested)
+  grades <<- grades[grades$requested < 60,]
   
   hint <- read.csv("../data/csc200/spring2016/hint.csv")  
   hint$type <- "hint"
@@ -48,6 +50,18 @@ plotStudents <- function(id) {
     #geom_point(aes(color=type))
 }
 
+plotRequestedGrades <- function() {
+  gradesQ <- ddply(grades, c("grade", "requested"), "nrow")
+  qplot(requested, grade, data=gradesQ, size=nrow) +
+    labs(x="Hints Requested", y="Auto Grade", size="Frequency", title="Grade vs Hints Requested")
+}
+
+plotFollowedGrades <- function() {
+  gradesQ <- ddply(grades, c("grade", "followed"), "nrow")
+  qplot(followed, grade, data=gradesQ, size=nrow) +
+    labs(x="Hints Followed", y="Auto Grade", size="Frequency", title="Grade vs Hints Followed")
+}
+
 tests <- function() {
   
   # all significantly correlate to performance
@@ -58,7 +72,7 @@ tests <- function() {
   # students following 1+ hinst do significantly better
   wilcox.test(grades[grades$followed > 1, "grade"], grades[grades$followed <= 1, "grade"])
   
-  # only 1/16 student following 1+ hints misses more than 1 objective
+  # only 1/13 student following 1+ hints misses more than 1 objective
   table(grades[grades$followed > 1, "grade"])
   
   # students following 1+ hints do 13% better

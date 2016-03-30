@@ -16,10 +16,10 @@ import com.snap.parser.Store.Mode;
 
 public class StudentEval {
 	
-	public final static int SKIP = 1, MAX = 100;
+	public final static int SKIP = 0, MAX = 100;
 	
 	public static void main(String[] args) throws IOException {
-		eval(Assignment.Fall2015.GuessingGame1);
+		eval(Assignment.Spring2016.GuessingGame1);
 	}
 	
 	private static void eval(Assignment assignment) throws IOException {

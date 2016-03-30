@@ -45,6 +45,17 @@ public class CheckHintUsage {
 	
 	private static final long MIN_DURATON = 5 * 60 * 1000;
 	
+	private static boolean isValidSubmission(SolutionPath path) {
+		if (!path.exported) return false;
+		
+		// Also ignore any that are shorted than then minimum duration (5m) 
+		long duration = path.rows.getLast().timestamp.getTime() - 
+				path.rows.getFirst().timestamp.getTime();
+		if (duration < MIN_DURATON) return false;
+		
+		return true;
+	}
+	
 	public static void main(String[] args) throws IOException {
 		
 		// Get the name-path pairs of all projects we logged
@@ -62,12 +73,7 @@ public class CheckHintUsage {
 			SolutionPath path = guessingGame.get(submission);
 			
 			// Ignore any that weren't exported (and thus couldn't have been submitted)
-			if (!path.exported) continue;
-			
-			// Also ignore any that are shorted than then minimum duration (5m) 
-			long duration = path.rows.getLast().timestamp.getTime() - 
-					path.rows.getFirst().timestamp.getTime();
-			if (duration < MIN_DURATON) continue;
+			if (!isValidSubmission(path)) continue;
 			
 			// The number of student who exported project (presumably number of submissions)
 			nStudents++;
@@ -268,7 +274,7 @@ public class CheckHintUsage {
 		for (String key: submissions.keySet()) {
 			SolutionPath path = submissions.get(key);
 			// if not exported, continue
-			if (!path.exported) continue;
+			if (!isValidSubmission(path)) continue;
 			
 			// for each submission, get initial time, final submission
 			Node finalSubmission = null;
@@ -366,7 +372,7 @@ public class CheckHintUsage {
 		int i = 0;
 		for (String key : submissions.keySet()) {
 			SolutionPath path = submissions.get(key);
-			if (!path.exported) continue;
+			if (!isValidSubmission(path)) continue;
 			
 			Node code = null;
 			for (int j = path.size() - 1; j >= 0; j--) {
@@ -378,6 +384,10 @@ public class CheckHintUsage {
 			}
 			HashMap<String, Boolean> grade = AutoGrader.grade(code);
 			double numberGrade = AutoGrader.numberGrade(grade);
+//			if (numberGrade < 0.5f) {
+//				System.out.println(key + ": " + grade);
+//				System.out.println(((Snapshot)code.tag).toCode());
+//			}
 			
 			Object[] row = new Object[grade.size() + 4];
 			int col = 0;
