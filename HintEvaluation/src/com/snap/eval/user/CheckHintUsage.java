@@ -23,6 +23,7 @@ import com.snap.graph.Alignment;
 import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.HintFactoryMap.VectorHint;
 import com.snap.graph.data.Node;
+import com.snap.graph.subtree.SubtreeBuilder.Tuple;
 import com.snap.parser.DataRow;
 import com.snap.parser.SolutionPath;
 
@@ -82,6 +83,8 @@ public class CheckHintUsage {
 			
 			List<LblTree> studentTrees = new LinkedList<LblTree>();
 						
+			Tuple<Node,Node> lastHint = null;
+			
 			Snapshot code = null;
 			// Iterate through each row of the solution path
 			for (int i = 0; i < path.size(); i++) {
@@ -151,6 +154,7 @@ public class CheckHintUsage {
 					// Calculate original distance between student's code with the hint
 					int originalHintDistance = Alignment.alignCost(parent.getChildArray(), to);
 					
+					lastHint = new Tuple<Node, Node>(parent, hintOutcome);
 					// For debugging these hints
 //					System.out.println("  " + parent + "\n->" + hintOutcome + "\n");
 										
@@ -211,6 +215,10 @@ public class CheckHintUsage {
 						nThumbsUp++;
 					} else if (row.data.equals("[\"down\"]")) {
 						nThumbsDown++;
+						// To print thumbs-down hints
+//						if (lastHint != null) {
+//							System.out.println("Bad hint: " + lastHint.x + "\n       -> " + lastHint.y + "\n");
+//						}
 					}
 				}
 			}
