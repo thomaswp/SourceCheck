@@ -228,8 +228,11 @@ public class Node extends StringHashable {
 		return a.equals(b);
 	}
 
-	public boolean hasType(String type) {
-		return type.equals(this.type);
+	public boolean hasType(String... types) {
+		for (String type : types) {
+			if (type.equals(this.type)) return true;			
+		}
+		return false;
 	}
 	
 	public boolean childHasType(String type, int index) {

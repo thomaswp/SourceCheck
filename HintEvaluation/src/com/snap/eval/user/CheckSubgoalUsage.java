@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.snap.eval.Assignment;
 import com.snap.parser.DataRow;
 import com.snap.parser.SolutionPath;
 

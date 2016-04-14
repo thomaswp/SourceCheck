@@ -16,6 +16,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.snap.data.Snapshot;
+import com.snap.eval.Assignment;
 import com.snap.eval.AutoGrader;
 import com.snap.eval.AutoGrader.Grader;
 import com.snap.eval.util.Prune;
@@ -26,6 +27,7 @@ import com.snap.graph.data.Node;
 import com.snap.graph.subtree.SubtreeBuilder.Tuple;
 import com.snap.parser.DataRow;
 import com.snap.parser.SolutionPath;
+import com.snap.parser.Store.Mode;
 
 import distance.RTED_InfoTree_Opt;
 import util.LblTree;
@@ -60,7 +62,7 @@ public class CheckHintUsage {
 	public static void main(String[] args) throws IOException {
 		
 		// Get the name-path pairs of all projects we logged
-		HashMap<String, SolutionPath> guessingGame = Assignment.Spring2016.GuessingGame1.load();
+		HashMap<String, SolutionPath> guessingGame = Assignment.Spring2016.GuessingGame1.load(Mode.Use, false);
 		
 		int nStudents = 0, nHints = 0, nThumbsUp = 0, nThumbsDown = 0, nHintsTaken = 0, nHintsParial = 0, nHintsCloser = 0;
 		int nObjectiveHints = 0, nObjectiveHintsTaken = 0;
@@ -382,16 +384,8 @@ public class CheckHintUsage {
 			SolutionPath path = submissions.get(key);
 			if (!isValidSubmission(path)) continue;
 			
-			Node code = null;
-			for (int j = path.size() - 1; j >= 0; j--) {
-				Snapshot snapshot = path.rows.get(j).snapshot;
-				if (snapshot != null) {
-					code = SimpleNodeBuilder.toTree(snapshot, true);
-					break;
-				}
-			}
-			HashMap<String, Boolean> grade = AutoGrader.grade(code);
-			double numberGrade = AutoGrader.numberGrade(grade);
+			HashMap<String, Boolean> grade = path.grade.tests;
+			double numberGrade = path.grade.average();
 //			if (numberGrade < 0.5f) {
 //				System.out.println(key + ": " + grade);
 //				System.out.println(((Snapshot)code.tag).toCode());

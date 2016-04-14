@@ -67,14 +67,14 @@ tests <- function() {
   # all significantly correlate to performance
   cor.test(grades$requested, grades$grade)
   cor.test(grades$followed, grades$grade)
-  cor.test(grades$pFollowed, grades$grade) # only this is significant, though
+  cor.test(grades$pFollowed, grades$grade) # none are significant
   
-  # students following 1+ hinst do significantly better
+  # students following 1+ hints don't do significantly better
   wilcox.test(grades[grades$followed > 1, "grade"], grades[grades$followed <= 1, "grade"])
   
-  # only 1/13 student following 1+ hints misses more than 1 objective
+  # No students following 1+ hints misses more than 1 objective
   table(grades[grades$followed > 1, "grade"])
   
-  # students following 1+ hints do 13% better
+  # students following 1+ hints do 6% better
   mean(grades[grades$followed > 1, "grade"]) - mean(grades[grades$followed <= 1, "grade"])
 }

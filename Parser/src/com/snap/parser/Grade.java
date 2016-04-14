@@ -55,7 +55,7 @@ public class Grade {
 			boolean pass;
 			if ("pass".equalsIgnoreCase(value)) pass = true;
 			else if ("fail".equalsIgnoreCase(value)) pass = false;
-			else throw new RuntimeException("Unknown test value: " + value);
+			else throw new RuntimeException("Unknown test value: " + key + " = " + value);
 			
 			tests.put(key, pass);
 		}

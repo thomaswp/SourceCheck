@@ -10,14 +10,13 @@ import com.snap.graph.data.Node;
 import com.snap.graph.data.Node.Predicate;
 import com.snap.parser.DataRow;
 import com.snap.parser.Grade;
-import com.snap.parser.SnapParser;
 import com.snap.parser.SolutionPath;
-import com.snap.parser.Store;
+import com.snap.parser.Store.Mode;
 
 public class AutoGrader {
 	
 	public static void main(String[] args) throws IOException {
-		AutoGrader grader = new AutoGrader("../data/csc200/fall2015", "guess1Lab");
+		AutoGrader grader = new AutoGrader(Assignment.Spring2016.GuessingGame1);
 		
 		for (Grader g : graders) {
 			System.out.println(g.name() + ": " + grader.verify(g));
@@ -37,17 +36,12 @@ public class AutoGrader {
 		new ReportCorrect(),
 	};
 	
-	public final String dataDir, assignment;
-	
 	private final HashMap<Grade, Node> graded = new HashMap<Grade, Node>();
 	
-	public AutoGrader(String dataDir, String assignment) throws IOException {
-		this.dataDir = dataDir;
-		this.assignment = assignment;
-		
-		parseStudents();
+	public AutoGrader(Assignment assignment) throws IOException {
+		parseStudents(assignment);
 	}
-	
+
 	public static HashMap<String, Boolean> grade(Node node) {
 		HashMap<String, Boolean> grades = new HashMap<String, Boolean>();
 		for (Grader g : graders) {
@@ -67,9 +61,8 @@ public class AutoGrader {
 		return g;
 	}
 	
-	private void parseStudents() throws IOException {
-		SnapParser parser = new SnapParser(dataDir, Store.Mode.Use);
-		HashMap<String, SolutionPath> students = parser.parseAssignment(assignment, true);
+	private void parseStudents(Assignment assignment) throws IOException {
+		HashMap<String, SolutionPath> students = assignment.load(Mode.Use, true);
 		
 		for (String student : students.keySet()) {
 			SolutionPath path = students.get(student);
@@ -131,13 +124,14 @@ public class AutoGrader {
 		private final static Predicate isGreeting = new Predicate() {
 			@Override
 			public boolean eval(Node node) {
-				return node.hasType("doSayFor") && node.childHasType("literal", 0);
+				return node.hasType("doSayFor", "bubble") && node.childHasType("literal", 0);
 				
 			}
 		};
 		private final static Predicate hasGreeting = new Predicate() {
 			@Override
 			public boolean eval(Node node) {
+				if (node.children.size() < 3) return false;
 				int ask = node.searchChildren(new Node.TypePredicate("doAsk"));
 				int say = node.searchChildren(isGreeting);
 				return say >= 0 && (ask < 0 || say < ask); 
