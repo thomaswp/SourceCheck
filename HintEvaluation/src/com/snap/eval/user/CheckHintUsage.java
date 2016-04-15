@@ -259,8 +259,8 @@ public class CheckHintUsage {
 		System.out.println("Hints Closer: " + nHintsCloser + "/" + nHints);
 		System.out.println("Objective Hints: " + nObjectiveHints + "/" + nHints);
 		System.out.println("Objective Hints Taken: " + nObjectiveHintsTaken + "/" + nObjectiveHints);
-		System.out.println("Students got more than 1 hint: " + nStudentHint1 + "/" + nStudents);
-		System.out.println("Students got more than 3 hint: " + nStudentHint3 + "/" + nStudents);
+		System.out.println("Students got at least 1 hint: " + nStudentHint1 + "/" + nStudents);
+		System.out.println("Students got at least 3 hint: " + nStudentHint3 + "/" + nStudents);
 		Collections.sort(studentHintCounts);
 		Collections.reverse(studentHintCounts);
 		System.out.println("Students Hint count: " + studentHintCounts);

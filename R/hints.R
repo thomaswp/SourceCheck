@@ -53,13 +53,13 @@ plotStudents <- function(id) {
 plotRequestedGrades <- function() {
   gradesQ <- ddply(grades, c("grade", "requested"), "nrow")
   qplot(requested, grade, data=gradesQ, size=nrow) +
-    labs(x="Hints Requested", y="Auto Grade", size="Frequency", title="Grade vs Hints Requested")
+    labs(x="Hints Requested", y="Grade", size="Frequency", title="Grade vs Hints Requested")
 }
 
 plotFollowedGrades <- function() {
   gradesQ <- ddply(grades, c("grade", "followed"), "nrow")
   qplot(followed, grade, data=gradesQ, size=nrow) +
-    labs(x="Hints Followed", y="Auto Grade", size="Frequency", title="Grade vs Hints Followed")
+    labs(x="Hints Followed", y="Grade", size="Frequency", title="Grade vs Hints Followed")
 }
 
 tests <- function() {
