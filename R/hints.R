@@ -68,6 +68,7 @@ tests <- function() {
   cor.test(grades$requested, grades$grade)
   cor.test(grades$followed, grades$grade)
   cor.test(grades$pFollowed, grades$grade) # none are significant
+  cor.test(grades$pFollowed, grades$requested) # none are significant
   
   # students following 1+ hints don't do significantly better
   wilcox.test(grades[grades$followed > 1, "grade"], grades[grades$followed <= 1, "grade"])
