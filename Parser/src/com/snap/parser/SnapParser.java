@@ -202,7 +202,7 @@ public class SnapParser {
 					parser.close();
 					
 					if (gradedID != null && !foundGraded) {
-						System.err.println("No graded row for: " + logFile.getName());
+						System.err.println("No grade row for: " + logFile.getName());
 					}
 					
 					System.out.println("Parsed: " + logFile.getName());

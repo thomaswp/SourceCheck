@@ -42,6 +42,7 @@ public class Grade {
 		}
 		if (record.isSet("Outlier")) {
 			outlier = "yes".equalsIgnoreCase(record.get("Outlier"));
+			if (outlier) return;
 		} else {
 			outlier = false;
 		}
