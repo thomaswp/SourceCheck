@@ -71,7 +71,7 @@ public class AutoGrader {
 				System.err.println("No grade for: " + student);
 				continue;
 			}
-
+			
 			if (path.grade.outlier) continue;
 			
 			Snapshot last = null;
@@ -157,6 +157,7 @@ public class AutoGrader {
 		private final static Predicate hasAskName = new Predicate() {
 			@Override
 			public boolean eval(Node node) {
+				
 				int ask = node.searchChildren(new Node.TypePredicate("doAsk"));
 				int doUntil = node.searchChildren(new Node.TypePredicate("doUntil"));
 				int doForever = node.searchChildren(new Node.TypePredicate("doForever"));
@@ -167,7 +168,8 @@ public class AutoGrader {
 					return ask >= 0 && ask < doForever;
 				} else {
 					return ask >= 0;
-				}}
+				}
+			}
 			
 		};
 		
@@ -185,7 +187,8 @@ public class AutoGrader {
 			return "Greet by name";
 		}
 		
-		// TODO: check for two say statements (14113)
+		// TODO: check for two say statements [either order] (14113)
+		// TODO: check for inside tautological IF
 		
 		private final static Predicate backbone = 
 				new Node.BackbonePredicate("sprite|customBlock", "script");
@@ -194,7 +197,8 @@ public class AutoGrader {
 			public boolean eval(Node node) {
 				if (!node.hasType("reportJoinWords") || node.children.size() != 1) return false;
 				Node list = node.children.get(0);
-				return list.childHasType("literal", 0) && list.childHasType("getLastAnswer", 1);
+				return list.childHasType("literal", 0) && list.childHasType("getLastAnswer", 1) ||
+						list.childHasType("literal", 1) && list.childHasType("getLastAnswer", 0);
 			}
 			
 		};
@@ -209,21 +213,22 @@ public class AutoGrader {
 			public boolean eval(Node node) {
 				if (!node.hasType("reportJoinWords") || node.children.size() != 1) return false;
 				Node list = node.children.get(0);
-				return list.childHasType("literal", 0) && list.childHasType("var", 1);
+				return list.childHasType("literal", 0) && list.childHasType("var", 1) ||
+						list.childHasType("literal", 1) && list.childHasType("var", 0);
 			}
 			
 		};
 		private final static Predicate isGreetByName = new Predicate() {
 			@Override
 			public boolean eval(Node node) {
-				return node.hasType("doSayFor") && node.children.size() > 0 && isJoin.eval(node.children.get(0));
+				return node.hasType("doSayFor", "bubble", "doAsk") && node.children.size() > 0 && node.children.get(0).exists(isJoin);
 				
 			}
 		};
 		private final static Predicate isGreetByNameVariable = new Predicate() {
 			@Override
 			public boolean eval(Node node) {
-				return node.hasType("doSayFor") && node.children.size() > 0 && isJoinVariable.eval(node.children.get(0));
+				return node.hasType("doSayFor", "bubble", "doAsk") && node.children.size() > 0 && node.children.get(0).exists(isJoinVariable);
 				
 			}
 		};
@@ -322,8 +327,8 @@ public class AutoGrader {
 				
 				String t1 = node.children.get(0).type();
 				String t2 = node.children.get(1).type();
-				return ("var".equals(t1) && "getLastAnswer".equals(t2)) ||
-						("var".equals(t2) && "getLastAnswer".equals(t1));
+				return ("var".equals(t1) || "getLastAnswer".equals(t1)) &&
+						("var".equals(t2) || "getLastAnswer".equals(t2));
 			}
 		};
 		

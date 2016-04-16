@@ -64,7 +64,7 @@ public class CheckHintUsage {
 		// Get the name-path pairs of all projects we logged
 		HashMap<String, SolutionPath> guessingGame = Assignment.Spring2016.GuessingGame1.load(Mode.Use, false);
 		
-		int nStudents = 0, nHints = 0, nThumbsUp = 0, nThumbsDown = 0, nHintsTaken = 0, nHintsParial = 0, nHintsCloser = 0;
+		int nStudents = 0, nHints = 0, nRepeatHints = 0, nDuplicateHInts = 0, nThumbsUp = 0, nThumbsDown = 0, nHintsTaken = 0, nHintsParial = 0, nHintsCloser = 0;
 		int nObjectiveHints = 0, nObjectiveHintsTaken = 0;
 		int nStudentHint1 = 0, nStudentHint3 = 0;
 		List<Integer> studentHintCounts = new LinkedList<Integer>(), studentFollowedCounts = new LinkedList<>();
@@ -87,6 +87,9 @@ public class CheckHintUsage {
 						
 			Tuple<Node,Node> lastHint = null;
 			
+			Node lastHintNode = null;
+			String lastHintData = null;
+			
 			Snapshot code = null;
 			// Iterate through each row of the solution path
 			for (int i = 0; i < path.size(); i++) {
@@ -106,6 +109,12 @@ public class CheckHintUsage {
 					
 					// Get the student's current code and turn it into a tree
 					Node node = SimpleNodeBuilder.toTree(code, true);
+					if (node.equals(lastHintNode)) {
+						nRepeatHints++;
+						if (row.data.equals(lastHintData)) nDuplicateHInts++;
+					}
+					lastHintNode = node;
+					lastHintData = row.data;
 
 //					System.out.println("S" + nStudents + "H" + studentTrees.size());
 //					System.out.println(code.toCode());
@@ -226,7 +235,6 @@ public class CheckHintUsage {
 			}
 			if (nStudentHints > 0) nStudentHint1++;
 			if (nStudentHints > 2) nStudentHint3++;
-			if (nStudentHints > 30) System.out.println(submission);
 			studentHintCounts.add(nStudentHints);
 			studentFollowedCounts.add(nStudentFollowed);
 			
@@ -236,27 +244,18 @@ public class CheckHintUsage {
 				}
 			}
 		}
-
 		
-		PrintStream ps = new PrintStream(Assignment.Spring2016.GuessingGame1.dataDir + "/grades.csv");
-		outputGrades(ps, guessingGame, studentHintCounts, studentFollowedCounts);
-		ps.close();
-		
-		// output distance between snapshots and final submission
-		PrintStream psSnapshot = new PrintStream(Assignment.Spring2016.GuessingGame1.dataDir + "/snapshot.csv");
-		PrintStream psHint = new PrintStream(Assignment.Spring2016.GuessingGame1.dataDir + "/hint.csv");
-		outputDistance(psSnapshot,psHint,guessingGame);
-		psSnapshot.close();
-		psHint.close();
+		int nonRepeatHints = nHints - nRepeatHints;
 		
 		// Print our results
 		System.out.println("Submissions: " + nStudents);
 		System.out.println("Total Hints Selected: " + nHints);
+		System.out.println("Repeat Hints: " + nRepeatHints + "/" + nHints);
+		System.out.println("Duplicate Hints: " + nDuplicateHInts + "/" + nRepeatHints);
 		System.out.println("Thumbs Up: " + nThumbsUp + "/" + nHints);
 		System.out.println("Thumbs Down: " + nThumbsDown + "/" + nHints);
-		System.out.println("Hints Taken: " + nHintsTaken + "/" + nHints);
-		System.out.println("Hints Partial: " + nHintsParial + "/" + nHints);
-		System.out.println("Hints Closer: " + nHintsCloser + "/" + nHints);
+		System.out.println("Hints Partial: " + nHintsParial + "/" + nonRepeatHints);
+		System.out.println("Hints Closer: " + nHintsCloser + "/" + nonRepeatHints);
 		System.out.println("Objective Hints: " + nObjectiveHints + "/" + nHints);
 		System.out.println("Objective Hints Taken: " + nObjectiveHintsTaken + "/" + nObjectiveHints);
 		System.out.println("Students got at least 1 hint: " + nStudentHint1 + "/" + nStudents);
@@ -264,6 +263,17 @@ public class CheckHintUsage {
 		Collections.sort(studentHintCounts);
 		Collections.reverse(studentHintCounts);
 		System.out.println("Students Hint count: " + studentHintCounts);
+
+		PrintStream ps = new PrintStream(Assignment.Spring2016.GuessingGame1.dataDir + "/grades.csv");
+		outputGrades(ps, guessingGame, studentHintCounts, studentFollowedCounts);
+		ps.close();
+		
+		// output distance between snapshots and final submission
+//		PrintStream psSnapshot = new PrintStream(Assignment.Spring2016.GuessingGame1.dataDir + "/snapshot.csv");
+//		PrintStream psHint = new PrintStream(Assignment.Spring2016.GuessingGame1.dataDir + "/hint.csv");
+//		outputDistance(psSnapshot,psHint,guessingGame);
+//		psSnapshot.close();
+//		psHint.close();
 		
 //		PrintStream ps = new PrintStream(Assignment.Spring2016.GuessingGame1.dataDir + "/hintsDis.csv");
 //		outputMatrix(ps, hintCodeTrees);
