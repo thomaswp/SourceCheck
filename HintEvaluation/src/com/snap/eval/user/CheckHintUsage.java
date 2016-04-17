@@ -1,5 +1,7 @@
 package com.snap.eval.user;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Arrays;
@@ -9,6 +11,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -26,6 +30,7 @@ import com.snap.graph.data.HintFactoryMap.VectorHint;
 import com.snap.graph.data.Node;
 import com.snap.graph.subtree.SubtreeBuilder.Tuple;
 import com.snap.parser.DataRow;
+import com.snap.parser.Grade;
 import com.snap.parser.SolutionPath;
 import com.snap.parser.Store.Mode;
 
@@ -61,15 +66,21 @@ public class CheckHintUsage {
 	
 	public static void main(String[] args) throws IOException {
 		
-		// Get the name-path pairs of all projects we logged
-		HashMap<String, SolutionPath> guessingGame = Assignment.Spring2016.GuessingGame1.load(Mode.Use, false);
+		Assignment assignment = Assignment.Fall2015.GuessingGame1;
 		
-		int nStudents = 0, nHints = 0, nRepeatHints = 0, nDuplicateHInts = 0, nThumbsUp = 0, nThumbsDown = 0, nHintsTaken = 0, nHintsParial = 0, nHintsCloser = 0;
-		int nObjectiveHints = 0, nObjectiveHintsTaken = 0;
+		// Get the name-path pairs of all projects we logged
+		HashMap<String, SolutionPath> guessingGame = assignment.load(Mode.Use, false);
+		
+		int nStudents = 0;
 		int nStudentHint1 = 0, nStudentHint3 = 0;
 		List<Integer> studentHintCounts = new LinkedList<Integer>(), studentFollowedCounts = new LinkedList<>();
 		
 		HashMap<String, LblTree> hintCodeTrees = new LinkedHashMap<>();
+		
+		List<String> header = new LinkedList<>(); 
+		header.addAll(Arrays.asList("id", "hints", "repeatHints", "followed", "closer", "objHints", "objFollowed", "duplicateHints", "thumbsUp", "thumbsDown", "grade"));
+		
+		Spreadsheet sheet = new Spreadsheet();
 		
 		// Iterate over all submissions
 		for (String submission : guessingGame.keySet()) {
@@ -77,12 +88,10 @@ public class CheckHintUsage {
 			
 			// Ignore any that weren't exported (and thus couldn't have been submitted)
 			if (!isValidSubmission(path)) continue;
-			
-			// The number of student who exported project (presumably number of submissions)
-			nStudents++;
-			// number of hints requested by this student
-			int nStudentHints = 0, nStudentFollowed = 0;
-			
+						
+			int nHints = 0, nRepeatHints = 0, nDuplicateHints = 0, nThumbsUp = 0, nThumbsDown = 0, nHintsFollowed = 0, nHintsCloser = 0;
+			int nObjectiveHints = 0, nObjectiveHintsFollowed = 0;
+						
 			List<LblTree> studentTrees = new LinkedList<LblTree>();
 						
 			Tuple<Node,Node> lastHint = null;
@@ -102,7 +111,6 @@ public class CheckHintUsage {
 				String action = row.action;
 				if (SHOW_HINT_MESSAGES.contains(action)) {
 					nHints++;
-					nStudentHints++;
 					
 					// Get the data from this event
 					JSONObject data = new JSONObject(row.data);
@@ -111,7 +119,7 @@ public class CheckHintUsage {
 					Node node = SimpleNodeBuilder.toTree(code, true);
 					if (node.equals(lastHintNode)) {
 						nRepeatHints++;
-						if (row.data.equals(lastHintData)) nDuplicateHInts++;
+						if (row.data.equals(lastHintData)) nDuplicateHints++;
 					}
 					lastHintNode = node;
 					lastHintData = row.data;
@@ -202,20 +210,12 @@ public class CheckHintUsage {
 						if (objectiveGrader != null && objectiveGrader.pass(nextNode)) {
 							gotObjective = true;
 						}
-						
-						// TODO: Rather than just looking for an exact match, check if the student's code gets
-						// closer to the hint or farther. 
-						if (nextParent.equals(hintOutcome)) {
-							nHintsTaken++;
-							break;
-						}
 					}
 					if (gotCloser) nHintsCloser++; 
 					if (gotPartial) {
-						nHintsParial++;
-						nStudentFollowed++;
+						nHintsFollowed++;
 					}
-					if (gotObjective) nObjectiveHintsTaken++;
+					if (gotObjective) nObjectiveHintsFollowed++;
 				}
 				
 				
@@ -233,40 +233,53 @@ public class CheckHintUsage {
 					}
 				}
 			}
-			if (nStudentHints > 0) nStudentHint1++;
-			if (nStudentHints > 2) nStudentHint3++;
-			studentHintCounts.add(nStudentHints);
-			studentFollowedCounts.add(nStudentFollowed);
 			
-			if (nStudentHints <= 30) {
+			sheet.newRow();
+			sheet.put("id", submission);
+			sheet.put("hints", nHints);
+			sheet.put("repeatHints", nRepeatHints);
+			sheet.put("duplicateHints", nDuplicateHints);
+			sheet.put("followed", nHintsFollowed);
+			sheet.put("closer", nHintsCloser);
+			sheet.put("thumbsUp", nThumbsUp);
+			sheet.put("thumbsDown", nThumbsDown);
+			sheet.put("objHints", nObjectiveHints);
+			sheet.put("objHintsFollowed", nObjectiveHintsFollowed);
+			
+			Grade grade = path.grade;
+			if (grade != null) {
+				sheet.put("grade", grade.average());
+				for (Entry<String, Boolean> entry : grade.tests.entrySet()) {
+					sheet.put(entry.getKey(), entry.getValue() ? 1 : 0);
+				}
+			}
+			
+			
+			if (nHints <= 30) {
 				for (int j = 0; j < studentTrees.size(); j++) {
 					hintCodeTrees.put("S" + nStudents + "H" + j, studentTrees.get(j));
 				}
 			}
 		}
 		
-		int nonRepeatHints = nHints - nRepeatHints;
-		
 		// Print our results
-		System.out.println("Submissions: " + nStudents);
-		System.out.println("Total Hints Selected: " + nHints);
-		System.out.println("Repeat Hints: " + nRepeatHints + "/" + nHints);
-		System.out.println("Duplicate Hints: " + nDuplicateHInts + "/" + nRepeatHints);
-		System.out.println("Thumbs Up: " + nThumbsUp + "/" + nHints);
-		System.out.println("Thumbs Down: " + nThumbsDown + "/" + nHints);
-		System.out.println("Hints Partial: " + nHintsParial + "/" + nHints);
-		System.out.println("Hints Closer: " + nHintsCloser + "/" + nHints);
-		System.out.println("Objective Hints: " + nObjectiveHints + "/" + nHints);
-		System.out.println("Objective Hints Taken: " + nObjectiveHintsTaken + "/" + nObjectiveHints);
-		System.out.println("Students got at least 1 hint: " + nStudentHint1 + "/" + nStudents);
-		System.out.println("Students got at least 3 hint: " + nStudentHint3 + "/" + nStudents);
-		Collections.sort(studentHintCounts);
-		Collections.reverse(studentHintCounts);
-		System.out.println("Students Hint count: " + studentHintCounts);
-
-		PrintStream ps = new PrintStream(Assignment.Spring2016.GuessingGame1.dataDir + "/grades.csv");
-		outputGrades(ps, guessingGame, studentHintCounts, studentFollowedCounts);
-		ps.close();
+//		System.out.println("Submissions: " + nStudents);
+//		System.out.println("Total Hints Selected: " + nHints);
+//		System.out.println("Repeat Hints: " + nRepeatHints + "/" + nHints);
+//		System.out.println("Duplicate Hints: " + nDuplicateHInts + "/" + nRepeatHints);
+//		System.out.println("Thumbs Up: " + nThumbsUp + "/" + nHints);
+//		System.out.println("Thumbs Down: " + nThumbsDown + "/" + nHints);
+//		System.out.println("Hints Partial: " + nHintsParial + "/" + nHints);
+//		System.out.println("Hints Closer: " + nHintsCloser + "/" + nHints);
+//		System.out.println("Objective Hints: " + nObjectiveHints + "/" + nHints);
+//		System.out.println("Objective Hints Taken: " + nObjectiveHintsTaken + "/" + nObjectiveHints);
+//		System.out.println("Students got at least 1 hint: " + nStudentHint1 + "/" + nStudents);
+//		System.out.println("Students got at least 3 hint: " + nStudentHint3 + "/" + nStudents);
+//		Collections.sort(studentHintCounts);
+//		Collections.reverse(studentHintCounts);
+//		System.out.println("Students Hint count: " + studentHintCounts);
+		
+		sheet.write(assignment.dataDir + "/analysis/" + assignment.name + "-hints.csv");
 		
 		// output distance between snapshots and final submission
 //		PrintStream psSnapshot = new PrintStream(Assignment.Spring2016.GuessingGame1.dataDir + "/snapshot.csv");
@@ -380,6 +393,33 @@ public class CheckHintUsage {
 		}
 		// close printer
 		prtSnapshot.close();
+	}
+	
+	private static class Spreadsheet {
+		private List<Map<String, Object>> rows = new LinkedList<>();
+		private Map<String,Object> row;
+		
+		public void newRow() {
+			row = new LinkedHashMap<>();
+			rows.add(row);
+		}
+		
+		public void put(String key, Object value) {
+			row.put(key, value);
+		}
+		
+		public void write(String path) throws FileNotFoundException, IOException {
+			String[] header = row.keySet().toArray(new String[row.keySet().size()]);
+			File file = new File(path);
+			file.getParentFile().mkdirs();
+			CSVPrinter printer = new CSVPrinter(new PrintStream(file), CSVFormat.DEFAULT.withHeader(header));
+			
+			for (Map<String,Object> row : rows) {
+				printer.printRecord(row.values());
+			}
+			
+			printer.close();
+		}
 	}
 
 	private static void outputGrades(PrintStream ps, HashMap<String, SolutionPath> submissions, List<Integer> studentHintCounts,

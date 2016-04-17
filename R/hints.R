@@ -4,10 +4,13 @@ library(plyr)
 loadData <- function() {
   rm(list=ls())
   
-  grades <<- read.csv("../data/csc200/spring2016/grades.csv")  
-  grades$letter <<- sapply(grades$grade, binGrade)
-  grades$pFollowed <<- ifelse(grades$requested == 0, 0, grades$followed / grades$requested)
-  grades <<- grades[grades$requested < 60,]
+  hint <<- read.csv("../data/csc200/spring2016/analysis/guess1Lab-hints.csv")  
+  hint$letter <<- sapply(hint$grade, binGrade)
+  hint$pFollowed <<- ifelse(hint$hints == 0, 0, hint$followed / hint$hints)
+  hint <<- hint[hint$hints < 60,]
+  
+  fall <<- read.csv("../data/csc200/fall2015/analysis/guess1Lab-hints.csv")  
+  fall$letter <<- sapply(fall$grade, binGrade)
   
   hint <- read.csv("../data/csc200/spring2016/hint.csv")  
   hint$type <- "hint"
@@ -25,14 +28,24 @@ loadData <- function() {
   maxDis$dis <- sapply(maxDis$id, function(id) max(snapshot[snapshot$id==id,"distance"]))
   snapshot$maxDis <<- sapply(snapshot$id, function(id) maxDis[maxDis$id==id,"dis"])
   snapshot$distanceNorm <<- snapshot$distance / snapshot$maxDis
+  
+  
+  goals <<- read.csv("../data/csc200/spring2016/analysis/guess1Lab-goals.csv") 
+  goals$percSat <<- goals$satisfied / goals$finished
+  goals[goals$finished == 0,]$percSat <<- 0
+  goals$used <<- goals$gap > 60 & goals$finished > 0
+  
+  part <<- goals[goals$finished > 0,]
+  
+  all <- merge(hint, goals)
 }
 
 binGrade <- function(grade) {
-  grades <- as.ordered(c("F", "CD", "B", "A"))
-  if (grade == 1) return (grades[4])
-  else if (grade >= 0.85) return (grades[3])
-  else if (grade >= 0.65) return (grades[2])
-  return (grades[1])
+  hint <- as.ordered(c("F", "CD", "B", "A"))
+  if (grade == 1) return (hint[4])
+  else if (grade >= 0.85) return (hint[3])
+  else if (grade >= 0.65) return (hint[2])
+  return (hint[1])
 }
 
 plotStudent <- function(id) {
@@ -51,31 +64,65 @@ plotStudents <- function(id) {
 }
 
 plotRequestedGrades <- function() {
-  gradesQ <- ddply(grades, c("grade", "requested"), "nrow")
-  qplot(requested, grade, data=gradesQ, size=nrow) +
-    labs(x="Hints Requested", y="Grade", size="Frequency", title="Grade vs Hints Requested")
+  hintQ <- ddply(hint, c("grade", "hints"), "nrow")
+  qplot(hints, grade, data=hintQ, size=nrow) +
+    labs(x="Hints hints", y="Grade", size="Frequency", title="Grade vs Hints hints")
 }
 
 plotFollowedGrades <- function() {
-  gradesQ <- ddply(grades, c("grade", "followed"), "nrow")
-  qplot(followed, grade, data=gradesQ, size=nrow) +
+  hintQ <- ddply(hint, c("grade", "followed"), "nrow")
+  qplot(followed, grade, data=hintQ, size=nrow) +
     labs(x="Hints Followed", y="Grade", size="Frequency", title="Grade vs Hints Followed")
+}
+
+
+subgoalTests <- function() {
+  
+  # Of those who check goals, their accuracy correlated with grade
+  cor.test(part$percSat, part$grade)
+  plot(jitter(part$grade) ~ part$percSat, col=as.factor(part$used))
+  # But their total correct completed goals did not
+  cor.test(part$satisfied, part$grade)
+  plot(jitter(part$grade) ~ part$satisfied, col=as.factor(part$used))
+  # But... that could just be that the people who wait until the end do better?
+  
+  # Strong correlation between number of goals you said you got and how many were right
+  # But that kind of meaningless b/c one bounds the other
+  cor.test(part$finished, part$satisfied)
+  plot(jitter(part$finished) ~ part$satisfied, col=as.factor(part$used))
+  
+  # Still percentage was generally high  
+  hist(part$percSat)
+  mean(part$percSat)
+  boxplot(part$percSat)
+  
+  # All with low median gap finished "all objectives"  
+  plot(part$finished ~ log(part$gap), col=as.factor(part$used))
+  
+  # Those using the subgoals perform about the same as the others
+  wilcox.test(goals$grade ~ goals$used)
+  plot(jitter(goals$grade) ~ log(goals$gap + 1), col=as.factor(goals$used))
+  
+  # No correlation at all between hint and subgoal usage
+  cor.test(all$finished, all$hints)
 }
 
 tests <- function() {
   
-  # all significantly correlate to performance
-  cor.test(grades$requested, grades$grade)
-  cor.test(grades$followed, grades$grade)
-  cor.test(grades$pFollowed, grades$grade) # none are significant
-  cor.test(grades$pFollowed, grades$requested) # none are significant
+  # all non-significantly positively correlate to performance
+  cor.test(hint$hints, hint$grade)
+  cor.test(hint$followed, hint$grade)
+  cor.test(hint$pFollowed, hint$grade) # none are significant
+  
+  # Hint usage and percFollowed are very correlated
+  cor.test(hint$pFollowed, hint$hints)
   
   # students following 1+ hints don't do significantly better
-  wilcox.test(grades[grades$followed > 1, "grade"], grades[grades$followed <= 1, "grade"])
+  wilcox.test(hint[hint$followed > 1, "grade"], hint[hint$followed <= 1, "grade"])
   
   # No students following 1+ hints misses more than 1 objective
-  table(grades[grades$followed > 1, "grade"])
+  table(hint[hint$followed > 1, "grade"])
   
-  # students following 1+ hints do 6% better
-  mean(grades[grades$followed > 1, "grade"]) - mean(grades[grades$followed <= 1, "grade"])
+  # students following 1+ hints do 4% better... but this isn't really a meaningful measure with nonnormal data
+  mean(hint[hint$followed > 1, "grade"]) - mean(hint[hint$followed <= 1, "grade"])
 }
