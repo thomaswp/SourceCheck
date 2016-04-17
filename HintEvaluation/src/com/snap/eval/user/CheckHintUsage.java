@@ -254,8 +254,8 @@ public class CheckHintUsage {
 		System.out.println("Duplicate Hints: " + nDuplicateHInts + "/" + nRepeatHints);
 		System.out.println("Thumbs Up: " + nThumbsUp + "/" + nHints);
 		System.out.println("Thumbs Down: " + nThumbsDown + "/" + nHints);
-		System.out.println("Hints Partial: " + nHintsParial + "/" + nonRepeatHints);
-		System.out.println("Hints Closer: " + nHintsCloser + "/" + nonRepeatHints);
+		System.out.println("Hints Partial: " + nHintsParial + "/" + nHints);
+		System.out.println("Hints Closer: " + nHintsCloser + "/" + nHints);
 		System.out.println("Objective Hints: " + nObjectiveHints + "/" + nHints);
 		System.out.println("Objective Hints Taken: " + nObjectiveHintsTaken + "/" + nObjectiveHints);
 		System.out.println("Students got at least 1 hint: " + nStudentHint1 + "/" + nStudents);

@@ -112,7 +112,7 @@ public class AutoGrader {
 		boolean pass(Node node);
 	}
 	
-	private static class WelcomePlayer implements Grader {
+	public static class WelcomePlayer implements Grader {
 
 		@Override
 		public String name() {
@@ -145,7 +145,7 @@ public class AutoGrader {
 		}
 	}
 	
-	private static class AskName implements Grader {
+	public static class AskName implements Grader {
 		@Override
 		public String name() {
 			return "Ask name";
@@ -181,7 +181,7 @@ public class AutoGrader {
 		}
 	}
 	
-	private static class GreetByName implements Grader {
+	public static class GreetByName implements Grader {
 		@Override
 		public String name() {
 			return "Greet by name";
@@ -279,7 +279,7 @@ public class AutoGrader {
 		}
 	}
 	
-	private static class StoreRandomNumber implements Grader {
+	public static class StoreRandomNumber implements Grader {
 
 		@Override
 		public String name() {
@@ -332,7 +332,7 @@ public class AutoGrader {
 	}
 	
 	
-	private static class LoopUntilGuessed implements Grader {
+	public static class LoopUntilGuessed implements Grader {
 		@Override
 		public String name() {
 			return "Loop until it's guessed";
@@ -385,7 +385,7 @@ public class AutoGrader {
 		}
 	}
 	
-	private static class GetGuess implements Grader {
+	public static class GetGuess implements Grader {
 		@Override
 		public String name() {
 			return "Ask player for guess (in loop)";
@@ -458,7 +458,7 @@ public class AutoGrader {
 		};
 	}
 	
-	private static class TooHigh extends FeedbackGrader {
+	public static class TooHigh extends FeedbackGrader {
 		public String name() {
 			return "Tell if too high (in loop)";
 		};
@@ -476,7 +476,7 @@ public class AutoGrader {
 		}
 	}
 	
-	private static class TooLow extends FeedbackGrader {
+	public static class TooLow extends FeedbackGrader {
 		public String name() {
 			return "Tell if too low (in loop)";
 		};
@@ -494,7 +494,7 @@ public class AutoGrader {
 		}
 	}
 	
-	private static class ReportCorrect extends FeedbackGrader {
+	public static class ReportCorrect extends FeedbackGrader {
 
 		@Override
 		public String name() {
