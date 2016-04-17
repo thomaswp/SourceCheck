@@ -108,7 +108,7 @@ public class Node extends StringHashable {
 	}
 	
 	public int searchChildren(Predicate pred, int startIndex) {
-		return searchChildren(pred, 0, children.size());
+		return searchChildren(pred, startIndex, children.size());
 	}
 	
 	public int searchChildren(Predicate pred, int startIndex, int endIndexExclusive) {
@@ -146,10 +146,7 @@ public class Node extends StringHashable {
 
 		@Override
 		public boolean eval(Node node) {
-			for (String type : types) {
-				if (type.equals(node.type)) return true;
-			}
-			return false;
+			return node != null && node.hasType(types);
 		}		
 	}
 	

@@ -187,9 +187,6 @@ public class AutoGrader {
 			return "Greet by name";
 		}
 		
-		// TODO: check for two say statements [either order] (14113)
-		// TODO: check for inside tautological IF
-		
 		private final static Predicate backbone = 
 				new Node.BackbonePredicate("sprite|customBlock", "script");
 		private final static Predicate isJoin = new Predicate() {
@@ -215,20 +212,22 @@ public class AutoGrader {
 				Node list = node.children.get(0);
 				return list.childHasType("literal", 0) && list.childHasType("var", 1) ||
 						list.childHasType("literal", 1) && list.childHasType("var", 0);
-			}
-			
+			}			
 		};
+		
+		private final static Predicate isSay = new Node.TypePredicate("doSayFor", "bubble", "doAsk");
+		
 		private final static Predicate isGreetByName = new Predicate() {
 			@Override
 			public boolean eval(Node node) {
-				return node.hasType("doSayFor", "bubble", "doAsk") && node.children.size() > 0 && node.children.get(0).exists(isJoin);
+				return isSay.eval(node) && node.children.size() > 0 && node.children.get(0).exists(isJoin);
 				
 			}
 		};
 		private final static Predicate isGreetByNameVariable = new Predicate() {
 			@Override
 			public boolean eval(Node node) {
-				return node.hasType("doSayFor", "bubble", "doAsk") && node.children.size() > 0 && node.children.get(0).exists(isJoinVariable);
+				return isSay.eval(node) && node.children.size() > 0 && node.children.get(0).exists(isJoinVariable);
 				
 			}
 		};
@@ -237,13 +236,39 @@ public class AutoGrader {
 			public boolean eval(Node node) {
 				int ask = node.searchChildren(new Node.TypePredicate("doAsk"));
 				if (ask < 0) return false;
-				int say = node.searchChildren(isGreetByName, ask + 1);
-				if (say > ask) return true;
 				
-				int var = node.searchChildren(isSetVariableToAnswer);
-				if (var < ask) return false;
-				say = node.searchChildren(isGreetByNameVariable, ask + 1);
-				return say > var;
+				return testGreet(node, ask);
+			}
+
+			private boolean testGreet(Node node, int ask) {
+				int say = node.searchChildren(isGreetByName, ask + 1);
+				if (say >= 0) return true;
+				
+				int var = node.searchChildren(isSetVariableToAnswer, ask + 1);
+				if (var >= 0) {
+					say = node.searchChildren(isGreetByNameVariable, var + 1);
+					if (say >= 0) return true;
+				}
+				
+				// Check if it's nested inside a true if statement
+				int doIf = node.searchChildren(new Node.TypePredicate("doIf"));
+				if (doIf >= 0) {
+					Node doIfNode = node.children.get(doIf);
+					if (!doIfNode.children.get(0).exists(new Node.TypePredicate("literal"))) {
+						if (doIfNode.children.size() > 1) {
+							if (testGreet(doIfNode.children.get(1), -1)) return true;
+						}
+					}
+				}
+				
+				// Consecutive say("Hello"), say(answer) 
+				say = node.searchChildren(isSay, ask + 1);
+				if (say < 0 || say == node.children.size() - 1) return false;
+				Node say1 = node.children.get(say);
+				Node say2 = node.children.get(say + 1);
+				if (say1.children.size() == 0 || say2.children.size() == 0 || !isSay.eval(say2)) return false;
+				return say1.childHasType("literal", 0) && say2.childHasType("getLastAnswer", 0) ||
+						say2.childHasType("literal", 0) && say1.childHasType("getLastAnswer", 0);
 			}
 		};
 		private final static Predicate test = new Node.ConjunctionPredicate(true, backbone, hasGreeting); 
@@ -380,13 +405,10 @@ public class AutoGrader {
 	
 	private abstract static class FeedbackGrader implements Grader {
 	
-		private final static Predicate backboneDoUntil = new Node.BackbonePredicate(
-				"sprite|customBlock", "...", "script", "doUntil", "...", "script", "...");
-		private final static Predicate backboneDoForever = new Node.BackbonePredicate(
-				"sprite|customBlock", "...", "script", "doForever", "...", "script", "...");
-		protected final static Predicate backbone = new Node.ConjunctionPredicate(false, backboneDoForever, backboneDoUntil);
+		private  final static Predicate backbone = new Node.BackbonePredicate(
+				"sprite|customBlock", "...", "script", "doUntil|doForever", "...", "script", "...");
 		
-		protected final static Predicate isResponse = new Node.TypePredicate("doSayFor", "doAsk");
+		protected final static Predicate isResponse = new Node.TypePredicate("doSayFor", "doAsk", "bubble");
 		
 		private static boolean isTooHighLow(Node node, boolean tooHigh) {
 			if (node.children.size() != 2) return false;
@@ -401,24 +423,19 @@ public class AutoGrader {
 				return false;
 			}
 			return node.childHasType("var", varIndex) &&
-					node.childHasType("getLastAnswer", answerIndex);
+					(node.childHasType("getLastAnswer", answerIndex) || 
+							node.childHasType("var", answerIndex));
 		}
-		
-		protected final static Predicate correctCondition = new Predicate() {
-			@Override
-			public boolean eval(Node node) {
-				if (node.children.size() != 2) return false;
-				if (!node.hasType("reportEquals")) return false;
-				return (node.childHasType("var", 0) && node.childHasType("getLastAnswer", 1)) ||
-						(node.childHasType("var", 1) && node.childHasType("getLastAnswer", 0));
-			}
-		};
 		
 		protected final static boolean saysTooHighLow(Node node, boolean tooHigh) {
 			if (!(node.hasType("doIf") || node.hasType("doIfElse"))) return false;
 			if (!backbone.eval(node)) return false;
 			if (node.children.size() < 2) return false;
 			Node condition = node.children.get(0);
+			
+			// Make sure it's not nested in the opposite
+			if (node.parent.index() == 1 && saysTooHighLow(node.parent.parent, !tooHigh)) return false;
+			
 			boolean hasCondition = isTooHighLow(condition, tooHigh);
 			boolean hasInvCondition = isTooHighLow(condition, !tooHigh);
 			if (hasCondition && node.children.get(1).searchChildren(isResponse) != -1) {
@@ -429,6 +446,16 @@ public class AutoGrader {
 			}
 			return false;
 		}
+		
+		protected final static Predicate correctCondition = new Predicate() {
+			@Override
+			public boolean eval(Node node) {
+				if (node.children.size() != 2) return false;
+				if (!node.hasType("reportEquals")) return false;
+				return (node.childHasType("var", 0) || node.childHasType("getLastAnswer", 0)) &&
+						(node.childHasType("var", 1) || node.childHasType("getLastAnswer", 1));
+			}
+		};
 	}
 	
 	private static class TooHigh extends FeedbackGrader {
@@ -474,13 +501,16 @@ public class AutoGrader {
 			return "Tell if correct";
 		}
 		
+		private  final static Predicate backbone = new Node.BackbonePredicate(
+				"sprite|customBlock", "...");
+		
 		private final static Predicate hasInLoop = new Predicate() {
 			public boolean eval(Node node) {
 				if (!(node.hasType("doIf") || node.hasType("doIfElse"))) return false;
 				if (!backbone.eval(node)) return false;
 				if (node.children.size() < 2) return false;
-				return correctCondition.eval(node.children.get(0)) &&
-						node.children.get(1).searchChildren(isResponse) != -1;
+				return (correctCondition.eval(node.children.get(0)) &&
+						node.children.get(1).searchChildren(isResponse) != -1);
 			};
 		};
 		
@@ -494,13 +524,11 @@ public class AutoGrader {
 			};
 		};
 		
-		private final Predicate test = new Node.ConjunctionPredicate(false, hasInLoop, hasOutOfLoop);
-
-		private final static LoopUntilGuessed loopGrader = new LoopUntilGuessed();
+		private final Predicate test = new Node.ConjunctionPredicate(false, hasOutOfLoop, hasInLoop);
 		
 		@Override
 		public boolean pass(Node node) {
-			return loopGrader.pass(node) && node.exists(test);
+			return node.exists(test);
 		}
 		
 	}
