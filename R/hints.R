@@ -1,5 +1,6 @@
 library(ggplot2)
 library(plyr)
+library(reshape2)
 
 loadData <- function() {
   rm(list=ls())
@@ -78,6 +79,26 @@ plotFollowedGrades <- function() {
   hintQ <- ddply(projs, c("grade", "followed"), "nrow")
   qplot(followed, grade, data=hintQ, size=nrow) +
     labs(x="Hints Followed", y="Grade", size="Frequency", title="Grade vs Hints Followed")
+}
+
+plotOverTime <- function(bins = 10) {
+  hints$bin <- floor(hints$editPerc * bins) + 1
+  data <- ddply(hints, c("id", "bin"), summarize, accepted = sum(followed), rejected = sum(!followed), total=length(followed))
+  for (id in unique(data$id)) {
+    for (bin in 1:bins) {
+      if (sum(data$id == id & data$bin == bin) == 0) {
+        data <- rbind(data, data.frame(id=id, bin=bin, accepted=0, rejected=0, total=0))
+      } 
+    }
+  }
+  orderedIds <- projs$id[order(projs$pFollowed)]
+  data$id <- match(data$id, orderedIds)
+  data <- melt(data, id=c("id", "bin"))
+  data$group <- paste(data$id, data$variable)
+  ggplot(data, aes(x=bin, y=value, color=variable, group=group)) +
+    geom_line() +
+    geom_point() +
+    facet_wrap(~id)
 }
 
 hintsTests <- function() {
