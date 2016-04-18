@@ -4,12 +4,17 @@ library(plyr)
 loadData <- function() {
   rm(list=ls())
   
-  hint <<- read.csv("../data/csc200/spring2016/analysis/guess1Lab-hints.csv")  
-  hint$letter <<- sapply(hint$grade, binGrade)
-  hint$pFollowed <<- ifelse(hint$hints == 0, 0, hint$followed / hint$hints)
-  hint <<- hint[hint$hints < 60,]
+  projs <<- read.csv("../data/csc200/spring2016/analysis/guess1Lab-projs.csv") 
+  totals <<- ddply(projs[,-1], c(), colwise(sum)) 
+  projs <<- projs[projs$hints < 60,]
+  totalsNO <<- ddply(projs[,-1], c(), colwise(sum))
+  projs$letter <<- sapply(projs$grade, binGrade)
+  projs$pFollowed <<- ifelse(projs$hints == 0, 0, projs$followed / projs$hints)
   
-  fall <<- read.csv("../data/csc200/fall2015/analysis/guess1Lab-hints.csv")  
+  hints <<- read.csv("../data/csc200/spring2016/analysis/guess1Lab-hints.csv") 
+  hints <<- hints[hints$id %in% projs$id,]
+  
+  fall <<- read.csv("../data/csc200/fall2015/analysis/guess1Lab-projs.csv")  
   fall$letter <<- sapply(fall$grade, binGrade)
   
   hint <- read.csv("../data/csc200/spring2016/hint.csv")  
@@ -37,15 +42,15 @@ loadData <- function() {
   
   part <<- goals[goals$finished > 0,]
   
-  all <- merge(hint, goals)
+  all <- merge(projs, goals)
 }
 
 binGrade <- function(grade) {
-  hint <- as.ordered(c("F", "CD", "B", "A"))
-  if (grade == 1) return (hint[4])
-  else if (grade >= 0.85) return (hint[3])
-  else if (grade >= 0.65) return (hint[2])
-  return (hint[1])
+  projs <- as.ordered(c("F", "CD", "B", "A"))
+  if (grade == 1) return (projs[4])
+  else if (grade >= 0.85) return (projs[3])
+  else if (grade >= 0.65) return (projs[2])
+  return (projs[1])
 }
 
 plotStudent <- function(id) {
@@ -64,17 +69,51 @@ plotStudents <- function(id) {
 }
 
 plotRequestedGrades <- function() {
-  hintQ <- ddply(hint, c("grade", "hints"), "nrow")
+  hintQ <- ddply(projs, c("grade", "hints"), "nrow")
   qplot(hints, grade, data=hintQ, size=nrow) +
     labs(x="Hints hints", y="Grade", size="Frequency", title="Grade vs Hints hints")
 }
 
 plotFollowedGrades <- function() {
-  hintQ <- ddply(hint, c("grade", "followed"), "nrow")
+  hintQ <- ddply(projs, c("grade", "followed"), "nrow")
   qplot(followed, grade, data=hintQ, size=nrow) +
     labs(x="Hints Followed", y="Grade", size="Frequency", title="Grade vs Hints Followed")
 }
 
+hintsTests <- function() {
+  # 42.8% of hints were followed
+  mean(hints$followed)
+  # but 58.3% of objective completing hints were followed  
+  mean(hints[hints$obj != "",]$followed)
+
+  # Hint requests were mostly normal, with a bit of bimodality  
+  hist(hints$timePerc)
+  
+  # followed hints generally came a bit earlier
+  ggplot(hints, aes(x=as.factor(followed), y=timePerc)) + geom_boxplot()
+  # this difference is significant
+  wilcox.test(hints$timePerc ~ hints$followed)
+  # but the difference in means was not much (6% or so)
+  
+  hints$early <- hints$editPerc < 0.5
+  evl <- ddply(hints, c("id"), summarize, 
+               percEarly = sum(followed & early) / sum(early), 
+               rejEarly = sum(early & !followed), 
+               perc = mean(followed), 
+               early = sum(early), late = length(followed) - sum(early), n = length(followed))
+  cor.test(evl$percEarly, evl$late)
+  cor.test(evl$perc, evl$late)
+  cor.test(evl$perc, evl$n)
+  
+  cor.test(evl$rejEarly, evl$late)
+  
+  # Maybe the more hints asked for early, the more asked for late (non-sig)
+  plot(evl$early, evl$late)
+  cor.test(evl$early, evl$late)
+  
+  table(hints$followed, hints$delete)
+  table(hints$followed, hints$change < -5)
+}
 
 subgoalTests <- function() {
   
@@ -107,22 +146,22 @@ subgoalTests <- function() {
   cor.test(all$finished, all$hints)
 }
 
-tests <- function() {
+projTests <- function() {
   
   # all non-significantly positively correlate to performance
-  cor.test(hint$hints, hint$grade)
-  cor.test(hint$followed, hint$grade)
-  cor.test(hint$pFollowed, hint$grade) # none are significant
+  cor.test(projs$hints, projs$grade)
+  cor.test(projs$followed, projs$grade)
+  cor.test(projs$pFollowed, projs$grade) # none are significant
   
   # Hint usage and percFollowed are very correlated
-  cor.test(hint$pFollowed, hint$hints)
+  cor.test(projs$pFollowed, projs$hints)
   
   # students following 1+ hints don't do significantly better
-  wilcox.test(hint[hint$followed > 1, "grade"], hint[hint$followed <= 1, "grade"])
+  wilcox.test(projs[projs$followed > 1, "grade"], projs[projs$followed <= 1, "grade"])
   
   # No students following 1+ hints misses more than 1 objective
-  table(hint[hint$followed > 1, "grade"])
+  table(projs[projs$followed > 1, "grade"])
   
   # students following 1+ hints do 4% better... but this isn't really a meaningful measure with nonnormal data
-  mean(hint[hint$followed > 1, "grade"]) - mean(hint[hint$followed <= 1, "grade"])
+  mean(projs[projs$followed > 1, "grade"]) - mean(projs[projs$followed <= 1, "grade"])
 }

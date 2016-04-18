@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.swing.plaf.synth.SynthScrollBarUI;
+
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.json.JSONArray;
@@ -28,6 +30,7 @@ import com.snap.graph.Alignment;
 import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.HintFactoryMap.VectorHint;
 import com.snap.graph.data.Node;
+import com.snap.graph.data.Node.Predicate;
 import com.snap.graph.subtree.SubtreeBuilder.Tuple;
 import com.snap.parser.DataRow;
 import com.snap.parser.Grade;
@@ -66,21 +69,17 @@ public class CheckHintUsage {
 	
 	public static void main(String[] args) throws IOException {
 		
-		Assignment assignment = Assignment.Fall2015.GuessingGame1;
+		Assignment assignment = Assignment.Spring2016.GuessingGame1;
 		
 		// Get the name-path pairs of all projects we logged
 		HashMap<String, SolutionPath> guessingGame = assignment.load(Mode.Use, false);
 		
 		int nStudents = 0;
-		int nStudentHint1 = 0, nStudentHint3 = 0;
-		List<Integer> studentHintCounts = new LinkedList<Integer>(), studentFollowedCounts = new LinkedList<>();
 		
 		HashMap<String, LblTree> hintCodeTrees = new LinkedHashMap<>();
 		
-		List<String> header = new LinkedList<>(); 
-		header.addAll(Arrays.asList("id", "hints", "repeatHints", "followed", "closer", "objHints", "objFollowed", "duplicateHints", "thumbsUp", "thumbsDown", "grade"));
-		
-		Spreadsheet sheet = new Spreadsheet();
+		Spreadsheet projects = new Spreadsheet();
+		Spreadsheet hints = new Spreadsheet();
 		
 		// Iterate over all submissions
 		for (String submission : guessingGame.keySet()) {
@@ -91,6 +90,7 @@ public class CheckHintUsage {
 						
 			int nHints = 0, nRepeatHints = 0, nDuplicateHints = 0, nThumbsUp = 0, nThumbsDown = 0, nHintsFollowed = 0, nHintsCloser = 0;
 			int nObjectiveHints = 0, nObjectiveHintsFollowed = 0;
+			int nTestScriptHints = 0, nTestScriptHintsFollowed = 0;
 						
 			List<LblTree> studentTrees = new LinkedList<LblTree>();
 						
@@ -98,14 +98,26 @@ public class CheckHintUsage {
 			
 			Node lastHintNode = null;
 			String lastHintData = null;
-			
 			Snapshot code = null;
+			
+			int edits = 0;
+			for (int i = 0; i < path.size(); i++) {
+				if (path.rows.get(i).snapshot != null) edits++;
+			}
+			long startTime = path.rows.getFirst().timestamp.getTime();
+			long endTime = path.rows.getLast().timestamp.getTime();
+			
+			int edit = 0;
+			
 			// Iterate through each row of the solution path
 			for (int i = 0; i < path.size(); i++) {
 				DataRow row = path.rows.get(i);
 				
 				// If this row had an update to the code, update it
-				if (row.snapshot != null) code = row.snapshot;
+				if (row.snapshot != null) {
+					code = row.snapshot;
+					edit++;
+				}
 				
 				// Check if this action was showing a hint
 				String action = row.action;
@@ -147,8 +159,27 @@ public class CheckHintUsage {
 					JSONArray toArray = data.getJSONArray("to");
 					String[] to = new String[toArray.length()];
 					for (int j = 0; j < to.length; j++) to[j] = toArray.getString(j);
+					JSONArray fromArray = data.getJSONArray("from");
+					String[] from = new String[fromArray.length()];
+					for (int j = 0; j < from.length; j++) from[j] = fromArray.getString(j);
 					// And apply this to get a new parent node
 					Node hintOutcome = VectorHint.applyHint(parent, to);
+					
+					boolean delete = false;
+					for (String f : from) {
+						boolean kept = false;
+						for (String t : to) {
+							if (t.equals(f)) {
+								kept = true;
+								break;
+							}
+						}
+						if (!kept) {
+							delete = true;
+							break;
+						}
+					}
+					int nodeChange = hintOutcome.size() - parent.size();
 					
 					// Grade the node after applying the hint
 					HashMap<String, Boolean> hintGrade = AutoGrader.grade(hintOutcome.root());
@@ -216,6 +247,32 @@ public class CheckHintUsage {
 						nHintsFollowed++;
 					}
 					if (gotObjective) nObjectiveHintsFollowed++;
+										
+					// Top-level scripts
+					if (parent.hasType("script") && parent.parent != null && parent.parent.hasType("sprite", "customBlock")) {
+						int children = parent.children.size();
+						// With siblings that have more than 1 child
+						if (parent.parent.searchChildren(new Predicate() {
+							@Override
+							public boolean eval(Node node) {
+								return node.children.size() > children;
+							}
+						}) >= 0) {
+							nTestScriptHints++;
+							if (gotPartial) nTestScriptHintsFollowed++;
+						}
+					}
+					
+					hints.newRow();
+					hints.put("id", submission);
+					hints.put("type", action.replace("SnapDisplay.show", "").replace("Hint", ""));
+					hints.put("editPerc", (double)edit / edits);
+					hints.put("timePerc", (double)(row.timestamp.getTime() - startTime) / (endTime - startTime));
+					hints.put("followed", gotPartial ? 1 : 0);
+					hints.put("obj", objective == null ? "" : objective);
+					hints.put("objComplete", objective == null ? "" : (gotObjective ? 1 : 0));
+					hints.put("delete", delete ? 1 : 0);
+					hints.put("change", nodeChange);
 				}
 				
 				
@@ -234,23 +291,25 @@ public class CheckHintUsage {
 				}
 			}
 			
-			sheet.newRow();
-			sheet.put("id", submission);
-			sheet.put("hints", nHints);
-			sheet.put("repeatHints", nRepeatHints);
-			sheet.put("duplicateHints", nDuplicateHints);
-			sheet.put("followed", nHintsFollowed);
-			sheet.put("closer", nHintsCloser);
-			sheet.put("thumbsUp", nThumbsUp);
-			sheet.put("thumbsDown", nThumbsDown);
-			sheet.put("objHints", nObjectiveHints);
-			sheet.put("objHintsFollowed", nObjectiveHintsFollowed);
+			projects.newRow();
+			projects.put("id", submission);
+			projects.put("hints", nHints);
+			projects.put("repeatHints", nRepeatHints);
+			projects.put("duplicateHints", nDuplicateHints);
+			projects.put("followed", nHintsFollowed);
+			projects.put("closer", nHintsCloser);
+			projects.put("thumbsUp", nThumbsUp);
+			projects.put("thumbsDown", nThumbsDown);
+			projects.put("objHints", nObjectiveHints);
+			projects.put("objHintsFollowed", nObjectiveHintsFollowed);
+			projects.put("tsHints", nTestScriptHints);
+			projects.put("tsHintsFollowed", nTestScriptHintsFollowed);
 			
 			Grade grade = path.grade;
 			if (grade != null) {
-				sheet.put("grade", grade.average());
+				projects.put("grade", grade.average());
 				for (Entry<String, Boolean> entry : grade.tests.entrySet()) {
-					sheet.put(entry.getKey(), entry.getValue() ? 1 : 0);
+					projects.put(entry.getKey(), entry.getValue() ? 1 : 0);
 				}
 			}
 			
@@ -279,7 +338,8 @@ public class CheckHintUsage {
 //		Collections.reverse(studentHintCounts);
 //		System.out.println("Students Hint count: " + studentHintCounts);
 		
-		sheet.write(assignment.dataDir + "/analysis/" + assignment.name + "-hints.csv");
+		projects.write(assignment.dataDir + "/analysis/" + assignment.name + "-projs.csv");
+		hints.write(assignment.dataDir + "/analysis/" + assignment.name + "-hints.csv");
 		
 		// output distance between snapshots and final submission
 //		PrintStream psSnapshot = new PrintStream(Assignment.Spring2016.GuessingGame1.dataDir + "/snapshot.csv");
