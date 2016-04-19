@@ -5,7 +5,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -13,8 +12,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import javax.swing.plaf.synth.SynthScrollBarUI;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -88,7 +85,7 @@ public class CheckHintUsage {
 			// Ignore any that weren't exported (and thus couldn't have been submitted)
 			if (!isValidSubmission(path)) continue;
 						
-			int nHints = 0, nRepeatHints = 0, nDuplicateHints = 0, nThumbsUp = 0, nThumbsDown = 0, nHintsFollowed = 0, nHintsCloser = 0;
+			int nHints = 0, nUnchangedHints = 0, nDuplicateHints = 0, nThumbsUp = 0, nThumbsDown = 0, nHintsFollowed = 0, nHintsCloser = 0;
 			int nObjectiveHints = 0, nObjectiveHintsFollowed = 0;
 			int nTestScriptHints = 0, nTestScriptHintsFollowed = 0;
 						
@@ -129,12 +126,6 @@ public class CheckHintUsage {
 					
 					// Get the student's current code and turn it into a tree
 					Node node = SimpleNodeBuilder.toTree(code, true);
-					if (node.equals(lastHintNode)) {
-						nRepeatHints++;
-						if (row.data.equals(lastHintData)) nDuplicateHints++;
-					}
-					lastHintNode = node;
-					lastHintData = row.data;
 
 //					System.out.println("S" + nStudents + "H" + studentTrees.size());
 //					System.out.println(code.toCode());
@@ -263,6 +254,17 @@ public class CheckHintUsage {
 						}
 					}
 					
+					boolean duplicate = false;
+					boolean unchanged;
+					if (unchanged = node.equals(lastHintNode)) {
+						nUnchangedHints++;
+						if (duplicate = row.data.equals(lastHintData)) {
+							nDuplicateHints++;
+						}
+					}
+					lastHintNode = node;
+					lastHintData = row.data;
+					
 					hints.newRow();
 					hints.put("id", submission);
 					hints.put("type", action.replace("SnapDisplay.show", "").replace("Hint", ""));
@@ -273,6 +275,8 @@ public class CheckHintUsage {
 					hints.put("objComplete", objective == null ? "" : (gotObjective ? 1 : 0));
 					hints.put("delete", delete ? 1 : 0);
 					hints.put("change", nodeChange);
+					hints.put("unchanged", unchanged ? 1 : 0);
+					hints.put("duplicate", duplicate ? 1 : 0);
 				}
 				
 				
@@ -294,7 +298,7 @@ public class CheckHintUsage {
 			projects.newRow();
 			projects.put("id", submission);
 			projects.put("hints", nHints);
-			projects.put("repeatHints", nRepeatHints);
+			projects.put("unchangedHints", nUnchangedHints);
 			projects.put("duplicateHints", nDuplicateHints);
 			projects.put("followed", nHintsFollowed);
 			projects.put("closer", nHintsCloser);
@@ -469,6 +473,7 @@ public class CheckHintUsage {
 		}
 		
 		public void write(String path) throws FileNotFoundException, IOException {
+			if (rows.size() == 0) return;
 			String[] header = row.keySet().toArray(new String[row.keySet().size()]);
 			File file = new File(path);
 			file.getParentFile().mkdirs();

@@ -82,6 +82,7 @@ plotFollowedGrades <- function() {
 }
 
 plotOverTime <- function(bins = 10) {
+  hints <- hints[!hints$unchanged,]
   hints$bin <- floor(hints$editPerc * bins) + 1
   data <- ddply(hints, c("id", "bin"), summarize, accepted = sum(followed), rejected = sum(!followed), total=length(followed))
   for (id in unique(data$id)) {
@@ -99,6 +100,67 @@ plotOverTime <- function(bins = 10) {
     geom_line() +
     geom_point() +
     facet_wrap(~id)
+}
+
+nf <- function(x, n) {
+  if (length(x) <= n) return (-1)
+  return (x[[n]])
+}
+
+nthCor <- function(nth) {
+  nth <<- nth
+  hints <- hints[!hints$unchanged,]
+  data <- ddply(hints, c("id"), summarize,
+               perc = mean(followed), 
+               nFollowed = sum(followed),
+               percAfter = mean(followed[-1:-nth]),
+               nFollowedAfter = sum(followed[-1:-nth]),
+               nthFollowed = nf(followed, nth))
+  data <- data[data$nthFollowed >= 0,]
+  data
+  #print (cor(data$perc, data$nthFollowed))
+  #plot(data$perc ~ jitter(data$nthFollowed))
+}
+
+se <- function(x) sqrt(var(x, na.rm=TRUE)/sum(!is.na(x)))
+
+plotAfter <- function(cutoff = 4) {
+  data <- NA
+  i <- 1
+  while (T) {
+    nc <- nthCor(i)
+    if (nrow(nc) < cutoff) break
+    row <- ddply(nc, "nthFollowed", summarize, mean=mean(nFollowed), se=se(nFollowed))
+    row$n <- i
+    data <- rbind(data, row)
+    i <- i + 1
+  }
+  data <- data[-1,]
+  
+  data$nthFollowed <- ordered(data$nthFollowed)
+  
+  ggplot(data, aes(x=n, y=mean, color=nthFollowed, group=nthFollowed)) +
+    geom_line() + geom_point() +
+    geom_ribbon(aes(ymin=mean-se, ymax=mean+se), alpha=0.3)
+}
+
+plotCor <- function(cutoff = 4) {
+  data <- NA
+  i <- 1
+  while (T) {
+    nc <- nthCor(i)
+    if (nrow(nc) < cutoff) break
+    test <- cor.test(nc$nFollowedAfter, nc$nthFollowed)
+    row <- data.frame(n=i, cor=test$estimate, min=test$conf.int[[1]], max=test$conf.int[[2]], p=test$p.value)
+    data <- rbind(data, row)
+    i <- i + 1
+  }
+  data <- data[-1,]
+  data <- data[data$p < 0.05,]
+  
+  ggplot(data, aes(x=n, y=cor)) +
+    geom_line() + geom_point() +
+    geom_ribbon(aes(ymin=min, ymax=max), alpha=0.3)
 }
 
 hintsTests <- function() {
