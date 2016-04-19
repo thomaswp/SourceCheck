@@ -37,6 +37,7 @@ loadData <- function() {
   
   
   goals <<- read.csv("../data/csc200/spring2016/analysis/guess1Lab-goals.csv") 
+  goals <<- goals[goals$id %in% projs$id,]
   goals$percSat <<- goals$satisfied / goals$finished
   goals[goals$finished == 0,]$percSat <<- 0
   goals$used <<- goals$gap > 60 & goals$finished > 0
@@ -225,11 +226,21 @@ subgoalTests <- function() {
   
   # All with low median gap finished "all objectives"  
   plot(part$finished ~ log(part$gap), col=as.factor(part$used))
+  # But they were not correct
+  plot(part$percSat ~ log(part$gap), col=as.factor(part$used))
+  plot(part$satisfied ~ log(part$gap), col=as.factor(part$used))
+  # No difference in accuracy
+  wilcox.test(part$percSat ~ part$used)
+  wilcox.test(part$satisfied ~ part$used)
+  
+  median(part[part$used,]$percSat)
+  median(part[!part$used,]$percSat)
   
   # Those using the subgoals perform about the same as the others
   wilcox.test(goals$grade ~ goals$used)
   plot(jitter(goals$grade) ~ log(goals$gap + 1), col=as.factor(goals$used))
   
+  all <- merge(projs, goals)
   # No correlation at all between hint and subgoal usage
   cor.test(all$finished, all$hints)
 }
