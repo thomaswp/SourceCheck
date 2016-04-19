@@ -63,11 +63,15 @@ plotStudent <- function(id) {
     geom_point(aes(color=type))
 }
 
-plotStudents <- function(id) {
-  ggplot(snapshot, aes(x = timeNorm, y = distanceNorm, group=id)) +
-    geom_line()
-    #geom_smooth() + 
-    #geom_point(aes(color=type))
+plotStudents <- function(bins = 40) {
+  snapshot$bin <- floor(snapshot$timeNorm * bins)
+  data <- ddply(snapshot, "bin", summarize, meanDis=mean(distance), seDis=se(distance), hints = sum(type=="hint"), followed = sum(!is.na(isTaken)))
+  #return (data)
+  ggplot(data, aes(x = bin, y = meanDis)) +
+    geom_line() +
+    geom_ribbon(aes(ymin = meanDis-seDis, ymax = meanDis+seDis), alpha=0.3) +
+    geom_point(aes(size=hints), color="red") 
+    #geom_point(aes(size=followed), color="blue")
 }
 
 plotRequestedGrades <- function() {
