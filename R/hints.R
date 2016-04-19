@@ -121,10 +121,15 @@ hintsTests <- function() {
                percEarly = sum(followed & early) / sum(early), 
                rejEarly = sum(early & !followed), 
                perc = mean(followed), 
-               early = sum(early), late = length(followed) - sum(early), n = length(followed))
-  cor.test(evl$percEarly, evl$late)
-  cor.test(evl$perc, evl$late)
+               er = sum(early), lt = sum(!early), n = length(early),
+               firstFollowed = followed[[1]])
+  cor.test(evl$percEarly, evl$lt)
+  cor.test(evl$perc, evl$lt)
   cor.test(evl$perc, evl$n)
+  
+  plot(evl$perc ~ jitter(evl$firstFollowed))
+  wilcox.test(evl$perc ~ evl$firstFollowed)
+  cor.test(evl$perc, evl$firstFollowed)
   
   cor.test(evl$rejEarly, evl$late)
   
