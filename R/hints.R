@@ -45,6 +45,30 @@ loadData <- function() {
   part <<- goals[goals$finished > 0,]
   
   all <- merge(projs, goals)
+  
+  objs <<- read.csv("../data/csc200/spring2016/analysis/guess1Lab-objs.csv") 
+  
+  hints <<- findHintObjs()
+}
+
+findHintObjs <- function() {
+  hints$nextObj <- sapply(1:nrow(hints), function(i) {
+    row <- hints[i,]
+    working <- objs[objs$id==as.character(row$id) & objs$timePerc > row$timePerc, "obj"]
+    if (length(working) == 0) return ("End")
+    as.character(working[[1]])
+  })
+  hints$nextObj <- as.factor(hints$nextObj)
+  
+  hints$lastObj <- sapply(1:nrow(hints), function(i) {
+    row <- hints[i,]
+    done <- objs[objs$id==as.character(row$id) & objs$timePerc < row$timePerc, "obj"]
+    if (length(done) == 0) return ("Start")
+    as.character(tail(done, 1))
+  })
+  hints$lastObj <- as.factor(hints$lastObj)
+  
+  hints
 }
 
 binGrade <- function(grade) {
@@ -166,6 +190,17 @@ plotCor <- function(cutoff = 4) {
   ggplot(data, aes(x=n, y=cor)) +
     geom_line() + geom_point() +
     geom_ribbon(aes(ymin=min, ymax=max), alpha=0.3)
+}
+
+plotObjs <- function() {
+  data1 <- ddply(objs, "obj", summarize, mean=mean(timePerc), se=se(timePerc))
+  data1$type <- "time"
+  data2 <- ddply(objs, "obj", summarize, mean=mean(duration), se=se(duration))
+  data2$type <- "duration"
+  data <- rbind(data1, data2)
+  ggplot(data, aes(x = obj, y = mean, fill=type)) +
+    geom_bar(stat="identity", position="dodge") +
+    geom_errorbar(position="dodge", aes(ymin=mean-se, ymax=mean+se))
 }
 
 hintsTests <- function() {

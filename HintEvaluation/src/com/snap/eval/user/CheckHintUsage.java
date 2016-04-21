@@ -7,11 +7,13 @@ import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -77,6 +79,7 @@ public class CheckHintUsage {
 		
 		Spreadsheet projects = new Spreadsheet();
 		Spreadsheet hints = new Spreadsheet();
+		Spreadsheet objectives = new Spreadsheet();
 		
 		// Iterate over all submissions
 		for (String submission : guessingGame.keySet()) {
@@ -106,6 +109,9 @@ public class CheckHintUsage {
 			
 			int edit = 0;
 			
+			Set<String> completedObjs = new HashSet<>();
+			double lastCompleted = 0;
+			
 			// Iterate through each row of the solution path
 			for (int i = 0; i < path.size(); i++) {
 				DataRow row = path.rows.get(i);
@@ -116,6 +122,24 @@ public class CheckHintUsage {
 					edit++;
 				}
 				
+				// Get the student's current code and turn it into a tree
+				Node node = SimpleNodeBuilder.toTree(code, true);
+				
+				double timePerc = (double)(row.timestamp.getTime() - startTime) / (endTime - startTime);
+				
+				HashMap<String, Boolean> grade = AutoGrader.grade(node);
+				for (String obj : grade.keySet()) {
+					if (grade.get(obj) && completedObjs.add(obj)) {
+						objectives.newRow();
+						objectives.put("id", submission);
+						objectives.put("timePerc", timePerc);
+						objectives.put("obj", obj);
+						objectives.put("duration", timePerc - lastCompleted);
+						
+						lastCompleted = timePerc;
+					}
+				}
+				
 				// Check if this action was showing a hint
 				String action = row.action;
 				if (SHOW_HINT_MESSAGES.contains(action)) {
@@ -124,8 +148,6 @@ public class CheckHintUsage {
 					// Get the data from this event
 					JSONObject data = new JSONObject(row.data);
 					
-					// Get the student's current code and turn it into a tree
-					Node node = SimpleNodeBuilder.toTree(code, true);
 
 //					System.out.println("S" + nStudents + "H" + studentTrees.size());
 //					System.out.println(code.toCode());
@@ -133,8 +155,6 @@ public class CheckHintUsage {
 					
 					LblTree tree = Prune.removeSmallerScripts(node).toTree();
 					studentTrees.add(tree);
-					
-					HashMap<String,Boolean> grade = AutoGrader.grade(node);
 					
 					// Find the parent node that this hint affects
 					Node parent = findParent(node, data);
@@ -269,7 +289,7 @@ public class CheckHintUsage {
 					hints.put("id", submission);
 					hints.put("type", action.replace("SnapDisplay.show", "").replace("Hint", ""));
 					hints.put("editPerc", (double)edit / edits);
-					hints.put("timePerc", (double)(row.timestamp.getTime() - startTime) / (endTime - startTime));
+					hints.put("timePerc", timePerc);
 					hints.put("followed", gotPartial ? 1 : 0);
 					hints.put("obj", objective == null ? "" : objective);
 					hints.put("objComplete", objective == null ? "" : (gotObjective ? 1 : 0));
@@ -277,6 +297,28 @@ public class CheckHintUsage {
 					hints.put("change", nodeChange);
 					hints.put("unchanged", unchanged ? 1 : 0);
 					hints.put("duplicate", duplicate ? 1 : 0);
+
+					long time = row.timestamp.getTime();
+					
+					long dismissTime = 0;
+					boolean done = false;
+					for (int j = i + 1; j < path.size(); j++) {
+						DataRow r = path.rows.get(j);
+						if (r.action.equals("HintDialogBox.done")) done = true;
+						if (done || r.action.equals("HintDialogBox.otherHints")) {
+							dismissTime = r.timestamp.getTime();
+							break;
+						}
+					}
+					int duration = (int)(dismissTime - time) / 1000;
+					hints.put("duration", duration);
+					hints.put("done", done ? 1 : 0);
+					
+
+					long nextActionTime = time;
+					if (i < path.size() - 1) nextActionTime = path.rows.get(i + 1).timestamp.getTime();
+					int pause = (int)(nextActionTime - time) / 1000;
+					hints.put("pause", pause);
 				}
 				
 				
@@ -325,6 +367,10 @@ public class CheckHintUsage {
 			}
 		}
 		
+		projects.write(assignment.dataDir + "/analysis/" + assignment.name + "-projs.csv");
+		hints.write(assignment.dataDir + "/analysis/" + assignment.name + "-hints.csv");
+		objectives.write(assignment.dataDir + "/analysis/" + assignment.name + "-objs.csv");
+		
 		// Print our results
 //		System.out.println("Submissions: " + nStudents);
 //		System.out.println("Total Hints Selected: " + nHints);
@@ -342,8 +388,6 @@ public class CheckHintUsage {
 //		Collections.reverse(studentHintCounts);
 //		System.out.println("Students Hint count: " + studentHintCounts);
 		
-		projects.write(assignment.dataDir + "/analysis/" + assignment.name + "-projs.csv");
-		hints.write(assignment.dataDir + "/analysis/" + assignment.name + "-hints.csv");
 		
 		// output distance between snapshots and final submission
 //		PrintStream psSnapshot = new PrintStream(Assignment.Spring2016.GuessingGame1.dataDir + "/snapshot.csv");
