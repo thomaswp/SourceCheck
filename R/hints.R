@@ -123,6 +123,7 @@ plotOverTime <- function(bins = 10) {
   }
   orderedIds <- projs$id[order(projs$pFollowed)]
   data$id <- match(data$id, orderedIds)
+  data$id <- paste(data$id, orderedIds[data$id])
   data <- melt(data, id=c("id", "bin"))
   data$group <- paste(data$id, data$variable)
   ggplot(data, aes(x=bin, y=value, color=variable, group=group)) +
