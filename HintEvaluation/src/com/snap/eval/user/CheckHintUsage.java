@@ -20,6 +20,7 @@ import org.apache.commons.csv.CSVPrinter;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.snap.data.Block;
 import com.snap.data.Snapshot;
 import com.snap.eval.Assignment;
 import com.snap.eval.AutoGrader;
@@ -48,6 +49,10 @@ public class CheckHintUsage {
 	private final static String HINT_DIALOG_DONE = "HintDialogBox.done";
 
 	private final static String PROCESS_HINTS = "HintProvider.processHints";
+	
+	private final static String GREEN_FLAG_RUN = "IDE.greenFlag";
+	private final static String BLOCK_RUN = "Block.clickRun";
+	
 	
 	private final static List<String> SHOW_HINT_MESSAGES = Arrays.asList(new String[] {
 			SHOW_SCRIPT_HINT, SHOW_BLOCK_HINT, SHOW_STRUCTURE_HINT
@@ -91,6 +96,7 @@ public class CheckHintUsage {
 			int nHints = 0, nUnchangedHints = 0, nDuplicateHints = 0, nThumbsUp = 0, nThumbsDown = 0, nHintsFollowed = 0, nHintsCloser = 0;
 			int nObjectiveHints = 0, nObjectiveHintsFollowed = 0;
 			int nTestScriptHints = 0, nTestScriptHintsFollowed = 0;
+			int nBlockRuns = 0, nFlagRuns = 0;
 						
 			List<LblTree> studentTrees = new LinkedList<LblTree>();
 						
@@ -176,6 +182,11 @@ public class CheckHintUsage {
 					// And apply this to get a new parent node
 					Node hintOutcome = VectorHint.applyHint(parent, to);
 					
+					if (contains(from, "doIfElse") && !contains(to, "doIfElse") && !contains(from, "doUntil")) {// && contains(to, "doUntil")) {
+						System.out.println(submission);
+						System.out.println("  "  + parent + "\n->" + hintOutcome);
+					}
+					
 					boolean delete = false;
 					for (String f : from) {
 						boolean kept = false;
@@ -258,21 +269,6 @@ public class CheckHintUsage {
 						nHintsFollowed++;
 					}
 					if (gotObjective) nObjectiveHintsFollowed++;
-										
-					// Top-level scripts
-					if (parent.hasType("script") && parent.parent != null && parent.parent.hasType("sprite", "customBlock")) {
-						int children = parent.children.size();
-						// With siblings that have more than 1 child
-						if (parent.parent.searchChildren(new Predicate() {
-							@Override
-							public boolean eval(Node node) {
-								return node.children.size() > children;
-							}
-						}) >= 0) {
-							nTestScriptHints++;
-							if (gotPartial) nTestScriptHintsFollowed++;
-						}
-					}
 					
 					boolean duplicate = false;
 					boolean unchanged;
@@ -319,6 +315,30 @@ public class CheckHintUsage {
 					if (i < path.size() - 1) nextActionTime = path.rows.get(i + 1).timestamp.getTime();
 					int pause = (int)(nextActionTime - time) / 1000;
 					hints.put("pause", pause);
+					
+					Node n = parent;
+					while (n.parent != null && !n.parent.hasType("sprite", "customBlock")) {
+						n = n.parent;
+					}
+					int scriptSize = 0;
+					boolean testScript = false;
+					if (n.hasType("script") && n.parent != null) {
+						scriptSize = n.size() - 1;
+						final int children = n.children.size();
+						if (n.parent.searchChildren(new Predicate() {
+							@Override
+							public boolean eval(Node node) {
+								return node.hasType("script") && node.children.size() > children;
+							}
+						}) >= 0) {
+							testScript = true;
+							nTestScriptHints++;
+							if (gotPartial) nTestScriptHintsFollowed++;
+						}
+						
+					}
+					hints.put("scriptSize", scriptSize);
+					hints.put("testScript", testScript ? 1 : 0);
 				}
 				
 				
@@ -335,6 +355,9 @@ public class CheckHintUsage {
 //						}
 					}
 				}
+				
+				if (GREEN_FLAG_RUN.equals(action)) nFlagRuns++;
+				if (BLOCK_RUN.equals(action)) nBlockRuns++;
 			}
 			
 			projects.newRow();
@@ -350,6 +373,8 @@ public class CheckHintUsage {
 			projects.put("objHintsFollowed", nObjectiveHintsFollowed);
 			projects.put("tsHints", nTestScriptHints);
 			projects.put("tsHintsFollowed", nTestScriptHintsFollowed);
+			projects.put("flagRuns", nFlagRuns);
+			projects.put("blockRuns", nBlockRuns);
 			
 			Grade grade = path.grade;
 			if (grade != null) {
@@ -399,6 +424,11 @@ public class CheckHintUsage {
 //		PrintStream ps = new PrintStream(Assignment.Spring2016.GuessingGame1.dataDir + "/hintsDis.csv");
 //		outputMatrix(ps, hintCodeTrees);
 //		ps.close();
+	}
+	
+	private static <T> boolean contains(T[] array, T item) {
+		for (T i : array) if (i.equals(item)) return true;
+		return false;
 	}
 	
 	private static void outputDistance(PrintStream psSnapshot, PrintStream psHint, HashMap<String, SolutionPath> submissions) throws IOException{
