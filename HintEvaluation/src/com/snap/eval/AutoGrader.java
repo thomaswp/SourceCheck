@@ -16,7 +16,7 @@ import com.snap.parser.Store.Mode;
 public class AutoGrader {
 	
 	public static void main(String[] args) throws IOException {
-		AutoGrader grader = new AutoGrader(Assignment.Spring2016.GuessingGame1);
+		AutoGrader grader = new AutoGrader(Assignment.Fall2015.GuessingGame1);
 		
 		for (Grader g : graders) {
 			System.out.println(g.name() + ": " + grader.verify(g));
@@ -254,7 +254,7 @@ public class AutoGrader {
 				int doIf = node.searchChildren(new Node.TypePredicate("doIf"));
 				if (doIf >= 0) {
 					Node doIfNode = node.children.get(doIf);
-					if (!doIfNode.children.get(0).exists(new Node.TypePredicate("literal"))) {
+					if (doIfNode.children.size() > 0 && !doIfNode.children.get(0).exists(new Node.TypePredicate("literal"))) {
 						if (doIfNode.children.size() > 1) {
 							if (testGreet(doIfNode.children.get(1), -1)) return true;
 						}
