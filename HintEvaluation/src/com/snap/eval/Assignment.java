@@ -19,6 +19,11 @@ public class Assignment {
 		this.end = end;
 	}
 	
+	@Override
+	public String toString() {
+		return dataDir + "/" + name;
+	}
+	
 	public HashMap<String, SolutionPath> load() {
 		return load(Mode.Use, false);
 	}

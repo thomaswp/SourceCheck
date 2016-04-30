@@ -16,10 +16,19 @@ import com.snap.parser.Store.Mode;
 public class AutoGrader {
 	
 	public static void main(String[] args) throws IOException {
-		AutoGrader grader = new AutoGrader(Assignment.Fall2015.GuessingGame1);
+		Assignment assignments[] = new Assignment[] {
+				Assignment.Fall2015.GuessingGame1,
+				Assignment.Spring2016.GuessingGame1
+		};
 		
-		for (Grader g : graders) {
-			System.out.println(g.name() + ": " + grader.verify(g));
+		for (Assignment assignment : assignments) {
+			System.out.println(assignment);
+			AutoGrader grader = new AutoGrader(assignment);
+			
+			for (Grader g : graders) {
+				System.out.println(g.name() + ": " + grader.verify(g));
+			}	
+			System.out.println("\n---------------------\n");
 		}
 		
 	}
