@@ -56,13 +56,16 @@ plotUndo <- function(grades) {
   data <- ddply(data, .(policy, variable), summarize, mean=mean(sign(value)))
   xlabels = sapply(1:9, function(i) paste("O", i, sep=""))
   title = "Students Getting Hints that Undo Objectives"
+  # xlab <- c("CTD All", "CTD Exemplar", "Direct Expert", "Direct Student", "SN")
+  xlab <- c("CA", "CE", "DE", "DS", "SN")
+  colors <- c(brewer_pal(palette="OrRd")(3)[c(1,2)], brewer_pal(palette="Blues")(4)[c(3,4)])
   ggplot(data, aes(variable, mean, fill=policy)) +
     geom_bar(stat='identity', position='dodge') + 
     labs(title=title, x="Objective", y="Percent of Students", fill="Policy") +
     scale_x_discrete(labels=xlabels) +
     scale_y_continuous(labels=percent) +
     theme_bw() + 
-    scale_fill_grey(labels=c("CA", "CE", "DE", "DS", "SN"))
+    scale_fill_manual(labels=xlab, values=colors)
 }
 
 plotStacked <- function(grades, action) {

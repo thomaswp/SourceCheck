@@ -49,18 +49,21 @@ plotCloser <- function() {
 testCloser <- function() {
   d <- distance[distance$target=="final" & distance$normalized == TRUE,]
   
-  print(summary(aov(percCloser ~ policy, distance[distance$target=="final" & distance$normalized == TRUE,])))
+  print(summary(aov(percCloser ~ policy, d)))
+  print(summary(aov(percCloser ~ policy, d[d$policy != "Direct Ideal" & d$policy != "Student Next",])))
   
-  hintAll <- distance[distance$policy=="Hint All",]$percCloser
-  hintExemplar <- distance[distance$policy=="Hint Exemplar",]$percCloser
-  directIdeal <- distance[distance$policy=="Direct Ideal",]$percCloser
-  directStudent <- distance[distance$policy=="Direct Student",]$percCloser
+  hintAll <- d[d$policy=="Hint All",]$percCloser
+  hintExemplar <- d[d$policy=="Hint Exemplar",]$percCloser
+  directIdeal <- d[d$policy=="Direct Ideal",]$percCloser
+  directStudent <- d[d$policy=="Direct Student",]$percCloser
   
   
-  print(t.test(hintAll, directIdeal, paired = TRUE))
-  print(t.test(hintExemplar, directIdeal, paired = TRUE))
-  print(t.test(hintExemplar, directStudent, paired = TRUE))
+  #print(t.test(hintExemplar, directStudent, paired = TRUE))
+  #print(t.test(hintExemplar, directIdeal, paired = TRUE))
+  #print(t.test(hintAll, directIdeal, paired = TRUE))
   print(t.test(hintAll, directStudent, paired = TRUE))
+  print(t.test(hintAll, directIdeal, paired = TRUE))
+  print(t.test(hintAll, hintExemplar, paired = TRUE))
 }
 
 plotFarther <- function() {
