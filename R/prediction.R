@@ -6,7 +6,7 @@ se <- function(x) sqrt(var(x)/length(x))
 loadData <- function() {
   rm(list = ls())
   
-  prediction <<- read.csv("../data/csc200/fall2015/anlysis/guess1Lab/prediction-p.csv")
+  prediction <<- read.csv("../data/csc200/fall2015/analysis/guess1Lab/prediction-p.csv")
   prediction$percActions <<- prediction$predicted / prediction$actions
   prediction$percHints <<- prediction$predicted / prediction$hints
   
@@ -18,7 +18,7 @@ loadData <- function() {
   policies <<- sapply(unique(prediction$policy), as.character)
   students <<- sapply(unique(prediction$student), as.character)
   
-  distance <<- read.csv("../data/csc200/fall2015/anlysis/guess1Lab/distance-p.csv")
+  distance <<- read.csv("../data/csc200/fall2015/analysis/guess1Lab/distance-p.csv")
   distance$mNodeDis <<- distance$nodeDis / distance$totalAction
   distance$mHintDis <<- distance$hintDis / distance$totalAction
   distance$percCloser <<- distance$closer / distance$totalHints

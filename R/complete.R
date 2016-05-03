@@ -7,7 +7,7 @@ se <- function(x) sqrt(var(x, na.rm=TRUE)/sum(!is.na(x)))
 loadData <- function() {
   rm(list=ls())
   maxTest <<- 8;
-  complete <<- read.csv("../data/csc200/fall2015/anlysis/guess1Lab/complete-p.csv")
+  complete <<- read.csv("../data/csc200/fall2015/analysis/guess1Lab/complete-p.csv")
   complete$policy <<- factor(complete$policy, levels = c("Hint All", "Hint Exemplar", "Direct Ideal", "Direct Student"))
   tests <<- sapply(0:maxTest, function(i) paste("test", i, sep=""))
   complete$grade <<- rowSums(complete[,tests]) / 9

@@ -21,13 +21,13 @@ loadData <- function() {
   percs <<- sapply(0:maxTest, function(i) paste("perc", i, sep=""))
   perAct <<- sapply(0:maxTest, function(i) paste("perAct", i, sep=""))
     
-  grade <<- read.csv("../data/csc200/fall2015/anlysis/guess1Lab/grade-p.csv")
+  grade <<- read.csv("../data/csc200/fall2015/analysis/guess1Lab/grade-p.csv")
   grade$policy <<- factor(grade$policy, levels = c("Hint All", "Hint Exemplar", "Direct Ideal", "Direct Student", "Student Next"))
   
-  solve <- read.csv("../data/csc200/fall2015/anlysis/guess1Lab/solve1-p.csv")
+  solve <- read.csv("../data/csc200/fall2015/analysis/guess1Lab/solve1-p.csv")
   grade$actions <<- solve$actions
   
-  #chain <<- read.csv("../data/csc200/fall2015/anlysis/guess1Lab/chain.csv")
+  #chain <<- read.csv("../data/csc200/fall2015/analysis/guess1Lab/chain.csv")
   #chain$policy <<- factor(chain$policy, levels = c("Hint All", "Hint Exemplar", "Direct Ideal", "Direct Student", "Student Next"))
   #chain <<- rbind(grade[grade$policy=="Hint All" | grade$policy=="Hint Exemplar",], chain)
   
