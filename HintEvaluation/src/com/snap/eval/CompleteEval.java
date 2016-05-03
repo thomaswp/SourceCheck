@@ -9,6 +9,7 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.csv.CSVFormat;
@@ -49,7 +50,7 @@ public class CompleteEval {
 		Node solutionNode = SimpleNodeBuilder.toTree(solution, true);
 		DirectEditPolicy solutionPolicy = new DirectEditPolicy(solutionNode);
 		
-		File outFile = new File(dir + "/anlysis/" + assignment + "/complete" + (PRUNE ? "-p" : "") + ".csv");
+		File outFile = new File(dir + "/analysis/" + assignment + "/complete" + (PRUNE ? "-p" : "") + ".csv");
 		outFile.getParentFile().mkdirs();
 		List<String> headers = new LinkedList<>();
 		headers.add("policy"); headers.add("student"); headers.add("slice"); headers.add("studentSteps"); headers.add("hash"); headers.add("steps"); headers.add("deletions");  headers.add("firstHints");
@@ -61,7 +62,7 @@ public class CompleteEval {
 		
 		String[] names = new String[] { "Hint All", "Hint Exemplar", "Direct Ideal", "Direct Student" };
 		
-		HashMap<String,List<Node>> nodeMap = subtree.nodeMap();
+		Map<String,List<Node>> nodeMap = subtree.nodeMap();
 		for (String student : nodeMap.keySet()) {
 			if (skip-- > 0) {
 				continue;
@@ -129,7 +130,7 @@ public class CompleteEval {
 		
 		String[] names = new String[] { "Hint All", "Hint Exemplar", "Direct Ideal", "Direct Student" };
 		
-		HashMap<String,List<Node>> nodeMap = subtree.nodeMap();
+		Map<String,List<Node>> nodeMap = subtree.nodeMap();
 		
 		int skip = 1, max = 2;
 		

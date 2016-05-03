@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -47,7 +48,7 @@ public class CheckSubgoalUsage {
 		for (Assignment assignment : Assignment.Spring2016.All) {
 			if (assignment != Assignment.Spring2016.GuessingGame1) continue;
 			
-			HashMap<String,SolutionPath> submissions = assignment.load();
+			Map<String,SolutionPath> submissions = assignment.load();
 			
 			File out = new File(assignment.dataDir + "/analysis/" + assignment.name + "-goals.csv");
 			out.getParentFile().mkdirs();

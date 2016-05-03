@@ -6,6 +6,7 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.snap.graph.data.HintFactoryMap;
@@ -122,7 +123,7 @@ public class DirectEditPolicy implements HintPolicy {
 		Date maxTime = new GregorianCalendar(2015, 8, 18).getTime();
 		SnapSubtree subtree = new SnapSubtree("../data/csc200/fall2015", "guess1Lab", maxTime, new HintFactoryMap());
 				
-		HashMap<String, List<Node>> students = subtree.nodeMap();
+		Map<String, List<Node>> students = subtree.nodeMap();
 		for (String student : students.keySet()) {
 			List<Node> nodes = students.get(student);
 			Node last = nodes.get(nodes.size() - 1);

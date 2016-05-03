@@ -5,9 +5,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 import com.snap.data.Snapshot;
 import com.snap.graph.data.HintFactoryMap;
@@ -40,7 +40,7 @@ public class FITExport {
 		String baseDir = subtree.dataDir + "/" + subtree.assignment + "/chf-fog/";
 		new File(baseDir).mkdirs();
 
-		HashMap<String,List<Node>> nodeMap = subtree.nodeMap();
+		Map<String,List<Node>> nodeMap = subtree.nodeMap();
 		for (String student : nodeMap.keySet()) {
 			Grade grade = subtree.gradeMap().get(student);
 			totalNodes++;
@@ -90,7 +90,7 @@ public class FITExport {
 	@SuppressWarnings("unused")
 	private static void outputStudents(SnapSubtree subtree) {
 
-		HashMap<String,List<Node>> nodeMap = subtree.nodeMap();
+		Map<String,List<Node>> nodeMap = subtree.nodeMap();
 		final HashSet<String> labels = new HashSet<String>();
 		for (List<Node> nodes : nodeMap.values()) {
 			for (Node node : nodes) {

@@ -2,6 +2,7 @@ package com.snap.eval;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import com.snap.data.Snapshot;
@@ -71,7 +72,7 @@ public class AutoGrader {
 	}
 	
 	private void parseStudents(Assignment assignment) throws IOException {
-		HashMap<String, SolutionPath> students = assignment.load(Mode.Use, true);
+		Map<String, SolutionPath> students = assignment.load(Mode.Use, true);
 		
 		for (String student : students.keySet()) {
 			SolutionPath path = students.get(student);

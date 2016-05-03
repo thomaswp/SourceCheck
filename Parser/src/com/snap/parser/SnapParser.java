@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.csv.CSVFormat;
@@ -239,15 +240,15 @@ public class SnapParser {
 //	}
 	
 	
-	public HashMap<String, SolutionPath> parseAssignment(String folder, final boolean snapshotsOnly) {
+	public Map<String, SolutionPath> parseAssignment(String folder, final boolean snapshotsOnly) {
 		return parseAssignment(folder, snapshotsOnly, null, null);
 	}
 	
-	public HashMap<String, SolutionPath> parseAssignment(String folder, final boolean snapshotsOnly,
+	public Map<String, SolutionPath> parseAssignment(String folder, final boolean snapshotsOnly,
 			final Date minDate, final Date maxDate) {
 		HashMap<String, Grade> grades = parseGrades(folder);
 		
-		final HashMap<String, SolutionPath> students = new HashMap<String, SolutionPath>();
+		final Map<String, SolutionPath> students = new TreeMap<String, SolutionPath>();
 		final AtomicInteger threads = new AtomicInteger();
 		for (File file : new File(outputFolder, folder).listFiles()) {
 			if (!file.getName().endsWith(".csv")) continue;

@@ -13,6 +13,8 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.snap.data.Snapshot;
@@ -78,10 +80,10 @@ public class SnapSubtree {
 	private final Date maxTime;
 	private final HintMap hintMap;
 
-	private HashMap<String, List<Node>> nodeMapCache;
-	private HashMap<String, Grade> gradeMapCache;
+	private Map<String, List<Node>> nodeMapCache;
+	private Map<String, Grade> gradeMapCache;
 
-	public HashMap<String, List<Node>> nodeMap() {
+	public Map<String, List<Node>> nodeMap() {
 		if (nodeMapCache == null) {
 			try {
 				parseStudents();
@@ -92,7 +94,7 @@ public class SnapSubtree {
 		return nodeMapCache;
 	}
 	
-	public HashMap<String, Grade> gradeMap() {
+	public Map<String, Grade> gradeMap() {
 		if (gradeMapCache == null) {
 			try {
 				parseStudents();
@@ -133,7 +135,7 @@ public class SnapSubtree {
 	}
 
 	public void printFinalSolutions() {
-		HashMap<String,List<Node>> map = nodeMap();
+		Map<String,List<Node>> map = nodeMap();
 		for (String student : map.keySet()) {
 			List<Node> nodes = map.get(student);
 			Node submitted = nodes.get(nodes.size() - 1);
@@ -256,9 +258,9 @@ public class SnapSubtree {
 
 	private void parseStudents() throws IOException {
 		SnapParser parser = new SnapParser(dataDir, Store.Mode.Use);
-		HashMap<String, SolutionPath> students = parser.parseAssignment(assignment, true);
-		nodeMapCache = new HashMap<String, List<Node>>();
-		gradeMapCache = new HashMap<String, Grade>();
+		Map<String, SolutionPath> students = parser.parseAssignment(assignment, true);
+		nodeMapCache = new TreeMap<String, List<Node>>();
+		gradeMapCache = new TreeMap<String, Grade>();
 
 		for (String student : students.keySet()) {
 			SolutionPath path = students.get(student);

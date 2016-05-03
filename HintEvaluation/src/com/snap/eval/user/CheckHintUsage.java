@@ -20,7 +20,6 @@ import org.apache.commons.csv.CSVPrinter;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.snap.data.Block;
 import com.snap.data.Snapshot;
 import com.snap.eval.Assignment;
 import com.snap.eval.AutoGrader;
@@ -76,7 +75,7 @@ public class CheckHintUsage {
 		Assignment assignment = Assignment.Spring2016.GuessingGame1;
 		
 		// Get the name-path pairs of all projects we logged
-		HashMap<String, SolutionPath> guessingGame = assignment.load(Mode.Use, false);
+		Map<String, SolutionPath> guessingGame = assignment.load(Mode.Use, false);
 		
 		int nStudents = 0;
 		

@@ -1,10 +1,10 @@
 package com.snap.eval;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import com.snap.eval.util.Prune;
 import com.snap.graph.SimpleNodeBuilder;
@@ -23,7 +23,7 @@ public class StudentEval {
 	
 	private static void eval(Assignment assignment) throws IOException {
 
-		HashMap<String, SolutionPath> paths = assignment.load(Mode.Use, true);
+		Map<String, SolutionPath> paths = assignment.load(Mode.Use, true);
 		
 		for (int i = 0; i < 2; i++) {
 			int skip = SKIP;

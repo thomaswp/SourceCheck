@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -100,7 +101,7 @@ public class SolveEval {
 		Date maxTime = new GregorianCalendar(2015, 8, 18).getTime();
 		SnapSubtree subtree = new SnapSubtree(dir, assignment, maxTime, new HintFactoryMap());
 		
-		File outFile = new File(dir + "/anlysis/" + assignment + "/" + test + (PRUNE ? "-p" : "") + ".csv");
+		File outFile = new File(dir + "/analysis/" + assignment + "/" + test + (PRUNE ? "-p" : "") + ".csv");
 		outFile.getParentFile().mkdirs();
 		CSVPrinter printer = new CSVPrinter(new PrintStream(outFile), CSVFormat.DEFAULT.withHeader(Score.headers()));
 		
@@ -111,7 +112,7 @@ public class SolveEval {
 			int skip = SKIP;
 			int max = MAX;
 			
-			HashMap<String,List<Node>> nodeMap = subtree.nodeMap();
+			Map<String,List<Node>> nodeMap = subtree.nodeMap();
 			for (String student : nodeMap.keySet()) {
 				if (skip-- > 0) {
 					continue;

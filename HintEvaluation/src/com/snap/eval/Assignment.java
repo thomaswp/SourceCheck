@@ -2,7 +2,7 @@ package com.snap.eval;
 
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.HashMap;
+import java.util.Map;
 
 import com.snap.parser.SnapParser;
 import com.snap.parser.SolutionPath;
@@ -24,11 +24,11 @@ public class Assignment {
 		return dataDir + "/" + name;
 	}
 	
-	public HashMap<String, SolutionPath> load() {
+	public Map<String, SolutionPath> load() {
 		return load(Mode.Use, false);
 	}
 	
-	public HashMap<String, SolutionPath> load(Mode mode, boolean snapshotsOnly) {
+	public Map<String, SolutionPath> load(Mode mode, boolean snapshotsOnly) {
 		return new SnapParser(dataDir, mode).parseAssignment(name, snapshotsOnly, start, end);
 	}
 	

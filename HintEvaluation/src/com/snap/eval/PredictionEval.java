@@ -8,6 +8,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -102,16 +103,16 @@ public class PredictionEval {
 		Date maxTime = new GregorianCalendar(2015, 8, 18).getTime();
 		SnapSubtree subtree = new SnapSubtree(dir, assignment, maxTime, new HintFactoryMap());
 		
-		File outFile = new File(dir + "/anlysis/" + assignment + "/" + test + (PRUNE ? "-p" : "") + ".csv");
+		File outFile = new File(dir + "/analysis/" + assignment + "/" + test + (PRUNE ? "-p" : "") + ".csv");
 		outFile.getParentFile().mkdirs();
 		CSVPrinter printer = new CSVPrinter(new PrintStream(outFile), CSVFormat.DEFAULT.withHeader(constructor.headers()));
 				
-		HashMap<String,Grade> gradeMap = subtree.gradeMap();
+		Map<String,Grade> gradeMap = subtree.gradeMap();
 		
 		int skip = SKIP;
 		int max = MAX;
 		
-		HashMap<String,List<Node>> nodeMap = subtree.nodeMap();
+		Map<String,List<Node>> nodeMap = subtree.nodeMap();
 		for (String student : nodeMap.keySet()) {
 			if (skip-- > 0) {
 				continue;
