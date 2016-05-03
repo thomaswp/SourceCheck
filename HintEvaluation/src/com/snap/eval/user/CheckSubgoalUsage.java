@@ -50,7 +50,7 @@ public class CheckSubgoalUsage {
 			
 			Map<String,SolutionPath> submissions = assignment.load();
 			
-			File out = new File(assignment.dataDir + "/analysis/" + assignment.name + "-goals.csv");
+			File out = new File(assignment.dataDir + "/analysis/" + assignment.name + "/goals.csv");
 			out.getParentFile().mkdirs();
 			PrintStream ps = new PrintStream(out);
 			CSVPrinter printer = new CSVPrinter(ps, CSVFormat.DEFAULT.withHeader("id", "finished", "satisfied", "satisfiedEnd", "grade", "gap"));

@@ -391,9 +391,9 @@ public class CheckHintUsage {
 			}
 		}
 		
-		projects.write(assignment.dataDir + "/analysis/" + assignment.name + "-projs.csv");
-		hints.write(assignment.dataDir + "/analysis/" + assignment.name + "-hints.csv");
-		objectives.write(assignment.dataDir + "/analysis/" + assignment.name + "-objs.csv");
+		projects.write(assignment.dataDir + "/analysis/" + assignment.name + "/projs.csv");
+		hints.write(assignment.dataDir + "/analysis/" + assignment.name + "/hints.csv");
+		objectives.write(assignment.dataDir + "/analysis/" + assignment.name + "/objs.csv");
 		
 		// Print our results
 //		System.out.println("Submissions: " + nStudents);

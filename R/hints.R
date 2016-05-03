@@ -5,17 +5,17 @@ library(reshape2)
 loadData <- function() {
   rm(list=ls())
   
-  projs <<- read.csv("../data/csc200/spring2016/analysis/guess1Lab-projs.csv") 
+  projs <<- read.csv("../data/csc200/spring2016/analysis/guess1Lab/projs.csv") 
   totals <<- ddply(projs[,-1], c(), colwise(sum)) 
   projs <<- projs[projs$hints < 60,]
   totalsNO <<- ddply(projs[,-1], c(), colwise(sum))
   projs$letter <<- sapply(projs$grade, binGrade)
   projs$pFollowed <<- ifelse(projs$hints == 0, 0, projs$followed / projs$hints)
   
-  hints <<- read.csv("../data/csc200/spring2016/analysis/guess1Lab-hints.csv") 
+  hints <<- read.csv("../data/csc200/spring2016/analysis/guess1Lab/hints.csv") 
   hints <<- hints[hints$id %in% projs$id,]
   
-  fall <<- read.csv("../data/csc200/fall2015/analysis/guess1Lab-projs.csv")  
+  fall <<- read.csv("../data/csc200/fall2015/analysis/guess1Lab/projs.csv")  
   fall$letter <<- sapply(fall$grade, binGrade)
   
   hint <- read.csv("../data/csc200/spring2016/hint.csv")  
@@ -36,7 +36,7 @@ loadData <- function() {
   snapshot$distanceNorm <<- snapshot$distance / snapshot$maxDis
   
   
-  goals <<- read.csv("../data/csc200/spring2016/analysis/guess1Lab-goals.csv") 
+  goals <<- read.csv("../data/csc200/spring2016/analysis/guess1Lab/goals.csv") 
   goals <<- goals[goals$id %in% projs$id,]
   goals$percSat <<- goals$satisfied / goals$finished
   goals[goals$finished == 0,]$percSat <<- 0
@@ -46,7 +46,7 @@ loadData <- function() {
   
   all <- merge(projs, goals)
   
-  objs <<- read.csv("../data/csc200/spring2016/analysis/guess1Lab-objs.csv") 
+  objs <<- read.csv("../data/csc200/spring2016/analysis/guess1Lab/objs.csv") 
   
   hints <<- findHintObjs()
 }
