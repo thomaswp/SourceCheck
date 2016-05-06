@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry excluding="com/snap/graph/data/GraphHintMap.java|com/snap/graph/data/MySQLHintMap.java|com/snap/graph/data/SimpleHintMap.java" kind="src" path="src"/>
+	<classpathentry kind="src" path="tests"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/Parser"/>
 	<classpathentry kind="lib" path="RTED_v1.1.jar"/>
 	<classpathentry kind="lib" path="/Parser/kryo-3.0.3.jar"/>
@@ -9,5 +10,6 @@
 			<attribute name="owner.project.facets" value="java"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -21,7 +21,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.snap.data.Snapshot;
-import com.snap.eval.Assignment;
 import com.snap.eval.AutoGrader;
 import com.snap.eval.AutoGrader.Grader;
 import com.snap.eval.util.Prune;
@@ -31,6 +30,7 @@ import com.snap.graph.data.HintFactoryMap.VectorHint;
 import com.snap.graph.data.Node;
 import com.snap.graph.data.Node.Predicate;
 import com.snap.graph.subtree.SubtreeBuilder.Tuple;
+import com.snap.parser.Assignment;
 import com.snap.parser.DataRow;
 import com.snap.parser.Grade;
 import com.snap.parser.SolutionPath;

@@ -9,6 +9,7 @@ import java.util.Map;
 import com.snap.eval.util.Prune;
 import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.Node;
+import com.snap.parser.Assignment;
 import com.snap.parser.DataRow;
 import com.snap.parser.SolutionPath;
 import com.snap.parser.Store.Mode;

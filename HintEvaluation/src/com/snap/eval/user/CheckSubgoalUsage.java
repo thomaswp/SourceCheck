@@ -16,11 +16,11 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
 import com.snap.data.Snapshot;
-import com.snap.eval.Assignment;
 import com.snap.eval.AutoGrader;
 import com.snap.eval.AutoGrader.Grader;
 import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.Node;
+import com.snap.parser.Assignment;
 import com.snap.parser.DataRow;
 import com.snap.parser.SolutionPath;
 

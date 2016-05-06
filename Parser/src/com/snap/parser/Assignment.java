@@ -1,11 +1,9 @@
-package com.snap.eval;
+package com.snap.parser;
 
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Map;
 
-import com.snap.parser.SnapParser;
-import com.snap.parser.SolutionPath;
 import com.snap.parser.Store.Mode;
 
 public class Assignment {

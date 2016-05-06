@@ -9,6 +9,7 @@ import com.snap.data.Snapshot;
 import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.Node;
 import com.snap.graph.data.Node.Predicate;
+import com.snap.parser.Assignment;
 import com.snap.parser.DataRow;
 import com.snap.parser.Grade;
 import com.snap.parser.SolutionPath;

@@ -2,7 +2,7 @@ package com.snap.eval.user;
 
 import java.io.IOException;
 
-import com.snap.eval.Assignment;
+import com.snap.parser.Assignment;
 import com.snap.parser.SnapParser;
 import com.snap.parser.Store.Mode;
 
