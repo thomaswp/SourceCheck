@@ -13,12 +13,18 @@ import com.snap.parser.Store.Mode;
 public class Assignment {
 	public final String dataDir, name;
 	public final Date start, end;
+	public final boolean graded;
 	
 	public Assignment(String dataDir, String name, Date start, Date end) {
+		this(dataDir, name, start, end, false);
+	}
+	
+	public Assignment(String dataDir, String name, Date start, Date end, boolean graded) {
 		this.dataDir = dataDir;
 		this.name = name;
 		this.start = start;
 		this.end = end;
+		this.graded = graded;
 	}
 	
 	public String analysisDir() {
@@ -69,7 +75,7 @@ public class Assignment {
 		public final static Assignment Squiral = new Assignment(dataDir, 
 				"squiralHW", start, null);
 		public final static Assignment GuessingGame1 = new Assignment(dataDir, 
-				"guess1Lab", start,  new GregorianCalendar(2015, 8, 18).getTime());
+				"guess1Lab", start,  new GregorianCalendar(2015, 8, 18).getTime(), true);
 		public final static Assignment GuessingGame2 = new Assignment(dataDir, 
 				"guess2HW", start, null);
 		public final static Assignment GuessingGame3 = new Assignment(dataDir, 
@@ -92,7 +98,7 @@ public class Assignment {
 		public final static Assignment Squiral = new Assignment(dataDir, 
 				"squiralHW", start, new GregorianCalendar(2016, 1, 9).getTime());
 		public final static Assignment GuessingGame1 = new Assignment(dataDir, 
-				"guess1Lab", start, new GregorianCalendar(2016, 1, 9).getTime());
+				"guess1Lab", start, new GregorianCalendar(2016, 1, 9).getTime(), true);
 		public final static Assignment GuessingGame2 = new Assignment(dataDir, 
 				"guess2HW", start, new GregorianCalendar(2016, 1, 16).getTime());
 		public final static Assignment GuessingGame3 = new Assignment(dataDir, 

@@ -41,7 +41,7 @@ public class SnapSubtree {
 
 		//		rtedTest();
 
-		SnapSubtree subtree = new SnapSubtree(Assignment.Fall2015.GuessingGame1);
+		SnapSubtree subtree = new SnapSubtree(Assignment.Spring2016.GuessingGame1);
 
 		// [0.0 - 1.0]
 		double minGrade = 1;
@@ -269,7 +269,7 @@ public class SnapSubtree {
 			}
 			
 			if (nodes.size() == 0) continue;
-			if (path.grade == null) System.err.println("No grade for: " + student);
+			if (assignment.graded && path.grade == null) System.err.println("No grade for: " + student);
 			
 			nodeMapCache.put(student, nodes);
 			gradeMapCache.put(student, path.grade);
