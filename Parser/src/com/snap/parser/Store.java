@@ -29,7 +29,11 @@ public class Store {
 				Input input = new Input(new FileInputStream(cached));
 				T rows = kryo.readObject(input, clazz);
 				input.close();
-				if (rows != null) return rows;
+				if (rows != null) {
+					if (!(rows instanceof IVersioned) || ((IVersioned)rows).isUpToDate()) {
+						return rows;
+					}
+				}
 			} catch (Exception e) {
 				e.printStackTrace();
 				cached.delete();
