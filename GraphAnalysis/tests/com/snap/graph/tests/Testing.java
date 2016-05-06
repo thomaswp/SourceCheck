@@ -22,7 +22,8 @@ import com.snap.parser.Store.Mode;
 public class Testing {
 
 	Assignment[] assignments = new Assignment[] {
-		Assignment.Fall2015.GuessingGame1	
+		Assignment.Fall2015.GuessingGame1,
+		Assignment.Spring2016.GuessingGame1
 	};
 	
 	private static Node toNode(Snapshot snapshot) {
@@ -46,40 +47,19 @@ public class Testing {
 		return (VectorHint) builder.getFirstHint(node);
 	}
 	
-	@Test
-	public void test() throws FileNotFoundException {
-		for (Assignment assignment : assignments) {
-			Snapshot test = assignment.loadTest("join");
-			Node node = toNode(test);
-			List<Node> says = node.searchAll(new Node.TypePredicate("doSayFor"));
-			Node say = says.get(1);
-			VectorHint hint = getFirstHint(assignment, say);
-			assertArrayEquals(hint.to.items, new String[] {
-				"reportJoinWords", "literal"	
-			});
-			
-			say = says.get(0);
-			hint = getFirstHint(assignment, say);
-			assertNull(hint);
-			
-		}
-		
-//		Node node = new 
-//		builder.getHints(parent)
+	private void testHintNull(Node node) {
+		testHint(node, (String[]) null);
 	}
 	
-	@Test
-	public void test2() {
-		Snapshot snapshot = getSnapshot(Assignment.Spring2016.GuessingGame1, "f5de3d7e-61e9-4a64-88d4-bf5adcee3e6f", 361577);
-		assertNotNull(snapshot);
-		
-		Node node = toNode(snapshot);
-		Node script = node.search(new Node.TypePredicate("script"));
-		
-		VectorHint hint = getFirstHint(Assignment.Fall2015.GuessingGame1, script);
-		assertArrayEquals(hint.to.items, new String[] {
-			"receiveGo", "doSayFor", "doAsk", "doSayFor"	
-		});
+	private void testHint(Node node, String... to) {
+		for (Assignment assignment : assignments) {
+			VectorHint hint = getFirstHint(assignment, node);
+			if (to == null) {
+				assertNull(hint);
+			} else {
+				assertArrayEquals(hint.to.items, to);
+			}
+		}
 	}
 	
 	private Snapshot getSnapshot(Assignment assignment, String id, int rowID) {
@@ -93,5 +73,25 @@ public class Testing {
 		}
 		return null;
 	}
+	
+	@Test
+	public void test() throws FileNotFoundException {
+		Snapshot test = Assignment.Fall2015.GuessingGame1.loadTest("join");
+		
+		Node node = toNode(test);
+		List<Node> says = node.searchAll(new Node.TypePredicate("doSayFor"));
 
+		testHintNull(says.get(0));
+		testHint(says.get(1), "reportJoinWords", "literal");
+	}
+	
+	@Test
+	public void test2() {
+		Snapshot snapshot = getSnapshot(Assignment.Spring2016.GuessingGame1, "f5de3d7e-61e9-4a64-88d4-bf5adcee3e6f", 361577);
+		
+		Node node = toNode(snapshot);
+		Node script = node.search(new Node.TypePredicate("script"));
+		
+		testHint(script, "receiveGo", "doSayFor", "doAsk", "doSayFor");
+	}
 }

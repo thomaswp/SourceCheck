@@ -137,7 +137,7 @@ public class SnapParser {
 		int hash = 0;
 		if (minDate != null) hash += minDate.hashCode();
 		if (maxDate != null) hash += maxDate.hashCode();
-		if (hash != 0) cachePath += "-d" + (maxDate.hashCode() + minDate.hashCode()); 
+		if (hash != 0) cachePath += "-d" + (hash); 
 		cachePath += ".cached";
 		
 		return Store.getCachedObject(new Kryo(), cachePath, SolutionPath.class, storeMode, new Store.Loader<SolutionPath>() {
