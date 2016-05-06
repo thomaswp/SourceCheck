@@ -55,7 +55,7 @@ public class SnapParser {
 	 * @throws IOException
 	 */
 	public static void splitStudentRecords(String file) throws IOException{
-		String outputFolder = file.substring(0, file.lastIndexOf("."));
+		String outputFolder = file.substring(0, file.lastIndexOf(".")) + "/parsed";
 		new File(outputFolder).mkdirs();
 		CSVParser parser = new CSVParser(new FileReader(file), CSVFormat.DEFAULT.withHeader());
 		int i = 0;
@@ -250,7 +250,7 @@ public class SnapParser {
 		
 		final Map<String, SolutionPath> students = new TreeMap<String, SolutionPath>();
 		final AtomicInteger threads = new AtomicInteger();
-		for (File file : new File(outputFolder, folder).listFiles()) {
+		for (File file : new File(outputFolder + "/" + "parsed", folder).listFiles()) {
 			if (!file.getName().endsWith(".csv")) continue;
 			final File fFile = file;
 			final Grade grade = grades.get(file.getName().replace(".csv", ""));
@@ -312,12 +312,12 @@ public class SnapParser {
 	}
 
 	public static void main(String[] args) throws IOException {
-//		SnapParser.splitStudentRecords("../data/csc200/fall2015");
+//		SnapParser.splitStudentRecords("../data/csc200/fall2015.csv");
 //		SnapParser parser = new SnapParser("../data/csc200/fall2015", Mode.Overwrite);
 //		parser.parseAssignment("guess1Lab", true);
 //		parser.parseAssignment("guess2HW", true);
 //		parser.parseAssignment("guess3Lab", true);
-		clean("../data/csc200/");
+		clean("../data/csc200/parsed");
 	}
 }
 

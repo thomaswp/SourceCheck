@@ -41,10 +41,12 @@ public class Assignment {
 		return new SnapParser(dataDir, mode).parseAssignment(name, snapshotsOnly, start, end);
 	}
 	
+	public final static String BASE_DIR = "../data/csc200";
+	
 	// TODO: Find end times
 	public static class Fall2015 {
 		private final static Date start = new GregorianCalendar(2015, 7, 10).getTime();
-		private final static String dataDir = "../data/csc200/fall2015";
+		private final static String dataDir = BASE_DIR + "/fall2015";
 		
 		public final static Assignment LightsCameraAction = new Assignment(dataDir, 
 				"lightsCameraActionHW", start, null);
@@ -67,7 +69,7 @@ public class Assignment {
 	
 	public static class Spring2016 {
 		private final static Date start = new GregorianCalendar(2016, 0, 1).getTime();
-		private final static String dataDir = "../data/csc200/spring2016";
+		private final static String dataDir = BASE_DIR + "/spring2016";
 		
 		public final static Assignment LightsCameraAction = new Assignment(dataDir, 
 				"lightsCameraActionHW", start, new GregorianCalendar(2016, 0, 29).getTime());
