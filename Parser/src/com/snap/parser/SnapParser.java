@@ -323,11 +323,10 @@ public class SnapParser {
 
 	public static void main(String[] args) throws IOException {
 //		SnapParser.splitStudentRecords("../data/csc200/fall2015.csv");
-//		SnapParser parser = new SnapParser("../data/csc200/fall2015", Mode.Overwrite);
-//		parser.parseAssignment("guess1Lab", true);
-//		parser.parseAssignment("guess2HW", true);
-//		parser.parseAssignment("guess3Lab", true);
-		clean("../data/csc200/parsed");
+
+		Assignment.Spring2016.PolygonMaker.load(Mode.Overwrite, true);
+		
+//		clean("../data/csc200/parsed");
 	}
 }
 
