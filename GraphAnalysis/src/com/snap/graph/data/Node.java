@@ -1,6 +1,7 @@
 package com.snap.graph.data;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import com.snap.data.Canonicalization;
@@ -101,6 +102,19 @@ public class Node extends StringHashable {
 			if (found != null) return found;
 		}
 		return null;
+	}
+	
+	public List<Node> searchAll(Predicate predicate) {
+		List<Node> list = new LinkedList<>();
+		searchAll(predicate, list);
+		return list;
+	}
+	
+	public void searchAll(Predicate predicate, List<Node> list) {
+		if (predicate.eval(this)) list.add(this);
+		for (Node node : children) {
+			node.searchAll(predicate, list);
+		}
 	}
 	
 	public int searchChildren(Predicate pred) {
