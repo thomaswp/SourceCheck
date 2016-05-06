@@ -44,7 +44,7 @@ public class PredictionEval {
 	}
 	
 	public static void predictionEval(Assignment assignment) throws FileNotFoundException, IOException {
-		Snapshot solution = assignment.solution();
+		Snapshot solution = assignment.loadSolution();
 		Node solutionNode = SimpleNodeBuilder.toTree(solution, true);
 		DirectEditPolicy solutionPolicy = new DirectEditPolicy(solutionNode);
 				
@@ -69,7 +69,7 @@ public class PredictionEval {
 	}
 	
 	public static void distanceEval(Assignment assignment) throws FileNotFoundException, IOException {
-		Snapshot solution = assignment.solution();
+		Snapshot solution = assignment.loadSolution();
 		Node solutionNode = SimpleNodeBuilder.toTree(solution, true);
 		DirectEditPolicy solutionPolicy = new DirectEditPolicy(solutionNode);
 				

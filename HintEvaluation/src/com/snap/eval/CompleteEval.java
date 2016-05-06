@@ -42,7 +42,7 @@ public class CompleteEval {
 
 		SnapSubtree subtree = new SnapSubtree(assignment);
 
-		Snapshot solution = assignment.solution();
+		Snapshot solution = assignment.loadSolution();
 		Node solutionNode = SimpleNodeBuilder.toTree(solution, true);
 		DirectEditPolicy solutionPolicy = new DirectEditPolicy(solutionNode);
 		
@@ -119,7 +119,7 @@ public class CompleteEval {
 
 		SnapSubtree subtree = new SnapSubtree(assignment);
 
-		Snapshot solution = assignment.solution();
+		Snapshot solution = assignment.loadSolution();
 		Node solutionNode = SimpleNodeBuilder.toTree(solution, true);
 		DirectEditPolicy solutionPolicy = new DirectEditPolicy(solutionNode);
 		

@@ -24,8 +24,12 @@ public class Assignment {
 		return dataDir + "/analysis/" + name;
 	}
 	
-	public Snapshot solution() throws FileNotFoundException {
+	public Snapshot loadSolution() throws FileNotFoundException {
 		return Snapshot.parse(new File(dataDir + "/solutions/", name + ".xml"));
+	}
+
+	public Snapshot loadTest(String name) throws FileNotFoundException {
+		return Snapshot.parse(new File(dataDir + "/tests/", name + ".xml"));
 	}
 	
 	@Override

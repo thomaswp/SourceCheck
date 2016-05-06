@@ -72,7 +72,7 @@ public class SolveEval {
 	}
 	
 	public static void policyGradeEval(Assignment assignment) throws FileNotFoundException, IOException {
-		Snapshot solution = assignment.solution();
+		Snapshot solution = assignment.loadSolution();
 		Node solutionNode = SimpleNodeBuilder.toTree(solution, true);
 		DirectEditPolicy solutionPolicy = new DirectEditPolicy(solutionNode);
 				
