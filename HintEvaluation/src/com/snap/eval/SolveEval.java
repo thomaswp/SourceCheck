@@ -4,8 +4,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -28,10 +26,10 @@ import com.snap.eval.policy.StudentPolicy;
 import com.snap.eval.util.PrintUpdater;
 import com.snap.eval.util.Prune;
 import com.snap.graph.SimpleNodeBuilder;
-import com.snap.graph.data.HintFactoryMap;
 import com.snap.graph.data.Node;
 import com.snap.graph.subtree.SnapSubtree;
 import com.snap.graph.subtree.SubtreeBuilder;
+import com.snap.parser.Assignment;
 
 public class SolveEval {
 	
@@ -48,16 +46,15 @@ public class SolveEval {
 	
 	public static void main(String[] args) throws IOException {
 				
-		String dir = "../data/csc200/fall2015";
-		String assignment = "guess1Lab";
+		Assignment assignment = Assignment.Fall2015.GuessingGame1;
 		
-		policyGradeEval(dir, assignment);
-//		hintChainEval(dir, assignment);
+		policyGradeEval(assignment);
+//		hintChainEval(assignment);
 	}
 
-	public static void hintChainEval(String dir, String assignment) throws FileNotFoundException, IOException {
+	public static void hintChainEval(Assignment assignment) throws FileNotFoundException, IOException {
 			
-		eval(dir, assignment, "solve-chain" + MAX_HINTS, new ScoreConstructor() {
+		eval(assignment, "solve-chain" + MAX_HINTS, new ScoreConstructor() {
 			@Override
 			public Score[] construct(String student, List<Node> nodes, SnapSubtree subtree) {
 				SubtreeBuilder builder0 = subtree.buildGraph(student, 0);
@@ -74,12 +71,12 @@ public class SolveEval {
 		});
 	}
 	
-	public static void policyGradeEval(String dir, String assignment) throws FileNotFoundException, IOException {
-		Snapshot solution = Snapshot.parse(new File(dir + "/solutions/", assignment + ".xml"));
+	public static void policyGradeEval(Assignment assignment) throws FileNotFoundException, IOException {
+		Snapshot solution = assignment.solution();
 		Node solutionNode = SimpleNodeBuilder.toTree(solution, true);
 		DirectEditPolicy solutionPolicy = new DirectEditPolicy(solutionNode);
 				
-		eval(dir, assignment, "solve" + MAX_HINTS, new ScoreConstructor() {
+		eval(assignment, "solve" + MAX_HINTS, new ScoreConstructor() {
 			@Override
 			public Score[] construct(String student, List<Node> nodes, SnapSubtree subtree) {
 				SubtreeBuilder builder0 = subtree.buildGraph(student, 0);
@@ -96,12 +93,11 @@ public class SolveEval {
 		});
 	}
 	
-	private static void eval(String dir, String assignment, String test, ScoreConstructor constructor) throws IOException {
+	private static void eval(Assignment assignment, String test, ScoreConstructor constructor) throws IOException {
 		
-		Date maxTime = new GregorianCalendar(2015, 8, 18).getTime();
-		SnapSubtree subtree = new SnapSubtree(dir, assignment, maxTime, new HintFactoryMap());
+		SnapSubtree subtree = new SnapSubtree(assignment);
 		
-		File outFile = new File(dir + "/analysis/" + assignment + "/" + test + (PRUNE ? "-p" : "") + ".csv");
+		File outFile = new File(assignment.analysisDir() + "/" + test + (PRUNE ? "-p" : "") + ".csv");
 		outFile.getParentFile().mkdirs();
 		CSVPrinter printer = new CSVPrinter(new PrintStream(outFile), CSVFormat.DEFAULT.withHeader(Score.headers()));
 		

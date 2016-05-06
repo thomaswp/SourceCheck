@@ -8,8 +8,6 @@ import java.io.PrintStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -24,9 +22,9 @@ import com.snap.graph.data.HintMap;
 import com.snap.graph.data.Node;
 import com.snap.graph.data.VectorGraph;
 import com.snap.graph.subtree.SubtreeBuilder.Hint;
+import com.snap.parser.Assignment;
 import com.snap.parser.DataRow;
 import com.snap.parser.Grade;
-import com.snap.parser.SnapParser;
 import com.snap.parser.SolutionPath;
 import com.snap.parser.Store;
 import com.snap.parser.Store.Mode;
@@ -43,8 +41,7 @@ public class SnapSubtree {
 
 		//		rtedTest();
 
-		Date maxTime = new GregorianCalendar(2015, 8, 18).getTime();
-		SnapSubtree subtree = new SnapSubtree("../data/csc200/fall2015", "guess1Lab", maxTime, new HintFactoryMap());
+		SnapSubtree subtree = new SnapSubtree(Assignment.Fall2015.GuessingGame1);
 
 		// [0.0 - 1.0]
 		double minGrade = 1;
@@ -75,11 +72,9 @@ public class SnapSubtree {
 	//	}
 
 
-	public final String dataDir;
-	public final String assignment;
-	private final Date maxTime;
+	public final Assignment assignment;
 	private final HintMap hintMap;
-
+	
 	private Map<String, List<Node>> nodeMapCache;
 	private Map<String, Grade> gradeMapCache;
 
@@ -105,10 +100,12 @@ public class SnapSubtree {
 		return gradeMapCache;
 	}
 
-	public SnapSubtree(String dataDir, String assignment, Date maxTime, HintMap hintMap) {
-		this.dataDir = dataDir;
+	public SnapSubtree(Assignment assignment) {
+		this(assignment, new HintFactoryMap());
+	}
+	
+	public SnapSubtree(Assignment assignment, HintMap hintMap) {
 		this.assignment = assignment;
-		this.maxTime = maxTime;
 		this.hintMap = hintMap;
 	}
 
@@ -179,7 +176,7 @@ public class SnapSubtree {
 			if (!graph.hasGoal()) continue;
 
 			graph.bellmanBackup(2);
-			String dir = String.format("%s/graphs/%s-g%03d/", dataDir, assignment, Math.round(builder.minGrade * 100));
+			String dir = String.format("%s/graphs/%s-g%03d/", assignment.dataDir, assignment.name, Math.round(builder.minGrade * 100));
 			Node child = node;
 			while (child.children.size() > 0) {
 				dir += child.type() + "/";
@@ -198,7 +195,7 @@ public class SnapSubtree {
 	}
 	
 	public SubtreeBuilder buildGraph(Mode storeMode, final double minGrade) {
-		String storePath = new File(dataDir, String.format("%s-g%03d.cached", assignment, Math.round(minGrade * 100))).getAbsolutePath();
+		String storePath = new File(assignment.dataDir, String.format("%s-g%03d.cached", assignment.name, Math.round(minGrade * 100))).getAbsolutePath();
 		SubtreeBuilder builder = Store.getCachedObject(SubtreeBuilder.getKryo(), storePath, SubtreeBuilder.class, storeMode, new Store.Loader<SubtreeBuilder>() {
 			@Override
 			public SubtreeBuilder load() {
@@ -257,27 +254,23 @@ public class SnapSubtree {
 	}
 
 	private void parseStudents() throws IOException {
-		SnapParser parser = new SnapParser(dataDir, Store.Mode.Use);
-		Map<String, SolutionPath> students = parser.parseAssignment(assignment, true);
+		Map<String, SolutionPath> students = assignment.load(Mode.Use, true);
 		nodeMapCache = new TreeMap<String, List<Node>>();
 		gradeMapCache = new TreeMap<String, Grade>();
 
 		for (String student : students.keySet()) {
 			SolutionPath path = students.get(student);
 			if (!path.exported) continue;
-			if (path.grade != null && path.grade.outlier) continue;
 			List<Node> nodes = new ArrayList<Node>();
 
 			for (DataRow row : path) {
-				if (maxTime.before(row.timestamp)) {
-//					System.out.println("Cutoff: " + student);
-					break;
-				}
 				Node node = SimpleNodeBuilder.toTree(row.snapshot, true);
 				nodes.add(node);
 			}
+			
 			if (nodes.size() == 0) continue;
 			if (path.grade == null) System.err.println("No grade for: " + student);
+			
 			nodeMapCache.put(student, nodes);
 			gradeMapCache.put(student, path.grade);
 		}

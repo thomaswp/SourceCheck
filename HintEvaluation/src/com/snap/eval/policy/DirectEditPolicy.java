@@ -1,18 +1,16 @@
 package com.snap.eval.policy;
 
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.snap.graph.data.HintFactoryMap;
 import com.snap.graph.data.Node;
 import com.snap.graph.subtree.SnapSubtree;
 import com.snap.graph.subtree.SubtreeBuilder.Tuple;
+import com.snap.parser.Assignment;
 
 import astrecognition.model.Convert;
 import astrecognition.model.Tree;
@@ -120,8 +118,7 @@ public class DirectEditPolicy implements HintPolicy {
 	}
 	
 	private static void testStudents() {
-		Date maxTime = new GregorianCalendar(2015, 8, 18).getTime();
-		SnapSubtree subtree = new SnapSubtree("../data/csc200/fall2015", "guess1Lab", maxTime, new HintFactoryMap());
+		SnapSubtree subtree = new SnapSubtree(Assignment.Fall2015.GuessingGame1);
 				
 		Map<String, List<Node>> students = subtree.nodeMap();
 		for (String student : students.keySet()) {

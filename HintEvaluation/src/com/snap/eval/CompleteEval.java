@@ -4,8 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -22,10 +20,10 @@ import com.snap.eval.policy.HintPolicy;
 import com.snap.eval.util.PrintUpdater;
 import com.snap.eval.util.Prune;
 import com.snap.graph.SimpleNodeBuilder;
-import com.snap.graph.data.HintFactoryMap;
 import com.snap.graph.data.Node;
 import com.snap.graph.subtree.SnapSubtree;
 import com.snap.graph.subtree.SubtreeBuilder.Tuple;
+import com.snap.parser.Assignment;
 
 import distance.RTED_InfoTree_Opt;
 
@@ -35,22 +33,20 @@ public class CompleteEval {
 	private final static boolean PRUNE = true;
 	
 	public static void main(String[] args) throws IOException {
-		String dir = "../data/csc200/fall2015";
-		String assignment = "guess1Lab";
-		eval(dir, assignment);
-//		test(dir, assignment);
+		Assignment assignment = Assignment.Fall2015.GuessingGame1;
+		eval(assignment);
+//		test(assignment);
 	}
 	
-	private static void eval(String dir, String assignment) throws IOException {
+	private static void eval(Assignment assignment) throws IOException {
 
-		Date maxTime = new GregorianCalendar(2015, 8, 18).getTime();
-		SnapSubtree subtree = new SnapSubtree(dir, assignment, maxTime, new HintFactoryMap());
+		SnapSubtree subtree = new SnapSubtree(assignment);
 
-		Snapshot solution = Snapshot.parse(new File(dir + "/solutions/", assignment + ".xml"));
+		Snapshot solution = assignment.solution();
 		Node solutionNode = SimpleNodeBuilder.toTree(solution, true);
 		DirectEditPolicy solutionPolicy = new DirectEditPolicy(solutionNode);
 		
-		File outFile = new File(dir + "/analysis/" + assignment + "/complete" + (PRUNE ? "-p" : "") + ".csv");
+		File outFile = new File(assignment.analysisDir() + "/complete" + (PRUNE ? "-p" : "") + ".csv");
 		outFile.getParentFile().mkdirs();
 		List<String> headers = new LinkedList<>();
 		headers.add("policy"); headers.add("student"); headers.add("slice"); headers.add("studentSteps"); headers.add("hash"); headers.add("steps"); headers.add("deletions");  headers.add("firstHints");
@@ -119,12 +115,11 @@ public class CompleteEval {
 	}
 	
 	@SuppressWarnings("unused")
-	private static void test(String dir, String assignment) throws IOException {
+	private static void test(Assignment assignment) throws IOException {
 
-		Date maxTime = new GregorianCalendar(2015, 8, 18).getTime();
-		SnapSubtree subtree = new SnapSubtree(dir, assignment, maxTime, new HintFactoryMap());
+		SnapSubtree subtree = new SnapSubtree(assignment);
 
-		Snapshot solution = Snapshot.parse(new File(dir + "/solutions/", assignment + ".xml"));
+		Snapshot solution = assignment.solution();
 		Node solutionNode = SimpleNodeBuilder.toTree(solution, true);
 		DirectEditPolicy solutionPolicy = new DirectEditPolicy(solutionNode);
 		

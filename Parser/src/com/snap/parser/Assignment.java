@@ -1,9 +1,12 @@
 package com.snap.parser;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Map;
 
+import com.snap.data.Snapshot;
 import com.snap.parser.Store.Mode;
 
 public class Assignment {
@@ -15,6 +18,14 @@ public class Assignment {
 		this.name = name;
 		this.start = start;
 		this.end = end;
+	}
+	
+	public String analysisDir() {
+		return dataDir + "/analysis/" + name;
+	}
+	
+	public Snapshot solution() throws FileNotFoundException {
+		return Snapshot.parse(new File(dataDir + "/solutions/", name + ".xml"));
 	}
 	
 	@Override

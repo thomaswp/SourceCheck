@@ -3,17 +3,15 @@ package com.snap.eval.export;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
 import com.snap.data.Snapshot;
-import com.snap.graph.data.HintFactoryMap;
 import com.snap.graph.data.Node;
 import com.snap.graph.data.Node.Action;
 import com.snap.graph.subtree.SnapSubtree;
+import com.snap.parser.Assignment;
 import com.snap.parser.Grade;
 
 import de.citec.tcs.alignment.csv.CSVExporter;
@@ -30,14 +28,13 @@ import de.unibi.citec.fit.objectgraphs.api.matlab.print.PlainTextPrintModule;
 public class FITExport {
 	
 	public static void main(String[] args) {
-		Date maxTime = new GregorianCalendar(2015, 8, 18).getTime();
-		SnapSubtree subtree = new SnapSubtree("../data/csc200/fall2015", "guess1Lab", maxTime, new HintFactoryMap());
+		SnapSubtree subtree = new SnapSubtree(Assignment.Fall2015.GuessingGame1);
 		outputStudentsFOG(subtree);
 	}
 	
 	private static void outputStudentsFOG(SnapSubtree subtree) {
 		int totalNodes = 0;
-		String baseDir = subtree.dataDir + "/" + subtree.assignment + "/chf-fog/";
+		String baseDir = subtree.assignment.dataDir + "/" + subtree.assignment + "/chf-fog/";
 		new File(baseDir).mkdirs();
 
 		Map<String,List<Node>> nodeMap = subtree.nodeMap();
@@ -103,7 +100,7 @@ public class FITExport {
 			}
 		}
 
-		String baseDir = subtree.dataDir + "/" + subtree.assignment + "/chf/";
+		String baseDir = subtree.assignment.dataDir + "/" + subtree.assignment + "/chf/";
 		new File(baseDir).mkdirs();
 
 		// this we want to transform to a Sequence in my format. For that we
