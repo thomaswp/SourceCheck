@@ -2,6 +2,7 @@ package com.snap.parser;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Map;
@@ -30,6 +31,15 @@ public class Assignment {
 
 	public Snapshot loadTest(String name) throws FileNotFoundException {
 		return Snapshot.parse(new File(dataDir + "/tests/", name + ".xml"));
+	}
+
+	public SolutionPath loadSubmission(String id, Mode mode, boolean snapshotsOnly) {
+		try {
+			return new SnapParser(dataDir, mode).parseSubmission(this, id, snapshotsOnly);
+		} catch (IOException e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 	
 	@Override

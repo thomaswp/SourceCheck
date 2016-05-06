@@ -12,16 +12,18 @@ public class DataRow implements Serializable, Comparable<DataRow> {
 	
 	private final static DateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
 	
+	public final int id;
 	public final Snapshot snapshot;
 	public final Date timestamp;
 	public final String action, data;
 	
 	@SuppressWarnings("unused")
 	private DataRow() { 
-		this(null, null, null, null);
+		this(0, null, null, null, null);
 	}
 	
-	public DataRow(Date timestamp, String action, String data, String snapshotXML) {
+	public DataRow(int id, Date timestamp, String action, String data, String snapshotXML) {
+		this.id = id;
 		this.timestamp = timestamp;
 		this.action = action;
 		this.data = data;

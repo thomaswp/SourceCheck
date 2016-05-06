@@ -128,7 +128,11 @@ public class SnapParser {
 		csvPrinters.clear();
 	}
 	
-	public SolutionPath parseRows(final File logFile, final Grade grade, final boolean snapshotsOnly, final Date minDate, final Date maxDate) throws IOException {
+	public SolutionPath parseSubmission(Assignment assignment, String id, boolean snapshotsOnly) throws IOException {
+		return parseRows(new File(assignment.dataDir + "/parsed/" + assignment.name, id + ".csv"), null, snapshotsOnly, assignment.start, assignment.end);
+	}
+	
+	private SolutionPath parseRows(final File logFile, final Grade grade, final boolean snapshotsOnly, final Date minDate, final Date maxDate) throws IOException {
 		String cachePath = logFile.getAbsolutePath().replace(".csv", "") + (snapshotsOnly ? "" :  "-data");
 		int hash = 0;
 		if (minDate != null) hash += minDate.hashCode();
@@ -178,15 +182,21 @@ public class SnapParser {
 						} else if (xml.length() <= 2 && lastGrab != null) {
 							xml = lastGrab;
 						}
-						DataRow row = new DataRow(timestamp, action, data, xml);
+						
+						String idS = record.get(0);
+						int id = -1;
+						try {
+							id = Integer.parseInt(idS);
+						} catch (NumberFormatException e) { }
+						
+						DataRow row = new DataRow(id, timestamp, action, data, xml);
 						
 						if (!snapshotsOnly || row.snapshot != null) {
 							currentWork.add(row);
 							lastGrab = null;
 						}
 						
-						String id = record.get(0);
-						if (id.equals(gradedID)) {
+						if (idS.equals(gradedID)) {
 							foundGraded = true;
 						}
 						

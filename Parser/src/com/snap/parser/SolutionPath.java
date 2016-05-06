@@ -5,7 +5,7 @@ import java.util.LinkedList;
 
 public class SolutionPath implements Iterable<DataRow>, IVersioned {
 	
-	public final static String VERSION = "1.0.1"; 
+	public final static String VERSION = "1.1.0"; 
 	
 	public final LinkedList<DataRow> rows = new LinkedList<DataRow>();
 	public final Grade grade;
