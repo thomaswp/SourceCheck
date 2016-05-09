@@ -272,7 +272,9 @@ public class SnapParser {
 						SolutionPath rows = parseRows(fFile, grade, snapshotsOnly, minDate, maxDate);
 						if (rows.grade == null || !rows.grade.outlier) {
 							if (rows.size() > 3) {
-								students.put(fFile.getName(), rows);
+								synchronized (students) {
+									students.put(fFile.getName(), rows);
+								}
 							}							
 						}
 					} catch (IOException e) {
