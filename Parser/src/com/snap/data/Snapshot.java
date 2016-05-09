@@ -23,18 +23,19 @@ public class Snapshot extends Code implements IHasID {
 	
 	public final String name;
 	public final Stage stage;
+	public final BlockDefinition editing;
 	public final List<BlockDefinition> blocks = new ArrayList<BlockDefinition>();
 	public final List<String> variables = new ArrayList<String>();
-	public final List<Script> editing = new ArrayList<Script>();
 
 	@SuppressWarnings("unused")
 	private Snapshot() {
-		this(null, null);
+		this(null, null, null);
 	}
 	
-	public Snapshot(String name, Stage stage) {
+	public Snapshot(String name, Stage stage, BlockDefinition editing) {
 		this.name = name;
 		this.stage = stage;
+		this.editing = editing;
 	}
 	
 	public static Snapshot parse(File file) throws FileNotFoundException {
@@ -62,24 +63,27 @@ public class Snapshot extends Code implements IHasID {
 			XML.buildRefMap(project, "sprite");
 			
 			Element stage = XML.getFirstChildByTagName(project, "stage");
-			Snapshot snapshot = new Snapshot(name, Stage.parse(stage));
+			
+			BlockDefinition editingBlock = null;
+			Element editing = XML.getFirstChildByTagName(project, "editing");
+			if (editing != null && editing.hasChildNodes()) {
+				editingBlock = BlockDefinition.parseEditing(editing);
+			}
+			
+			Snapshot snapshot = new Snapshot(name, Stage.parse(stage), editingBlock);
 			for (Code code : XML.getCodeInFirstChild(project, "blocks")) {
 				snapshot.blocks.add((BlockDefinition) code);
 			}
 			for (Element variable : XML.getGrandchildrenByTagName(project, "variables", "variable")) {
 				snapshot.variables.add(variable.getAttribute("name"));
 			}
-			Element editing = XML.getFirstChildByTagName(project, "editing");
-			if (editing != null && editing.hasChildNodes()) {
-				for (Code script : XML.getCodeInFirstChild(editing, "scripts")) {
-					snapshot.editing.add((Script)script);
-				}
-			}
+			
 			XML.ensureEmpty(project, "headers", "code");
 			// TODO: what is in <hidden>?
 			return snapshot;
 		} catch (Exception e) {
 			System.out.println("Error parsing: " + name);
+			System.out.println(xmlSource);
 			e.printStackTrace();
 		}
 		return null;
@@ -107,6 +111,7 @@ public class Snapshot extends Code implements IHasID {
 		ac.add(stage);
 		ac.add(blocks);
 		ac.add(canonicalizeVariables(variables, canon));
+		if (editing != null) ac.add(editing);
 		return canon ? "snapshot" : name;
 	}
 	

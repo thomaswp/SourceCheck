@@ -35,7 +35,8 @@ public class Store {
 					}
 				}
 			} catch (Exception e) {
-				e.printStackTrace();
+//				e.printStackTrace();
+				System.err.println("Error parsing: " + path);
 				cached.delete();
 			}
 		}

@@ -14,6 +14,7 @@ public class CodeBuilder {
 	}
 
 	public CodeBuilder add(Code code) {
+		if (code == null) return this;
 		addIndent();
 		String content = code.toCode(canon);
 		if (content.endsWith("\n")) {

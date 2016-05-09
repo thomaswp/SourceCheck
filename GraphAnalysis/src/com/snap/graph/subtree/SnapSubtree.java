@@ -41,7 +41,7 @@ public class SnapSubtree {
 
 		//		rtedTest();
 
-		SnapSubtree subtree = new SnapSubtree(Assignment.Spring2016.GuessingGame1);
+		SnapSubtree subtree = new SnapSubtree(Assignment.Spring2016.PolygonMaker);
 
 		// [0.0 - 1.0]
 		double minGrade = 1;
