@@ -21,8 +21,10 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
+import org.json.JSONObject;
 
 import com.esotericsoftware.kryo.Kryo;
+import com.snap.data.Snapshot;
 import com.snap.parser.Store.Mode;
 
 /**
@@ -154,6 +156,9 @@ public class SnapParser {
 					String gradedID = grade == null ? null : grade.gradedID;
 					boolean foundGraded = false;
 					
+					int editingIndex = -1;
+					Snapshot lastSnaphot = null;
+					
 					List<DataRow> currentWork = new ArrayList<DataRow>();
 					
 					for (CSVRecord record : parser) {
@@ -190,6 +195,22 @@ public class SnapParser {
 						} catch (NumberFormatException e) { }
 						
 						DataRow row = new DataRow(id, timestamp, action, data, xml);
+						if (row.snapshot != null) lastSnaphot = row.snapshot;
+						
+						if ("BlockEditor.start".equals(action)) {
+							JSONObject json = new JSONObject(data);
+							String name = json.getString("spec");
+							String type = json.getString("type");
+							String category = json.getString("category");
+							editingIndex = lastSnaphot.getEditingIndex(name, type, category);
+							if (editingIndex == -1) System.err.println("Edit index not found");
+						} else if ("BlockEditor.ok".equals(action)) {
+							// TODO: fix ok bug in snap-logging
+//							editingIndex = -1;
+						}
+						if (row.snapshot != null && row.snapshot.editingIndex == -1) {
+							row.snapshot.editingIndex = editingIndex;
+						}
 						
 						if (!snapshotsOnly || row.snapshot != null) {
 							currentWork.add(row);

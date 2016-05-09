@@ -26,6 +26,8 @@ public class Snapshot extends Code implements IHasID {
 	public final BlockDefinition editing;
 	public final List<BlockDefinition> blocks = new ArrayList<BlockDefinition>();
 	public final List<String> variables = new ArrayList<String>();
+	
+	public int editingIndex = -1;
 
 	@SuppressWarnings("unused")
 	private Snapshot() {
@@ -89,6 +91,19 @@ public class Snapshot extends Code implements IHasID {
 		return null;
 	}
 	
+	public List<BlockDefinition> getBlockDefinitionsWithEdits(boolean canon) {
+		if (!canon || editing == null || editingIndex < 0) return blocks;
+		List<BlockDefinition> editBlocks = new ArrayList<BlockDefinition>();
+		for (int i = 0; i < blocks.size(); i++) {
+			if (i == editingIndex) {
+				editBlocks.add(editing);
+			} else {
+				editBlocks.add(blocks.get(i));
+			}
+		}
+		return editBlocks;
+	}
+	
 	public String toCode(boolean canon) {
 		return new CodeBuilder(canon)
 		.add("Snapshot")
@@ -96,7 +111,7 @@ public class Snapshot extends Code implements IHasID {
 		.add(stage)
 		.add("blocks:")
 		.indent()
-		.add(blocks)
+		.add(getBlockDefinitionsWithEdits(canon))
 		.close()
 		.add(variables.size() == 0 ? null : ("variables: " + canonicalizeVariables(variables, canon).toString() + "\n"))
 		.add("editing:")
@@ -109,7 +124,7 @@ public class Snapshot extends Code implements IHasID {
 	@Override
 	public String addChildren(boolean canon, Accumulator ac) {
 		ac.add(stage);
-		ac.add(blocks);
+		ac.add(getBlockDefinitionsWithEdits(canon));
 		ac.add(canonicalizeVariables(variables, canon));
 		if (editing != null) ac.add(editing);
 		return canon ? "snapshot" : name;
@@ -118,5 +133,22 @@ public class Snapshot extends Code implements IHasID {
 	@Override
 	public Object getID() {
 		return "snapshot";
+	}
+
+	public int getEditingIndex(String name, String type, String category) {
+		name = BlockDefinition.steralizeName(name);
+		for (int i = 0; i < blocks.size(); i++) {
+			BlockDefinition def = blocks.get(i);
+			if (def.name.equals(name) && def.type.equals(type) && def.category.equals(category)) {
+				return i;
+			}
+		}
+		System.out.printf("Not found: %s %s %s:\n", name, type, category);
+		for (int i = 0; i < blocks.size(); i++) {
+			BlockDefinition def = blocks.get(i);
+			System.out.printf("  Has: %s %s %s:\n", def.name, def.type, def.category);
+		}
+		System.out.println();
+		return -1;
 	}
 }

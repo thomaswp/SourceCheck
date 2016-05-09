@@ -14,13 +14,13 @@ public class BlockDefinition extends Block {
 	public final Script script;
 	public final List<String> inputs = new ArrayList<String>();
 	public final List<Script> scripts = new ArrayList<Script>();
-	
+
 	@SuppressWarnings("unused")
 	private BlockDefinition() {
 		this(null, null, null, null);
 	}
 	
-	private static String steralizeName(String name) {
+	public static String steralizeName(String name) {
 		if (name == null) return null;
 		return name.replace("&apos;", "'").replaceAll("%'[A-Za-z0-9# ]*'", "%s");
 	}
@@ -28,8 +28,8 @@ public class BlockDefinition extends Block {
 	public BlockDefinition(String name, String type, String category, Script script) {
 		super(steralizeName(name), -1);
 		this.type = type;
-		this.script = script;
 		this.category = category;
+		this.script = script;
 	}
 	
 	public static BlockDefinition parse(Element element) {
