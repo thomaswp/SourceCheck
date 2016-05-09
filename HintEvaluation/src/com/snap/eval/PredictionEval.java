@@ -32,7 +32,7 @@ import util.LblTree;
 
 public class PredictionEval {
 
-	private final static int SKIP = 1, MAX = 100, LOOK_AHEAD = 5, STEP = 5;
+	private final static int MAX = 1000, LOOK_AHEAD = 5, STEP = 5;
 	private final static boolean PRUNE = true;
 	
 	public static void main(String[] args) throws IOException {
@@ -105,14 +105,11 @@ public class PredictionEval {
 				
 		Map<String,Grade> gradeMap = subtree.gradeMap();
 		
-		int skip = SKIP;
 		int max = MAX;
 		
 		Map<String,List<Node>> nodeMap = subtree.nodeMap();
 		for (String student : nodeMap.keySet()) {
-			if (skip-- > 0) {
-				continue;
-			}
+			if (assignment.ignore(student)) continue;
 
 			Grade grade = gradeMap.get(student);
 			if (grade == null) continue;

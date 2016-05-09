@@ -31,8 +31,7 @@ import com.snap.parser.Assignment;
 
 public class GradeEval {
 	
-	private final static int SKIP = 1;
-	private final static int MAX = 100;
+	private final static int MAX = 1000;
 	private final static boolean PRUNE = true;
 	
 	public static void main(String[] args) throws IOException {
@@ -89,14 +88,11 @@ public class GradeEval {
 		
 		SnapSubtree subtree = new SnapSubtree(assignment);
 		
-		int skip = SKIP;
 		int max = 1;
 		
 		Map<String,List<Node>> nodeMap = subtree.nodeMap();
 		for (String student : nodeMap.keySet()) {
-			if (skip-- > 0) {
-				continue;
-			}
+			if (assignment.ignore(student)) continue;
 			
 			if (--max < 0) break;
 			
@@ -157,14 +153,11 @@ public class GradeEval {
 		for (int i = 0; i < AutoGrader.graders.length; i++) headers.add("test" + i);
 		CSVPrinter printer = new CSVPrinter(new PrintStream(outFile), CSVFormat.DEFAULT.withHeader(headers.toArray(new String[headers.size()])));
 		
-		int skip = SKIP;
 		int max = MAX;
 		
 		Map<String,List<Node>> nodeMap = subtree.nodeMap();
 		for (String student : nodeMap.keySet()) {
-			if (skip-- > 0) {
-				continue;
-			}
+			if (assignment.ignore(student)) continue;
 			
 			if (--max < 0) break;
 			

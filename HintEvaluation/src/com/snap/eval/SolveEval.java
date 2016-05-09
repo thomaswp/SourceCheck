@@ -33,8 +33,7 @@ import com.snap.parser.Assignment;
 
 public class SolveEval {
 	
-	private final static int SKIP = 1;
-	private final static int MAX = 100;
+	private final static int MAX = 1000;
 	private final static boolean PRUNE = true;
 	
 	private final static int SEED = 1234;
@@ -105,14 +104,11 @@ public class SolveEval {
 		
 		for (int round = 0; round < ROUNDS; round++) {
 		
-			int skip = SKIP;
 			int max = MAX;
 			
 			Map<String,List<Node>> nodeMap = subtree.nodeMap();
 			for (String student : nodeMap.keySet()) {
-				if (skip-- > 0) {
-					continue;
-				}
+				if (assignment.ignore(student)) continue;
 				
 				if (--max < 0) break;
 				

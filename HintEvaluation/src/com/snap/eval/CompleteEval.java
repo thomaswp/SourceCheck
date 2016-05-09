@@ -29,7 +29,7 @@ import distance.RTED_InfoTree_Opt;
 
 public class CompleteEval {
 	
-	private final static int SKIP = 1, MAX = 100, MAX_STEPS = 250, SLICES = 50;
+	private final static int MAX = 1000, MAX_STEPS = 250, SLICES = 50;
 	private final static boolean PRUNE = true;
 	
 	public static void main(String[] args) throws IOException {
@@ -53,16 +53,13 @@ public class CompleteEval {
 		for (int i = 0; i < AutoGrader.graders.length; i++) headers.add("test" + i);
 		CSVPrinter printer = new CSVPrinter(new PrintStream(outFile), CSVFormat.DEFAULT.withHeader(headers.toArray(new String[headers.size()])));
 
-		int skip = SKIP;
 		int max = MAX;
 		
 		String[] names = new String[] { "Hint All", "Hint Exemplar", "Direct Ideal", "Direct Student" };
 		
 		Map<String,List<Node>> nodeMap = subtree.nodeMap();
 		for (String student : nodeMap.keySet()) {
-			if (skip-- > 0) {
-				continue;
-			}
+			if (assignment.ignore(student)) continue;
 
 			if (--max < 0) break;
 
@@ -127,12 +124,10 @@ public class CompleteEval {
 		
 		Map<String,List<Node>> nodeMap = subtree.nodeMap();
 		
-		int skip = 1, max = 2;
+		int max = 2;
 		
 		for (String student : nodeMap.keySet()) {
-			if (skip-- > 0) {
-				continue;
-			}
+			if (assignment.ignore(student)) continue;
 
 			if (--max < 0) break;
 

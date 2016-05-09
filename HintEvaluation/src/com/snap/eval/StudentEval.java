@@ -16,7 +16,7 @@ import com.snap.parser.Store.Mode;
 
 public class StudentEval {
 	
-	public final static int SKIP = 0, MAX = 100;
+	public final static int MAX = 100;
 	
 	public static void main(String[] args) throws IOException {
 		eval(Assignment.Spring2016.GuessingGame1);
@@ -27,7 +27,6 @@ public class StudentEval {
 		Map<String, SolutionPath> paths = assignment.load(Mode.Use, true);
 		
 		for (int i = 0; i < 2; i++) {
-			int skip = SKIP;
 			int max = MAX;
 				
 			HashSet<String> seen = new HashSet<>();
@@ -43,10 +42,7 @@ public class StudentEval {
 			double minGrade = 1;
 			
 			for (String student : paths.keySet()) {
-				if (skip-- > 0) {
-					continue;
-				}
-	
+				if (assignment.ignore(student)) continue;
 				if (--max < 0) break;
 				
 				SolutionPath solutionPath = paths.get(student);
@@ -57,11 +53,15 @@ public class StudentEval {
 				HashSet<String> studentSet = new HashSet<>();
 				
 
-				Node solution = nodes.get(nodes.size() - 1);
-				if (AutoGrader.graders[0].pass(solution)) {
-					pass0++;
-				}				
-				double grade = AutoGrader.numberGrade(solution);
+				Node solution = nodes.get(nodes.size() - 1);				
+				double grade;
+				if (solutionPath.grade != null) {
+					grade = solutionPath.grade.average();
+					if (solutionPath.grade.tests.get("Welcome player")) pass0++;
+				} else {
+					grade = AutoGrader.numberGrade(solution);
+					if (AutoGrader.graders[0].pass(solution)) pass0++;
+				}
 				totalGrade += grade;
 				minGrade = Math.min(grade, minGrade);
 				if (grade == 1) perfectGrade++;

@@ -48,6 +48,10 @@ public class Assignment {
 		}
 	}
 	
+	public boolean ignore(String student) {
+		return false;
+	}
+	
 	@Override
 	public String toString() {
 		return dataDir + "/" + name;
@@ -67,6 +71,9 @@ public class Assignment {
 	public static class Fall2015 {
 		private final static Date start = new GregorianCalendar(2015, 7, 10).getTime();
 		private final static String dataDir = BASE_DIR + "/fall2015";
+
+		// Used this submission for testing, so not using it in evaluation
+		public final static String GG1_SKIP = "3c3ce047-b408-417e-b556-f9406ac4c7a8.csv";
 		
 		public final static Assignment LightsCameraAction = new Assignment(dataDir, 
 				"lightsCameraActionHW", start, null);
@@ -75,7 +82,12 @@ public class Assignment {
 		public final static Assignment Squiral = new Assignment(dataDir, 
 				"squiralHW", start, null);
 		public final static Assignment GuessingGame1 = new Assignment(dataDir, 
-				"guess1Lab", start,  new GregorianCalendar(2015, 8, 18).getTime(), true);
+				"guess1Lab", start,  new GregorianCalendar(2015, 8, 18).getTime()) {
+			@Override
+			public boolean ignore(String id) {
+				return GG1_SKIP.equals(id);
+			};
+		};
 		public final static Assignment GuessingGame2 = new Assignment(dataDir, 
 				"guess2HW", start, null);
 		public final static Assignment GuessingGame3 = new Assignment(dataDir, 
