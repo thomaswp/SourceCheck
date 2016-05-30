@@ -173,8 +173,7 @@ public class SnapParser {
 						
 						if (timestamp != null && (
 								(minDate != null && timestamp.before(minDate)) || 
-								(maxDate != null && timestamp.after(maxDate)))
-								) {
+								(maxDate != null && timestamp.after(maxDate)))) {
 							continue;
 						}
 						
@@ -208,12 +207,13 @@ public class SnapParser {
 								System.err.println("Edit index not found");
 							}
 						} else if ("BlockEditor.ok".equals(action)) {
-							// TODO: fix ok bug in snap-logging
-//							editingIndex = null;
+							editingIndex = null;
 						}
 						if (row.snapshot != null) {
 							if (row.snapshot.editing == null) editingIndex = null;
-							row.snapshot.setEditingIndex(editingIndex);
+							else if (row.snapshot.editing.guid == null) {
+								row.snapshot.setEditingIndex(editingIndex);
+							}
 						}
 						
 						if (!snapshotsOnly || row.snapshot != null) {

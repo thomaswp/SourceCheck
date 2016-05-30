@@ -2,16 +2,37 @@ package com.snap.data;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class BlockDefinitionGroup {
 	
 	public final List<BlockDefinition> blocks = new ArrayList<BlockDefinition>();
 	
-	public int editingIndex;
-	public BlockDefinition editing;
+	private int editingIndex = -1;
+	private BlockDefinition editing;
 	
 	public void add(BlockDefinition block) {
 		blocks.add(block);
+	}
+
+	public void setEditing(BlockDefinition editing, BlockIndex index, int spriteIndex) {
+		editingIndex = -1;
+		if (index != null) {
+			editingIndex = guidIndex(index.guid);
+			if (editingIndex == -1 && spriteIndex == index.spriteIndex) {
+				editingIndex = index.blockDefIndex;
+			}
+		}
+		
+		this.editing = editingIndex == -1 ? null : editing;
+	}
+	
+	private int guidIndex(String guid) {
+		for (int i = 0; i < blocks.size(); i++) {
+			if (guid.equals(blocks.get(i).guid)) return i;
+		}
+		return -1;
 	}
 
 	public List<BlockDefinition> getWithEdits(boolean canon) {
@@ -40,6 +61,16 @@ public class BlockDefinitionGroup {
 		return null;
 	}
 	
+	public static Map<Integer, BlockDefinitionGroup> getBlockDefGroups(Snapshot snapshot) {
+		Map<Integer, BlockDefinitionGroup> blockLists = new TreeMap<Integer, BlockDefinitionGroup>();
+		blockLists.put(BlockIndex.SNAPSHOT_INDEX, snapshot.blocks);
+		blockLists.put(BlockIndex.STAGE_INDEX, snapshot.stage.blocks);
+		for (int i = 0; i < snapshot.stage.sprites.size(); i++) {
+			blockLists.put(i, snapshot.stage.sprites.get(i).blocks);
+		}
+		return blockLists;
+	}
+	
 	public static class BlockIndex {
 		public static final int STAGE_INDEX = -1;
 		public static final int SNAPSHOT_INDEX = -2;
@@ -47,28 +78,18 @@ public class BlockDefinitionGroup {
 		
 		public final int spriteIndex;
 		public final int blockDefIndex;
+		public final String guid;
+		
+		public BlockIndex(String guid) {
+			this.spriteIndex = NONE_INDEX;
+			this.blockDefIndex = NONE_INDEX;
+			this.guid = guid;
+		}
 		
 		public BlockIndex(int spriteIndex, int blockDefIndex) {
 			this.spriteIndex = spriteIndex;
 			this.blockDefIndex = blockDefIndex;
-		}
-		
-		public BlockDefinitionGroup getGroup(Snapshot snapshot) {
-			if (spriteIndex == SNAPSHOT_INDEX) {
-				return snapshot.blocks;
-			} else if (spriteIndex == STAGE_INDEX) {
-				return snapshot.stage.blocks;
-			} else {
-				return snapshot.stage.sprites.get(spriteIndex).blocks;
-			}
-		}
-		
-		public BlockDefinition get(Snapshot snapshot) {
-			return getGroup(snapshot).blocks.get(blockDefIndex);
-		}
-		
-		public void setEditing(Snapshot snapshot, BlockDefinition editing) {
-			getGroup(snapshot).editing = editing;
+			this.guid = null;
 		}
 	}
 }

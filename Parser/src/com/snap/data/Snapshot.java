@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.TreeMap;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -35,15 +34,11 @@ public class Snapshot extends Code implements IHasID {
 			System.err.println("Editing index exists iff editing exists");
 		}
 		
-		int si = index == null ? BlockIndex.NONE_INDEX : index.spriteIndex;
-		Map<Integer, BlockDefinitionGroup> blockLists = getBlockDefGroups();
-		
+		Map<Integer, BlockDefinitionGroup> blockLists = 
+				BlockDefinitionGroup.getBlockDefGroups(this);
 		for (int spriteIndex : blockLists.keySet()) {
-			BlockDefinitionGroup blocks = blockLists.get(spriteIndex);
-			blocks.editingIndex = si == spriteIndex ?
-					index.blockDefIndex : -1;
+			blockLists.get(spriteIndex).setEditing(editing, index, spriteIndex);
 		}
-		if (index != null) index.setEditing(this, editing);
 	}
 
 	@SuppressWarnings("unused")
@@ -96,6 +91,10 @@ public class Snapshot extends Code implements IHasID {
 			for (Element variable : XML.getGrandchildrenByTagName(project, "variables", "variable")) {
 				snapshot.variables.add(variable.getAttribute("name"));
 			}
+
+			if (snapshot.editing != null && snapshot.editing.guid != null) {
+				snapshot.setEditingIndex(new BlockIndex(snapshot.editing.guid));
+			}
 			
 			XML.ensureEmpty(project, "headers", "code");
 			// TODO: what is in <hidden>?
@@ -140,10 +139,13 @@ public class Snapshot extends Code implements IHasID {
 	}
 
 	public BlockIndex getEditingIndex(String name, String type, String category) {
+		if (editing == null) return null;
+		if (editing.guid != null) return new BlockIndex(editing.guid);
+		
 		name = BlockDefinition.steralizeName(name);
 		
 		BlockIndex index = null;
-		Map<Integer, BlockDefinitionGroup> blockLists = getBlockDefGroups();
+		Map<Integer, BlockDefinitionGroup> blockLists = BlockDefinitionGroup.getBlockDefGroups(this);
 		
 		for (int spriteIndex : blockLists.keySet()) {
 			BlockDefinitionGroup blocks = blockLists.get(spriteIndex);
@@ -161,16 +163,6 @@ public class Snapshot extends Code implements IHasID {
 		}
 		
 		return index;
-	}
-
-	private Map<Integer, BlockDefinitionGroup> getBlockDefGroups() {
-		Map<Integer, BlockDefinitionGroup> blockLists = new TreeMap<Integer, BlockDefinitionGroup>();
-		blockLists.put(BlockIndex.SNAPSHOT_INDEX, blocks);
-		blockLists.put(BlockIndex.STAGE_INDEX, stage.blocks);
-		for (int i = 0; i < stage.sprites.size(); i++) {
-			blockLists.put(i, stage.sprites.get(i).blocks);
-		}
-		return blockLists;
 	}
 	
 	

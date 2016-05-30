@@ -10,14 +10,14 @@ import com.snap.XML;
 public class BlockDefinition extends Block {
 	private static final long serialVersionUID = 1L;
 	
-	public final String type, category;
+	public final String type, category, guid;
 	public final Script script;
 	public final List<String> inputs = new ArrayList<String>();
 	public final List<Script> scripts = new ArrayList<Script>();
 
 	@SuppressWarnings("unused")
 	private BlockDefinition() {
-		this(null, null, null, null);
+		this(null, null, null, null, null);
 	}
 	
 	public static String steralizeName(String name) {
@@ -25,20 +25,22 @@ public class BlockDefinition extends Block {
 		return name.replace("&apos;", "'").replaceAll("%'[A-Za-z0-9# ]*'", "%s");
 	}
 	
-	public BlockDefinition(String name, String type, String category, Script script) {
+	public BlockDefinition(String name, String type, String category, String guid, Script script) {
 		super(steralizeName(name), -1);
 		this.type = type;
 		this.category = category;
 		this.script = script;
+		this.guid = guid;
 	}
 	
 	public static BlockDefinition parse(Element element) {
 		String name = element.getAttribute("s");
 		String type = element.getAttribute("type");
 		String category = element.getAttribute("category");
+		String guid = element.getAttribute("guid");
 		Element scriptElement = XML.getFirstChildByTagName(element, "script");
 		Script script = scriptElement == null ? new Script() : Script.parse(scriptElement);
-		BlockDefinition def = new BlockDefinition(name, type, category, script);
+		BlockDefinition def = new BlockDefinition(name, type, category, guid, script);
 		for (Element e : XML.getGrandchildrenByTagName(element, "inputs", "input")) {
 			def.inputs.add(e.getAttribute("type"));
 		}
@@ -58,6 +60,7 @@ public class BlockDefinition extends Block {
 	}
 	
 	public static BlockDefinition parseEditing(Element element) {
+		String guid = element.getAttribute("guid");
 		List<Element> scripts = toList(XML.getGrandchildrenByTagName(element, "scripts", "script"));
 		Element mainScript = scripts.get(0);
 		List<Element> blocks = toList(XML.getChildrenByTagName(mainScript, "block"));
@@ -77,7 +80,7 @@ public class BlockDefinition extends Block {
 			script.blocks.add((Block) XML.getCodeElement(blocks.get(i)));
 		}
 		
-		BlockDefinition def = new BlockDefinition(name, null, null, script);
+		BlockDefinition def = new BlockDefinition(name, null, null, guid, script);
 
 		for (Element e : XML.getChildrenByTagName(definition, "l")) {
 			def.inputs.add(e.getNodeValue());
