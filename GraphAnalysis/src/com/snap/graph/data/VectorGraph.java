@@ -123,7 +123,7 @@ public class VectorGraph extends OutGraph<VectorState> {
 		
 		String[] goalItems = goal.items;
 		int index = 1;
-		while (index < goalPath.size() - 1) {
+		while (index < goalPath.size()) {
 			String[] nextItems = goalPath.get(index++).items;
 			int edits = 0;
 

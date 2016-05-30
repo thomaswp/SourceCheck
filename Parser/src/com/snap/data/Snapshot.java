@@ -129,7 +129,6 @@ public class Snapshot extends Code implements IHasID {
 		ac.add(stage);
 		ac.add(blocks.getWithEdits(canon));
 		ac.add(canonicalizeVariables(variables, canon));
-		if (editing != null) ac.add(editing);
 		return canon ? "snapshot" : name;
 	}
 	

@@ -267,7 +267,7 @@ public class SubtreeBuilder {
 		
 	private void getHints(Node node, List<Hint> list, int chain, int limit) {
 		if (list.size() >= limit) return;
-		
+
 		Iterable<Hint> edges = hintMap.getHints(node, chain);
 		
 		// TODO: don't forget that really the skeleton need not match exactly,
