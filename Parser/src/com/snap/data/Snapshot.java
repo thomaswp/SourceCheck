@@ -5,7 +5,9 @@ import java.io.FileNotFoundException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
+import java.util.TreeMap;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -14,6 +16,7 @@ import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 
 import com.snap.XML;
+import com.snap.data.BlockDefinitionGroup.BlockIndex;
 
 public class Snapshot extends Code implements IHasID {
 	private static final long serialVersionUID = 1L;
@@ -24,10 +27,24 @@ public class Snapshot extends Code implements IHasID {
 	public final String name;
 	public final Stage stage;
 	public final BlockDefinition editing;
-	public final List<BlockDefinition> blocks = new ArrayList<BlockDefinition>();
+	public final BlockDefinitionGroup blocks = new BlockDefinitionGroup();
 	public final List<String> variables = new ArrayList<String>();
 	
-	public int editingIndex = -1;
+	public void setEditingIndex(BlockIndex index) {
+		if ((index == null) != (editing == null)) {
+			System.err.println("Editing index exists iff editing exists");
+		}
+		
+		int si = index == null ? BlockIndex.NONE_INDEX : index.spriteIndex;
+		Map<Integer, BlockDefinitionGroup> blockLists = getBlockDefGroups();
+		
+		for (int spriteIndex : blockLists.keySet()) {
+			BlockDefinitionGroup blocks = blockLists.get(spriteIndex);
+			blocks.editingIndex = si == spriteIndex ?
+					index.blockDefIndex : -1;
+		}
+		if (index != null) index.setEditing(this, editing);
+	}
 
 	@SuppressWarnings("unused")
 	private Snapshot() {
@@ -91,19 +108,6 @@ public class Snapshot extends Code implements IHasID {
 		return null;
 	}
 	
-	public List<BlockDefinition> getBlockDefinitionsWithEdits(boolean canon) {
-		if (!canon || editing == null || editingIndex < 0) return blocks;
-		List<BlockDefinition> editBlocks = new ArrayList<BlockDefinition>();
-		for (int i = 0; i < blocks.size(); i++) {
-			if (i == editingIndex) {
-				editBlocks.add(editing);
-			} else {
-				editBlocks.add(blocks.get(i));
-			}
-		}
-		return editBlocks;
-	}
-	
 	public String toCode(boolean canon) {
 		return new CodeBuilder(canon)
 		.add("Snapshot")
@@ -111,7 +115,7 @@ public class Snapshot extends Code implements IHasID {
 		.add(stage)
 		.add("blocks:")
 		.indent()
-		.add(getBlockDefinitionsWithEdits(canon))
+		.add(blocks.getWithEdits(canon))
 		.close()
 		.add(variables.size() == 0 ? null : ("variables: " + canonicalizeVariables(variables, canon).toString() + "\n"))
 		.add("editing:")
@@ -124,7 +128,7 @@ public class Snapshot extends Code implements IHasID {
 	@Override
 	public String addChildren(boolean canon, Accumulator ac) {
 		ac.add(stage);
-		ac.add(getBlockDefinitionsWithEdits(canon));
+		ac.add(blocks.getWithEdits(canon));
 		ac.add(canonicalizeVariables(variables, canon));
 		if (editing != null) ac.add(editing);
 		return canon ? "snapshot" : name;
@@ -135,20 +139,39 @@ public class Snapshot extends Code implements IHasID {
 		return "snapshot";
 	}
 
-	public int getEditingIndex(String name, String type, String category) {
+	public BlockIndex getEditingIndex(String name, String type, String category) {
 		name = BlockDefinition.steralizeName(name);
-		for (int i = 0; i < blocks.size(); i++) {
-			BlockDefinition def = blocks.get(i);
-			if (def.name.equals(name) && def.type.equals(type) && def.category.equals(category)) {
-				return i;
+		
+		BlockIndex index = null;
+		Map<Integer, BlockDefinitionGroup> blockLists = getBlockDefGroups();
+		
+		for (int spriteIndex : blockLists.keySet()) {
+			BlockDefinitionGroup blocks = blockLists.get(spriteIndex);
+			BlockIndex i = blocks.getEditingIndex(spriteIndex, name, type, category);
+			if (i != null) {
+				if (index != null) {
+					System.err.println("Multiple matching indices!");
+				}
+				index = i;
 			}
 		}
-		System.out.printf("Not found: %s %s %s:\n", name, type, category);
-		for (int i = 0; i < blocks.size(); i++) {
-			BlockDefinition def = blocks.get(i);
-			System.out.printf("  Has: %s %s %s:\n", def.name, def.type, def.category);
+		
+		if (index == null) {
+			System.err.printf("Not found: %s %s %s:\n", name, type, category);
 		}
-		System.out.println();
-		return -1;
+		
+		return index;
 	}
+
+	private Map<Integer, BlockDefinitionGroup> getBlockDefGroups() {
+		Map<Integer, BlockDefinitionGroup> blockLists = new TreeMap<Integer, BlockDefinitionGroup>();
+		blockLists.put(BlockIndex.SNAPSHOT_INDEX, blocks);
+		blockLists.put(BlockIndex.STAGE_INDEX, stage.blocks);
+		for (int i = 0; i < stage.sprites.size(); i++) {
+			blockLists.put(i, stage.sprites.get(i).blocks);
+		}
+		return blockLists;
+	}
+	
+	
 }

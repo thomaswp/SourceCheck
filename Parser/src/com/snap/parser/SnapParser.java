@@ -24,6 +24,7 @@ import org.apache.commons.csv.CSVRecord;
 import org.json.JSONObject;
 
 import com.esotericsoftware.kryo.Kryo;
+import com.snap.data.BlockDefinitionGroup.BlockIndex;
 import com.snap.data.Snapshot;
 import com.snap.parser.Store.Mode;
 
@@ -156,7 +157,7 @@ public class SnapParser {
 					String gradedID = grade == null ? null : grade.gradedID;
 					boolean foundGraded = false;
 					
-					int editingIndex = -1;
+					BlockIndex editingIndex = null;
 					Snapshot lastSnaphot = null;
 					
 					List<DataRow> currentWork = new ArrayList<DataRow>();
@@ -203,13 +204,16 @@ public class SnapParser {
 							String type = json.getString("type");
 							String category = json.getString("category");
 							editingIndex = lastSnaphot.getEditingIndex(name, type, category);
-							if (editingIndex == -1) System.err.println("Edit index not found");
+							if (editingIndex == null) {
+								System.err.println("Edit index not found");
+							}
 						} else if ("BlockEditor.ok".equals(action)) {
 							// TODO: fix ok bug in snap-logging
-//							editingIndex = -1;
+//							editingIndex = null;
 						}
-						if (row.snapshot != null && row.snapshot.editingIndex == -1) {
-							row.snapshot.editingIndex = editingIndex;
+						if (row.snapshot != null) {
+							if (row.snapshot.editing == null) editingIndex = null;
+							row.snapshot.setEditingIndex(editingIndex);
 						}
 						
 						if (!snapshotsOnly || row.snapshot != null) {
@@ -303,7 +307,7 @@ public class SnapParser {
 					}
 					threads.decrementAndGet();
 				}
-			}).start();
+			}).run(); // TODO: Figure out why parallel doesn't work
 		}
 		while (threads.get() != 0) {
 			try {
@@ -349,7 +353,7 @@ public class SnapParser {
 
 		Assignment.Spring2016.PolygonMaker.load(Mode.Overwrite, true);
 		
-//		clean("../data/csc200/parsed");
+//		clean("../data/csc200/spring2016/parsed");
 	}
 }
 

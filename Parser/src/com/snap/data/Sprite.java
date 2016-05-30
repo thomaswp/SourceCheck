@@ -13,7 +13,7 @@ public class Sprite extends Code implements IHasID {
 	public final String name;
 	public final List<String> variables = new ArrayList<String>();
 	public final List<Script> scripts = new ArrayList<Script>();
-	public final List<BlockDefinition> blocks = new ArrayList<BlockDefinition>();
+	public final BlockDefinitionGroup blocks = new BlockDefinitionGroup();
 	
 	@SuppressWarnings("unused")
 	private Sprite() {
@@ -48,7 +48,7 @@ public class Sprite extends Code implements IHasID {
 		.add(name)
 		.indent()
 		.add(variables.size() == 0 ? null : ("variables: " + canonicalizeVariables(variables, canon).toString() + "\n"))
-		.add(blocks)
+		.add(blocks.getWithEdits(canon))
 		.add(scripts)
 		.end();
 	}
@@ -57,7 +57,7 @@ public class Sprite extends Code implements IHasID {
 	public String addChildren(boolean canon, Accumulator ac) {
 		ac.add(canonicalizeVariables(variables, canon));
 		ac.add(scripts);
-		ac.add(blocks);
+		ac.add(blocks.getWithEdits(canon));
 		return canon ? "sprite" : name;
 	}
 
