@@ -231,7 +231,7 @@ public class SnapSubtree {
 						studentMap = studentSubtreeCache.get(fStudent);
 					}
 					if (studentMap == null) {
-						studentMap = builder.addStudent(nodes);
+						studentMap = builder.addStudent(nodes, assignment.hasIDs);
 						synchronized (studentSubtreeCache) {
 							studentSubtreeCache.put(fStudent, studentMap);
 						}

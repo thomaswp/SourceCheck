@@ -13,17 +13,20 @@ import com.snap.parser.Store.Mode;
 public class Assignment {
 	public final String dataDir, name;
 	public final Date start, end;
+	public final boolean hasIDs;
 	public final boolean graded;
 	
-	public Assignment(String dataDir, String name, Date start, Date end) {
-		this(dataDir, name, start, end, false);
+	public Assignment(String dataDir, String name, Date start, Date end, boolean hasIDs) {
+		this(dataDir, name, start, end, hasIDs, false);
 	}
 	
-	public Assignment(String dataDir, String name, Date start, Date end, boolean graded) {
+	public Assignment(String dataDir, String name, Date start, Date end, 
+			boolean hasIDs, boolean graded) {
 		this.dataDir = dataDir;
 		this.name = name;
 		this.start = start;
 		this.end = end;
+		this.hasIDs = hasIDs;
 		this.graded = graded;
 	}
 	
@@ -76,22 +79,22 @@ public class Assignment {
 		public final static String GG1_SKIP = "3c3ce047-b408-417e-b556-f9406ac4c7a8.csv";
 		
 		public final static Assignment LightsCameraAction = new Assignment(dataDir, 
-				"lightsCameraActionHW", start, null);
+				"lightsCameraActionHW", start, null, false);
 		public final static Assignment PolygonMaker = new Assignment(dataDir, 
-				"polygonMakerLab", start, null);
+				"polygonMakerLab", start, null, false);
 		public final static Assignment Squiral = new Assignment(dataDir, 
-				"squiralHW", start, null);
+				"squiralHW", start, null, false);
 		public final static Assignment GuessingGame1 = new Assignment(dataDir, 
-				"guess1Lab", start,  new GregorianCalendar(2015, 8, 18).getTime()) {
+				"guess1Lab", start,  new GregorianCalendar(2015, 8, 18).getTime(), false, true) {
 			@Override
 			public boolean ignore(String id) {
 				return GG1_SKIP.equals(id);
 			};
 		};
 		public final static Assignment GuessingGame2 = new Assignment(dataDir, 
-				"guess2HW", start, null);
+				"guess2HW", start, null, false);
 		public final static Assignment GuessingGame3 = new Assignment(dataDir, 
-				"guess3Lab", start, null);
+				"guess3Lab", start, null, false);
 		
 		public final static Assignment[] All = {
 			LightsCameraAction, PolygonMaker, Squiral,
@@ -104,17 +107,17 @@ public class Assignment {
 		private final static String dataDir = BASE_DIR + "/spring2016";
 		
 		public final static Assignment LightsCameraAction = new Assignment(dataDir, 
-				"lightsCameraActionHW", start, new GregorianCalendar(2016, 0, 29).getTime());
+				"lightsCameraActionHW", start, new GregorianCalendar(2016, 0, 29).getTime(), true);
 		public final static Assignment PolygonMaker = new Assignment(dataDir, 
-				"polygonMakerLab", start, new GregorianCalendar(2016, 1, 2).getTime());
+				"polygonMakerLab", start, new GregorianCalendar(2016, 1, 2).getTime(), true);
 		public final static Assignment Squiral = new Assignment(dataDir, 
-				"squiralHW", start, new GregorianCalendar(2016, 1, 9).getTime());
+				"squiralHW", start, new GregorianCalendar(2016, 1, 9).getTime(), true);
 		public final static Assignment GuessingGame1 = new Assignment(dataDir, 
-				"guess1Lab", start, new GregorianCalendar(2016, 1, 9).getTime(), true);
+				"guess1Lab", start, new GregorianCalendar(2016, 1, 9).getTime(), true, true);
 		public final static Assignment GuessingGame2 = new Assignment(dataDir, 
-				"guess2HW", start, new GregorianCalendar(2016, 1, 16).getTime());
+				"guess2HW", start, new GregorianCalendar(2016, 1, 16).getTime(), true);
 		public final static Assignment GuessingGame3 = new Assignment(dataDir, 
-				"guess3Lab", start, new GregorianCalendar(2016, 1, 23).getTime());
+				"guess3Lab", start, new GregorianCalendar(2016, 1, 23).getTime(), true);
 		
 		public final static Assignment[] All = {
 			LightsCameraAction, PolygonMaker, Squiral,

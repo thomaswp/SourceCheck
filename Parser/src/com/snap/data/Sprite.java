@@ -62,7 +62,7 @@ public class Sprite extends Code implements IHasID {
 	}
 
 	@Override
-	public Object getID() {
+	public String getID() {
 		return name;
 	}
 }

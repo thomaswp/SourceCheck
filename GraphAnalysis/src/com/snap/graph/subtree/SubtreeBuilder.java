@@ -8,9 +8,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-
-import util.LblTree;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.snap.graph.Alignment;
@@ -25,6 +24,7 @@ import com.snap.graph.data.VectorGraph;
 import com.snap.graph.data.VectorState;
 
 import distance.RTED_InfoTree_Opt;
+import util.LblTree;
 
 public class SubtreeBuilder {
 
@@ -45,14 +45,54 @@ public class SubtreeBuilder {
 		hintMap.clear();
 	}
 	
-	@SuppressWarnings({ "unchecked" })
-	public HintMap addStudent(List<Node> path) {
+	public HintMap addStudent(List<Node> path, boolean useIDs) {
 
 		HintMap hintMap = this.hintMap.instance();
 		if (path.size() <= 1) return hintMap;
 		
-//		List<HashSet<Node>> keptNodes = keptNodes(path);
+		if (useIDs) {
+			Map<String, Node> lastByID = null;
+			Map<String[], Node> lastByChildren = null;
+			for (Node current : path) {
+				current.cache();
+				Map<String, Node> byID = new HashMap<>();
+				Map<String[], Node> byChildren = new HashMap<>();
+				createMaps(current, byID, byChildren);
+				if (lastByID != null) {
+					
+				}
+				lastByID = byID;
+				lastByChildren = byChildren;
+			}
+		} else {
+			addEdgesTED(path, hintMap);
+		}
 		
+		Node submission = path.get(path.size() - 1);
+		hintMap.setSolution(submission);
+		addStudentMap(hintMap);
+		
+		return hintMap;
+	}
+
+	private void createMaps(Node node, Map<String, Node> byID, Map<String[], Node> byChildren) {
+		String id = node.getID();
+		if (id != null) {
+			if (byID.put(id, node) != null) {
+				System.err.println("Multiple nodes with ID: " + id);
+			}
+		} else if (node.children.size() > 0) {
+			String[] childIDs = new String[node.children.size()];
+			for (int i = 0; i < node.children.size(); i++) {
+				childIDs[i] = node.children.get(i).getID();
+			}
+		}
+		
+		for (Node child : node.children) createMaps(child, byID, byChildren);
+	}
+	
+	@SuppressWarnings({ "unchecked" })
+	private void addEdgesTED(List<Node> path, HintMap hintMap) {
 		LblTree lastTree = null;
 		List<LblTree> lastList = null;
 		RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(0.01, 0.01, 10000);
@@ -111,12 +151,6 @@ public class SubtreeBuilder {
 			lastTree = tree;
 //			i++;
 		}
-		
-		Node submission = path.get(path.size() - 1);
-		hintMap.setSolution(submission);
-		addStudentMap(hintMap);
-		
-		return hintMap;
 	}
 	
 	public void addStudentMap(HintMap hintMap) {

@@ -7,10 +7,10 @@ import org.w3c.dom.Element;
 
 import com.snap.XML;
 
-public class BlockDefinition extends Block {
+public class BlockDefinition extends Code implements IHasID {
 	private static final long serialVersionUID = 1L;
 	
-	public final String type, category, guid;
+	public final String name, type, category, guid;
 	public final Script script;
 	public final List<String> inputs = new ArrayList<String>();
 	public final List<Script> scripts = new ArrayList<Script>();
@@ -26,7 +26,7 @@ public class BlockDefinition extends Block {
 	}
 	
 	public BlockDefinition(String name, String type, String category, String guid, Script script) {
-		super(steralizeName(name), -1);
+		this.name = steralizeName(name);
 		this.type = type;
 		this.category = category;
 		this.script = script;
@@ -112,5 +112,11 @@ public class BlockDefinition extends Block {
 		ac.add(canonicalizeVariables(inputs, canon));
 		ac.add(scripts);
 		return canon ? "customBlock" : name;
+	}
+	
+	@Override
+	public String getID() {
+		if (guid != null) return guid;
+		return name;
 	}
 }

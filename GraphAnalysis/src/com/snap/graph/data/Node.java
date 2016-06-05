@@ -18,6 +18,13 @@ public class Node extends StringHashable {
 	public transient Object tag;
 	public final transient List<Canonicalization> canonicalizations = new ArrayList<Canonicalization>();
 	
+	public String getID() {
+		if (tag != null && tag instanceof IHasID) {
+			return ((IHasID) tag).getID();
+		}
+		return null;
+	}
+	
 	public String type() {
 		return type;
 	}

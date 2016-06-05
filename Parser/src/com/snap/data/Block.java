@@ -29,7 +29,7 @@ public abstract class Block extends Code implements IHasID {
 	}
 	
 	@Override
-	public Object getID() {
-		return id;
+	public String getID() {
+		return String.valueOf(id);
 	}
 }
