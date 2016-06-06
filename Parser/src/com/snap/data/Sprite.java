@@ -13,7 +13,7 @@ public class Sprite extends Code implements IHasID {
 	public final String name;
 	public final List<String> variables = new ArrayList<String>();
 	public final List<Script> scripts = new ArrayList<Script>();
-	public final BlockDefinitionGroup blocks = new BlockDefinitionGroup();
+	public final BlockDefinitionGroup blocks;
 	
 	@SuppressWarnings("unused")
 	private Sprite() {
@@ -22,6 +22,7 @@ public class Sprite extends Code implements IHasID {
 	
 	public Sprite(String name) {
 		this.name = name == null ? "Stage" : name;
+		this.blocks = new BlockDefinitionGroup(getID());
 	}
 	
 	public static Sprite parse(Element element) {

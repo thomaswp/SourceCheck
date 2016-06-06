@@ -350,10 +350,10 @@ public class SnapParser {
 
 	public static void main(String[] args) throws IOException {
 //		SnapParser.splitStudentRecords("../data/csc200/fall2015.csv");
+//		clean("../data/csc200/spring2016/parsed");
 
 		Assignment.Spring2016.PolygonMaker.load(Mode.Overwrite, true);
 		
-//		clean("../data/csc200/spring2016/parsed");
 	}
 }
 

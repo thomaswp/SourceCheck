@@ -20,10 +20,10 @@ public class LiteralBlock extends Block {
 
 	@SuppressWarnings("unused")
 	private LiteralBlock() {
-		this(null, -1, null, false);
+		this(null, null, null, false);
 	}
 	
-	public LiteralBlock(String type, int id, String value, boolean isVarRef) {
+	public LiteralBlock(String type, String id, String value, boolean isVarRef) {
 		super(type, id);
 		this.value = value;
 		this.isVarRef = isVarRef;

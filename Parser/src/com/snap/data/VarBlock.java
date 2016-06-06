@@ -6,10 +6,10 @@ public class VarBlock extends Block {
 	
 	@SuppressWarnings("unused")
 	private VarBlock() {
-		this(null, -1);
+		this(null, null);
 	}
 	
-	public VarBlock(String name, int id) {
+	public VarBlock(String name, String id) {
 		super(name, id);
 	}
 	

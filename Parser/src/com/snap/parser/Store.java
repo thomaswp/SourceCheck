@@ -35,8 +35,8 @@ public class Store {
 					}
 				}
 			} catch (Exception e) {
-//				e.printStackTrace();
-				System.err.println("Error parsing: " + path);
+				e.printStackTrace();
+				System.err.println("Error Kryo parsing: " + path);
 				cached.delete();
 			}
 		}

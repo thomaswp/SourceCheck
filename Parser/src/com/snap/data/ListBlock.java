@@ -11,7 +11,7 @@ public class ListBlock extends Block {
 	private static final long serialVersionUID = 1L;
 
 	public ListBlock() {
-		super("list", -1);
+		super("list", null);
 	}
 
 	public final List<Block> list = new ArrayList<Block>();

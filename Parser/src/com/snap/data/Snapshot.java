@@ -26,7 +26,7 @@ public class Snapshot extends Code implements IHasID {
 	public final String name;
 	public final Stage stage;
 	public final BlockDefinition editing;
-	public final BlockDefinitionGroup blocks = new BlockDefinitionGroup();
+	public final BlockDefinitionGroup blocks;
 	public final List<String> variables = new ArrayList<String>();
 	
 	public void setEditingIndex(BlockIndex index) {
@@ -50,6 +50,7 @@ public class Snapshot extends Code implements IHasID {
 		this.name = name;
 		this.stage = stage;
 		this.editing = editing;
+		this.blocks = new BlockDefinitionGroup(getID());
 	}
 	
 	public static Snapshot parse(File file) throws FileNotFoundException {

@@ -14,6 +14,7 @@ public class BlockDefinition extends Code implements IHasID {
 	public final Script script;
 	public final List<String> inputs = new ArrayList<String>();
 	public final List<Script> scripts = new ArrayList<Script>();
+	public String parentID;
 
 	@SuppressWarnings("unused")
 	private BlockDefinition() {
@@ -116,7 +117,7 @@ public class BlockDefinition extends Code implements IHasID {
 	
 	@Override
 	public String getID() {
-		if (guid != null) return guid;
-		return name;
+		if (guid != null && guid.length() > 0) return guid;
+		return String.format("%s[%s,%s,%s](%s)", parentID, name, type, category, inputs.toString());
 	}
 }

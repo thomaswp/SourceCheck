@@ -53,11 +53,10 @@ public class HintFactoryMap implements HintMap {
 	
 	@Override
 	public HintChoice addEdge(Node from, Node to) {
-		
-		VectorState fromState = getVectorState(from);
+		VectorState fromState = from == null ? VectorState.empty() : getVectorState(from);
 		VectorState toState = getVectorState(to);
-		getGraph(from, true).addEdge(fromState, toState);
-		getGraph(from, false).addEdge(fromState, toState);
+		getGraph(to, true).addEdge(fromState, toState);
+		getGraph(to, false).addEdge(fromState, toState);
 		
 		return new HintChoice(from, to);
 	}

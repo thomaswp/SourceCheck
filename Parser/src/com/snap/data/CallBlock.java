@@ -31,10 +31,10 @@ public class CallBlock extends Block {
 
 	@SuppressWarnings("unused")
 	private CallBlock() {
-		this(null, -1, false);
+		this(null, null, false);
 	}
 	
-	public CallBlock(String type, int id, boolean isCustom) {
+	public CallBlock(String type, String id, boolean isCustom) {
 		super(type, id);
 		this.isCustom = isCustom;
 	}

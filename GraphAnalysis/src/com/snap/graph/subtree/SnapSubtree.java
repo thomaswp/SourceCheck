@@ -36,12 +36,17 @@ public class SnapSubtree {
 
 	public static void main(String[] args) throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
 
-		System.out.println(System.currentTimeMillis());
 
 
 		//		rtedTest();
 
-		SnapSubtree subtree = new SnapSubtree(Assignment.Spring2016.PolygonMaker);
+		SnapSubtree subtree = new SnapSubtree(Assignment.Spring2016.GuessingGame1);
+		subtree.nodeMap();
+		
+//		System.out.print("Go");
+//		new Scanner(System.in).nextLine();
+		
+		System.out.println(System.currentTimeMillis());
 
 		// [0.0 - 1.0]
 		double minGrade = 1;
@@ -231,6 +236,7 @@ public class SnapSubtree {
 						studentMap = studentSubtreeCache.get(fStudent);
 					}
 					if (studentMap == null) {
+//						System.out.println(fStudent);
 						studentMap = builder.addStudent(nodes, assignment.hasIDs);
 						synchronized (studentSubtreeCache) {
 							studentSubtreeCache.put(fStudent, studentMap);

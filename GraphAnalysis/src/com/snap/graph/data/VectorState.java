@@ -86,4 +86,8 @@ public class VectorState extends StringHashable {
 	protected String getItem(int index) {
 		return items[index];
 	}
+
+	public static VectorState empty() {
+		return new VectorState(new String[0]);
+	}
 }

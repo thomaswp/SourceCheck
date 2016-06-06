@@ -51,18 +51,49 @@ public class SubtreeBuilder {
 		if (path.size() <= 1) return hintMap;
 		
 		if (useIDs) {
-			Map<String, Node> lastByID = null;
-			Map<String[], Node> lastByChildren = null;
+			Map<String, Node> lastIDMap = null, cumulativeIDMap = new HashMap<String, Node>();
 			for (Node current : path) {
 				current.cache();
-				Map<String, Node> byID = new HashMap<>();
-				Map<String[], Node> byChildren = new HashMap<>();
-				createMaps(current, byID, byChildren);
-				if (lastByID != null) {
-					
+				Map<String, Node> idMap = new HashMap<>();
+				createMap(current, idMap);
+				if (lastIDMap != null) {					
+					for (String id : lastIDMap.keySet()) {
+						if (!idMap.containsKey(id)) {
+							Node lastParent = lastIDMap.get(id).parent;
+							Tuple<Node,Node> match = findClosestMatch(lastParent, lastIDMap, idMap);
+							hintMap.addEdge(match.x, match.y);
+						}
+					}
+					for (String id : idMap.keySet()) {
+						Node node = idMap.get(id);
+						Node lastNode = cumulativeIDMap.get(id);
+						if (lastNode == null) {
+							Tuple<Node,Node> match = findClosestMatch(node.parent, idMap, cumulativeIDMap);
+							hintMap.addEdge(match.y, match.x);
+							if (match.x != node.parent) {
+								// TODO: This can be caused by duplication, but there's
+								// clearly another cause, possible to do with custom blocks.
+								// See: 1daddf46-9553-462f-b2b6-35d3c332dbbf.csv
+//								if (node.parent.tag instanceof CallBlock) {
+//									System.out.printf("%s (%s)\n", node.parent, node.parent.getID());
+//									System.out.println(current.prettyPrint());
+//									break;
+//								}
+								hintMap.addEdge(null, node.parent);
+							}
+						} else {
+							// TODO: test to make sure this isn't overly exclusive
+							if (node.parent != null && lastNode.index() != node.index()) {
+								hintMap.addEdge(lastNode.parent, node.parent);
+							}
+							if (lastNode.children.size() != node.children.size()) {
+								hintMap.addEdge(lastNode, node);
+							}
+						}
+					}
 				}
-				lastByID = byID;
-				lastByChildren = byChildren;
+				lastIDMap = idMap;
+				cumulativeIDMap.putAll(idMap);
 			}
 		} else {
 			addEdgesTED(path, hintMap);
@@ -74,21 +105,34 @@ public class SubtreeBuilder {
 		
 		return hintMap;
 	}
-
-	private void createMaps(Node node, Map<String, Node> byID, Map<String[], Node> byChildren) {
+	
+	private Tuple<Node, Node> findClosestMatch(Node node, Map<String, Node> nodeMap, Map<String, Node> pairMap) {
 		String id = node.getID();
-		if (id != null) {
-			if (byID.put(id, node) != null) {
-				System.err.println("Multiple nodes with ID: " + id);
-			}
-		} else if (node.children.size() > 0) {
-			String[] childIDs = new String[node.children.size()];
-			for (int i = 0; i < node.children.size(); i++) {
-				childIDs[i] = node.children.get(i).getID();
+		Node match = pairMap.get(id);
+		if (match != null) return new Tuple<>(node, match);
+		Node parent = node.parent;
+		Tuple<Node, Node> parentMatch = findClosestMatch(parent, nodeMap, pairMap);
+		int index = node.index();
+		List<Node> children = parentMatch.y.children;
+		if (index < children.size()) {
+			match = children.get(index);
+			if (match.hasType(node.type()) && !nodeMap.containsKey(match.getID())) {
+				return new Tuple<>(node, match);
 			}
 		}
-		
-		for (Node child : node.children) createMaps(child, byID, byChildren);
+			
+		return parentMatch;
+	}
+
+	private void createMap(Node node, Map<String, Node> byID) {
+		String id = node.getID();
+		if (id != null) {
+			if (id.equals("null")) System.out.println("!" + node.tag);
+			if (byID.put(id, node) != null) {
+				System.err.println("Multiple nodes with ID: " + node + " (" + id + ")");
+			}
+		}
+		for (Node child : node.children) createMap(child, byID);
 	}
 	
 	@SuppressWarnings({ "unchecked" })
@@ -423,7 +467,7 @@ public class SubtreeBuilder {
 		
 		@Override
 		public String toString() {
-			return String.format("%s -> %s", x.toString(), y.toString());
+			return String.format("%s -> %s", x, y);
 		}
 
 		@Override

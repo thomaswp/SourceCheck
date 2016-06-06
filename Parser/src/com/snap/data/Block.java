@@ -6,30 +6,26 @@ public abstract class Block extends Code implements IHasID {
 	private static final long serialVersionUID = 1L;
 
 	public final String name;
-	public final int id;
+	public final String id;
 
 	@SuppressWarnings("unused")
 	private Block() {
-		this(null, -1);
+		this(null, null);
 	}
 	
-	protected static int getID(Element element) {
-		String idS = element.getAttribute("id");
-		if (idS != null) {
-			try {
-				return Integer.parseInt(idS);
-			}  catch (Exception e) { }
-		}
-		return -1;
+	protected static String getID(Element element) {
+		String id = element.getAttribute("id");
+		if (id == null || id.length() == 0) return null;
+		return id;
 	}
 	
-	public Block(String type, int id) {
+	public Block(String type, String id) {
 		this.name = type;
 		this.id = id;
 	}
 	
 	@Override
 	public String getID() {
-		return String.valueOf(id);
+		return id;
 	}
 }

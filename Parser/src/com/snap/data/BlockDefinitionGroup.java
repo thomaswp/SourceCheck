@@ -8,12 +8,27 @@ import java.util.TreeMap;
 public class BlockDefinitionGroup {
 	
 	public final List<BlockDefinition> blocks = new ArrayList<BlockDefinition>();
+	private final String parentID;
 	
 	private int editingIndex = -1;
 	private BlockDefinition editing;
 	
+	@SuppressWarnings("unused")
+	private BlockDefinitionGroup() {
+		this(null);
+	}
+	
+	public BlockDefinitionGroup(String parentID) {
+		this.parentID = parentID;
+	}
+	
+	private String getParentID(int index) {
+		return parentID + index;
+	}
+	
 	public void add(BlockDefinition block) {
 		blocks.add(block);
+		block.parentID = getParentID(blocks.size() - 1);
 	}
 
 	public void setEditing(BlockDefinition editing, BlockIndex index, int spriteIndex) {
@@ -26,6 +41,7 @@ public class BlockDefinitionGroup {
 		}
 		
 		this.editing = editingIndex == -1 ? null : editing;
+		if (this.editing != null) this.editing.parentID = getParentID(editingIndex);
 	}
 	
 	private int guidIndex(String guid) {
