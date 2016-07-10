@@ -82,12 +82,17 @@ public class Graph<N,E> {
 	}
 	
 	public boolean hasEdge(N from, N to) {
+		return getEdge(from, to) != null;
+	}
+	
+	private Edge<N, E> getEdge(N from, N to) {
 		List<Edge<N, E>> list = fromMap.get(from);
-		if (list == null) return false;
-		for (Edge<N,E> edge : list) {
-			if (edge.to.equals(to)) return true;
+		if (list != null) {
+			for (Edge<N,E> edge : list) {
+				if (edge.to.equals(to)) return edge;
+			}
 		}
-		return false;
+		return null;
 	}
 	
 	public void addEdge(N from , N to, E edgeData) {
@@ -123,7 +128,13 @@ public class Graph<N,E> {
 		}
 		return null;
 	}
-
+	
+	public void removeEdge(N from, N to) {
+		Edge<N, E> edge = getEdge(from, to);
+		if (edge == null) return;
+		fromMap.get(from).remove(to);
+		edges.remove(edge);
+	}
 
 	public void addGraph(Graph<N,E> graph, boolean atomicWeight) {
 		for (Vertex<N> v : graph.vertexMap.values()) {

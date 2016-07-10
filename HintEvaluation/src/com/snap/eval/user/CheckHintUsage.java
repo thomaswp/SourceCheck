@@ -29,7 +29,7 @@ import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.HintFactoryMap.VectorHint;
 import com.snap.graph.data.Node;
 import com.snap.graph.data.Node.Predicate;
-import com.snap.graph.subtree.SubtreeBuilder.Tuple;
+import com.snap.graph.data.Tuple;
 import com.snap.parser.Assignment;
 import com.snap.parser.DataRow;
 import com.snap.parser.Grade;

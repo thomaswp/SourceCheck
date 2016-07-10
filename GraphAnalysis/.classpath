@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry excluding="com/snap/graph/data/GraphHintMap.java|com/snap/graph/data/MySQLHintMap.java|com/snap/graph/data/SimpleHintMap.java" kind="src" path="src"/>
+	<classpathentry excluding="com/snap/graph/data/GraphHintMap.java|com/snap/graph/data/MySQLHintMap.java|com/snap/graph/data/SimpleHintMap.java|com/snap/graph/data/SkeletonMap.java" kind="src" path="src"/>
 	<classpathentry kind="src" path="tests"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/Parser"/>
 	<classpathentry kind="lib" path="RTED_v1.1.jar"/>

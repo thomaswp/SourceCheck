@@ -3,7 +3,7 @@ package com.snap.eval.policy;
 import java.util.Set;
 
 import com.snap.graph.data.Node;
-import com.snap.graph.subtree.SubtreeBuilder.Tuple;
+import com.snap.graph.data.Tuple;
 
 public interface HintPolicy {
 	Set<Node> nextSteps(Node node);

@@ -9,15 +9,25 @@ import com.snap.data.Canonicalization;
 import com.snap.data.Canonicalization.InvertOp;
 import com.snap.data.Canonicalization.SwapArgs;
 import com.snap.graph.data.Node.Action;
-import com.snap.graph.subtree.SubtreeBuilder.Hint;
-import com.snap.graph.subtree.SubtreeBuilder.HintChoice;
 
 public class HintFactoryMap implements HintMap {
 	
+	// All "magic" constants used in the algorithm:
+	
+	// When at least this proportion of visitors to a state finished there,
+	// we flag hints to leave it with caution
 	private final static double STAY_PROPORTION = 0.75;
+	// We prune out states with weight less than this
 	private final static int PRUNE_NODES = 2;
+	// We prune out goals with fewer students than this finishing there
 	private final static int PRUNE_GOALS = 2;
+	// To hint towards a nearby neighbor, it must be less than this distance
+	// from the student's current state
 	private final static int MAX_NN = 3;
+	// We add synthetic edges between nodes with distance no more than this
+	private final static int MAX_EDGE_ADD_DISTANCE = 1;
+	// We prune edges between states with distance greater than this
+	private final static int MAX_EDGE_DISTANCE = 2;
 	
 	// TODO: stop cheating!
 	private final static HashSet<String> BAD_CONTEXT = new HashSet<String>();
@@ -34,35 +44,48 @@ public class HintFactoryMap implements HintMap {
 	
 	public final HashMap<Node, VectorGraph> map = new HashMap<Node, VectorGraph>();
 	
+	public static Node toBackbone(Node node) {
+		return toBackbone(node, false);
+	}
+	
+	public static Node toBackbone(Node node, boolean indices) {
+		if (node == null) return null;
+		
+		Node parent = toBackbone(node.parent, indices);
+		String type = node.type();
+		if (indices && node.parent != null) {
+			int index = 0;
+			List<Node> siblings = node.parent.children;
+			for (int i = 0; i < siblings.size(); i++) {
+				Node sibling = siblings.get(i);
+				if (sibling == node) break;
+				if (sibling.type().equals(type)) index++;
+			}
+			type += index;
+		}
+		Node child = new Node(parent, type);
+		if (parent != null) parent.children.add(child);
+		
+		return child;
+	}
+	
 	@Override
 	public void clear() {
 		map.clear();
 	}
-
-	@Override
-	public void addState(Node node) {
-		node.recurse(new Action() {
-			@Override
-			public void run(Node item) {
-				VectorState children = getVectorState(item);
-				getGraph(item, true).addPathNode(children, null);
-				getGraph(item, false).addPathNode(children, null);
-			}
-		});
-	}
 	
 	@Override
-	public HintChoice addEdge(Node from, Node to) {
+	public void addEdge(Node from, Node to) {
+		// The from Node can be null for new nodes, and is the assumed empty
 		VectorState fromState = from == null ? VectorState.empty() : getVectorState(from);
 		VectorState toState = getVectorState(to);
-		getGraph(to, true).addEdge(fromState, toState);
-		getGraph(to, false).addEdge(fromState, toState);
-		
-		return new HintChoice(from, to);
+		// Don't include loops
+		if (fromState.equals(toState)) return;
+		getGraph(to).addEdge(fromState, toState);
 	}
 	
-	private VectorGraph getGraph(Node node, boolean indices) {
-		Node backbone = SkeletonMap.toBackbone(node, indices).root();
+	private VectorGraph getGraph(Node node) {
+		Node backbone = toBackbone(node).root();
 		VectorGraph graph = map.get(backbone); 
 		if (graph == null) {
 			graph = new VectorGraph();
@@ -86,11 +109,6 @@ public class HintFactoryMap implements HintMap {
 	}
 
 	@Override
-	public boolean hasVertex(Node node) {
-		return false;
-	}
-
-	@Override
 	public HintMap instance() {
 		return new HintFactoryMap();
 	}
@@ -101,7 +119,7 @@ public class HintFactoryMap implements HintMap {
 			@Override
 			public void run(Node item) {
 				if (item.children.size() == 0) return;
-				VectorGraph graph = getGraph(item, false);
+				VectorGraph graph = getGraph(item);
 				VectorState children = getVectorState(item);
 				if (!graph.vertices.contains(children)) {
 					graph.addVertex(children);
@@ -126,7 +144,7 @@ public class HintFactoryMap implements HintMap {
 	public Iterable<Hint> getHints(Node node, int chain) {
 		List<Hint> hints = new ArrayList<Hint>();
 		
-		Node backbone = SkeletonMap.toBackbone(node, false).root();
+		Node backbone = toBackbone(node).root();
 		VectorGraph graph = map.get(backbone);
 		if (graph == null) return hints;
 		
@@ -160,7 +178,7 @@ public class HintFactoryMap implements HintMap {
 	public void finish() {		
 		for (VectorGraph graph : map.values()) {
 			graph.prune(PRUNE_NODES);
-			graph.generateEdges();
+			graph.generateAndRemoveEdges(MAX_EDGE_ADD_DISTANCE, MAX_EDGE_DISTANCE);
 			graph.bellmanBackup(PRUNE_GOALS);
 		}
 	}
@@ -228,7 +246,7 @@ public class HintFactoryMap implements HintMap {
 					getNodeReference(root), from.toJson(swapArgs), to.toJson(swapArgs), String.valueOf(caution));
 		}
 		
-		public static String getNodeReference(Node node) {
+		private static String getNodeReference(Node node) {
 			if (node == null) return null;
 			
 			String label = node.type();

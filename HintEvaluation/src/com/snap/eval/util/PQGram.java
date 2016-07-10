@@ -8,7 +8,7 @@ import java.util.Set;
 
 import com.snap.eval.util.PQGram.Profile.Constructor;
 import com.snap.graph.data.Node;
-import com.snap.graph.subtree.SubtreeBuilder.Tuple;
+import com.snap.graph.data.Tuple;
 
 public class PQGram {
 

@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.snap.graph.data.Node;
-import com.snap.graph.subtree.SubtreeBuilder.Tuple;
+import com.snap.graph.data.Tuple;
 
 public class StudentPolicy implements HintPolicy {
 	

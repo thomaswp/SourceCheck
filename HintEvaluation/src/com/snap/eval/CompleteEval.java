@@ -21,8 +21,8 @@ import com.snap.eval.util.PrintUpdater;
 import com.snap.eval.util.Prune;
 import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.Node;
+import com.snap.graph.data.Tuple;
 import com.snap.graph.subtree.SnapSubtree;
-import com.snap.graph.subtree.SubtreeBuilder.Tuple;
 import com.snap.parser.Assignment;
 
 import distance.RTED_InfoTree_Opt;

@@ -3,7 +3,6 @@ package com.snap.graph.data;
 import java.util.Collection;
 
 import com.snap.graph.Alignment;
-import com.snap.graph.subtree.SubtreeBuilder.Tuple;
 
 public class VectorState extends StringHashable {
 

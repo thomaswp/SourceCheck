@@ -4,12 +4,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.snap.graph.data.Node;
+import com.snap.graph.data.Hint;
 import com.snap.graph.data.HintFactoryMap.VectorHint;
+import com.snap.graph.data.Node;
 import com.snap.graph.data.Node.Predicate;
+import com.snap.graph.data.Tuple;
 import com.snap.graph.subtree.SubtreeBuilder;
-import com.snap.graph.subtree.SubtreeBuilder.Hint;
-import com.snap.graph.subtree.SubtreeBuilder.Tuple;
 
 public class HintFactoryPolicy implements HintPolicy {
 

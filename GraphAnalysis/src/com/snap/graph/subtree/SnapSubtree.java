@@ -17,11 +17,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.snap.data.Snapshot;
 import com.snap.graph.SimpleNodeBuilder;
+import com.snap.graph.data.Hint;
 import com.snap.graph.data.HintFactoryMap;
 import com.snap.graph.data.HintMap;
 import com.snap.graph.data.Node;
 import com.snap.graph.data.VectorGraph;
-import com.snap.graph.subtree.SubtreeBuilder.Hint;
 import com.snap.parser.Assignment;
 import com.snap.parser.DataRow;
 import com.snap.parser.Grade;
@@ -40,7 +40,7 @@ public class SnapSubtree {
 
 		//		rtedTest();
 
-		SnapSubtree subtree = new SnapSubtree(Assignment.Spring2016.GuessingGame1);
+		SnapSubtree subtree = new SnapSubtree(Assignment.Spring2016.PolygonMaker);
 		subtree.nodeMap();
 		
 //		System.out.print("Go");

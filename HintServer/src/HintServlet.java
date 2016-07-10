@@ -15,9 +15,9 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.snap.data.Snapshot;
 import com.snap.graph.SimpleNodeBuilder;
+import com.snap.graph.data.Hint;
 import com.snap.graph.data.Node;
 import com.snap.graph.subtree.SubtreeBuilder;
-import com.snap.graph.subtree.SubtreeBuilder.Hint;
 
 
 @SuppressWarnings("serial")
@@ -90,12 +90,16 @@ public class HintServlet extends HttpServlet {
 		out.println("[");
 		for (int i = 0; i < hints.size(); i++) {
 			if (i > 0) out.println(",");
-			out.print(SubtreeBuilder.hintToJson(hints.get(i)));
+			out.print(hintToJson(hints.get(i)));
 		}
 		out.println("]");
 		
 //		long elapsed = System.currentTimeMillis() - time;
 //		System.out.println(elapsed);
+	}
+	
+	public static String hintToJson(Hint hint) {
+		return String.format("{\"from\": \"%s\", \"to\": \"%s\", \"data\": %s}", hint.from(), hint.to(), hint.data());
 	}
 	
 	private SubtreeBuilder loadBuilder(String assignment, int minGrade) {

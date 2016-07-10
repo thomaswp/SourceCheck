@@ -8,8 +8,8 @@ import java.util.Map;
 import java.util.Set;
 
 import com.snap.graph.data.Node;
+import com.snap.graph.data.Tuple;
 import com.snap.graph.subtree.SnapSubtree;
-import com.snap.graph.subtree.SubtreeBuilder.Tuple;
 import com.snap.parser.Assignment;
 
 import astrecognition.model.Convert;

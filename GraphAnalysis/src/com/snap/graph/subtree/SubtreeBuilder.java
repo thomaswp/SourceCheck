@@ -1,25 +1,22 @@
 package com.snap.graph.subtree;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import com.esotericsoftware.kryo.Kryo;
-import com.snap.graph.Alignment;
 import com.snap.graph.data.Graph;
+import com.snap.graph.data.Hint;
 import com.snap.graph.data.HintFactoryMap;
 import com.snap.graph.data.HintMap;
 import com.snap.graph.data.IndexedVectorState;
 import com.snap.graph.data.Node;
-import com.snap.graph.data.SkeletonMap;
 import com.snap.graph.data.StringHashable;
+import com.snap.graph.data.Tuple;
 import com.snap.graph.data.VectorGraph;
 import com.snap.graph.data.VectorState;
 
@@ -54,9 +51,23 @@ public class SubtreeBuilder {
 			Map<String, Node> lastIDMap = null, cumulativeIDMap = new HashMap<String, Node>();
 			for (Node current : path) {
 				current.cache();
+				
+				// The general goal of this loop is to identify all matching nodes between
+				// the current and last AST, and add an edge between them.  We also search
+				// for nodes that have been added and deleted (no match) and add edges in 
+				// the graph for their parents.
+				
+				// We add edges directly because duplicates are OK, since only one
+				// edge from each student is counted towards the combined interaction networks
+				
+				// Map ID strings to Nodes in the current AST
 				Map<String, Node> idMap = new HashMap<>();
 				createMap(current, idMap);
-				if (lastIDMap != null) {					
+				
+				// If this isn't the first AST in the sequence...
+				if (lastIDMap != null) {
+					
+					// Find deleted nodes that were in the last map but not this one
 					for (String id : lastIDMap.keySet()) {
 						if (!idMap.containsKey(id)) {
 							Node lastParent = lastIDMap.get(id).parent;
@@ -64,30 +75,42 @@ public class SubtreeBuilder {
 							hintMap.addEdge(match.x, match.y);
 						}
 					}
+					// Find added and maintained nodes in this map
 					for (String id : idMap.keySet()) {
 						Node node = idMap.get(id);
 						Node lastNode = cumulativeIDMap.get(id);
 						if (lastNode == null) {
+							// If there's no matching node in the cumulativeMap, this is a new node
+							// Find a match and add the edge
 							Tuple<Node,Node> match = findClosestMatch(node.parent, idMap, cumulativeIDMap);
 							hintMap.addEdge(match.y, match.x);
+							
+							// If we've matched a farther ancestor than the parent, it means the parent
+							// is new as well, which is an unusual behavior
 							if (match.x != node.parent) {
 								// TODO: This can be caused by duplication, but there's
-								// clearly another cause, possible to do with custom blocks.
+								// clearly another cause, possibly to do with custom blocks.
 								// See: 1daddf46-9553-462f-b2b6-35d3c332dbbf.csv
 //								if (node.parent.tag instanceof CallBlock) {
 //									System.out.printf("%s (%s)\n", node.parent, node.parent.getID());
 //									System.out.println(current.prettyPrint());
 //									break;
 //								}
+								// In this case, we also want to add the node's parent as an edge,
+								// so node also shows up in the graph
 								hintMap.addEdge(null, node.parent);
 							}
 						} else {
+							// If a node exists in both trees, we add an edge. This will likely just be a loop
+							// if its children have not changed, but these are filtered out.
+							hintMap.addEdge(lastNode, node);
+							
+							// First, if its position has changed (e.g. two nodes swapped, but
+							// neither was added or deleted)
 							// TODO: test to make sure this isn't overly exclusive
-							if (node.parent != null && lastNode.index() != node.index()) {
+							if (node.parent != null && (
+									lastNode.index() != node.index())) {
 								hintMap.addEdge(lastNode.parent, node.parent);
-							}
-							if (lastNode.children.size() != node.children.size()) {
-								hintMap.addEdge(lastNode, node);
 							}
 						}
 					}
@@ -106,12 +129,21 @@ public class SubtreeBuilder {
 		return hintMap;
 	}
 	
+	// Given a node, finds the closest ancestor in pairMap that has a matching ID in nodeMap.
 	private Tuple<Node, Node> findClosestMatch(Node node, Map<String, Node> nodeMap, Map<String, Node> pairMap) {
 		String id = node.getID();
+		
+		// If this node has a match, return it. For valid trees, this is a base-case
+		// since the root should always have a match.
 		Node match = pairMap.get(id);
 		if (match != null) return new Tuple<>(node, match);
+		
+		// Otherwise, get the parent's closest matching ancestor
 		Node parent = node.parent;
 		Tuple<Node, Node> parentMatch = findClosestMatch(parent, nodeMap, pairMap);
+		
+		// We also look through that ancestor's children to see if there's an
+		// unmatched node with the same type as node, and return it if so
 		int index = node.index();
 		List<Node> children = parentMatch.y.children;
 		if (index < children.size()) {
@@ -120,14 +152,14 @@ public class SubtreeBuilder {
 				return new Tuple<>(node, match);
 			}
 		}
-			
+		
+		// Otherwise, there's no way to match directly, so we return the ancestor
 		return parentMatch;
 	}
 
 	private void createMap(Node node, Map<String, Node> byID) {
 		String id = node.getID();
 		if (id != null) {
-			if (id.equals("null")) System.out.println("!" + node.tag);
 			if (byID.put(id, node) != null) {
 				System.err.println("Multiple nodes with ID: " + node + " (" + id + ")");
 			}
@@ -206,126 +238,6 @@ public class SubtreeBuilder {
 	public void finishedAdding() {
 		hintMap.finish();
 	}
-	
-	@SuppressWarnings({ "unchecked", "unused" })
-	private List<HashSet<Node>> keptNodes(List<Node> path) {
-		List<HashSet<Node>> keptList = new ArrayList<HashSet<Node>>();
-		if (path.size() == 0) return keptList;
-		
-		for (int i = 0; i < path.size(); i++) keptList.add(new HashSet<Node>());
-
-		RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(1, 1, 10000);
-		
-		LblTree lastTree = path.get(path.size() - 1).toTree();
-		
-		Node next = null;
-		LblTree nextTree = null;
-		List<LblTree> nextList = null;
-		for (int i = path.size() - 1; i >= 0; i--) {
-			Node node = path.get(i);
-			LblTree tree = node.toTree();
-			List<LblTree> list = Collections.list(tree.depthFirstEnumeration());
-			
-			HashSet<Node> kept = keptList.get(i);
-			
-			if (next != null) {
-				HashSet<Node> nextKept = keptList.get(i + 1); 
-				
-//				HashSet<LblTree> added = new HashSet<LblTree>();
-				
-				opt.init(tree, nextTree);
-				opt.computeOptimalStrategy();
-				opt.nonNormalizedTreeDist();
-//				int keptCount = 0;
-				LinkedList<int[]> editMapping = opt.computeEditMapping();
-				for (int[] a : editMapping) {
-					if (a[0] != 0 && a[1] != 0) {
-						Node saved = (Node) nextList.get(a[1] - 1).getUserObject();
-						if (nextKept.contains(saved)) {
-							LblTree addedTree = list.get(a[0] - 1);
-//							added.add(addedTree);
-							kept.add((Node) addedTree.getUserObject());
-//							keptCount++;
-						}
-					}
-				}
-				
-				opt.init(tree, lastTree);
-				opt.computeOptimalStrategy();
-				opt.nonNormalizedTreeDist();
-				editMapping = opt.computeEditMapping();
-				for (int[] a : editMapping) {
-					if (a[0] != 0 && a[1] != 0) {
-						LblTree addedTree = list.get(a[0] - 1);
-//						if (added.add(addedTree)) {
-							kept.add((Node) addedTree.getUserObject());
-//							keptCount++;
-//						}
-					}
-				}	
-				
-//				System.out.println(i + ": " + keptCount + "/" + list.size());
-			} else {
-				for (LblTree t : list) {
-					kept.add((Node) t.getUserObject());
-				}
-			}
-			
-			next = node;
-			nextTree = tree;
-			nextList = list;
-		}
-		return keptList;
-	}
-
-	@SuppressWarnings("unchecked")
-	public float testStudent(List<Node> nodes, boolean subtree) {
-		
-		Set<Node> set = new HashSet<Node>();
-		
-		LblTree lastTree = null;
-		List<LblTree> lastList = null;
-		RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(1, 1, 100);
-		
-		int success = 0;
-		int size = 0;
-		for (int i = 0; i < nodes.size(); i++) {
-			Node node = nodes.get(i);
-			if (!set.add(node)) continue;
-			size++;
-			
-			if (hintMap.hasVertex(node)) {
-				success++;
-				continue;
-			}
-			if (!subtree) continue;
-
-			LblTree tree = node.toTree();
-			List<LblTree> list = Collections.list(tree.depthFirstEnumeration());
-			if (lastTree != null) {
-				opt.init(lastTree, tree);
-				for (int[] a : opt.computeEditMapping()) {
-					LblTree c1 = a[0] == 0 ? null : lastList.get(a[0] - 1);
-					LblTree c2 = a[1] == 0 ? null : list.get(a[1] - 1);
-					// We look for newly created blocks (they have no match in the previous state)
-					if (c1 == null) {
-						Node n = (Node)c2.getUserObject();
-						if (hasHint(n)) {
-							success++;
-							break;
-						}
-					}
-				}
-			}
-			lastTree = tree;
-			lastList = list;
-		}
-		
-		float perc = (float)success / size;
-		System.out.println(success + "/" + size + " = " + perc );
-		
-		return perc;
-	}
 		
 	public synchronized Hint getFirstHint(Node node) {
 		LinkedList<Hint> hints = new LinkedList<Hint>();
@@ -361,30 +273,6 @@ public class SubtreeBuilder {
 		for (Node child : node.children) getHints(child, list, chain, limit);
 	}
 	
-	public double skeletonDiff(Node x, Node y) {
-		return skeletonDiff(x, y, 0.5);
-	}
-	
-	public double skeletonDiff(Node x, Node y, double decay) {
-		if (x == null || y == null) return 0;
-		if (!x.type().equals(y.type())) {
-			return 0;
-		}
-
-		String[] xChildren = childrenTypes(x);
-		String[] yChildren = childrenTypes(y);
-		double d = Alignment.normalizedAlignScore(xChildren, yChildren);
-//		System.out.println(d + ": " + Arrays.toString(xChildren) + " v " + Arrays.toString(yChildren));
-		d += decay * skeletonDiff(x.parent, y.parent, decay);
-		return d;
-	}
-	
-	private String[] childrenTypes(Node node) {
-		String[] types = new String[node.children.size()];
-		for (int i = 0; i < types.length; i++) types[i] = node.children.get(i).type();
-		return types;
-	}
-	
 	public boolean hasHint(Node node) {
 		List<Node> toSearch = new LinkedList<Node>();
 		toSearch.add(node);
@@ -400,204 +288,12 @@ public class SubtreeBuilder {
 		return false;
 	}
 
-	public static class HintChoice extends PairHint {
-
-		public boolean accepted = true;
-		public String status = "Good";
-		
-		public HintChoice(Node x, Node y) {
-			super(x, y);
-		}
-		
-		public void setStatus(boolean accepted, String status) {
-			this.accepted = accepted;
-			this.status = status;
-		}
-		
-		@Override
-		public String data() {
-			return String.format("{\"accepted\": %s, \"status\": \"%s\"}", 
-					(accepted ? "true" : "false"), status);
-		}
-	}
-	
-	public static class WeightedHint extends PairHint {
-
-		public int relevance, context;
-		public double alignment, ted;
-		
-		public WeightedHint(Node x, Node y) {
-			super(x, y);
-		}
-		
-		@Override
-		public String toString() {
-			return String.format("[%02d,%02d,%.3f,%.3f]: %s -> %s", relevance, context, alignment, ted, x.toString(), y.toString());
-		}
-		
-		@Override
-		public String data() {
-			return String.format(
-					"{\"relevance\": %d, \"context\": %d, \"alignment\": %.3f}", 
-					relevance, context, alignment);
-		}
-		
-	}
-	
-	public static interface Hint {
-		String from();
-		String to();
-		String data();
-		Node outcome();
-	}
-	
-	public static String hintToJson(Hint hint) {
-		return String.format("{\"from\": \"%s\", \"to\": \"%s\", \"data\": %s}", hint.from(), hint.to(), hint.data());
-	}
-	
-	public static class PairHint extends Tuple<Node, Node> implements Hint {
-
-		private PairHint() {
-			super(null, null);
-		}
-		
-		public PairHint(Node x, Node y) {
-			super(x, y);
-		}
-		
-		@Override
-		public String toString() {
-			return String.format("%s -> %s", x, y);
-		}
-
-		@Override
-		public String from() {
-			return x.toString();
-		}
-
-		@Override
-		public String to() {
-			return y.toString();
-		}
-
-		@Override
-		public String data() {
-			return "null";
-		}
-
-		@Override
-		public Node outcome() {
-			return y;
-		}
-	}
-	
-	public static abstract class HintComparator implements Comparator<WeightedHint> { 
-		public final static HintComparator ByRelevance = new HintComparator() {
-			@Override
-			public int compare(WeightedHint o1, WeightedHint o2) {
-				return Integer.compare(o2.relevance, o1.relevance);
-			}
-		};
-		
-		public final static HintComparator ByContext = new HintComparator() {
-			@Override
-			public int compare(WeightedHint o1, WeightedHint o2) {
-				return Integer.compare(o2.context, o1.context);
-			}
-		};
-		
-		public final static HintComparator ByTED = new HintComparator() {
-			@Override
-			public int compare(WeightedHint o1, WeightedHint o2) {
-				return Double.compare(o1.ted, o2.ted);
-			}
-		};
-		
-		public final static HintComparator ByAlignment = new HintComparator() {
-			@Override
-			public int compare(WeightedHint o1, WeightedHint o2) {
-				return Double.compare(o2.alignment, o1.alignment);
-			}
-		};
-		
-		public HintComparator then(final HintComparator comparator) {
-			return new HintComparator() {
-				@Override
-				public int compare(WeightedHint o1, WeightedHint o2) {
-					int first = HintComparator.this.compare(o1, o2);
-					if (first != 0) return first; 
-					return comparator.compare(o1, o2);
-				}
-			};
-		}
-		
-		public static HintComparator compose(HintComparator... comparators) {
-			HintComparator base = comparators[0];
-			for (int i = 0; i < comparators.length; i++) {
-				base = base.then(comparators[i]);
-			}
-			return base;
-		}
-		
-		public static HintComparator weighted(final double relevance, final double context, final double quality) {
-			return new HintComparator() {
-				@Override
-				public int compare(WeightedHint o1, WeightedHint o2) {
-					return Double.compare(
-							o2.relevance * relevance + o2.context * context + o2.alignment * quality,
-							o1.relevance * relevance + o1.context * context + o1.alignment * quality);
-				}
-			};
-		}
-	}
-	
-	public static class Tuple<T1,T2> {
-		public T1 x;
-		public T2 y;
-		
-		public Tuple(T1 x, T2 y) {
-			this.x = x;
-			this.y = y;
-		}
-		
-		@Override
-		public boolean equals(Object obj) {
-			if (obj instanceof Tuple<?,?>) {
-				Tuple<?,?> tuple = (Tuple<?, ?>) obj;
-				if (x == null) { 
-					if (tuple.x != null) return false; 
-				} else if (!x.equals(tuple.x)) return false;
-				if (y == null) {
-					if (tuple.y != null) return false;
-				} else if (!y.equals(tuple.y)) return false;
-				return true;
-			}
-			return super.equals(obj);
-		}
-		
-		@Override
-		public int hashCode() {
-			int hash = 1;
-			hash = hash * 31 + (x == null ? 0 : x.hashCode());
-			hash = hash * 31 + (y == null ? 0 : y.hashCode());
-			return hash;
-		}
-		
-		@Override
-		public String toString() {
-			return "{" + x + "," + y + "}";
-		}
-	}
-
 	public static Kryo getKryo() {
 		Kryo kryo = new Kryo();
 		kryo.register(SubtreeBuilder.class);
 		kryo.register(StringHashable.class);
 		kryo.register(Node.class);
 		kryo.register(HintMap.class);
-		kryo.register(PairHint.class);
-//		kryo.register(SimpleHintMap.class);
-		kryo.register(SkeletonMap.class);
 		kryo.register(HintFactoryMap.class);
 		kryo.register(VectorState.class);
 		kryo.register(IndexedVectorState.class);
