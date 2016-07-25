@@ -62,6 +62,7 @@ public class BlockDefinition extends Code implements IHasID {
 		this.type = type;
 		this.category = category;
 		this.guid = guid;
+		// TODO: Should also include blocks marked as imported
 		this.isToolsBlock = TOOLS_BLOCKS_SET.contains(this.name);
 		this.script = script;
 	}
