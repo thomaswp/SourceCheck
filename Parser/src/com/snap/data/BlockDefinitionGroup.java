@@ -52,13 +52,14 @@ public class BlockDefinitionGroup {
 	}
 
 	public List<BlockDefinition> getWithEdits(boolean canon) {
-		if (!canon || editing == null || editingIndex == -1) {
+		if (!canon) {
 			return blocks;
 		}
 		
 		List<BlockDefinition> editBlocks = new ArrayList<BlockDefinition>();
 		for (int i = 0; i < blocks.size(); i++) {
-			if (i == editingIndex) {
+			if (blocks.get(i).isToolsBlock) continue;
+			if (editing != null && i == editingIndex) {
 				editBlocks.add(editing);
 			} else {
 				editBlocks.add(blocks.get(i));

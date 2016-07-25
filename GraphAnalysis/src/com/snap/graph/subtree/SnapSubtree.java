@@ -39,8 +39,8 @@ public class SnapSubtree {
 
 
 		//		rtedTest();
-
-		SnapSubtree subtree = new SnapSubtree(Assignment.Spring2016.Squiral);
+		// TODO: What is this telling me to do weird things (doWarp, doRun, report), when all examples I've seen have normal solutions?
+		SnapSubtree subtree = new SnapSubtree(Assignment.Spring2016.PolygonMaker);
 		subtree.nodeMap();
 		
 //		System.out.print("Go");

@@ -1,7 +1,10 @@
 package com.snap.data;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.w3c.dom.Element;
 
@@ -10,7 +13,35 @@ import com.snap.XML;
 public class BlockDefinition extends Code implements IHasID {
 	private static final long serialVersionUID = 1L;
 	
+	public final static String[] TOOLS_BLOCKS = new String[] {
+       	"label %s of size %s",
+       	"map %s over %s",
+       	"empty? %s",
+       	"keep items such that %s from %s",
+       	"combine with %s items of %s",
+       	"if %s then %s else %s",
+       	"for %s = %s to %s %s",
+       	"join words %s",
+       	"list $arrowRight sentence %s",
+       	"sentence $arrowRight list %s",
+       	"catch %s %s",
+       	"throw %s",
+       	"catch %s %s",
+       	"throw %s %s",
+       	"for each %s of %s %s",
+       	"if %s do %s and pause all $pause-1-255-220-0",
+       	"word $arrowRight list %s",
+       	"ignore %s",
+       	"tell %s to %s",
+       	"ask %s for %s",
+       	"list $arrowRight word %s",
+	};
+	
+	private final static Set<String> TOOLS_BLOCKS_SET = 
+			new HashSet<String>(Arrays.asList(TOOLS_BLOCKS));
+	
 	public final String name, type, category, guid;
+	public final boolean isToolsBlock;
 	public final Script script;
 	public final List<String> inputs = new ArrayList<String>();
 	public final List<Script> scripts = new ArrayList<Script>();
@@ -30,8 +61,9 @@ public class BlockDefinition extends Code implements IHasID {
 		this.name = steralizeName(name);
 		this.type = type;
 		this.category = category;
-		this.script = script;
 		this.guid = guid;
+		this.isToolsBlock = TOOLS_BLOCKS_SET.contains(this.name);
+		this.script = script;
 	}
 	
 	public static BlockDefinition parse(Element element) {
