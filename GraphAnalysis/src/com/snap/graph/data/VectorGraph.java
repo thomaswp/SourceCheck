@@ -19,6 +19,7 @@ public class VectorGraph extends OutGraph<VectorState> {
 	
 	private final transient HashMap<VectorState, Double> tmpGoalValues = 
 			new HashMap<VectorState, Double>();
+	private transient IndexedVectorState tmpContext;
 	
 	public boolean setGoal(VectorState goal, IndexedVectorState context) {
 		List<IndexedVectorState> list = getContext(goal);
@@ -60,9 +61,20 @@ public class VectorGraph extends OutGraph<VectorState> {
 		return value;
 	}
 	
-	public VectorState getHint(VectorState state, IndexedVectorState context, int maxNN, boolean naturalEdges) {
-		calculateContextualGoalValues(context);
-		bellmanBackup(2);
+	public VectorState getGoalState(VectorState state, IndexedVectorState context, int maxNN, int minGoal) {
+		if (state == null) return null;
+		contextualBellmanBackup(context, minGoal);
+		
+		if (!connectedToGoal(state)) {
+			return getGoalState(getNearestNeighbor(state, maxNN, true), context, maxNN, minGoal);
+		}
+		List<VectorState> goalPath = getMDPGoalPath(state);
+		if (goalPath == null) return null;
+		return goalPath.get(goalPath.size() - 1);
+	}
+	
+	public VectorState getHint(VectorState state, IndexedVectorState context, int maxNN, int minGoal, boolean naturalEdges) {
+		contextualBellmanBackup(context, minGoal);
 		
 		boolean connectedToGoal = connectedToGoal(state);
 		
@@ -72,7 +84,7 @@ public class VectorGraph extends OutGraph<VectorState> {
 				VectorState nearestNeighbor = getNearestNeighbor(state, maxNN, true);
 				if (nearestNeighbor == null) return null;
 				// If we find one, get the hint from there
-				VectorState hintState = getHint(nearestNeighbor, context, maxNN, naturalEdges);
+				VectorState hintState = getHint(nearestNeighbor, context, maxNN, minGoal, naturalEdges);
 				if (hintState != null) {
 					// If it exists, and it's at least as close as the nearest neighbor...
 					int disNN = VectorState.distance(state, nearestNeighbor);
@@ -115,7 +127,6 @@ public class VectorGraph extends OutGraph<VectorState> {
 		List<VectorState> goalPath = getMDPGoalPath(nearestNeighbor);
 		if (goalPath == null) return null;
 		VectorState goal = goalPath.get(goalPath.size() - 1);
-		if (!isGoal(goal)) return null;
 		
 		List<String> stateItems = new LinkedList<String>();
 		for (String item : state.items) stateItems.add(item);
@@ -166,16 +177,17 @@ public class VectorGraph extends OutGraph<VectorState> {
 		return path;		
 	}
 	
-	private void calculateContextualGoalValues(IndexedVectorState context) {
-//		int minDis = Integer.MAX_VALUE;
+	private void contextualBellmanBackup(IndexedVectorState context, int minGoal) {
+		if (context.equals(tmpContext)) return;
+		
 		HashMap<VectorState, Double> cachedDistances = new HashMap<VectorState, Double>();
 		
 		tmpGoalValues.clear();
+		tmpContext = context;
 		
 		for (VectorState goal : goalContextMap.keySet()) {
 			List<IndexedVectorState> list = goalContextMap.get(goal);
 			if (list.size() < 2) continue;
-//			double totalDis = 0;
 			for (IndexedVectorState state : list) {
 				state.cache();
 				Double dis = cachedDistances.get(state);
@@ -183,13 +195,9 @@ public class VectorGraph extends OutGraph<VectorState> {
 					dis = IndexedVectorState.distance(context, state);
 					cachedDistances.put(state, dis);
 				}
-//				totalDis += dis;
-//				minDis = Math.min(minDis, dis);
 			}
-//			double avg = totalDis / list.size();
 		}
 
-//		VectorState best = null;
 		double nextBest = Double.MIN_VALUE;
 		double bestAvgDis = Double.MIN_VALUE;
 		for (VectorState goal : goalContextMap.keySet()) {
@@ -211,28 +219,12 @@ public class VectorGraph extends OutGraph<VectorState> {
 				nextBest = weight;
 			}
 			if (weight > bestAvgDis) {
-//				best = goal;
 				nextBest = bestAvgDis;
 				bestAvgDis = weight;
 			}
-		}
-//		System.out.println(bestAvgDis + " > " + nextBest);
-		
-//		int bestVotes = Integer.MIN_VALUE;
-//		for (VectorState goal : goalContextMap.keySet()) {
-//			int votes = 0;
-//			for (IndexedVectorState state : goalContextMap.get(goal)) {
-//				int dis = cachedDistances.get(state);
-//				if (dis == minDis) votes++;
-//			}
-//			if (votes > bestVotes) {
-//				bestVotes = votes;
-//				best = goal;
-//			}
-//		}
-//		System.out.println(minDis + " " + bestVotes);
-		
-//		return best;
+		}		
+
+		bellmanBackup(minGoal);
 	}
 		
 	public void exportGoalContexts(PrintStream out) throws FileNotFoundException {

@@ -1,5 +1,7 @@
 package com.snap.graph.data;
 
+import java.util.List;
+
 public interface HintMap {
 
 	void clear();
@@ -15,4 +17,6 @@ public interface HintMap {
 	void finish();
 
 	void addMap(HintMap hintMap);
+
+	void postProcess(List<Hint> hints);
 }

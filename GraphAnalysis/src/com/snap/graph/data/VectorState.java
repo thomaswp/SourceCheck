@@ -1,6 +1,8 @@
 package com.snap.graph.data;
 
 import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 
 import com.snap.graph.Alignment;
 
@@ -61,6 +63,15 @@ public class VectorState extends StringHashable {
 		return toJson(false);
 	}
 	
+	public int countOf(String item) {
+		if (item == null) return 0;
+		int count = 0;
+		for (String i : items) {
+			if (item.equals(i)) count++;
+		}
+		return count;
+	}
+	
 	public String toJson(boolean reverseArgs) {
 		String out = "[";
 		if (reverseArgs) {
@@ -88,5 +99,32 @@ public class VectorState extends StringHashable {
 
 	public static VectorState empty() {
 		return new VectorState(new String[0]);
+	}
+
+	public int overlap(VectorState other) {
+		List<String> otherList = new LinkedList<>();
+		for (String i : other.items) otherList.add(i);
+		
+		int count = 0;
+		for (String i : items) {
+			if (otherList.remove(i)) count++;
+		}
+		
+		return count;
+	}
+
+	public VectorState limitTo(VectorState... states) {
+		List<String> list = new LinkedList<>();
+		for (String i : items) list.add(i);
+		List<String> allowed = new LinkedList<>();
+		for (VectorState state : states) {
+			for (String i : state.items) allowed.add(i);
+		}
+		for (int i = 0; i < list.size(); i++) {
+			if (!allowed.remove(list.get(i))) {
+				list.remove(i--);
+			}
+		}
+		return new VectorState(list);
 	}
 }

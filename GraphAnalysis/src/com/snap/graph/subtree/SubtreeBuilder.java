@@ -252,6 +252,7 @@ public class SubtreeBuilder {
 	public synchronized List<Hint> getHints(Node parent, int chain) {
 		LinkedList<Hint> hints = new LinkedList<Hint>();
 		getHints(parent, hints, chain, Integer.MAX_VALUE);
+		hintMap.postProcess(hints);
 		return hints;
 	}
 		
