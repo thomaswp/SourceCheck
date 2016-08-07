@@ -12,7 +12,7 @@ import com.snap.XML;
 
 public class BlockDefinition extends Code implements IHasID {
 	private static final long serialVersionUID = 1L;
-	
+
 	public final static String[] TOOLS_BLOCKS = new String[] {
        	"label %s of size %s",
        	"map %s over %s",
@@ -36,10 +36,10 @@ public class BlockDefinition extends Code implements IHasID {
        	"ask %s for %s",
        	"list $arrowRight word %s",
 	};
-	
-	private final static Set<String> TOOLS_BLOCKS_SET = 
+
+	private final static Set<String> TOOLS_BLOCKS_SET =
 			new HashSet<String>(Arrays.asList(TOOLS_BLOCKS));
-	
+
 	public final String name, type, category, guid;
 	public final boolean isToolsBlock;
 	public final Script script;
@@ -51,12 +51,12 @@ public class BlockDefinition extends Code implements IHasID {
 	private BlockDefinition() {
 		this(null, null, null, null, null);
 	}
-	
+
 	public static String steralizeName(String name) {
 		if (name == null) return null;
 		return name.replace("&apos;", "'").replaceAll("%'[A-Za-z0-9# ]*'", "%s");
 	}
-	
+
 	public BlockDefinition(String name, String type, String category, String guid, Script script) {
 		this.name = steralizeName(name);
 		this.type = type;
@@ -66,7 +66,7 @@ public class BlockDefinition extends Code implements IHasID {
 		this.isToolsBlock = TOOLS_BLOCKS_SET.contains(this.name);
 		this.script = script;
 	}
-	
+
 	public static BlockDefinition parse(Element element) {
 		String name = element.getAttribute("s");
 		String type = element.getAttribute("type");
@@ -84,7 +84,7 @@ public class BlockDefinition extends Code implements IHasID {
 		XML.ensureEmpty(element, "header", "code");
 		return def;
 	}
-	
+
 	private static <E> List<E> toList(Iterable<E> iter) {
 	    List<E> list = new ArrayList<E>();
 	    for (E item : iter) {
@@ -92,7 +92,7 @@ public class BlockDefinition extends Code implements IHasID {
 	    }
 	    return list;
 	}
-	
+
 	public static BlockDefinition parseEditing(Element element) {
 		String guid = element.getAttribute("guid");
 		List<Element> scripts = toList(XML.getGrandchildrenByTagName(element, "scripts", "script"));
@@ -106,14 +106,14 @@ public class BlockDefinition extends Code implements IHasID {
 		while (!definition.getTagName().equals("custom-block")) {
 			definition = (Element) definition.getFirstChild();
 		}
-		
+
 		String name = definition.getAttribute("s");
-		
+
 		Script script = new Script();
 		for (int i = 1; i < blocks.size(); i++) {
 			script.blocks.add((Block) XML.getCodeElement(blocks.get(i)));
 		}
-		
+
 		BlockDefinition def = new BlockDefinition(name, null, null, guid, script);
 
 		for (Element e : XML.getChildrenByTagName(definition, "l")) {
@@ -125,7 +125,7 @@ public class BlockDefinition extends Code implements IHasID {
 		}
 		return def;
 	}
-	
+
 	@Override
 	public String toCode(boolean canon) {
 		return new CodeBuilder(canon)
@@ -147,7 +147,7 @@ public class BlockDefinition extends Code implements IHasID {
 		ac.add(scripts);
 		return canon ? "customBlock" : name;
 	}
-	
+
 	@Override
 	public String getID() {
 		if (guid != null && guid.length() > 0) return guid;

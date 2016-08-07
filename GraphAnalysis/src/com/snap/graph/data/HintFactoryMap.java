@@ -18,10 +18,10 @@ import com.snap.graph.data.Node.Action;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class HintFactoryMap implements HintMap {
-	
+
 	// All "magic" constants used in the algorithm
 	// TODO: Make these into a config file
-	
+
 	// When at least this proportion of visitors to a state finished there,
 	// we flag hints to leave it with caution
 	private final static double STAY_PROPORTION = 0.75;
@@ -39,7 +39,7 @@ public class HintFactoryMap implements HintMap {
 	// The maximum number of siblings to look at at either end when considering context
 	private final static int MAX_CONTEXT_SIBLINGS = 3;
 
-	// Code elements that have exactly one script child or unordered children and 
+	// Code elements that have exactly one script child or unordered children and
 	// therefore should not have their children used as context
 	private final static HashSet<String> BAD_CONTEXT = new HashSet<String>();
 	static {
@@ -53,19 +53,19 @@ public class HintFactoryMap implements HintMap {
 			BAD_CONTEXT.add(c);
 		}
 	}
-	
+
 	private final static String SCRIPT = "script";
-	
-	public final HashMap<Node, VectorGraph> map = 
+
+	public final HashMap<Node, VectorGraph> map =
 			new HashMap<Node, VectorGraph>();
-	
+
 	public static Node toBackbone(Node node) {
 		return toBackbone(node, false);
 	}
-	
+
 	public static Node toBackbone(Node node, boolean indices) {
 		if (node == null) return null;
-		
+
 		Node parent = toBackbone(node.parent, indices);
 		String type = node.type();
 		if (indices && node.parent != null) {
@@ -80,36 +80,36 @@ public class HintFactoryMap implements HintMap {
 		}
 		Node child = new Node(parent, type);
 		if (parent != null) parent.children.add(child);
-		
+
 		return child;
 	}
-	
+
 	@Override
 	public void clear() {
 		map.clear();
 	}
-	
+
 	@Override
 	public void addEdge(Node from, Node to) {
 		// The from Node can be null for new nodes, and is the assumed empty
-		VectorState fromState = from == null ? 
+		VectorState fromState = from == null ?
 				VectorState.empty() : getVectorState(from);
 		VectorState toState = getVectorState(to);
 		// Don't include loops
 		if (fromState.equals(toState)) return;
 		getGraph(to).addEdge(fromState, toState);
 	}
-	
+
 	private VectorGraph getGraph(Node node) {
 		Node backbone = toBackbone(node).root();
-		VectorGraph graph = map.get(backbone); 
+		VectorGraph graph = map.get(backbone);
 		if (graph == null) {
 			graph = new VectorGraph();
 			map.put(backbone, graph);
 		}
 		return graph;
 	}
-	
+
 	private static VectorState getVectorState(Node node) {
 		return new VectorState(getChildren(node));
 	}
@@ -148,56 +148,56 @@ public class HintFactoryMap implements HintMap {
 	private static IndexedVectorState getContext(Node item) {
 		return getContext(item, MAX_CONTEXT_SIBLINGS);
 	}
-	
+
 	private static IndexedVectorState getContext(Node item, int maxLength) {
 		Node contextChild = item;
-		while (contextChild.parent != null && 
+		while (contextChild.parent != null &&
 				BAD_CONTEXT.contains(contextChild.parent.type())) {
 			contextChild = contextChild.parent;
 		}
-		int index = contextChild.index(); 
+		int index = contextChild.index();
 		return new IndexedVectorState(getChildren(contextChild.parent), index, maxLength);
 	}
 
 	@Override
 	public Iterable<Hint> getHints(Node node, int chain) {
 		List<Hint> hints = new ArrayList<Hint>();
-		
+
 		Node backbone = toBackbone(node).root();
 		VectorGraph graph = map.get(backbone);
 		if (graph == null) return hints;
-		
+
 		boolean useGraph = !node.hasType(SCRIPT);
-		
+
 		VectorState children = getVectorState(node);
 		IndexedVectorState context = getContext(node);
 		VectorState next = children;
-		
+
 		for (int j = 0; j < chain; j++) {
 			// Get the best successor state from our current state
-			VectorState hint = graph.getHint(next, context, MAX_NN, PRUNE_GOALS, useGraph);  
+			VectorState hint = graph.getHint(next, context, MAX_NN, PRUNE_GOALS, useGraph);
 			// If there is none, we stop where we are
 			if (hint == null || hint.equals(next)) break;
 			// Otherwise, chain to the next hint
 			next = hint;
 		}
-		
+
 		VectorState goal = graph.getGoalState(next, context, MAX_NN, PRUNE_GOALS);
 		if (goal == null) goal = next;
 
 		double stayed = graph.getProportionStayed(children);
-		boolean caution = 
-				graph.getGoalCount(children) >= PRUNE_GOALS && 
-				stayed >= STAY_PROPORTION;		
-				
+		boolean caution =
+				graph.getGoalCount(children) >= PRUNE_GOALS &&
+				stayed >= STAY_PROPORTION;
+
 		VectorHint hint = new VectorHint(node, backbone.toString(), children, next, goal, caution);
 		hints.add(hint);
-			
+
 		return hints;
 	}
 
 	@Override
-	public void finish() {		
+	public void finish() {
 		for (VectorGraph graph : map.values()) {
 			graph.prune(PRUNE_NODES);
 			graph.generateAndRemoveEdges(MAX_EDGE_ADD_DISTANCE, MAX_EDGE_DISTANCE);
@@ -218,16 +218,17 @@ public class HintFactoryMap implements HintMap {
 			myGraph.addGraph(graph, true);
 		}
 	}
-	
+
+	@Override
 	public void postProcess(List<Hint> hints) {
 		Set<Node> extraScripts = new HashSet<>();
 		Map<VectorState, VectorHint> missingMap = new HashMap<>();
-		
+
 		// Find scripts that should be removed and don't give hints to their children
 		for (Hint hint : hints) {
 			if (!(hint instanceof VectorHint)) return;
 			VectorHint vHint = (VectorHint) hint;
-			
+
 			int extraChildren = vHint.from.countOf(SCRIPT) - vHint.goal.countOf(SCRIPT);
 			if (extraChildren > 0) {
 				List<Integer> sizes = new LinkedList<>();
@@ -243,7 +244,7 @@ public class HintFactoryMap implements HintMap {
 					}
 				}
 			}
-			
+
 		}
 
 		// Remove the hints for the extra hints and make a map of missing blocks for the others
@@ -251,27 +252,27 @@ public class HintFactoryMap implements HintMap {
 		for (Hint hint : hints) {
 			if (!(hint instanceof VectorHint)) return;
 			VectorHint vHint = (VectorHint) hint;
-			
+
 			if (extraScripts.contains(vHint.root)) {
 				toRemove.add(hint);
 			} else {
 				missingMap.put(vHint.getMissingChildren(), vHint);
 			}
 		}
-		
+
 		// Instead look for another hint that could use the blocks in these
 		// scripts and make a LinkHint that points there
 		List<Hint> toAdd = new LinkedList<>();
 		for (Hint hint : hints) {
 			if (!(hint instanceof VectorHint)) return;
 			VectorHint vHint = (VectorHint) hint;
-			
+
 			if (extraScripts.contains(vHint.root)) {
-				
+
 				VectorHint bestMatch = null;
 				int bestUseful = 0;
 				int bestDistance = Integer.MAX_VALUE;
-				
+
 				for (VectorState missing : missingMap.keySet()) {
 					int useful = missing.overlap(vHint.from);
 					if (useful * 2 >= vHint.from.items.length && useful >= bestUseful) {
@@ -283,7 +284,7 @@ public class HintFactoryMap implements HintMap {
 						}
 					}
 				}
-				
+
 				if (bestMatch != null) {
 					toAdd.add(new LinkHint(bestMatch, vHint));
 				}
@@ -292,32 +293,32 @@ public class HintFactoryMap implements HintMap {
 		hints.addAll(toAdd);
 		hints.removeAll(toRemove);
 	}
-	
+
 	public static class LinkHint extends VectorHint {
 
 		public final Node oldRoot;
 		public final VectorState oldFrom;
 		public final String oldBackbone;
-		
+
 		public LinkHint(VectorHint mainHint, VectorHint oldHint) {
-			super(mainHint.root, mainHint.backbone, mainHint.from, 
-					mainHint.goal.limitTo(mainHint.from, oldHint.from), 
+			super(mainHint.root, mainHint.backbone, mainHint.from,
+					mainHint.goal.limitTo(mainHint.from, oldHint.from),
 					mainHint.goal, mainHint.caution);
 			oldRoot = oldHint.root;
 			oldFrom = oldHint.from;
 			oldBackbone = oldHint.backbone;
 		}
-		
+
 		@Override
 		public String from() {
 			return super.from() + " and " + oldBackbone + ": " + oldFrom;
 		}
-		
+
 		@Override
 		public String to() {
 			return super.to() + " and " + oldBackbone + ": []";
 		}
-		
+
 		@Override
 		protected Map<String, String> dataMap() {
 			Map<String, String> map =  super.dataMap();
@@ -329,18 +330,18 @@ public class HintFactoryMap implements HintMap {
 		@Override
 		public Node outcome() {
 			throw new NotImplementedException();
-		}		
+		}
 	}
-	
+
 	public static class VectorHint extends StringHashable implements Hint {
 
 		public final Node root;
 		public final String backbone;
 		public final VectorState from, to, goal;
 		public final boolean caution;
-		
+
 		protected final boolean swapArgs;
-		
+
 		public VectorHint(Node root, String backbone, VectorState from, VectorState to, VectorState goal, boolean caution) {
 			this.root = root;
 			this.backbone = backbone;
@@ -348,7 +349,7 @@ public class HintFactoryMap implements HintMap {
 			this.to = to;
 			this.goal = goal;
 			this.caution = caution;
-			
+
 			boolean swap = false;
 			for (Canonicalization c : root.canonicalizations) {
 				if (c instanceof InvertOp || c instanceof SwapArgs) {
@@ -358,22 +359,22 @@ public class HintFactoryMap implements HintMap {
 			}
 			this.swapArgs = swap;
 		}
-		
+
 		@Override
 		protected boolean autoCache() {
 			return true;
 		}
-		
+
 		@Override
 		public String from() {
 			return backbone + ": " + from;
 		}
-		
+
 		@Override
 		public String to() {
 			return backbone + ": " + to;
 		}
-		
+
 		@Override
 		public String data() {
 			String data = "{";
@@ -384,7 +385,7 @@ public class HintFactoryMap implements HintMap {
 			data += "}";
 			return data;
 		}
-		
+
 		protected Map<String, String> dataMap() {
 			HashMap<String, String> map = new HashMap<>();
 			map.put("root", getNodeReference(root));
@@ -394,10 +395,10 @@ public class HintFactoryMap implements HintMap {
 			map.put("caution", String.valueOf(caution));
 			return map;
 		}
-		
+
 		protected static String getNodeReference(Node node) {
 			if (node == null) return null;
-			
+
 			String label = node.type();
 			for (Canonicalization c : node.canonicalizations) {
 				if (c instanceof InvertOp) {
@@ -406,7 +407,7 @@ public class HintFactoryMap implements HintMap {
 					break;
 				}
 			}
-			
+
 			int index = node.index();
 			if (node.parent != null) {
 				for (Canonicalization c : node.parent.canonicalizations) {
@@ -417,9 +418,9 @@ public class HintFactoryMap implements HintMap {
 					}
 				}
 			}
-			
+
 			String parent = getNodeReference(node.parent);
-			
+
 			return String.format("{\"label\": \"%s\", \"index\": %d, \"parent\": %s}",
 					label, index, parent);
 		}
@@ -433,20 +434,20 @@ public class HintFactoryMap implements HintMap {
 		public Node outcome() {
 			return applyHint(root, to.items);
 		}
-		
+
 		public VectorState getMissingChildren() {
 			List<String> missing = new LinkedList<>();
 			for (String i : goal.items) missing.add(i);
 			for (String i : from.items) missing.remove(i);
 			return new VectorState(missing);
 		}
-		
+
 		public static Node applyHint(Node root, String[] to) {
 			Node nRoot = root.copy(false);
-			
+
 			List<Node> children = new ArrayList<Node>();
 			children.addAll(nRoot.children);
-			
+
 			nRoot.children.clear();
 			for (String type : to) {
 				boolean added = false;
@@ -461,10 +462,10 @@ public class HintFactoryMap implements HintMap {
 					nRoot.children.add(new Node(nRoot, type));
 				}
 			}
-			
+
 			return nRoot;
 		}
-		
+
 	}
-	
+
 }

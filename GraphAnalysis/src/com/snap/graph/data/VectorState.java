@@ -9,26 +9,26 @@ import com.snap.graph.Alignment;
 public class VectorState extends StringHashable {
 
 	public final String[] items;
-	
+
 	@SuppressWarnings("unused")
-	private VectorState() {	
+	private VectorState() {
 		items = null;
 	}
-	
+
 	@Override
 	protected boolean autoCache() {
 		return true;
 	}
-	
+
 	public VectorState(String[] items) {
 		this.items = items;
 		cache();
 	}
-	
+
 	public VectorState(Collection<String> items) {
 		this(items.toArray(new String[items.size()]));
 	}
-	
+
 	@Override
 	protected String toCanonicalStringInternal() {
 		String out = "[";
@@ -39,30 +39,31 @@ public class VectorState extends StringHashable {
 		out += "]";
 		return out;
 	}
-	
+
 	public static double normalizedDirectionalDistance(VectorState a, VectorState b) {
 		return distances(a, b).y;
 	}
-	
+
 	public static int distance(VectorState a, VectorState b) {
 		return distance(a, b, 1, 1, 1);
 	}
-	
-	public static int distance(VectorState a, VectorState b, int insCost, int delCost, int subCost) {
+
+	public static int distance(VectorState a, VectorState b, int insCost, int delCost,
+			int subCost) {
 		return Alignment.alignCost(a.items, b.items, insCost, delCost, subCost);
 	}
-	
+
 	public static Tuple<Integer, Double> distances(VectorState a, VectorState b) {
 		int distance = distance(a, b);
 		int length = Math.max(a.items.length, b.items.length);
 		double ndd = length == 0 ? 0 : (double)distance / length;
 		return new Tuple<Integer, Double>(distance, ndd);
 	}
-	
+
 	public String toJson() {
 		return toJson(false);
 	}
-	
+
 	public int countOf(String item) {
 		if (item == null) return 0;
 		int count = 0;
@@ -71,7 +72,7 @@ public class VectorState extends StringHashable {
 		}
 		return count;
 	}
-	
+
 	public String toJson(boolean reverseArgs) {
 		String out = "[";
 		if (reverseArgs) {
@@ -92,7 +93,7 @@ public class VectorState extends StringHashable {
 		out += "\"" + getItem(i) + "\"";
 		return out;
 	}
-	
+
 	protected String getItem(int index) {
 		return items[index];
 	}
@@ -104,12 +105,12 @@ public class VectorState extends StringHashable {
 	public int overlap(VectorState other) {
 		List<String> otherList = new LinkedList<>();
 		for (String i : other.items) otherList.add(i);
-		
+
 		int count = 0;
 		for (String i : items) {
 			if (otherList.remove(i)) count++;
 		}
-		
+
 		return count;
 	}
 

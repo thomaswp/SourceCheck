@@ -34,22 +34,23 @@ import util.LblTree;
 
 public class SnapSubtree {
 
-	public static void main(String[] args) throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
+	public static void main(String[] args) throws IOException, InstantiationException,
+			IllegalAccessException, ClassNotFoundException, SQLException {
 
 
 
 		//		rtedTest();
 		SnapSubtree subtree = new SnapSubtree(Assignment.Spring2016.GuessingGame1);
 		subtree.nodeMap();
-		
+
 //		System.out.print("Go");
 //		new Scanner(System.in).nextLine();
-		
+
 		System.out.println(System.currentTimeMillis());
 
 		// [0.0 - 1.0]
 		double minGrade = 1;
-		
+
 		SubtreeBuilder builder = subtree.buildGraph(Mode.Overwrite, minGrade);
 
 		//		subtree.getHints(builder, "0:{snapshot{stage{sprite{script{receiveGo}{doSetVar}{doSayFor}{doAsk}{doSayFor}{doSayFor}{abc}}}}{var}}");
@@ -71,14 +72,14 @@ public class SnapSubtree {
 	//		HintFactoryMap map = (HintFactoryMap) builder.hintMap;
 	//		for (Node root : map.map.keySet()) {
 	//			VectorGraph vectorGraph = map.map.get(root);
-	//			
+	//
 	//		}
 	//	}
 
 
 	public final Assignment assignment;
 	private final HintMap hintMap;
-	
+
 	private Map<String, List<Node>> nodeMapCache;
 	private Map<String, Grade> gradeMapCache;
 
@@ -92,7 +93,7 @@ public class SnapSubtree {
 		}
 		return nodeMapCache;
 	}
-	
+
 	public Map<String, Grade> gradeMap() {
 		if (gradeMapCache == null) {
 			try {
@@ -107,7 +108,7 @@ public class SnapSubtree {
 	public SnapSubtree(Assignment assignment) {
 		this(assignment, new HintFactoryMap());
 	}
-	
+
 	public SnapSubtree(Assignment assignment, HintMap hintMap) {
 		this.assignment = assignment;
 		this.hintMap = hintMap;
@@ -122,7 +123,7 @@ public class SnapSubtree {
 			List<Hint> hints = builder.getHints(node);
 			for (Hint hint : hints) {
 				System.out.println(hint);
-			}		
+			}
 			if (i >= 5) break;
 		}
 	}
@@ -167,7 +168,8 @@ public class SnapSubtree {
 		System.exit(0);
 	}
 
-	public void saveGraphs(SubtreeBuilder builder, int minVertices) throws FileNotFoundException {
+	public void saveGraphs(SubtreeBuilder builder, int minVertices)
+			throws FileNotFoundException {
 		if (!(hintMap instanceof HintFactoryMap)) {
 			System.out.println("No Hint Factory Map");
 			return;
@@ -180,7 +182,8 @@ public class SnapSubtree {
 			if (!graph.hasGoal()) continue;
 
 			graph.bellmanBackup(2);
-			String dir = String.format("%s/graphs/%s-g%03d/", assignment.dataDir, assignment.name, Math.round(builder.minGrade * 100));
+			String dir = String.format("%s/graphs/%s-g%03d/", assignment.dataDir,
+					assignment.name, Math.round(builder.minGrade * 100));
 			Node child = node;
 			while (child.children.size() > 0) {
 				dir += child.type() + "/";
@@ -189,7 +192,8 @@ public class SnapSubtree {
 			new File(dir).mkdirs();
 			File file = new File(dir, child.type());
 
-			graph.export(new PrintStream(new FileOutputStream(file + ".graphml")), true, 0, false, true);
+			graph.export(new PrintStream(new FileOutputStream(file + ".graphml")), true,
+					0, false, true);
 			graph.exportGoalContexts(new PrintStream(file + ".txt"));
 		}
 	}
@@ -197,10 +201,13 @@ public class SnapSubtree {
 	public SubtreeBuilder buildGraph(Mode storeMode) {
 		return buildGraph(storeMode, 0);
 	}
-	
+
 	public SubtreeBuilder buildGraph(Mode storeMode, final double minGrade) {
-		String storePath = new File(assignment.dataDir, String.format("%s-g%03d.cached", assignment.name, Math.round(minGrade * 100))).getAbsolutePath();
-		SubtreeBuilder builder = Store.getCachedObject(SubtreeBuilder.getKryo(), storePath, SubtreeBuilder.class, storeMode, new Store.Loader<SubtreeBuilder>() {
+		String storePath = new File(assignment.dataDir, String.format("%s-g%03d.cached",
+				assignment.name, Math.round(minGrade * 100))).getAbsolutePath();
+		SubtreeBuilder builder = Store.getCachedObject(SubtreeBuilder.getKryo(),
+				storePath, SubtreeBuilder.class, storeMode,
+				new Store.Loader<SubtreeBuilder>() {
 			@Override
 			public SubtreeBuilder load() {
 				return buildGraph((String)null, minGrade);
@@ -209,23 +216,24 @@ public class SnapSubtree {
 		return builder;
 	}
 
-	private final HashMap<String, HintMap> studentSubtreeCache = new HashMap<String, HintMap>();
-	
+	private final HashMap<String, HintMap> studentSubtreeCache =
+			new HashMap<String, HintMap>();
+
 	public SubtreeBuilder buildGraph(String testStudent, double minGrade) {
 		final SubtreeBuilder builder = new SubtreeBuilder(hintMap.instance(), minGrade);
 		builder.startBuilding();
 		final AtomicInteger count = new AtomicInteger();
 		for (String student : nodeMap().keySet()) {
 			if (student.equals(testStudent)) continue;
-			
+
 			Grade grade = gradeMapCache.get(student);
 			if (grade != null && grade.average() < minGrade) continue;
-			
+
 			final List<Node> nodes = nodeMap().get(student);
 			if (nodes.size() == 0) continue;
-			
+
 			final String fStudent = student;
-			
+
 			count.incrementAndGet();
 			new Thread(new Runnable() {
 				@Override
@@ -272,10 +280,12 @@ public class SnapSubtree {
 				Node node = SimpleNodeBuilder.toTree(row.snapshot, true);
 				nodes.add(node);
 			}
-			
+
 			if (nodes.size() == 0) continue;
-			if (assignment.graded && path.grade == null) System.err.println("No grade for: " + student);
-			
+			if (assignment.graded && path.grade == null) {
+				System.err.println("No grade for: " + student);
+			}
+
 			nodeMapCache.put(student, nodes);
 			gradeMapCache.put(student, path.grade);
 		}
