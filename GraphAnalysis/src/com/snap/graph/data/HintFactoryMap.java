@@ -324,6 +324,7 @@ public class HintFactoryMap implements HintMap {
 			Map<String, String> map =  super.dataMap();
 			map.put("oldRoot", getNodeReference(oldRoot));
 			map.put("oldFrom", oldFrom.toJson(swapArgs));
+			map.put("oldTo", VectorState.empty().toJson());
 			return map;
 		}
 

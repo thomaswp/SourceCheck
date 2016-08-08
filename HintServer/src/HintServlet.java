@@ -87,7 +87,6 @@ public class HintServlet extends HttpServlet {
 		Node node = SimpleNodeBuilder.toTree(snapshot, true);
 
 		List<Hint> hints = builder.getHints(node);
-//		Collections.sort(hints, HintComparator.ByContext.then(HintComparator.ByAlignment));
 
 		out.println("[");
 		for (int i = 0; i < hints.size(); i++) {
