@@ -133,10 +133,12 @@ public class BlockDefinition extends Code implements IHasID {
 		.addSParameters(canonicalizeVariables(inputs, canon))
 		.add(" ")
 		.add(script)
+		.ifNotCanon()
 		.add("scripts:")
 		.indent()
 		.add(scripts)
 		.close()
+		.endIf()
 		.end();
 	}
 
@@ -144,7 +146,9 @@ public class BlockDefinition extends Code implements IHasID {
 	public String addChildren(boolean canon, Accumulator ac) {
 		ac.add(script);
 		ac.add(canonicalizeVariables(inputs, canon));
-		ac.add(scripts);
+		// We ignore aditional scripts if canonizing because they're generally not hintable
+		// TODO: make a more generic solution for ignoring things for hints but not generally
+		if (!canon) ac.add(scripts);
 		return canon ? "customBlock" : name;
 	}
 

@@ -8,12 +8,14 @@ public class CodeBuilder {
 	private String code = "";
 	private int indent = 0;
 	private boolean canon;
+	private boolean ignore;
 	
 	public CodeBuilder(boolean canon) {
 		this.canon = canon;
 	}
 
 	public CodeBuilder add(Code code) {
+		if (ignore) return this;
 		if (code == null) return this;
 		addIndent();
 		String content = code.toCode(canon);
@@ -33,6 +35,7 @@ public class CodeBuilder {
 	}
 	
 	public CodeBuilder indent() {
+		if (ignore) return this;
 		addIndent();
 		if (code.length() > 0 && !Character.isWhitespace(code.charAt(code.length() - 1))) {
 			code += " ";
@@ -43,6 +46,7 @@ public class CodeBuilder {
 	}
 	
 	public CodeBuilder close() {
+		if (ignore) return this;
 		indent--;
 		addIndent();
 		code += "}";
@@ -64,6 +68,7 @@ public class CodeBuilder {
 	}
 
 	public CodeBuilder add(String content, String canonical) {
+		if (ignore) return this;
 		if (content == null) return this;
 		addIndent();
 		code += canon ? canonical : content;
@@ -75,12 +80,14 @@ public class CodeBuilder {
 	}
 
 	public CodeBuilder addParameters(List<? extends Code> parameters) {
+		if (ignore) return this;
 		List<String> strings = new ArrayList<String>();
 		for (Code c : parameters) strings.add(c.toCode(canon));
 		return addSParameters(strings);
 	}
 
 	public CodeBuilder addSParameters(List<String> parameters) {
+		if (ignore) return this;
 		addIndent();
 		code += "(";
 		boolean comma = false;
@@ -94,6 +101,7 @@ public class CodeBuilder {
 	}
 
 	public CodeBuilder addBodies(List<? extends Code> bodies) {
+		if (ignore) return this;
 		if (bodies.size() == 0) return this;
 		for (Code body : bodies) {
 			indent();
@@ -108,6 +116,7 @@ public class CodeBuilder {
 	}
 	
 	public CodeBuilder add(List<? extends Code> codes, boolean nl) {
+		if (ignore) return this;
 		if (codes.size() == 0) return this;
 		for (int i = 0; i < codes.size(); i++) {
 			add(codes.get(i));
@@ -118,12 +127,24 @@ public class CodeBuilder {
 	}
 	
 	public CodeBuilder cnl() {
+		if (ignore) return this;
 		if (code.endsWith("\n")) return this;
 		return nl();
 	}
 	
 	public CodeBuilder nl() {
+		if (ignore) return this;
 		code += "\n";
+		return this;
+	}
+
+	public CodeBuilder ifNotCanon() {
+		if (canon) ignore = true;
+		return this;
+	}
+	
+	public CodeBuilder endIf() {
+		ignore = false;
 		return this;
 	}
 }

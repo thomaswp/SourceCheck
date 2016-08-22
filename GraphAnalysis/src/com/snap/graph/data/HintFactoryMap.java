@@ -256,7 +256,10 @@ public class HintFactoryMap implements HintMap {
 			if (extraScripts.contains(vHint.root)) {
 				toRemove.add(hint);
 			} else {
-				missingMap.put(vHint.getMissingChildren(), vHint);
+				VectorState missingChildren = vHint.getMissingChildren();
+				if (missingChildren.items.length > 0) {
+					missingMap.put(missingChildren, vHint);
+				}
 			}
 		}
 
@@ -267,7 +270,7 @@ public class HintFactoryMap implements HintMap {
 			if (!(hint instanceof VectorHint)) return;
 			VectorHint vHint = (VectorHint) hint;
 
-			if (extraScripts.contains(vHint.root)) {
+			if (extraScripts.contains(vHint.root) && vHint.from.items.length > 0) {
 
 				VectorHint bestMatch = null;
 				int bestUseful = 0;
