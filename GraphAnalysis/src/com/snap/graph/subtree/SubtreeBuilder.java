@@ -111,12 +111,17 @@ public class SubtreeBuilder {
 							// these are filtered out.
 							hintMap.addEdge(lastNode, node);
 
-							// First, if its position has changed (e.g. two nodes swapped,
-							// but neither was added or deleted)
-							// TODO: test to make sure this isn't overly exclusive
-							if (node.parent != null && (
-									lastNode.index() != node.index())) {
-								hintMap.addEdge(lastNode.parent, node.parent);
+							// We also check for changes in siblings if there's a parent
+							if (node.parent != null) {
+								// If the node's position has changed (e.g. two nodes swapped,
+								// but neither was added or deleted), or if it's gained or lost
+								// siblings, we add the parent (possibly redundantly)
+								// TODO: test to make sure this isn't overly in/exclusive
+								if (lastNode.index() != node.index() || 
+										lastNode.parent.children.size() != 
+										node.parent.children.size()) {
+									hintMap.addEdge(lastNode.parent, node.parent);
+								}
 							}
 						}
 					}

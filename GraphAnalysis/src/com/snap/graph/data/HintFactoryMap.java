@@ -38,6 +38,8 @@ public class HintFactoryMap implements HintMap {
 	private final static int MAX_EDGE_DISTANCE = 2;
 	// The maximum number of siblings to look at at either end when considering context
 	private final static int MAX_CONTEXT_SIBLINGS = 3;
+	// Ratio of unused to used blocks in a side-script for it to used in  a LinkHint
+	private static final int LINK_USEFUL_RATIO = 2;
 
 	// Code elements that have exactly one script child or unordered children and
 	// therefore should not have their children used as context
@@ -278,7 +280,8 @@ public class HintFactoryMap implements HintMap {
 
 				for (VectorState missing : missingMap.keySet()) {
 					int useful = missing.overlap(vHint.from);
-					if (useful * 2 >= vHint.from.items.length && useful >= bestUseful) {
+					if (useful * LINK_USEFUL_RATIO >= vHint.from.items.length && 
+							useful >= bestUseful) {
 						int distance = VectorState.distance(missing, vHint.from);
 						if (useful > bestUseful || distance < bestDistance) {
 							bestUseful = useful;
@@ -346,7 +349,8 @@ public class HintFactoryMap implements HintMap {
 
 		protected final boolean swapArgs;
 
-		public VectorHint(Node root, String backbone, VectorState from, VectorState to, VectorState goal, boolean caution) {
+		public VectorHint(Node root, String backbone, VectorState from, VectorState to, 
+				VectorState goal, boolean caution) {
 			this.root = root;
 			this.backbone = backbone;
 			this.from = from;

@@ -178,7 +178,10 @@ public class VectorGraph extends OutGraph<VectorState> {
 	}
 	
 	private void contextualBellmanBackup(IndexedVectorState context, int minGoal) {
-		if (context.equals(tmpContext)) return;
+		if (context.equals(tmpContext)) {
+			bellmanBackup();
+			return;
+		}
 		
 		HashMap<VectorState, Double> cachedDistances = new HashMap<VectorState, Double>();
 		

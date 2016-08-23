@@ -40,7 +40,7 @@ public class SnapSubtree {
 
 
 		//		rtedTest();
-		SnapSubtree subtree = new SnapSubtree(Assignment.Spring2016.GuessingGame2);
+		SnapSubtree subtree = new SnapSubtree(Assignment.Spring2016.PolygonMaker);
 		subtree.nodeMap();
 
 //		System.out.print("Go");
