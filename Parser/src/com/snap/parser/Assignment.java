@@ -72,8 +72,8 @@ public class Assignment {
 	
 	// TODO: Find end times
 	public static class Fall2015 {
-		private final static Date start = new GregorianCalendar(2015, 7, 10).getTime();
-		private final static String dataDir = BASE_DIR + "/fall2015";
+		public final static Date start = new GregorianCalendar(2015, 7, 10).getTime();
+		public final static String dataDir = BASE_DIR + "/fall2015";
 
 		// Used this submission for testing, so not using it in evaluation
 		public final static String GG1_SKIP = "3c3ce047-b408-417e-b556-f9406ac4c7a8.csv";
@@ -103,8 +103,8 @@ public class Assignment {
 	}
 	
 	public static class Spring2016 {
-		private final static Date start = new GregorianCalendar(2016, 0, 1).getTime();
-		private final static String dataDir = BASE_DIR + "/spring2016";
+		public final static Date start = new GregorianCalendar(2016, 0, 1).getTime();
+		public final static String dataDir = BASE_DIR + "/spring2016";
 		
 		public final static Assignment LightsCameraAction = new Assignment(dataDir, 
 				"lightsCameraActionHW", start, new GregorianCalendar(2016, 0, 29).getTime(), true);

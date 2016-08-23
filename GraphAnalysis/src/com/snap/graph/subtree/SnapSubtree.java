@@ -36,45 +36,24 @@ public class SnapSubtree {
 
 	public static void main(String[] args) throws IOException, InstantiationException,
 			IllegalAccessException, ClassNotFoundException, SQLException {
-
-
-
-		//		rtedTest();
-		SnapSubtree subtree = new SnapSubtree(Assignment.Spring2016.PolygonMaker);
-		subtree.nodeMap();
-
-//		System.out.print("Go");
-//		new Scanner(System.in).nextLine();
-
-		System.out.println(System.currentTimeMillis());
-
-		// [0.0 - 1.0]
-		double minGrade = 1;
-
-		SubtreeBuilder builder = subtree.buildGraph(Mode.Overwrite, minGrade);
-
-		//		subtree.getHints(builder, "0:{snapshot{stage{sprite{script{receiveGo}{doSetVar}{doSayFor}{doAsk}{doSayFor}{doSayFor}{abc}}}}{var}}");
-
-		subtree.saveGraphs(builder, 1);
-
-		//		subtree.printGoalMaps(builder);
-
-		//		subtree.printFinalSolutions();
-
-		//		subtree.printSomeHints(builder);
-
-		//		subtree.analyze();
-
-		System.out.println(System.currentTimeMillis());
+		buildHints(Assignment.Spring2016.PolygonMaker, 1);
+		buildHints(Assignment.Spring2016.Squiral, 1);
+		buildHints(Assignment.Spring2016.GuessingGame1, 1);
+		buildHints(Assignment.Spring2016.GuessingGame2, 1);
+		CopyData.copyGraphs(Assignment.Spring2016.dataDir);
 	}
 
-	//	private void printGoalMaps(SubtreeBuilder builder) {
-	//		HintFactoryMap map = (HintFactoryMap) builder.hintMap;
-	//		for (Node root : map.map.keySet()) {
-	//			VectorGraph vectorGraph = map.map.get(root);
-	//
-	//		}
-	//	}
+	private static void buildHints(Assignment assignment, double minGrade)
+			throws FileNotFoundException {
+		System.out.println("Loading: " + assignment.name);
+		SnapSubtree subtree = new SnapSubtree(assignment);
+		subtree.nodeMap();
+		System.out.print("Building subtree: ");
+		long ms = System.currentTimeMillis();
+		SubtreeBuilder builder = subtree.buildGraph(Mode.Overwrite, minGrade);
+		subtree.saveGraphs(builder, 1);
+		System.out.println((System.currentTimeMillis() - ms) + "ms");
+	}
 
 
 	public final Assignment assignment;
