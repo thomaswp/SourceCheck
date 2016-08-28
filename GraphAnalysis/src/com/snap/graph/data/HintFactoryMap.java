@@ -262,8 +262,9 @@ public class HintFactoryMap implements HintMap {
 				VectorState missingChildren = vHint.getMissingChildren();
 				// To benefit from a LinkHint, an existing hint must have some missing
 				// children but it shouldn't be missing all of them (completely replaced)
-				if (missingChildren.items.length > 0 &&
-						missingChildren.items.length < vHint.goal.items.length) {
+				// unless it's empty to begin with
+				if (missingChildren.length() > 0 && (vHint.from.length() == 0 ||
+						missingChildren.length() < vHint.goal.length())) {
 					missingMap.put(missingChildren, vHint);
 				}
 			}
@@ -277,7 +278,7 @@ public class HintFactoryMap implements HintMap {
 			VectorHint canceledHint = (VectorHint) hint;
 
 			if (extraScripts.contains(canceledHint.root) &&
-					canceledHint.from.items.length > 0) {
+					canceledHint.from.length() > 0) {
 
 				VectorHint bestMatch = null;
 				int bestUseful = 0;
@@ -285,7 +286,7 @@ public class HintFactoryMap implements HintMap {
 
 				for (VectorState missing : missingMap.keySet()) {
 					int useful = missing.overlap(canceledHint.from);
-					if (useful * LINK_USEFUL_RATIO >= canceledHint.from.items.length &&
+					if (useful * LINK_USEFUL_RATIO >= canceledHint.from.length() &&
 							useful >= bestUseful) {
 						int distance = VectorState.distance(missing, canceledHint.from);
 						if (useful > bestUseful || distance < bestDistance) {

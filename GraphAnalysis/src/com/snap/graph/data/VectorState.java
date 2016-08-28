@@ -20,6 +20,10 @@ public class VectorState extends StringHashable {
 		return true;
 	}
 
+	public int length() {
+		return items.length;
+	}
+
 	public VectorState(String[] items) {
 		this.items = items;
 		cache();
