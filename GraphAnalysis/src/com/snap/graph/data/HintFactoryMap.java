@@ -249,7 +249,8 @@ public class HintFactoryMap implements HintMap {
 
 		}
 
-		// Remove the hints for the extra hints and make a map of missing blocks for the others
+		// Remove the hints for the extra hints and make a map of missing blocks for the
+		// others
 		List<Hint> toRemove = new LinkedList<>();
 		for (Hint hint : hints) {
 			if (!(hint instanceof VectorHint)) return;
@@ -259,7 +260,10 @@ public class HintFactoryMap implements HintMap {
 				toRemove.add(hint);
 			} else {
 				VectorState missingChildren = vHint.getMissingChildren();
-				if (missingChildren.items.length > 0) {
+				// To benefit from a LinkHint, an existing hint must have some missing
+				// children but it shouldn't be missing all of them (completely replaced)
+				if (missingChildren.items.length > 0 &&
+						missingChildren.items.length < vHint.goal.items.length) {
 					missingMap.put(missingChildren, vHint);
 				}
 			}
@@ -270,19 +274,20 @@ public class HintFactoryMap implements HintMap {
 		List<Hint> toAdd = new LinkedList<>();
 		for (Hint hint : hints) {
 			if (!(hint instanceof VectorHint)) return;
-			VectorHint vHint = (VectorHint) hint;
+			VectorHint canceledHint = (VectorHint) hint;
 
-			if (extraScripts.contains(vHint.root) && vHint.from.items.length > 0) {
+			if (extraScripts.contains(canceledHint.root) &&
+					canceledHint.from.items.length > 0) {
 
 				VectorHint bestMatch = null;
 				int bestUseful = 0;
 				int bestDistance = Integer.MAX_VALUE;
 
 				for (VectorState missing : missingMap.keySet()) {
-					int useful = missing.overlap(vHint.from);
-					if (useful * LINK_USEFUL_RATIO >= vHint.from.items.length && 
+					int useful = missing.overlap(canceledHint.from);
+					if (useful * LINK_USEFUL_RATIO >= canceledHint.from.items.length &&
 							useful >= bestUseful) {
-						int distance = VectorState.distance(missing, vHint.from);
+						int distance = VectorState.distance(missing, canceledHint.from);
 						if (useful > bestUseful || distance < bestDistance) {
 							bestUseful = useful;
 							bestDistance = distance;
@@ -292,7 +297,7 @@ public class HintFactoryMap implements HintMap {
 				}
 
 				if (bestMatch != null) {
-					toAdd.add(new LinkHint(bestMatch, vHint));
+					toAdd.add(new LinkHint(bestMatch, canceledHint));
 				}
 			}
 		}
@@ -349,7 +354,7 @@ public class HintFactoryMap implements HintMap {
 
 		protected final boolean swapArgs;
 
-		public VectorHint(Node root, String backbone, VectorState from, VectorState to, 
+		public VectorHint(Node root, String backbone, VectorState from, VectorState to,
 				VectorState goal, boolean caution) {
 			this.root = root;
 			this.backbone = backbone;
