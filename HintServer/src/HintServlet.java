@@ -1,3 +1,6 @@
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -66,19 +69,42 @@ public class HintServlet extends HttpServlet {
 			} catch (Exception e) { }
 		}
 
-		resp.setContentType("text/json");
-//		out.println(snapshot.toCode());
-		getHint(snapshot, req.getParameter("assignmentID"), minGrade, out);
+		String hint = req.getParameter("hint");
+		String assignment = req.getParameter("assignmentID");
+		if (assignment == null){
+			assignment = DEFAULT_ASSIGNMENT;
+		}
 
-//		resp.getOutputStream().println(builder.graph.size());
+		if (hint != null) {
+			saveHint(assignment, xml, hint);
+			out.println("Hint saved.");
+		} else {
+			String hintJSON = getHintJSON(snapshot, assignment, minGrade);
+			resp.setContentType("text/json");
+			out.println(hintJSON);
+		}
 	}
 
-	private void getHint(Snapshot snapshot, String assignment, int minGrade,
-			PrintStream out) {
+	private void saveHint(String assignment, String xml, String hintJSON)
+			throws IOException {
+		String id = String.format("%x", (xml + hintJSON).hashCode());
+		String path = System.getenv().get("dataDir") + "/unittests/" + assignment + "/" +
+					id;
+		new File(path).mkdirs();
+		BufferedWriter writer = new BufferedWriter(new FileWriter(path + "/hint.json"));
+		writer.write(hintJSON);
+		writer.close();
+		writer = new BufferedWriter(new FileWriter(path + "/code.xml"));
+		writer.write(xml);
+		writer.close();
+	}
+
+	private String getHintJSON(Snapshot snapshot, String assignment, int minGrade) {
+		String json = "";
+
 		SubtreeBuilder builder = loadBuilder(assignment, minGrade);
 		if (builder == null) {
-			out.println("[]");
-			return;
+			return "[]";
 		}
 
 //		long time = System.currentTimeMillis();
@@ -88,15 +114,17 @@ public class HintServlet extends HttpServlet {
 
 		List<Hint> hints = builder.getHints(node);
 
-		out.println("[");
+		json += "[";
 		for (int i = 0; i < hints.size(); i++) {
-			if (i > 0) out.println(",");
-			out.print(hintToJson(hints.get(i)));
+			if (i > 0) json += ",\n";
+			json += hintToJson(hints.get(i));
 		}
-		out.println("]");
+		json += "]";
 
 //		long elapsed = System.currentTimeMillis() - time;
 //		System.out.println(elapsed);
+
+		return json;
 	}
 
 	public static String hintToJson(Hint hint) {
