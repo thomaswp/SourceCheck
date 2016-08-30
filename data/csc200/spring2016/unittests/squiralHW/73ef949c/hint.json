@@ -1,0 +1,39 @@
+{
+	"from": "snapshot:[customBlock:[script]]: [doSetVar, down, doRepeat, up]",
+	"to": "snapshot:[customBlock:[script]]: [down, doSetVar, doRepeat, up]",
+	"data": {
+		"goal": [
+			"clear",
+			"down",
+			"doSetVar",
+			"doRepeat",
+			"up"
+		],
+		"root": {
+			"label": "script",
+			"index": 0,
+			"parent": {
+				"label": "customBlock",
+				"index": 1,
+				"parent": {
+					"label": "snapshot",
+					"index": -1,
+					"parent": null
+				}
+			}
+		},
+		"from": [
+			"doSetVar",
+			"down",
+			"doRepeat",
+			"up"
+		],
+		"to": [
+			"down",
+			"doSetVar",
+			"doRepeat",
+			"up"
+		],
+		"caution": true
+	}
+}

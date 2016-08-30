@@ -1,0 +1,58 @@
+{
+	"from": "snapshot:[customBlock:[script:[doRepeat:[script]]]]: [] and snapshot:[stage:[sprite:[script]]]: [forward]",
+	"to": "snapshot:[customBlock:[script:[doRepeat:[script]]]]: [forward] and snapshot:[stage:[sprite:[script]]]: []",
+	"data": {
+		"oldFrom": [
+			"forward"
+		],
+		"goal": [
+			"forward",
+			"turn",
+			"doChangeVar"
+		],
+		"root": {
+			"label": "script",
+			"index": 1,
+			"parent": {
+				"label": "doRepeat",
+				"index": 1,
+				"parent": {
+					"label": "script",
+					"index": 0,
+					"parent": {
+						"label": "customBlock",
+						"index": 1,
+						"parent": {
+							"label": "snapshot",
+							"index": -1,
+							"parent": null
+						}
+					}
+				}
+			}
+		},
+		"from": [],
+		"to": [
+			"forward"
+		],
+		"oldTo": [],
+		"caution": false,
+		"oldRoot": {
+			"label": "script",
+			"index": 1,
+			"parent": {
+				"label": "sprite",
+				"index": 0,
+				"parent": {
+					"label": "stage",
+					"index": 0,
+					"parent": {
+						"label": "snapshot",
+						"index": -1,
+						"parent": null
+					}
+				}
+			}
+		}
+	}
+}

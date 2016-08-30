@@ -1,0 +1,26 @@
+{
+	"from": "snapshot: [stage, customBlock]",
+	"to": "snapshot: [stage, customBlock, var]",
+	"data": {
+		"goal": [
+			"stage",
+			"customBlock",
+			"var"
+		],
+		"root": {
+			"label": "snapshot",
+			"index": -1,
+			"parent": null
+		},
+		"from": [
+			"stage",
+			"customBlock"
+		],
+		"to": [
+			"stage",
+			"customBlock",
+			"var"
+		],
+		"caution": false
+	}
+}
