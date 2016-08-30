@@ -1,0 +1,53 @@
+{
+	"from": "snapshot:[customBlock:[script]]: [] and snapshot:[stage:[sprite:[script]]]: [down]",
+	"to": "snapshot:[customBlock:[script]]: [down] and snapshot:[stage:[sprite:[script]]]: []",
+	"data": {
+		"oldFrom": [
+			"down"
+		],
+		"goal": [
+			"down",
+			"doRepeat",
+			"up"
+		],
+		"root": {
+			"label": "script",
+			"index": 0,
+			"parent": {
+				"label": "customBlock",
+				"index": 1,
+				"parent": {
+					"label": "snapshot",
+					"index": -1,
+					"parent": null
+				}
+			}
+		},
+		"from": [
+			"prototypeHatBlock"
+		],
+		"to": [
+			"prototypeHatBlock",
+			"down"
+		],
+		"oldTo": [],
+		"caution": false,
+		"oldRoot": {
+			"label": "script",
+			"index": 1,
+			"parent": {
+				"label": "sprite",
+				"index": 0,
+				"parent": {
+					"label": "stage",
+					"index": 0,
+					"parent": {
+						"label": "snapshot",
+						"index": -1,
+						"parent": null
+					}
+				}
+			}
+		}
+	}
+}

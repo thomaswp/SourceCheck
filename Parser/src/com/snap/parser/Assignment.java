@@ -34,6 +34,10 @@ public class Assignment {
 		return dataDir + "/analysis/" + name;
 	}
 	
+	public String unitTestDir() {
+		return dataDir + "/unittests/" + name;
+	}
+	
 	public Snapshot loadSolution() throws FileNotFoundException {
 		return Snapshot.parse(new File(dataDir + "/solutions/", name + ".xml"));
 	}

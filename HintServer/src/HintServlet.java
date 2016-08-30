@@ -21,6 +21,7 @@ import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.Hint;
 import com.snap.graph.data.Node;
 import com.snap.graph.subtree.SubtreeBuilder;
+import com.snap.graph.unittest.UnitTest;
 
 
 @SuppressWarnings("serial")
@@ -76,27 +77,13 @@ public class HintServlet extends HttpServlet {
 		}
 
 		if (hint != null) {
-			saveHint(assignment, xml, hint);
+			UnitTest.saveUnitTest(assignment, xml, hint);
 			out.println("Hint saved.");
 		} else {
 			String hintJSON = getHintJSON(snapshot, assignment, minGrade);
 			resp.setContentType("text/json");
 			out.println(hintJSON);
 		}
-	}
-
-	private void saveHint(String assignment, String xml, String hintJSON)
-			throws IOException {
-		String id = String.format("%x", (xml + hintJSON).hashCode());
-		String path = System.getenv().get("dataDir") + "/unittests/" + assignment + "/" +
-					id;
-		new File(path).mkdirs();
-		BufferedWriter writer = new BufferedWriter(new FileWriter(path + "/hint.json"));
-		writer.write(hintJSON);
-		writer.close();
-		writer = new BufferedWriter(new FileWriter(path + "/code.xml"));
-		writer.write(xml);
-		writer.close();
 	}
 
 	private String getHintJSON(Snapshot snapshot, String assignment, int minGrade) {
