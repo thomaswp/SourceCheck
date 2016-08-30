@@ -60,19 +60,22 @@ public class VectorGraph extends OutGraph<VectorState> {
 		return value;
 	}
 
-	public VectorState getGoalState(VectorState state, IndexedVectorState context, int maxNN, int minGoal) {
+	public VectorState getGoalState(VectorState state, IndexedVectorState context,
+			int maxNN, int minGoal) {
 		if (state == null) return null;
 		contextualBellmanBackup(context, minGoal);
 
 		if (!connectedToGoal(state)) {
-			return getGoalState(getNearestNeighbor(state, maxNN, true), context, maxNN, minGoal);
+			return getGoalState(getNearestNeighbor(state, maxNN, true), context, maxNN,
+					minGoal);
 		}
 		List<VectorState> goalPath = getMDPGoalPath(state);
 		if (goalPath == null) return null;
 		return goalPath.get(goalPath.size() - 1);
 	}
 
-	public VectorState getHint(VectorState state, IndexedVectorState context, int maxNN, int minGoal, boolean naturalEdges) {
+	public VectorState getHint(VectorState state, IndexedVectorState context, int maxNN,
+			int minGoal, boolean naturalEdges) {
 		contextualBellmanBackup(context, minGoal);
 
 		boolean connectedToGoal = connectedToGoal(state);
@@ -83,7 +86,8 @@ public class VectorGraph extends OutGraph<VectorState> {
 				VectorState nearestNeighbor = getNearestNeighbor(state, maxNN, true);
 				if (nearestNeighbor == null) return null;
 				// If we find one, get the hint from there
-				VectorState hintState = getHint(nearestNeighbor, context, maxNN, minGoal, naturalEdges);
+				VectorState hintState = getHint(nearestNeighbor, context, maxNN, minGoal,
+						naturalEdges);
 				if (hintState != null) {
 					// If it exists, and it's at least as close as the nearest neighbor...
 					int disNN = VectorState.distance(state, nearestNeighbor);
@@ -136,22 +140,26 @@ public class VectorGraph extends OutGraph<VectorState> {
 			String[] nextItems = goalPath.get(index++).items;
 			int edits = 0;
 
-			edits += Alignment.doEdits(stateItems, goalItems, Alignment.MoveEditor, 1 - edits);
-			int addEdits = Alignment.doEdits(stateItems, nextItems, Alignment.AddEditor, 1 - edits);
+			edits += Alignment.doEdits(stateItems, goalItems, Alignment.MoveEditor,
+					1 - edits);
+			int addEdits = Alignment.doEdits(stateItems, nextItems, Alignment.AddEditor,
+					1 - edits);
 			edits += addEdits;
 			if (addEdits > 0) {
-				edits += Alignment.doEdits(stateItems, goalItems, Alignment.MoveEditor, 1); // If we added, rearrange for free
+				// If we added, rearrange for free
+				edits += Alignment.doEdits(stateItems, goalItems, Alignment.MoveEditor,
+						1);
 			}
-			edits += Alignment.doEdits(stateItems, goalItems, Alignment.DeleteEditor, 2 - edits); // delete gets an extra edit
+			// Delete gets an extra edit
+			edits += Alignment.doEdits(stateItems, goalItems, Alignment.DeleteEditor,
+					2 - edits);
 
 			if (edits > 0) {
 				VectorState hint = new VectorState(stateItems);
 				if (hint.equals(state)) continue;
-//				System.out.printf("State: %s\nNeighbor: %s\nNext: %s\nGoal: %s\nHint: %s\n\n", state, nearestNeighbor, Arrays.toString(nextItems), goal, hint);
 				return hint;
 			}
 		}
-//		System.out.printf("State: %s\nNeighbor: %s\nGoal: %s\n\n", state, nearestNeighbor, goal);
 		return goal;
 	}
 
@@ -236,7 +244,8 @@ public class VectorGraph extends OutGraph<VectorState> {
 		});
 
 		for (VectorState state : goals) {
-			final HashMap<VectorState, Integer> counts = new HashMap<VectorState, Integer>();
+			final HashMap<VectorState, Integer> counts =
+					new HashMap<VectorState, Integer>();
 			List<IndexedVectorState> contexts = goalContextMap.get(state);
 			for (IndexedVectorState context : contexts) {
 				int count = 0;
@@ -245,16 +254,17 @@ public class VectorGraph extends OutGraph<VectorState> {
 				}
 				counts.put(context, count + 1);
 			}
-			TreeMap<VectorState, Integer> sortedCounts = new TreeMap<VectorState, Integer>(new Comparator<VectorState>() {
-				@Override
-				public int compare(VectorState o1, VectorState o2) {
-					if (counts.get(o1) > counts.get(o2)) {
-						return -1;
-					} else {
-						return 1;
-					}
-				}
-			});
+			TreeMap<VectorState, Integer> sortedCounts =
+					new TreeMap<VectorState, Integer>(new Comparator<VectorState>() {
+						@Override
+						public int compare(VectorState o1, VectorState o2) {
+							if (counts.get(o1) > counts.get(o2)) {
+								return -1;
+							} else {
+								return 1;
+							}
+						}
+					});
 			sortedCounts.putAll(counts);
 			out.println(state + " (" + contexts.size() + "): ");
 			for (VectorState context : sortedCounts.keySet()) {
@@ -283,15 +293,19 @@ public class VectorGraph extends OutGraph<VectorState> {
 		}
 	}
 
-	public VectorState getNearestNeighbor(VectorState state, int maxDis, boolean connectToGoalOnly) {
-		// TODO: must be goalConnected, must be not rep, add = 1, del = 0.1, should have highest score
+	public VectorState getNearestNeighbor(VectorState state, int maxDis,
+			boolean connectToGoalOnly) {
+		// TODO: must be goalConnected, must be not rep <--(what does this mean? repeat?)
+		// add = 1, del = 0.1, should have highest score
 		maxDis *= 10; // scale to be an integer
 		Vertex<VectorState> nearest = null;
 		int nearestDistance = maxDis;
 		for (Vertex<VectorState> vertex : vertexMap.values()) {
-			if (vertex.data == null || vertex.equals(state)) continue; // Ignore exact matches (they're not neighbors)
+			// Ignore exact matches (they're not neighbors)
+			if (vertex.data == null || vertex.equals(state)) continue;
 			if (connectToGoalOnly && !connectedToGoal(vertex.data)) continue;
-			int distance = VectorState.distance(state, vertex.data, 10, 1, 10000); // Favor deletions over insertions, but forbid subs
+			// Favor deletions over insertions, but forbid subs
+			int distance = VectorState.distance(state, vertex.data, 10, 1, 10000);
 			if (distance > nearestDistance) continue;
 			if (distance == nearestDistance && nearest != null &&
 					vertex.bValue <= nearest.bValue) {
@@ -307,7 +321,8 @@ public class VectorGraph extends OutGraph<VectorState> {
 	public double getProportionStayed(VectorState children) {
 		Vertex<VectorState> vertex = vertexMap.get(children);
 		if (vertex == null || vertex.weight() == 0) return 0;
-		return (vertex.weight() - outWeight(vertex.data, true, true)) / (double)vertex.weight();
+		return (vertex.weight() - outWeight(vertex.data, true, true)) /
+				(double)vertex.weight();
 	}
 
 }

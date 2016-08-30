@@ -10,7 +10,7 @@ import com.snap.graph.data.HintFactoryMap.VectorHint;
 
 public class TestHint {
 	public final HintPart main, old;
-	public final boolean caution;
+	public final boolean caution, expectedFailure;
 	
 	
 	public TestHint(String json) {
@@ -19,6 +19,8 @@ public class TestHint {
 		main = new HintPart(data, null);
 		old = data.has("oldRoot") ? new HintPart(data, "old") : null;
 		caution = data.getBoolean("caution");
+		expectedFailure = data.has("expectedFailure") ? 
+				data.getBoolean("expectedFailure") : false;
 	}
 	
 	public TestHint(VectorHint hint) {

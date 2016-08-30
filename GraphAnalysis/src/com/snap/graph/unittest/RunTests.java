@@ -23,8 +23,9 @@ public class RunTests {
 		long start = System.currentTimeMillis();
 		
 		List<String> unloaded = new ArrayList<>();
+		List<String> unexpectedSuccesses = new ArrayList<>();
 		HashMap<UnitTest, SubtreeBuilder> failedTests = new LinkedHashMap<>();
-		int passed = 0;
+		int passed = 0, expectedFailures = 0;
 		for (Assignment assignment : assignments) {
 			File testDir = new File(assignment.unitTestDir());
 			if (!testDir.exists()) continue;
@@ -36,7 +37,7 @@ public class RunTests {
 			for (File folder : new File(assignment.unitTestDir()).listFiles()) {
 				String testID = folder.getName();
 				String loadName = assignment.name + "/" + testID;
-				out.println("Testing " + loadName);
+				out.println(loadName + " started...");
 				String xml, hint;
 				try {
 					xml = new String(Files.readAllBytes(
@@ -59,14 +60,24 @@ public class RunTests {
 				
 				UnitTest test = new UnitTest(loadName, assignment, xml, hint);
 				boolean success = test.run(builder, err);
-				if (success) {
-					out.print(loadName + " passed!");
-					passed++;
+				if (test.expectedFailure()) {
+					if (success) {
+						out.println(loadName + " passed!");
+						unexpectedSuccesses.add(loadName);
+					} else {
+						err.println(loadName + " failed!");
+						expectedFailures++;
+					}
 				} else {
-					failedTests.put(test, builder);
-					err.print(loadName + " failed!");
+					if (success) {
+						out.println(loadName + " passed!");
+						passed++;
+					} else {
+						failedTests.put(test, builder);
+						err.println(loadName + " failed!");
+					}
 				}
-				out.println();
+				
 			}
 			out.println();
 		}
@@ -87,8 +98,14 @@ public class RunTests {
 		
 		long time = System.currentTimeMillis() - start;
 		out.printf(
-				"All tests finished in %.02f seconds: %d passed, %d missing, %d failed\n",
-				time / 1000f, passed, unloaded.size(), failedTests.size());
-		out.println();
+				"All tests finished in %.02f seconds: %d passed, %d missing, %d failed," +
+				" %d expected failures\n",
+				time / 1000f, passed, unloaded.size(), failedTests.size(), 
+				expectedFailures);
+		
+		if (unexpectedSuccesses.size() > 0) {
+			out.println("\nUnexpected successes:");
+			for (String success : unexpectedSuccesses) out.println("\t" + success);
+		}
 	}
 }

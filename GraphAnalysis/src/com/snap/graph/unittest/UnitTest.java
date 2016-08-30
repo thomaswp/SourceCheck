@@ -74,4 +74,8 @@ public class UnitTest {
 		
 		return id;
 	}
+
+	public boolean expectedFailure() {
+		return new TestHint(hintJSON).expectedFailure;
+	}
 }

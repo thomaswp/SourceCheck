@@ -1,6 +1,3 @@
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -77,8 +74,7 @@ public class HintServlet extends HttpServlet {
 		}
 
 		if (hint != null) {
-			UnitTest.saveUnitTest(assignment, xml, hint);
-			out.println("Hint saved.");
+			out.println(UnitTest.saveUnitTest(assignment, xml, hint));
 		} else {
 			String hintJSON = getHintJSON(snapshot, assignment, minGrade);
 			resp.setContentType("text/json");
