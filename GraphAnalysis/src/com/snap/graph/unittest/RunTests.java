@@ -60,6 +60,10 @@ public class RunTests {
 
 				UnitTest test = new UnitTest(loadName, assignment, xml, hint);
 				boolean success = test.run(builder, err);
+				if (!success) {
+					// Get the hints again to allow for debugging
+					test.getHints(builder, out);
+				}
 				if (test.expectedFailure()) {
 					if (success) {
 						out.println(loadName + " passed!");

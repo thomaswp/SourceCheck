@@ -51,7 +51,7 @@ public class OutGraph<T> extends Graph<T, Void> {
 			double bestValue = v.bValue;
 			for (Edge<T,?> e : fromMap.get(v.data)) {
 				if (e.isLoop()) continue;
-				if (e.bRelativeWeight * 2 < bestProb) continue;
+//				if (e.bRelativeWeight * 2 < bestProb) continue;
 				double value = vertexMap.get(e.to).bValue;
 				if (value > bestValue) {
 					bestValue = value;

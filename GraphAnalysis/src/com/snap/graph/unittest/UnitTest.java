@@ -16,24 +16,18 @@ import com.snap.graph.subtree.SubtreeBuilder;
 import com.snap.parser.Assignment;
 
 public class UnitTest {
-	
+
 	public final String id, xml, hintJSON;
 	public final Assignment assignment;
-	
+
 	public UnitTest(String id, Assignment assignment, String xml, String hintJSON) {
 		this.id = id;
 		this.xml = xml;
 		this.assignment = assignment;
 		this.hintJSON = hintJSON;
 	}
-	
+
 	public boolean run(SubtreeBuilder builder, PrintStream out) {
-		Snapshot snapshot = Snapshot.parse("test_" + id, xml);
-		if (snapshot == null) {
-			out.println("Cannot parse snapshot.");
-			return false;
-		}
-		
 		TestHint correctHint = null;
 		try {
 			correctHint = new TestHint(hintJSON);
@@ -42,23 +36,35 @@ public class UnitTest {
 			out.println("Cannot parse hint.");
 			return false;
 		}
-		
-		Node node = SimpleNodeBuilder.toTree(snapshot, true);
-		List<Hint> hints = builder.getHints(node);
-		
+
+		List<Hint> hints = getHints(builder, out);
+		if (hints == null) return false;
+
 		for (Hint hint : hints) {
 			if (!(hint instanceof VectorHint)) continue;
 			TestHint givenHint = new TestHint((VectorHint) hint);
-			
+
 			if (correctHint.sharesRoot(givenHint)) {
 				return correctHint.test(givenHint, out);
 			}
 		}
-		
+
 		out.println("No hint generated for root.");
 		return false;
 	}
-	
+
+	public List<Hint> getHints(SubtreeBuilder builder, PrintStream out) {
+		Snapshot snapshot = Snapshot.parse("test_" + id, xml);
+		if (snapshot == null) {
+			out.println("Cannot parse snapshot.");
+			return null;
+		}
+
+		Node node = SimpleNodeBuilder.toTree(snapshot, true);
+		List<Hint> hints = builder.getHints(node);
+		return hints;
+	}
+
 	public static String saveUnitTest(String assignment, String xml, String hintJSON)
 			throws IOException {
 		String id = String.format("%x", (xml + hintJSON).hashCode());
@@ -71,7 +77,7 @@ public class UnitTest {
 		writer = new BufferedWriter(new FileWriter(path + "/code.xml"));
 		writer.write(xml);
 		writer.close();
-		
+
 		return id;
 	}
 
