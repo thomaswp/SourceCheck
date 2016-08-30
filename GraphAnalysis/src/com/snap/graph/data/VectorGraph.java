@@ -191,7 +191,8 @@ public class VectorGraph extends OutGraph<VectorState> {
 
 		for (VectorState goal : goalContextMap.keySet()) {
 			List<IndexedVectorState> list = goalContextMap.get(goal);
-			if (list.size() < 2) continue;
+			if (list.size() < minGoal)
+				continue;
 			for (IndexedVectorState state : list) {
 				state.cache();
 				Double dis = cachedDistances.get(state);
@@ -206,7 +207,8 @@ public class VectorGraph extends OutGraph<VectorState> {
 		double bestAvgDis = Double.MIN_VALUE;
 		for (VectorState goal : goalContextMap.keySet()) {
 			List<IndexedVectorState> list = goalContextMap.get(goal);
-			if (list.size() < 2) continue;
+			if (list.size() < minGoal)
+				continue;
 
 			double weight = 0;
 			for (IndexedVectorState state : list) {

@@ -16,12 +16,12 @@ import com.snap.parser.Store;
 public class RunTests {
 	public static void main(String[] args) {
 		Assignment[] assignments = Assignment.Spring2016.All;
-		
+
 		PrintStream out = System.out;
 		PrintStream err = System.out;
-		
+
 		long start = System.currentTimeMillis();
-		
+
 		List<String> unloaded = new ArrayList<>();
 		List<String> unexpectedSuccesses = new ArrayList<>();
 		HashMap<UnitTest, SubtreeBuilder> failedTests = new LinkedHashMap<>();
@@ -30,10 +30,10 @@ public class RunTests {
 			File testDir = new File(assignment.unitTestDir());
 			if (!testDir.exists()) continue;
 			out.println("Testing assignment: " + assignment.name);
-			
+
 			SubtreeBuilder builder = new SnapSubtree(assignment)
 					.buildGraph(Store.Mode.Use, 1);
-			
+
 			for (File folder : new File(assignment.unitTestDir()).listFiles()) {
 				String testID = folder.getName();
 				String loadName = assignment.name + "/" + testID;
@@ -57,7 +57,7 @@ public class RunTests {
 					unloaded.add(loadName);
 					continue;
 				}
-				
+
 				UnitTest test = new UnitTest(loadName, assignment, xml, hint);
 				boolean success = test.run(builder, err);
 				if (test.expectedFailure()) {
@@ -77,7 +77,7 @@ public class RunTests {
 						err.println(loadName + " failed!");
 					}
 				}
-				
+
 			}
 			out.println();
 		}
@@ -86,7 +86,7 @@ public class RunTests {
 			out.println("Missing tests:");
 			for (String test : unloaded) out.println("\t" + test);
 		}
-		
+
 		if (failedTests.size() > 0) {
 			out.println("Failed tests:");
 			for (UnitTest test : failedTests.keySet()) {
@@ -95,14 +95,14 @@ public class RunTests {
 				out.println();
 			}
 		}
-		
+
 		long time = System.currentTimeMillis() - start;
 		out.printf(
-				"All tests finished in %.02f seconds: %d passed, %d missing, %d failed," +
-				" %d expected failures\n",
-				time / 1000f, passed, unloaded.size(), failedTests.size(), 
-				expectedFailures);
-		
+				"All tests finished in %.02f seconds: %d passed, %d missing, " +
+ "%d expected failures, %d failed\n",
+				time / 1000f, passed, unloaded.size(), expectedFailures,
+				failedTests.size());
+
 		if (unexpectedSuccesses.size() > 0) {
 			out.println("\nUnexpected successes:");
 			for (String success : unexpectedSuccesses) out.println("\t" + success);

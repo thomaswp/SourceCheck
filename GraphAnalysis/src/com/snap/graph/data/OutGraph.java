@@ -5,19 +5,19 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class OutGraph<T> extends Graph<T, Void> {
-	
+
 	public void addEdge(T from , T to) {
 		addEdge(from, to, null);
 	}
-	
+
 	public void bellmanBackup() {
 		bellmanBackup(1);
 	}
-	
+
 	protected double getGoalValue(Vertex<T> vertex) {
 		return vertex.goalCount() * 100;
 	}
-	
+
 	public void bellmanBackup(int minGoalCount) {
 		calculateProbabilities();
 		for (Vertex<T> v : vertexMap.values()) {
@@ -42,10 +42,16 @@ public class OutGraph<T> extends Graph<T, Void> {
 	private void setBest() {
 		for (Vertex<T> v : vertexMap.values()) {
 			if (!fromMap.containsKey(v.data)) continue;
+			double bestProb = 0;
+			for (Edge<T, ?> e : fromMap.get(v.data)) {
+				if (e.isLoop()) continue;
+				bestProb = Math.max(bestProb, e.bRelativeWeight);
+			}
 			Edge<T,?> best = null;
 			double bestValue = v.bValue;
 			for (Edge<T,?> e : fromMap.get(v.data)) {
 				if (e.isLoop()) continue;
+				if (e.bRelativeWeight * 2 < bestProb) continue;
 				double value = vertexMap.get(e.to).bValue;
 				if (value > bestValue) {
 					bestValue = value;
@@ -55,7 +61,7 @@ public class OutGraph<T> extends Graph<T, Void> {
 			if (best != null) best.bBest = true;
 		}
 	}
-	
+
 	private void calculateProbabilities() {
 		for (T node : vertices) {
 			if (!fromMap.containsKey(node)) continue;
@@ -68,7 +74,7 @@ public class OutGraph<T> extends Graph<T, Void> {
 			}
 		}
 	}
-	
+
 	private boolean updateNode(Vertex<T> v, int minGoalCount) {
 		if (!fromMap.containsKey(v.data)) return false;
 		if (v.goalCount() >= minGoalCount) return false;
@@ -78,14 +84,15 @@ public class OutGraph<T> extends Graph<T, Void> {
 		for (Edge<T,?> edge : fromMap.get(v.data)) {
 			if (edge.isLoop()) continue;
 			counted = true;
+			// Note: e.bR is always 0; we have no reward values on actions
 			newValue += edge.bRelativeWeight * (edge.bR + 0.99 * vertexMap.get(edge.to).bValue);
 		}
 		if (counted) v.bValue = Math.round(newValue * 64) / 64.0;
 		return value != v.bValue;
 	}
-	
+
 	public void export(PrintStream ps, boolean showLoops, int prune, boolean colorEdges, boolean yEd) {
-				
+
 		ps.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
 		ps.print("<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\" "
 				+ "xsi:schemaLocation=\"http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd\" "
@@ -106,35 +113,35 @@ public class OutGraph<T> extends Graph<T, Void> {
 		printAttr(ps, "best", "edge", "best", "int");
 		printAttr(ps, "ideal", "node", "ideal", "int");
 		printAttr(ps, "start", "node", "start", "int");
-		
+
 		if (yEd) {
 			ps.println("<key for='node' id='graphics' yfiles.type='nodegraphics'/>");
 			ps.println("<key for='edge' id='edges' yfiles.type='edgegraphics'/>");
 		}
-		
+
 		Set<T> ignoreNs = new HashSet<T>();
 		for (Vertex<T> v : vertexMap.values()) {
 			if (v.weight() < prune) ignoreNs.add(v.data);
 		}
-		
-		ps.println("<graph id='G' edgedefault='directed'>");			
-		
+
+		ps.println("<graph id='G' edgedefault='directed'>");
+
 		for (T state : vertices()) {
 			if (ignoreNs.contains(state)) continue;
-			
+
 			int inWeight = inWeight(state, false, true), outWeight = outWeight(state, false, true);
-			
+
 			Vertex<T> vertex = vertexMap.get(state);
-			
+
 			ps.printf("<node id='%s'>", state.hashCode());
 			ps.printf("<data key='descN'><![CDATA[%s]]></data>", state.toString());
 			ps.printf("<data key='weightN'>%d</data>", vertex.weight());
 			ps.printf("<data key='value'>%.04f</data>", vertex.bValue);
 			ps.printf("<data key='goal'>%d</data>", vertex.goalCount());
-			
+
 			if (yEd) {
 				String color = "#888888";
-			
+
 				ps.print("<data key='graphics'>");
 				ps.print("<y:ShapeNode>");
 //				ps.printf("<y:NodeLabel>%d</y:NodeLabel>", n++);
@@ -142,7 +149,7 @@ public class OutGraph<T> extends Graph<T, Void> {
 				ps.printf("<y:Fill color='%s' transparent='false'/>", color);
 
 				int exit = inWeight - outWeight;
-				
+
 				String borderColor = "#000000";
 				double borderWidth = 1;
 				if (vertex.goalCount() > 0) {
@@ -157,10 +164,10 @@ public class OutGraph<T> extends Graph<T, Void> {
 				ps.print("</y:ShapeNode>");
 				ps.print("</data>");
 			}
-			
+
 			ps.println("</node>");
 		}
-		
+
 
 		int i = 0;
 		for (Graph.Edge<T,Void> edge : edges()) {
@@ -168,15 +175,15 @@ public class OutGraph<T> extends Graph<T, Void> {
 			if (edge.isLoop() && edge.weight <= prune) continue;
 			if (edge.synthetic) continue;
 			if (ignoreNs.contains(edge.to) || ignoreNs.contains(edge.from)) continue;
-			
+
 			String color = "#000000";
-			
+
 			String id = "" + i++;
 			ps.printf("<edge id='%s' source='%s' target='%s'>", id, edge.from.hashCode(), edge.to.hashCode());
 			ps.printf("<data key='weightE'>%d</data>", edge.weight);
 			ps.printf("<data key='prob'>%.04f</data>", edge.bRelativeWeight);
 			ps.printf("<data key='best'>%d</data>", edge.bBest ? 1 : 0);
-			
+
 			if (yEd) {
 				ps.printf("<data key='edges'><y:PolyLineEdge><y:LineStyle color='%s' type='%s' width='%.02f'/>"
 						+ "<y:Arrows source='none' target='%s'/></y:PolyLineEdge></data>",
@@ -185,17 +192,17 @@ public class OutGraph<T> extends Graph<T, Void> {
 						Math.log(edge.weight) + 1,
 						edge.bBest ? "standard" : "transparent_circle");
 			}
-			
+
 			ps.println("</edge>");
 		}
-			
+
 		ps.println("</graph>");
 		ps.println("</graphml>");
 		ps.close();
 	}
 
 	private static void printAttr(PrintStream ps, String id, String target, String name, String type) {
-		ps.printf("<key id='%s' for='%s' attr.name='%s' attr.type='%s'/>\n", 
+		ps.printf("<key id='%s' for='%s' attr.name='%s' attr.type='%s'/>\n",
 				id, target, name, type);
 	}
 }
