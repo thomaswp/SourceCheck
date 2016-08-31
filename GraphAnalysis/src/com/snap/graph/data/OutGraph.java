@@ -77,7 +77,6 @@ public class OutGraph<T> extends Graph<T, Void> {
 
 	private boolean updateNode(Vertex<T> v, int minGoalCount) {
 		if (!fromMap.containsKey(v.data)) return false;
-		if (v.goalCount() >= minGoalCount) return false;
 		double value = v.bValue;
 		double newValue = 0;
 		boolean counted = false;
@@ -87,7 +86,13 @@ public class OutGraph<T> extends Graph<T, Void> {
 			// Note: e.bR is always 0; we have no reward values on actions
 			newValue += edge.bRelativeWeight * (edge.bR + 0.99 * vertexMap.get(edge.to).bValue);
 		}
-		if (counted) v.bValue = Math.round(newValue * 64) / 64.0;
+		if (counted) {
+			v.bValue = Math.round(newValue * 64) / 64.0;
+		}
+		if (v.goalCount() >= minGoalCount) {
+			// Legitimate goal states should never drop below their goal value
+			v.bValue = Math.max(v.bValue, getGoalValue(v));
+		}
 		return value != v.bValue;
 	}
 

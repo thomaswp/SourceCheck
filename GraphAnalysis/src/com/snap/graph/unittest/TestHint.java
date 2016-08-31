@@ -92,8 +92,8 @@ public class TestHint {
 		private boolean testArray(String name, String[] a1, String[] a2,
 				PrintStream out) {
 			if (Arrays.equals(a1, a2)) return true;
-			out.printf("%s mismatch: %s vs %s\n", name, Arrays.toString(a1),
-					Arrays.toString(a2));
+			out.printf("'%s' mismatch:\n  Should be: %s\n  Found:     %s\n",
+					name, Arrays.toString(a1), Arrays.toString(a2));
 			return false;
 		}
 
