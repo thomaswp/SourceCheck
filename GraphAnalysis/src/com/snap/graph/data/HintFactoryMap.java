@@ -57,6 +57,21 @@ public class HintFactoryMap implements HintMap {
 		}
 	}
 
+	// When we have hints for these parent blocks, we should go straight to the goal, since
+	// There's no point in, e.g., leading them through adding one variable, then another
+	// These are the "structure hints" on the client side
+	private final static HashSet<String> STRAIGHT_TO_GOAL = new HashSet<String>();
+	static {
+		for (String c : new String[] {
+				"snapshot",
+				"stage",
+				"sprite",
+				"customBlock",
+		}) {
+			STRAIGHT_TO_GOAL.add(c);
+		}
+	}
+
 	private final static String SCRIPT = "script";
 
 	public final HashMap<Node, VectorGraph> map =
@@ -176,17 +191,21 @@ public class HintFactoryMap implements HintMap {
 		IndexedVectorState context = getContext(node);
 		VectorState next = children;
 
-		for (int j = 0; j < chain; j++) {
-			// Get the best successor state from our current state
-			VectorState hint = graph.getHint(next, context, MAX_NN, PRUNE_GOALS, useGraph);
-			// If there is none, we stop where we are
-			if (hint == null || hint.equals(next)) break;
-			// Otherwise, chain to the next hint
-			next = hint;
-		}
-
 		VectorState goal = graph.getGoalState(next, context, MAX_NN, PRUNE_GOALS);
-		if (goal == null) goal = next;
+
+		if (goal != null && STRAIGHT_TO_GOAL.contains(node.type())) {
+			next = goal;
+		} else {
+			for (int j = 0; j < chain; j++) {
+				// Get the best successor state from our current state
+				VectorState hint = graph.getHint(next, context, MAX_NN, PRUNE_GOALS, useGraph);
+				// If there is none, we stop where we are
+				if (hint == null || hint.equals(next)) break;
+				// Otherwise, chain to the next hint
+				next = hint;
+			}
+			if (goal == null) goal = next;
+		}
 
 		double stayed = graph.getProportionStayed(children);
 		boolean caution =

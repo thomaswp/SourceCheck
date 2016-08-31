@@ -17,7 +17,8 @@
 		],
 		"to": [
 			"stage",
-			"customBlock"
+			"customBlock",
+			"var"
 		],
 		"caution": false
 	}
