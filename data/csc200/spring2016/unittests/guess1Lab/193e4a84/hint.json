@@ -1,0 +1,51 @@
+{
+	"from": "snapshot:[stage:[sprite:[script:[doUntil:[script:[doIfElse]]]]]]: [literal, script, script]",
+	"to": "snapshot:[stage:[sprite:[script:[doUntil:[script:[doIfElse]]]]]]: [reportEquals, script, script]",
+	"data": {
+		"goal": [
+			"reportEquals",
+			"script",
+			"script"
+		],
+		"root": {
+			"label": "doIfElse",
+			"index": 1,
+			"parent": {
+				"label": "script",
+				"index": 1,
+				"parent": {
+					"label": "doUntil",
+					"index": 5,
+					"parent": {
+						"label": "script",
+						"index": 0,
+						"parent": {
+							"label": "sprite",
+							"index": 0,
+							"parent": {
+								"label": "stage",
+								"index": 0,
+								"parent": {
+									"label": "snapshot",
+									"index": -1,
+									"parent": null
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"from": [
+			"literal",
+			"script",
+			"script"
+		],
+		"to": [
+			"reportEquals",
+			"script",
+			"script"
+		],
+		"caution": false
+	}
+}

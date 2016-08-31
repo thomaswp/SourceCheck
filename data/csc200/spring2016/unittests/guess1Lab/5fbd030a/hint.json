@@ -1,0 +1,47 @@
+{
+	"from": "snapshot:[stage:[sprite:[script]]]: [receiveGo, doSetVar, doSayFor, doAsk, doSayFor]",
+	"to": "snapshot:[stage:[sprite:[script]]]: [receiveGo, doSetVar, doSayFor, doAsk, doSayFor, doUntil]",
+	"data": {
+		"goal": [
+			"receiveGo",
+			"doSetVar",
+			"doSayFor",
+			"doAsk",
+			"doSayFor",
+			"doUntil"
+		],
+		"root": {
+			"label": "script",
+			"index": 0,
+			"parent": {
+				"label": "sprite",
+				"index": 0,
+				"parent": {
+					"label": "stage",
+					"index": 0,
+					"parent": {
+						"label": "snapshot",
+						"index": -1,
+						"parent": null
+					}
+				}
+			}
+		},
+		"from": [
+			"receiveGo",
+			"doSetVar",
+			"doSayFor",
+			"doAsk",
+			"doSayFor"
+		],
+		"to": [
+			"receiveGo",
+			"doSetVar",
+			"doSayFor",
+			"doAsk",
+			"doSayFor",
+			"doUntil"
+		],
+		"caution": false
+	}
+}

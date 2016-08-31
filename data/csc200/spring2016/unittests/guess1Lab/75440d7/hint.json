@@ -1,0 +1,64 @@
+{
+	"from": "snapshot:[stage:[sprite:[script:[doUntil:[script]]]]]: [doIfElse] and snapshot:[stage:[sprite:[script]]]: [doAsk]",
+	"to": "snapshot:[stage:[sprite:[script:[doUntil:[script]]]]]: [doAsk, doIfElse] and snapshot:[stage:[sprite:[script]]]: []",
+	"data": {
+		"oldFrom": [
+			"doAsk"
+		],
+		"goal": [
+			"doAsk",
+			"doIfElse"
+		],
+		"root": {
+			"label": "script",
+			"index": 1,
+			"parent": {
+				"label": "doUntil",
+				"index": 5,
+				"parent": {
+					"label": "script",
+					"index": 0,
+					"parent": {
+						"label": "sprite",
+						"index": 0,
+						"parent": {
+							"label": "stage",
+							"index": 0,
+							"parent": {
+								"label": "snapshot",
+								"index": -1,
+								"parent": null
+							}
+						}
+					}
+				}
+			}
+		},
+		"from": [
+			"doIfElse"
+		],
+		"to": [
+			"doAsk",
+			"doIfElse"
+		],
+		"oldTo": [],
+		"caution": false,
+		"oldRoot": {
+			"label": "script",
+			"index": 1,
+			"parent": {
+				"label": "sprite",
+				"index": 0,
+				"parent": {
+					"label": "stage",
+					"index": 0,
+					"parent": {
+						"label": "snapshot",
+						"index": -1,
+						"parent": null
+					}
+				}
+			}
+		}
+	}
+}

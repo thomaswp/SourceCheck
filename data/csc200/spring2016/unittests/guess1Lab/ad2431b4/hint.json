@@ -1,0 +1,48 @@
+{
+	"from": "snapshot:[stage:[sprite:[script:[doSayFor:[reportJoinWords:[list]]]]]]: [literal, literal]",
+	"to": "snapshot:[stage:[sprite:[script:[doSayFor:[reportJoinWords:[list]]]]]]: [literal, getLastAnswer]",
+	"data": {
+		"goal": [
+			"literal",
+			"getLastAnswer"
+		],
+		"root": {
+			"label": "list",
+			"index": 0,
+			"parent": {
+				"label": "reportJoinWords",
+				"index": 0,
+				"parent": {
+					"label": "doSayFor",
+					"index": 3,
+					"parent": {
+						"label": "script",
+						"index": 0,
+						"parent": {
+							"label": "sprite",
+							"index": 0,
+							"parent": {
+								"label": "stage",
+								"index": 0,
+								"parent": {
+									"label": "snapshot",
+									"index": -1,
+									"parent": null
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"from": [
+			"literal",
+			"literal"
+		],
+		"to": [
+			"literal",
+			"getLastAnswer"
+		],
+		"caution": false
+	}
+}

@@ -1,0 +1,42 @@
+{
+	"from": "snapshot:[stage:[sprite:[script:[doSayFor]]]]: [reportJoinWords, literal]",
+	"to": "snapshot:[stage:[sprite:[script:[doSayFor]]]]: [literal, literal]",
+	"data": {
+		"goal": [
+			"literal",
+			"literal"
+		],
+		"root": {
+			"label": "doSayFor",
+			"index": 3,
+			"parent": {
+				"label": "script",
+				"index": 0,
+				"parent": {
+					"label": "sprite",
+					"index": 0,
+					"parent": {
+						"label": "stage",
+						"index": 0,
+						"parent": {
+							"label": "snapshot",
+							"index": -1,
+							"parent": null
+						}
+					}
+				}
+			}
+		},
+		"from": [
+			"reportJoinWords",
+			"literal"
+		],
+		"to": [
+			"literal",
+			"literal"
+		],
+		"caution": true,
+		"badHint": true,
+		"expectedFailure": true
+	}
+}

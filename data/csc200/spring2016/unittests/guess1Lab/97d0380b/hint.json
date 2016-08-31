@@ -1,0 +1,65 @@
+{
+	"from": "snapshot:[stage:[sprite:[script:[doUntil:[reportEquals]]]]]: [getLastAnswer, literal] and snapshot:[stage:[sprite:[script]]]: [var]",
+	"to": "snapshot:[stage:[sprite:[script:[doUntil:[reportEquals]]]]]: [getLastAnswer, var] and snapshot:[stage:[sprite:[script]]]: []",
+	"data": {
+		"oldFrom": [
+			"var"
+		],
+		"goal": [
+			"var",
+			"getLastAnswer"
+		],
+		"root": {
+			"label": "reportEquals",
+			"index": 0,
+			"parent": {
+				"label": "doUntil",
+				"index": 5,
+				"parent": {
+					"label": "script",
+					"index": 0,
+					"parent": {
+						"label": "sprite",
+						"index": 0,
+						"parent": {
+							"label": "stage",
+							"index": 0,
+							"parent": {
+								"label": "snapshot",
+								"index": -1,
+								"parent": null
+							}
+						}
+					}
+				}
+			}
+		},
+		"from": [
+			"literal",
+			"getLastAnswer"
+		],
+		"to": [
+			"var",
+			"getLastAnswer"
+		],
+		"oldTo": [],
+		"caution": false,
+		"oldRoot": {
+			"label": "script",
+			"index": 1,
+			"parent": {
+				"label": "sprite",
+				"index": 0,
+				"parent": {
+					"label": "stage",
+					"index": 0,
+					"parent": {
+						"label": "snapshot",
+						"index": -1,
+						"parent": null
+					}
+				}
+			}
+		}
+	}
+}
