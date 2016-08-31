@@ -1,9 +1,8 @@
 {
-	"from": "snapshot:[stage:[sprite:[script]]]: [receiveGo, doSetVar, doSayFor, doAsk] and snapshot:[stage:[sprite:[script]]]: [doSayFor, doUntil]",
-	"to": "snapshot:[stage:[sprite:[script]]]: [receiveGo, doSetVar, doSayFor, doAsk, doSayFor, doUntil] and snapshot:[stage:[sprite:[script]]]: []",
+	"from": "snapshot:[stage:[sprite:[script]]]: [receiveGo, doSayFor, doAsk, doSayFor, doSetVar] and snapshot:[stage:[sprite:[script]]]: [doUntil]",
+	"to": "snapshot:[stage:[sprite:[script]]]: [receiveGo, doSayFor, doAsk, doSayFor, doSetVar, doUntil] and snapshot:[stage:[sprite:[script]]]: []",
 	"data": {
 		"oldFrom": [
-			"doSayFor",
 			"doUntil"
 		],
 		"goal": [
@@ -33,9 +32,10 @@
 		},
 		"from": [
 			"receiveGo",
-			"doSetVar",
 			"doSayFor",
-			"doAsk"
+			"doAsk",
+			"doSayFor",
+			"doSetVar"
 		],
 		"to": [
 			"receiveGo",

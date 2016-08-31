@@ -41,7 +41,6 @@
 			"doAsk",
 			"doIf"
 		],
-		"caution": true,
-		"expectedFailure": true
+		"caution": true
 	}
 }
