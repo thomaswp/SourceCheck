@@ -49,6 +49,10 @@ public class UnitTest {
 			}
 		}
 
+		// If it's a bad hint, we pass if nothing matches
+		if (correctHint.badHint) return true;
+
+		// Otherwise, we should have had a hint generated, and we fail the test
 		out.println("No hint generated for root.");
 		return false;
 	}
