@@ -430,6 +430,7 @@ public class CheckHintUsage {
 		return false;
 	}
 	
+	@SuppressWarnings("unused")
 	private static void outputDistance(PrintStream psSnapshot, PrintStream psHint, HashMap<String, SolutionPath> submissions) throws IOException{
 		// create column names
 		List<String> headerSnapshot = new LinkedList<String>();
@@ -497,7 +498,7 @@ public class CheckHintUsage {
 					Date snapshotTime = row.timestamp;
 					long diffTime = snapshotTime.getTime() - initTime.getTime();
 					double diffTimeSec = diffTime / 1000.0;
-					double elTime = (double) diffTimeSec;
+					double elTime = diffTimeSec;
 					
 					Object[] rowSnapshot = new Object[3];
 					rowSnapshot[0] = key;
@@ -514,7 +515,7 @@ public class CheckHintUsage {
 					Date hintTime = row.timestamp;
 					long diffTime = hintTime.getTime() - initTime.getTime();
 					double diffTimeSec = diffTime / 1000.0;
-					double elTime = (double) diffTimeSec;
+					double elTime = diffTimeSec;
 					
 					Object[] rowHint = new Object[4];
 					rowHint[0] = key;
@@ -530,6 +531,7 @@ public class CheckHintUsage {
 		}
 		// close printer
 		prtSnapshot.close();
+		prtHint.close();
 	}
 	
 	private static class Spreadsheet {

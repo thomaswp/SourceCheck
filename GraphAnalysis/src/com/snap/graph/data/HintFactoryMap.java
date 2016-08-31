@@ -14,6 +14,7 @@ import com.snap.data.Canonicalization;
 import com.snap.data.Canonicalization.InvertOp;
 import com.snap.data.Canonicalization.SwapArgs;
 import com.snap.graph.data.Node.Action;
+import com.snap.graph.data.Node.Predicate;
 
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
@@ -24,7 +25,7 @@ public class HintFactoryMap implements HintMap {
 
 	// When at least this proportion of visitors to a state finished there,
 	// we flag hints to leave it with caution
-	private final static double STAY_PROPORTION = 0.75;
+	private final static double STAY_PROPORTION = 0.67;
 	// We prune out states with weight less than this
 	private final static int PRUNE_NODES = 2;
 	// We prune out goals with fewer students than this finishing there
@@ -223,7 +224,7 @@ public class HintFactoryMap implements HintMap {
 
 	@Override
 	public void postProcess(List<Hint> hints) {
-		Set<Node> extraScripts = new HashSet<>();
+		final Set<Node> extraScripts = new HashSet<>();
 		Map<VectorState, VectorHint> missingMap = new HashMap<>();
 
 		// Find scripts that should be removed and don't give hints to their children
@@ -249,21 +250,27 @@ public class HintFactoryMap implements HintMap {
 
 		}
 
-		// Remove the hints for the extra hints and make a map of missing blocks for the
-		// others
+		// Remove the hints for the extra hints and make a map of missing blocks for the others
 		List<Hint> toRemove = new LinkedList<>();
 		for (Hint hint : hints) {
 			if (!(hint instanceof VectorHint)) return;
 			VectorHint vHint = (VectorHint) hint;
 
-			if (extraScripts.contains(vHint.root)) {
+			if (vHint.root.hasAncestor(new Predicate() {
+				@Override
+				public boolean eval(Node node) {
+					return extraScripts.contains(node);
+				}
+			})) {
 				toRemove.add(hint);
 			} else {
 				VectorState missingChildren = vHint.getMissingChildren();
 				// To benefit from a LinkHint, an existing hint must have some missing
 				// children but it shouldn't be missing all of them (completely replaced)
-				// unless it's empty to begin with
-				if (missingChildren.length() > 0 && (vHint.from.length() == 0 ||
+				// unless it's empty to begin with, or a block hint
+				if (missingChildren.length() > 0 && (
+						!vHint.root.hasType(SCRIPT) ||
+						vHint.from.length() == 0 ||
 						missingChildren.length() < vHint.goal.length())) {
 					missingMap.put(missingChildren, vHint);
 				}
