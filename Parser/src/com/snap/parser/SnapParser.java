@@ -33,16 +33,16 @@ import com.snap.parser.Store.Mode;
  * @author DraganLipovac
  */
 public class SnapParser {
-	
+
 	private static final String[] HEADER = new String[] {
 			"id","time","message","jsonData","assignmentID","projectID","sessionID","browserID","code"
 	};
-	
+
 	private final static Map<String, CSVPrinter> csvPrinters = new HashMap<String, CSVPrinter>();
-	
+
 	private final String outputFolder;
 	private final Mode storeMode;
-	
+
 	/**
 	 * SnapParserConstructor
 	 */
@@ -51,7 +51,7 @@ public class SnapParser {
 		this.storeMode = cacheUse;
 		new File(outputFolder).mkdirs();
 	}
-	
+
 	/**
 	 * Scans the CSV file name, and sends scanner to the processRows method
 	 * @param snapCSVfileName
@@ -67,7 +67,7 @@ public class SnapParser {
 			String assignmentID = record.get(4);
 			String projectID = record.get(5);
 			writeRecord(assignmentID,projectID, outputFolder, record);
-			if (i++ % 1000 == 0) System.out.print("+"); 
+			if (i++ % 1000 == 0) System.out.print("+");
 			if (i % 50000 == 0) System.out.println();
 		}
 		//close out all the writers in hashmap
@@ -75,12 +75,12 @@ public class SnapParser {
 		parser.close();
 		cleanUpSplit();
 	}
-	
+
 	/**
 	 * creates File tree structure
 	 * @param assignment
 	 * @param userId
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	private static void writeRecord(String assignmentID, String projectID, String outputFolder, CSVRecord record) throws IOException{
 		//rows without projectID are skipped. these are the logger.started lines
@@ -97,17 +97,17 @@ public class SnapParser {
 				printer = new CSVPrinter(new FileWriter(currentFolderPath + "/" + projectID + ".csv"), CSVFormat.EXCEL.withHeader(HEADER));
 				csvPrinters.put(keyword, printer);
 			}
-			
+
 			Object[] cols = new Object[record.size()];
 			for (int i = 0; i < cols.length; i++) {
 				cols[i] = record.get(i);
 			}
 			printer.printRecord(cols);
-			
+
 			if (Math.random() < 0.1) printer.flush();
 		}
 	}
-	
+
 	/**
 	 * code taken from StackOverflow to close out BufferedWriters
 	 */
@@ -130,38 +130,46 @@ public class SnapParser {
 		}
 		csvPrinters.clear();
 	}
-	
-	public SolutionPath parseSubmission(Assignment assignment, String id, boolean snapshotsOnly) throws IOException {
-		return parseRows(new File(assignment.dataDir + "/parsed/" + assignment.name, id + ".csv"), null, snapshotsOnly, assignment.start, assignment.end);
+
+	public SolutionPath parseSubmission(Assignment assignment, String id, boolean snapshotsOnly)
+			throws IOException {
+		return parseRows(new File(assignment.dataDir + "/parsed/" + assignment.name, id + ".csv"),
+				null, snapshotsOnly, assignment.start, assignment.end);
 	}
-	
-	private SolutionPath parseRows(final File logFile, final Grade grade, final boolean snapshotsOnly, final Date minDate, final Date maxDate) throws IOException {
-		String cachePath = logFile.getAbsolutePath().replace(".csv", "") + (snapshotsOnly ? "" :  "-data");
+
+	private SolutionPath parseRows(final File logFile, final Grade grade,
+			final boolean snapshotsOnly, final Date minDate, final Date maxDate)
+					throws IOException {
+		final String attemptID = logFile.getName().replace(".csv", "");
+		String cachePath = logFile.getAbsolutePath().replace(".csv", "") +
+				(snapshotsOnly ? "" :  "-data");
 		int hash = 0;
 		if (minDate != null) hash += minDate.hashCode();
 		if (maxDate != null) hash += maxDate.hashCode();
-		if (hash != 0) cachePath += "-d" + (hash); 
+		if (hash != 0) cachePath += "-d" + (hash);
 		cachePath += ".cached";
-		
-		return Store.getCachedObject(new Kryo(), cachePath, SolutionPath.class, storeMode, new Store.Loader<SolutionPath>() {
+
+		return Store.getCachedObject(new Kryo(), cachePath, SolutionPath.class, storeMode,
+				new Store.Loader<SolutionPath>() {
 			@Override
 			public SolutionPath load() {
 				SolutionPath solution = new SolutionPath(grade);
 				try {
-					CSVParser parser = new CSVParser(new FileReader(logFile), CSVFormat.EXCEL.withHeader());
-					
+					CSVParser parser = new CSVParser(new FileReader(logFile),
+							CSVFormat.EXCEL.withHeader());
+
 					DateFormat format = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
-					
+
 					String lastGrab = null;
-					
+
 					String gradedID = grade == null ? null : grade.gradedID;
 					boolean foundGraded = false;
-					
+
 					BlockIndex editingIndex = null;
 					Snapshot lastSnaphot = null;
-					
+
 					List<DataRow> currentWork = new ArrayList<DataRow>();
-					
+
 					for (CSVRecord record : parser) {
 						String timestampString = record.get(1);
 						Date timestamp = null;
@@ -170,16 +178,16 @@ public class SnapParser {
 						} catch (ParseException e) {
 							e.printStackTrace();
 						}
-						
+
 						if (timestamp != null && (
-								(minDate != null && timestamp.before(minDate)) || 
+								(minDate != null && timestamp.before(minDate)) ||
 								(maxDate != null && timestamp.after(maxDate)))) {
 							continue;
 						}
-						
+
 						String action = record.get(2);
 						String data = record.get(3);
-						
+
 						String xml = record.get(8);
 						if (snapshotsOnly && action.equals("Block.grabbed")) {
 							if (xml.length() > 2) lastGrab = xml;
@@ -187,16 +195,16 @@ public class SnapParser {
 						} else if (xml.length() <= 2 && lastGrab != null) {
 							xml = lastGrab;
 						}
-						
+
 						String idS = record.get(0);
 						int id = -1;
 						try {
 							id = Integer.parseInt(idS);
 						} catch (NumberFormatException e) { }
-						
-						DataRow row = new DataRow(id, timestamp, action, data, xml);
+
+						DataRow row = new DataRow(id, attemptID, timestamp, action, data, xml);
 						if (row.snapshot != null) lastSnaphot = row.snapshot;
-						
+
 						if ("BlockEditor.start".equals(action)) {
 							JSONObject json = new JSONObject(data);
 							String name = json.getString("spec");
@@ -215,16 +223,16 @@ public class SnapParser {
 								row.snapshot.setEditingIndex(editingIndex);
 							}
 						}
-						
+
 						if (!snapshotsOnly || row.snapshot != null) {
 							currentWork.add(row);
 							lastGrab = null;
 						}
-						
+
 						if (idS.equals(gradedID)) {
 							foundGraded = true;
 						}
-						
+
 						if (action.equals("IDE.exportProject")) {
 							solution.exported = true;
 							for (DataRow r : currentWork) {
@@ -233,56 +241,56 @@ public class SnapParser {
 							currentWork.clear();
 							if (foundGraded) break;
 						}
-						
+
 					}
 					parser.close();
-					
+
 					if (gradedID != null && !foundGraded) {
 						System.err.println("No grade row for: " + logFile.getName());
 					}
-					
+
 					System.out.println("Parsed: " + logFile.getName());
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-				
+
 				Collections.sort(solution.rows);
-				
+
 				return solution;
 			}
 		});
 	}
-	
+
 //	private class Labeling {
 //		public final Snapshot snapshot;
-//		
+//
 //		public Labeling(Snapshot snapshot) {
 //			this.snapshot = snapshot;
 //		}
-//		
+//
 //		public void load(Labeling last) {
-//			
+//
 //		}
 //	}
-//	
+//
 //	private class Label {
 //		public Block block;
 //		public Label parent;
 //		public List<Block> children = new LinkedList<Block>();
 //		public int id;
-//		
-//		
+//
+//
 //	}
-	
-	
+
+
 	public Map<String, SolutionPath> parseAssignment(String folder, final boolean snapshotsOnly) {
 		return parseAssignment(folder, snapshotsOnly, null, null);
 	}
-	
+
 	public Map<String, SolutionPath> parseAssignment(String folder, final boolean snapshotsOnly,
 			final Date minDate, final Date maxDate) {
 		HashMap<String, Grade> grades = parseGrades(folder);
-		
+
 		final Map<String, SolutionPath> students = new TreeMap<String, SolutionPath>();
 		final AtomicInteger threads = new AtomicInteger();
 		for (File file : new File(outputFolder + "/" + "parsed", folder).listFiles()) {
@@ -300,7 +308,7 @@ public class SnapParser {
 								synchronized (students) {
 									students.put(fFile.getName(), rows);
 								}
-							}							
+							}
 						}
 					} catch (IOException e) {
 						e.printStackTrace();
@@ -318,14 +326,14 @@ public class SnapParser {
 		}
 		return students;
 	}
-	
-	
+
+
 	private HashMap<String, Grade> parseGrades(String folder) {
 		HashMap<String, Grade> grades = new HashMap<String, Grade>();
-		
+
 		File file = new File(outputFolder, "grades/" + folder + ".csv");
 		if (!file.exists()) return grades;
-		
+
 		try {
 			CSVParser parser = new CSVParser(new FileReader(file), CSVFormat.DEFAULT.withHeader());
 			for (CSVRecord record : parser) {
@@ -336,10 +344,10 @@ public class SnapParser {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
+
 		return grades;
 	}
-	
+
 	public static void clean(String path) {
 		for (String file : new File(path).list()) {
 			File f = new File(path, file);
@@ -353,7 +361,7 @@ public class SnapParser {
 //		clean("../data/csc200/spring2016/parsed");
 
 		Assignment.Spring2016.PolygonMaker.load(Mode.Overwrite, true);
-		
+
 	}
 }
 
