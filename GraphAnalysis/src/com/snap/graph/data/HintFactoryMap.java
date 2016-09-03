@@ -228,7 +228,11 @@ public class HintFactoryMap implements HintMap {
 			}
 
 			graph.prune(PRUNE_NODES);
-			if (parent.hasType(SCRIPT)) {
+			// TODO: This is my shorthand of saying we shouldn't do this for scripts with common
+			// siblings (as the children of doIfElse do), since the weighting isn't context
+			// sensitive right now. Ideally the weighting should be, or at the very least a more
+			// comprehensive solution is needed for identifying when this is inappropriate
+			if (parent.hasType(SCRIPT) && !parent.parentHasType("doIfElse")) {
 				graph.generateScriptGoalValues();
 			}
 			graph.generateAndRemoveEdges(MAX_EDGE_ADD_DISTANCE, MAX_EDGE_DISTANCE);

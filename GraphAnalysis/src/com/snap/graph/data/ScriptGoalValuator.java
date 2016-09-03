@@ -70,27 +70,13 @@ public class ScriptGoalValuator {
 				}
 			}
 		}
-
-//		List<VectorState> goals = new LinkedList<>();
-//		goals.addAll(goalCounts.keySet());
-//		Collections.sort(goals, new Comparator<VectorState>() {
-//			@Override
-//			public int compare(VectorState o1, VectorState o2) {
-//				return -Double.compare(getGoalValue(medianCounts, orderings, o1),
-//						getGoalValue(medianCounts, orderings, o2));
-//			}
-//		});
-//		for (VectorState state : goals) {
-//			System.out.printf("%.03f: %s\n",
-//					getGoalValue(medianCounts, orderings, state),
-//					state.toString());
-//		}
 	}
 
 	public double getGoalValue(VectorState state) {
 		double countDistance = getGoalCountDistance(state);
 		double orderDistance = getGoalOrderDistance(state);
 
+		// TODO: Make these more justified/configurable
 		double score1 = 1 / Math.pow(countDistance + (1.0 / 10), 2); // max 100
 		double score2 = 1 / Math.pow(orderDistance + (1.0 / 7), 2); // max 49
 		return (score1 + score2) / 1.49; // max 100

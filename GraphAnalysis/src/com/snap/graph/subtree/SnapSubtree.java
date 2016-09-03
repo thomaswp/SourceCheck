@@ -173,7 +173,7 @@ public class SnapSubtree {
 
 			graph.export(new PrintStream(new FileOutputStream(file + ".graphml")), true,
 					0, false, true);
-			graph.exportGoalContexts(new PrintStream(file + ".txt"));
+			graph.exportGoals(new PrintStream(file + ".txt"));
 		}
 	}
 

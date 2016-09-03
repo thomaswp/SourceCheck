@@ -18,7 +18,7 @@ public class VectorGraph extends OutGraph<VectorState> {
 	private final HashMap<VectorState, List<IndexedVectorState>> goalContextMap =
 			new HashMap<VectorState, List<IndexedVectorState>>();
 
-	private final HashMap<VectorState, Double> goalVales = new HashMap<>();
+	private final HashMap<VectorState, Double> goalValues = new HashMap<>();
 
 	private final transient HashMap<VectorState, Double> tmpGoalValues =
 			new HashMap<VectorState, Double>();
@@ -61,11 +61,15 @@ public class VectorGraph extends OutGraph<VectorState> {
 	}
 
 	private double getUncontextualGoalValue(Vertex<VectorState> vertex) {
-		if (goalVales.containsKey(vertex.data)) {
-			return goalVales.get(vertex.data);
+		if (goalValues.containsKey(vertex.data)) {
+			return goalValues.get(vertex.data);
 		} else {
 			return super.getGoalValue(vertex);
 		}
+	}
+
+	private double getUncontextualGoalValue(VectorState state) {
+		return getUncontextualGoalValue(vertexMap.get(state));
 	}
 
 	public VectorState getGoalState(VectorState state, IndexedVectorState context,
@@ -226,10 +230,11 @@ public class VectorGraph extends OutGraph<VectorState> {
 					dis = IndexedVectorState.distance(context, state);
 					cachedDistances.put(state, dis);
 				}
+				// TODO: Make these more justified/configurable
 				weight += 0.25f / Math.pow(0.5f + dis, 2); // max 1
 			}
 			weight /= list.size();
-			tmpGoalValues.put(goal, weight * getUncontextualGoalValue(vertexMap.get(goal)));
+			tmpGoalValues.put(goal, weight * getUncontextualGoalValue(goal));
 			if (weight > nextBest) {
 				nextBest = weight;
 			}
@@ -242,15 +247,13 @@ public class VectorGraph extends OutGraph<VectorState> {
 		bellmanBackup(minGoal);
 	}
 
-	public void exportGoalContexts(PrintStream out) throws FileNotFoundException {
+	public void exportGoals(PrintStream out) throws FileNotFoundException {
 		List<VectorState> goals = new ArrayList<VectorState>();
 		goals.addAll(goalContextMap.keySet());
 		Collections.sort(goals, new Comparator<VectorState>() {
 			@Override
 			public int compare(VectorState o1, VectorState o2) {
-				return -Integer.compare(
-						goalContextMap.get(o1).size(),
-						goalContextMap.get(o2).size());
+				return -Double.compare(getUncontextualGoalValue(o1), getUncontextualGoalValue(o2));
 			}
 		});
 
@@ -277,7 +280,7 @@ public class VectorGraph extends OutGraph<VectorState> {
 						}
 					});
 			sortedCounts.putAll(counts);
-			out.println(state + " (" + contexts.size() + "): ");
+			out.printf("%s (%.03f):\n", state, getUncontextualGoalValue(state));
 			for (VectorState context : sortedCounts.keySet()) {
 				out.println("\t" + counts.get(context) + ": " + context);
 			}
@@ -343,7 +346,7 @@ public class VectorGraph extends OutGraph<VectorState> {
 		}
 		ScriptGoalValuator goalValuator = new ScriptGoalValuator(goalCounts);
 		for (VectorState goal : goalContextMap.keySet()) {
-			goalVales.put(goal, goalValuator.getGoalValue(goal));
+			goalValues.put(goal, goalValuator.getGoalValue(goal));
 		}
 	}
 
