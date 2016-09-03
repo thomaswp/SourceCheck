@@ -36,7 +36,6 @@
 			"literal"
 		],
 		"caution": true,
-		"badHint": true,
-		"expectedFailure": true
+		"badHint": true
 	}
 }

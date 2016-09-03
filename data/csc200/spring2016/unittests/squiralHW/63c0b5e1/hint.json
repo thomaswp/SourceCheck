@@ -4,8 +4,8 @@
 	"data": {
 		"goal": [
 			"forward",
-			"turn",
-			"doChangeVar"
+			"doChangeVar",
+			"turn"
 		],
 		"root": {
 			"label": "script",
@@ -34,8 +34,8 @@
 		],
 		"to": [
 			"forward",
-			"turn",
-			"doChangeVar"
+			"doChangeVar",
+			"turn"
 		],
 		"caution": false
 	}

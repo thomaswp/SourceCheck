@@ -1,13 +1,13 @@
 {
-	"from": "snapshot:[customBlock:[script]]: [] and snapshot:[stage:[sprite:[script]]]: [down]",
-	"to": "snapshot:[customBlock:[script]]: [down] and snapshot:[stage:[sprite:[script]]]: []",
+	"from": "snapshot:[customBlock:[script]]: [down] and snapshot:[stage:[sprite:[script]]]: [setSize]",
+	"to": "snapshot:[customBlock:[script]]: [down, setSize] and snapshot:[stage:[sprite:[script]]]: []",
 	"data": {
 		"oldFrom": [
-			"down"
+			"setSize"
 		],
 		"goal": [
 			"down",
-			"doSetVar",
+			"setSize",
 			"doRepeat",
 			"up"
 		],
@@ -25,11 +25,13 @@
 			}
 		},
 		"from": [
-			"prototypeHatBlock"
+			"prototypeHatBlock",
+			"down"
 		],
 		"to": [
 			"prototypeHatBlock",
-			"down"
+			"down",
+			"setSize"
 		],
 		"oldTo": [],
 		"caution": false,

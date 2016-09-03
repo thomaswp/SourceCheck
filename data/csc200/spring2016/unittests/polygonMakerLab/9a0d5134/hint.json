@@ -7,6 +7,7 @@
 		],
 		"goal": [
 			"down",
+			"setSize",
 			"doRepeat",
 			"up"
 		],

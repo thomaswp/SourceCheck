@@ -38,6 +38,7 @@
 			"turn",
 			"doChangeVar"
 		],
-		"caution": true
+		"caution": false,
+		"badHint": true
 	}
 }

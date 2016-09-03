@@ -3,8 +3,10 @@
 	"to": "snapshot:[customBlock:[script]]: [down, doRepeat]",
 	"data": {
 		"goal": [
+			"doSetVar",
 			"down",
-			"doRepeat"
+			"doRepeat",
+			"up"
 		],
 		"root": {
 			"label": "script",

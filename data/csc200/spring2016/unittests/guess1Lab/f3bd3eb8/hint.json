@@ -1,13 +1,13 @@
 {
-	"from": "snapshot:[stage:[sprite:[script]]]: [receiveGo, doSetVar, doSayFor, doAsk, doSayFor, doRepeat]",
-	"to": "snapshot:[stage:[sprite:[script]]]: [receiveGo, doSetVar, doSayFor, doAsk, doSayFor, doUntil]",
+	"from": "snapshot:[stage:[sprite:[script]]]: [receiveGo, doSayFor, doAsk, doSayFor, doSetVar, doRepeat]",
+	"to": "snapshot:[stage:[sprite:[script]]]: [receiveGo, doSayFor, doAsk, doSayFor, doSetVar, doUntil]",
 	"data": {
 		"goal": [
 			"receiveGo",
-			"doSetVar",
 			"doSayFor",
 			"doAsk",
 			"doSayFor",
+			"doSetVar",
 			"doUntil"
 		],
 		"root": {
@@ -29,18 +29,18 @@
 		},
 		"from": [
 			"receiveGo",
-			"doSetVar",
 			"doSayFor",
 			"doAsk",
 			"doSayFor",
+			"doSetVar",
 			"doRepeat"
 		],
 		"to": [
 			"receiveGo",
-			"doSetVar",
 			"doSayFor",
 			"doAsk",
 			"doSayFor",
+			"doSetVar",
 			"doUntil"
 		],
 		"caution": false
