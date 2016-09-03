@@ -220,8 +220,17 @@ public class HintFactoryMap implements HintMap {
 
 	@Override
 	public void finish() {
-		for (VectorGraph graph : map.values()) {
+		for (Node key : map.keySet()) {
+			VectorGraph graph = map.get(key);
+			Node parent = key;
+			while (parent.children.size() == 1) {
+				parent = parent.children.get(0);
+			}
+
 			graph.prune(PRUNE_NODES);
+			if (parent.hasType(SCRIPT)) {
+				graph.generateScriptGoalValues();
+			}
 			graph.generateAndRemoveEdges(MAX_EDGE_ADD_DISTANCE, MAX_EDGE_DISTANCE);
 			graph.bellmanBackup(PRUNE_GOALS);
 		}

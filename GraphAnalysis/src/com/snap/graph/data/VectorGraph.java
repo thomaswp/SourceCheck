@@ -11,11 +11,14 @@ import java.util.List;
 import java.util.TreeMap;
 
 import com.snap.graph.Alignment;
+import com.snap.util.CountMap;
 
 public class VectorGraph extends OutGraph<VectorState> {
 
 	private final HashMap<VectorState, List<IndexedVectorState>> goalContextMap =
 			new HashMap<VectorState, List<IndexedVectorState>>();
+
+	private final HashMap<VectorState, Double> goalVales = new HashMap<>();
 
 	private final transient HashMap<VectorState, Double> tmpGoalValues =
 			new HashMap<VectorState, Double>();
@@ -51,13 +54,18 @@ public class VectorGraph extends OutGraph<VectorState> {
 
 	@Override
 	protected double getGoalValue(Vertex<VectorState> vertex) {
-		double value = 0;
 		if (tmpGoalValues.containsKey(vertex.data)) {
-			value = tmpGoalValues.get(vertex.data);
+			return tmpGoalValues.get(vertex.data);
+		}
+		return getUncontextualGoalValue(vertex);
+	}
+
+	private double getUncontextualGoalValue(Vertex<VectorState> vertex) {
+		if (goalVales.containsKey(vertex.data)) {
+			return goalVales.get(vertex.data);
 		} else {
 			return super.getGoalValue(vertex);
 		}
-		return value;
 	}
 
 	public VectorState getGoalState(VectorState state, IndexedVectorState context,
@@ -218,9 +226,10 @@ public class VectorGraph extends OutGraph<VectorState> {
 					dis = IndexedVectorState.distance(context, state);
 					cachedDistances.put(state, dis);
 				}
-				weight += 1 / Math.pow(0.5f + dis, 2);
+				weight += 0.25f / Math.pow(0.5f + dis, 2); // max 1
 			}
-			tmpGoalValues.put(goal, weight * 10);
+			weight /= list.size();
+			tmpGoalValues.put(goal, weight * getUncontextualGoalValue(vertexMap.get(goal)));
 			if (weight > nextBest) {
 				nextBest = weight;
 			}
@@ -325,6 +334,17 @@ public class VectorGraph extends OutGraph<VectorState> {
 		if (vertex == null || vertex.weight() == 0) return 0;
 		return (vertex.weight() - outWeight(vertex.data, true, true)) /
 				(double)vertex.weight();
+	}
+
+	public void generateScriptGoalValues() {
+		CountMap<VectorState> goalCounts = new CountMap<>();
+		for (VectorState goal : goalContextMap.keySet()) {
+			goalCounts.put(goal, vertexMap.get(goal).goalCount());
+		}
+		ScriptGoalValuator goalValuator = new ScriptGoalValuator(goalCounts);
+		for (VectorState goal : goalContextMap.keySet()) {
+			goalVales.put(goal, goalValuator.getGoalValue(goal));
+		}
 	}
 
 }
