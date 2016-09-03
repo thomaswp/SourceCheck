@@ -109,6 +109,8 @@ public class SubtreeBuilder {
 							// If a node exists in both trees, we add an edge. This will
 							// likely just be a loop if its children have not changed, but
 							// these are filtered out.
+							// TODO: For scripts, for some reason many states aren't being added
+							// until they're marked as goals. This really shouldn't be happening.
 							hintMap.addEdge(lastNode, node);
 
 							// We also check for changes in siblings if there's a parent
@@ -117,8 +119,8 @@ public class SubtreeBuilder {
 								// but neither was added or deleted), or if it's gained or lost
 								// siblings, we add the parent (possibly redundantly)
 								// TODO: test to make sure this isn't overly in/exclusive
-								if (lastNode.index() != node.index() || 
-										lastNode.parent.children.size() != 
+								if (lastNode.index() != node.index() ||
+										lastNode.parent.children.size() !=
 										node.parent.children.size()) {
 									hintMap.addEdge(lastNode.parent, node.parent);
 								}
