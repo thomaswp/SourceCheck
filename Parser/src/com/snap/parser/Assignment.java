@@ -83,12 +83,13 @@ public class Assignment {
 		// Used this submission for testing, so not using it in evaluation
 		public final static String GG1_SKIP = "3c3ce047-b408-417e-b556-f9406ac4c7a8.csv";
 
-		public final static Assignment LightsCameraAction = new Assignment(dataDir,
-				"lightsCameraActionHW", start, date(2016, 9, 4), false);
-		public final static Assignment PolygonMaker = new Assignment(dataDir,
-				"polygonMakerLab", start, date(2015, 9, 4), false);
-		public final static Assignment Squiral = new Assignment(dataDir,
-				"squiralHW", start, date(2015, 9, 13), false);
+		// Note: the first three assignments were not recorded in Fall 2015
+//		public final static Assignment LightsCameraAction = new Assignment(dataDir,
+//				"lightsCameraActionHW", start, date(2016, 9, 4), false);
+//		public final static Assignment PolygonMaker = new Assignment(dataDir,
+//				"polygonMakerLab", start, date(2015, 9, 4), false);
+//		public final static Assignment Squiral = new Assignment(dataDir,
+//				"squiralHW", start, date(2015, 9, 13), false);
 		public final static Assignment GuessingGame1 = new Assignment(dataDir,
 				"guess1Lab", start,
 				date(2015, 9, 18), false, true) {
@@ -103,7 +104,7 @@ public class Assignment {
 				"guess3Lab", start, date(2015, 10, 2), false);
 
 		public final static Assignment[] All = {
-			LightsCameraAction, PolygonMaker, Squiral,
+//			LightsCameraAction, PolygonMaker, Squiral,
 			GuessingGame1, GuessingGame2, GuessingGame3
 		};
 	}
@@ -124,6 +125,29 @@ public class Assignment {
 				"guess2HW", start, date(2016, 2, 16), true);
 		public final static Assignment GuessingGame3 = new Assignment(dataDir,
 				"guess3Lab", start, date(2016, 2, 23), true);
+
+		public final static Assignment[] All = {
+			LightsCameraAction, PolygonMaker, Squiral,
+			GuessingGame1, GuessingGame2, GuessingGame3
+		};
+	}
+
+	public static class Fall2016 {
+		public final static Date start = date(2015, 8, 17);
+		public final static String dataDir = BASE_DIR + "/fall2016";
+
+		public final static Assignment LightsCameraAction = new Assignment(dataDir,
+				"lightsCameraActionHW", start, date(2016, 9, 2), true);
+		public final static Assignment PolygonMaker = new Assignment(dataDir,
+				"polygonMakerLab", start, date(2016, 9, 2), true);
+		public final static Assignment Squiral = new Assignment(dataDir,
+				"squiralHW", start, date(2016, 9, 11), true);
+		public final static Assignment GuessingGame1 = new Assignment(dataDir,
+				"guess1Lab", start, date(2016, 9, 16), true, true);
+		public final static Assignment GuessingGame2 = new Assignment(dataDir,
+				"guess2HW", start, date(2016, 9, 23), true);
+		public final static Assignment GuessingGame3 = new Assignment(dataDir,
+				"guess3Lab", start, date(2016, 9, 30), true);
 
 		public final static Assignment[] All = {
 			LightsCameraAction, PolygonMaker, Squiral,
