@@ -5,21 +5,25 @@ import java.util.LinkedList;
 
 public class AssignmentAttempt implements Iterable<AttemptAction>, IVersioned {
 
-	public final static String VERSION = "1.3.0";
+	public final static String VERSION = "1.4.0";
 
 	public final LinkedList<AttemptAction> rows = new LinkedList<AttemptAction>();
 	public final Grade grade;
+	/** Whether the attempt was actually submitted for a grade; null if unknown. */
+	public final Boolean submitted;
+	/** Whether the attempt was ever exported from Snap. */
 	public boolean exported;
 
 	private String version = VERSION;
 
 	@SuppressWarnings("unused")
 	private AssignmentAttempt() {
-		this.grade = null;
+		this(null, null);
 	}
 
-	public AssignmentAttempt(Grade grade) {
+	public AssignmentAttempt(Grade grade, Boolean submitted) {
 		this.grade = grade;
+		this.submitted = submitted;
 	}
 
 	public void add(AttemptAction row) {

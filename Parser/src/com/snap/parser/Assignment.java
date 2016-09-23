@@ -31,11 +31,27 @@ public class Assignment {
 	}
 
 	public String analysisDir() {
-		return dataDir + "/analysis/" + name;
+		return dir("analysis");
 	}
 
 	public String unitTestDir() {
-		return dataDir + "/unittests/" + name;
+		return dir("unittests");
+	}
+
+	public String submittedDir() {
+		return dir("submitted");
+	}
+
+	public String gradesFile() {
+		return dir("grades") + ".csv";
+	}
+
+	public String parsedDir() {
+		return dir("parsed");
+	}
+
+	private String dir(String folderName) {
+		return dataDir + "/" + folderName + "/" + name;
 	}
 
 	public Snapshot loadSolution() throws FileNotFoundException {
@@ -48,7 +64,7 @@ public class Assignment {
 
 	public AssignmentAttempt loadSubmission(String id, Mode mode, boolean snapshotsOnly) {
 		try {
-			return new SnapParser(dataDir, mode).parseSubmission(this, id, snapshotsOnly);
+			return new SnapParser(this, mode).parseSubmission(id, snapshotsOnly);
 		} catch (IOException e) {
 			e.printStackTrace();
 			return null;
@@ -69,7 +85,7 @@ public class Assignment {
 	}
 
 	public Map<String, AssignmentAttempt> load(Mode mode, boolean snapshotsOnly) {
-		return new SnapParser(dataDir, mode).parseAssignment(name, snapshotsOnly, start, end);
+		return new SnapParser(this, mode).parseAssignment(snapshotsOnly);
 	}
 
 	public final static String BASE_DIR = "../data/csc200";

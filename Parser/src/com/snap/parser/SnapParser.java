@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -52,35 +53,34 @@ public class SnapParser {
 		}
 	}
 
-	private final String rootFolder;
+	private final Assignment assignment;
 	private final Mode storeMode;
 
 	/**
 	 * Constructor for a SnapParser. This should rarely be called directly. Instead, use
 	 * {@link Assignment#load()}.
 	 *
-	 * @param rootFolder The root folder for a dataset from which files will be loaded.
+	 * @param assignment The assignment to load
 	 * @param cacheUse The cache {@link Mode} to use when loading data.
 	 */
-	public SnapParser(String rootFolder, Mode cacheUse){
-		this.rootFolder = rootFolder;
+	public SnapParser(Assignment assignment, Mode cacheUse){
+		this.assignment = assignment;
 		this.storeMode = cacheUse;
-		new File(rootFolder).mkdirs();
+		new File(assignment.dataDir).mkdirs();
 	}
 
-	public AssignmentAttempt parseSubmission(Assignment assignment, String id, boolean snapshotsOnly)
-			throws IOException {
-		return parseRows(new File(assignment.dataDir + "/parsed/" + assignment.name, id + ".csv"),
-				null, snapshotsOnly, assignment.start, assignment.end);
+	public AssignmentAttempt parseSubmission(String id, boolean snapshotsOnly) throws IOException {
+		return parseRows(new File(assignment.parsedDir(), id + ".csv"), null, null, snapshotsOnly);
 	}
 
 	private AssignmentAttempt parseRows(final File logFile, final Grade grade,
-			final boolean snapshotsOnly, final Date minDate, final Date maxDate)
+			final Boolean submitted, final boolean snapshotsOnly)
 					throws IOException {
 		final String attemptID = logFile.getName().replace(".csv", "");
 		String cachePath = logFile.getAbsolutePath().replace(".csv", "") +
 				(snapshotsOnly ? "" :  "-data");
 		int hash = 0;
+		final Date minDate = assignment.start, maxDate = assignment.end;
 		if (minDate != null) hash += minDate.hashCode();
 		if (maxDate != null) hash += maxDate.hashCode();
 		if (hash != 0) cachePath += "-d" + (hash);
@@ -90,7 +90,7 @@ public class SnapParser {
 				new Store.Loader<AssignmentAttempt>() {
 			@Override
 			public AssignmentAttempt load() {
-				AssignmentAttempt solution = new AssignmentAttempt(grade);
+				AssignmentAttempt solution = new AssignmentAttempt(grade, submitted);
 				try {
 					CSVParser parser = new CSVParser(new FileReader(logFile),
 							CSVFormat.EXCEL.withHeader());
@@ -198,27 +198,26 @@ public class SnapParser {
 		});
 	}
 
-	public Map<String, AssignmentAttempt> parseAssignment(String folder, final boolean snapshotsOnly) {
-		return parseAssignment(folder, snapshotsOnly, null, null);
-	}
+	public Map<String, AssignmentAttempt> parseAssignment(final boolean snapshotsOnly) {
+		HashMap<String, Grade> grades = parseGrades();
 
-	public Map<String, AssignmentAttempt> parseAssignment(String folder, final boolean snapshotsOnly,
-			final Date minDate, final Date maxDate) {
-		HashMap<String, Grade> grades = parseGrades(folder);
+		Set<String> submittedGUIDs = ParseSubmitted.getSubmittedGUIDs(assignment);
 
 		final Map<String, AssignmentAttempt> students = new TreeMap<String, AssignmentAttempt>();
 		final AtomicInteger threads = new AtomicInteger();
-		for (File file : new File(rootFolder + "/" + "parsed", folder).listFiles()) {
+		for (File file : new File(assignment.parsedDir()).listFiles()) {
 			if (!file.getName().endsWith(".csv")) continue;
 			final File fFile = file;
-			final Grade grade = grades.get(file.getName().replace(".csv", ""));
+			String guid = file.getName().replace(".csv", "");
+			final Grade grade = grades.get(guid);
+			final Boolean submitted = submittedGUIDs == null ? null : submittedGUIDs.contains(guid);
+
 			threads.incrementAndGet();
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
 					try {
-						AssignmentAttempt rows = parseRows(fFile, grade, snapshotsOnly, minDate,
-								maxDate);
+						AssignmentAttempt rows = parseRows(fFile, grade, submitted, snapshotsOnly);
 						if (rows.grade == null || !rows.grade.outlier) {
 							if (rows.size() > 3) {
 								synchronized (students) {
@@ -244,10 +243,10 @@ public class SnapParser {
 	}
 
 
-	private HashMap<String, Grade> parseGrades(String folder) {
+	private HashMap<String, Grade> parseGrades() {
 		HashMap<String, Grade> grades = new HashMap<String, Grade>();
 
-		File file = new File(rootFolder, "grades/" + folder + ".csv");
+		File file = new File(assignment.gradesFile());
 		if (!file.exists()) return grades;
 
 		try {

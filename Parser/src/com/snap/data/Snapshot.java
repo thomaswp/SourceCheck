@@ -23,6 +23,7 @@ public class Snapshot extends Code implements IHasID {
 	private final static String META =
 			"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=US-ASCII\">";
 
+	public final String guid;
 	public final String name;
 	public final Stage stage;
 	public final BlockDefinition editing;
@@ -43,10 +44,11 @@ public class Snapshot extends Code implements IHasID {
 
 	@SuppressWarnings("unused")
 	private Snapshot() {
-		this(null, null, null);
+		this(null, null, null, null);
 	}
 
-	public Snapshot(String name, Stage stage, BlockDefinition editing) {
+	public Snapshot(String guid, String name, Stage stage, BlockDefinition editing) {
+		this.guid = guid;
 		this.name = name;
 		this.stage = stage;
 		this.editing = editing;
@@ -70,7 +72,8 @@ public class Snapshot extends Code implements IHasID {
 			StringReader reader = new StringReader(xmlSource);
 //			System.out.println(xmlSource);
 
-			Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new InputSource(reader));
+			Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(
+					new InputSource(reader));
 			doc.getDocumentElement().normalize();
 			Element project = (Element) doc.getElementsByTagName("project").item(0);
 			if (project == null) return null;
@@ -78,6 +81,7 @@ public class Snapshot extends Code implements IHasID {
 			XML.buildRefMap(project, "sprite");
 
 			Element stage = XML.getFirstChildByTagName(project, "stage");
+			String guid = stage.getAttribute("guid");
 
 			BlockDefinition editingBlock = null;
 			Element editing = XML.getFirstChildByTagName(project, "editing");
@@ -85,11 +89,12 @@ public class Snapshot extends Code implements IHasID {
 				editingBlock = BlockDefinition.parseEditing(editing);
 			}
 
-			Snapshot snapshot = new Snapshot(name, Stage.parse(stage), editingBlock);
+			Snapshot snapshot = new Snapshot(guid, name, Stage.parse(stage), editingBlock);
 			for (Code code : XML.getCodeInFirstChild(project, "blocks")) {
 				snapshot.blocks.add((BlockDefinition) code);
 			}
-			for (Element variable : XML.getGrandchildrenByTagName(project, "variables", "variable")) {
+			for (Element variable : XML.getGrandchildrenByTagName(
+					project, "variables", "variable")) {
 				snapshot.variables.add(variable.getAttribute("name"));
 			}
 
@@ -118,7 +123,9 @@ public class Snapshot extends Code implements IHasID {
 		.indent()
 		.add(blocks.getWithEdits(canon))
 		.close()
-		.add(variables.size() == 0 ? null : ("variables: " + canonicalizeVariables(variables, canon).toString() + "\n"))
+		.add(variables.size() == 0 ?
+				null :
+				("variables: " + canonicalizeVariables(variables, canon).toString() + "\n"))
 		.add("editing:")
 		.indent()
 		.add(editing)
@@ -146,7 +153,8 @@ public class Snapshot extends Code implements IHasID {
 		name = BlockDefinition.steralizeName(name);
 
 		BlockIndex index = null;
-		Map<Integer, BlockDefinitionGroup> blockLists = BlockDefinitionGroup.getBlockDefGroups(this);
+		Map<Integer, BlockDefinitionGroup> blockLists =
+				BlockDefinitionGroup.getBlockDefGroups(this);
 
 		for (int spriteIndex : blockLists.keySet()) {
 			BlockDefinitionGroup blocks = blockLists.get(spriteIndex);

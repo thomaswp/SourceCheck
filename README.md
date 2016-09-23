@@ -41,13 +41,14 @@ When you have set up your dataset under `data/csc200/{dataset}/`, you will see s
 
 * **parsed**: This contains the parsed .csv files from splitting the large dataset file. It also contains cached versions of these .csv files for easier loading. To remove the cached files easily, you can run `Parser.clean("../data/csc200/{dataset}/parsed")`.  
 * **grades**: If you have created manual grades for an assignment, it should go here. This will be parsed with the snapshots.
+* **submitted**: A folder for submitted assignments, actually turned into the teacher. If you create folders and fill them with submitted .xml files for each assignment, then run [ParseSubmitted](Parser/src/com/snap/parser/ParseSubmitted.java), it will generate a text file with the list of GUIDs of submitted assignments. This file can be versioned, and is used when parsing assignment attempts to flag them as submittetd or not.
 * **graphs**: After creating a [HintGenerator](GraphAnalysis/src/com/snap/graph/subtree/HintGenerator.java), you can call the `createGraphs` method to generate a set of .graphml files, one for each node in the ASTs oberved. These can be opened with [yEd](https://www.yworks.com/products/yed), and the formatted using Layout->Hierarchical. This is helpful for debugging. This method will also generate text files for each node, which show the goal states for that node, and their comparative rankings.
 * **analysis**: Most scripts in the HintEvalutaion project will produce a .csv file in the analysis folder. These can be read in using the R scripts in the R folder.
 * **unittests**: See the Unit Tests section under GraphAnalysis.
 
 ## Parser
 
-The Parser project contains files for parsing logs from iSnap. [SnapParser.java](Parser/src/com/snap/parser/SnapParser.java) will parse assignments for a given dataset; however, it is much easier to use the load method of the [Assignment](Parser/src/com/snap/parser/Assignment.java) you want to parse. This method will return a map of attemptIDs to [AssignmentAttempts](Parser/src/com/snap/parser/AssignmentAttempt.java). The AssignmentAttempt contains a list of actions that the student made during the attempt, such as interface or edit actions within the Snap interface.
+The Parser project contains files for parsing logs from iSnap. [SnapParser](Parser/src/com/snap/parser/SnapParser.java) will parse assignments for a given dataset; however, it is much easier to use the load method of the [Assignment](Parser/src/com/snap/parser/Assignment.java) you want to parse. This method will return a map of attemptIDs to [AssignmentAttempts](Parser/src/com/snap/parser/AssignmentAttempt.java). The AssignmentAttempt contains a list of actions that the student made during the attempt, such as interface or edit actions within the Snap interface.
 
 Each action the student made may have an associated [Snapshot](Parser/src/com/snap/data/Snapshot.java). This is a Java data-structure representing the hierarchy of an exported Snap project (which is originally represented in XML). The basic structure of a Snapshot is as follows:
 
