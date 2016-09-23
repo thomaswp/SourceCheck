@@ -17,7 +17,7 @@ import com.snap.data.Snapshot;
 import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.Hint;
 import com.snap.graph.data.Node;
-import com.snap.graph.subtree.SubtreeBuilder;
+import com.snap.graph.subtree.HintGenerator;
 import com.snap.graph.unittest.UnitTest;
 
 
@@ -28,8 +28,8 @@ public class HintServlet extends HttpServlet {
 	private final static String DEFAULT_ASSIGNMENT = "guess1Lab";
 	private final static int DEFAULT_MIN_GRADE = 100;
 
-	private static HashMap<String, SubtreeBuilder> builders =
-			new HashMap<String, SubtreeBuilder>();
+	private static HashMap<String, HintGenerator> builders =
+			new HashMap<String, HintGenerator>();
 
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -85,7 +85,7 @@ public class HintServlet extends HttpServlet {
 	private String getHintJSON(Snapshot snapshot, String assignment, int minGrade) {
 		String json = "";
 
-		SubtreeBuilder builder = loadBuilder(assignment, minGrade);
+		HintGenerator builder = loadBuilder(assignment, minGrade);
 		if (builder == null) {
 			return "[]";
 		}
@@ -115,18 +115,18 @@ public class HintServlet extends HttpServlet {
 				hint.from(), hint.to(), hint.data());
 	}
 
-	private SubtreeBuilder loadBuilder(String assignment, int minGrade) {
+	private HintGenerator loadBuilder(String assignment, int minGrade) {
 		if (assignment == null || "test".equals(assignment)) {
 			assignment = DEFAULT_ASSIGNMENT;
 		}
-		SubtreeBuilder builder = builders.get(assignment);
+		HintGenerator builder = builders.get(assignment);
 		if (builder == null) {
-			Kryo kryo = SubtreeBuilder.getKryo();
+			Kryo kryo = HintGenerator.getKryo();
 			InputStream stream = getServletContext().getResourceAsStream(
 					String.format("/WEB-INF/data/%s-g%03d.cached", assignment, minGrade));
 			if (stream == null) return null;
 			Input input = new Input(stream);
-			builder = kryo.readObject(input, SubtreeBuilder.class);
+			builder = kryo.readObject(input, HintGenerator.class);
 			input.close();
 
 			builders.put(assignment, builder);

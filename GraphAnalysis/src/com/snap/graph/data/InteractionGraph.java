@@ -4,7 +4,7 @@ import java.io.PrintStream;
 import java.util.HashSet;
 import java.util.Set;
 
-public class OutGraph<T> extends Graph<T, Void> {
+public class InteractionGraph<T> extends Graph<T, Void> {
 
 	public void addEdge(T from , T to) {
 		addEdge(from, to, null);

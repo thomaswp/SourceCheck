@@ -10,7 +10,7 @@ import java.util.Map;
 import com.snap.data.Snapshot;
 import com.snap.graph.data.Node;
 import com.snap.graph.data.Node.Action;
-import com.snap.graph.subtree.SnapSubtree;
+import com.snap.graph.subtree.SnapHintBuilder;
 import com.snap.parser.Assignment;
 import com.snap.parser.Grade;
 
@@ -28,11 +28,11 @@ import de.unibi.citec.fit.objectgraphs.api.matlab.print.PlainTextPrintModule;
 public class FITExport {
 	
 	public static void main(String[] args) {
-		SnapSubtree subtree = new SnapSubtree(Assignment.Fall2015.GuessingGame1);
+		SnapHintBuilder subtree = new SnapHintBuilder(Assignment.Fall2015.GuessingGame1);
 		outputStudentsFOG(subtree);
 	}
 	
-	private static void outputStudentsFOG(SnapSubtree subtree) {
+	private static void outputStudentsFOG(SnapHintBuilder subtree) {
 		int totalNodes = 0;
 		String baseDir = subtree.assignment.dataDir + "/" + subtree.assignment + "/chf-fog/";
 		new File(baseDir).mkdirs();
@@ -85,7 +85,7 @@ public class FITExport {
 	}
 
 	@SuppressWarnings("unused")
-	private static void outputStudents(SnapSubtree subtree) {
+	private static void outputStudents(SnapHintBuilder subtree) {
 
 		Map<String,List<Node>> nodeMap = subtree.nodeMap();
 		final HashSet<String> labels = new HashSet<String>();

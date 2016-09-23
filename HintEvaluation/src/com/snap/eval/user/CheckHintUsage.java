@@ -31,107 +31,109 @@ import com.snap.graph.data.Node;
 import com.snap.graph.data.Node.Predicate;
 import com.snap.graph.data.Tuple;
 import com.snap.parser.Assignment;
+import com.snap.parser.AssignmentAttempt;
 import com.snap.parser.AttemptAction;
 import com.snap.parser.Grade;
-import com.snap.parser.AssignmentAttempt;
 import com.snap.parser.Store.Mode;
 
 import distance.RTED_InfoTree_Opt;
 import util.LblTree;
 
 public class CheckHintUsage {
-	
+
 	// Actions of interest
 	private final static String SHOW_SCRIPT_HINT = "SnapDisplay.showScriptHint";
 	private final static String SHOW_BLOCK_HINT = "SnapDisplay.showBlockHint";
 	private final static String SHOW_STRUCTURE_HINT = "SnapDisplay.showStructureHint";
 	private final static String HINT_DIALOG_DONE = "HintDialogBox.done";
 
+	@SuppressWarnings("unused")
 	private final static String PROCESS_HINTS = "HintProvider.processHints";
-	
+
 	private final static String GREEN_FLAG_RUN = "IDE.greenFlag";
 	private final static String BLOCK_RUN = "Block.clickRun";
-	
-	
+
+
 	private final static List<String> SHOW_HINT_MESSAGES = Arrays.asList(new String[] {
 			SHOW_SCRIPT_HINT, SHOW_BLOCK_HINT, SHOW_STRUCTURE_HINT
 	});
-	
+
 	private static final long MIN_DURATON = 5 * 60 * 1000;
-	
+
 	private static boolean isValidSubmission(AssignmentAttempt path) {
 		if (!path.exported) return false;
-		
-		// Also ignore any that are shorted than then minimum duration (5m) 
-		long duration = path.rows.getLast().timestamp.getTime() - 
+
+		// Also ignore any that are shorted than then minimum duration (5m)
+		long duration = path.rows.getLast().timestamp.getTime() -
 				path.rows.getFirst().timestamp.getTime();
 		if (duration < MIN_DURATON) return false;
-		
+
 		return true;
 	}
-	
+
 	public static void main(String[] args) throws IOException {
-		
+
 		Assignment assignment = Assignment.Spring2016.GuessingGame1;
-		
+
 		// Get the name-path pairs of all projects we logged
 		Map<String, AssignmentAttempt> guessingGame = assignment.load(Mode.Use, false);
-		
+
 		int nStudents = 0;
-		
+
 		HashMap<String, LblTree> hintCodeTrees = new LinkedHashMap<>();
-		
+
 		Spreadsheet projects = new Spreadsheet();
 		Spreadsheet hints = new Spreadsheet();
 		Spreadsheet objectives = new Spreadsheet();
-		
+
 		// Iterate over all submissions
 		for (String submission : guessingGame.keySet()) {
 			AssignmentAttempt path = guessingGame.get(submission);
-			
+
 			// Ignore any that weren't exported (and thus couldn't have been submitted)
 			if (!isValidSubmission(path)) continue;
-						
+
 			int nHints = 0, nUnchangedHints = 0, nDuplicateHints = 0, nThumbsUp = 0, nThumbsDown = 0, nHintsFollowed = 0, nHintsCloser = 0;
 			int nObjectiveHints = 0, nObjectiveHintsFollowed = 0;
 			int nTestScriptHints = 0, nTestScriptHintsFollowed = 0;
 			int nBlockRuns = 0, nFlagRuns = 0;
-						
+
 			List<LblTree> studentTrees = new LinkedList<LblTree>();
-						
+
+			@SuppressWarnings("unused")
 			Tuple<Node,Node> lastHint = null;
-			
+
 			Node lastHintNode = null;
 			String lastHintData = null;
 			Snapshot code = null;
-			
+
 			int edits = 0;
 			for (int i = 0; i < path.size(); i++) {
 				if (path.rows.get(i).snapshot != null) edits++;
 			}
 			long startTime = path.rows.getFirst().timestamp.getTime();
 			long endTime = path.rows.getLast().timestamp.getTime();
-			
+
 			int edit = 0;
-			
+
 			Set<String> completedObjs = new HashSet<>();
 			double lastCompleted = 0;
-			
+
 			// Iterate through each row of the solution path
 			for (int i = 0; i < path.size(); i++) {
 				AttemptAction row = path.rows.get(i);
-				
+
 				// If this row had an update to the code, update it
 				if (row.snapshot != null) {
 					code = row.snapshot;
 					edit++;
 				}
-				
+
 				// Get the student's current code and turn it into a tree
 				Node node = SimpleNodeBuilder.toTree(code, true);
-				
+
 				double timePerc = (double)(row.timestamp.getTime() - startTime) / (endTime - startTime);
-				
+
 				HashMap<String, Boolean> grade = AutoGrader.grade(node);
 				for (String obj : grade.keySet()) {
 					if (grade.get(obj) && completedObjs.add(obj)) {
@@ -140,27 +142,27 @@ public class CheckHintUsage {
 						objectives.put("timePerc", timePerc);
 						objectives.put("obj", obj);
 						objectives.put("duration", timePerc - lastCompleted);
-						
+
 						lastCompleted = timePerc;
 					}
 				}
-				
+
 				// Check if this action was showing a hint
 				String action = row.action;
 				if (SHOW_HINT_MESSAGES.contains(action)) {
 					nHints++;
-					
+
 					// Get the data from this event
 					JSONObject data = new JSONObject(row.data);
-					
+
 
 //					System.out.println("S" + nStudents + "H" + studentTrees.size());
 //					System.out.println(code.toCode());
 //					System.out.println(node.prettyPrint());
-					
+
 					LblTree tree = Prune.removeSmallerScripts(node).toTree();
 					studentTrees.add(tree);
-					
+
 					// Find the parent node that this hint affects
 					Node parent = findParent(node, data);
 					// It shouldn't be null (and isn't for this dataset)
@@ -170,7 +172,7 @@ public class CheckHintUsage {
 						findParent(node, data);
 						throw new RuntimeException("Parent shouldn't be null :/");
 					}
-					
+
 					// Read the list of nodes that the hint is telling to use for the parent's new children
 					JSONArray toArray = data.getJSONArray("to");
 					String[] to = new String[toArray.length()];
@@ -180,12 +182,12 @@ public class CheckHintUsage {
 					for (int j = 0; j < from.length; j++) from[j] = fromArray.getString(j);
 					// And apply this to get a new parent node
 					Node hintOutcome = VectorHint.applyHint(parent, to);
-					
+
 					if (contains(from, "doIfElse") && !contains(to, "doIfElse") && !contains(from, "doUntil")) {// && contains(to, "doUntil")) {
 						System.out.println(submission);
 						System.out.println("  "  + parent + "\n->" + hintOutcome);
 					}
-					
+
 					boolean delete = false;
 					for (String f : from) {
 						boolean kept = false;
@@ -201,11 +203,11 @@ public class CheckHintUsage {
 						}
 					}
 					int nodeChange = hintOutcome.size() - parent.size();
-					
+
 					// Grade the node after applying the hint
 					HashMap<String, Boolean> hintGrade = AutoGrader.grade(hintOutcome.root());
-					
-					String objective = null; 
+
+					String objective = null;
 					// Check if applying a hint will complete an objective
 					for (String key : grade.keySet()) {
 						if (!grade.get(key) && hintGrade.get(key)) {
@@ -215,24 +217,24 @@ public class CheckHintUsage {
 					}
 					// record the number of hints requested that can complete an objective
 					if (objective != null) nObjectiveHints++;
-					
+
 					// get the corresponding grader for the objective completed by hint
 					Grader objectiveGrader = null;
-					for (Grader g : AutoGrader.graders) 
-						if (g.name().equals(objective)) 
+					for (Grader g : AutoGrader.graders)
+						if (g.name().equals(objective))
 							objectiveGrader = g;
-					
+
 					// Calculate original distance between student's code with the hint
 					int originalHintDistance = Alignment.alignCost(parent.getChildArray(), to);
-					
+
 					lastHint = new Tuple<Node, Node>(parent, hintOutcome);
 					// For debugging these hints
 //					System.out.println("  " + parent + "\n->" + hintOutcome + "\n");
-										
+
 					boolean gotCloser = false;
 					boolean gotPartial = false;
 					boolean gotObjective = false;
-					
+
 					// Look ahead for hint application in the student's code
 					int steps = 0;
 					for (int j = i+1; j < path.size(); j++) {
@@ -243,10 +245,10 @@ public class CheckHintUsage {
 						if (nextCode == null)
 							continue;
 						steps++;
-						
+
 						// If we've looked more than n (5) steps in the future, give up
 						if (steps > 5) break;
-						
+
 						// Find the same parent node and see if it matches the hint state
 						Node nextNode = SimpleNodeBuilder.toTree(nextCode, true);
 						Node nextParent = findParent(nextNode, data);
@@ -254,21 +256,21 @@ public class CheckHintUsage {
 
 						int newDistance = Alignment.alignCost(nextParent.getChildArray(), to);
 						if (newDistance < originalHintDistance) gotCloser = true;
-						
+
 						if (Arrays.equals(nextParent.getChildArray(), to)) {
 							gotPartial = true;
 						}
-						
+
 						if (objectiveGrader != null && objectiveGrader.pass(nextNode)) {
 							gotObjective = true;
 						}
 					}
-					if (gotCloser) nHintsCloser++; 
+					if (gotCloser) nHintsCloser++;
 					if (gotPartial) {
 						nHintsFollowed++;
 					}
 					if (gotObjective) nObjectiveHintsFollowed++;
-					
+
 					boolean duplicate = false;
 					boolean unchanged;
 					if (unchanged = node.equals(lastHintNode)) {
@@ -279,7 +281,7 @@ public class CheckHintUsage {
 					}
 					lastHintNode = node;
 					lastHintData = row.data;
-					
+
 					hints.newRow();
 					hints.put("id", submission);
 					hints.put("type", action.replace("SnapDisplay.show", "").replace("Hint", ""));
@@ -294,7 +296,7 @@ public class CheckHintUsage {
 					hints.put("duplicate", duplicate ? 1 : 0);
 
 					long time = row.timestamp.getTime();
-					
+
 					long dismissTime = 0;
 					boolean done = false;
 					for (int j = i + 1; j < path.size(); j++) {
@@ -308,13 +310,13 @@ public class CheckHintUsage {
 					int duration = (int)(dismissTime - time) / 1000;
 					hints.put("duration", duration);
 					hints.put("done", done ? 1 : 0);
-					
+
 
 					long nextActionTime = time;
 					if (i < path.size() - 1) nextActionTime = path.rows.get(i + 1).timestamp.getTime();
 					int pause = (int)(nextActionTime - time) / 1000;
 					hints.put("pause", pause);
-					
+
 					Node n = parent;
 					while (n.parent != null && !n.parent.hasType("sprite", "customBlock")) {
 						n = n.parent;
@@ -334,13 +336,13 @@ public class CheckHintUsage {
 							nTestScriptHints++;
 							if (gotPartial) nTestScriptHintsFollowed++;
 						}
-						
+
 					}
 					hints.put("scriptSize", scriptSize);
 					hints.put("testScript", testScript ? 1 : 0);
 				}
-				
-				
+
+
 				// Check if this action was dismissing a hint
 				if (HINT_DIALOG_DONE.equals(action)) {
 					// TODO: inspect good and bad hints
@@ -354,11 +356,11 @@ public class CheckHintUsage {
 //						}
 					}
 				}
-				
+
 				if (GREEN_FLAG_RUN.equals(action)) nFlagRuns++;
 				if (BLOCK_RUN.equals(action)) nBlockRuns++;
 			}
-			
+
 			projects.newRow();
 			projects.put("id", submission);
 			projects.put("hints", nHints);
@@ -374,7 +376,7 @@ public class CheckHintUsage {
 			projects.put("tsHintsFollowed", nTestScriptHintsFollowed);
 			projects.put("flagRuns", nFlagRuns);
 			projects.put("blockRuns", nBlockRuns);
-			
+
 			Grade grade = path.grade;
 			if (grade != null) {
 				projects.put("grade", grade.average());
@@ -382,19 +384,19 @@ public class CheckHintUsage {
 					projects.put(entry.getKey(), entry.getValue() ? 1 : 0);
 				}
 			}
-			
-			
+
+
 			if (nHints <= 30) {
 				for (int j = 0; j < studentTrees.size(); j++) {
 					hintCodeTrees.put("S" + nStudents + "H" + j, studentTrees.get(j));
 				}
 			}
 		}
-		
+
 		projects.write(assignment.dataDir + "/analysis/" + assignment.name + "/projs.csv");
 		hints.write(assignment.dataDir + "/analysis/" + assignment.name + "/hints.csv");
 		objectives.write(assignment.dataDir + "/analysis/" + assignment.name + "/objs.csv");
-		
+
 		// Print our results
 //		System.out.println("Submissions: " + nStudents);
 //		System.out.println("Total Hints Selected: " + nHints);
@@ -411,25 +413,25 @@ public class CheckHintUsage {
 //		Collections.sort(studentHintCounts);
 //		Collections.reverse(studentHintCounts);
 //		System.out.println("Students Hint count: " + studentHintCounts);
-		
-		
+
+
 		// output distance between snapshots and final submission
 //		PrintStream psSnapshot = new PrintStream(Assignment.Spring2016.GuessingGame1.dataDir + "/snapshot.csv");
 //		PrintStream psHint = new PrintStream(Assignment.Spring2016.GuessingGame1.dataDir + "/hint.csv");
 //		outputDistance(psSnapshot,psHint,guessingGame);
 //		psSnapshot.close();
 //		psHint.close();
-		
+
 //		PrintStream ps = new PrintStream(Assignment.Spring2016.GuessingGame1.dataDir + "/hintsDis.csv");
 //		outputMatrix(ps, hintCodeTrees);
 //		ps.close();
 	}
-	
+
 	private static <T> boolean contains(T[] array, T item) {
 		for (T i : array) if (i.equals(item)) return true;
 		return false;
 	}
-	
+
 	@SuppressWarnings("unused")
 	private static void outputDistance(PrintStream psSnapshot, PrintStream psHint, HashMap<String, AssignmentAttempt> submissions) throws IOException{
 		// create column names
@@ -437,7 +439,7 @@ public class CheckHintUsage {
 		headerSnapshot.addAll(Arrays.asList("id","time","distance"));
 		List<String> headerHint = new LinkedList<String>();
 		headerHint.addAll(Arrays.asList("id","time","distance","isTaken"));
-		
+
 		// create printer
 		CSVPrinter prtSnapshot = new CSVPrinter(psSnapshot, CSVFormat.DEFAULT.withHeader(headerSnapshot.toArray(new String[headerSnapshot.size()])));
 		CSVPrinter prtHint = new CSVPrinter(psHint, CSVFormat.DEFAULT.withHeader(headerHint.toArray(new String[headerHint.size()])));
@@ -446,11 +448,11 @@ public class CheckHintUsage {
 			AssignmentAttempt path = submissions.get(key);
 			// if not exported, continue
 			if (!isValidSubmission(path)) continue;
-			
+
 			// for each submission, get initial time, final submission
 			Node finalSubmission = null;
 			Date initTime = null;
-			
+
 			// find final submission
 			for (int j = path.size() - 1; j >= 0; j--) {
 				Snapshot snapshot = path.rows.get(j).snapshot;
@@ -459,13 +461,13 @@ public class CheckHintUsage {
 					break;
 				}
 			}
-			
+
 			LblTree lblFinalSubmission = Prune.removeSmallerScripts(finalSubmission).toTree();
-			
+
 			// get timestamp for the first row as initial time
 			initTime = path.rows.get(0).timestamp;
-			
-			
+
+
 			// loop through rows
 			Snapshot code = null;
 			Node snapshotNode = null;
@@ -473,7 +475,7 @@ public class CheckHintUsage {
 			RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(1, 1, 1);
 			for (int i = 0; i < path.size(); i++) {
 				AttemptAction row = path.rows.get(i);
-				
+
 				// check if snapshot is changed.
 				boolean isSnapshotChanged = false;
 				if (row.snapshot != null) {
@@ -485,46 +487,46 @@ public class CheckHintUsage {
 					}
 				}
 				if (row.action.equals("Block.grabbed")) isSnapshotChanged = false;
-				
-				
+
+
 				// if snapshot is changed, calculate distance, record distance, time difference, etc.
 				if (isSnapshotChanged) {
 					code = row.snapshot;
 					snapshotNode = SimpleNodeBuilder.toTree(code, true);
-					
+
 					LblTree lblTree = Prune.removeSmallerScripts(snapshotNode).toTree();
 					dis = opt.nonNormalizedTreeDist(lblFinalSubmission, lblTree);
-					
+
 					Date snapshotTime = row.timestamp;
 					long diffTime = snapshotTime.getTime() - initTime.getTime();
 					double diffTimeSec = diffTime / 1000.0;
 					double elTime = diffTimeSec;
-					
+
 					Object[] rowSnapshot = new Object[3];
 					rowSnapshot[0] = key;
 					rowSnapshot[1] = elTime;
 					rowSnapshot[2] = dis;
-					
+
 					// System.out.println("key: " + key + "; dis: " + dis + "; elTime: " + elTime + ";");
 					// print record
 					prtSnapshot.printRecord(rowSnapshot);
 				}
-				
+
 				// if this is a hint, record time difference, distance (is Taken)
 				if (SHOW_HINT_MESSAGES.contains(row.action)) {
 					Date hintTime = row.timestamp;
 					long diffTime = hintTime.getTime() - initTime.getTime();
 					double diffTimeSec = diffTime / 1000.0;
 					double elTime = diffTimeSec;
-					
+
 					Object[] rowHint = new Object[4];
 					rowHint[0] = key;
 					rowHint[1] = elTime;
 					rowHint[2] = dis;
 					rowHint[3] = "null";
-					
+
 					//System.out.println("key: " + key + "; dis: " + dis + "; elTime: " + elTime + ";");
-					
+
 					prtHint.printRecord(rowHint);
 				}
 			}
@@ -533,71 +535,73 @@ public class CheckHintUsage {
 		prtSnapshot.close();
 		prtHint.close();
 	}
-	
+
 	private static class Spreadsheet {
 		private List<Map<String, Object>> rows = new LinkedList<>();
 		private Map<String,Object> row;
-		
+
 		public void newRow() {
 			row = new LinkedHashMap<>();
 			rows.add(row);
 		}
-		
+
 		public void put(String key, Object value) {
 			row.put(key, value);
 		}
-		
+
 		public void write(String path) throws FileNotFoundException, IOException {
 			if (rows.size() == 0) return;
 			String[] header = row.keySet().toArray(new String[row.keySet().size()]);
 			File file = new File(path);
 			file.getParentFile().mkdirs();
 			CSVPrinter printer = new CSVPrinter(new PrintStream(file), CSVFormat.DEFAULT.withHeader(header));
-			
+
 			for (Map<String,Object> row : rows) {
 				printer.printRecord(row.values());
 			}
-			
+
 			printer.close();
 		}
 	}
 
+	@SuppressWarnings("unused")
 	private static void outputGrades(PrintStream ps, HashMap<String, AssignmentAttempt> submissions, List<Integer> studentHintCounts,
 			List<Integer> studentFollowedCounts) throws IOException {
-		List<String> header = new LinkedList<>(); 
+		List<String> header = new LinkedList<>();
 		header.addAll(Arrays.asList("id", "requested", "followed", "grade"));
 		for (Grader g : AutoGrader.graders)	header.add(g.name());
-		
+
 		CSVPrinter printer = new CSVPrinter(ps, CSVFormat.DEFAULT.withHeader(header.toArray(new String[header.size()])));
 		int i = 0;
 		for (String key : submissions.keySet()) {
 			AssignmentAttempt path = submissions.get(key);
 			if (!isValidSubmission(path)) continue;
-			
+
 			HashMap<String, Boolean> grade = path.grade.tests;
 			double numberGrade = path.grade.average();
 //			if (numberGrade < 0.5f) {
 //				System.out.println(key + ": " + grade);
 //				System.out.println(((Snapshot)code.tag).toCode());
 //			}
-			
+
 			Object[] row = new Object[grade.size() + 4];
 			int col = 0;
-			row[col++] = key; row[col++] = studentHintCounts.get(i); 
+			row[col++] = key; row[col++] = studentHintCounts.get(i);
 			row[col++] = studentFollowedCounts.get(i); row[col++] = numberGrade;
-			
+
 			for (Grader g : AutoGrader.graders) {
 				row[col++] = grade.get(g.name()) ? 1 : 0;
 			}
 			printer.printRecord(row);
-			
+
 			i++;
 		}
-		
+
 		printer.close();
-		
+
 	}
 
+	@SuppressWarnings("unused")
 	private static void outputMatrix(PrintStream out, HashMap<String, LblTree> trees) {
 		String[] labels = trees.keySet().toArray(new String[trees.size()]);
 		for (String label : labels) {
@@ -622,7 +626,7 @@ public class CheckHintUsage {
 		if (!obj.has(key) || obj.isNull(key)) return null;
 		return obj.get(key);
 	}
-	
+
 	/**
 	 * Finds the Node that was the parent for this hint, i.e. the hint
 	 * is telling us to change this node's children.
@@ -634,16 +638,16 @@ public class CheckHintUsage {
 		String[] ids = new String[] {
 				"parentID", "rootID", "rootType"
 		};
-		
+
 		Node parent = null;
 		for (String id : ids) {
 			Object parentID = getValue(data, id);
 			if (parentID != null) {
 				parent = root.searchForNodeWithID(parentID);
 				break;
-			}	
+			}
 		}
-		
+
 		if (parent != null && data.has("index")) {
 			if (!data.isNull("parentID")) {
 				int index = data.getInt("index");
@@ -652,11 +656,11 @@ public class CheckHintUsage {
 				parent = parent.parent;
 			}
 		}
-		
+
 		if (parent != null && parent.children.size() == 1 && parent.children.get(0).hasType("list")) {
 			return parent.children.get(0);
 		}
-		
+
 		return parent;
 	}
 }

@@ -8,8 +8,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-import com.snap.graph.subtree.SnapSubtree;
-import com.snap.graph.subtree.SubtreeBuilder;
+import com.snap.graph.subtree.SnapHintBuilder;
+import com.snap.graph.subtree.HintGenerator;
 import com.snap.parser.Assignment;
 import com.snap.parser.Store;
 
@@ -24,15 +24,15 @@ public class RunTests {
 
 		List<String> unloaded = new ArrayList<>();
 		List<String> unexpectedSuccesses = new ArrayList<>();
-		HashMap<UnitTest, SubtreeBuilder> failedTests = new LinkedHashMap<>();
+		HashMap<UnitTest, HintGenerator> failedTests = new LinkedHashMap<>();
 		int passed = 0, expectedFailures = 0;
 		for (Assignment assignment : assignments) {
 			File testDir = new File(assignment.unitTestDir());
 			if (!testDir.exists()) continue;
 			out.println("Testing assignment: " + assignment.name);
 
-			SubtreeBuilder builder = new SnapSubtree(assignment)
-					.buildGraph(Store.Mode.Use, 1);
+			HintGenerator builder = new SnapHintBuilder(assignment)
+					.buildGenerator(Store.Mode.Use, 1);
 
 			for (File folder : new File(assignment.unitTestDir()).listFiles()) {
 				String testID = folder.getName();

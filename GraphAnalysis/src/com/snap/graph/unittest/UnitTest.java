@@ -12,7 +12,7 @@ import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.Hint;
 import com.snap.graph.data.HintFactoryMap.VectorHint;
 import com.snap.graph.data.Node;
-import com.snap.graph.subtree.SubtreeBuilder;
+import com.snap.graph.subtree.HintGenerator;
 import com.snap.parser.Assignment;
 
 public class UnitTest {
@@ -27,7 +27,7 @@ public class UnitTest {
 		this.hintJSON = hintJSON;
 	}
 
-	public boolean run(SubtreeBuilder builder, PrintStream out) {
+	public boolean run(HintGenerator builder, PrintStream out) {
 		TestHint correctHint = null;
 		try {
 			correctHint = new TestHint(hintJSON);
@@ -57,7 +57,7 @@ public class UnitTest {
 		return false;
 	}
 
-	public List<Hint> getHints(SubtreeBuilder builder, PrintStream out) {
+	public List<Hint> getHints(HintGenerator builder, PrintStream out) {
 		Snapshot snapshot = Snapshot.parse("test_" + id, xml);
 		if (snapshot == null) {
 			out.println("Cannot parse snapshot.");

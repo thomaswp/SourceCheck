@@ -22,7 +22,7 @@ import com.snap.eval.util.Prune;
 import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.Node;
 import com.snap.graph.data.Tuple;
-import com.snap.graph.subtree.SnapSubtree;
+import com.snap.graph.subtree.SnapHintBuilder;
 import com.snap.parser.Assignment;
 
 import distance.RTED_InfoTree_Opt;
@@ -40,7 +40,7 @@ public class CompleteEval {
 	
 	private static void eval(Assignment assignment) throws IOException {
 
-		SnapSubtree subtree = new SnapSubtree(assignment);
+		SnapHintBuilder subtree = new SnapHintBuilder(assignment);
 
 		Snapshot solution = assignment.loadSolution();
 		Node solutionNode = SimpleNodeBuilder.toTree(solution, true);
@@ -72,8 +72,8 @@ public class CompleteEval {
 			int total = 0;
 
 			HintPolicy[] policies = new HintPolicy[] {
-					new HintFactoryPolicy(subtree.buildGraph(student, 0)),
-					new HintFactoryPolicy(subtree.buildGraph(student, 1)),
+					new HintFactoryPolicy(subtree.buildGenerator(student, 0)),
+					new HintFactoryPolicy(subtree.buildGenerator(student, 1)),
 					solutionPolicy,
 					new DirectEditPolicy(nodes.get(nodes.size() - 1)),
 			};
@@ -114,7 +114,7 @@ public class CompleteEval {
 	@SuppressWarnings("unused")
 	private static void test(Assignment assignment) throws IOException {
 
-		SnapSubtree subtree = new SnapSubtree(assignment);
+		SnapHintBuilder subtree = new SnapHintBuilder(assignment);
 
 		Snapshot solution = assignment.loadSolution();
 		Node solutionNode = SimpleNodeBuilder.toTree(solution, true);
@@ -136,8 +136,8 @@ public class CompleteEval {
 			List<Node> nodes = nodeMap.get(student);
 
 			HintPolicy[] policies = new HintPolicy[] {
-					new HintFactoryPolicy(subtree.buildGraph(student, 0)),
-					new HintFactoryPolicy(subtree.buildGraph(student, 1)),
+					new HintFactoryPolicy(subtree.buildGenerator(student, 0)),
+					new HintFactoryPolicy(subtree.buildGenerator(student, 1)),
 					solutionPolicy,
 					new DirectEditPolicy(nodes.get(nodes.size() - 1)),
 			};

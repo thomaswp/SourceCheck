@@ -22,8 +22,8 @@ import com.snap.eval.util.PrintUpdater;
 import com.snap.eval.util.Prune;
 import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.Node;
-import com.snap.graph.subtree.SnapSubtree;
-import com.snap.graph.subtree.SubtreeBuilder;
+import com.snap.graph.subtree.SnapHintBuilder;
+import com.snap.graph.subtree.HintGenerator;
 import com.snap.parser.Assignment;
 import com.snap.parser.Grade;
 
@@ -50,9 +50,9 @@ public class PredictionEval {
 				
 		eval(assignment, "prediction", new ScoreConstructor() {
 			@Override
-			public Score[] construct(String student, List<Node> nodes, SnapSubtree subtree) {
-				SubtreeBuilder builder0 = subtree.buildGraph(student, 0);
-				SubtreeBuilder builder1 = subtree.buildGraph(student, 1);
+			public Score[] construct(String student, List<Node> nodes, SnapHintBuilder subtree) {
+				HintGenerator builder0 = subtree.buildGenerator(student, 0);
+				HintGenerator builder1 = subtree.buildGenerator(student, 1);
 				return new Score[] {
 						new BinaryScore("Hint All", new HintFactoryPolicy(builder0)),
 						new BinaryScore("Hint Exemplar", new HintFactoryPolicy(builder1)),
@@ -75,9 +75,9 @@ public class PredictionEval {
 				
 		eval(assignment, "distance", new ScoreConstructor() {
 			@Override
-			public Score[] construct(String student, List<Node> nodes, SnapSubtree subtree) {
-				SubtreeBuilder builder0 = subtree.buildGraph(student, 0);
-				SubtreeBuilder builder1 = subtree.buildGraph(student, 1);
+			public Score[] construct(String student, List<Node> nodes, SnapHintBuilder subtree) {
+				HintGenerator builder0 = subtree.buildGenerator(student, 0);
+				HintGenerator builder1 = subtree.buildGenerator(student, 1);
 				Node studentLast = nodes.get(nodes.size() - 1);
 				return new Score[] {
 						new DistanceScore("Hint All", new HintFactoryPolicy(builder0)),
@@ -97,7 +97,7 @@ public class PredictionEval {
 	
 	private static void eval(Assignment assignment, String test, ScoreConstructor constructor) throws IOException {
 		
-		SnapSubtree subtree = new SnapSubtree(assignment);
+		SnapHintBuilder subtree = new SnapHintBuilder(assignment);
 		
 		File outFile = new File(assignment.analysisDir() + "/" + test + (PRUNE ? "-p" : "") + ".csv");
 		outFile.getParentFile().mkdirs();
@@ -160,7 +160,7 @@ public class PredictionEval {
 	
 	public interface ScoreConstructor {
 		String[] headers();
-		Score[] construct(String student, List<Node> nodes, SnapSubtree subtree);
+		Score[] construct(String student, List<Node> nodes, SnapHintBuilder subtree);
 	}
 	
 	protected static class DistanceScore extends Score {

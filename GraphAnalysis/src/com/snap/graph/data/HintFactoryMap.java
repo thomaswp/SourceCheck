@@ -18,6 +18,9 @@ import com.snap.graph.data.Node.Predicate;
 
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
+/**
+ * Class for handling the core logic of the CTD algorithm.
+ */
 public class HintFactoryMap implements HintMap {
 
 	// All "magic" constants used in the algorithm
@@ -77,6 +80,10 @@ public class HintFactoryMap implements HintMap {
 	public final HashMap<Node, VectorGraph> map =
 			new HashMap<Node, VectorGraph>();
 
+	/**
+	 * Gets the backbone for the given Node, which contains only the nodes in the root path from
+	 * this given node to its root.
+	 */
 	public static Node toBackbone(Node node) {
 		return toBackbone(node, false);
 	}

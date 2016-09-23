@@ -13,7 +13,7 @@ import java.util.TreeMap;
 import com.snap.graph.Alignment;
 import com.snap.util.CountMap;
 
-public class VectorGraph extends OutGraph<VectorState> {
+public class VectorGraph extends InteractionGraph<VectorState> {
 
 	private final HashMap<VectorState, List<IndexedVectorState>> goalContextMap =
 			new HashMap<VectorState, List<IndexedVectorState>>();

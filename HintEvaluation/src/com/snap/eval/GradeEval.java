@@ -25,8 +25,8 @@ import com.snap.eval.util.Prune;
 import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.Node;
 import com.snap.graph.data.Tuple;
-import com.snap.graph.subtree.SnapSubtree;
-import com.snap.graph.subtree.SubtreeBuilder;
+import com.snap.graph.subtree.SnapHintBuilder;
+import com.snap.graph.subtree.HintGenerator;
 import com.snap.parser.Assignment;
 
 public class GradeEval {
@@ -46,9 +46,9 @@ public class GradeEval {
 			
 		eval(assignment, "chain", new ScoreConstructor() {
 			@Override
-			public Score[] construct(String student, List<Node> nodes, SnapSubtree subtree) {
-				SubtreeBuilder builder0 = subtree.buildGraph(student, 0);
-				SubtreeBuilder builder1 = subtree.buildGraph(student, 1);
+			public Score[] construct(String student, List<Node> nodes, SnapHintBuilder subtree) {
+				HintGenerator builder0 = subtree.buildGenerator(student, 0);
+				HintGenerator builder1 = subtree.buildGenerator(student, 1);
 				return new Score[] {
 						new Score("All 2", new HintFactoryPolicy(builder0, 2)),
 						new Score("Exemplar 2", new HintFactoryPolicy(builder1, 2)),
@@ -68,9 +68,9 @@ public class GradeEval {
 				
 		eval(assignment, "grade", new ScoreConstructor() {
 			@Override
-			public Score[] construct(String student, List<Node> nodes, SnapSubtree subtree) {
-				SubtreeBuilder builder0 = subtree.buildGraph(student, 0);
-				SubtreeBuilder builder1 = subtree.buildGraph(student, 1);
+			public Score[] construct(String student, List<Node> nodes, SnapHintBuilder subtree) {
+				HintGenerator builder0 = subtree.buildGenerator(student, 0);
+				HintGenerator builder1 = subtree.buildGenerator(student, 1);
 				Node studentLast = nodes.get(nodes.size() - 1);
 				return new Score[] {
 						new Score("Hint All", new HintFactoryPolicy(builder0)),
@@ -86,7 +86,7 @@ public class GradeEval {
 	@SuppressWarnings("unused")
 	private static void pruneTest(Assignment assignment) throws IOException {
 		
-		SnapSubtree subtree = new SnapSubtree(assignment);
+		SnapHintBuilder subtree = new SnapHintBuilder(assignment);
 		
 		int max = 1;
 		
@@ -144,7 +144,7 @@ public class GradeEval {
 	
 	private static void eval(Assignment assignment, String test, ScoreConstructor constructor) throws IOException {
 		
-		SnapSubtree subtree = new SnapSubtree(assignment);
+		SnapHintBuilder subtree = new SnapHintBuilder(assignment);
 		
 		File outFile = new File(assignment.analysisDir() + "/" + test + (PRUNE ? "-p" : "") + ".csv");
 		outFile.getParentFile().mkdirs();
@@ -205,7 +205,7 @@ public class GradeEval {
 	}
 	
 	public interface ScoreConstructor {
-		Score[] construct(String student, List<Node> nodes, SnapSubtree subtree);
+		Score[] construct(String student, List<Node> nodes, SnapHintBuilder subtree);
 	}
 	
 	protected static class Score {

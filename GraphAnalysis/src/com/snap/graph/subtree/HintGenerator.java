@@ -1,5 +1,9 @@
 package com.snap.graph.subtree;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -23,34 +27,141 @@ import com.snap.graph.data.VectorState;
 import distance.RTED_InfoTree_Opt;
 import util.LblTree;
 
-public class SubtreeBuilder {
+/**
+ * A data-structure that stores all information needed to generate hints for a given assignment.
+ */
+public class HintGenerator {
 
 	public final HintMap hintMap;
 	public final double minGrade;
 
 	@SuppressWarnings("unused")
-	private SubtreeBuilder() {
+	private HintGenerator() {
 		this(null, 0);
 	}
 
-	public SubtreeBuilder(HintMap hintMap, double minGrade) {
+	public HintGenerator(HintMap hintMap, double minGrade) {
 		this.hintMap = hintMap;
 		this.minGrade = minGrade;
 	}
 
+	/**
+	 * This should be called to clear the generator's data before adding new data.
+	 */
 	public void startBuilding() {
 		hintMap.clear();
 	}
 
-	public HintMap addStudent(List<Node> path, boolean useIDs) {
+	/**
+	 * Adds an attempt map (returned by {@link HintGenerator#addAttempt(List, boolean)} to this
+	 * generator. This can be useful if you want to cache the output of addAttempt and reconstruct
+	 * new generators from a subset of your data.
+	 */
+	public void addAttemptMap(HintMap hintMap) {
+		synchronized (this.hintMap) {
+			this.hintMap.addMap(hintMap);
+		}
+	}
+
+	/**
+	 * Call this methods when you are finished adding data to the generator so that it can perform
+	 * finalization.
+	 */
+	public void finishedAdding() {
+		hintMap.finish();
+	}
+
+	/**
+	 * Gets the first hint generated for the given (root) Node, representing a student's current
+	 * snapshot.
+	 * @param node
+	 * @return
+	 */
+	public synchronized Hint getFirstHint(Node node) {
+		LinkedList<Hint> hints = new LinkedList<Hint>();
+		getHints(node, hints, 1, 1);
+		return hints.size() > 0 ? hints.getFirst() : null;
+	}
+
+	/**
+	 * Gets all hints generated for the given (root) Node, representing a student's current
+	 * snapshot.
+	 * @param parent
+	 * @return
+	 */
+	public synchronized List<Hint> getHints(Node parent) {
+		return getHints(parent, 1);
+	}
+
+	/**
+	 * Gets all hints generated for the given (root) Node, representing a student's current
+	 * snapshot. "Chains" the hint the given number of times, meaning it will apply multuple
+	 * hints to get closer to the goal state.
+	 * @param parent
+	 * @param chain
+	 * @return
+	 */
+	public synchronized List<Hint> getHints(Node parent, int chain) {
+		LinkedList<Hint> hints = new LinkedList<Hint>();
+		getHints(parent, hints, chain, Integer.MAX_VALUE);
+		hintMap.postProcess(hints);
+		return hints;
+	}
+
+
+	/**
+	 * Saves graphs and other debugging files to the given directory for this HintGenerator.
+	 * @param dir The root directory in which to save the files.
+	 * @param minVertices The minimum number of vertices a graph must have to be saved.
+	 * @throws FileNotFoundException
+	 */
+	public void saveGraphs(String dir, int minVertices)
+			throws FileNotFoundException {
+		if (!(hintMap instanceof HintFactoryMap)) {
+			System.out.println("No Hint Factory Map");
+			return;
+		}
+
+		HashMap<Node, VectorGraph> map = ((HintFactoryMap) hintMap).map;
+		for (Node node : map.keySet()) {
+			VectorGraph graph = map.get(node);
+			if (graph.nVertices() < minVertices) continue;
+			if (!graph.hasGoal()) continue;
+
+			graph.bellmanBackup(2);
+			Node child = node;
+			while (child.children.size() > 0) {
+				dir += child.type() + "/";
+				child = child.children.get(0);
+			}
+			new File(dir).mkdirs();
+			File file = new File(dir, child.type());
+
+			graph.export(new PrintStream(new FileOutputStream(file + ".graphml")), true,
+					0, false, true);
+			graph.exportGoals(new PrintStream(file + ".txt"));
+		}
+	}
+
+	/**
+	 * Add data from an assignment attempt to the HintGenerator.
+	 * @param solutionPath A list of Nodes, representing Snapshots of the attempt from start to
+	 * finish.
+	 * @param useIDs If true, the algorithm assumes that most Nodes will return a non-null
+	 * values when getID() is called. This is a more effective version of the algorithm; however,
+	 * if the supplied data cannot track nodes across snapshots, this value should be false. In this
+	 * case, the RTED algorithm will be used to guess which Nodes are the same across snapshots.
+	 * @return The individual HintMap for this attempt, which has now been added to the generator.
+	 */
+	public HintMap addAttempt(List<Node> solutionPath, boolean useIDs) {
 
 		HintMap hintMap = this.hintMap.instance();
-		if (path.size() <= 1) return hintMap;
+		if (solutionPath.size() <= 1) return hintMap;
 
 		if (useIDs) {
 			Map<String, Node> lastIDMap = null, cumulativeIDMap =
 					new HashMap<String, Node>();
-			for (Node current : path) {
+			for (Node current : solutionPath) {
 				current.cache();
 
 				// The general goal of this loop is to identify all matching nodes between
@@ -132,12 +243,12 @@ public class SubtreeBuilder {
 				cumulativeIDMap.putAll(idMap);
 			}
 		} else {
-			addEdgesTED(path, hintMap);
+			addEdgesTED(solutionPath, hintMap);
 		}
 
-		Node submission = path.get(path.size() - 1);
+		Node submission = solutionPath.get(solutionPath.size() - 1);
 		hintMap.setSolution(submission);
-		addStudentMap(hintMap);
+		addAttemptMap(hintMap);
 
 		return hintMap;
 	}
@@ -245,33 +356,6 @@ public class SubtreeBuilder {
 		}
 	}
 
-	public void addStudentMap(HintMap hintMap) {
-		synchronized (this.hintMap) {
-			this.hintMap.addMap(hintMap);
-		}
-	}
-
-	public void finishedAdding() {
-		hintMap.finish();
-	}
-
-	public synchronized Hint getFirstHint(Node node) {
-		LinkedList<Hint> hints = new LinkedList<Hint>();
-		getHints(node, hints, 1, 1);
-		return hints.size() > 0 ? hints.getFirst() : null;
-	}
-
-	public synchronized List<Hint> getHints(Node parent) {
-		return getHints(parent, 1);
-	}
-
-	public synchronized List<Hint> getHints(Node parent, int chain) {
-		LinkedList<Hint> hints = new LinkedList<Hint>();
-		getHints(parent, hints, chain, Integer.MAX_VALUE);
-		hintMap.postProcess(hints);
-		return hints;
-	}
-
 	private void getHints(Node node, List<Hint> list, int chain, int limit) {
 		if (list.size() >= limit) return;
 
@@ -307,7 +391,7 @@ public class SubtreeBuilder {
 
 	public static Kryo getKryo() {
 		Kryo kryo = new Kryo();
-		kryo.register(SubtreeBuilder.class);
+		kryo.register(HintGenerator.class);
 		kryo.register(StringHashable.class);
 		kryo.register(Node.class);
 		kryo.register(HintMap.class);

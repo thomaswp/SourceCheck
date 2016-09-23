@@ -12,8 +12,8 @@ import com.snap.data.Snapshot;
 import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.HintFactoryMap.VectorHint;
 import com.snap.graph.data.Node;
-import com.snap.graph.subtree.SnapSubtree;
-import com.snap.graph.subtree.SubtreeBuilder;
+import com.snap.graph.subtree.SnapHintBuilder;
+import com.snap.graph.subtree.HintGenerator;
 import com.snap.parser.Assignment;
 import com.snap.parser.AttemptAction;
 import com.snap.parser.AssignmentAttempt;
@@ -30,20 +30,20 @@ public class Testing {
 		return SimpleNodeBuilder.toTree(snapshot, true);
 	}
 	
-	private HashMap<Assignment, SubtreeBuilder> builders = new HashMap<>();
+	private HashMap<Assignment, HintGenerator> builders = new HashMap<>();
 
-	private SubtreeBuilder getBuilder(Assignment assignment) {
-		SubtreeBuilder builder = builders.get(assignment);
+	private HintGenerator getBuilder(Assignment assignment) {
+		HintGenerator builder = builders.get(assignment);
 		if (builder == null) {
-			SnapSubtree subtree = new SnapSubtree(assignment);
-			builder = subtree.buildGraph(Mode.Use, 1);
+			SnapHintBuilder subtree = new SnapHintBuilder(assignment);
+			builder = subtree.buildGenerator(Mode.Use, 1);
 			builders.put(assignment, builder);
 		}
 		return builder;
 	}
 	
 	private VectorHint getFirstHint(Assignment assignment, Node node) {
-		SubtreeBuilder builder = getBuilder(assignment);
+		HintGenerator builder = getBuilder(assignment);
 		return (VectorHint) builder.getFirstHint(node);
 	}
 	
