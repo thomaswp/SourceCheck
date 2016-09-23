@@ -30,7 +30,7 @@ Run this file to separate the single log file into more a more manageable set of
 
 ### Code Style
 
-The code in this reposity is in various states of cleanliness, but new code should endeavor to be as clean as possible. This reposity uses standard Java code style, and it is recommended you enable some settings in Eclipse to maintain this:
+The code in this repository is in various states of cleanliness, but new code should endeavor to be as clean as possible. This repository uses standard Java code style, and it is recommended you enable some settings in Eclipse to maintain this:
 
 * Preferences->General->Editors->Text Editors->Print margin columns: Set this value to 100 and for new code, try to keep lines under 100 characters in length.
 * Preferences->Java->Editor->Save Actions: Check the "Perform the selected action on save" box, and uncheck "Format source code," but check "Organize Imports" and "Additional Actions." Click "Configure..." and check "Remove trailing whitespace." This will ensure your code does not have excess tabs/spaces and that it uses only needed imports. 
@@ -49,7 +49,7 @@ When you have set up your dataset under `data/csc200/{dataset}/`, you will see s
 
 The Parser project contains files for parsing logs from iSnap. [SnapParser.java](Parser/src/com/snap/parser/SnapParser.java) will parse assignments for a given dataset; however, it is much easier to use the load method of the [Assignment](Parser/src/com/snap/parser/Assignment.java) you want to parse. This method will return a map of attemptIDs to [AssignmentAttempts](Parser/src/com/snap/parser/AssignmentAttempt.java). The AssignmentAttempt contains a list of actions that the student made during the attempt, such as interface or edit actions within the Snap interface.
 
-Each action the student made may have an associated [Snapshot](Parser/src/com/snap/data/Snapshot.java). This is a Java data-structure representing the hierarchy of an exported Snap project (which is origianlly represented in XML). The basic structure of a Snapshot is as follows:
+Each action the student made may have an associated [Snapshot](Parser/src/com/snap/data/Snapshot.java). This is a Java data-structure representing the hierarchy of an exported Snap project (which is originally represented in XML). The basic structure of a Snapshot is as follows:
 
 * **Snapshot**: The high-level structure for an entire Snap project.
   * *Variables*: Global variables for the project.
@@ -76,7 +76,7 @@ The HintGenerator itself is non-Snap-specific, and therefore uses a generic AST 
 
 Because the hint generation algorithm is modified on a regular basis, it is important to get an understanding of how these changes affect the generated hints. To do this, you can collect unit tests, representing good (or bad) hints, and check to make sure these tests still pass after modifying the algorithm.
 
-The [RunTests](GraphAnalysis/src/com/snap/graph/unittest/RunTests.java) class will report on all tests for the dataset defined on its first line of code. Some tests will be "expected failures," meaning the behavior is not ideal, but a known issue. A failed tests is not necessarily a bad thing - the new hint may be different but equally correct. In this case the test can be modified to match the new behavior. In this sense, these tests are not like normal unit tests, as they define a changing definition of expected behavior. They are also dataset-dependent, since the hints themselves will depend on the input data.
+The [RunTests](GraphAnalysis/src/com/snap/graph/unittest/RunTests.java) class will report on all tests for the dataset defined on its first line of code. Some tests will be "expected failures," meaning the behavior is not ideal, but a known issue. A failed test is not necessarily a bad thing - the new hint may be different but equally correct. In this case the test can be modified to match the new behavior. In this sense, these tests are not like normal unit tests, as they define a changing definition of expected behavior. They are also dataset-dependent, since the hints themselves will depend on the input data.
 
 To create a Unit Test, in Eclipse edit the Run Confirguration for the HintServer (Run->Run Configurations...->Apache TomCat->{Your Instace}), select the Environment tab, add a new entry with variable name "dataDir", and value the full path to the dataset directory where you want to collect unit tests (e.g. "C:\...\SnapHints\data\csc200\spring2016"). Then run the HintServer and run iSnap. In iSnap, make sure the config is setup to use your local hint server and to show the DebugDisplay. Then, when you see a hint that you want in the DebugDisplay, hit the save button. It should now appear in the unittest folder of the dataset you're working with.
 
@@ -90,4 +90,4 @@ The HintEvaluation project contains a number of classes which perform automated,
 
 Most evaluation logic can be found in the [com.snap.eval](HintEvaluation/src/com/snap/eval) package. These classes have main methods, which mainly produce .csv files in the analysis folder of a given dataset. These are used by the R scripts, found in the [R folder](R).
 
-This would be an appropriate project to add additional evaluation scripts. 
+This would be an appropriate project to add additional evaluation scripts.
