@@ -111,11 +111,11 @@ public class HintGenerator {
 
 	/**
 	 * Saves graphs and other debugging files to the given directory for this HintGenerator.
-	 * @param dir The root directory in which to save the files.
+	 * @param rootDir The root directory in which to save the files.
 	 * @param minVertices The minimum number of vertices a graph must have to be saved.
 	 * @throws FileNotFoundException
 	 */
-	public void saveGraphs(String dir, int minVertices)
+	public void saveGraphs(String rootDir, int minVertices)
 			throws FileNotFoundException {
 		if (!(hintMap instanceof HintFactoryMap)) {
 			System.out.println("No Hint Factory Map");
@@ -130,6 +130,7 @@ public class HintGenerator {
 
 			graph.bellmanBackup(2);
 			Node child = node;
+			String dir = rootDir;
 			while (child.children.size() > 0) {
 				dir += child.type() + "/";
 				child = child.children.get(0);
