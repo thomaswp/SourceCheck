@@ -15,8 +15,8 @@ import com.snap.graph.data.Node;
 import com.snap.graph.subtree.SnapSubtree;
 import com.snap.graph.subtree.SubtreeBuilder;
 import com.snap.parser.Assignment;
-import com.snap.parser.DataRow;
-import com.snap.parser.SolutionPath;
+import com.snap.parser.AttemptAction;
+import com.snap.parser.AssignmentAttempt;
 import com.snap.parser.Store.Mode;
 
 public class Testing {
@@ -63,9 +63,9 @@ public class Testing {
 	}
 	
 	private Snapshot getSnapshot(Assignment assignment, String id, int rowID) {
-		SolutionPath submission = assignment.loadSubmission(id, Mode.Use, true);
+		AssignmentAttempt submission = assignment.loadSubmission(id, Mode.Use, true);
 		Snapshot snapshot = null;
-		for (DataRow row : submission) {
+		for (AttemptAction row : submission) {
 			if (row.snapshot != null) snapshot = row.snapshot;
 			if (row.id == rowID) {
 				return snapshot;

@@ -8,21 +8,30 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
+/**
+ * Class for caching and loading data-structures using Kryo.
+ */
 public class Store {
-	
+
+	/** Mode for loading data. */
 	public enum Mode {
+		/** Ignores any cached data and reloads from scratch, without overwriting cached data. */
 		Ignore,
+		/** Uses any existing cached data if it exists, or loads and caches if not. */
 		Use,
+		/** Reloads data and overwrites the existing cache. */
 		Overwrite
 	}
-	
+
 	private final static Kryo kryo = new Kryo();
-	
-	public static <T> T getCachedObject(String path, Class<T> clazz, Mode cacheUse, Loader<T> loader) {
+
+	public static <T> T getCachedObject(String path, Class<T> clazz, Mode cacheUse,
+			Loader<T> loader) {
 		return getCachedObject(kryo, path, clazz, cacheUse, loader);
 	}
-	
-	public static <T> T getCachedObject(Kryo kryo, String path, Class<T> clazz, Mode cacheUse, Loader<T> loader) {
+
+	public static <T> T getCachedObject(Kryo kryo, String path, Class<T> clazz, Mode cacheUse,
+			Loader<T> loader) {
 		File cached = new File(path);
 		if (cacheUse == Mode.Use && cached.exists()) {
 			try {
@@ -40,9 +49,9 @@ public class Store {
 				cached.delete();
 			}
 		}
-		
+
 		T rows = loader.load();
-		
+
 		if (cacheUse != Mode.Ignore) {
 			cached.delete();
 			try {
@@ -51,10 +60,10 @@ public class Store {
 				output.close();
 			} catch (Exception e) { }
 		}
-		
+
 		return rows;
 	}
-	
+
 	public interface Loader<T> {
 		T load();
 	}

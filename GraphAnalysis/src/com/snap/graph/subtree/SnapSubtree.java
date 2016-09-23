@@ -23,9 +23,9 @@ import com.snap.graph.data.HintMap;
 import com.snap.graph.data.Node;
 import com.snap.graph.data.VectorGraph;
 import com.snap.parser.Assignment;
-import com.snap.parser.DataRow;
+import com.snap.parser.AttemptAction;
 import com.snap.parser.Grade;
-import com.snap.parser.SolutionPath;
+import com.snap.parser.AssignmentAttempt;
 import com.snap.parser.Store;
 import com.snap.parser.Store.Mode;
 
@@ -246,16 +246,16 @@ public class SnapSubtree {
 	}
 
 	private void parseStudents() throws IOException {
-		Map<String, SolutionPath> students = assignment.load(Mode.Use, true);
+		Map<String, AssignmentAttempt> students = assignment.load(Mode.Use, true);
 		nodeMapCache = new TreeMap<String, List<Node>>();
 		gradeMapCache = new TreeMap<String, Grade>();
 
 		for (String student : students.keySet()) {
-			SolutionPath path = students.get(student);
+			AssignmentAttempt path = students.get(student);
 			if (!path.exported) continue;
 			List<Node> nodes = new ArrayList<Node>();
 
-			for (DataRow row : path) {
+			for (AttemptAction row : path) {
 				Node node = SimpleNodeBuilder.toTree(row.snapshot, true);
 				nodes.add(node);
 			}

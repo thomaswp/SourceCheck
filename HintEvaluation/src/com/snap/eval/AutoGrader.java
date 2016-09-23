@@ -10,9 +10,9 @@ import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.Node;
 import com.snap.graph.data.Node.Predicate;
 import com.snap.parser.Assignment;
-import com.snap.parser.DataRow;
+import com.snap.parser.AttemptAction;
 import com.snap.parser.Grade;
-import com.snap.parser.SolutionPath;
+import com.snap.parser.AssignmentAttempt;
 import com.snap.parser.Store.Mode;
 
 public class AutoGrader {
@@ -73,10 +73,10 @@ public class AutoGrader {
 	}
 	
 	private void parseStudents(Assignment assignment) throws IOException {
-		Map<String, SolutionPath> students = assignment.load(Mode.Use, true);
+		Map<String, AssignmentAttempt> students = assignment.load(Mode.Use, true);
 		
 		for (String student : students.keySet()) {
-			SolutionPath path = students.get(student);
+			AssignmentAttempt path = students.get(student);
 			if (!path.exported) continue;
 			if (path.grade == null) {
 				System.err.println("No grade for: " + student);
@@ -86,7 +86,7 @@ public class AutoGrader {
 			if (path.grade.outlier) continue;
 			
 			Snapshot last = null;
-			for (DataRow row : path) {
+			for (AttemptAction row : path) {
 				last = row.snapshot;
 			}
 			

@@ -3,26 +3,26 @@ package com.snap.parser;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-public class SolutionPath implements Iterable<DataRow>, IVersioned {
+public class AssignmentAttempt implements Iterable<AttemptAction>, IVersioned {
 
 	public final static String VERSION = "1.3.0";
 
-	public final LinkedList<DataRow> rows = new LinkedList<DataRow>();
+	public final LinkedList<AttemptAction> rows = new LinkedList<AttemptAction>();
 	public final Grade grade;
 	public boolean exported;
 
 	private String version = VERSION;
 
 	@SuppressWarnings("unused")
-	private SolutionPath() {
+	private AssignmentAttempt() {
 		this.grade = null;
 	}
 
-	public SolutionPath(Grade grade) {
+	public AssignmentAttempt(Grade grade) {
 		this.grade = grade;
 	}
 
-	public void add(DataRow row) {
+	public void add(AttemptAction row) {
 		rows.add(row);
 	}
 
@@ -31,7 +31,7 @@ public class SolutionPath implements Iterable<DataRow>, IVersioned {
 	}
 
 	@Override
-	public Iterator<DataRow> iterator() {
+	public Iterator<AttemptAction> iterator() {
 		return rows.iterator();
 	}
 

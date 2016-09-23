@@ -2,7 +2,6 @@ package com.snap.parser;
 
 import java.io.File;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -13,13 +12,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.json.JSONObject;
 
@@ -29,115 +26,55 @@ import com.snap.data.Snapshot;
 import com.snap.parser.Store.Mode;
 
 /**
- * Snap parser for logging files
- * @author DraganLipovac
+ * Parser for iSnap logs.
  */
 public class SnapParser {
 
-	private static final String[] HEADER = new String[] {
-			"id","time","message","jsonData","assignmentID","projectID","sessionID","browserID","code"
-	};
+	public static void main(String[] args) {
+		// Reloads and caches assignments for a give dataset.
 
-	private final static Map<String, CSVPrinter> csvPrinters = new HashMap<String, CSVPrinter>();
+		// Replace Fall2015 with the dataset to reload.
+		for (Assignment assignment : Assignment.Fall2015.All) {
+			// Loads the given assignment, overwriting any cached data.
+			assignment.load(Mode.Overwrite, true);
+		}
+	}
 
-	private final String outputFolder;
+	/**
+	 * Removes all cached files at the given path.
+	 * @param path
+	 */
+	public static void clean(String path) {
+		for (String file : new File(path).list()) {
+			File f = new File(path, file);
+			if (f.isDirectory()) clean(f.getAbsolutePath());
+			else if (f.getName().endsWith(".cached")) f.delete();
+		}
+	}
+
+	private final String rootFolder;
 	private final Mode storeMode;
 
 	/**
-	 * SnapParserConstructor
+	 * Constructor for a SnapParser. This should rarely be called directly. Instead, use
+	 * {@link Assignment#load()}.
+	 *
+	 * @param rootFolder The root folder for a dataset from which files will be loaded.
+	 * @param cacheUse The cache {@link Mode} to use when loading data.
 	 */
-	public SnapParser(String outputFolder, Mode cacheUse){
-		this.outputFolder = outputFolder;
+	public SnapParser(String rootFolder, Mode cacheUse){
+		this.rootFolder = rootFolder;
 		this.storeMode = cacheUse;
-		new File(outputFolder).mkdirs();
+		new File(rootFolder).mkdirs();
 	}
 
-	/**
-	 * Scans the CSV file name, and sends scanner to the processRows method
-	 * @param snapCSVfileName
-	 * @throws IOException
-	 */
-	public static void splitStudentRecords(String file) throws IOException{
-		String outputFolder = file.substring(0, file.lastIndexOf(".")) + "/parsed";
-		new File(outputFolder).mkdirs();
-		CSVParser parser = new CSVParser(new FileReader(file), CSVFormat.DEFAULT.withHeader());
-		int i = 0;
-		System.out.println("Splitting records:");
-		for (CSVRecord record : parser) {
-			String assignmentID = record.get(4);
-			String projectID = record.get(5);
-			writeRecord(assignmentID,projectID, outputFolder, record);
-			if (i++ % 1000 == 0) System.out.print("+");
-			if (i % 50000 == 0) System.out.println();
-		}
-		//close out all the writers in hashmap
-		System.out.println();
-		parser.close();
-		cleanUpSplit();
-	}
-
-	/**
-	 * creates File tree structure
-	 * @param assignment
-	 * @param userId
-	 * @throws IOException
-	 */
-	private static void writeRecord(String assignmentID, String projectID, String outputFolder, CSVRecord record) throws IOException{
-		//rows without projectID are skipped. these are the logger.started lines
-		if(!projectID.equals("")){
-			//check to see if folder for assignment such as GuessLab3 already exists, if not - create folder
-			File newAssignmentFolder = new File(outputFolder, assignmentID);
-			newAssignmentFolder.mkdir();
-			String currentFolderPath = newAssignmentFolder.getAbsolutePath();
-
-			//hashmap for bufferedWriters
-			String keyword = assignmentID+projectID;
-			CSVPrinter printer = csvPrinters.get(keyword);
-			if(printer == null){
-				printer = new CSVPrinter(new FileWriter(currentFolderPath + "/" + projectID + ".csv"), CSVFormat.EXCEL.withHeader(HEADER));
-				csvPrinters.put(keyword, printer);
-			}
-
-			Object[] cols = new Object[record.size()];
-			for (int i = 0; i < cols.length; i++) {
-				cols[i] = record.get(i);
-			}
-			printer.printRecord(cols);
-
-			if (Math.random() < 0.1) printer.flush();
-		}
-	}
-
-	/**
-	 * code taken from StackOverflow to close out BufferedWriters
-	 */
-	private static void cleanUpSplit(){
-		System.out.println("Cleaning up:");
-		Set<String> keySet = csvPrinters.keySet();
-		int i = 0;
-		for(String key : keySet){
-			CSVPrinter writer = csvPrinters.get(key);
-			if(writer != null){
-				try{
-					writer.close();
-				} catch (Throwable t){
-					t.printStackTrace();
-				}
-				writer = null;
-			}
-			if (i++ % 10 == 0) System.out.print("+");
-			if (i % 500 == 0) System.out.println();
-		}
-		csvPrinters.clear();
-	}
-
-	public SolutionPath parseSubmission(Assignment assignment, String id, boolean snapshotsOnly)
+	public AssignmentAttempt parseSubmission(Assignment assignment, String id, boolean snapshotsOnly)
 			throws IOException {
 		return parseRows(new File(assignment.dataDir + "/parsed/" + assignment.name, id + ".csv"),
 				null, snapshotsOnly, assignment.start, assignment.end);
 	}
 
-	private SolutionPath parseRows(final File logFile, final Grade grade,
+	private AssignmentAttempt parseRows(final File logFile, final Grade grade,
 			final boolean snapshotsOnly, final Date minDate, final Date maxDate)
 					throws IOException {
 		final String attemptID = logFile.getName().replace(".csv", "");
@@ -149,11 +86,11 @@ public class SnapParser {
 		if (hash != 0) cachePath += "-d" + (hash);
 		cachePath += ".cached";
 
-		return Store.getCachedObject(new Kryo(), cachePath, SolutionPath.class, storeMode,
-				new Store.Loader<SolutionPath>() {
+		return Store.getCachedObject(new Kryo(), cachePath, AssignmentAttempt.class, storeMode,
+				new Store.Loader<AssignmentAttempt>() {
 			@Override
-			public SolutionPath load() {
-				SolutionPath solution = new SolutionPath(grade);
+			public AssignmentAttempt load() {
+				AssignmentAttempt solution = new AssignmentAttempt(grade);
 				try {
 					CSVParser parser = new CSVParser(new FileReader(logFile),
 							CSVFormat.EXCEL.withHeader());
@@ -168,7 +105,7 @@ public class SnapParser {
 					BlockIndex editingIndex = null;
 					Snapshot lastSnaphot = null;
 
-					List<DataRow> currentWork = new ArrayList<DataRow>();
+					List<AttemptAction> currentWork = new ArrayList<AttemptAction>();
 
 					for (CSVRecord record : parser) {
 						String timestampString = record.get(1);
@@ -202,7 +139,7 @@ public class SnapParser {
 							id = Integer.parseInt(idS);
 						} catch (NumberFormatException e) { }
 
-						DataRow row = new DataRow(id, attemptID, timestamp, action, data, xml);
+						AttemptAction row = new AttemptAction(id, attemptID, timestamp, action, data, xml);
 						if (row.snapshot != null) lastSnaphot = row.snapshot;
 
 						if ("BlockEditor.start".equals(action)) {
@@ -235,7 +172,7 @@ public class SnapParser {
 
 						if (action.equals("IDE.exportProject")) {
 							solution.exported = true;
-							for (DataRow r : currentWork) {
+							for (AttemptAction r : currentWork) {
 								solution.add(r);
 							}
 							currentWork.clear();
@@ -261,39 +198,17 @@ public class SnapParser {
 		});
 	}
 
-//	private class Labeling {
-//		public final Snapshot snapshot;
-//
-//		public Labeling(Snapshot snapshot) {
-//			this.snapshot = snapshot;
-//		}
-//
-//		public void load(Labeling last) {
-//
-//		}
-//	}
-//
-//	private class Label {
-//		public Block block;
-//		public Label parent;
-//		public List<Block> children = new LinkedList<Block>();
-//		public int id;
-//
-//
-//	}
-
-
-	public Map<String, SolutionPath> parseAssignment(String folder, final boolean snapshotsOnly) {
+	public Map<String, AssignmentAttempt> parseAssignment(String folder, final boolean snapshotsOnly) {
 		return parseAssignment(folder, snapshotsOnly, null, null);
 	}
 
-	public Map<String, SolutionPath> parseAssignment(String folder, final boolean snapshotsOnly,
+	public Map<String, AssignmentAttempt> parseAssignment(String folder, final boolean snapshotsOnly,
 			final Date minDate, final Date maxDate) {
 		HashMap<String, Grade> grades = parseGrades(folder);
 
-		final Map<String, SolutionPath> students = new TreeMap<String, SolutionPath>();
+		final Map<String, AssignmentAttempt> students = new TreeMap<String, AssignmentAttempt>();
 		final AtomicInteger threads = new AtomicInteger();
-		for (File file : new File(outputFolder + "/" + "parsed", folder).listFiles()) {
+		for (File file : new File(rootFolder + "/" + "parsed", folder).listFiles()) {
 			if (!file.getName().endsWith(".csv")) continue;
 			final File fFile = file;
 			final Grade grade = grades.get(file.getName().replace(".csv", ""));
@@ -302,7 +217,8 @@ public class SnapParser {
 				@Override
 				public void run() {
 					try {
-						SolutionPath rows = parseRows(fFile, grade, snapshotsOnly, minDate, maxDate);
+						AssignmentAttempt rows = parseRows(fFile, grade, snapshotsOnly, minDate,
+								maxDate);
 						if (rows.grade == null || !rows.grade.outlier) {
 							if (rows.size() > 3) {
 								synchronized (students) {
@@ -331,7 +247,7 @@ public class SnapParser {
 	private HashMap<String, Grade> parseGrades(String folder) {
 		HashMap<String, Grade> grades = new HashMap<String, Grade>();
 
-		File file = new File(outputFolder, "grades/" + folder + ".csv");
+		File file = new File(rootFolder, "grades/" + folder + ".csv");
 		if (!file.exists()) return grades;
 
 		try {
@@ -346,22 +262,6 @@ public class SnapParser {
 		}
 
 		return grades;
-	}
-
-	public static void clean(String path) {
-		for (String file : new File(path).list()) {
-			File f = new File(path, file);
-			if (f.isDirectory()) clean(f.getAbsolutePath());
-			else if (f.getName().endsWith(".cached")) f.delete();
-		}
-	}
-
-	public static void main(String[] args) throws IOException {
-//		SnapParser.splitStudentRecords("../data/csc200/fall2015.csv");
-//		clean("../data/csc200/spring2016/parsed");
-
-		Assignment.Spring2016.PolygonMaker.load(Mode.Overwrite, true);
-
 	}
 }
 

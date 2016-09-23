@@ -7,7 +7,7 @@ import java.util.Date;
 
 import com.snap.data.Snapshot;
 
-public class DataRow implements Serializable, Comparable<DataRow> {
+public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	private static final long serialVersionUID = 1L;
 
 	private final static DateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
@@ -18,11 +18,11 @@ public class DataRow implements Serializable, Comparable<DataRow> {
 	public final String action, data;
 
 	@SuppressWarnings("unused")
-	private DataRow() {
+	private AttemptAction() {
 		this(0, null, null, null, null, null);
 	}
 
-	public DataRow(int id, String attemptID, Date timestamp, String action, String data,
+	public AttemptAction(int id, String attemptID, Date timestamp, String action, String data,
 			String snapshotXML) {
 		this.id = id;
 		this.timestamp = timestamp;
@@ -36,7 +36,7 @@ public class DataRow implements Serializable, Comparable<DataRow> {
 	}
 
 	@Override
-	public int compareTo(DataRow o) {
+	public int compareTo(AttemptAction o) {
 		if (timestamp == null) return o == null || o.timestamp == null ? 0 : -1;
 		return timestamp.compareTo(o.timestamp);
 	}

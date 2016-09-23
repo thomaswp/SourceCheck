@@ -21,8 +21,8 @@ import com.snap.eval.AutoGrader.Grader;
 import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.Node;
 import com.snap.parser.Assignment;
-import com.snap.parser.DataRow;
-import com.snap.parser.SolutionPath;
+import com.snap.parser.AttemptAction;
+import com.snap.parser.AssignmentAttempt;
 
 public class CheckSubgoalUsage {
 	private final static String SUBGOAL_SELECTED = "Subgoal.selected";
@@ -48,7 +48,7 @@ public class CheckSubgoalUsage {
 		for (Assignment assignment : Assignment.Spring2016.All) {
 			if (assignment != Assignment.Spring2016.GuessingGame1) continue;
 			
-			Map<String,SolutionPath> submissions = assignment.load();
+			Map<String,AssignmentAttempt> submissions = assignment.load();
 			
 			File out = new File(assignment.dataDir + "/analysis/" + assignment.name + "/goals.csv");
 			out.getParentFile().mkdirs();
@@ -56,7 +56,7 @@ public class CheckSubgoalUsage {
 			CSVPrinter printer = new CSVPrinter(ps, CSVFormat.DEFAULT.withHeader("id", "finished", "satisfied", "satisfiedEnd", "grade", "gap"));
 			
 			for (String key : submissions.keySet()) {
-				SolutionPath path = submissions.get(key);
+				AssignmentAttempt path = submissions.get(key);
 				
 				// Set of finished objectives 
 				// (due to a bug, a subgoal may be marked finished multiple times)
@@ -71,7 +71,7 @@ public class CheckSubgoalUsage {
 				
 				int satisfied = 0;
 				
-				for (DataRow row : path) {
+				for (AttemptAction row : path) {
 					
 					if (row.snapshot != null) lastCode = row.snapshot;
 					

@@ -10,8 +10,8 @@ import com.snap.eval.util.Prune;
 import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.Node;
 import com.snap.parser.Assignment;
-import com.snap.parser.DataRow;
-import com.snap.parser.SolutionPath;
+import com.snap.parser.AttemptAction;
+import com.snap.parser.AssignmentAttempt;
 import com.snap.parser.Store.Mode;
 
 public class StudentEval {
@@ -24,7 +24,7 @@ public class StudentEval {
 	
 	private static void eval(Assignment assignment) throws IOException {
 
-		Map<String, SolutionPath> paths = assignment.load(Mode.Use, true);
+		Map<String, AssignmentAttempt> paths = assignment.load(Mode.Use, true);
 		
 		for (int i = 0; i < 2; i++) {
 			int max = MAX;
@@ -45,9 +45,9 @@ public class StudentEval {
 				if (assignment.ignore(student)) continue;
 				if (--max < 0) break;
 				
-				SolutionPath solutionPath = paths.get(student);
+				AssignmentAttempt solutionPath = paths.get(student);
 				List<Node> nodes = new LinkedList<>();
-				for (DataRow r : solutionPath) nodes.add(SimpleNodeBuilder.toTree(r.snapshot, true));
+				for (AttemptAction r : solutionPath) nodes.add(SimpleNodeBuilder.toTree(r.snapshot, true));
 				
 				if (i == 1) nodes = Prune.removeSmallerScripts(nodes);
 				HashSet<String> studentSet = new HashSet<>();

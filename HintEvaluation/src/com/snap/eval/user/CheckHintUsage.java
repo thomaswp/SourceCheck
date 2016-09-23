@@ -31,9 +31,9 @@ import com.snap.graph.data.Node;
 import com.snap.graph.data.Node.Predicate;
 import com.snap.graph.data.Tuple;
 import com.snap.parser.Assignment;
-import com.snap.parser.DataRow;
+import com.snap.parser.AttemptAction;
 import com.snap.parser.Grade;
-import com.snap.parser.SolutionPath;
+import com.snap.parser.AssignmentAttempt;
 import com.snap.parser.Store.Mode;
 
 import distance.RTED_InfoTree_Opt;
@@ -59,7 +59,7 @@ public class CheckHintUsage {
 	
 	private static final long MIN_DURATON = 5 * 60 * 1000;
 	
-	private static boolean isValidSubmission(SolutionPath path) {
+	private static boolean isValidSubmission(AssignmentAttempt path) {
 		if (!path.exported) return false;
 		
 		// Also ignore any that are shorted than then minimum duration (5m) 
@@ -75,7 +75,7 @@ public class CheckHintUsage {
 		Assignment assignment = Assignment.Spring2016.GuessingGame1;
 		
 		// Get the name-path pairs of all projects we logged
-		Map<String, SolutionPath> guessingGame = assignment.load(Mode.Use, false);
+		Map<String, AssignmentAttempt> guessingGame = assignment.load(Mode.Use, false);
 		
 		int nStudents = 0;
 		
@@ -87,7 +87,7 @@ public class CheckHintUsage {
 		
 		// Iterate over all submissions
 		for (String submission : guessingGame.keySet()) {
-			SolutionPath path = guessingGame.get(submission);
+			AssignmentAttempt path = guessingGame.get(submission);
 			
 			// Ignore any that weren't exported (and thus couldn't have been submitted)
 			if (!isValidSubmission(path)) continue;
@@ -119,7 +119,7 @@ public class CheckHintUsage {
 			
 			// Iterate through each row of the solution path
 			for (int i = 0; i < path.size(); i++) {
-				DataRow row = path.rows.get(i);
+				AttemptAction row = path.rows.get(i);
 				
 				// If this row had an update to the code, update it
 				if (row.snapshot != null) {
@@ -237,7 +237,7 @@ public class CheckHintUsage {
 					int steps = 0;
 					for (int j = i+1; j < path.size(); j++) {
 						// Get the next row with a new snapshot
-						DataRow nextRow = path.rows.get(j);
+						AttemptAction nextRow = path.rows.get(j);
 						Snapshot nextCode = nextRow.snapshot;
 						// if the row does not have a snapshot, skip this row and do not count into steps
 						if (nextCode == null)
@@ -298,7 +298,7 @@ public class CheckHintUsage {
 					long dismissTime = 0;
 					boolean done = false;
 					for (int j = i + 1; j < path.size(); j++) {
-						DataRow r = path.rows.get(j);
+						AttemptAction r = path.rows.get(j);
 						if (r.action.equals("HintDialogBox.done")) done = true;
 						if (done || r.action.equals("HintDialogBox.otherHints")) {
 							dismissTime = r.timestamp.getTime();
@@ -431,7 +431,7 @@ public class CheckHintUsage {
 	}
 	
 	@SuppressWarnings("unused")
-	private static void outputDistance(PrintStream psSnapshot, PrintStream psHint, HashMap<String, SolutionPath> submissions) throws IOException{
+	private static void outputDistance(PrintStream psSnapshot, PrintStream psHint, HashMap<String, AssignmentAttempt> submissions) throws IOException{
 		// create column names
 		List<String> headerSnapshot = new LinkedList<String>();
 		headerSnapshot.addAll(Arrays.asList("id","time","distance"));
@@ -443,7 +443,7 @@ public class CheckHintUsage {
 		CSVPrinter prtHint = new CSVPrinter(psHint, CSVFormat.DEFAULT.withHeader(headerHint.toArray(new String[headerHint.size()])));
 		// loop through the submissions
 		for (String key: submissions.keySet()) {
-			SolutionPath path = submissions.get(key);
+			AssignmentAttempt path = submissions.get(key);
 			// if not exported, continue
 			if (!isValidSubmission(path)) continue;
 			
@@ -472,7 +472,7 @@ public class CheckHintUsage {
 			double dis = 1000.0;
 			RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(1, 1, 1);
 			for (int i = 0; i < path.size(); i++) {
-				DataRow row = path.rows.get(i);
+				AttemptAction row = path.rows.get(i);
 				
 				// check if snapshot is changed.
 				boolean isSnapshotChanged = false;
@@ -562,7 +562,7 @@ public class CheckHintUsage {
 		}
 	}
 
-	private static void outputGrades(PrintStream ps, HashMap<String, SolutionPath> submissions, List<Integer> studentHintCounts,
+	private static void outputGrades(PrintStream ps, HashMap<String, AssignmentAttempt> submissions, List<Integer> studentHintCounts,
 			List<Integer> studentFollowedCounts) throws IOException {
 		List<String> header = new LinkedList<>(); 
 		header.addAll(Arrays.asList("id", "requested", "followed", "grade"));
@@ -571,7 +571,7 @@ public class CheckHintUsage {
 		CSVPrinter printer = new CSVPrinter(ps, CSVFormat.DEFAULT.withHeader(header.toArray(new String[header.size()])));
 		int i = 0;
 		for (String key : submissions.keySet()) {
-			SolutionPath path = submissions.get(key);
+			AssignmentAttempt path = submissions.get(key);
 			if (!isValidSubmission(path)) continue;
 			
 			HashMap<String, Boolean> grade = path.grade.tests;

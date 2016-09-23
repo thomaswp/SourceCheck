@@ -16,11 +16,11 @@ public class Assignment {
 	public final boolean hasIDs;
 	public final boolean graded;
 
-	public Assignment(String dataDir, String name, Date start, Date end, boolean hasIDs) {
+	private Assignment(String dataDir, String name, Date start, Date end, boolean hasIDs) {
 		this(dataDir, name, start, end, hasIDs, false);
 	}
 
-	public Assignment(String dataDir, String name, Date start, Date end,
+	private Assignment(String dataDir, String name, Date start, Date end,
 			boolean hasIDs, boolean graded) {
 		this.dataDir = dataDir;
 		this.name = name;
@@ -46,7 +46,7 @@ public class Assignment {
 		return Snapshot.parse(new File(dataDir + "/tests/", name + ".xml"));
 	}
 
-	public SolutionPath loadSubmission(String id, Mode mode, boolean snapshotsOnly) {
+	public AssignmentAttempt loadSubmission(String id, Mode mode, boolean snapshotsOnly) {
 		try {
 			return new SnapParser(dataDir, mode).parseSubmission(this, id, snapshotsOnly);
 		} catch (IOException e) {
@@ -64,11 +64,11 @@ public class Assignment {
 		return dataDir + "/" + name;
 	}
 
-	public Map<String, SolutionPath> load() {
+	public Map<String, AssignmentAttempt> load() {
 		return load(Mode.Use, false);
 	}
 
-	public Map<String, SolutionPath> load(Mode mode, boolean snapshotsOnly) {
+	public Map<String, AssignmentAttempt> load(Mode mode, boolean snapshotsOnly) {
 		return new SnapParser(dataDir, mode).parseAssignment(name, snapshotsOnly, start, end);
 	}
 
@@ -79,6 +79,7 @@ public class Assignment {
 	public static class Fall2015 {
 		public final static Date start = date(2015, 8, 10);
 		public final static String dataDir = BASE_DIR + "/fall2015";
+		public final static String dataFile = dataDir + ".csv";
 
 		// Used this submission for testing, so not using it in evaluation
 		public final static String GG1_SKIP = "3c3ce047-b408-417e-b556-f9406ac4c7a8.csv";
@@ -112,6 +113,7 @@ public class Assignment {
 	public static class Spring2016 {
 		public final static Date start = date(2016, 1, 1);
 		public final static String dataDir = BASE_DIR + "/spring2016";
+		public final static String dataFile = dataDir + ".csv";
 
 		public final static Assignment LightsCameraAction = new Assignment(dataDir,
 				"lightsCameraActionHW", start, date(2016, 1, 29), true);
@@ -135,6 +137,7 @@ public class Assignment {
 	public static class Fall2016 {
 		public final static Date start = date(2015, 8, 17);
 		public final static String dataDir = BASE_DIR + "/fall2016";
+		public final static String dataFile = dataDir + ".csv";
 
 		public final static Assignment LightsCameraAction = new Assignment(dataDir,
 				"lightsCameraActionHW", start, date(2016, 9, 2), true);
