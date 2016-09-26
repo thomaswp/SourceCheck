@@ -12,6 +12,7 @@ import java.util.Set;
 
 import com.snap.data.Snapshot;
 import com.snap.parser.Assignment.Fall2015;
+import com.snap.parser.Store.Mode;
 
 public class ParseSubmitted {
 
@@ -19,6 +20,28 @@ public class ParseSubmitted {
 		for (Assignment assignment : Fall2015.All) {
 			parse(assignment);
 		}
+		printToGrade(Fall2015.GuessingGame1);
+	}
+
+	public static void printToGrade(Assignment assignment) {
+		Map<String, String> submittedHashes = getSubmittedHashes(assignment);
+		if (submittedHashes == null) System.out.println("No submitted assignments.");
+
+		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Overwrite, true);
+		System.out.println("\n\n");
+		for (String attemptID : attempts.keySet()) {
+			AssignmentAttempt attempt = attempts.get(attemptID);
+			if (attempt.submittedActionID >= 0) {
+				System.out.printf("%s,%s\n", attempt.submittedSnapshot.guid,
+						attempt.submittedActionID);
+				submittedHashes.remove(attempt.submittedSnapshot.guid);
+			}
+		}
+		System.out.println("------------------,");
+		for (String attemptID : submittedHashes.keySet()) {
+			System.out.println(attemptID + ",");
+		}
+
 	}
 
 	public static void parse(Assignment assignment) throws IOException {
