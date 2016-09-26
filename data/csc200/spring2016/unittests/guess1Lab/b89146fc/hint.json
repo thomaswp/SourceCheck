@@ -4,10 +4,10 @@
 	"data": {
 		"goal": [
 			"receiveGo",
+			"doSetVar",
 			"doSayFor",
 			"doAsk",
 			"doSayFor",
-			"doSetVar",
 			"doUntil"
 		],
 		"root": {
