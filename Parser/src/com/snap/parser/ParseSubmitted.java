@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
 
@@ -36,9 +38,9 @@ public class ParseSubmitted {
 			try {
 				Snapshot snapshot = Snapshot.parse(file);
 				if (submitted.add(snapshot.guid)) {
-					System.err.println("Duplicate submission: " + file.getAbsolutePath());
+					output.printf("%s,%x\n", snapshot.guid, snapshot.toCode().hashCode());
 				} else {
-					output.println(snapshot.guid);
+					System.err.println("Duplicate submission: " + file.getAbsolutePath());
 				}
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
@@ -47,15 +49,23 @@ public class ParseSubmitted {
 		output.close();
 	}
 
-	public static Set<String> getSubmittedGUIDs(Assignment assignment) {
-		Set<String> submitted = new HashSet<String>();
+	public static Map<String, String> getSubmittedHashes(Assignment assignment) {
+		Map<String, String> submitted = new HashMap<String, String>();
 		File file = new File(assignment.submittedDir() + ".txt");
 		if (!file.exists()) return null;
 		Scanner sc;
 		try {
 			sc = new Scanner(file);
 			while (sc.hasNextLine()) {
-				submitted.add(sc.nextLine());
+				String line = sc.nextLine();
+				if (line.length() > 0) {
+					String[] parts = line.split(",");
+					if (parts.length != 2) {
+						sc.close();
+						throw new RuntimeException("Invalid line: " + line);
+					}
+					submitted.put(parts[0], parts[1]);
+				}
 			}
 			sc.close();
 		} catch (FileNotFoundException e) {

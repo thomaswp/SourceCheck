@@ -12,7 +12,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -70,11 +69,13 @@ public class SnapParser {
 	}
 
 	public AssignmentAttempt parseSubmission(String id, boolean snapshotsOnly) throws IOException {
-		return parseRows(new File(assignment.parsedDir(), id + ".csv"), null, null, snapshotsOnly);
+		return parseRows(new File(assignment.parsedDir(), id + ".csv"),
+				null, false, null, snapshotsOnly);
 	}
 
 	private AssignmentAttempt parseRows(final File logFile, final Grade grade,
-			final Boolean submitted, final boolean snapshotsOnly)
+			final boolean knownSubmissions, final String submittedCodeHash,
+			final boolean snapshotsOnly)
 					throws IOException {
 		final String attemptID = logFile.getName().replace(".csv", "");
 		String cachePath = logFile.getAbsolutePath().replace(".csv", "") +
@@ -90,7 +91,10 @@ public class SnapParser {
 				new Store.Loader<AssignmentAttempt>() {
 			@Override
 			public AssignmentAttempt load() {
-				AssignmentAttempt solution = new AssignmentAttempt(grade, submitted);
+				AssignmentAttempt solution = new AssignmentAttempt(grade);
+				solution.submittedActionID = knownSubmissions ? AssignmentAttempt.NOT_SUBMITTED :
+					AssignmentAttempt.UNKNOWN;
+
 				try {
 					CSVParser parser = new CSVParser(new FileReader(logFile),
 							CSVFormat.EXCEL.withHeader());
@@ -139,7 +143,8 @@ public class SnapParser {
 							id = Integer.parseInt(idS);
 						} catch (NumberFormatException e) { }
 
-						AttemptAction row = new AttemptAction(id, attemptID, timestamp, action, data, xml);
+						AttemptAction row = new AttemptAction(id, attemptID, timestamp, action,
+								data, xml);
 						if (row.snapshot != null) lastSnaphot = row.snapshot;
 
 						if ("BlockEditor.start".equals(action)) {
@@ -176,6 +181,12 @@ public class SnapParser {
 								solution.add(r);
 							}
 							currentWork.clear();
+							String codeHash = String.format("%x", lastSnaphot.toCode().hashCode());
+							if (codeHash.equals(submittedCodeHash)) {
+								solution.submittedSnapshot = lastSnaphot;
+								solution.submittedActionID = id;
+								break;
+							}
 							if (foundGraded) break;
 						}
 
@@ -184,6 +195,10 @@ public class SnapParser {
 
 					if (gradedID != null && !foundGraded) {
 						System.err.println("No grade row for: " + logFile.getName());
+					}
+
+					if (submittedCodeHash != null && solution.submittedSnapshot == null) {
+						System.err.println("Submitted hash not found: " + submittedCodeHash);
 					}
 
 					System.out.println("Parsed: " + logFile.getName());
@@ -201,7 +216,7 @@ public class SnapParser {
 	public Map<String, AssignmentAttempt> parseAssignment(final boolean snapshotsOnly) {
 		HashMap<String, Grade> grades = parseGrades();
 
-		Set<String> submittedGUIDs = ParseSubmitted.getSubmittedGUIDs(assignment);
+		final Map<String, String> submittedHashes = ParseSubmitted.getSubmittedHashes(assignment);
 
 		final Map<String, AssignmentAttempt> students = new TreeMap<String, AssignmentAttempt>();
 		final AtomicInteger threads = new AtomicInteger();
@@ -210,14 +225,16 @@ public class SnapParser {
 			final File fFile = file;
 			String guid = file.getName().replace(".csv", "");
 			final Grade grade = grades.get(guid);
-			final Boolean submitted = submittedGUIDs == null ? null : submittedGUIDs.contains(guid);
+			final String submittedCodeHash = submittedHashes == null ?
+					null : submittedHashes.get(guid);
 
 			threads.incrementAndGet();
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
 					try {
-						AssignmentAttempt rows = parseRows(fFile, grade, submitted, snapshotsOnly);
+						AssignmentAttempt rows = parseRows(fFile, grade, submittedHashes != null,
+								submittedCodeHash, snapshotsOnly);
 						if (rows.grade == null || !rows.grade.outlier) {
 							if (rows.size() > 3) {
 								synchronized (students) {
