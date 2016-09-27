@@ -73,7 +73,7 @@ public class CheckHintUsage {
 
 	public static void main(String[] args) throws IOException {
 
-		Assignment assignment = Assignment.Spring2016.GuessingGame1;
+		Assignment assignment = Assignment.Fall2016.Squiral;
 
 		// Get the name-path pairs of all projects we logged
 		Map<String, AssignmentAttempt> guessingGame = assignment.load(Mode.Use, false);
@@ -93,7 +93,8 @@ public class CheckHintUsage {
 			// Ignore any that weren't exported (and thus couldn't have been submitted)
 			if (!isValidSubmission(path)) continue;
 
-			int nHints = 0, nUnchangedHints = 0, nDuplicateHints = 0, nThumbsUp = 0, nThumbsDown = 0, nHintsFollowed = 0, nHintsCloser = 0;
+			int nHints = 0, nUnchangedHints = 0, nDuplicateHints = 0, nThumbsUp = 0,
+					nThumbsDown = 0, nHintsFollowed = 0, nHintsCloser = 0;
 			int nObjectiveHints = 0, nObjectiveHintsFollowed = 0;
 			int nTestScriptHints = 0, nTestScriptHintsFollowed = 0;
 			int nBlockRuns = 0, nFlagRuns = 0;
@@ -132,7 +133,8 @@ public class CheckHintUsage {
 				// Get the student's current code and turn it into a tree
 				Node node = SimpleNodeBuilder.toTree(code, true);
 
-				double timePerc = (double)(row.timestamp.getTime() - startTime) / (endTime - startTime);
+				double timePerc = (double)(row.timestamp.getTime() - startTime) /
+						(endTime - startTime);
 
 				HashMap<String, Boolean> grade = AutoGrader.grade(node);
 				for (String obj : grade.keySet()) {
@@ -165,6 +167,14 @@ public class CheckHintUsage {
 
 					// Find the parent node that this hint affects
 					Node parent = findParent(node, data);
+
+					// Hack for custom block structure hints that failed to log rootTypes
+					if (parent == null && "SnapDisplay.showStructureHint".equals(row.action)) {
+						if (code.editing != null) {
+							parent = node.searchForNodeWithID(code.editing.getID());
+						}
+					}
+
 					// It shouldn't be null (and isn't for this dataset)
 					if (parent == null) {
 						System.out.println(node.prettyPrint());
@@ -173,17 +183,25 @@ public class CheckHintUsage {
 						throw new RuntimeException("Parent shouldn't be null :/");
 					}
 
-					// Read the list of nodes that the hint is telling to use for the parent's new children
+					// Read the list of nodes that the hint is telling to use for the parent's new
+					// children
 					JSONArray toArray = data.getJSONArray("to");
 					String[] to = new String[toArray.length()];
 					for (int j = 0; j < to.length; j++) to[j] = toArray.getString(j);
-					JSONArray fromArray = data.getJSONArray("from");
+
+					JSONArray fromArray;
+					if (data.has("from")) {
+						fromArray = data.getJSONArray("from");
+					} else {
+						fromArray = data.getJSONArray("fromList").getJSONArray(0);
+					}
 					String[] from = new String[fromArray.length()];
 					for (int j = 0; j < from.length; j++) from[j] = fromArray.getString(j);
 					// And apply this to get a new parent node
 					Node hintOutcome = VectorHint.applyHint(parent, to);
 
-					if (contains(from, "doIfElse") && !contains(to, "doIfElse") && !contains(from, "doUntil")) {// && contains(to, "doUntil")) {
+					if (contains(from, "doIfElse") && !contains(to, "doIfElse") &&
+							!contains(from, "doUntil")) {// && contains(to, "doUntil")) {
 						System.out.println(submission);
 						System.out.println("  "  + parent + "\n->" + hintOutcome);
 					}
@@ -241,7 +259,8 @@ public class CheckHintUsage {
 						// Get the next row with a new snapshot
 						AttemptAction nextRow = path.rows.get(j);
 						Snapshot nextCode = nextRow.snapshot;
-						// if the row does not have a snapshot, skip this row and do not count into steps
+						// if the row does not have a snapshot, skip this row and do not count
+						// into steps
 						if (nextCode == null)
 							continue;
 						steps++;
@@ -313,7 +332,8 @@ public class CheckHintUsage {
 
 
 					long nextActionTime = time;
-					if (i < path.size() - 1) nextActionTime = path.rows.get(i + 1).timestamp.getTime();
+					if (i < path.size() - 1) nextActionTime =
+							path.rows.get(i + 1).timestamp.getTime();
 					int pause = (int)(nextActionTime - time) / 1000;
 					hints.put("pause", pause);
 
@@ -433,7 +453,8 @@ public class CheckHintUsage {
 	}
 
 	@SuppressWarnings("unused")
-	private static void outputDistance(PrintStream psSnapshot, PrintStream psHint, HashMap<String, AssignmentAttempt> submissions) throws IOException{
+	private static void outputDistance(PrintStream psSnapshot, PrintStream psHint, HashMap<String,
+			AssignmentAttempt> submissions) throws IOException{
 		// create column names
 		List<String> headerSnapshot = new LinkedList<String>();
 		headerSnapshot.addAll(Arrays.asList("id","time","distance"));
@@ -441,8 +462,10 @@ public class CheckHintUsage {
 		headerHint.addAll(Arrays.asList("id","time","distance","isTaken"));
 
 		// create printer
-		CSVPrinter prtSnapshot = new CSVPrinter(psSnapshot, CSVFormat.DEFAULT.withHeader(headerSnapshot.toArray(new String[headerSnapshot.size()])));
-		CSVPrinter prtHint = new CSVPrinter(psHint, CSVFormat.DEFAULT.withHeader(headerHint.toArray(new String[headerHint.size()])));
+		CSVPrinter prtSnapshot = new CSVPrinter(psSnapshot, CSVFormat.DEFAULT.withHeader(
+				headerSnapshot.toArray(new String[headerSnapshot.size()])));
+		CSVPrinter prtHint = new CSVPrinter(psHint, CSVFormat.DEFAULT.withHeader(
+				headerHint.toArray(new String[headerHint.size()])));
 		// loop through the submissions
 		for (String key: submissions.keySet()) {
 			AssignmentAttempt path = submissions.get(key);
@@ -489,7 +512,8 @@ public class CheckHintUsage {
 				if (row.action.equals("Block.grabbed")) isSnapshotChanged = false;
 
 
-				// if snapshot is changed, calculate distance, record distance, time difference, etc.
+				// if snapshot is changed, calculate distance, record distance, time difference,
+				// etc.
 				if (isSnapshotChanged) {
 					code = row.snapshot;
 					snapshotNode = SimpleNodeBuilder.toTree(code, true);
@@ -554,7 +578,8 @@ public class CheckHintUsage {
 			String[] header = row.keySet().toArray(new String[row.keySet().size()]);
 			File file = new File(path);
 			file.getParentFile().mkdirs();
-			CSVPrinter printer = new CSVPrinter(new PrintStream(file), CSVFormat.DEFAULT.withHeader(header));
+			CSVPrinter printer = new CSVPrinter(new PrintStream(file),
+					CSVFormat.DEFAULT.withHeader(header));
 
 			for (Map<String,Object> row : rows) {
 				printer.printRecord(row.values());
@@ -565,13 +590,15 @@ public class CheckHintUsage {
 	}
 
 	@SuppressWarnings("unused")
-	private static void outputGrades(PrintStream ps, HashMap<String, AssignmentAttempt> submissions, List<Integer> studentHintCounts,
-			List<Integer> studentFollowedCounts) throws IOException {
+	private static void outputGrades(PrintStream ps, HashMap<String, AssignmentAttempt> submissions,
+			List<Integer> studentHintCounts, List<Integer> studentFollowedCounts)
+					throws IOException {
 		List<String> header = new LinkedList<>();
 		header.addAll(Arrays.asList("id", "requested", "followed", "grade"));
 		for (Grader g : AutoGrader.graders)	header.add(g.name());
 
-		CSVPrinter printer = new CSVPrinter(ps, CSVFormat.DEFAULT.withHeader(header.toArray(new String[header.size()])));
+		CSVPrinter printer = new CSVPrinter(ps, CSVFormat.DEFAULT.withHeader(
+				header.toArray(new String[header.size()])));
 		int i = 0;
 		for (String key : submissions.keySet()) {
 			AssignmentAttempt path = submissions.get(key);
@@ -641,14 +668,15 @@ public class CheckHintUsage {
 
 		Node parent = null;
 		for (String id : ids) {
-			Object parentID = getValue(data, id);
-			if (parentID != null) {
+			Object value = getValue(data, id);
+			if (value != null) {
+				String parentID = value.toString();
 				parent = root.searchForNodeWithID(parentID);
 				break;
 			}
 		}
 
-		if (parent != null && data.has("index")) {
+		if (parent != null && data.has("index") && !parent.hasType("script")) {
 			if (!data.isNull("parentID")) {
 				int index = data.getInt("index");
 				parent = parent.children.get(index);
@@ -657,7 +685,8 @@ public class CheckHintUsage {
 			}
 		}
 
-		if (parent != null && parent.children.size() == 1 && parent.children.get(0).hasType("list")) {
+		if (parent != null && parent.children.size() == 1 &&
+				parent.children.get(0).hasType("list")) {
 			return parent.children.get(0);
 		}
 

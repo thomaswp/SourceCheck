@@ -98,18 +98,19 @@ public class BlockDefinition extends Code implements IHasID {
 		List<Element> scripts = toList(XML.getGrandchildrenByTagName(element, "scripts", "script"));
 		Element mainScript = scripts.get(0);
 		List<Element> blocks = toList(XML.getChildrenByTagName(mainScript, "block"));
-		Element firstBlock = blocks.get(0);
-		if (firstBlock.getAttribute("s").length() > 0) {
+		Element hatBlock = blocks.get(0);
+		String hatBlockId = hatBlock.getAttribute("id");
+		if (hatBlock.getAttribute("s").length() > 0) {
 			throw new RuntimeException("Improper editing block");
 		}
-		Element definition = firstBlock;
+		Element definition = hatBlock;
 		while (!definition.getTagName().equals("custom-block")) {
 			definition = (Element) definition.getFirstChild();
 		}
 
 		String name = definition.getAttribute("s");
 
-		Script script = new Script();
+		Script script = new Script(hatBlockId);
 		for (int i = 1; i < blocks.size(); i++) {
 			script.blocks.add((Block) XML.getCodeElement(blocks.get(i)));
 		}
