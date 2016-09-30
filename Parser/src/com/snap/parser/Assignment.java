@@ -111,7 +111,13 @@ public class Assignment {
 		public final static Assignment GuessingGame1 = new Assignment(dataDir,
 				"guess1Lab", start, date(2015, 9, 18), false, true);
 		public final static Assignment GuessingGame2 = new Assignment(dataDir,
-				"guess2HW", start, date(2015, 9, 25), false);
+				"guess2HW", start, date(2015, 9, 25), false) {
+			@Override
+			public boolean ignore(String student) {
+				// Actually work on guess3Lab with the same ID as a guess2HW submission
+				return "10e87347-75ca-4d07-9b65-138c47332aca".equals(student);
+			}
+		};
 		public final static Assignment GuessingGame3 = new Assignment(dataDir,
 				"guess3Lab", start, date(2015, 10, 2), false);
 

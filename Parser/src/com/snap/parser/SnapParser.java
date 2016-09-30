@@ -201,7 +201,8 @@ public class SnapParser {
 					// the submitted snapshot, check to see what's wrong manually
 					if (solution.exported && submittedCodeHash != null &&
 							solution.submittedSnapshot == null) {
-						System.err.println("Submitted hash not found: " + submittedCodeHash);
+						System.err.printf("Submitted hash not found for %s: %s\n",
+								attemptID, submittedCodeHash);
 					}
 
 					System.out.println("Parsed: " + logFile.getName());
@@ -226,7 +227,7 @@ public class SnapParser {
 		for (File file : new File(assignment.parsedDir()).listFiles()) {
 			if (!file.getName().endsWith(".csv")) continue;
 			final File fFile = file;
-			String guid = file.getName().replace(".csv", "");
+			final String guid = file.getName().replace(".csv", "");
 			final Grade grade = grades.get(guid);
 			final String submittedCodeHash = submittedHashes == null ?
 					null : submittedHashes.get(guid);
@@ -236,9 +237,9 @@ public class SnapParser {
 				@Override
 				public void run() {
 					try {
-						if (grade == null || !grade.outlier) {
-							AssignmentAttempt rows = parseRows(fFile, grade, submittedHashes != null,
-									submittedCodeHash, snapshotsOnly);
+						if (!assignment.ignore(guid) && (grade == null || !grade.outlier)) {
+							AssignmentAttempt rows = parseRows(fFile, grade,
+									submittedHashes != null, submittedCodeHash, snapshotsOnly);
 							if (rows.size() > 3) {
 								synchronized (students) {
 									students.put(fFile.getName(), rows);
