@@ -133,7 +133,13 @@ public class Assignment {
 		public final static String dataFile = dataDir + ".csv";
 
 		public final static Assignment LightsCameraAction = new Assignment(dataDir,
-				"lightsCameraActionHW", start, date(2016, 1, 29), true);
+				"lightsCameraActionHW", start, date(2016, 1, 29), true) {
+			@Override
+			public boolean ignore(String student) {
+				// XML logging seems to have failed part-way through the submission
+				return "8c515eec-6cad-444d-9882-41c596f415d0".equals(student);
+			};
+		};
 		public final static Assignment PolygonMaker = new Assignment(dataDir,
 				"polygonMakerLab", start, date(2016, 2, 2), true);
 		public final static Assignment Squiral = new Assignment(dataDir,

@@ -16,16 +16,15 @@ import com.snap.parser.Store.Mode;
 public class ParseSubmitted {
 
 	public static void main(String[] args) throws IOException {
-		for (Assignment assignment : Assignment.Spring2016.All) {
-			parse(assignment);
-		}
-//		parse(Assignment.Spring2016.LightsCameraAction);
-		printToGrade(Assignment.Spring2016.LightsCameraAction);
+//		for (Assignment assignment : Assignment.Spring2016.All) {
+//			parse(assignment);
+//		}
+		parse(Assignment.Spring2016.LightsCameraAction);
 	}
 
-	public static void printToGrade(Assignment assignment) {
-		Map<String, String> submittedHashes = getSubmittedHashes(assignment);
-		if (submittedHashes == null) System.out.println("No submitted assignments.");
+	public static void printToGrade(Assignment assignment) throws IOException {
+		Map<String, String> submittedHashes = getOrParseSubmittedHashes(assignment);
+		if (submittedHashes == null) throw new RuntimeException("No submitted assignments.");
 
 		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Overwrite, true);
 		System.out.println("\n\n");
@@ -45,6 +44,7 @@ public class ParseSubmitted {
 	}
 
 	public static void parse(Assignment assignment) throws IOException {
+		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, true);
 		File dir = new File(assignment.submittedDir());
 		if (!dir.exists()) {
 			System.err.println("Missing submitted directory: " + dir.getAbsolutePath());
@@ -69,12 +69,34 @@ public class ParseSubmitted {
 					guid = file.getName();
 					guid = "nolog-" + guid.substring(0, guid.length() - 4);
 				}
-				if (submitted.add(guid)) {
-					System.out.printf("%s => %s\n", file.getName(), guid);
-					output.printf("%s,%x\n", guid, snapshot.toCode().hashCode());
-				} else {
-					System.err.printf("Duplicate submission (%s): (%s)\n", guid, file.getAbsolutePath());
+
+				if (!submitted.add(guid)) {
+					throw new RuntimeException(String.format("Duplicate submission (%s): (%s)\n",
+							guid, file.getAbsolutePath()));
 				}
+
+				String submittedCode = snapshot.toCode();
+
+				int rowID = -1;
+				// TODO: This should be standardized, but I'm concerned it will break code somewhere
+				AssignmentAttempt attempt = attempts.get(guid + ".csv");
+				if (attempt != null && attempt.exported) {
+					String lastCode = null;
+					for (AttemptAction action : attempt) {
+						lastCode = action.snapshot.toCode();
+						if (submittedCode.equals(lastCode)) {
+							lastCode = null;
+							rowID = action.id;
+							break;
+						}
+					}
+					if (lastCode != null) {
+						System.err.println("Submitted code not found for: " + file.getPath());
+						System.out.println(lastCode + "\n----vs----\n" + submittedCode);
+					}
+				}
+
+				output.printf("%s,%d\n", guid, rowID);
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			}
@@ -82,6 +104,15 @@ public class ParseSubmitted {
 		output.close();
 	}
 
+	public static Map<String, String> getOrParseSubmittedHashes(Assignment assignment)
+			throws IOException {
+		Map<String, String> submittedHashes = getSubmittedHashes(assignment);
+		if (submittedHashes != null) return submittedHashes;
+		parse(assignment);
+		return getSubmittedHashes(assignment);
+	}
+
+	// TODO: Update to return integers and modify parse code to use them
 	public static Map<String, String> getSubmittedHashes(Assignment assignment) {
 		Map<String, String> submitted = new HashMap<String, String>();
 		File file = new File(assignment.submittedDir() + ".txt");
