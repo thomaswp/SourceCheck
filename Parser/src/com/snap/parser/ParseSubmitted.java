@@ -20,7 +20,7 @@ public class ParseSubmitted {
 		for (Assignment assignment : Fall2015.All) {
 			parse(assignment);
 		}
-		printToGrade(Fall2015.GuessingGame1);
+		printToGrade(Fall2015.GuessingGame2);
 	}
 
 	public static void printToGrade(Assignment assignment) {
@@ -66,6 +66,7 @@ public class ParseSubmitted {
 					guid = "nolog-" + guid.substring(0, guid.length() - 4);
 				}
 				if (submitted.add(guid)) {
+					System.out.printf("%s => %s\n", file.getName(), guid);
 					output.printf("%s,%x\n", guid, snapshot.toCode().hashCode());
 				} else {
 					System.err.printf("Duplicate submission (%s): (%s)\n", guid, file.getAbsolutePath());

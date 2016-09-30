@@ -98,6 +98,7 @@ public class Assignment {
 		public final static String dataFile = dataDir + ".csv";
 
 		// Used this submission for testing, so not using it in evaluation
+		// For the comparison 2015/2016 study we should keep it, though
 		public final static String GG1_SKIP = "3c3ce047-b408-417e-b556-f9406ac4c7a8.csv";
 
 		// Note: the first three assignments were not recorded in Fall 2015
@@ -108,13 +109,7 @@ public class Assignment {
 //		public final static Assignment Squiral = new Assignment(dataDir,
 //				"squiralHW", start, date(2015, 9, 13), false);
 		public final static Assignment GuessingGame1 = new Assignment(dataDir,
-				"guess1Lab", start,
-				date(2015, 9, 18), false, true) {
-			@Override
-			public boolean ignore(String id) {
-				return GG1_SKIP.equals(id);
-			};
-		};
+				"guess1Lab", start, date(2015, 9, 18), false, true);
 		public final static Assignment GuessingGame2 = new Assignment(dataDir,
 				"guess2HW", start, date(2015, 9, 25), false);
 		public final static Assignment GuessingGame3 = new Assignment(dataDir,

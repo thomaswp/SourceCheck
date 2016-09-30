@@ -197,7 +197,10 @@ public class SnapParser {
 						System.err.println("No grade row for: " + logFile.getName());
 					}
 
-					if (submittedCodeHash != null && solution.submittedSnapshot == null) {
+					// If the solution was exported and submitted, but the log data does not contain
+					// the submitted snapshot, check to see what's wrong manually
+					if (solution.exported && submittedCodeHash != null &&
+							solution.submittedSnapshot == null) {
 						System.err.println("Submitted hash not found: " + submittedCodeHash);
 					}
 
@@ -233,9 +236,9 @@ public class SnapParser {
 				@Override
 				public void run() {
 					try {
-						AssignmentAttempt rows = parseRows(fFile, grade, submittedHashes != null,
-								submittedCodeHash, snapshotsOnly);
-						if (rows.grade == null || !rows.grade.outlier) {
+						if (grade == null || !grade.outlier) {
+							AssignmentAttempt rows = parseRows(fFile, grade, submittedHashes != null,
+									submittedCodeHash, snapshotsOnly);
 							if (rows.size() > 3) {
 								synchronized (students) {
 									students.put(fFile.getName(), rows);
