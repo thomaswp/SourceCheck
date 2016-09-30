@@ -11,16 +11,16 @@ import java.util.Scanner;
 import java.util.Set;
 
 import com.snap.data.Snapshot;
-import com.snap.parser.Assignment.Fall2015;
 import com.snap.parser.Store.Mode;
 
 public class ParseSubmitted {
 
 	public static void main(String[] args) throws IOException {
-		for (Assignment assignment : Fall2015.All) {
+		for (Assignment assignment : Assignment.Spring2016.All) {
 			parse(assignment);
 		}
-		printToGrade(Fall2015.GuessingGame2);
+//		parse(Assignment.Spring2016.LightsCameraAction);
+		printToGrade(Assignment.Spring2016.LightsCameraAction);
 	}
 
 	public static void printToGrade(Assignment assignment) {
@@ -60,6 +60,10 @@ public class ParseSubmitted {
 			}
 			try {
 				Snapshot snapshot = Snapshot.parse(file);
+				if (snapshot == null) {
+					System.err.println("Failed to parse: " + file.getPath());
+					continue;
+				}
 				String guid = snapshot.guid;
 				if (guid == null || guid.length() == 0) {
 					guid = file.getName();
