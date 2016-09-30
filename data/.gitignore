@@ -3,5 +3,5 @@
 *.json
 *.json.js
 *.txt
-csc200/*/submitted/*/*.xml
+csc200/*/submitted/*/*
 !csc200/*/submitted/*.txt

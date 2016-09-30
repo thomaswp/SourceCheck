@@ -60,10 +60,15 @@ public class ParseSubmitted {
 			}
 			try {
 				Snapshot snapshot = Snapshot.parse(file);
-				if (submitted.add(snapshot.guid)) {
-					output.printf("%s,%x\n", snapshot.guid, snapshot.toCode().hashCode());
+				String guid = snapshot.guid;
+				if (guid == null || guid.length() == 0) {
+					guid = file.getName();
+					guid = "nolog-" + guid.substring(0, guid.length() - 4);
+				}
+				if (submitted.add(guid)) {
+					output.printf("%s,%x\n", guid, snapshot.toCode().hashCode());
 				} else {
-					System.err.println("Duplicate submission: " + file.getAbsolutePath());
+					System.err.printf("Duplicate submission (%s): (%s)\n", guid, file.getAbsolutePath());
 				}
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
