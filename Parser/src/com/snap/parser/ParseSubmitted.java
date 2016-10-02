@@ -4,14 +4,21 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
 
 import com.snap.data.Snapshot;
 import com.snap.parser.Store.Mode;
+
+import difflib.Chunk;
+import difflib.Delta;
+import difflib.DiffUtils;
+import difflib.Patch;
 
 public class ParseSubmitted {
 
@@ -20,6 +27,7 @@ public class ParseSubmitted {
 //			parse(assignment);
 //		}
 		parse(Assignment.Spring2016.LightsCameraAction);
+//		System.out.println(diff("a\nb\nc", "a\nd\ne"));
 	}
 
 	public static void printToGrade(Assignment assignment) throws IOException {
@@ -91,8 +99,9 @@ public class ParseSubmitted {
 						}
 					}
 					if (lastCode != null) {
-						System.err.println("Submitted code not found for: " + file.getPath());
-						System.out.println(lastCode + "\n----vs----\n" + submittedCode);
+						System.out.printf("Submitted code not found for: %s (%s)\n",
+								guid, file.getPath());
+						System.out.println(diff(lastCode, submittedCode));
 					}
 				}
 
@@ -137,5 +146,62 @@ public class ParseSubmitted {
 			return null;
 		}
 		return submitted;
+	}
+
+	public static String diff(String a, String b) {
+		String[] original = a.split("\n");
+		Patch<String> diff = DiffUtils.diff(
+				Arrays.asList(original), Arrays.asList(b.split("\n")));
+		List<Delta<String>> deltas = diff.getDeltas();
+		String out = "";
+		int lastChunkEnd = -1;
+		int margin = 3;
+		boolean[] printed = new boolean[original.length];
+		for (Delta<String> delta : deltas) {
+			Chunk<String> chunk = delta.getOriginal();
+//			System.out.println(chunk);
+			int chunkStart = chunk.getPosition();
+			int chunkEnd = chunkStart + chunk.getLines().size() - 1;
+			if (lastChunkEnd >= 0) {
+				int printStop = Math.min(lastChunkEnd + margin + 1, chunkStart - 1);
+				for (int i = lastChunkEnd + 1; i <= printStop; i++) {
+					out += "  " + original[i] + "\n";
+					printed[i] = true;
+				}
+				if (printStop < chunkStart - 1) {
+					out += "...\n";
+				}
+			}
+
+			for (int i = Math.max(chunkStart - margin, 0); i < chunkStart; i++) {
+				if (!printed[i]) {
+					out += "  " + original[i] + "\n";
+					printed[i] = true;
+				}
+			}
+
+			for (String deleted : delta.getOriginal().getLines()) {
+				out += "- " + deleted + "\n";
+			}
+			for (String added : delta.getRevised().getLines()) {
+				out += "+ " + added + "\n";
+			}
+
+			for (int i = chunkStart; i <= chunkEnd; i++) printed[i] = true;
+
+			lastChunkEnd = chunkEnd;
+		}
+
+		if (lastChunkEnd >= 0) {
+			int printStop = Math.min(lastChunkEnd + margin + 1, original.length - 1);
+			for (int i = lastChunkEnd + 1; i <= printStop; i++) {
+				out += "  " + original[i] + "\n";
+				printed[i] = true;
+			}
+			if (printStop < original.length - 1) {
+				out += "...\n";
+			}
+		}
+		return out;
 	}
 }
