@@ -26,7 +26,7 @@ public class ParseSubmitted {
 //		for (Assignment assignment : Assignment.Spring2016.All) {
 //			parse(assignment);
 //		}
-		parse(Assignment.Spring2016.LightsCameraAction);
+		parse(Assignment.Spring2016.GuessingGame1);
 //		System.out.println(diff("a\nb\nc", "a\nd\ne"));
 	}
 
