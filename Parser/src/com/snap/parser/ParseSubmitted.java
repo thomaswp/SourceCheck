@@ -26,7 +26,8 @@ public class ParseSubmitted {
 //		for (Assignment assignment : Assignment.Spring2016.All) {
 //			parse(assignment);
 //		}
-		parse(Assignment.Spring2016.LightsCameraAction);
+//		parse(Assignment.Fall2015.GuessingGame3);
+		printToGrade(Assignment.Fall2015.GuessingGame1);
 	}
 
 	public static void printToGrade(Assignment assignment) throws IOException {
@@ -84,8 +85,7 @@ public class ParseSubmitted {
 				String submittedCode = snapshot.toCode();
 
 				int rowID = -1;
-				// TODO: This should be standardized, but I'm concerned it will break code somewhere
-				AssignmentAttempt attempt = attempts.get(guid + ".csv");
+				AssignmentAttempt attempt = attempts.get(guid);
 				if (attempt != null && attempt.exported) {
 					String lastCode = null;
 					for (AttemptAction action : attempt) {
@@ -121,7 +121,6 @@ public class ParseSubmitted {
 		return getSubmittedRows(assignment);
 	}
 
-	// TODO: Update to return integers and modify parse code to use them
 	public static Map<String, Integer> getSubmittedRows(Assignment assignment) {
 		Map<String, Integer> submitted = new HashMap<String, Integer>();
 		File file = new File(assignment.submittedDir() + ".txt");

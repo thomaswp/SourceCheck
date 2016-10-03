@@ -99,7 +99,7 @@ public class Assignment {
 
 		// Used this submission for testing, so not using it in evaluation
 		// For the comparison 2015/2016 study we should keep it, though
-		public final static String GG1_SKIP = "3c3ce047-b408-417e-b556-f9406ac4c7a8.csv";
+		public final static String GG1_SKIP = "3c3ce047-b408-417e-b556-f9406ac4c7a8";
 
 		// Note: the first three assignments were not recorded in Fall 2015
 //		public final static Assignment LightsCameraAction = new Assignment(dataDir,

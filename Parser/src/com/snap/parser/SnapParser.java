@@ -226,7 +226,7 @@ public class SnapParser {
 
 		final Map<String, Integer> submittedRows = ParseSubmitted.getSubmittedRows(assignment);
 
-		final Map<String, AssignmentAttempt> students = new TreeMap<String, AssignmentAttempt>();
+		final Map<String, AssignmentAttempt> submissions = new TreeMap<String, AssignmentAttempt>();
 		final AtomicInteger threads = new AtomicInteger();
 		for (File file : new File(assignment.parsedDir()).listFiles()) {
 			if (!file.getName().endsWith(".csv")) continue;
@@ -245,8 +245,8 @@ public class SnapParser {
 							AssignmentAttempt rows = parseRows(fFile, grade,
 									submittedRows != null, submittedRow, snapshotsOnly);
 							if (rows.size() > 3) {
-								synchronized (students) {
-									students.put(fFile.getName(), rows);
+								synchronized (submissions) {
+									submissions.put(guid, rows);
 								}
 							}
 						}
@@ -264,7 +264,7 @@ public class SnapParser {
 				e.printStackTrace();
 			}
 		}
-		return students;
+		return submissions;
 	}
 
 
