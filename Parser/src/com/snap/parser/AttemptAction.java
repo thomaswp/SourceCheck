@@ -10,6 +10,11 @@ import com.snap.data.Snapshot;
 public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	private static final long serialVersionUID = 1L;
 
+	public final static String IDE_EXPORT_PROJECT = "IDE.exportProject";
+	public final static String BLOCK_GRABBED = "Block.grabbed";
+	public final static String BLOCK_EDITOR_START = "BlockEditor.start";
+	public final static String BLOCK_EDITOR_OK = "BlockEditor.ok";
+
 	private final static DateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
 
 	public final int id;

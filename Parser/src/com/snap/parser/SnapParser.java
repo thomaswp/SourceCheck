@@ -74,7 +74,7 @@ public class SnapParser {
 	}
 
 	private AssignmentAttempt parseRows(final File logFile, final Grade grade,
-			final boolean knownSubmissions, final String submittedCodeHash,
+			final boolean knownSubmissions, final Integer submittedActionID,
 			final boolean snapshotsOnly)
 					throws IOException {
 		final String attemptID = logFile.getName().replace(".csv", "");
@@ -130,7 +130,7 @@ public class SnapParser {
 						String data = record.get(3);
 
 						String xml = record.get(8);
-						if (snapshotsOnly && action.equals("Block.grabbed")) {
+						if (snapshotsOnly && AttemptAction.BLOCK_GRABBED.equals(action)) {
 							if (xml.length() > 2) lastGrab = xml;
 							continue;
 						} else if (xml.length() <= 2 && lastGrab != null) {
@@ -147,7 +147,7 @@ public class SnapParser {
 								data, xml);
 						if (row.snapshot != null) lastSnaphot = row.snapshot;
 
-						if ("BlockEditor.start".equals(action)) {
+						if (AttemptAction.BLOCK_EDITOR_START.equals(action)) {
 							JSONObject json = new JSONObject(data);
 							String name = json.getString("spec");
 							String type = json.getString("type");
@@ -156,7 +156,7 @@ public class SnapParser {
 							if (editingIndex == null) {
 								System.err.println("Edit index not found");
 							}
-						} else if ("BlockEditor.ok".equals(action)) {
+						} else if (AttemptAction.BLOCK_EDITOR_OK.equals(action)) {
 							editingIndex = null;
 						}
 						if (row.snapshot != null) {
@@ -175,19 +175,24 @@ public class SnapParser {
 							foundGraded = true;
 						}
 
-						if (action.equals("IDE.exportProject")) {
+						boolean done = false;
+						if (AttemptAction.IDE_EXPORT_PROJECT.equals(action)) {
 							solution.exported = true;
 							for (AttemptAction r : currentWork) {
 								solution.add(r);
 							}
 							currentWork.clear();
-							String codeHash = String.format("%x", lastSnaphot.toCode().hashCode());
-							if (codeHash.equals(submittedCodeHash)) {
-								solution.submittedSnapshot = lastSnaphot;
-								solution.submittedActionID = id;
-								break;
-							}
-							if (foundGraded) break;
+							done |= foundGraded;
+						}
+
+						if (submittedActionID != null && id == submittedActionID) {
+							solution.submittedSnapshot = lastSnaphot;
+							solution.submittedActionID = id;
+							done = true;
+						}
+
+						if (done) {
+							break;
 						}
 
 					}
@@ -199,10 +204,9 @@ public class SnapParser {
 
 					// If the solution was exported and submitted, but the log data does not contain
 					// the submitted snapshot, check to see what's wrong manually
-					if (solution.exported && submittedCodeHash != null &&
-							solution.submittedSnapshot == null) {
-						System.err.printf("Submitted hash not found for %s: %s\n",
-								attemptID, submittedCodeHash);
+					if (submittedActionID != null && solution.submittedSnapshot == null) {
+						System.err.printf("Submitted id not found for %s: %s\n",
+								attemptID, submittedActionID);
 					}
 
 					System.out.println("Parsed: " + logFile.getName());
@@ -220,7 +224,7 @@ public class SnapParser {
 	public Map<String, AssignmentAttempt> parseAssignment(final boolean snapshotsOnly) {
 		HashMap<String, Grade> grades = parseGrades();
 
-		final Map<String, String> submittedHashes = ParseSubmitted.getSubmittedHashes(assignment);
+		final Map<String, Integer> submittedRows = ParseSubmitted.getSubmittedRows(assignment);
 
 		final Map<String, AssignmentAttempt> students = new TreeMap<String, AssignmentAttempt>();
 		final AtomicInteger threads = new AtomicInteger();
@@ -229,8 +233,8 @@ public class SnapParser {
 			final File fFile = file;
 			final String guid = file.getName().replace(".csv", "");
 			final Grade grade = grades.get(guid);
-			final String submittedCodeHash = submittedHashes == null ?
-					null : submittedHashes.get(guid);
+			final Integer submittedRow = submittedRows == null ?
+					null : submittedRows.get(guid);
 
 			threads.incrementAndGet();
 			new Thread(new Runnable() {
@@ -239,7 +243,7 @@ public class SnapParser {
 					try {
 						if (!assignment.ignore(guid) && (grade == null || !grade.outlier)) {
 							AssignmentAttempt rows = parseRows(fFile, grade,
-									submittedHashes != null, submittedCodeHash, snapshotsOnly);
+									submittedRows != null, submittedRow, snapshotsOnly);
 							if (rows.size() > 3) {
 								synchronized (students) {
 									students.put(fFile.getName(), rows);

@@ -26,26 +26,24 @@ public class ParseSubmitted {
 //		for (Assignment assignment : Assignment.Spring2016.All) {
 //			parse(assignment);
 //		}
-		parse(Assignment.Spring2016.GuessingGame1);
-//		System.out.println(diff("a\nb\nc", "a\nd\ne"));
+		parse(Assignment.Spring2016.LightsCameraAction);
 	}
 
 	public static void printToGrade(Assignment assignment) throws IOException {
-		Map<String, String> submittedHashes = getOrParseSubmittedHashes(assignment);
-		if (submittedHashes == null) throw new RuntimeException("No submitted assignments.");
+		Map<String, Integer> submittedRows = getOrParseSubmittedRows(assignment);
+		if (submittedRows == null) throw new RuntimeException("No submitted assignments.");
 
-		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Overwrite, true);
+		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, true);
 		System.out.println("\n\n");
 		for (String attemptID : attempts.keySet()) {
-			AssignmentAttempt attempt = attempts.get(attemptID);
-			if (attempt.submittedActionID >= 0) {
-				System.out.printf("%s,%s\n", attempt.submittedSnapshot.guid,
-						attempt.submittedActionID);
-				submittedHashes.remove(attempt.submittedSnapshot.guid);
+			if (submittedRows.containsKey(attemptID)) {
+				System.out.printf("%s,%s\n", attemptID,
+						submittedRows.get(attemptID));
+				submittedRows.remove(attemptID);
 			}
 		}
 		System.out.println("------------------,");
-		for (String attemptID : submittedHashes.keySet()) {
+		for (String attemptID : submittedRows.keySet()) {
 			System.out.println(attemptID + ",");
 		}
 
@@ -93,12 +91,14 @@ public class ParseSubmitted {
 					for (AttemptAction action : attempt) {
 						lastCode = action.snapshot.toCode();
 						if (submittedCode.equals(lastCode)) {
-							lastCode = null;
 							rowID = action.id;
-							break;
+							if (AttemptAction.IDE_EXPORT_PROJECT.equals(action.action)) {
+								lastCode = null;
+								break;
+							}
 						}
 					}
-					if (lastCode != null) {
+					if (rowID == -1) {
 						System.out.printf("Submitted code not found for: %s (%s)\n",
 								guid, file.getPath());
 						System.out.println(diff(lastCode, submittedCode));
@@ -113,17 +113,17 @@ public class ParseSubmitted {
 		output.close();
 	}
 
-	public static Map<String, String> getOrParseSubmittedHashes(Assignment assignment)
+	public static Map<String, Integer> getOrParseSubmittedRows(Assignment assignment)
 			throws IOException {
-		Map<String, String> submittedHashes = getSubmittedHashes(assignment);
-		if (submittedHashes != null) return submittedHashes;
+		Map<String, Integer> submittedRows = getSubmittedRows(assignment);
+		if (submittedRows != null) return submittedRows;
 		parse(assignment);
-		return getSubmittedHashes(assignment);
+		return getSubmittedRows(assignment);
 	}
 
 	// TODO: Update to return integers and modify parse code to use them
-	public static Map<String, String> getSubmittedHashes(Assignment assignment) {
-		Map<String, String> submitted = new HashMap<String, String>();
+	public static Map<String, Integer> getSubmittedRows(Assignment assignment) {
+		Map<String, Integer> submitted = new HashMap<String, Integer>();
 		File file = new File(assignment.submittedDir() + ".txt");
 		if (!file.exists()) return null;
 		Scanner sc;
@@ -137,7 +137,8 @@ public class ParseSubmitted {
 						sc.close();
 						throw new RuntimeException("Invalid line: " + line);
 					}
-					submitted.put(parts[0], parts[1]);
+					int value = Integer.parseInt(parts[1]);
+					submitted.put(parts[0], value == -1 ? null : value);
 				}
 			}
 			sc.close();
@@ -147,6 +148,7 @@ public class ParseSubmitted {
 		}
 		return submitted;
 	}
+
 
 	public static String diff(String a, String b) {
 		String[] original = a.split("\n");
