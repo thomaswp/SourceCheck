@@ -22,10 +22,10 @@ import difflib.Patch;
 public class ParseSubmitted {
 
 	public static void main(String[] args) throws IOException {
-//		for (Assignment assignment : Assignment.Fall2015.All) {
-//			parse(assignment);
-//		}
-		parseSubmitted(Assignment.Fall2016.GuessingGame3);
+		for (Assignment assignment : Assignment.Spring2016.All) {
+			parseSubmitted(assignment);
+		}
+//		parseSubmitted(Assignment.Spring2016.PolygonMaker);
 //		printToGrade(Assignment.Fall2015.GuessingGame1);
 	}
 
@@ -62,6 +62,7 @@ public class ParseSubmitted {
 
 	private static void parseSubmitted(Assignment assignment) throws IOException {
 		System.out.println("Parsing submitted for: " + assignment.name);
+		cachedMaps.clear();
 		File dir = new File(assignment.submittedDir());
 		if (!dir.exists()) {
 			System.err.println("Missing submitted directory: " + dir.getAbsolutePath());
@@ -163,7 +164,7 @@ public class ParseSubmitted {
 
 	public static Map<String, Map<String, Submission>> getAllSubmissions(Dataset dataset) {
 		Map<String, Map<String, Submission>> allSubmissions = new HashMap<>();
-		for (Assignment assignment : dataset.all) {
+		for (Assignment assignment : dataset.all()) {
 			allSubmissions.put(assignment.name, getSubmissions(assignment));
 		}
 		return allSubmissions;

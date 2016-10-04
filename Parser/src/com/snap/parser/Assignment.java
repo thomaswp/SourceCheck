@@ -112,13 +112,13 @@ public class Assignment {
 	public static abstract class Dataset {
 		public final Date start;
 		public final String dataDir, dataFile;
-		public final Assignment[] all;
 
-		private Dataset(Date start, String dataDir, Assignment[] all) {
+		public abstract Assignment[] all();
+
+		private Dataset(Date start, String dataDir) {
 			this.start = start;
 			this.dataDir = dataDir;
 			this.dataFile = dataDir + ".csv";
-			this.all = all;
 		}
 
 	}
@@ -183,7 +183,12 @@ public class Assignment {
 		};
 
 		private Fall2015() {
-			super(start, dataDir, All);
+			super(start, dataDir);
+		}
+
+		@Override
+		public Assignment[] all() {
+			return All;
 		}
 	}
 
@@ -228,7 +233,12 @@ public class Assignment {
 		};
 
 		private Spring2016() {
-			super(start, dataDir, All);
+			super(start, dataDir);
+		}
+
+		@Override
+		public Assignment[] all() {
+			return All;
 		}
 	}
 
@@ -342,7 +352,12 @@ public class Assignment {
 		};
 
 		private Fall2016() {
-			super(start, dataDir, All);
+			super(start, dataDir);
+		}
+
+		@Override
+		public Assignment[] all() {
+			return All;
 		}
 	}
 

@@ -154,10 +154,10 @@ public class SnapParser {
 	private AssignmentAttempt parseRows(File logFile, Grade grade, boolean knownSubmissions,
 			Integer submittedActionID, Integer prequelEndID, boolean snapshotsOnly, boolean addMetadata)
 					throws IOException {
+		String attemptID = logFile.getName().replace(".csv", "");
 
 		ActionRows actions = parseActions(logFile);
 
-		String attemptID = logFile.getName().replace(".csv", "");
 		Date minDate = assignment.start, maxDate = assignment.end;
 
 		AssignmentAttempt attempt = new AssignmentAttempt(grade);
