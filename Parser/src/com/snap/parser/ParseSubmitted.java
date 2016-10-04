@@ -22,8 +22,9 @@ import difflib.Patch;
 public class ParseSubmitted {
 
 	public static void main(String[] args) throws IOException {
-		for (Assignment assignment : Assignment.Spring2016.All) {
-			parseSubmitted(assignment);
+		for (Assignment assignment : Assignment.Fall2016.All) {
+//			parseSubmitted(assignment);
+			assignment.load(Mode.Use, false);
 		}
 //		parseSubmitted(Assignment.Spring2016.PolygonMaker);
 //		printToGrade(Assignment.Fall2015.GuessingGame1);

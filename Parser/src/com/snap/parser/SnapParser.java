@@ -173,6 +173,7 @@ public class SnapParser {
 			AttemptAction action = actions.get(i);
 
 			// Ignore actions outside of our time range
+			// TODO: deal with late submissions
 			if (addMetadata && action.timestamp != null && (
 					(minDate != null && action.timestamp.before(minDate)) ||
 					(maxDate != null && action.timestamp.after(maxDate)))) {
@@ -316,7 +317,11 @@ public class SnapParser {
 				throw new RuntimeException("Missing submission data: " + file.getPath());
 			}
 			Integer prequelEndRow = prequelEndRows.get(attemptID);
-			parseCSV(file, snapshotsOnly, addMetadata, attempts, submissions, grades, prequelEndRow, threads);
+			boolean knownSubmissions = submissions != null;
+			Submission submission = knownSubmissions ? submissions.get(attemptID) : null;
+			Integer submittedRowID = submission != null ? submission.submittedRowID : null;
+			parseCSV(file, snapshotsOnly, addMetadata, attempts, knownSubmissions, submittedRowID, grades,
+					prequelEndRow, threads);
 		}
 		waitForThreads(threads);
 		return attempts;
@@ -333,12 +338,10 @@ public class SnapParser {
 	}
 
 	private void parseCSV(final File file, final boolean snapshotsOnly, final boolean addMetadata,
-			final Map<String, AssignmentAttempt> attempts, final Map<String, Submission> submissions,
+			final Map<String, AssignmentAttempt> attempts, final boolean knownSubmissions, final Integer submittedRowID,
 			Map<String, Grade> grades, final Integer prequelEndRow, final AtomicInteger threads) {
 		final String guid = file.getName().replace(".csv", "");
 		final Grade grade = grades.get(guid);
-		final Integer submittedRow = submissions == null ?
-				null : submissions.get(guid).submittedRowID;
 
 		threads.incrementAndGet();
 		new Thread(new Runnable() {
@@ -346,7 +349,7 @@ public class SnapParser {
 			public void run() {
 				try {
 					if (!assignment.ignore(guid) && (grade == null || !grade.outlier)) {
-						AssignmentAttempt attempt = parseRows(file, grade, submissions != null, submittedRow,
+						AssignmentAttempt attempt = parseRows(file, grade, knownSubmissions, submittedRowID,
 								prequelEndRow, snapshotsOnly, addMetadata);
 						if (attempt.size() > 3) {
 							synchronized (attempts) {
