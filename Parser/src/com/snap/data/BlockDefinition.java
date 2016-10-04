@@ -38,13 +38,13 @@ public class BlockDefinition extends Code implements IHasID {
 	};
 
 	private final static Set<String> TOOLS_BLOCKS_SET =
-			new HashSet<String>(Arrays.asList(TOOLS_BLOCKS));
+			new HashSet<>(Arrays.asList(TOOLS_BLOCKS));
 
 	public final String name, type, category, guid;
 	public final boolean isToolsBlock;
 	public final Script script;
-	public final List<String> inputs = new ArrayList<String>();
-	public final List<Script> scripts = new ArrayList<Script>();
+	public final List<String> inputs = new ArrayList<>();
+	public final List<Script> scripts = new ArrayList<>();
 	public String parentID;
 
 	@SuppressWarnings("unused")
@@ -81,12 +81,14 @@ public class BlockDefinition extends Code implements IHasID {
 		for (Element e : XML.getGrandchildrenByTagName(element, "scripts", "script")) {
 			def.scripts.add(Script.parse(e));
 		}
-		XML.ensureEmpty(element, "header", "code");
+		// Unparsed children:
+		// <code>: Snap-to-code mappings to translating Snap
+		// <header>: Snap-to-header mappings for translating Snap
 		return def;
 	}
 
 	private static <E> List<E> toList(Iterable<E> iter) {
-	    List<E> list = new ArrayList<E>();
+	    List<E> list = new ArrayList<>();
 	    for (E item : iter) {
 	        list.add(item);
 	    }
