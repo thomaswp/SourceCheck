@@ -15,20 +15,22 @@ public class Assignment {
 	public final Date start, end;
 	public final boolean hasIDs;
 	public final boolean graded;
+	public final Assignment prequel;
 	public final Assignment None;
 
 	private Assignment(String dataDir, String name, Date start, Date end, boolean hasIDs) {
-		this(dataDir, name, start, end, hasIDs, false);
+		this(dataDir, name, start, end, hasIDs, false, null);
 	}
 
 	private Assignment(String dataDir, String name, Date start, Date end,
-			boolean hasIDs, boolean graded) {
+			boolean hasIDs, boolean graded, Assignment prequel) {
 		this.dataDir = dataDir;
 		this.name = name;
 		this.start = start;
 		this.end = end;
 		this.hasIDs = hasIDs;
 		this.graded = graded;
+		this.prequel = prequel;
 		this.None = name.equals("none") ? null :
 			new Assignment(dataDir, "none", start, end, hasIDs);
 	}
@@ -116,8 +118,9 @@ public class Assignment {
 //				"polygonMakerLab", start, date(2015, 9, 4), false);
 //		public final static Assignment Squiral = new Assignment(dataDir,
 //				"squiralHW", start, date(2015, 9, 13), false);
+
 		public final static Assignment GuessingGame1 = new Assignment(dataDir,
-				"guess1Lab", start, date(2015, 9, 18), false, true) {
+				"guess1Lab", start, date(2015, 9, 18), false, true, null) {
 			@Override
 			public Assignment getLocationAssignment(String attemptID) {
 				switch (attemptID) {
@@ -128,25 +131,28 @@ public class Assignment {
 				return super.getLocationAssignment(attemptID);
 			};
 		};
+
 		public final static Assignment GuessingGame2 = new Assignment(dataDir,
-				"guess2HW", start, date(2015, 9, 25), false) {
+				"guess2HW", start, date(2015, 9, 25), false, false, GuessingGame1) {
 			@Override
 			public boolean ignore(String student) {
 				// Actually work on guess3Lab with the same ID as a guess2HW submission
 				return "10e87347-75ca-4d07-9b65-138c47332aca".equals(student);
 			}
-
 			@Override
 			public Assignment getLocationAssignment(String attemptID) {
 				switch (attemptID) {
-					// Did their GG2 work entirely under GG1
+					// Did GG2 under GG1, but also has "none" work so this is to override that
 					case "0cc151f3-a9db-4a03-9671-d5c814b3bbbe": return GuessingGame1;
+					// Did their GG2 work under GG3, which includes no GG3 work...
+					case "94833254-29ae-428a-b800-4a7efc699ef4": return GuessingGame3;
 				}
 				return super.getLocationAssignment(attemptID);
 			};
 		};
+
 		public final static Assignment GuessingGame3 = new Assignment(dataDir,
-				"guess3Lab", start, date(2015, 10, 2), false);
+				"guess3Lab", start, date(2015, 10, 2), false);;
 
 		public final static Assignment[] All = {
 //			LightsCameraAction, PolygonMaker, Squiral,
@@ -172,9 +178,9 @@ public class Assignment {
 		public final static Assignment Squiral = new Assignment(dataDir,
 				"squiralHW", start, date(2016, 2, 9), true);
 		public final static Assignment GuessingGame1 = new Assignment(dataDir,
-				"guess1Lab", start, date(2016, 2, 9), true, true);
+				"guess1Lab", start, date(2016, 2, 9), true, true, null);
 		public final static Assignment GuessingGame2 = new Assignment(dataDir,
-				"guess2HW", start, date(2016, 2, 16), true);
+				"guess2HW", start, date(2016, 2, 16), true, false, GuessingGame1);
 		public final static Assignment GuessingGame3 = new Assignment(dataDir,
 				"guess3Lab", start, date(2016, 2, 23), true);
 
@@ -196,9 +202,9 @@ public class Assignment {
 		public final static Assignment Squiral = new Assignment(dataDir,
 				"squiralHW", start, date(2016, 9, 11), true);
 		public final static Assignment GuessingGame1 = new Assignment(dataDir,
-				"guess1Lab", start, date(2016, 9, 16), true, true);
+				"guess1Lab", start, date(2016, 9, 16), true, true, null);
 		public final static Assignment GuessingGame2 = new Assignment(dataDir,
-				"guess2HW", start, date(2016, 9, 23), true);
+				"guess2HW", start, date(2016, 9, 23), true, false, GuessingGame1);
 		public final static Assignment GuessingGame3 = new Assignment(dataDir,
 				"guess3Lab", start, date(2016, 9, 30), true);
 

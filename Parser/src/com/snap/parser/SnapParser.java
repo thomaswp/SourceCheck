@@ -10,10 +10,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -267,6 +265,7 @@ public class SnapParser {
 
 
 		HashMap<String, Grade> grades = new HashMap<String, Grade>();
+		// TODO: Get submitted assignment location; filter out logs part of prequel assignments
 		Map<String, Integer> submittedRows = null;
 
 		if (addMetadata) {
@@ -274,13 +273,8 @@ public class SnapParser {
 			submittedRows = ParseSubmitted.getSubmittedRows(assignment);
 		}
 
-		// TODO: parse "none"
-		Set<String> missingSubmitted = new HashSet<String>(grades.keySet());
-
 		final AtomicInteger threads = new AtomicInteger();
 		for (File file : new File(assignment.parsedDir()).listFiles()) {
-			String guid = file.getName().replace(".csv", "");
-			missingSubmitted.remove(guid);
 			parseCSV(file, snapshotsOnly, addMetadata, false, submissions, submittedRows, grades,
 					threads);
 		}

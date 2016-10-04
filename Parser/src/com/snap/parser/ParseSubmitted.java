@@ -24,8 +24,10 @@ public class ParseSubmitted {
 
 	public static void main(String[] args) throws IOException {
 		for (Assignment assignment : Assignment.Fall2015.All) {
+			System.out.println("Starting: " + assignment.name);
 			parse(assignment);
 		}
+//		parse(Assignment.Spring2016.LightsCameraAction);
 //		printToGrade(Assignment.Fall2015.GuessingGame1);
 	}
 
@@ -81,9 +83,11 @@ public class ParseSubmitted {
 					continue;
 				}
 				String guid = snapshot.guid;
+				boolean noGUID = false;
 				if (guid == null || guid.length() == 0) {
 					guid = file.getName();
 					guid = "nolog-" + guid.substring(0, guid.length() - 4);
+					noGUID = true;
 				}
 
 				if (!submitted.add(guid)) {
@@ -92,8 +96,6 @@ public class ParseSubmitted {
 				}
 
 				String submittedCode = snapshot.toCode();
-
-				int rowID = -1;
 
 				Assignment effectiveAssignment = assignment.getLocationAssignment(guid);
 				String location = effectiveAssignment.name;
@@ -105,7 +107,14 @@ public class ParseSubmitted {
 						System.out.println("None attempt: " + guid);
 					}
 				}
+				if (attempt == null && assignment.prequel != null) {
+					attempt = getCachedAttempt(guid, assignment.prequel);
+					if (attempt != null) {
+						location = assignment.prequel.name;
+					}
+				}
 
+				int rowID = -1;
 				if (attempt != null) {
 					String lastCode = null;
 					for (AttemptAction action : attempt) {
@@ -115,16 +124,18 @@ public class ParseSubmitted {
 						if (submittedCode.equals(lastCode)) {
 							rowID = action.id;
 							if (AttemptAction.IDE_EXPORT_PROJECT.equals(action.message)) {
-								lastCode = null;
 								break;
 							}
 						}
 					}
 					if (rowID == -1) {
-						System.out.printf("Submitted code not found for: %s (%s)\n",
-								guid, file.getPath());
+						System.out.printf("Submitted code not found for: %s/%s (%s)\n",
+								location, guid, file.getPath());
 						System.out.println(diff(lastCode, submittedCode));
 					}
+				} else if (!noGUID) {
+					System.out.printf("No logs found for: %s/%s (%s)\n",
+							location, guid, file.getPath());
 				}
 
 				output.printf("%s,%s,%d\n", guid, location, rowID);
