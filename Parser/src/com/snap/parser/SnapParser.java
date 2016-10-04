@@ -281,20 +281,19 @@ public class SnapParser {
 		Map<String, Integer> prequelEndRows = new HashMap<>();
 		if (addMetadata) {
 			grades = parseGrades();
-			submissions = ParseSubmitted.getSubmissions(assignment);
-			Map<String, Submission> prequelSubmissions = new HashMap<>();
-
-			if (assignment.prequel != null) {
-				prequelSubmissions = ParseSubmitted.getSubmissions(assignment.prequel);
-			}
+			Map<String, Map<String, Submission>> allSubmissions = ParseSubmitted.getAllSubmissions(assignment.dataset);
+			submissions = allSubmissions.get(assignment.name);
 
 			for (String attemptID : submissions.keySet()) {
 				Submission submission = submissions.get(attemptID);
 				if (submission.location == null) continue;
 				// If this attempt was completed under it's prequel assignment, find when the prequel was submitted
-				if (submission.location.equals(assignment.prequel.name) && prequelSubmissions.containsKey(attemptID)) {
-					// TODO: test that this actually happens
-					prequelEndRows.put(attemptID, prequelSubmissions.get(attemptID).submittedRowID);
+				if (!submission.location.equals(assignment.name) && allSubmissions.containsKey(submission.location)) {
+					Map<String, Submission> prequelSubmissions = allSubmissions.get(submission.location);
+					if (prequelSubmissions.containsKey(attemptID)) {
+						// TODO: test that this actually happens
+						prequelEndRows.put(attemptID, prequelSubmissions.get(attemptID).submittedRowID);
+					}
 				}
 				String path = assignment.dataDir + "/parsed/" + submission.location + "/" + attemptID + ".csv";
 				attemptFiles.put(attemptID, path);

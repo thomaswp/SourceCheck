@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Scanner;
 
 import com.snap.data.Snapshot;
+import com.snap.parser.Assignment.Dataset;
 import com.snap.parser.Store.Mode;
 
 import difflib.Chunk;
@@ -24,7 +25,7 @@ public class ParseSubmitted {
 //		for (Assignment assignment : Assignment.Fall2015.All) {
 //			parse(assignment);
 //		}
-		parseSubmitted(Assignment.Fall2016.LightsCameraAction);
+		parseSubmitted(Assignment.Fall2016.GuessingGame1);
 //		printToGrade(Assignment.Fall2015.GuessingGame1);
 	}
 
@@ -105,7 +106,6 @@ public class ParseSubmitted {
 					attempt = getCachedAttempt(guid, assignment.None);
 					if (attempt != null) {
 						location = assignment.None.name;
-						System.out.println("None attempt: " + guid);
 					}
 				}
 				if (attempt == null && assignment.prequel != null) {
@@ -116,7 +116,10 @@ public class ParseSubmitted {
 				}
 
 				int rowID = -1;
-				if (attempt != null) {
+				Integer overrideRowID = assignment.getSubmittedRow(guid);
+				if (overrideRowID != null) {
+					rowID = overrideRowID;
+				} else if (attempt != null) {
 					String lastCode = null;
 					for (AttemptAction action : attempt) {
 						if (action.snapshot != null) {
@@ -156,6 +159,14 @@ public class ParseSubmitted {
 		if (submittedRows != null) return submittedRows;
 		parseSubmitted(assignment);
 		return getSubmissions(assignment);
+	}
+
+	public static Map<String, Map<String, Submission>> getAllSubmissions(Dataset dataset) {
+		Map<String, Map<String, Submission>> allSubmissions = new HashMap<>();
+		for (Assignment assignment : dataset.all) {
+			allSubmissions.put(assignment.name, getSubmissions(assignment));
+		}
+		return allSubmissions;
 	}
 
 	public static Map<String, Submission> getSubmissions(Assignment assignment) {

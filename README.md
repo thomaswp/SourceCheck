@@ -17,7 +17,7 @@ Once you have cloned this repo, open Eclipse and choose File->Import->Existing P
 
 To use this repository, you will need a dataset. These are not versioned for privacy reasons. When you have a dataset (in .csv format), place in the data/csc200 folder. This file contains output from a single table with all logs.
 
-You then need to find or create a corresponding dataset class in the [Assignment](Parser/src/com/snap/parser/Assignment.java) file. See the existing datasets for examples (e.g. `Fall2016`).
+You then need to find or create a corresponding Dataset class in the [Assignment](Parser/src/com/snap/parser/Assignment.java) file. See the existing Dataset classes for examples (e.g. `Fall2016`).
 
 Next, open the [LogSplitter](Parser/src/com/snap/parser/LogSplitter.java) class, scroll to the bottom and edit the main method:
 
