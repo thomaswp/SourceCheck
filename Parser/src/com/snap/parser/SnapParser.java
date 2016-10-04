@@ -288,23 +288,22 @@ public class SnapParser {
 				Submission submission = submissions.get(attemptID);
 				if (submission.location == null) continue;
 
-				// TODO: why not just check them all (assuming All is in order, right?)
-				// Find the name of the assignment that contains prequel work for this submission
-				String prequelAssignment = null;
-				// If the submission is located in another location, it's that assignmnet
-				if (!submission.location.equals(assignment.name)) prequelAssignment = submission.location;
-				// Otherwise, if this assignment has a known prequel, we check there
-				else if (assignment.prequel != null) prequelAssignment = assignment.prequel.name;
-
-				// If the we found a prequel assignment (and it's not "none")...
-				if (prequelAssignment != null && allSubmissions.containsKey(prequelAssignment)) {
-					// See if there was a submission for that prequel assignment and if so find the submission row id
-					Map<String, Submission> prequelSubmissions = allSubmissions.get(submission.location);
+				// Loop through all earlier assignments and see if any have the same submission ID.
+				for (String location : allSubmissions.keySet()) {
+					if (location.equals(assignment.name)) break;
+					Map<String, Submission> prequelSubmissions = allSubmissions.get(location);
 					if (prequelSubmissions.containsKey(attemptID)) {
 						// TODO: test that this actually happens
-						prequelEndRows.put(attemptID, prequelSubmissions.get(attemptID).submittedRowID);
+						// If so, and there's a submission row, we put (or update) that as the prequel row. It makes no
+						// sense to process data that was logged before the previous assignment was submitted.
+						Integer submittedRowID = prequelSubmissions.get(attemptID).submittedRowID;
+						if (submittedRowID != null) {
+							prequelEndRows.put(attemptID, submittedRowID);
+						}
 					}
 				}
+
+				// Update the log path with the one specified in the submission file
 				String path = assignment.dataDir + "/parsed/" + submission.location + "/" + attemptID + ".csv";
 				attemptFiles.put(attemptID, path);
 			}
