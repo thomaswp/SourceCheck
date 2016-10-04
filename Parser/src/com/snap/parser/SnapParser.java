@@ -287,8 +287,18 @@ public class SnapParser {
 			for (String attemptID : submissions.keySet()) {
 				Submission submission = submissions.get(attemptID);
 				if (submission.location == null) continue;
-				// If this attempt was completed under it's prequel assignment, find when the prequel was submitted
-				if (!submission.location.equals(assignment.name) && allSubmissions.containsKey(submission.location)) {
+
+				// TODO: why not just check them all (assuming All is in order, right?)
+				// Find the name of the assignment that contains prequel work for this submission
+				String prequelAssignment = null;
+				// If the submission is located in another location, it's that assignmnet
+				if (!submission.location.equals(assignment.name)) prequelAssignment = submission.location;
+				// Otherwise, if this assignment has a known prequel, we check there
+				else if (assignment.prequel != null) prequelAssignment = assignment.prequel.name;
+
+				// If the we found a prequel assignment (and it's not "none")...
+				if (prequelAssignment != null && allSubmissions.containsKey(prequelAssignment)) {
+					// See if there was a submission for that prequel assignment and if so find the submission row id
 					Map<String, Submission> prequelSubmissions = allSubmissions.get(submission.location);
 					if (prequelSubmissions.containsKey(attemptID)) {
 						// TODO: test that this actually happens
