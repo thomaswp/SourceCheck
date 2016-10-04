@@ -161,13 +161,10 @@ public class Assignment {
 		public final static Assignment GuessingGame2 = new Assignment(instance,
 				"guess2HW", date(2015, 9, 25), false, false, GuessingGame1) {
 			@Override
-			public boolean ignore(String student) {
-				// Actually work on guess3Lab with the same ID as a guess2HW submission
-				return "10e87347-75ca-4d07-9b65-138c47332aca".equals(student);
-			}
-			@Override
 			public Assignment getLocationAssignment(String attemptID) {
 				switch (attemptID) {
+					// Did GG2 on GG1, but then edited some more on "none", so no complete file
+					case "10e87347-75ca-4d07-9b65-138c47332aca":
 					// Did GG2 under GG1, but also has "none" work so this is to override that
 					case "0cc151f3-a9db-4a03-9671-d5c814b3bbbe": return GuessingGame1;
 					// Did their GG2 work under GG3, which includes no GG3 work...
@@ -201,6 +198,7 @@ public class Assignment {
 				"lightsCameraActionHW", date(2016, 1, 29), true) {
 			@Override
 			public boolean ignore(String attemptID) {
+				// Logs cut out part-way through
 				return "8c515eec-6cad-444d-9882-41c596f415d0".equals(attemptID);
 			};
 		};
