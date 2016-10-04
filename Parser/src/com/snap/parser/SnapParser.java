@@ -38,7 +38,7 @@ public class SnapParser {
 		// Replace Fall2015 with the dataset to reload.
 		for (Assignment assignment : Assignment.Fall2015.All) {
 			// Loads the given assignment, overwriting any cached data.
-			assignment.load(Mode.Overwrite, true);
+			assignment.load(Mode.Use, true);
 		}
 	}
 
@@ -238,6 +238,8 @@ public class SnapParser {
 				attempt.rows.add(action);
 			}
 		}
+		if (attempt.size() > 0) System.out.println(attemptID + ": " + attempt.rows.getLast().id);
+		else System.out.println(attemptID + ": 0 / " + actions.size() + " / " + prequelEndID);
 
 		if (addMetadata) {
 			if (gradedID != null && !foundGraded) {
@@ -294,11 +296,10 @@ public class SnapParser {
 				if (submission.location == null) continue;
 
 				// Loop through all earlier assignments and see if any have the same submission ID.
-				for (String location : allSubmissions.keySet()) {
-					if (location.equals(assignment.name)) break;
-					Map<String, Submission> prequelSubmissions = allSubmissions.get(location);
+				for (Assignment prequel : assignment.dataset.all()) {
+					if (prequel == assignment) break;
+					Map<String, Submission> prequelSubmissions = allSubmissions.get(prequel.name);
 					if (prequelSubmissions.containsKey(attemptID)) {
-						// TODO: test that this actually happens
 						// If so, and there's a submission row, we put (or update) that as the
 						// prequel row. It makes no sense to process data that was logged before the
 						// previous assignment was submitted.
