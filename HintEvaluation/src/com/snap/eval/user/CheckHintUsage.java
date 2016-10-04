@@ -150,7 +150,7 @@ public class CheckHintUsage {
 				}
 
 				// Check if this action was showing a hint
-				String action = row.action;
+				String action = row.message;
 				if (SHOW_HINT_MESSAGES.contains(action)) {
 					nHints++;
 
@@ -169,7 +169,7 @@ public class CheckHintUsage {
 					Node parent = findParent(node, data);
 
 					// Hack for custom block structure hints that failed to log rootTypes
-					if (parent == null && "SnapDisplay.showStructureHint".equals(row.action)) {
+					if (parent == null && "SnapDisplay.showStructureHint".equals(row.message)) {
 						if (code.editing != null) {
 							parent = node.searchForNodeWithID(code.editing.getID());
 						}
@@ -320,8 +320,8 @@ public class CheckHintUsage {
 					boolean done = false;
 					for (int j = i + 1; j < path.size(); j++) {
 						AttemptAction r = path.rows.get(j);
-						if (r.action.equals("HintDialogBox.done")) done = true;
-						if (done || r.action.equals("HintDialogBox.otherHints")) {
+						if (r.message.equals("HintDialogBox.done")) done = true;
+						if (done || r.message.equals("HintDialogBox.otherHints")) {
 							dismissTime = r.timestamp.getTime();
 							break;
 						}
@@ -509,7 +509,7 @@ public class CheckHintUsage {
 						if (!snapshotNode.equals(node)) isSnapshotChanged = true;
 					}
 				}
-				if (row.action.equals("Block.grabbed")) isSnapshotChanged = false;
+				if (row.message.equals("Block.grabbed")) isSnapshotChanged = false;
 
 
 				// if snapshot is changed, calculate distance, record distance, time difference,
@@ -537,7 +537,7 @@ public class CheckHintUsage {
 				}
 
 				// if this is a hint, record time difference, distance (is Taken)
-				if (SHOW_HINT_MESSAGES.contains(row.action)) {
+				if (SHOW_HINT_MESSAGES.contains(row.message)) {
 					Date hintTime = row.timestamp;
 					long diffTime = hintTime.getTime() - initTime.getTime();
 					double diffTimeSec = diffTime / 1000.0;

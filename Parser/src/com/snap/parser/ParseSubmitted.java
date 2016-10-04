@@ -23,11 +23,10 @@ import difflib.Patch;
 public class ParseSubmitted {
 
 	public static void main(String[] args) throws IOException {
-//		for (Assignment assignment : Assignment.Spring2016.All) {
-//			parse(assignment);
-//		}
-//		parse(Assignment.Fall2015.GuessingGame3);
-		printToGrade(Assignment.Fall2015.GuessingGame1);
+		for (Assignment assignment : Assignment.Fall2015.All) {
+			parse(assignment);
+		}
+//		printToGrade(Assignment.Fall2015.GuessingGame1);
 	}
 
 	public static void printToGrade(Assignment assignment) throws IOException {
@@ -43,6 +42,7 @@ public class ParseSubmitted {
 				submittedRows.remove(attemptID);
 			}
 		}
+		// TODO: Print alternate assignment separately
 		System.out.println("------------------,");
 		for (String attemptID : submittedRows.keySet()) {
 			System.out.println(attemptID + ",");
@@ -50,8 +50,17 @@ public class ParseSubmitted {
 
 	}
 
-	public static void parse(Assignment assignment) throws IOException {
-		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, true);
+	private static HashMap<Assignment, Map<String, AssignmentAttempt>> cachedMaps =
+			new HashMap<>();
+
+	private static AssignmentAttempt getCachedAttempt(String guid, Assignment assignment) {
+		if (!cachedMaps.containsKey(assignment)) {
+			cachedMaps.put(assignment, assignment.load(Mode.Use, false, false));
+		}
+		return cachedMaps.get(assignment).get(guid);
+	}
+
+	private static void parse(Assignment assignment) throws IOException {
 		File dir = new File(assignment.submittedDir());
 		if (!dir.exists()) {
 			System.err.println("Missing submitted directory: " + dir.getAbsolutePath());
@@ -85,14 +94,27 @@ public class ParseSubmitted {
 				String submittedCode = snapshot.toCode();
 
 				int rowID = -1;
-				AssignmentAttempt attempt = attempts.get(guid);
-				if (attempt != null && attempt.exported) {
+
+				Assignment effectiveAssignment = assignment.getLocationAssignment(guid);
+				String location = effectiveAssignment.name;
+				AssignmentAttempt attempt = getCachedAttempt(guid, effectiveAssignment);
+				if (attempt == null) {
+					attempt = getCachedAttempt(guid, assignment.None);
+					if (attempt != null) {
+						location = assignment.None.name;
+						System.out.println("None attempt: " + guid);
+					}
+				}
+
+				if (attempt != null) {
 					String lastCode = null;
 					for (AttemptAction action : attempt) {
-						lastCode = action.snapshot.toCode();
+						if (action.snapshot != null) {
+							lastCode = action.snapshot.toCode();
+						}
 						if (submittedCode.equals(lastCode)) {
 							rowID = action.id;
-							if (AttemptAction.IDE_EXPORT_PROJECT.equals(action.action)) {
+							if (AttemptAction.IDE_EXPORT_PROJECT.equals(action.message)) {
 								lastCode = null;
 								break;
 							}
@@ -105,7 +127,7 @@ public class ParseSubmitted {
 					}
 				}
 
-				output.printf("%s,%d\n", guid, rowID);
+				output.printf("%s,%s,%d\n", guid, location, rowID);
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			}
@@ -121,6 +143,7 @@ public class ParseSubmitted {
 		return getSubmittedRows(assignment);
 	}
 
+	// TODO: Return the assignment location as well
 	public static Map<String, Integer> getSubmittedRows(Assignment assignment) {
 		Map<String, Integer> submitted = new HashMap<String, Integer>();
 		File file = new File(assignment.submittedDir() + ".txt");
@@ -132,11 +155,11 @@ public class ParseSubmitted {
 				String line = sc.nextLine();
 				if (line.length() > 0) {
 					String[] parts = line.split(",");
-					if (parts.length != 2) {
+					if (parts.length != 3) {
 						sc.close();
 						throw new RuntimeException("Invalid line: " + line);
 					}
-					int value = Integer.parseInt(parts[1]);
+					int value = Integer.parseInt(parts[2]);
 					submitted.put(parts[0], value == -1 ? null : value);
 				}
 			}

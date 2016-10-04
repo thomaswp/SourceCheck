@@ -10,8 +10,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -23,6 +25,7 @@ import org.json.JSONObject;
 import com.esotericsoftware.kryo.Kryo;
 import com.snap.data.BlockDefinitionGroup.BlockIndex;
 import com.snap.data.Snapshot;
+import com.snap.parser.AssignmentAttempt.ActionRows;
 import com.snap.parser.Store.Mode;
 
 /**
@@ -70,46 +73,25 @@ public class SnapParser {
 
 	public AssignmentAttempt parseSubmission(String id, boolean snapshotsOnly) throws IOException {
 		return parseRows(new File(assignment.parsedDir(), id + ".csv"),
-				null, false, null, snapshotsOnly);
+				null, false, null, snapshotsOnly, true);
 	}
 
-	private AssignmentAttempt parseRows(final File logFile, final Grade grade,
-			final boolean knownSubmissions, final Integer submittedActionID,
-			final boolean snapshotsOnly)
-					throws IOException {
+	private ActionRows parseActions(final File logFile) {
 		final String attemptID = logFile.getName().replace(".csv", "");
-		String cachePath = logFile.getAbsolutePath().replace(".csv", "") +
-				(snapshotsOnly ? "" :  "-data");
-		int hash = 0;
-		final Date minDate = assignment.start, maxDate = assignment.end;
-		if (minDate != null) hash += minDate.hashCode();
-		if (maxDate != null) hash += maxDate.hashCode();
-		if (hash != 0) cachePath += "-d" + (hash);
-		cachePath += ".cached";
-
-		return Store.getCachedObject(new Kryo(), cachePath, AssignmentAttempt.class, storeMode,
-				new Store.Loader<AssignmentAttempt>() {
+		String cachePath = logFile.getAbsolutePath().replace(".csv", ".cached");
+		return Store.getCachedObject(new Kryo(), cachePath, ActionRows.class, storeMode,
+				new Store.Loader<ActionRows>() {
 			@Override
-			public AssignmentAttempt load() {
-				AssignmentAttempt solution = new AssignmentAttempt(grade);
-				solution.submittedActionID = knownSubmissions ? AssignmentAttempt.NOT_SUBMITTED :
-					AssignmentAttempt.UNKNOWN;
+			public ActionRows load() {
+				ActionRows solution = new ActionRows();
 
 				try {
 					CSVParser parser = new CSVParser(new FileReader(logFile),
 							CSVFormat.EXCEL.withHeader());
 
 					DateFormat format = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
-
-					String lastGrab = null;
-
-					String gradedID = grade == null ? null : grade.gradedID;
-					boolean foundGraded = false;
-
 					BlockIndex editingIndex = null;
 					Snapshot lastSnaphot = null;
-
-					List<AttemptAction> currentWork = new ArrayList<AttemptAction>();
 
 					for (CSVRecord record : parser) {
 						String timestampString = record.get(1);
@@ -120,23 +102,9 @@ public class SnapParser {
 							e.printStackTrace();
 						}
 
-						if (timestamp != null && (
-								(minDate != null && timestamp.before(minDate)) ||
-								(maxDate != null && timestamp.after(maxDate)))) {
-							continue;
-						}
-
 						String action = record.get(2);
 						String data = record.get(3);
-
 						String xml = record.get(8);
-						if (snapshotsOnly && AttemptAction.BLOCK_GRABBED.equals(action)) {
-							if (xml.length() > 2) lastGrab = xml;
-							continue;
-						} else if (xml.length() <= 2 && lastGrab != null) {
-							xml = lastGrab;
-						}
-
 						String idS = record.get(0);
 						int id = -1;
 						try {
@@ -145,7 +113,9 @@ public class SnapParser {
 
 						AttemptAction row = new AttemptAction(id, attemptID, timestamp, action,
 								data, xml);
-						if (row.snapshot != null) lastSnaphot = row.snapshot;
+						if (row.snapshot != null) {
+							lastSnaphot = row.snapshot;
+						}
 
 						if (AttemptAction.BLOCK_EDITOR_START.equals(action)) {
 							JSONObject json = new JSONObject(data);
@@ -166,96 +136,153 @@ public class SnapParser {
 							}
 						}
 
-						if (!snapshotsOnly || row.snapshot != null) {
-							currentWork.add(row);
-							lastGrab = null;
-						}
-
-						if (idS.equals(gradedID)) {
-							foundGraded = true;
-						}
-
-						boolean done = false;
-						if (AttemptAction.IDE_EXPORT_PROJECT.equals(action)) {
-							solution.exported = true;
-							for (AttemptAction r : currentWork) {
-								solution.add(r);
-							}
-							currentWork.clear();
-							done |= foundGraded;
-						}
-
-						if (submittedActionID != null && id == submittedActionID) {
-							solution.submittedSnapshot = lastSnaphot;
-							solution.submittedActionID = id;
-							done = true;
-						}
-
-						if (done) {
-							break;
-						}
+						solution.add(row);
 
 					}
 					parser.close();
-
-					if (gradedID != null && !foundGraded) {
-						System.err.println("No grade row for: " + logFile.getName());
-					}
-
-					// If the solution was exported and submitted, but the log data does not contain
-					// the submitted snapshot, check to see what's wrong manually
-					if (submittedActionID != null && solution.submittedSnapshot == null) {
-						System.err.printf("Submitted id not found for %s: %s\n",
-								attemptID, submittedActionID);
-					}
-
 					System.out.println("Parsed: " + logFile.getName());
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
 
-				Collections.sort(solution.rows);
+				Collections.sort(solution);
 
 				return solution;
 			}
 		});
 	}
 
-	public Map<String, AssignmentAttempt> parseAssignment(final boolean snapshotsOnly) {
-		HashMap<String, Grade> grades = parseGrades();
+	private AssignmentAttempt parseRows(File logFile, Grade grade, boolean knownSubmissions,
+			Integer submittedActionID, boolean snapshotsOnly, boolean addMetadata)
+					throws IOException {
 
-		final Map<String, Integer> submittedRows = ParseSubmitted.getSubmittedRows(assignment);
+		ActionRows actions = parseActions(logFile);
 
-		final Map<String, AssignmentAttempt> submissions = new TreeMap<String, AssignmentAttempt>();
+		String attemptID = logFile.getName().replace(".csv", "");
+		Date minDate = assignment.start, maxDate = assignment.end;
+
+		AssignmentAttempt attempt = new AssignmentAttempt(grade);
+		attempt.submittedActionID = knownSubmissions ?
+				AssignmentAttempt.NOT_SUBMITTED : AssignmentAttempt.UNKNOWN;
+		List<AttemptAction> currentWork = new ArrayList<AttemptAction>();
+
+		String gradedID = grade == null ? null : grade.gradedID;
+		boolean foundGraded = false;
+		Snapshot lastSnaphot = null;
+
+		for (int i = 0; i < actions.size(); i++) {
+			AttemptAction action = actions.get(i);
+
+			// Ignore actions outside of our time range
+			if (addMetadata && action.timestamp != null && (
+					(minDate != null && action.timestamp.before(minDate)) ||
+					(maxDate != null && action.timestamp.after(maxDate)))) {
+				continue;
+			}
+
+			// If we're only concerned with snapshots, and this was a Block.grabbed action,
+			// we skip it if the next action (presumably a Block.snapped) produces a snapshot
+			// as well. This smooths out some of the quick delete/insert pairs into "moved" events.
+			if (snapshotsOnly && action.snapshot != null &&
+					AttemptAction.BLOCK_GRABBED.equals(action.message)) {
+				if (i + 1 < actions.size() && actions.get(i + 1).snapshot != null) {
+					continue;
+				}
+
+			}
+
+			// Add this row unless it has not snapshot and we want snapshots only
+			boolean addRow = !(snapshotsOnly && action.snapshot == null);
+
+			if (addMetadata) {
+				if (addRow) {
+					currentWork.add(action);
+				}
+
+				// The graded ID is ideally the submitted ID, so this should be redundant
+				if (String.valueOf(action.id).equals(gradedID)) {
+					foundGraded = true;
+				}
+
+				boolean done = false;
+				boolean saveWork = false;
+
+				// If this is an export keep the work we've seen so far
+				if (AttemptAction.IDE_EXPORT_PROJECT.equals(action)) {
+					attempt.exported = true;
+					saveWork = true;
+					done |= foundGraded;
+				}
+
+				if (action.snapshot != null) lastSnaphot = action.snapshot;
+				// If this is the submitted action, store that information and finish
+				if (submittedActionID != null && action.id == submittedActionID) {
+					attempt.submittedSnapshot = lastSnaphot;
+					attempt.submittedActionID = action.id;
+					done = true;
+				}
+
+				if (done || saveWork) {
+					// Add the work we've seen so far to the attempt;
+					attempt.rows.addAll(currentWork);
+					currentWork.clear();
+				}
+				if (done) {
+					break;
+				}
+			} else if (addRow){
+				attempt.rows.add(action);
+			}
+		}
+
+		if (addMetadata) {
+			if (gradedID != null && !foundGraded) {
+				System.err.println("No grade row for: " + logFile.getName());
+			}
+
+			// If the solution was exported and submitted, but the log data does not contain
+			// the submitted snapshot, check to see what's wrong manually
+			if (submittedActionID != null && attempt.submittedSnapshot == null) {
+				System.err.printf("Submitted id not found for %s: %s\n",
+						attemptID, submittedActionID);
+			}
+		}
+
+		return attempt;
+	}
+
+	/**
+	 * Parses the attempts for a given assignment and returns them as a map of id-attempt pairs.
+	 * @param snapshotsOnly Whether to include only {@link AttemptAction}s with a snapshot, or all
+	 * actions.
+	 * @param addMetadata Whether to add metadata, such as start and end dates, grades, submitted
+	 * IDs, etc., and additionally filter on this data (e.g. include only actions within the date
+	 * range).
+	 *
+	 * @return
+	 */
+	public Map<String, AssignmentAttempt> parseAssignment(boolean snapshotsOnly,
+			boolean addMetadata) {
+		Map<String, AssignmentAttempt> submissions = new TreeMap<String, AssignmentAttempt>();
+
+
+		HashMap<String, Grade> grades = new HashMap<String, Grade>();
+		Map<String, Integer> submittedRows = null;
+
+		if (addMetadata) {
+			grades = parseGrades();
+			submittedRows = ParseSubmitted.getSubmittedRows(assignment);
+		}
+
+		// TODO: parse "none"
+		Set<String> missingSubmitted = new HashSet<String>(grades.keySet());
+
 		final AtomicInteger threads = new AtomicInteger();
 		for (File file : new File(assignment.parsedDir()).listFiles()) {
-			if (!file.getName().endsWith(".csv")) continue;
-			final File fFile = file;
-			final String guid = file.getName().replace(".csv", "");
-			final Grade grade = grades.get(guid);
-			final Integer submittedRow = submittedRows == null ?
-					null : submittedRows.get(guid);
-
-			threads.incrementAndGet();
-			new Thread(new Runnable() {
-				@Override
-				public void run() {
-					try {
-						if (!assignment.ignore(guid) && (grade == null || !grade.outlier)) {
-							AssignmentAttempt rows = parseRows(fFile, grade,
-									submittedRows != null, submittedRow, snapshotsOnly);
-							if (rows.size() > 3) {
-								synchronized (submissions) {
-									submissions.put(guid, rows);
-								}
-							}
-						}
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-					threads.decrementAndGet();
-				}
-			}).run(); // TODO: Figure out why parallel doesn't work
+			String guid = file.getName().replace(".csv", "");
+			missingSubmitted.remove(guid);
+			parseCSV(file, snapshotsOnly, addMetadata, false, submissions, submittedRows, grades,
+					threads);
 		}
 		while (threads.get() != 0) {
 			try {
@@ -265,6 +292,41 @@ public class SnapParser {
 			}
 		}
 		return submissions;
+	}
+
+	private void parseCSV(File file, final boolean snapshotsOnly, final boolean submittedOnly,
+			final boolean addMetadata, final Map<String, AssignmentAttempt> submissions,
+			final Map<String, Integer> submittedRows,
+			Map<String, Grade> grades, final AtomicInteger threads) {
+		if (!file.getName().endsWith(".csv")) return;
+		final File fFile = file;
+		final String guid = file.getName().replace(".csv", "");
+		final Grade grade = grades.get(guid);
+		final Integer submittedRow = submittedRows == null ?
+				null : submittedRows.get(guid);
+
+		threads.incrementAndGet();
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					if (!assignment.ignore(guid) && (grade == null || !grade.outlier)) {
+						AssignmentAttempt attempt = parseRows(fFile, grade,
+								submittedRows != null, submittedRow, snapshotsOnly, addMetadata);
+						if (attempt.size() > 3 &&
+								!(submittedOnly && attempt.submittedSnapshot == null)) {
+							synchronized (submissions) {
+								submissions.put(guid, attempt);
+							}
+						}
+					}
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				threads.decrementAndGet();
+			}
+		}).run(); // TODO: Figure out why parallel doesn't work
+		// Hint - it's probably because Kryo isn't thread-safe and you use one static instance
 	}
 
 

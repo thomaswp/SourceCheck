@@ -15,6 +15,7 @@ public class Assignment {
 	public final Date start, end;
 	public final boolean hasIDs;
 	public final boolean graded;
+	public final Assignment None;
 
 	private Assignment(String dataDir, String name, Date start, Date end, boolean hasIDs) {
 		this(dataDir, name, start, end, hasIDs, false);
@@ -28,6 +29,8 @@ public class Assignment {
 		this.end = end;
 		this.hasIDs = hasIDs;
 		this.graded = graded;
+		this.None = name.equals("none") ? null :
+			new Assignment(dataDir, "none", start, end, hasIDs);
 	}
 
 	public String analysisDir() {
@@ -71,8 +74,12 @@ public class Assignment {
 		}
 	}
 
-	public boolean ignore(String student) {
+	public boolean ignore(String attemptID) {
 		return false;
+	}
+
+	public Assignment getLocationAssignment(String attemptID) {
+		return this;
 	}
 
 	@Override
@@ -80,12 +87,13 @@ public class Assignment {
 		return dataDir + "/" + name;
 	}
 
-	public Map<String, AssignmentAttempt> load() {
-		return load(Mode.Use, false);
+	public Map<String, AssignmentAttempt> load(Mode mode, boolean snapshotsOnly) {
+		return load(mode, snapshotsOnly, true);
 	}
 
-	public Map<String, AssignmentAttempt> load(Mode mode, boolean snapshotsOnly) {
-		return new SnapParser(this, mode).parseAssignment(snapshotsOnly);
+	public Map<String, AssignmentAttempt> load(Mode mode, boolean snapshotsOnly,
+			boolean addMetadata) {
+		return new SnapParser(this, mode).parseAssignment(snapshotsOnly, addMetadata);
 	}
 
 	public final static String BASE_DIR = "../data/csc200";
@@ -109,7 +117,17 @@ public class Assignment {
 //		public final static Assignment Squiral = new Assignment(dataDir,
 //				"squiralHW", start, date(2015, 9, 13), false);
 		public final static Assignment GuessingGame1 = new Assignment(dataDir,
-				"guess1Lab", start, date(2015, 9, 18), false, true);
+				"guess1Lab", start, date(2015, 9, 18), false, true) {
+			@Override
+			public Assignment getLocationAssignment(String attemptID) {
+				switch (attemptID) {
+					// Did their GG1 work under none, but also did a short load/export under GG1
+					// so the detection algorithm misses it
+					case "0cc151f3-a9db-4a03-9671-d5c814b3bbbe": return None;
+				}
+				return super.getLocationAssignment(attemptID);
+			};
+		};
 		public final static Assignment GuessingGame2 = new Assignment(dataDir,
 				"guess2HW", start, date(2015, 9, 25), false) {
 			@Override
@@ -117,6 +135,15 @@ public class Assignment {
 				// Actually work on guess3Lab with the same ID as a guess2HW submission
 				return "10e87347-75ca-4d07-9b65-138c47332aca".equals(student);
 			}
+
+			@Override
+			public Assignment getLocationAssignment(String attemptID) {
+				switch (attemptID) {
+					// Did their GG2 work entirely under GG1
+					case "0cc151f3-a9db-4a03-9671-d5c814b3bbbe": return GuessingGame1;
+				}
+				return super.getLocationAssignment(attemptID);
+			};
 		};
 		public final static Assignment GuessingGame3 = new Assignment(dataDir,
 				"guess3Lab", start, date(2015, 10, 2), false);

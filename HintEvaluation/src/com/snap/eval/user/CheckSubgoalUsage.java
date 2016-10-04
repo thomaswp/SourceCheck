@@ -23,6 +23,7 @@ import com.snap.graph.data.Node;
 import com.snap.parser.Assignment;
 import com.snap.parser.AssignmentAttempt;
 import com.snap.parser.AttemptAction;
+import com.snap.parser.Store.Mode;
 
 public class CheckSubgoalUsage {
 	private final static String SUBGOAL_SELECTED = "Subgoal.selected";
@@ -49,7 +50,7 @@ public class CheckSubgoalUsage {
 		for (Assignment assignment : Assignment.Spring2016.All) {
 			if (assignment != Assignment.Spring2016.GuessingGame1) continue;
 
-			Map<String,AssignmentAttempt> submissions = assignment.load();
+			Map<String,AssignmentAttempt> submissions = assignment.load(Mode.Use, false);
 
 			File out = new File(assignment.dataDir + "/analysis/" + assignment.name + "/goals.csv");
 			out.getParentFile().mkdirs();
@@ -77,7 +78,7 @@ public class CheckSubgoalUsage {
 					if (row.snapshot != null) lastCode = row.snapshot;
 
 					// If this is a sugoal finish we haven't seen before ...
-					if (SUBGOAL_FINISHED.equals(row.action)) {
+					if (SUBGOAL_FINISHED.equals(row.message)) {
 						if (finished.add(row.data)) {
 
 							if (satisfied(lastCode, row.data)) {

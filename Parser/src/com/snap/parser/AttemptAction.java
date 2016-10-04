@@ -20,18 +20,18 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	public final int id;
 	public final Snapshot snapshot;
 	public final Date timestamp;
-	public final String action, data;
+	public final String message, data;
 
 	@SuppressWarnings("unused")
 	private AttemptAction() {
 		this(0, null, null, null, null, null);
 	}
 
-	public AttemptAction(int id, String attemptID, Date timestamp, String action, String data,
+	public AttemptAction(int id, String attemptID, Date timestamp, String message, String data,
 			String snapshotXML) {
 		this.id = id;
 		this.timestamp = timestamp;
-		this.action = action;
+		this.message = message;
 		this.data = data;
 		String name = attemptID;
 		synchronized (format) {
