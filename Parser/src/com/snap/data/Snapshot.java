@@ -28,7 +28,7 @@ public class Snapshot extends Code implements IHasID {
 	public final Stage stage;
 	public final BlockDefinition editing;
 	public final BlockDefinitionGroup blocks;
-	public final List<String> variables = new ArrayList<String>();
+	public final List<String> variables = new ArrayList<>();
 
 	public void setEditingIndex(BlockIndex index) {
 		if ((index == null) != (editing == null)) {
@@ -102,8 +102,11 @@ public class Snapshot extends Code implements IHasID {
 				snapshot.setEditingIndex(new BlockIndex(snapshot.editing.guid));
 			}
 
-			XML.ensureEmpty(project, "headers", "code");
-			// TODO: what is in <hidden>?
+			// Unparsed children:
+			// <code>: Snap-to-code mappings to translating Snap
+			// <header>: Snap-to-header mappings for translating Snap
+			// <hidden>: blocks which are hidden from view
+
 			return snapshot;
 		} catch (Exception e) {
 			System.out.println("Error parsing: " + name);
