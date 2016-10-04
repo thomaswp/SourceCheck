@@ -152,7 +152,8 @@ public class SnapParser {
 	}
 
 	private AssignmentAttempt parseRows(File logFile, Grade grade, boolean knownSubmissions,
-			Integer submittedActionID, Integer prequelEndID, boolean snapshotsOnly, boolean addMetadata)
+			Integer submittedActionID, Integer prequelEndID, boolean snapshotsOnly,
+			boolean addMetadata)
 					throws IOException {
 		String attemptID = logFile.getName().replace(".csv", "");
 
@@ -179,7 +180,8 @@ public class SnapParser {
 					(maxDate != null && action.timestamp.after(maxDate)))) {
 				continue;
 			}
-			// If we're using log data from a prequel assignment, ignore rows before the prequel was submitted
+			// If we're using log data from a prequel assignment, ignore rows before the prequel was
+			// submitted
 			if (prequelEndID != null && action.id <= prequelEndID) continue;
 
 			// If we're only concerned with snapshots, and this was a Block.grabbed action,
@@ -275,14 +277,16 @@ public class SnapParser {
 		for (File file : new File(assignment.parsedDir()).listFiles()) {
 			if (!file.getName().endsWith(".csv")) continue;
 			String attemptID = file.getName().replace(".csv", "");
-			String path = assignment.getLocationAssignment(attemptID).parsedDir() + "/" + attemptID + ".csv";
+			String path = assignment.getLocationAssignment(attemptID).parsedDir() + "/" +
+					attemptID + ".csv";
 			attemptFiles.put(attemptID, path);
 		}
 
 		Map<String, Integer> prequelEndRows = new HashMap<>();
 		if (addMetadata) {
 			grades = parseGrades();
-			Map<String, Map<String, Submission>> allSubmissions = ParseSubmitted.getAllSubmissions(assignment.dataset);
+			Map<String, Map<String, Submission>> allSubmissions =
+					ParseSubmitted.getAllSubmissions(assignment.dataset);
 			submissions = allSubmissions.get(assignment.name);
 
 			for (String attemptID : submissions.keySet()) {
@@ -295,8 +299,9 @@ public class SnapParser {
 					Map<String, Submission> prequelSubmissions = allSubmissions.get(location);
 					if (prequelSubmissions.containsKey(attemptID)) {
 						// TODO: test that this actually happens
-						// If so, and there's a submission row, we put (or update) that as the prequel row. It makes no
-						// sense to process data that was logged before the previous assignment was submitted.
+						// If so, and there's a submission row, we put (or update) that as the
+						// prequel row. It makes no sense to process data that was logged before the
+						// previous assignment was submitted.
 						Integer submittedRowID = prequelSubmissions.get(attemptID).submittedRowID;
 						if (submittedRowID != null) {
 							prequelEndRows.put(attemptID, submittedRowID);
@@ -305,7 +310,8 @@ public class SnapParser {
 				}
 
 				// Update the log path with the one specified in the submission file
-				String path = assignment.dataDir + "/parsed/" + submission.location + "/" + attemptID + ".csv";
+				String path = assignment.dataDir + "/parsed/" + submission.location + "/" +
+						attemptID + ".csv";
 				attemptFiles.put(attemptID, path);
 			}
 		}
@@ -320,8 +326,8 @@ public class SnapParser {
 			boolean knownSubmissions = submissions != null;
 			Submission submission = knownSubmissions ? submissions.get(attemptID) : null;
 			Integer submittedRowID = submission != null ? submission.submittedRowID : null;
-			parseCSV(file, snapshotsOnly, addMetadata, attempts, knownSubmissions, submittedRowID, grades,
-					prequelEndRow, threads);
+			parseCSV(file, snapshotsOnly, addMetadata, attempts, knownSubmissions, submittedRowID,
+					grades, prequelEndRow, threads);
 		}
 		waitForThreads(threads);
 		return attempts;
@@ -338,8 +344,9 @@ public class SnapParser {
 	}
 
 	private void parseCSV(final File file, final boolean snapshotsOnly, final boolean addMetadata,
-			final Map<String, AssignmentAttempt> attempts, final boolean knownSubmissions, final Integer submittedRowID,
-			Map<String, Grade> grades, final Integer prequelEndRow, final AtomicInteger threads) {
+			final Map<String, AssignmentAttempt> attempts, final boolean knownSubmissions,
+			final Integer submittedRowID, Map<String, Grade> grades, final Integer prequelEndRow,
+			final AtomicInteger threads) {
 		final String guid = file.getName().replace(".csv", "");
 		final Grade grade = grades.get(guid);
 
@@ -349,8 +356,8 @@ public class SnapParser {
 			public void run() {
 				try {
 					if (!assignment.ignore(guid) && (grade == null || !grade.outlier)) {
-						AssignmentAttempt attempt = parseRows(file, grade, knownSubmissions, submittedRowID,
-								prequelEndRow, snapshotsOnly, addMetadata);
+						AssignmentAttempt attempt = parseRows(file, grade, knownSubmissions,
+								submittedRowID, prequelEndRow, snapshotsOnly, addMetadata);
 						if (attempt.size() > 3) {
 							synchronized (attempts) {
 								attempts.put(guid, attempt);

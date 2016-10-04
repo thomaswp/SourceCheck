@@ -22,10 +22,10 @@ import difflib.Patch;
 public class ParseSubmitted {
 
 	public static void main(String[] args) throws IOException {
-		for (Assignment assignment : Assignment.Fall2016.All) {
+//		for (Assignment assignment : Assignment.Fall2015.All) {
 //			parseSubmitted(assignment);
-			assignment.load(Mode.Use, false);
-		}
+//		}
+		Assignment.Fall2015.GuessingGame1.load(Mode.Use, false);
 //		parseSubmitted(Assignment.Spring2016.PolygonMaker);
 //		printToGrade(Assignment.Fall2015.GuessingGame1);
 	}
@@ -95,7 +95,8 @@ public class ParseSubmitted {
 
 				String previousFile = submitted.put(guid, file.getName());
 				if (previousFile != null) {
-					throw new RuntimeException(String.format("Duplicate submission (%s): (%s vs %s)\n",
+					throw new RuntimeException(String.format(
+							"Duplicate submission (%s): (%s vs %s)\n",
 							guid, file.getName(), previousFile));
 				}
 
@@ -188,7 +189,8 @@ public class ParseSubmitted {
 					}
 					String location = parts[1];
 					int value = Integer.parseInt(parts[2]);
-					Submission submissions = new Submission(location.length() == 0 ? null : location,
+					Submission submissions = new Submission(
+							location.length() == 0 ? null : location,
 							value == -1 ? null : value);
 					submitted.put(parts[0], submissions);
 				}

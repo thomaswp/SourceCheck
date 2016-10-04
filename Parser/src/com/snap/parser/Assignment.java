@@ -23,7 +23,8 @@ public class Assignment {
 		this(dataset, name, end, hasIDs, false, null);
 	}
 
-	private Assignment(Dataset dataset, String name, Date end, boolean hasIDs, boolean graded, Assignment prequel) {
+	private Assignment(Dataset dataset, String name, Date end, boolean hasIDs, boolean graded,
+			Assignment prequel) {
 		this.dataset = dataset;
 		this.dataDir = dataset.dataDir;
 		this.name = name;
@@ -87,7 +88,8 @@ public class Assignment {
 	}
 
 	/**
-	 * Override to manually define the submitted row ID for attempts that change minimally from that row to submission.
+	 * Override to manually define the submitted row ID for attempts that change minimally from that
+	 * row to submission.
 	 */
 	public Integer getSubmittedRow(String attemptID) {
 		return null;
