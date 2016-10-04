@@ -24,6 +24,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.snap.data.BlockDefinitionGroup.BlockIndex;
 import com.snap.data.Snapshot;
 import com.snap.parser.AssignmentAttempt.ActionRows;
+import com.snap.parser.ParseSubmitted.Submission;
 import com.snap.parser.Store.Mode;
 
 /**
@@ -162,7 +163,7 @@ public class SnapParser {
 		AssignmentAttempt attempt = new AssignmentAttempt(grade);
 		attempt.submittedActionID = knownSubmissions ?
 				AssignmentAttempt.NOT_SUBMITTED : AssignmentAttempt.UNKNOWN;
-		List<AttemptAction> currentWork = new ArrayList<AttemptAction>();
+		List<AttemptAction> currentWork = new ArrayList<>();
 
 		String gradedID = grade == null ? null : grade.gradedID;
 		boolean foundGraded = false;
@@ -261,23 +262,46 @@ public class SnapParser {
 	 */
 	public Map<String, AssignmentAttempt> parseAssignment(boolean snapshotsOnly,
 			boolean addMetadata) {
-		Map<String, AssignmentAttempt> submissions = new TreeMap<String, AssignmentAttempt>();
+		Map<String, AssignmentAttempt> attempts = new TreeMap<>();
 
 
-		HashMap<String, Grade> grades = new HashMap<String, Grade>();
-		// TODO: Get submitted assignment location; filter out logs part of prequel assignments
-		Map<String, Integer> submittedRows = null;
+		HashMap<String, Grade> grades = new HashMap<>();
+		// TODO: Filter out logs part of prequel assignments
+		Map<String, Submission> submissions = null;
+
+		Map<String, String> attemptFiles = new TreeMap<>();
+		for (File file : new File(assignment.parsedDir()).listFiles()) {
+			if (!file.getName().endsWith(".csv")) continue;
+			String attemptID = file.getName().replace(".csv", "");
+			String path = assignment.getLocationAssignment(attemptID).parsedDir() + "/" + attemptID + ".csv";
+			attemptFiles.put(attemptID, path);
+		}
 
 		if (addMetadata) {
 			grades = parseGrades();
-			submittedRows = ParseSubmitted.getSubmittedRows(assignment);
+			submissions = ParseSubmitted.getSubmissions(assignment);
+
+			for (String attemptID : submissions.keySet()) {
+				Submission submission = submissions.get(attemptID);
+				if (submission.location == null) continue;
+				String path = assignment.dataDir + "/parsed/" + submission.location + "/" + attemptID + ".csv";
+				attemptFiles.put(attemptID, path);
+			}
 		}
 
 		final AtomicInteger threads = new AtomicInteger();
-		for (File file : new File(assignment.parsedDir()).listFiles()) {
-			parseCSV(file, snapshotsOnly, addMetadata, false, submissions, submittedRows, grades,
-					threads);
+		for (String path : attemptFiles.values()) {
+			File file = new File(path);
+			if (!file.exists()) {
+				throw new RuntimeException("Missing submission data: " + path);
+			}
+			parseCSV(file, snapshotsOnly, addMetadata, attempts, submissions, grades, threads);
 		}
+		waitForThreads(threads);
+		return attempts;
+	}
+
+	private void waitForThreads(final AtomicInteger threads) {
 		while (threads.get() != 0) {
 			try {
 				Thread.sleep(100);
@@ -285,19 +309,15 @@ public class SnapParser {
 				e.printStackTrace();
 			}
 		}
-		return submissions;
 	}
 
-	private void parseCSV(File file, final boolean snapshotsOnly, final boolean submittedOnly,
-			final boolean addMetadata, final Map<String, AssignmentAttempt> submissions,
-			final Map<String, Integer> submittedRows,
+	private void parseCSV(final File file, final boolean snapshotsOnly, final boolean addMetadata,
+			final Map<String, AssignmentAttempt> attempts, final Map<String, Submission> submissions,
 			Map<String, Grade> grades, final AtomicInteger threads) {
-		if (!file.getName().endsWith(".csv")) return;
-		final File fFile = file;
 		final String guid = file.getName().replace(".csv", "");
 		final Grade grade = grades.get(guid);
-		final Integer submittedRow = submittedRows == null ?
-				null : submittedRows.get(guid);
+		final Integer submittedRow = submissions == null ?
+				null : submissions.get(guid).submittedRowID;
 
 		threads.incrementAndGet();
 		new Thread(new Runnable() {
@@ -305,12 +325,11 @@ public class SnapParser {
 			public void run() {
 				try {
 					if (!assignment.ignore(guid) && (grade == null || !grade.outlier)) {
-						AssignmentAttempt attempt = parseRows(fFile, grade,
-								submittedRows != null, submittedRow, snapshotsOnly, addMetadata);
-						if (attempt.size() > 3 &&
-								!(submittedOnly && attempt.submittedSnapshot == null)) {
-							synchronized (submissions) {
-								submissions.put(guid, attempt);
+						AssignmentAttempt attempt = parseRows(file, grade,
+								submissions != null, submittedRow, snapshotsOnly, addMetadata);
+						if (attempt.size() > 3) {
+							synchronized (attempts) {
+								attempts.put(guid, attempt);
 							}
 						}
 					}
@@ -325,7 +344,7 @@ public class SnapParser {
 
 
 	private HashMap<String, Grade> parseGrades() {
-		HashMap<String, Grade> grades = new HashMap<String, Grade>();
+		HashMap<String, Grade> grades = new HashMap<>();
 
 		File file = new File(assignment.gradesFile());
 		if (!file.exists()) return grades;

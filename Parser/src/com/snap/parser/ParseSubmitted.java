@@ -23,16 +23,15 @@ import difflib.Patch;
 public class ParseSubmitted {
 
 	public static void main(String[] args) throws IOException {
-		for (Assignment assignment : Assignment.Fall2015.All) {
-			System.out.println("Starting: " + assignment.name);
-			parse(assignment);
-		}
-//		parse(Assignment.Spring2016.LightsCameraAction);
+//		for (Assignment assignment : Assignment.Fall2015.All) {
+//			parse(assignment);
+//		}
+		parseSubmitted(Assignment.Spring2016.GuessingGame3);
 //		printToGrade(Assignment.Fall2015.GuessingGame1);
 	}
 
 	public static void printToGrade(Assignment assignment) throws IOException {
-		Map<String, Integer> submittedRows = getOrParseSubmittedRows(assignment);
+		Map<String, Submission> submittedRows = getOrParseSubmissions(assignment);
 		if (submittedRows == null) throw new RuntimeException("No submitted assignments.");
 
 		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, true);
@@ -62,7 +61,8 @@ public class ParseSubmitted {
 		return cachedMaps.get(assignment).get(guid);
 	}
 
-	private static void parse(Assignment assignment) throws IOException {
+	private static void parseSubmitted(Assignment assignment) throws IOException {
+		System.out.println("Parsing submitted for: " + assignment.name);
 		File dir = new File(assignment.submittedDir());
 		if (!dir.exists()) {
 			System.err.println("Missing submitted directory: " + dir.getAbsolutePath());
@@ -70,7 +70,7 @@ public class ParseSubmitted {
 		}
 		String outPath = assignment.submittedDir() + ".txt";
 		PrintWriter output = new PrintWriter(outPath);
-		Set<String> submitted = new HashSet<String>();
+		Set<String> submitted = new HashSet<>();
 		for (File file : dir.listFiles()) {
 			if (!file.getName().endsWith(".xml")) {
 				System.err.println("Unknown file in submitted folder: " + file.getAbsolutePath());
@@ -131,11 +131,14 @@ public class ParseSubmitted {
 					if (rowID == -1) {
 						System.out.printf("Submitted code not found for: %s/%s (%s)\n",
 								location, guid, file.getPath());
-						System.out.println(diff(lastCode, submittedCode));
+//						System.out.println(diff(lastCode, submittedCode));
 					}
-				} else if (!noGUID) {
-					System.out.printf("No logs found for: %s/%s (%s)\n",
-							location, guid, file.getPath());
+				} else {
+					location = "";
+					if (!noGUID) {
+						System.err.printf("No logs found for: %s/%s (%s)\n",
+								location, guid, file.getPath());
+					}
 				}
 
 				output.printf("%s,%s,%d\n", guid, location, rowID);
@@ -146,17 +149,16 @@ public class ParseSubmitted {
 		output.close();
 	}
 
-	public static Map<String, Integer> getOrParseSubmittedRows(Assignment assignment)
+	public static Map<String, Submission> getOrParseSubmissions(Assignment assignment)
 			throws IOException {
-		Map<String, Integer> submittedRows = getSubmittedRows(assignment);
+		Map<String, Submission> submittedRows = getSubmissions(assignment);
 		if (submittedRows != null) return submittedRows;
-		parse(assignment);
-		return getSubmittedRows(assignment);
+		parseSubmitted(assignment);
+		return getSubmissions(assignment);
 	}
 
-	// TODO: Return the assignment location as well
-	public static Map<String, Integer> getSubmittedRows(Assignment assignment) {
-		Map<String, Integer> submitted = new HashMap<String, Integer>();
+	public static Map<String, Submission> getSubmissions(Assignment assignment) {
+		Map<String, Submission> submitted = new HashMap<>();
 		File file = new File(assignment.submittedDir() + ".txt");
 		if (!file.exists()) return null;
 		Scanner sc;
@@ -170,8 +172,11 @@ public class ParseSubmitted {
 						sc.close();
 						throw new RuntimeException("Invalid line: " + line);
 					}
+					String location = parts[1];
 					int value = Integer.parseInt(parts[2]);
-					submitted.put(parts[0], value == -1 ? null : value);
+					Submission submissions = new Submission(location.length() == 0 ? null : location,
+							value == -1 ? null : value);
+					submitted.put(parts[0], submissions);
 				}
 			}
 			sc.close();
@@ -182,6 +187,15 @@ public class ParseSubmitted {
 		return submitted;
 	}
 
+	public static class Submission {
+		public final String location;
+		public final Integer submittedRowID;
+
+		public Submission(String location, Integer submittedRowID) {
+			this.location = location;
+			this.submittedRowID = submittedRowID;
+		}
+	}
 
 	public static String diff(String a, String b) {
 		String[] original = a.split("\n");
@@ -194,7 +208,6 @@ public class ParseSubmitted {
 		boolean[] printed = new boolean[original.length];
 		for (Delta<String> delta : deltas) {
 			Chunk<String> chunk = delta.getOriginal();
-//			System.out.println(chunk);
 			int chunkStart = chunk.getPosition();
 			int chunkEnd = chunkStart + chunk.getLines().size() - 1;
 			if (lastChunkEnd >= 0) {

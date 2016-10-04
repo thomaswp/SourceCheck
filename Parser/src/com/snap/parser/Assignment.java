@@ -166,13 +166,7 @@ public class Assignment {
 		public final static String dataFile = dataDir + ".csv";
 
 		public final static Assignment LightsCameraAction = new Assignment(dataDir,
-				"lightsCameraActionHW", start, date(2016, 1, 29), true) {
-			@Override
-			public boolean ignore(String student) {
-				// XML logging seems to have failed part-way through the submission
-				return "8c515eec-6cad-444d-9882-41c596f415d0".equals(student);
-			};
-		};
+				"lightsCameraActionHW", start, date(2016, 1, 29), true);
 		public final static Assignment PolygonMaker = new Assignment(dataDir,
 				"polygonMakerLab", start, date(2016, 2, 2), true);
 		public final static Assignment Squiral = new Assignment(dataDir,
@@ -182,7 +176,16 @@ public class Assignment {
 		public final static Assignment GuessingGame2 = new Assignment(dataDir,
 				"guess2HW", start, date(2016, 2, 16), true, false, GuessingGame1);
 		public final static Assignment GuessingGame3 = new Assignment(dataDir,
-				"guess3Lab", start, date(2016, 2, 23), true);
+				"guess3Lab", start, date(2016, 2, 23), true) {
+			@Override
+			public Assignment getLocationAssignment(String attemptID) {
+				switch (attemptID) {
+					// Seems to have done the assignment twice, but submitted under "None"
+					case "8923de0f-491f-41d2-8c89-ad8a2cd24cf4": return None;
+				}
+				return super.getLocationAssignment(attemptID);
+			};
+		};
 
 		public final static Assignment[] All = {
 			LightsCameraAction, PolygonMaker, Squiral,
