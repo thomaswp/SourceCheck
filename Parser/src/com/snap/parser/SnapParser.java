@@ -72,7 +72,7 @@ public class SnapParser {
 
 	public AssignmentAttempt parseSubmission(String id, boolean snapshotsOnly) throws IOException {
 		return parseRows(new File(assignment.parsedDir(), id + ".csv"),
-				null, false, null, snapshotsOnly, true);
+				null, false, null, null, snapshotsOnly, true);
 	}
 
 	private ActionRows parseActions(final File logFile) {
@@ -152,7 +152,7 @@ public class SnapParser {
 	}
 
 	private AssignmentAttempt parseRows(File logFile, Grade grade, boolean knownSubmissions,
-			Integer submittedActionID, boolean snapshotsOnly, boolean addMetadata)
+			Integer submittedActionID, Integer prequelEndID, boolean snapshotsOnly, boolean addMetadata)
 					throws IOException {
 
 		ActionRows actions = parseActions(logFile);
@@ -178,6 +178,8 @@ public class SnapParser {
 					(maxDate != null && action.timestamp.after(maxDate)))) {
 				continue;
 			}
+			// If we're using log data from a prequel assignment, ignore rows before the prequel was submitted
+			if (prequelEndID != null && action.id <= prequelEndID) continue;
 
 			// If we're only concerned with snapshots, and this was a Block.grabbed action,
 			// we skip it if the next action (presumably a Block.snapped) produces a snapshot
@@ -266,7 +268,6 @@ public class SnapParser {
 
 
 		HashMap<String, Grade> grades = new HashMap<>();
-		// TODO: Filter out logs part of prequel assignments
 		Map<String, Submission> submissions = null;
 
 		Map<String, String> attemptFiles = new TreeMap<>();
@@ -277,25 +278,37 @@ public class SnapParser {
 			attemptFiles.put(attemptID, path);
 		}
 
+		Map<String, Integer> prequelEndRows = new HashMap<>();
 		if (addMetadata) {
 			grades = parseGrades();
 			submissions = ParseSubmitted.getSubmissions(assignment);
+			Map<String, Submission> prequelSubmissions = new HashMap<>();
+
+			if (assignment.prequel != null) {
+				prequelSubmissions = ParseSubmitted.getSubmissions(assignment.prequel);
+			}
 
 			for (String attemptID : submissions.keySet()) {
 				Submission submission = submissions.get(attemptID);
 				if (submission.location == null) continue;
+				// If this attempt was completed under it's prequel assignment, find when the prequel was submitted
+				if (submission.location.equals(assignment.prequel.name) && prequelSubmissions.containsKey(attemptID)) {
+					// TODO: test that this actually happens
+					prequelEndRows.put(attemptID, prequelSubmissions.get(attemptID).submittedRowID);
+				}
 				String path = assignment.dataDir + "/parsed/" + submission.location + "/" + attemptID + ".csv";
 				attemptFiles.put(attemptID, path);
 			}
 		}
 
 		final AtomicInteger threads = new AtomicInteger();
-		for (String path : attemptFiles.values()) {
-			File file = new File(path);
+		for (String attemptID : attemptFiles.keySet()) {
+			File file = new File(attemptFiles.get(attemptID));
 			if (!file.exists()) {
-				throw new RuntimeException("Missing submission data: " + path);
+				throw new RuntimeException("Missing submission data: " + file.getPath());
 			}
-			parseCSV(file, snapshotsOnly, addMetadata, attempts, submissions, grades, threads);
+			Integer prequelEndRow = prequelEndRows.get(attemptID);
+			parseCSV(file, snapshotsOnly, addMetadata, attempts, submissions, grades, prequelEndRow, threads);
 		}
 		waitForThreads(threads);
 		return attempts;
@@ -313,7 +326,7 @@ public class SnapParser {
 
 	private void parseCSV(final File file, final boolean snapshotsOnly, final boolean addMetadata,
 			final Map<String, AssignmentAttempt> attempts, final Map<String, Submission> submissions,
-			Map<String, Grade> grades, final AtomicInteger threads) {
+			Map<String, Grade> grades, final Integer prequelEndRow, final AtomicInteger threads) {
 		final String guid = file.getName().replace(".csv", "");
 		final Grade grade = grades.get(guid);
 		final Integer submittedRow = submissions == null ?
@@ -325,8 +338,8 @@ public class SnapParser {
 			public void run() {
 				try {
 					if (!assignment.ignore(guid) && (grade == null || !grade.outlier)) {
-						AssignmentAttempt attempt = parseRows(file, grade,
-								submissions != null, submittedRow, snapshotsOnly, addMetadata);
+						AssignmentAttempt attempt = parseRows(file, grade, submissions != null, submittedRow,
+								prequelEndRow, snapshotsOnly, addMetadata);
 						if (attempt.size() > 3) {
 							synchronized (attempts) {
 								attempts.put(guid, attempt);

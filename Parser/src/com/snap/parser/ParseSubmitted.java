@@ -6,11 +6,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.Set;
 
 import com.snap.data.Snapshot;
 import com.snap.parser.Store.Mode;
@@ -26,7 +24,7 @@ public class ParseSubmitted {
 //		for (Assignment assignment : Assignment.Fall2015.All) {
 //			parse(assignment);
 //		}
-		parseSubmitted(Assignment.Spring2016.GuessingGame3);
+		parseSubmitted(Assignment.Fall2016.LightsCameraAction);
 //		printToGrade(Assignment.Fall2015.GuessingGame1);
 	}
 
@@ -70,7 +68,7 @@ public class ParseSubmitted {
 		}
 		String outPath = assignment.submittedDir() + ".txt";
 		PrintWriter output = new PrintWriter(outPath);
-		Set<String> submitted = new HashSet<>();
+		Map<String, String> submitted = new HashMap<>();
 		for (File file : dir.listFiles()) {
 			if (!file.getName().endsWith(".xml")) {
 				System.err.println("Unknown file in submitted folder: " + file.getAbsolutePath());
@@ -90,9 +88,12 @@ public class ParseSubmitted {
 					noGUID = true;
 				}
 
-				if (!submitted.add(guid)) {
-					throw new RuntimeException(String.format("Duplicate submission (%s): (%s)\n",
-							guid, file.getAbsolutePath()));
+				if (assignment.ignore(guid)) continue;
+
+				String previousFile = submitted.put(guid, file.getName());
+				if (previousFile != null) {
+					throw new RuntimeException(String.format("Duplicate submission (%s): (%s vs %s)\n",
+							guid, file.getName(), previousFile));
 				}
 
 				String submittedCode = snapshot.toCode();
@@ -131,7 +132,7 @@ public class ParseSubmitted {
 					if (rowID == -1) {
 						System.out.printf("Submitted code not found for: %s/%s (%s)\n",
 								location, guid, file.getPath());
-//						System.out.println(diff(lastCode, submittedCode));
+//						if (lastCode != null) System.out.println(diff(lastCode, submittedCode));
 					}
 				} else {
 					location = "";

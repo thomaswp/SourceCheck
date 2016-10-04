@@ -166,7 +166,12 @@ public class Assignment {
 		public final static String dataFile = dataDir + ".csv";
 
 		public final static Assignment LightsCameraAction = new Assignment(dataDir,
-				"lightsCameraActionHW", start, date(2016, 1, 29), true);
+				"lightsCameraActionHW", start, date(2016, 1, 29), true) {
+			@Override
+			public boolean ignore(String attemptID) {
+				return "8c515eec-6cad-444d-9882-41c596f415d0".equals(attemptID);
+			};
+		};
 		public final static Assignment PolygonMaker = new Assignment(dataDir,
 				"polygonMakerLab", start, date(2016, 2, 2), true);
 		public final static Assignment Squiral = new Assignment(dataDir,
@@ -199,7 +204,17 @@ public class Assignment {
 		public final static String dataFile = dataDir + ".csv";
 
 		public final static Assignment LightsCameraAction = new Assignment(dataDir,
-				"lightsCameraActionHW", start, date(2016, 9, 2), true);
+				"lightsCameraActionHW", start, date(2016, 9, 2), true) {
+			@Override
+			public boolean ignore(String attemptID) {
+				// In both cases, logging cuts out partway through
+				return "136a29fd-8591-4dbe-81eb-1b62e5366670".equals(attemptID) ||
+						"c8889470-75ee-4b8b-a238-42cae2521fa7".equals(attemptID) ||
+						"4b1cb6f6-48b1-428d-8eef-88216555b7c7".equals(attemptID) ||
+						"8b69ceb5-424c-4541-8b4a-53221908b20b".equals(attemptID);
+			};
+		};
+
 		public final static Assignment PolygonMaker = new Assignment(dataDir,
 				"polygonMakerLab", start, date(2016, 9, 2), true);
 		public final static Assignment Squiral = new Assignment(dataDir,
