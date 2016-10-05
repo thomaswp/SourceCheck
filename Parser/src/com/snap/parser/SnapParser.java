@@ -36,7 +36,7 @@ public class SnapParser {
 		// Reloads and caches assignments for a give dataset.
 
 		// Replace Fall2015 with the dataset to reload.
-		for (Assignment assignment : Assignment.Spring2016.All) {
+		for (Assignment assignment : Assignment.Fall2016.All) {
 			System.out.println("Reparsing: " + assignment);
 			// Loads the given assignment, overwriting any cached data.
 			assignment.load(Mode.Use, true);
@@ -175,10 +175,12 @@ public class SnapParser {
 			AttemptAction action = actions.get(i);
 
 			// Ignore actions outside of our time range
-			// TODO: deal with late submissions
 			if (addMetadata && action.timestamp != null && (
 					(minDate != null && action.timestamp.before(minDate)) ||
-					(maxDate != null && action.timestamp.after(maxDate)))) {
+					// Only check max date if we don't have a final submission ID (late work is
+					// ok if we can verify it was submitted)
+					(submittedActionID == null &&
+					maxDate != null && action.timestamp.after(maxDate)))) {
 				continue;
 			}
 			// If we're using log data from a prequel assignment, ignore rows before the prequel was
