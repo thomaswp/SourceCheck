@@ -28,7 +28,7 @@ public class ParseSubmitted {
 		for (Assignment assignment : Assignment.Fall2016.All) {
 			parseSubmitted(assignment);
 		}
-//		parseSubmitted(Assignment.Fall2015.GuessingGame2);
+//		parseSubmitted(Assignment.Fall2016.GuessingGame1);
 //		printToGrade(Assignment.Fall2015.GuessingGame1);
 	}
 

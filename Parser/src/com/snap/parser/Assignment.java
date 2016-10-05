@@ -348,6 +348,12 @@ public class Assignment {
 		public final static Assignment GuessingGame1 = new Assignment(instance,
 				"guess1Lab", date(2016, 9, 16), true, true, null) {
 			@Override
+			public boolean ignore(String attemptID) {
+				// Somehow managed to do GG2 before GG1... I don't even...
+				return "66d1bd35-1013-45f7-a25c-101c31d36930".equals(attemptID);
+			}
+
+			@Override
 			public Assignment getLocationAssignment(String attemptID) {
 				switch (attemptID) {
 					// Did both in-lab and homework under the HW assignment
@@ -355,7 +361,6 @@ public class Assignment {
 					// Did only the in-lab under the HW assignment
 					case "495c88a5-536f-470e-bd6d-7b1c2e416002":
 					case "92ce1f93-3392-4f5b-a111-c17bac56aee0":
-					case "66d1bd35-1013-45f7-a25c-101c31d36930":
 						return GuessingGame2;
 					// Did both in-lab and homework under the wrong assignment
 					case "bba76353-ad96-489e-9e62-c264fedd03cd":
@@ -363,10 +368,26 @@ public class Assignment {
 				}
 				return super.getLocationAssignment(attemptID);
 			}
+
+			@Override
+			public Integer getSubmittedRow(String attemptID) {
+				switch (attemptID) {
+					// Went back to slightly edit GG1 later (after GG2), but version this was nearly
+					// the same.
+					case "b3a92bca-d9bc-4553-9498-9cb9feb2ef09": return 206491;
+				}
+				return super.getSubmittedRow(attemptID);
+			}
 		};
 
 		public final static Assignment GuessingGame2 = new Assignment(instance,
 				"guess2HW", date(2016, 9, 23), true, false, GuessingGame1) {
+			@Override
+			public boolean ignore(String attemptID) {
+				// (See GG1 ignore)
+				return "66d1bd35-1013-45f7-a25c-101c31d36930".equals(attemptID);
+			}
+
 			@Override
 			public Assignment getLocationAssignment(String attemptID) {
 				switch (attemptID) {
