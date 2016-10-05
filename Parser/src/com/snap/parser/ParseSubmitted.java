@@ -25,7 +25,7 @@ public class ParseSubmitted {
 		for (Assignment assignment : Assignment.Fall2015.All) {
 			parseSubmitted(assignment);
 		}
-//		parseSubmitted(Assignment.Spring2016.PolygonMaker);
+//		parseSubmitted(Assignment.Fall2015.GuessingGame2);
 //		printToGrade(Assignment.Fall2015.GuessingGame1);
 	}
 
@@ -104,12 +104,15 @@ public class ParseSubmitted {
 				Assignment effectiveAssignment = assignment.getLocationAssignment(guid);
 				String location = effectiveAssignment.name;
 				AssignmentAttempt attempt = getCachedAttempt(guid, effectiveAssignment);
+				// Ignore fragment attempts
+				if (attempt != null && attempt.size() < 30) attempt = null;
 				if (attempt == null) {
 					attempt = getCachedAttempt(guid, assignment.None);
 					if (attempt != null) {
 						location = assignment.None.name;
 					}
 				}
+				if (attempt != null && attempt.size() < 30) attempt = null;
 				if (attempt == null && assignment.prequel != null) {
 					attempt = getCachedAttempt(guid, assignment.prequel);
 					if (attempt != null) {

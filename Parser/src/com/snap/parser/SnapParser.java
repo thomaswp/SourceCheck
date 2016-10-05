@@ -238,8 +238,8 @@ public class SnapParser {
 				attempt.rows.add(action);
 			}
 		}
-		if (attempt.size() > 0) System.out.println(attemptID + ": " + attempt.rows.getLast().id);
-		else System.out.println(attemptID + ": 0 / " + actions.size() + " / " + prequelEndID);
+//		if (attempt.size() > 0) System.out.println(attemptID + ": " + attempt.rows.getLast().id);
+//		else System.out.println(attemptID + ": 0 / " + actions.size() + " / " + prequelEndID);
 
 		if (addMetadata) {
 			if (gradedID != null && !foundGraded) {
