@@ -56,7 +56,7 @@ public class Assignment {
 		return dir("parsed");
 	}
 
-	private String dir(String folderName) {
+	public String dir(String folderName) {
 		return dataDir + "/" + folderName + "/" + name;
 	}
 
