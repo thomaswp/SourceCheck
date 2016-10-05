@@ -221,6 +221,7 @@ public class Assignment {
 				// Logs cut out part-way through
 				return "8c515eec-6cad-444d-9882-41c596f415d0".equals(attemptID);
 			};
+
 		};
 		public final static Assignment PolygonMaker = new Assignment(instance,
 				"polygonMakerLab", date(2016, 2, 2), true);
@@ -230,7 +231,9 @@ public class Assignment {
 			@Override
 			public boolean ignore(String attemptID) {
 				// Seems to be missing nearly all logs
-				return "ebafbcc3-1834-43b9-9739-31940a5a4048".equals(attemptID);
+				return "ebafbcc3-1834-43b9-9739-31940a5a4048".equals(attemptID) ||
+						// Logs appear truncated; no export
+						"4a9c4040-3646-498d-8a29-1a921237e6bb".equals(attemptID);
 			}
 
 			@Override

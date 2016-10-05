@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
@@ -24,7 +25,7 @@ public class ParseSubmitted {
 	private final static int MIN_LOG_LENGTH = 30;
 
 	public static void main(String[] args) throws IOException {
-		for (Assignment assignment : Assignment.Spring2016.All) {
+		for (Assignment assignment : Assignment.Fall2016.All) {
 			parseSubmitted(assignment);
 		}
 //		parseSubmitted(Assignment.Fall2015.GuessingGame2);
@@ -103,64 +104,85 @@ public class ParseSubmitted {
 
 				String submittedCode = snapshot.toCode();
 
-				Assignment effectiveAssignment = assignment.getLocationAssignment(guid);
-				String location = effectiveAssignment.name;
-				AssignmentAttempt attempt = getCachedAttempt(guid, effectiveAssignment);
-
-				// Ignore logs that are too small
-				if (attempt != null && attempt.size() < MIN_LOG_LENGTH) attempt = null;
-
-				if (attempt == null) {
-					AssignmentAttempt noneAttempt = getCachedAttempt(guid, assignment.None);
-					if (noneAttempt != null && noneAttempt.size() >= MIN_LOG_LENGTH) {
-						attempt = noneAttempt;
-						location = assignment.None.name;
-					}
-				}
-				if (attempt == null && assignment.prequel != null) {
-					AssignmentAttempt prequelAttempt = getCachedAttempt(guid, assignment.prequel);
-					if (prequelAttempt != null && prequelAttempt.size() >= MIN_LOG_LENGTH) {
-						attempt = prequelAttempt;
-						location = assignment.prequel.name;
-					}
+				// Get all the assignments to check for this submission
+				List<Assignment> possibleAssignments = new LinkedList<>();
+				Assignment locationAssignment = assignment.getLocationAssignment(guid);
+				possibleAssignments.add(locationAssignment);
+				// Only add other assignments if this submission's location isn't hard-coded
+				if (locationAssignment == assignment) {
+					possibleAssignments.add(assignment.prequel);
+					possibleAssignments.add(assignment.None);
 				}
 
-				int rowID = -1;
 				Integer overrideRowID = assignment.getSubmittedRow(guid);
-				if (overrideRowID != null) {
-					rowID = overrideRowID;
-				} else if (attempt != null) {
-					String lastCode = null;
-					for (AttemptAction action : attempt) {
-						if (action.snapshot != null) {
-							lastCode = action.snapshot.toCode();
-						}
-						if (submittedCode.equals(lastCode)) {
-							rowID = action.id;
-							if (AttemptAction.IDE_EXPORT_PROJECT.equals(action.message)) {
-								break;
-							}
-						}
+
+				Integer rowID = null;
+				String location = "";
+				for (Assignment toCheck : possibleAssignments) {
+					// Look for a valid submission for this assignment
+					if (toCheck == null) continue;
+					AssignmentAttempt attempt = getCachedAttempt(guid, toCheck);
+					if (attempt == null || attempt.size() < MIN_LOG_LENGTH) continue;
+
+					// If this is the first valid assignment, we set the location
+					if (location.isEmpty()) location = toCheck.name;
+
+					// We then check for a matching row
+					rowID = findMatchingRow(attempt, guid, submittedCode, overrideRowID);
+					if (rowID != null) {
+						location = toCheck.name;
+						break;
 					}
-					if (rowID == -1) {
+				}
+				output.printf("%s,%s,%d\n", guid, location, rowID == null ? -1 : rowID);
+
+				// Check for undesirable outcomes
+				if (!location.isEmpty()) {
+					if (rowID == null) {
+						// We at least one found a valid attempt, but no matching row
 						System.out.printf("Submitted code not found for: %s/%s (%s)\n",
 								location, guid, file.getPath());
-//						if (lastCode != null) System.out.println(diff(lastCode, submittedCode));
 					}
-				} else {
-					location = "";
-					if (!noGUID) {
-						System.err.printf("No logs found for: %s/%s (%s)\n",
-								location, guid, file.getPath());
-					}
+				} else if (!noGUID) {
+					// We found no matching attempt, but there was a GUID in the submission
+					System.err.printf("No logs found for: %s/%s (%s)\n",
+							location, guid, file.getPath());
 				}
 
-				output.printf("%s,%s,%d\n", guid, location, rowID);
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			}
 		}
 		output.close();
+	}
+
+	private static Integer findMatchingRow(AssignmentAttempt attempt, String guid,
+			String submittedCode, Integer overrideRowID) {
+		Integer rowID = null;
+		String lastCode = null;
+		for (AttemptAction action : attempt) {
+			if (action.snapshot != null) {
+				lastCode = action.snapshot.toCode();
+			}
+
+			if (overrideRowID == null) {
+				// If the we aren't given a row to find, match code
+				if (submittedCode.equals(lastCode)) {
+					rowID = action.id;
+					// And preference export rows
+					if (AttemptAction.IDE_EXPORT_PROJECT.equals(action.message)) {
+						break;
+					}
+				}
+			} else {
+				// Otherwise, only match to that row
+				if (overrideRowID == action.id) {
+					rowID = action.id;
+					break;
+				}
+			}
+		}
+		return rowID;
 	}
 
 	public static Map<String, Submission> getOrParseSubmissions(Assignment assignment)

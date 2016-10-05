@@ -36,7 +36,8 @@ public class SnapParser {
 		// Reloads and caches assignments for a give dataset.
 
 		// Replace Fall2015 with the dataset to reload.
-		for (Assignment assignment : Assignment.Fall2015.All) {
+		for (Assignment assignment : Assignment.Spring2016.All) {
+			System.out.println("Reparsing: " + assignment);
 			// Loads the given assignment, overwriting any cached data.
 			assignment.load(Mode.Use, true);
 		}
@@ -238,8 +239,6 @@ public class SnapParser {
 				attempt.rows.add(action);
 			}
 		}
-//		if (attempt.size() > 0) System.out.println(attemptID + ": " + attempt.rows.getLast().id);
-//		else System.out.println(attemptID + ": 0 / " + actions.size() + " / " + prequelEndID);
 
 		if (addMetadata) {
 			if (gradedID != null && !foundGraded) {
@@ -249,6 +248,8 @@ public class SnapParser {
 			// If the solution was exported and submitted, but the log data does not contain
 			// the submitted snapshot, check to see what's wrong manually
 			if (submittedActionID != null && attempt.submittedSnapshot == null) {
+				if (attempt.size() > 0) System.out.println(attemptID + ": " + attempt.rows.getLast().id);
+				else System.out.println(attemptID + ": 0 / " + actions.size() + " / " + prequelEndID);
 				System.err.printf("Submitted id not found for %s: %s\n",
 						attemptID, submittedActionID);
 			}

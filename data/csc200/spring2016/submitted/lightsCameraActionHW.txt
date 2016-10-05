@@ -44,7 +44,7 @@ e103df2f-e1cc-4a9e-aa2b-dd73c871859f,lightsCameraActionHW,297791
 303a47fb-a02e-4d60-85f9-85efec4c5dec,none,241338
 ebf3e6e1-8de8-440e-b45e-0d8c850b423a,lightsCameraActionHW,300444
 f409a3bb-67e1-4ec0-822f-977248b20329,none,232122
-f84709f1-2639-444a-a350-958df076ee81,lightsCameraActionHW,-1
+f84709f1-2639-444a-a350-958df076ee81,none,286247
 a26d5c13-75b4-465c-adb0-c9159f88c0ec,lightsCameraActionHW,261626
 a919437c-d66e-4f10-89ae-85147c089f05,lightsCameraActionHW,330823
 6702b801-0e82-4090-9039-a1e6accdac82,lightsCameraActionHW,268986
