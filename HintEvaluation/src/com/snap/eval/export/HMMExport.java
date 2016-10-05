@@ -29,7 +29,7 @@ public class HMMExport {
 	};
 
 	public static void main(String[] args) throws Exception {
-		for (Assignment assignment : Assignment.Spring2016.All) {
+		for (Assignment assignment : Assignment.Fall2016.All) {
 			System.out.println("Generating logs for: " + assignment);
 			export(assignment);
 		}
@@ -42,8 +42,8 @@ public class HMMExport {
 		folder.mkdirs();
 
 		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, false);
-		AtomicInteger threadCount = new AtomicInteger(0);
-		for (String attemptID : attempts.keySet()) {
+		final AtomicInteger threadCount = new AtomicInteger(0);
+		for (final String attemptID : attempts.keySet()) {
 			final AssignmentAttempt attempt = attempts.get(attemptID);
 			if (attempt.submittedSnapshot == null) continue;
 			final File file = new File(folder, attemptID + ".csv");
