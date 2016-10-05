@@ -21,8 +21,10 @@ import difflib.Patch;
 
 public class ParseSubmitted {
 
+	private final static int MIN_LOG_LENGTH = 30;
+
 	public static void main(String[] args) throws IOException {
-		for (Assignment assignment : Assignment.Fall2015.All) {
+		for (Assignment assignment : Assignment.Spring2016.All) {
 			parseSubmitted(assignment);
 		}
 //		parseSubmitted(Assignment.Fall2015.GuessingGame2);
@@ -104,18 +106,21 @@ public class ParseSubmitted {
 				Assignment effectiveAssignment = assignment.getLocationAssignment(guid);
 				String location = effectiveAssignment.name;
 				AssignmentAttempt attempt = getCachedAttempt(guid, effectiveAssignment);
-				// Ignore fragment attempts
-				if (attempt != null && attempt.size() < 30) attempt = null;
+
+				// Ignore logs that are too small
+				if (attempt != null && attempt.size() < MIN_LOG_LENGTH) attempt = null;
+
 				if (attempt == null) {
-					attempt = getCachedAttempt(guid, assignment.None);
-					if (attempt != null) {
+					AssignmentAttempt noneAttempt = getCachedAttempt(guid, assignment.None);
+					if (noneAttempt != null && noneAttempt.size() >= MIN_LOG_LENGTH) {
+						attempt = noneAttempt;
 						location = assignment.None.name;
 					}
 				}
-				if (attempt != null && attempt.size() < 30) attempt = null;
 				if (attempt == null && assignment.prequel != null) {
-					attempt = getCachedAttempt(guid, assignment.prequel);
-					if (attempt != null) {
+					AssignmentAttempt prequelAttempt = getCachedAttempt(guid, assignment.prequel);
+					if (prequelAttempt != null && prequelAttempt.size() >= MIN_LOG_LENGTH) {
+						attempt = prequelAttempt;
 						location = assignment.prequel.name;
 					}
 				}

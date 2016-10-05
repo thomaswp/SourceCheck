@@ -224,12 +224,37 @@ public class Assignment {
 		};
 		public final static Assignment PolygonMaker = new Assignment(instance,
 				"polygonMakerLab", date(2016, 2, 2), true);
+
 		public final static Assignment Squiral = new Assignment(instance,
-				"squiralHW", date(2016, 2, 9), true);
+				"squiralHW", date(2016, 2, 9), true) {
+			@Override
+			public boolean ignore(String attemptID) {
+				// Seems to be missing nearly all logs
+				return "ebafbcc3-1834-43b9-9739-31940a5a4048".equals(attemptID);
+			}
+
+			@Override
+			public Assignment getLocationAssignment(String attemptID) {
+				switch (attemptID) {
+					// Did Squiral work during the lab
+					case "74f1f0d0-9995-4846-9e41-fcd61606d6bf": return PolygonMaker;
+				}
+				return super.getLocationAssignment(attemptID);
+			}
+		};
+
 		public final static Assignment GuessingGame1 = new Assignment(instance,
 				"guess1Lab", date(2016, 2, 9), true, true, null);
+
 		public final static Assignment GuessingGame2 = new Assignment(instance,
-				"guess2HW", date(2016, 2, 16), true, false, GuessingGame1);
+				"guess2HW", date(2016, 2, 16), true, false, GuessingGame1) {
+			@Override
+			public boolean ignore(String attemptID) {
+				// Just saves/loads under HW2
+				return "33221f23-0ef8-4fb2-a950-79b6c20400e0".equals(attemptID);
+			}
+		};
+
 		public final static Assignment GuessingGame3 = new Assignment(instance,
 				"guess3Lab", date(2016, 2, 23), true) {
 			@Override
@@ -360,6 +385,16 @@ public class Assignment {
 			public boolean ignore(String attemptID) {
 				// Just imported/exported without creating any logs
 				return "6d9879f6-c720-4896-adf7-eb2a68f28fe9".equals(attemptID);
+			};
+
+			@Override
+			public Assignment getLocationAssignment(String attemptID) {
+				switch (attemptID) {
+					// Did GG2 and GG3 under GG2
+					case "70481592-09e8-45e4-968b-6890078e2de7":
+						return GuessingGame2;
+				}
+				return super.getLocationAssignment(attemptID);
 			};
 		};
 
