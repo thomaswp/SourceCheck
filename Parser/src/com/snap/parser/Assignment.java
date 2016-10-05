@@ -174,6 +174,15 @@ public class Assignment {
 				}
 				return super.getLocationAssignment(attemptID);
 			}
+
+			@Override
+			public Integer getSubmittedRow(String attemptID) {
+				switch (attemptID) {
+					// Accidentally submitted GG1 again for GG2, but did export GG2
+					case "4c9d2e1c-7cac-4b66-9784-231a62e36c0d": return 28092;
+				}
+				return super.getSubmittedRow(attemptID);
+			};
 		};
 
 		public final static Assignment GuessingGame3 = new Assignment(instance,
