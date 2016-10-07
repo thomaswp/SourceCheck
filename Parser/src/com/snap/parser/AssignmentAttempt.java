@@ -12,6 +12,7 @@ public class AssignmentAttempt implements Iterable<AttemptAction> {
 
 	// TODO: add attemptID
 
+	public final String id;
 	public final ActionRows rows = new ActionRows();
 	public final Grade grade;
 	/** Whether the attempt was ever exported from Snap. */
@@ -23,10 +24,11 @@ public class AssignmentAttempt implements Iterable<AttemptAction> {
 
 	@SuppressWarnings("unused")
 	private AssignmentAttempt() {
-		this(null);
+		this(null, null);
 	}
 
-	public AssignmentAttempt(Grade grade) {
+	public AssignmentAttempt(String id, Grade grade) {
+		this.id = id;
 		this.grade = grade;
 	}
 
@@ -50,7 +52,7 @@ public class AssignmentAttempt implements Iterable<AttemptAction> {
 		 * Version of the AttemptAction and its stored classes, such as Snapshot.
 		 * Change it when they should be reloaded and the cache invalidated.
 		 */
-		public final static String VERSION = "1.0.0";
+		public final static String VERSION = "1.0.1";
 
 		private String version = VERSION;
 

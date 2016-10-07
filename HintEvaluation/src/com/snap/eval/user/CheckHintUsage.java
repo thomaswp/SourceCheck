@@ -1,5 +1,10 @@
 package com.snap.eval.user;
 
+import static com.snap.parser.AttemptAction.BLOCK_RUN;
+import static com.snap.parser.AttemptAction.GREEN_FLAG_RUN;
+import static com.snap.parser.AttemptAction.HINT_DIALOG_DONE;
+import static com.snap.parser.AttemptAction.SHOW_HINT_MESSAGES;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -40,23 +45,6 @@ import distance.RTED_InfoTree_Opt;
 import util.LblTree;
 
 public class CheckHintUsage {
-
-	// Actions of interest
-	private final static String SHOW_SCRIPT_HINT = "SnapDisplay.showScriptHint";
-	private final static String SHOW_BLOCK_HINT = "SnapDisplay.showBlockHint";
-	private final static String SHOW_STRUCTURE_HINT = "SnapDisplay.showStructureHint";
-	private final static String HINT_DIALOG_DONE = "HintDialogBox.done";
-
-	@SuppressWarnings("unused")
-	private final static String PROCESS_HINTS = "HintProvider.processHints";
-
-	private final static String GREEN_FLAG_RUN = "IDE.greenFlag";
-	private final static String BLOCK_RUN = "Block.clickRun";
-
-
-	private final static List<String> SHOW_HINT_MESSAGES = Arrays.asList(new String[] {
-			SHOW_SCRIPT_HINT, SHOW_BLOCK_HINT, SHOW_STRUCTURE_HINT
-	});
 
 	private static final long MIN_DURATON = 5 * 60 * 1000;
 

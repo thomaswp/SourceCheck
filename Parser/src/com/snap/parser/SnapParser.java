@@ -36,10 +36,10 @@ public class SnapParser {
 		// Reloads and caches assignments for a give dataset.
 
 		// Replace Fall2015 with the dataset to reload.
-		for (Assignment assignment : Assignment.Fall2016.All) {
+		for (Assignment assignment : Assignment.Spring2016.All) {
 			System.out.println("Reparsing: " + assignment);
 			// Loads the given assignment, overwriting any cached data.
-			assignment.load(Mode.Use, true);
+			assignment.load(Mode.Overwrite, true);
 		}
 	}
 
@@ -104,6 +104,7 @@ public class SnapParser {
 
 						String action = record.get(2);
 						String data = record.get(3);
+						String session = record.get(6);
 						String xml = record.get(8);
 						String idS = record.get(0);
 						int id = -1;
@@ -111,8 +112,8 @@ public class SnapParser {
 							id = Integer.parseInt(idS);
 						} catch (NumberFormatException e) { }
 
-						AttemptAction row = new AttemptAction(id, attemptID, timestamp, action,
-								data, xml);
+						AttemptAction row = new AttemptAction(id, attemptID, timestamp, session,
+								action, data, xml);
 						if (row.snapshot != null) {
 							lastSnaphot = row.snapshot;
 						}
@@ -162,7 +163,7 @@ public class SnapParser {
 
 		Date minDate = assignment.start, maxDate = assignment.end;
 
-		AssignmentAttempt attempt = new AssignmentAttempt(grade);
+		AssignmentAttempt attempt = new AssignmentAttempt(attemptID, grade);
 		attempt.submittedActionID = knownSubmissions ?
 				AssignmentAttempt.NOT_SUBMITTED : AssignmentAttempt.UNKNOWN;
 		List<AttemptAction> currentWork = new ArrayList<>();
