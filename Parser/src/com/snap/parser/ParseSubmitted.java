@@ -25,7 +25,7 @@ public class ParseSubmitted {
 	private final static int MIN_LOG_LENGTH = 30;
 
 	public static void main(String[] args) throws IOException {
-		for (Assignment assignment : Assignment.Fall2016.All) {
+		for (Assignment assignment : Assignment.Spring2016.All) {
 			parseSubmitted(assignment);
 		}
 //		parseSubmitted(Assignment.Fall2016.GuessingGame1);

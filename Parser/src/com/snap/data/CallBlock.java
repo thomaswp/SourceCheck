@@ -12,7 +12,7 @@ import com.snap.XML;
 
 public class CallBlock extends Block {
 	private static final long serialVersionUID = 1L;
-	
+
 	private final static HashSet<String> SYMMETRIC = new HashSet<String>();
 	private final static HashMap<String, String> OPPOSITES = new HashMap<String, String>();
 	static {
@@ -20,34 +20,52 @@ public class CallBlock extends Block {
 			"reportSum", "reportProduct", "reportRandom", "reportEquals",
 			"reportAnd", "reportOr",
 		};
-		for (String s : symmetric) SYMMETRIC.add(s);		
-		
+		for (String s : symmetric) SYMMETRIC.add(s);
+
 		OPPOSITES.put("reportGreaterThan", "reportLessThan");
 	}
-	
+
 	public final List<Block> parameters = new ArrayList<Block>();
 	public final List<Script> bodies = new ArrayList<Script>();
 	public final boolean isCustom;
+
+	@Override
+	public String name(boolean canon) {
+		if (canon) {
+			if (OPPOSITES.containsKey(name)) {
+				return OPPOSITES.get(name);
+			}
+			return type();
+		}
+
+		return name;
+	}
+
+	@Override
+	public String type() {
+		if (isCustom) return "doCustomBlock";
+		return name;
+	}
 
 	@SuppressWarnings("unused")
 	private CallBlock() {
 		this(null, null, false);
 	}
-	
+
 	public CallBlock(String type, String id, boolean isCustom) {
 		super(type, id);
 		this.isCustom = isCustom;
 	}
-	
+
 	public static Block parse(Element element) {
 		if (element.hasAttribute("var")) {
 			return new VarBlock(
 					element.getAttribute("var"),
 					getID(element));
 		}
-		
+
 		CallBlock block = new CallBlock(
-				element.getAttribute("s").replace("%n", "%s"), 
+				element.getAttribute("s").replace("%n", "%s"),
 				getID(element),
 				element.getTagName().equals("custom-block"));
 		for (Code code : XML.getCode(element)) {
@@ -62,18 +80,6 @@ public class CallBlock extends Block {
 		return block;
 	}
 
-	@Override
-	public String name(boolean canon) {
-		if (canon) {
-			if (isCustom) return "doCustomBlock";
-			if (OPPOSITES.containsKey(name)) {
-				return OPPOSITES.get(name);
-			}
-		}
-		
-		return name;
-	}
-	
 	private List<Block> params(boolean canon) {
 		if (!canon || parameters.size() != 2) return parameters;
 		if (SYMMETRIC.contains(name)) {
@@ -84,9 +90,9 @@ public class CallBlock extends Block {
 		ArrayList<Block> params = new ArrayList<Block>();
 		params.addAll(parameters);
 		Collections.reverse(params);
-		return params;		
+		return params;
 	}
-	
+
 	@Override
 	public String toCode(boolean canon) {
 		return new CodeBuilder(canon)
@@ -98,7 +104,7 @@ public class CallBlock extends Block {
 	}
 
 	@Override
-	public String addChildren(boolean canon, Accumulator ac) {
+	public void addChildren(boolean canon, Accumulator ac) {
 		List<Block> params = params(canon);
 		if (params != parameters) {
 			ac.add(new Canonicalization.SwapArgs());
@@ -107,6 +113,5 @@ public class CallBlock extends Block {
 		ac.add(bodies);
 		if (OPPOSITES.containsKey(name)) ac.add(new Canonicalization.InvertOp(name));
 		else if (!name.equals(name(canon))) ac.add(new Canonicalization.Rename(name));
-		return name(canon);
 	}
 }

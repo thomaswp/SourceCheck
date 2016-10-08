@@ -21,7 +21,7 @@ public class LogSplitter {
 
 	public static void main(String[] args) throws IOException {
 		// Replace "Fall2015" with the dataset you want to load
-		splitStudentRecords(Assignment.Fall2016.dataFile);
+		splitStudentRecords(Assignment.Spring2016.dataFile);
 	}
 
 	// Header for iSnap log table

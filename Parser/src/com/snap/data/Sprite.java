@@ -9,28 +9,38 @@ import com.snap.XML;
 
 public class Sprite extends Code implements IHasID {
 	private static final long serialVersionUID = 1L;
-	
+
 	public final String name;
 	public final List<String> variables = new ArrayList<String>();
 	public final List<Script> scripts = new ArrayList<Script>();
 	public final BlockDefinitionGroup blocks;
-	
+
+	@Override
+	public String name(boolean canon) {
+		return canon ? type() : name;
+	}
+
+	@Override
+	public String type() {
+		return "sprite";
+	}
+
 	@SuppressWarnings("unused")
 	private Sprite() {
 		this(null);
 	}
-	
+
 	public Sprite(String name) {
 		this.name = name == null ? "Stage" : name;
 		this.blocks = new BlockDefinitionGroup(getID());
 	}
-	
+
 	public static Sprite parse(Element element) {
 		Sprite sprite = new Sprite(element.getAttribute("name"));
 		parseInto(element, sprite);
 		return sprite;
 	}
-	
+
 	protected static void parseInto(Element element, Sprite sprite) {
 		for (Element variable : XML.getGrandchildrenByTagName(element, "variables", "variable")) {
 			sprite.variables.add(variable.getAttribute("name"));
@@ -55,11 +65,10 @@ public class Sprite extends Code implements IHasID {
 	}
 
 	@Override
-	public String addChildren(boolean canon, Accumulator ac) {
-		ac.add(canonicalizeVariables(variables, canon));
+	public void addChildren(boolean canon, Accumulator ac) {
+		ac.addVariables(canonicalizeVariables(variables, canon));
 		ac.add(scripts);
 		ac.add(blocks.getWithEdits(canon));
-		return canon ? "sprite" : name;
 	}
 
 	@Override

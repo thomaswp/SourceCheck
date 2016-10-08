@@ -3,18 +3,26 @@ package com.snap.eval.export;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.snap.data.Canonicalization;
+import com.snap.data.Code;
+import com.snap.data.Code.Accumulator;
+import com.snap.data.IHasID;
+import com.snap.data.Script;
 import com.snap.data.Snapshot;
 import com.snap.parser.Assignment;
 import com.snap.parser.Assignment.Dataset;
 import com.snap.parser.AssignmentAttempt;
 import com.snap.parser.AttemptAction;
 import com.snap.parser.Store.Mode;
+import com.snap.util.DoubleMap;
 
 public class Datashop {
 
@@ -69,6 +77,8 @@ public class Datashop {
 
 		String lastCode = null;
 
+		Anonymizer anon = new Anonymizer();
+
 		for (AttemptAction action : attempt) {
 			String message = action.message;
 
@@ -76,7 +86,8 @@ public class Datashop {
 			String selection = "";
 			String feedbackText = "";
 			String feedbackClassification = "";
-			String code = toCode(action.snapshot);
+			String code = toCode(action.snapshot, anon);
+			if (code != null) lastCode = code;
 
 			if (AttemptAction.SHOW_HINT_MESSAGES.contains(message)) {
 				studentResponse = "HINT_REQUEST";
@@ -86,19 +97,16 @@ public class Datashop {
 					System.err.printf("Hint with code (%s): %d\n", attemptID, action.id);
 				}
 				code = "";
-			} else if (code != null && !code.equals(lastCode)) {
-				lastCode = code;
-				if (action.data != null && action.data.startsWith("{")) {
-					JSONObject data = new JSONObject(action.data);
-					if (data.has("id") && data.get("id") instanceof JSONObject) {
-						data = data.getJSONObject("id");
-					}
-					if (data.has("selector") && data.has("id")) {
-						selection = data.get("id") + "," + data.get("selector");
-					}
+			}
+
+			if (action.data != null && action.data.startsWith("{")) {
+				JSONObject data = new JSONObject(action.data);
+				if (data.has("id") && data.get("id") instanceof JSONObject) {
+					data = data.getJSONObject("id");
 				}
-			} else {
-				continue;
+				if (data.has("selector") && data.has("id")) {
+					selection = data.get("id") + "," + data.get("selector");
+				}
 			}
 
 			printer.printRecord(new Object[] {
@@ -112,13 +120,73 @@ public class Datashop {
 					message,
 					feedbackText,
 					feedbackClassification,
-					code,
+					lastCode,
 			});
 		}
 	}
 
-	private static String toCode(Snapshot snapshot) {
+	private static class Anonymizer {
+		private DoubleMap<String, String, Integer> map = new DoubleMap<>();
+		int count = 0;
+
+		public int getID(String type, String id) {
+			if (map.containsKey(type, id)) {
+				return map.get(type, id);
+			}
+			map.put(type, id, count);
+			return count++;
+		}
+	}
+
+	private static String toCode(Snapshot snapshot, Anonymizer anon) {
 		if (snapshot == null) return null;
-		return snapshot.toCode(true).replace("\t", " ").replace("\n", " ");
+		return toJSON(snapshot, anon).toString().replace("\t", " ");
+	}
+
+	private static JSONObject toJSON(Code code, Anonymizer anon) {
+		if (code == null) return null;
+
+		final JSONObject object = new JSONObject();
+		String type = code.type();
+		object.put("type", type);
+		if (code instanceof IHasID && !(code instanceof Script)) {
+			object.put("id", anon.getID(type, ((IHasID) code).getID()));
+		}
+
+		JSONArray children = new JSONArray();
+
+		code.addChildren(false, new Accumulator() {
+
+			@Override
+			public void add(Iterable<? extends Code> codes) {
+				for (Code code : codes) {
+					add(code);
+				}
+			}
+
+			@Override
+			public void add(Code code) {
+				children.put(toJSON(code, anon));
+			}
+
+			@Override
+			public void addVariables(List<String> variables) {
+				if (variables.size() == 0) return;
+				JSONArray array = new JSONArray();
+				for (String variable : variables) {
+					array.put(anon.getID("varDec", variable));
+				}
+				object.put("variables", array);
+			}
+
+			@Override
+			public void add(Canonicalization canon) { }
+		});
+
+		if (children.length() > 0) {
+			object.put("children", children);
+		}
+
+		return object;
 	}
 }

@@ -13,6 +13,16 @@ public class Script extends Code implements IHasID {
 	public final List<Block> blocks = new ArrayList<Block>();
 	public final String customBlockID;
 
+	@Override
+	public String name(boolean canon) {
+		return type();
+	}
+
+	@Override
+	public String type() {
+		return "script";
+	}
+
 	public Script() {
 		this(null);
 	}
@@ -42,9 +52,8 @@ public class Script extends Code implements IHasID {
 	}
 
 	@Override
-	public String addChildren(boolean canon, Accumulator ac) {
+	public void addChildren(boolean canon, Accumulator ac) {
 		ac.add(blocks);
-		return "script";
 	}
 
 	@Override

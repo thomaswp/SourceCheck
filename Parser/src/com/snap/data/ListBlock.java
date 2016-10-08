@@ -10,11 +10,21 @@ import com.snap.XML;
 public class ListBlock extends Block {
 	private static final long serialVersionUID = 1L;
 
+	public final List<Block> list = new ArrayList<Block>();
+
+	@Override
+	public String name(boolean canon) {
+		return name;
+	}
+
+	@Override
+	public String type() {
+		return name;
+	}
+
 	public ListBlock() {
 		super("list", null);
 	}
-
-	public final List<Block> list = new ArrayList<Block>();
 
 	public static ListBlock parse(Element element) {
 		ListBlock list = new ListBlock();
@@ -23,7 +33,7 @@ public class ListBlock extends Block {
 		}
 		return list;
 	}
-	
+
 	@Override
 	public String toCode(boolean canon) {
 		return new CodeBuilder(canon)
@@ -34,8 +44,7 @@ public class ListBlock extends Block {
 	}
 
 	@Override
-	public String addChildren(boolean canon, Accumulator ac) {
+	public void addChildren(boolean canon, Accumulator ac) {
 		ac.add(list);
-		return "list";
 	}
 }

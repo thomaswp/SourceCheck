@@ -19,8 +19,8 @@ public abstract class Block extends Code implements IHasID {
 		return id;
 	}
 	
-	public Block(String type, String id) {
-		this.name = type;
+	public Block(String name, String id) {
+		this.name = name;
 		this.id = id;
 	}
 	

@@ -7,10 +7,10 @@ import org.w3c.dom.Element;
 
 public class LiteralBlock extends Block {
 	private static final long serialVersionUID = 1L;
-	
+
 	public final String value;
 	public final boolean isVarRef;
-	
+
 	private final static HashSet<String> setVarBlocks = new HashSet<String>(Arrays.asList(new String[] {
 		"doSetVar",
 		"doChangeVar",
@@ -18,11 +18,21 @@ public class LiteralBlock extends Block {
 		"doHideVar"
 	}));
 
+	@Override
+	public String name(boolean canon) {
+		return canon ? type() : value;
+	}
+
+	@Override
+	public String type() {
+		return isVarRef ? "literal" : "varDec";
+	}
+
 	@SuppressWarnings("unused")
 	private LiteralBlock() {
 		this(null, null, null, false);
 	}
-	
+
 	public LiteralBlock(String type, String id, String value, boolean isVarRef) {
 		super(type, id);
 		this.value = value;
@@ -36,19 +46,17 @@ public class LiteralBlock extends Block {
 			isVarRef = setVarBlocks.contains(parent.getAttribute("s"));
 		}
 		return new LiteralBlock(
-				element.getTagName(), 
+				element.getTagName(),
 				getID(element),
-				element.getTextContent(), 
+				element.getTextContent(),
 				isVarRef);
-	}
-	
-	@Override
-	public String toCode(boolean canon) {
-		return canon ? "literal" : value;
 	}
 
 	@Override
-	public String addChildren(boolean canon, Accumulator ac) {
-		return toCode(canon);
+	public String toCode(boolean canon) {
+		return name(canon);
 	}
+
+	@Override
+	public void addChildren(boolean canon, Accumulator ac) { }
 }

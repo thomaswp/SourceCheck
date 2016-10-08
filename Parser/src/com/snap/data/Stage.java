@@ -12,10 +12,15 @@ public class Stage extends Sprite {
 
 	public final List<Sprite> sprites = new ArrayList<Sprite>();
 
+	@Override
+	public String type() {
+		return "stage";
+	}
+
 	public Stage() {
 		super("Stage");
 	}
-	
+
 	public static Stage parse(Element element) {
 		Stage stage = new Stage();
 		Sprite.parseInto(element, stage);
@@ -24,7 +29,7 @@ public class Stage extends Sprite {
 		}
 		return stage;
 	}
-	
+
 	@Override
 	public String toCode(boolean canon) {
 		return new CodeBuilder(canon)
@@ -35,8 +40,7 @@ public class Stage extends Sprite {
 	}
 
 	@Override
-	public String addChildren(boolean canon, Accumulator ac) {
+	public void addChildren(boolean canon, Accumulator ac) {
 		ac.add(sprites);
-		return "stage";
 	}
 }

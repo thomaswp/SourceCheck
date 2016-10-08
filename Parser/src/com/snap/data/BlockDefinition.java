@@ -47,6 +47,16 @@ public class BlockDefinition extends Code implements IHasID {
 	public final List<Script> scripts = new ArrayList<>();
 	public String parentID;
 
+	@Override
+	public String type() {
+		return "customBlock";
+	}
+
+	@Override
+	public String name(boolean canon) {
+		return canon ? type() : name;
+	}
+
 	@SuppressWarnings("unused")
 	private BlockDefinition() {
 		this(null, null, null, null, null);
@@ -146,13 +156,12 @@ public class BlockDefinition extends Code implements IHasID {
 	}
 
 	@Override
-	public String addChildren(boolean canon, Accumulator ac) {
+	public void addChildren(boolean canon, Accumulator ac) {
 		ac.add(script);
-		ac.add(canonicalizeVariables(inputs, canon));
+		ac.addVariables(canonicalizeVariables(inputs, canon));
 		// We ignore aditional scripts if canonizing because they're generally not hintable
 		// TODO: make a more generic solution for ignoring things for hints but not generally
 		if (!canon) ac.add(scripts);
-		return canon ? "customBlock" : name;
 	}
 
 	@Override

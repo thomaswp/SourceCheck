@@ -30,6 +30,16 @@ public class Snapshot extends Code implements IHasID {
 	public final BlockDefinitionGroup blocks;
 	public final List<String> variables = new ArrayList<>();
 
+	@Override
+	public String type() {
+		return "snapshot";
+	}
+
+	@Override
+	public String name(boolean canon) {
+		return canon ? type() : name;
+	}
+
 	public void setEditingIndex(BlockIndex index) {
 		if ((index == null) != (editing == null)) {
 			System.err.println("Editing index exists iff editing exists");
@@ -137,11 +147,10 @@ public class Snapshot extends Code implements IHasID {
 	}
 
 	@Override
-	public String addChildren(boolean canon, Accumulator ac) {
+	public void addChildren(boolean canon, Accumulator ac) {
 		ac.add(stage);
 		ac.add(blocks.getWithEdits(canon));
-		ac.add(canonicalizeVariables(variables, canon));
-		return canon ? "snapshot" : name;
+		ac.addVariables(canonicalizeVariables(variables, canon));
 	}
 
 	@Override
