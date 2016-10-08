@@ -20,7 +20,7 @@ public class LiteralBlock extends Block {
 
 	@Override
 	public String name(boolean canon) {
-		return canon ? type() : value;
+		return canon ? "literal" : value;
 	}
 
 	@Override

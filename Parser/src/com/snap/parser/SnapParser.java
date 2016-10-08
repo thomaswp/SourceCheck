@@ -216,7 +216,7 @@ public class SnapParser {
 				boolean saveWork = false;
 
 				// If this is an export keep the work we've seen so far
-				if (AttemptAction.IDE_EXPORT_PROJECT.equals(action)) {
+				if (AttemptAction.IDE_EXPORT_PROJECT.equals(action.message)) {
 					attempt.exported = true;
 					saveWork = true;
 					done |= foundGraded;
