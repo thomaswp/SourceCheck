@@ -15,8 +15,10 @@ import com.snap.data.Canonicalization;
 import com.snap.data.Code;
 import com.snap.data.Code.Accumulator;
 import com.snap.data.IHasID;
+import com.snap.data.LiteralBlock;
 import com.snap.data.Script;
 import com.snap.data.Snapshot;
+import com.snap.data.VarBlock;
 import com.snap.parser.Assignment;
 import com.snap.parser.Assignment.Dataset;
 import com.snap.parser.AssignmentAttempt;
@@ -107,6 +109,7 @@ public class Datashop {
 				if (data.has("selector") && data.has("id")) {
 					selection = data.get("id") + "," + data.get("selector");
 				}
+				// TODO: add more data, e.g. from change category
 			}
 
 			printer.printRecord(new Object[] {
@@ -150,7 +153,15 @@ public class Datashop {
 		String type = code.type();
 		object.put("type", type);
 		if (code instanceof IHasID && !(code instanceof Script)) {
-			object.put("id", anon.getID(type, ((IHasID) code).getID()));
+			String id = ((IHasID) code).getID();
+			object.put("id", anon.getID(type, id));
+		}
+
+		// TODO: Do something similar for custom block definitions and call
+		if (code instanceof VarBlock) {
+			object.put("varRef", anon.getID("varRef", ((VarBlock) code).name));
+		} else if (code instanceof LiteralBlock && ((LiteralBlock) code).isVarRef) {
+			object.put("varRef", anon.getID("varRef", ((LiteralBlock) code).value));
 		}
 
 		JSONArray children = new JSONArray();
@@ -174,7 +185,7 @@ public class Datashop {
 				if (variables.size() == 0) return;
 				JSONArray array = new JSONArray();
 				for (String variable : variables) {
-					array.put(anon.getID("varDec", variable));
+					array.put(anon.getID("varRef", variable));
 				}
 				object.put("variables", array);
 			}

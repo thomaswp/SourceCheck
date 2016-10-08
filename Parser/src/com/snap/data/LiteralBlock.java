@@ -25,7 +25,7 @@ public class LiteralBlock extends Block {
 
 	@Override
 	public String type() {
-		return isVarRef ? "literal" : "varDec";
+		return isVarRef ? "var" : "literal";
 	}
 
 	@SuppressWarnings("unused")
