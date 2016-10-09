@@ -9,7 +9,7 @@ This repository contains projects for parsing Snap logs, generating data-driven 
 
 ## Setup
 
-The projects here are designed for use with [Eclipse](http://www.eclipse.org/). For the HintSerer to work properly, you may need to select the "EE" version of Eclipse, or install the [Web Tools Platform](http://www.eclipse.org/webtools/). 
+The projects here are designed for use with [Eclipse](http://www.eclipse.org/). For the HintSerer to work properly, you may need to select the "EE" version of Eclipse, or install the [Web Tools Platform](http://www.eclipse.org/webtools/).
 
 Once you have cloned this repo, open Eclipse and choose File->Import->Existing Projects Into Workspace and select the root folder of this repository. Select all projects and import them.
 
@@ -33,13 +33,13 @@ Run this file to separate the single log file into more a more manageable set of
 The code in this repository is in various states of cleanliness, but new code should endeavor to be as clean as possible. This repository uses standard Java code style, and it is recommended you enable some settings in Eclipse to maintain this:
 
 * Preferences->General->Editors->Text Editors->Print margin columns: Set this value to 100 and for new code, try to keep lines under 100 characters in length.
-* Preferences->Java->Editor->Save Actions: Check the "Perform the selected action on save" box, and uncheck "Format source code," but check "Organize Imports" and "Additional Actions." Click "Configure..." and check "Remove trailing whitespace." This will ensure your code does not have excess tabs/spaces and that it uses only needed imports. 
+* Preferences->Java->Editor->Save Actions: Check the "Perform the selected action on save" box, and uncheck "Format source code," but check "Organize Imports" and "Additional Actions." Click "Configure..." and check "Remove trailing whitespace." This will ensure your code does not have excess tabs/spaces and that it uses only needed imports.
 
 ## Data Folders
 
 When you have set up your dataset under `data/csc200/{dataset}/`, you will see some folders created as your run code:
 
-* **parsed**: This contains the parsed .csv files from splitting the large dataset file. It also contains cached versions of these .csv files for easier loading. To remove the cached files easily, you can run `Parser.clean("../data/csc200/{dataset}/parsed")`.  
+* **parsed**: This contains the parsed .csv files from splitting the large dataset file. It also contains cached versions of these .csv files for easier loading. To remove the cached files easily, you can run `Parser.clean("../data/csc200/{dataset}/parsed")`.
 * **grades**: If you have created manual grades for an assignment, it should go here. This will be parsed with the snapshots.
 * **submitted**: A folder for submitted assignments, actually turned into the teacher. If you create folders and fill them with submitted .xml files for each assignment, then run [ParseSubmitted](Parser/src/com/snap/parser/ParseSubmitted.java), it will generate a text file with the list of GUIDs of submitted assignments. This file can be versioned, and is used when parsing assignment attempts to flag them as submittetd or not.
 * **graphs**: After creating a [HintGenerator](GraphAnalysis/src/com/snap/graph/subtree/HintGenerator.java), you can call the `createGraphs` method to generate a set of .graphml files, one for each node in the ASTs oberved. These can be opened with [yEd](https://www.yworks.com/products/yed), and the formatted using Layout->Hierarchical. This is helpful for debugging. This method will also generate text files for each node, which show the goal states for that node, and their comparative rankings.
@@ -59,7 +59,7 @@ Each action the student made may have an associated [Snapshot](Parser/src/com/sn
     * **Sprites**: Scriptable actors on the Snap stage.
       * *Variables*: Local variables for this sprite.
       * **Scripts**: Executable code fragments.
-        * **Blocks**: Code blocks (vertically alligned) in this Scriptable
+        * **Blocks**: Code blocks (vertically alligned) in this Script
           * *Blocks and Scripts*: Depending on the type of block, it may contained additional Blocks and Scripts nested inside.
       * **Block Definitions**: Custom blocks just for this Sprite
         * *Inputs*: Parameters for the custom block.
@@ -69,7 +69,7 @@ Each action the student made may have an associated [Snapshot](Parser/src/com/sn
 
 ## GraphAnalysis
 
-This project contains the core AI of the data-driven hint generation process. The most important class here is the [SnapHintBuilder](GraphAnalysis/src/com/snap/graph/subtree/SnapHintBuilder.java). It is used to construct a [HintGenerator](GraphAnalysis/src/com/snap/graph/subtree/HintGenerator.java) from Snap data, using the SnapParser discussed earlier. This is done with the `buildGenerator` method. Additionally, the `main` method of SnapHintBuilder can be easily used to build a HintGenerator for a number of assignments, cache them, and copy them over to the HintServer for use with iSnap. 
+This project contains the core AI of the data-driven hint generation process. The most important class here is the [SnapHintBuilder](GraphAnalysis/src/com/snap/graph/subtree/SnapHintBuilder.java). It is used to construct a [HintGenerator](GraphAnalysis/src/com/snap/graph/subtree/HintGenerator.java) from Snap data, using the SnapParser discussed earlier. This is done with the `buildGenerator` method. Additionally, the `main` method of SnapHintBuilder can be easily used to build a HintGenerator for a number of assignments, cache them, and copy them over to the HintServer for use with iSnap.
 
 The HintGenerator itself is non-Snap-specific, and therefore uses a generic AST data-structure, called a [Node](GraphAnalysis/src/com/snap/graph/data/Node,java). The node is just a basic tree node class, but it contains many convenience methods for searching through the tree. The HintGenerator deals constructing the data-structure behind hint generation, and its primary logic involved identifying when two Nodes match in consecutive snapshots. It builds up a [HintFactoryMap](GraphAnalysis/src/com/snap/graph/data/HintFactoryMap.java) for each assignment attempt, and later combines them into a single map representing all attempts. This class contains the real logic behind the [CTD algorithm](http://www4.ncsu.edu/~twprice/website/files/EDM%202016.pdf). Unsurprisingly, it makes use of interaction networks and the HintFactory aglorithm, which are implemented in the [InteractionGraph](GraphAnalysis/src/com/snap/graph/data/InteractionGraph.java) and [VectorGraph](GraphAnalysis/src/com/snap/graph/data/VectorGraph.java) classes.
 
@@ -83,7 +83,7 @@ To create a Unit Test, in Eclipse edit the Run Confirguration for the HintServer
 
 ## HintServer
 
-The HintServer is a Java servlet designed to serve hints to iSnap. To use the HintServer, you must generate hints using the [SnapHintBuilder](GraphAnalysis/src/com/snap/graph/subtree/SnapHintBuilder.java)'s main method. This will generate HintBuilders for each assignment, cache them, and copy the cached files to the HintServer's WEB-INF folder. If using Eclipse, you'll need to refresh the HintServer folder before starting the server, so that it recognizes the updated data files. 
+The HintServer is a Java servlet designed to serve hints to iSnap. To use the HintServer, you must generate hints using the [SnapHintBuilder](GraphAnalysis/src/com/snap/graph/subtree/SnapHintBuilder.java)'s main method. This will generate HintBuilders for each assignment, cache them, and copy the cached files to the HintServer's WEB-INF folder. If using Eclipse, you'll need to refresh the HintServer folder before starting the server, so that it recognizes the updated data files.
 
 ## HintEvaluation
 
