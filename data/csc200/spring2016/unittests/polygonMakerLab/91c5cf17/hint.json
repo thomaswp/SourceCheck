@@ -1,10 +1,10 @@
 {
 	"from": "snapshot:[stage:[sprite:[script]]]: [receiveGo]",
-	"to": "snapshot:[stage:[sprite:[script]]]: [receiveGo, doCustomBlock]",
+	"to": "snapshot:[stage:[sprite:[script]]]: [receiveGo, evaluateCustomBlock]",
 	"data": {
 		"goal": [
 			"receiveGo",
-			"doCustomBlock"
+			"evaluateCustomBlock"
 		],
 		"root": {
 			"label": "script",
@@ -28,7 +28,7 @@
 		],
 		"to": [
 			"receiveGo",
-			"doCustomBlock"
+			"evaluateCustomBlock"
 		],
 		"caution": false
 	}

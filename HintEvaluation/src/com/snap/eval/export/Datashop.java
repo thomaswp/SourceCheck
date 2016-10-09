@@ -43,7 +43,7 @@ public class Datashop {
 	};
 
 	public static void main(String[] args) {
-		export(Assignment.Fall2015.instance);
+		export(Assignment.Fall2016.instance);
 	}
 
 	public static void export(Dataset dataset) {
@@ -93,6 +93,7 @@ public class Datashop {
 
 			if (AttemptAction.SHOW_HINT_MESSAGES.contains(message)) {
 				studentResponse = "HINT_REQUEST";
+				// TODO: Make this more accurate
 				feedbackText = action.data;
 				feedbackClassification = message;
 				if (code != null) {
@@ -107,9 +108,20 @@ public class Datashop {
 					data = data.getJSONObject("id");
 				}
 				if (data.has("selector") && data.has("id")) {
-					selection = data.get("id") + "," + data.get("selector");
+					String id = data.get("id").toString();
+					String selector = data.getString("selector").replace("evaluateCustomBlock", "doCusomtBlock");
+					id = String.valueOf(anon.getID(selector, id));
+					selection = id + "," + data.get("selector");
 				}
-				// TODO: add more data, e.g. from change category
+			}
+			if (AttemptAction.SINGLE_ARG_MESSAGES.contains(action.message)) {
+				selection = action.data.substring(1, action.data.length() - 1);
+			} else if (AttemptAction.SPRITE_ADD_VARIABLE.contains(action.message)) {
+				selection = String.valueOf(anon.getID("varRef",
+						action.data.substring(1, action.data.length() - 1)));
+			}
+			if (action.data.length() > 2 && selection.isEmpty()) {
+				System.out.println(action.message + ": " + action.data);
 			}
 
 			printer.printRecord(new Object[] {

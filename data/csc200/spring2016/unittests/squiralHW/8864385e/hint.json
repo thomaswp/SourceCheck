@@ -1,12 +1,12 @@
 {
-	"from": "snapshot:[stage:[sprite:[script:[doCustomBlock]]]]: []",
-	"to": "snapshot:[stage:[sprite:[script:[doCustomBlock]]]]: [literal]",
+	"from": "snapshot:[stage:[sprite:[script:[evaluateCustomBlock]]]]: []",
+	"to": "snapshot:[stage:[sprite:[script:[evaluateCustomBlock]]]]: [literal]",
 	"data": {
 		"goal": [
 			"literal"
 		],
 		"root": {
-			"label": "doCustomBlock",
+			"label": "evaluateCustomBlock",
 			"index": 1,
 			"parent": {
 				"label": "script",

@@ -43,7 +43,7 @@ public class CallBlock extends Block {
 
 	@Override
 	public String type() {
-		if (isCustom) return "doCustomBlock";
+		if (isCustom) return "evaluateCustomBlock";
 		return name;
 	}
 
