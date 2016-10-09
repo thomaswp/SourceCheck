@@ -1,8 +1,8 @@
 package com.snap.eval.user;
 
 import static com.snap.parser.AttemptAction.BLOCK_CLICK_RUN;
-import static com.snap.parser.AttemptAction.IDE_GREEN_FLAG_RUN;
 import static com.snap.parser.AttemptAction.HINT_DIALOG_DONE;
+import static com.snap.parser.AttemptAction.IDE_GREEN_FLAG_RUN;
 import static com.snap.parser.AttemptAction.SHOW_HINT_MESSAGES;
 
 import java.io.File;
@@ -154,14 +154,7 @@ public class CheckHintUsage {
 					studentTrees.add(tree);
 
 					// Find the parent node that this hint affects
-					Node parent = findParent(node, data);
-
-					// Hack for custom block structure hints that failed to log rootTypes
-					if (parent == null && "SnapDisplay.showStructureHint".equals(row.message)) {
-						if (code.editing != null) {
-							parent = node.searchForNodeWithID(code.editing.getID());
-						}
-					}
+					Node parent = findParent(row.message, code, node, data);
 
 					// It shouldn't be null (and isn't for this dataset)
 					if (parent == null) {
@@ -642,14 +635,31 @@ public class CheckHintUsage {
 		return obj.get(key);
 	}
 
+
 	/**
 	 * Finds the Node that was the parent for this hint, i.e. the hint
 	 * is telling us to change this node's children.
+	 * @param message The message for this hint
+	 * @param snapshot The latest snapshot when the hint was given
 	 * @param root The root node of the student's whole code
 	 * @param data The data from the showHint event
 	 * @return The node for the parent
 	 */
-	public static Node findParent(Node root, JSONObject data) {
+	public static Node findParent(String message, Snapshot snapshot, Node root,
+			JSONObject data) {
+		Node parent = findParent(root, data);
+
+		// Hack for custom block structure hints that failed to log rootTypes
+		if (parent == null && "SnapDisplay.showStructureHint".equals(message)) {
+			if (snapshot.editing != null) {
+				parent = root.searchForNodeWithID(snapshot.editing.getID());
+			}
+		}
+
+		return parent;
+	}
+
+	private static Node findParent(Node root, JSONObject data) {
 		String[] ids = new String[] {
 				"parentID", "rootID", "rootType"
 		};

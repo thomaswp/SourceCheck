@@ -65,7 +65,7 @@ public class CallBlock extends Block {
 		}
 
 		CallBlock block = new CallBlock(
-				element.getAttribute("s").replace("%n", "%s"),
+				element.getAttribute("s").replaceAll("%[^(\\s%)]*", "%s"),
 				getID(element),
 				element.getTagName().equals("custom-block"));
 		for (Code code : XML.getCode(element)) {

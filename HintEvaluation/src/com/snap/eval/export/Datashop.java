@@ -11,6 +11,8 @@ import org.apache.commons.csv.CSVPrinter;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.snap.data.BlockDefinition;
+import com.snap.data.CallBlock;
 import com.snap.data.Canonicalization;
 import com.snap.data.Code;
 import com.snap.data.Code.Accumulator;
@@ -70,7 +72,6 @@ public class Datashop {
 		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, false);
 		for (AssignmentAttempt attempt : attempts.values()) {
 			export(assignment, attempt, printer);
-			break;
 		}
 	}
 
@@ -97,6 +98,9 @@ public class Datashop {
 			if (code != null) {
 				lastSnapshot = action.snapshot;
 				lastCode = code;
+				if (code.length() > 64000) {
+					System.err.println("Long code: " + code.length());
+				}
 			}
 
 			if (action.data != null && data.startsWith("{")) {
@@ -106,7 +110,7 @@ public class Datashop {
 				}
 				if (jsonData.has("selector") && jsonData.has("id")) {
 					String id = jsonData.get("id").toString();
-					String selector = jsonData.getString("selector");
+					String selector = jsonData.get("selector").toString();
 					id = String.valueOf(anon.getID(selector, id));
 					selection = id + "," + jsonData.get("selector");
 				}
@@ -133,7 +137,7 @@ public class Datashop {
 
 				JSONObject jsonData = new JSONObject(data);
 				Node root = SimpleNodeBuilder.toTree(lastSnapshot, true);
-				Node parent = CheckHintUsage.findParent(root, jsonData);
+				Node parent = CheckHintUsage.findParent(message, lastSnapshot, root, jsonData);
 				if (parent == null) System.err.println("Null parent: " + data);
 				while (!(parent.tag instanceof IHasID)) {
 					System.out.println("No ID: " + parent.type());
@@ -210,14 +214,16 @@ public class Datashop {
 		object.put("type", type);
 		if (code instanceof IHasID && !(code instanceof Script)) {
 			String id = ((IHasID) code).getID();
+			if (code instanceof BlockDefinition) id = ((BlockDefinition) code).name;
 			object.put("id", anon.getID(type, id));
 		}
 
-		// TODO: Do something similar for custom block definitions and call
 		if (code instanceof VarBlock) {
 			object.put("varRef", anon.getID("varRef", ((VarBlock) code).name));
 		} else if (code instanceof LiteralBlock && ((LiteralBlock) code).isVarRef) {
 			object.put("varRef", anon.getID("varRef", ((LiteralBlock) code).value));
+		} else if (code instanceof CallBlock && ((CallBlock) code).isCustom) {
+			object.put("customBlockRef", anon.getID("customBlock", code.name(false)));
 		}
 
 		JSONArray children = new JSONArray();
