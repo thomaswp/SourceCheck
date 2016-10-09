@@ -19,6 +19,9 @@ import com.snap.data.LiteralBlock;
 import com.snap.data.Script;
 import com.snap.data.Snapshot;
 import com.snap.data.VarBlock;
+import com.snap.eval.user.CheckHintUsage;
+import com.snap.graph.SimpleNodeBuilder;
+import com.snap.graph.data.Node;
 import com.snap.parser.Assignment;
 import com.snap.parser.Assignment.Dataset;
 import com.snap.parser.AssignmentAttempt;
@@ -78,51 +81,92 @@ public class Datashop {
 		String problemName = assignment.name;
 
 		String lastCode = null;
+		Snapshot lastSnapshot = null;
 
 		Anonymizer anon = new Anonymizer();
 
 		for (AttemptAction action : attempt) {
 			String message = action.message;
+			String data = action.data;
 
 			String studentResponse = "ATTEMPT";
 			String selection = "";
 			String feedbackText = "";
 			String feedbackClassification = "";
 			String code = toCode(action.snapshot, anon);
-			if (code != null) lastCode = code;
-
-			if (AttemptAction.SHOW_HINT_MESSAGES.contains(message)) {
-				studentResponse = "HINT_REQUEST";
-				// TODO: Make this more accurate
-				feedbackText = action.data;
-				feedbackClassification = message;
-				if (code != null) {
-					System.err.printf("Hint with code (%s): %d\n", attemptID, action.id);
-				}
-				code = "";
+			if (code != null) {
+				lastSnapshot = action.snapshot;
+				lastCode = code;
 			}
 
-			if (action.data != null && action.data.startsWith("{")) {
-				JSONObject data = new JSONObject(action.data);
-				if (data.has("id") && data.get("id") instanceof JSONObject) {
-					data = data.getJSONObject("id");
+			if (action.data != null && data.startsWith("{")) {
+				JSONObject jsonData = new JSONObject(data);
+				if (jsonData.has("id") && jsonData.get("id") instanceof JSONObject) {
+					jsonData = jsonData.getJSONObject("id");
 				}
-				if (data.has("selector") && data.has("id")) {
-					String id = data.get("id").toString();
-					String selector = data.getString("selector").replace("evaluateCustomBlock", "doCusomtBlock");
+				if (jsonData.has("selector") && jsonData.has("id")) {
+					String id = jsonData.get("id").toString();
+					String selector = jsonData.getString("selector");
 					id = String.valueOf(anon.getID(selector, id));
-					selection = id + "," + data.get("selector");
+					selection = id + "," + jsonData.get("selector");
 				}
 			}
-			if (AttemptAction.SINGLE_ARG_MESSAGES.contains(action.message)) {
-				selection = action.data.substring(1, action.data.length() - 1);
-			} else if (AttemptAction.SPRITE_ADD_VARIABLE.contains(action.message)) {
-				selection = String.valueOf(anon.getID("varRef",
-						action.data.substring(1, action.data.length() - 1)));
+			if (data.startsWith("\"") && data.endsWith("\"")) {
+				data = data.substring(1, data.length() - 1);
 			}
-			if (action.data.length() > 2 && selection.isEmpty()) {
-				System.out.println(action.message + ": " + action.data);
+			if (AttemptAction.SINGLE_ARG_MESSAGES.contains(message)) {
+				selection = data;
+			} else if (AttemptAction.SPRITE_ADD_VARIABLE.contains(message) ||
+					AttemptAction.SPRITE_DELETE_VARIABLE.contains(message)) {
+				selection = String.valueOf(anon.getID("varRef", data));
+			} else if (AttemptAction.IDE_ADD_SPRITE.equals(message) ||
+					AttemptAction.IDE_REMOVE_SPRITE.equals(message) ||
+					AttemptAction.IDE_SELECT_SPRITE.equals(message)) {
+				selection = String.valueOf(anon.getID("sprite", data));
+			} else if (AttemptAction.HINT_DIALOG_LOG_FEEDBACK.equals(message)) {
+				if (data.length() > 4) {
+					selection = data.substring(2, data.length() - 2);
+				}
+			} else if (AttemptAction.SHOW_HINT_MESSAGES.contains(message)) {
+				studentResponse = "HINT_REQUEST";
+				feedbackClassification = message;
+
+				JSONObject jsonData = new JSONObject(data);
+				Node root = SimpleNodeBuilder.toTree(lastSnapshot, true);
+				Node parent = CheckHintUsage.findParent(root, jsonData);
+				if (parent == null) System.err.println("Null parent: " + data);
+				while (!(parent.tag instanceof IHasID)) {
+					System.out.println("No ID: " + parent.type());
+					parent = parent.parent;
+				}
+				int parentID = anon.getID(parent.type(), ((IHasID)parent.tag).getID());
+				selection = String.valueOf(parentID);
+
+				JSONArray toArray = jsonData.getJSONArray("to");
+				JSONArray fromArray;
+				if (jsonData.has("from")) {
+					fromArray = jsonData.getJSONArray("from");
+				} else {
+					fromArray = jsonData.getJSONArray("fromList").getJSONArray(0);
+				}
+				for (JSONArray array : new JSONArray[] {toArray, fromArray}) {
+					if (array.length() > 0 && array.getString(0).equals("prototypeHatBlock")) {
+						array.remove(0);
+					}
+				}
+
+				JSONObject saveData = new JSONObject();
+				saveData.put("parentID", parentID);
+				saveData.put("parentType", parent.type());
+				saveData.put("from", fromArray);
+				saveData.put("to", toArray);
+
+				feedbackText = saveData.toString();
 			}
+
+//			if (data.length() > 0 && selection.isEmpty()) {
+//				System.out.println(message + ": " + data);
+//			}
 
 			printer.printRecord(new Object[] {
 					attemptID,

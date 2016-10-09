@@ -1,7 +1,7 @@
 package com.snap.eval.user;
 
-import static com.snap.parser.AttemptAction.BLOCK_RUN;
-import static com.snap.parser.AttemptAction.GREEN_FLAG_RUN;
+import static com.snap.parser.AttemptAction.BLOCK_CLICK_RUN;
+import static com.snap.parser.AttemptAction.IDE_GREEN_FLAG_RUN;
 import static com.snap.parser.AttemptAction.HINT_DIALOG_DONE;
 import static com.snap.parser.AttemptAction.SHOW_HINT_MESSAGES;
 
@@ -365,8 +365,8 @@ public class CheckHintUsage {
 					}
 				}
 
-				if (GREEN_FLAG_RUN.equals(action)) nFlagRuns++;
-				if (BLOCK_RUN.equals(action)) nBlockRuns++;
+				if (IDE_GREEN_FLAG_RUN.equals(action)) nFlagRuns++;
+				if (BLOCK_CLICK_RUN.equals(action)) nBlockRuns++;
 			}
 
 			projects.newRow();
