@@ -35,7 +35,7 @@ public class CallBlock extends Block {
 			if (OPPOSITES.containsKey(name)) {
 				return OPPOSITES.get(name);
 			}
-			return type();
+			if (isCustom) return "evaluateCustomBlock";
 		}
 
 		return name;
@@ -43,8 +43,7 @@ public class CallBlock extends Block {
 
 	@Override
 	public String type() {
-		if (isCustom) return "evaluateCustomBlock";
-		return name;
+		return "callBlock";
 	}
 
 	@SuppressWarnings("unused")

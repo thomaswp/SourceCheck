@@ -59,7 +59,7 @@ public class Sprite extends Code implements IHasID {
 		.add(name)
 		.indent()
 		.add(variables.size() == 0 ? null : ("variables: " + canonicalizeVariables(variables, canon).toString() + "\n"))
-		.add(blocks.getWithEdits(canon))
+		.add(blocks.getWithEdits(true))
 		.add(scripts)
 		.end();
 	}

@@ -295,29 +295,31 @@ public class SnapParser {
 					ParseSubmitted.getAllSubmissions(assignment.dataset);
 			submissions = allSubmissions.get(assignment.name);
 
-			for (String attemptID : submissions.keySet()) {
-				Submission submission = submissions.get(attemptID);
-				if (submission.location == null) continue;
+			if (submissions != null) {
+				for (String attemptID : submissions.keySet()) {
+					Submission submission = submissions.get(attemptID);
+					if (submission.location == null) continue;
 
-				// Loop through all earlier assignments and see if any have the same submission ID.
-				for (Assignment prequel : assignment.dataset.all()) {
-					if (prequel == assignment) break;
-					Map<String, Submission> prequelSubmissions = allSubmissions.get(prequel.name);
-					if (prequelSubmissions.containsKey(attemptID)) {
-						// If so, and there's a submission row, we put (or update) that as the
-						// prequel row. It makes no sense to process data that was logged before the
-						// previous assignment was submitted.
-						Integer submittedRowID = prequelSubmissions.get(attemptID).submittedRowID;
-						if (submittedRowID != null) {
-							prequelEndRows.put(attemptID, submittedRowID);
+					// Loop through all earlier assignments and see if any have the same submission ID.
+					for (Assignment prequel : assignment.dataset.all()) {
+						if (prequel == assignment) break;
+						Map<String, Submission> prequelSubmissions = allSubmissions.get(prequel.name);
+						if (prequelSubmissions.containsKey(attemptID)) {
+							// If so, and there's a submission row, we put (or update) that as the
+							// prequel row. It makes no sense to process data that was logged before the
+							// previous assignment was submitted.
+							Integer submittedRowID = prequelSubmissions.get(attemptID).submittedRowID;
+							if (submittedRowID != null) {
+								prequelEndRows.put(attemptID, submittedRowID);
+							}
 						}
 					}
-				}
 
-				// Update the log path with the one specified in the submission file
-				String path = assignment.dataDir + "/parsed/" + submission.location + "/" +
-						attemptID + ".csv";
-				attemptFiles.put(attemptID, path);
+					// Update the log path with the one specified in the submission file
+					String path = assignment.dataDir + "/parsed/" + submission.location + "/" +
+							attemptID + ".csv";
+					attemptFiles.put(attemptID, path);
+				}
 			}
 		}
 

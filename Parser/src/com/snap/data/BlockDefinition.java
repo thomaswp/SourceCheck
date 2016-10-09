@@ -97,14 +97,6 @@ public class BlockDefinition extends Code implements IHasID {
 		return def;
 	}
 
-	private static <E> List<E> toList(Iterable<E> iter) {
-	    List<E> list = new ArrayList<>();
-	    for (E item : iter) {
-	        list.add(item);
-	    }
-	    return list;
-	}
-
 	public static BlockDefinition parseEditing(Element element) {
 		String guid = element.getAttribute("guid");
 		List<Element> scripts = toList(XML.getGrandchildrenByTagName(element, "scripts", "script"));
@@ -137,6 +129,14 @@ public class BlockDefinition extends Code implements IHasID {
 			def.scripts.add(Script.parse(scripts.get(i)));
 		}
 		return def;
+	}
+
+	private static <E> List<E> toList(Iterable<E> iter) {
+	    List<E> list = new ArrayList<>();
+	    for (E item : iter) {
+	        list.add(item);
+	    }
+	    return list;
 	}
 
 	@Override

@@ -149,7 +149,9 @@ public class Snapshot extends Code implements IHasID {
 	@Override
 	public void addChildren(boolean canon, Accumulator ac) {
 		ac.add(stage);
-		ac.add(blocks.getWithEdits(canon));
+		// TODO: Find a better way to determine whether to collapse the editing block
+		// (And when you do make the same change in Sprite)
+		ac.add(blocks.getWithEdits(true));
 		ac.addVariables(canonicalizeVariables(variables, canon));
 	}
 

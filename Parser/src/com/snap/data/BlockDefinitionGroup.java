@@ -51,8 +51,8 @@ public class BlockDefinitionGroup {
 		return -1;
 	}
 
-	public List<BlockDefinition> getWithEdits(boolean canon) {
-		if (!canon) {
+	public List<BlockDefinition> getWithEdits(boolean collapseEditing) {
+		if (!collapseEditing) {
 			return blocks;
 		}
 

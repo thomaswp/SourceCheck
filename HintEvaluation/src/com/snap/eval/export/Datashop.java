@@ -3,6 +3,8 @@ package com.snap.eval.export;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Field;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -47,8 +49,8 @@ public class Datashop {
 			"CF (AST)"
 	};
 
-	public static void main(String[] args) {
-		export(Assignment.Fall2016.instance);
+	public static void main(String[] args) throws IOException {
+		export(Assignment.Demo.Squiral);
 	}
 
 	public static void export(Dataset dataset) {
@@ -68,9 +70,23 @@ public class Datashop {
 		}
 	}
 
+	private static void export(Assignment assignment) throws IOException {
+		try {
+			File output = new File(assignment.analysisDir() + "/datashop.txt");
+			output.getParentFile().mkdirs();
+			CSVPrinter printer = new CSVPrinter(new PrintWriter(output),
+					CSVFormat.TDF.withHeader(HEADER));
+			export(assignment, printer);
+			printer.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
 	private static void export(Assignment assignment, CSVPrinter printer) throws IOException {
 		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, false);
 		for (AssignmentAttempt attempt : attempts.values()) {
+			System.out.println(attempt.id);
 			export(assignment, attempt, printer);
 		}
 	}
@@ -139,8 +155,13 @@ public class Datashop {
 				Node root = SimpleNodeBuilder.toTree(lastSnapshot, true);
 				Node parent = CheckHintUsage.findParent(message, lastSnapshot, root, jsonData);
 				if (parent == null) System.err.println("Null parent: " + data);
-				while (!(parent.tag instanceof IHasID)) {
-					System.out.println("No ID: " + parent.type());
+				int scriptIndex = -1;
+				while (parent.tag instanceof Script || !(parent.tag instanceof IHasID)) {
+					if (parent.tag instanceof Script) {
+						scriptIndex = parent.index();
+					} else {
+						System.out.println("No ID: " + parent.type());
+					}
 					parent = parent.parent;
 				}
 				int parentID = anon.getID(parent.type(), ((IHasID)parent.tag).getID());
@@ -162,6 +183,11 @@ public class Datashop {
 				JSONObject saveData = new JSONObject();
 				saveData.put("parentID", parentID);
 				saveData.put("parentType", parent.type());
+				if (scriptIndex >= 0) {
+					// Because scripts have no IDs, we use their parents' IDs, and mark which script
+					// was referenced
+					saveData.put("scriptIndex", scriptIndex);
+				}
 				saveData.put("from", fromArray);
 				saveData.put("to", toArray);
 
@@ -175,7 +201,7 @@ public class Datashop {
 			printer.printRecord(new Object[] {
 					attemptID,
 					action.sessionID,
-					action.timestamp.getTime(),
+					action.timestamp.getTime() / 1000,
 					studentResponse,
 					levelType,
 					problemName,
@@ -191,6 +217,10 @@ public class Datashop {
 	private static class Anonymizer {
 		private DoubleMap<String, String, Integer> map = new DoubleMap<>();
 		int count = 0;
+
+		public void linkIDs(String type, String fromID, String toID) {
+			map.put(type, fromID, getID(type, toID));
+		}
 
 		public int getID(String type, String id) {
 			if (map.containsKey(type, id)) {
@@ -209,22 +239,36 @@ public class Datashop {
 	private static JSONObject toJSON(Code code, Anonymizer anon) {
 		if (code == null) return null;
 
-		final JSONObject object = new JSONObject();
+		final JSONObject object = new OJSONObject();
 		String type = code.type();
 		object.put("type", type);
 		if (code instanceof IHasID && !(code instanceof Script)) {
 			String id = ((IHasID) code).getID();
-			if (code instanceof BlockDefinition) id = ((BlockDefinition) code).name;
+			if (code instanceof BlockDefinition) {
+				// If this is a custom block definition, we link its name to it's GUID (if it has
+				// one), so that customBlockRefs can reference the ID by it's name
+				String name = ((BlockDefinition) code).name;
+				anon.linkIDs(type, name, id);
+			}
 			object.put("id", anon.getID(type, id));
 		}
 
+		// Special fields for certain nodes
 		if (code instanceof VarBlock) {
+			System.out.println("R: " + ((VarBlock) code).name + " -> " + anon.getID("varRef", ((VarBlock) code).name));
 			object.put("varRef", anon.getID("varRef", ((VarBlock) code).name));
 		} else if (code instanceof LiteralBlock && ((LiteralBlock) code).isVarRef) {
 			object.put("varRef", anon.getID("varRef", ((LiteralBlock) code).value));
-		} else if (code instanceof CallBlock && ((CallBlock) code).isCustom) {
-			object.put("customBlockRef", anon.getID("customBlock", code.name(false)));
+		} else if (code instanceof CallBlock) {
+			if (((CallBlock) code).isCustom) {
+				object.put("blockType", "evaluateCustomBlock");
+				object.put("customBlockRef", anon.getID("customBlock", code.name(false)));
+			} else {
+				object.put("blockType", code.name(false));
+			}
 		}
+
+		// TODO: literal integer values
 
 		JSONArray children = new JSONArray();
 
@@ -247,9 +291,13 @@ public class Datashop {
 				if (variables.size() == 0) return;
 				JSONArray array = new JSONArray();
 				for (String variable : variables) {
+//					if (variable == null || variable.equals("%s")) {
+//						System.out.println("!");
+//					}
+					System.out.println("V: " + variable + " -> " + anon.getID("varRef", variable));
 					array.put(anon.getID("varRef", variable));
 				}
-				object.put("variables", array);
+				object.put("variableIDs", array);
 			}
 
 			@Override
@@ -261,5 +309,19 @@ public class Datashop {
 		}
 
 		return object;
+	}
+
+	// We want the fields to come out in the order we add them (with extendable children last)
+	// for readability
+	private static class OJSONObject extends JSONObject {
+		public OJSONObject() {
+			try {
+				Field f = JSONObject.class.getDeclaredField("map");
+			    f.setAccessible(true);
+			    f.set(this, new LinkedHashMap<String, Object>());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
 	}
 }
