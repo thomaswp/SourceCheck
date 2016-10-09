@@ -164,7 +164,7 @@ public class Snapshot extends Code implements IHasID {
 		if (editing == null) return null;
 		if (editing.guid != null) return new BlockIndex(editing.guid);
 
-		name = BlockDefinition.steralizeName(name);
+		name = BlockDefinition.extractInputs(name, null);
 
 		BlockIndex index = null;
 		Map<Integer, BlockDefinitionGroup> blockLists =

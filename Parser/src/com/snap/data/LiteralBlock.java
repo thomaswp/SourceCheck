@@ -8,8 +8,27 @@ import org.w3c.dom.Element;
 public class LiteralBlock extends Block {
 	private static final long serialVersionUID = 1L;
 
+	public enum Type {
+		Text(null), VarRef(null), Option("option"), Color("color");
+
+		public final String tag;
+
+		Type(String tag) {
+			this.tag = tag;
+		}
+
+		boolean isOfType(String value) {
+			return tag != null && value.startsWith("<" + tag + ">") &&
+					value.endsWith("</" + tag + ">");
+		}
+
+		String parse(String value) {
+			return value.substring(tag.length() + 2, value.length() - tag.length() - 3);
+		}
+	}
+
 	public final String value;
-	public final boolean isVarRef;
+	public final Type type;
 
 	private final static HashSet<String> setVarBlocks = new HashSet<String>(Arrays.asList(new String[] {
 		"doSetVar",
@@ -25,7 +44,7 @@ public class LiteralBlock extends Block {
 
 	@Override
 	public String type() {
-		return isVarRef ? "var" : "literal";
+		return type == Type.VarRef ? "var" : "literal";
 	}
 
 	@SuppressWarnings("unused")
@@ -33,10 +52,26 @@ public class LiteralBlock extends Block {
 		this(null, null, null, false);
 	}
 
-	public LiteralBlock(String type, String id, String value, boolean isVarRef) {
-		super(type, id);
-		this.value = value;
-		this.isVarRef = isVarRef;
+	public LiteralBlock(String name, String id, String value, boolean isVarRef) {
+		super(name, id);
+
+		Type _type = Type.Text;
+		String _value = value;
+
+		if (isVarRef) {
+			_type = Type.VarRef;
+			_value = value;
+		} else {
+			for (Type type : Type.values()) {
+				if (type.isOfType(value)) {
+					_type = type;
+					_value = type.parse(value);
+				}
+			}
+		}
+
+		this.type = _type;
+		this.value = _value;
 	}
 
 	public static LiteralBlock parse(Element element) {

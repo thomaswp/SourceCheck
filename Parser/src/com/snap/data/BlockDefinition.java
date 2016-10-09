@@ -5,6 +5,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.w3c.dom.Element;
 
@@ -62,13 +64,21 @@ public class BlockDefinition extends Code implements IHasID {
 		this(null, null, null, null, null);
 	}
 
-	public static String steralizeName(String name) {
+	private final static Pattern ARG_PATTERN = Pattern.compile("%'([^']*)'");
+
+	public static String extractInputs(String name, List<String> inputs) {
 		if (name == null) return null;
-		return name.replace("&apos;", "'").replaceAll("%'[A-Za-z0-9# ]*'", "%s");
+		Matcher matcher = ARG_PATTERN.matcher(name);
+		if (inputs != null) {
+			while (matcher.find()) {
+				inputs.add(matcher.group(1));
+			}
+		}
+		return matcher.replaceAll("%s");
 	}
 
 	public BlockDefinition(String name, String type, String category, String guid, Script script) {
-		this.name = steralizeName(name);
+		this.name = extractInputs(name, inputs);
 		this.type = type;
 		this.category = category;
 		this.guid = guid;
@@ -85,9 +95,6 @@ public class BlockDefinition extends Code implements IHasID {
 		Element scriptElement = XML.getFirstChildByTagName(element, "script");
 		Script script = scriptElement == null ? new Script() : Script.parse(scriptElement);
 		BlockDefinition def = new BlockDefinition(name, type, category, guid, script);
-		for (Element e : XML.getGrandchildrenByTagName(element, "inputs", "input")) {
-			def.inputs.add(e.getAttribute("type"));
-		}
 		for (Element e : XML.getGrandchildrenByTagName(element, "scripts", "script")) {
 			def.scripts.add(Script.parse(e));
 		}
@@ -120,10 +127,6 @@ public class BlockDefinition extends Code implements IHasID {
 		}
 
 		BlockDefinition def = new BlockDefinition(name, null, null, guid, script);
-
-		for (Element e : XML.getChildrenByTagName(definition, "l")) {
-			def.inputs.add(e.getNodeValue());
-		}
 
 		for (int i = 1; i < scripts.size(); i++) {
 			def.scripts.add(Script.parse(scripts.get(i)));

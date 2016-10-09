@@ -20,6 +20,7 @@ import com.snap.data.Code;
 import com.snap.data.Code.Accumulator;
 import com.snap.data.IHasID;
 import com.snap.data.LiteralBlock;
+import com.snap.data.LiteralBlock.Type;
 import com.snap.data.Script;
 import com.snap.data.Snapshot;
 import com.snap.data.VarBlock;
@@ -194,10 +195,6 @@ public class Datashop {
 				feedbackText = saveData.toString();
 			}
 
-//			if (data.length() > 0 && selection.isEmpty()) {
-//				System.out.println(message + ": " + data);
-//			}
-
 			printer.printRecord(new Object[] {
 					attemptID,
 					action.sessionID,
@@ -244,21 +241,34 @@ public class Datashop {
 		object.put("type", type);
 		if (code instanceof IHasID && !(code instanceof Script)) {
 			String id = ((IHasID) code).getID();
-			if (code instanceof BlockDefinition) {
-				// If this is a custom block definition, we link its name to it's GUID (if it has
-				// one), so that customBlockRefs can reference the ID by it's name
-				String name = ((BlockDefinition) code).name;
-				anon.linkIDs(type, name, id);
+			if (id != null) {
+				if (code instanceof BlockDefinition) {
+					// If this is a custom block definition, we link its name to it's GUID (if it has
+					// one), so that customBlockRefs can reference the ID by it's name
+					String name = ((BlockDefinition) code).name;
+					anon.linkIDs(type, name, id);
+				}
+				object.put("id", anon.getID(type, id));
 			}
-			object.put("id", anon.getID(type, id));
 		}
 
 		// Special fields for certain nodes
 		if (code instanceof VarBlock) {
-			System.out.println("R: " + ((VarBlock) code).name + " -> " + anon.getID("varRef", ((VarBlock) code).name));
 			object.put("varRef", anon.getID("varRef", ((VarBlock) code).name));
-		} else if (code instanceof LiteralBlock && ((LiteralBlock) code).isVarRef) {
-			object.put("varRef", anon.getID("varRef", ((LiteralBlock) code).value));
+		} else if (code instanceof LiteralBlock) {
+			LiteralBlock literal = (LiteralBlock) code;
+			if (literal.type == Type.VarRef) {
+				object.put("varRef", anon.getID("varRef", literal.value));
+			} else {
+				if (literal.type != Type.Text) {
+					object.put("value", literal.value);
+				} else {
+					try {
+						int value = Integer.parseInt(literal.value);
+						object.put("value", value);
+					} catch (NumberFormatException e) { }
+				}
+			}
 		} else if (code instanceof CallBlock) {
 			if (((CallBlock) code).isCustom) {
 				object.put("blockType", "evaluateCustomBlock");
@@ -267,8 +277,6 @@ public class Datashop {
 				object.put("blockType", code.name(false));
 			}
 		}
-
-		// TODO: literal integer values
 
 		JSONArray children = new JSONArray();
 
@@ -291,10 +299,6 @@ public class Datashop {
 				if (variables.size() == 0) return;
 				JSONArray array = new JSONArray();
 				for (String variable : variables) {
-//					if (variable == null || variable.equals("%s")) {
-//						System.out.println("!");
-//					}
-					System.out.println("V: " + variable + " -> " + anon.getID("varRef", variable));
 					array.put(anon.getID("varRef", variable));
 				}
 				object.put("variableIDs", array);
