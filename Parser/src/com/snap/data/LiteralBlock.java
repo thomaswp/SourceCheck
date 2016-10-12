@@ -18,7 +18,7 @@ public class LiteralBlock extends Block {
 		}
 
 		boolean isOfType(String value) {
-			return tag != null && value.startsWith("<" + tag + ">") &&
+			return value != null && tag != null && value.startsWith("<" + tag + ">") &&
 					value.endsWith("</" + tag + ">");
 		}
 
@@ -30,7 +30,7 @@ public class LiteralBlock extends Block {
 	public final String value;
 	public final Type type;
 
-	private final static HashSet<String> setVarBlocks = new HashSet<String>(Arrays.asList(new String[] {
+	private final static HashSet<String> setVarBlocks = new HashSet<>(Arrays.asList(new String[] {
 		"doSetVar",
 		"doChangeVar",
 		"doShowVar",
@@ -60,7 +60,6 @@ public class LiteralBlock extends Block {
 
 		if (isVarRef) {
 			_type = Type.VarRef;
-			_value = value;
 		} else {
 			for (Type type : Type.values()) {
 				if (type.isOfType(value)) {
