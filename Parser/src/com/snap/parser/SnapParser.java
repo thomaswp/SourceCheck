@@ -355,6 +355,8 @@ public class SnapParser {
 			final Integer submittedRowID, Map<String, Grade> grades, final Integer prequelEndRow,
 			final AtomicInteger threads) {
 		final String guid = file.getName().replace(".csv", "");
+		if (assignment.ignore(guid)) return;
+
 		final Grade grade = grades.get(guid);
 
 		threads.incrementAndGet();
@@ -362,7 +364,7 @@ public class SnapParser {
 			@Override
 			public void run() {
 				try {
-					if (!assignment.ignore(guid) && (grade == null || !grade.outlier)) {
+					if (grade == null || !grade.outlier) {
 						AssignmentAttempt attempt = parseRows(file, grade, knownSubmissions,
 								submittedRowID, prequelEndRow, snapshotsOnly, addMetadata);
 						if (attempt.size() > 3) {

@@ -10,6 +10,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.TreeMap;
 
 import com.snap.data.Snapshot;
 import com.snap.parser.Assignment.Dataset;
@@ -25,7 +26,7 @@ public class ParseSubmitted {
 	private final static int MIN_LOG_LENGTH = 30;
 
 	public static void main(String[] args) throws IOException {
-		for (Assignment assignment : Assignment.Spring2016.All) {
+		for (Assignment assignment : Assignment.Fall2016.All) {
 			parseSubmitted(assignment);
 		}
 //		parseSubmitted(Assignment.Fall2016.GuessingGame1);
@@ -72,7 +73,9 @@ public class ParseSubmitted {
 			return;
 		}
 		String outPath = assignment.submittedDir() + ".txt";
-		PrintWriter output = new PrintWriter(outPath);
+
+		TreeMap<String, String> output = new TreeMap<>();
+
 		Map<String, String> submitted = new HashMap<>();
 		for (File file : dir.listFiles()) {
 			if (!file.getName().endsWith(".xml")) {
@@ -89,11 +92,10 @@ public class ParseSubmitted {
 				boolean noGUID = false;
 				if (guid == null || guid.length() == 0) {
 					guid = file.getName();
-					guid = "nolog-" + guid.substring(0, guid.length() - 4);
+					guid = guid.substring(0, guid.length() - 4).replaceAll("nolog-", "");
+					guid = "nolog-" + guid;
 					noGUID = true;
 				}
-
-				if (assignment.ignore(guid)) continue;
 
 				String previousFile = submitted.put(guid, file.getName());
 				if (previousFile != null) {
@@ -102,16 +104,28 @@ public class ParseSubmitted {
 							guid, file.getName(), previousFile));
 				}
 
+				String goodName = guid + ".xml";
+				if (!file.getName().equals(goodName)) {
+					boolean success = file.renameTo(new File(file.getParent(), guid + ".xml"));
+					if (!success) {
+						System.err.println("Failed to rename: " + file.getPath());
+					}
+				}
+
 				String submittedCode = snapshot.toCode();
 
 				// Get all the assignments to check for this submission
 				List<Assignment> possibleAssignments = new LinkedList<>();
-				Assignment locationAssignment = assignment.getLocationAssignment(guid);
-				possibleAssignments.add(locationAssignment);
-				// Only add other assignments if this submission's location isn't hard-coded
-				if (locationAssignment == assignment) {
-					possibleAssignments.add(assignment.prequel);
-					possibleAssignments.add(assignment.None);
+				// Don't do this for ignored assignments (but we still want to write a row for
+				// completion and grading purposes)
+				if (!assignment.ignore(guid)) {
+					Assignment locationAssignment = assignment.getLocationAssignment(guid);
+					possibleAssignments.add(locationAssignment);
+					// Only add other assignments if this submission's location isn't hard-coded
+					if (locationAssignment == assignment) {
+						possibleAssignments.add(assignment.prequel);
+						possibleAssignments.add(assignment.None);
+					}
 				}
 
 				Integer overrideRowID = assignment.getSubmittedRow(guid);
@@ -134,7 +148,8 @@ public class ParseSubmitted {
 						break;
 					}
 				}
-				output.printf("%s,%s,%d\n", guid, location, rowID == null ? -1 : rowID);
+				output.put(guid, String.format("%s,%s,%d",
+						guid, location, rowID == null ? -1 : rowID));
 
 				// Check for undesirable outcomes
 				if (!location.isEmpty()) {
@@ -143,7 +158,7 @@ public class ParseSubmitted {
 						System.out.printf("Submitted code not found for: %s/%s (%s)\n",
 								location, guid, file.getPath());
 					}
-				} else if (!noGUID) {
+				} else if (!noGUID && !assignment.ignore(guid)) {
 					// We found no matching attempt, but there was a GUID in the submission
 					System.err.printf("No logs found for: %s/%s (%s)\n",
 							location, guid, file.getPath());
@@ -153,7 +168,12 @@ public class ParseSubmitted {
 				e.printStackTrace();
 			}
 		}
-		output.close();
+
+		PrintWriter writer = new PrintWriter(outPath);
+		for (String out : output.values()) {
+			writer.println(out);
+		}
+		writer.close();
 	}
 
 	private static Integer findMatchingRow(AssignmentAttempt attempt, String guid,
