@@ -111,7 +111,7 @@ public class SnapHintBuilder {
 	 * @param assignment
 	 */
 	public SnapHintBuilder(Assignment assignment) {
-		this(assignment, new HintFactoryMap());
+		this(assignment, new HintFactoryMap(assignment.config()));
 	}
 
 	public SnapHintBuilder(Assignment assignment, HintMap hintMap) {

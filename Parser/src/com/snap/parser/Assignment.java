@@ -36,6 +36,10 @@ public class Assignment {
 		this.None = name.equals("none") ? null : new Assignment(dataset, "none", end, hasIDs);
 	}
 
+	public HintConfig config() {
+		return new HintConfig();
+	}
+
 	public String analysisDir() {
 		return dir("analysis");
 	}
@@ -481,8 +485,19 @@ public class Assignment {
 		public final static String dataDir = "../data/help-seeking/fall2016";
 		public final static String dataFile = dataDir + ".csv";
 
+		private final static HintConfig config = new HintConfig();
+		static {
+			config.pruneGoals = 1;
+			config.pruneNodes = 0;
+		}
+
 		public final static Assignment BrickWall = new Assignment(instance,
-				"brickWall", null, true);
+				"brickWall", null, true) {
+			@Override
+			public HintConfig config() {
+				return config;
+			};
+		};
 		public final static Assignment GuessingGame1 = new Assignment(instance,
 				"guess1Lab", null, true);
 

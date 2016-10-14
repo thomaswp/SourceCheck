@@ -15,6 +15,7 @@ import com.snap.data.Canonicalization.InvertOp;
 import com.snap.data.Canonicalization.SwapArgs;
 import com.snap.graph.data.Node.Action;
 import com.snap.graph.data.Node.Predicate;
+import com.snap.parser.HintConfig;
 
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
@@ -23,61 +24,16 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
  */
 public class HintFactoryMap implements HintMap {
 
-	// All "magic" constants used in the algorithm
-	// TODO: Make these into a config file
+	final HintConfig config;
 
-	// When at least this proportion of visitors to a state finished there,
-	// we flag hints to leave it with caution
-	private final static double STAY_PROPORTION = 0.67;
-	// We prune out states with weight less than this
-	private final static int PRUNE_NODES = 2;
-	// We prune out goals with fewer students than this finishing there
-	private final static int PRUNE_GOALS = 2;
-	// To hint towards a nearby neighbor, it must be less than this distance
-	// from the student's current state
-	private final static int MAX_NN = 3;
-	// We add synthetic edges between nodes with distance no more than this
-	private final static int MAX_EDGE_ADD_DISTANCE = 1;
-	// We prune edges between states with distance greater than this
-	private final static int MAX_EDGE_DISTANCE = 2;
-	// The maximum number of siblings to look at at either end when considering context
-	private final static int MAX_CONTEXT_SIBLINGS = 3;
-	// Ratio of unused to used blocks in a side-script for it to used in  a LinkHint
-	private static final int LINK_USEFUL_RATIO = 2;
-
-	// Code elements that have exactly one script child or unordered children and
-	// therefore should not have their children used as context
-	private final static HashSet<String> BAD_CONTEXT = new HashSet<String>();
-	static {
-		for (String c : new String[] {
-				// These control structures hold exactly one script
-				"doIf",
-				"doUntil",
-				// Sprites' children are unordered
-				"sprite",
-				// While custom blocks have variables, they're better IDd by order
-				"customBlock",
-		}) {
-			BAD_CONTEXT.add(c);
-		}
+	@SuppressWarnings("unused")
+	private HintFactoryMap() {
+		this(null);
 	}
 
-	// When we have hints for these parent blocks, we should go straight to the goal, since
-	// There's no point in, e.g., leading them through adding one variable, then another
-	// These are the "structure hints" on the client side
-	private final static HashSet<String> STRAIGHT_TO_GOAL = new HashSet<String>();
-	static {
-		for (String c : new String[] {
-				"snapshot",
-				"stage",
-				"sprite",
-				"customBlock",
-		}) {
-			STRAIGHT_TO_GOAL.add(c);
-		}
+	public HintFactoryMap(HintConfig config) {
+		this.config = config;
 	}
-
-	private final static String SCRIPT = "script";
 
 	public final HashMap<Node, VectorGraph> map =
 			new HashMap<Node, VectorGraph>();
@@ -153,7 +109,7 @@ public class HintFactoryMap implements HintMap {
 
 	@Override
 	public HintMap instance() {
-		return new HintFactoryMap();
+		return new HintFactoryMap(config);
 	}
 
 	@Override
@@ -172,14 +128,14 @@ public class HintFactoryMap implements HintMap {
 		});
 	}
 
-	private static IndexedVectorState getContext(Node item) {
-		return getContext(item, MAX_CONTEXT_SIBLINGS);
+	private IndexedVectorState getContext(Node item) {
+		return getContext(item, config.maxContextSiblings);
 	}
 
-	private static IndexedVectorState getContext(Node item, int maxLength) {
+	private IndexedVectorState getContext(Node item, int maxLength) {
 		Node contextChild = item;
 		while (contextChild.parent != null &&
-				BAD_CONTEXT.contains(contextChild.parent.type())) {
+				config.badContext.contains(contextChild.parent.type())) {
 			contextChild = contextChild.parent;
 		}
 		int index = contextChild.index();
@@ -194,20 +150,21 @@ public class HintFactoryMap implements HintMap {
 		VectorGraph graph = map.get(backbone);
 		if (graph == null) return hints;
 
-		boolean useGraph = !node.hasType(SCRIPT);
+		boolean useGraph = !node.hasType(config.script);
 
 		VectorState children = getVectorState(node);
 		IndexedVectorState context = getContext(node);
 		VectorState next = children;
 
-		VectorState goal = graph.getGoalState(next, context, MAX_NN, PRUNE_GOALS);
+		VectorState goal = graph.getGoalState(next, context, config.maxNN, config.pruneGoals);
 
-		if (goal != null && STRAIGHT_TO_GOAL.contains(node.type())) {
+		if (goal != null && config.straightToGoal.contains(node.type())) {
 			next = goal;
 		} else {
 			for (int j = 0; j < chain; j++) {
 				// Get the best successor state from our current state
-				VectorState hint = graph.getHint(next, context, MAX_NN, PRUNE_GOALS, useGraph);
+				VectorState hint = graph.getHint(next, context, config.maxNN, config.pruneGoals,
+						useGraph);
 				// If there is none, we stop where we are
 				if (hint == null || hint.equals(next)) break;
 				// Otherwise, chain to the next hint
@@ -218,8 +175,8 @@ public class HintFactoryMap implements HintMap {
 
 		double stayed = graph.getProportionStayed(children);
 		boolean caution =
-				graph.getGoalCount(children) >= PRUNE_GOALS &&
-				stayed >= STAY_PROPORTION;
+				graph.getGoalCount(children) >= config.pruneGoals &&
+				stayed >= config.stayProportion;
 
 		VectorHint hint = new VectorHint(node, backbone.toString(), children, next, goal, caution);
 		hints.add(hint);
@@ -236,16 +193,16 @@ public class HintFactoryMap implements HintMap {
 				parent = parent.children.get(0);
 			}
 
-			graph.prune(PRUNE_NODES);
+			graph.prune(config.pruneNodes);
 			// TODO: This is my shorthand of saying we shouldn't do this for scripts with common
 			// siblings (as the children of doIfElse do), since the weighting isn't context
 			// sensitive right now. Ideally the weighting should be, or at the very least a more
 			// comprehensive solution is needed for identifying when this is inappropriate
-			if (parent.hasType(SCRIPT) && !parent.parentHasType("doIfElse")) {
+			if (parent.hasType(config.script) && !parent.parentHasType("doIfElse")) {
 				graph.generateScriptGoalValues();
 			}
-			graph.generateAndRemoveEdges(MAX_EDGE_ADD_DISTANCE, MAX_EDGE_DISTANCE);
-			graph.bellmanBackup(PRUNE_GOALS);
+			graph.generateAndRemoveEdges(config.maxEdgeAddDistance, config.maxEdgeDistance);
+			graph.bellmanBackup(config.pruneGoals);
 		}
 	}
 
@@ -273,7 +230,8 @@ public class HintFactoryMap implements HintMap {
 			if (!(hint instanceof VectorHint)) return;
 			VectorHint vHint = (VectorHint) hint;
 
-			int extraChildren = vHint.from.countOf(SCRIPT) - vHint.goal.countOf(SCRIPT);
+			int extraChildren = vHint.from.countOf(config.script) -
+					vHint.goal.countOf(config.script);
 			if (extraChildren > 0) {
 				List<Integer> sizes = new LinkedList<>();
 				for (Node child : vHint.root.children) {
@@ -283,7 +241,7 @@ public class HintFactoryMap implements HintMap {
 				int cutoff = sizes.get(extraChildren);
 				// TODO: find a more comprehensive way of deciding on the primary script(s)
 				for (Node child : vHint.root.children) {
-					if (child.hasType(SCRIPT) && child.children.size() < cutoff) {
+					if (child.hasType(config.script) && child.children.size() < cutoff) {
 						extraScripts.add(child);
 					}
 				}
@@ -310,7 +268,7 @@ public class HintFactoryMap implements HintMap {
 				// children but it shouldn't be missing all of them (completely replaced)
 				// unless it's empty to begin with, or a block hint
 				if (missingChildren.length() > 0 && (
-						!vHint.root.hasType(SCRIPT) ||
+						!vHint.root.hasType(config.script) ||
 						vHint.from.length() == 0 ||
 						missingChildren.length() < vHint.goal.length())) {
 					missingMap.put(missingChildren, vHint);
@@ -334,7 +292,7 @@ public class HintFactoryMap implements HintMap {
 
 				for (VectorState missing : missingMap.keySet()) {
 					int useful = missing.overlap(canceledHint.from);
-					if (useful * LINK_USEFUL_RATIO >= canceledHint.from.length() &&
+					if (useful * config.linkUsefulRatio >= canceledHint.from.length() &&
 							useful >= bestUseful) {
 						int distance = VectorState.distance(missing, canceledHint.from);
 						if (useful > bestUseful || distance < bestDistance) {
