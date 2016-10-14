@@ -473,6 +473,33 @@ public class Assignment {
 		}
 	}
 
+	/** Demo dataset from http://go.ncsu.edu/isnap - publicly sharable data */
+	public static class HelpSeeking extends Dataset {
+
+		public final static HelpSeeking instance = new HelpSeeking();
+		public final static Date start = date(2016, 8, 10);
+		public final static String dataDir = "../data/help-seeking/fall2016";
+		public final static String dataFile = dataDir + ".csv";
+
+		public final static Assignment BrickWall = new Assignment(instance,
+				"brickWall", null, true);
+		public final static Assignment GuessingGame1 = new Assignment(instance,
+				"guess1Lab", null, true);
+
+		public final static Assignment[] All = {
+			BrickWall, GuessingGame1
+		};
+
+		private HelpSeeking() {
+			super(start, dataDir);
+		}
+
+		@Override
+		public Assignment[] all() {
+			return All;
+		}
+	}
+
 	public static Date date(int year, int month, int day) {
 		// NOTE: GregorianCalendar months are 0-based, thus the 'month - 1'
 		return new GregorianCalendar(year, month - 1, day).getTime();

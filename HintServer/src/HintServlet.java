@@ -122,8 +122,8 @@ public class HintServlet extends HttpServlet {
 		HintGenerator builder = builders.get(assignment);
 		if (builder == null) {
 			Kryo kryo = HintGenerator.getKryo();
-			InputStream stream = getServletContext().getResourceAsStream(
-					String.format("/WEB-INF/data/%s-g%03d.cached", assignment, minGrade));
+			String path = String.format("/WEB-INF/data/%s-g%03d.cached", assignment, minGrade);
+			InputStream stream = getServletContext().getResourceAsStream(path);
 			if (stream == null) return null;
 			Input input = new Input(stream);
 			builder = kryo.readObject(input, HintGenerator.class);

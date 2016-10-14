@@ -55,6 +55,8 @@ public class HintFactoryMap implements HintMap {
 				"doUntil",
 				// Sprites' children are unordered
 				"sprite",
+				// While custom blocks have variables, they're better IDd by order
+				"customBlock",
 		}) {
 			BAD_CONTEXT.add(c);
 		}
