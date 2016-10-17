@@ -59,6 +59,7 @@ public class KMedoids<T> {
 		List<T> medoids = new LinkedList<>();
 		List<List<T>> output = new LinkedList<>();
 		for (int i = 0; i < numberOfClusters; i++) {
+			// TODO: choose non-overlapping medoids
 			int random = rg.nextInt(data.size());
 			medoids.add(data.get(random));
 			output.add(new LinkedList<T>());

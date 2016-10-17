@@ -6,6 +6,8 @@ import java.util.LinkedList;
 import java.util.List;
 
 import com.snap.util.CountMap;
+import com.snap.util.KMedoids;
+import com.snap.util.KMedoids.DistanceMeasure;
 import com.snap.util.ListMap;
 
 public class ScriptGoalValuator {
@@ -17,7 +19,9 @@ public class ScriptGoalValuator {
 	// an item may appear multiple times in a goal
 	private final ListMap<String, CountMap<String>> orderings;
 
-	public ScriptGoalValuator(CountMap<VectorState> goalCounts) {
+	public ScriptGoalValuator(CountMap<VectorState> goalCounts, int nClusters) {
+
+		getClusters(goalCounts, nClusters);
 
 		medianCounts = new CountMap<>();
 		orderings = new ListMap<>();
@@ -69,6 +73,27 @@ public class ScriptGoalValuator {
 					}
 				}
 			}
+		}
+	}
+
+	private static DistanceMeasure<VectorState> distanceMeasure =
+			new DistanceMeasure<VectorState>() {
+		@Override
+		public double measure(VectorState a, VectorState b) {
+			return VectorState.distance(a, b);
+		}
+
+	};
+
+	private void getClusters(CountMap<VectorState> goalCounts, int nClusters) {
+		if (nClusters <= 1 || goalCounts.size() <= nClusters) return;
+		List<VectorState> goals = new LinkedList<>();
+		goals.addAll(goalCounts.keySet());
+		KMedoids<VectorState> kMedoids = new KMedoids<>(nClusters, 1000, distanceMeasure);
+		List<List<VectorState>> clusters = kMedoids.cluster(goals);
+		System.out.println("Clusters:");
+		for (int i = 0; i < clusters.size(); i++) {
+			System.out.println(i + ": " + clusters.get(i));
 		}
 	}
 

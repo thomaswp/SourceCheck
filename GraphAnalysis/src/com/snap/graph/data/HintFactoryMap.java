@@ -186,25 +186,10 @@ public class HintFactoryMap implements HintMap {
 
 	@Override
 	public void finish() {
-		for (Node key : map.keySet()) {
-			VectorGraph graph = map.get(key);
-			Node parent = key;
-			// key is the root of the root, so we traverse to the leaf
-			while (parent.children.size() == 1) {
-				parent = parent.children.get(0);
-			}
-
+		for (VectorGraph graph : map.values()) {
 			graph.prune(config.pruneNodes);
-			// TODO: This is my shorthand of saying we shouldn't do this for scripts with common
-			// siblings (as the children of doIfElse do), since the weighting isn't context
-			// sensitive right now. Ideally the weighting should be, or at the very least a more
-			// comprehensive solution is needed for identifying when this is inappropriate
-			if (parent.hasType(config.script) && !parent.parentHasType("doIfElse")) {
-				graph.generateScriptGoalValues();
-			}
-			graph.generateAndRemoveEdges(config.maxEdgeAddDistance, config.maxEdgeDistance);
-			graph.bellmanBackup(config.pruneGoals);
 		}
+
 		for (Node key : map.keySet()) {
 			VectorGraph graph = map.get(key);
 			if (!graph.hasGoal()) continue;
@@ -213,6 +198,14 @@ public class HintFactoryMap implements HintMap {
 			while (parent.children.size() == 1) {
 				parent = parent.children.get(0);
 			}
+
+			// TODO: This is my shorthand of saying we shouldn't do this for scripts with common
+			// siblings (as the children of doIfElse do), since the weighting isn't context
+			// sensitive right now. Ideally the weighting should be, or at the very least a more
+			// comprehensive solution is needed for identifying when this is inappropriate
+			boolean shouldGenerateScriptGoalValues = parent.hasType(config.script) &&
+					!parent.parentHasType("doIfElse");
+
 			// Record the type at the end of the root path
 			String type = parent.type();
 			parent = parent.parent;
@@ -227,6 +220,16 @@ public class HintFactoryMap implements HintMap {
 			VectorGraph parentGraph = map.get(parent.root());
 			int clusterCount = parentGraph.getMedianPositiveChildCountInGoals(type);
 			graph.setClusters(clusterCount);
+
+			// TODO: fix and use
+//			if (shouldGenerateScriptGoalValues) {
+				graph.generateScriptGoalValues();
+//			}
+		}
+
+		for (VectorGraph graph : map.values()) {
+			graph.generateAndRemoveEdges(config.maxEdgeAddDistance, config.maxEdgeDistance);
+			graph.bellmanBackup(config.pruneGoals);
 		}
 	}
 

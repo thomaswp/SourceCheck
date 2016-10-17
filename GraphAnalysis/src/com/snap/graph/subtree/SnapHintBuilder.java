@@ -39,13 +39,13 @@ public class SnapHintBuilder {
 //		// Builds and caches a HintGenerator for each of these assignments
 //		buildHints(Assignment.Spring2016.PolygonMaker, 1);
 //		buildHints(Assignment.Spring2016.Squiral, 1);
-//		buildHints(Assignment.Spring2016.GuessingGame1, 1);
+		buildHints(Assignment.Spring2016.GuessingGame1, 1);
 //		buildHints(Assignment.Spring2016.GuessingGame2, 1);
 //		// Then copies the cache to the HintServer
 //		CopyData.copyGraphs(Assignment.Spring2016.dataDir);
 
-		buildHints(Assignment.HelpSeeking.BrickWall, 1);
-		CopyData.copyGraphs(Assignment.HelpSeeking.BrickWall.dataDir);
+//		buildHints(Assignment.HelpSeeking.BrickWall, 1);
+//		CopyData.copyGraphs(Assignment.HelpSeeking.BrickWall.dataDir);
 	}
 
 
@@ -71,7 +71,7 @@ public class SnapHintBuilder {
 	public final Assignment assignment;
 	private final HintMap hintMap;
 	private final HashMap<String, HintMap> studentSubtreeCache =
-			new HashMap<String, HintMap>();
+			new HashMap<>();
 
 	private Map<String, List<Node>> nodeMapCache;
 	private Map<String, Grade> gradeMapCache;
@@ -208,13 +208,13 @@ public class SnapHintBuilder {
 	// Parses all attempts for this assignment
 	private void parseAttempts() throws IOException {
 		Map<String, AssignmentAttempt> students = assignment.load(Mode.Use, true);
-		nodeMapCache = new TreeMap<String, List<Node>>();
-		gradeMapCache = new TreeMap<String, Grade>();
+		nodeMapCache = new TreeMap<>();
+		gradeMapCache = new TreeMap<>();
 
 		for (String student : students.keySet()) {
 			AssignmentAttempt path = students.get(student);
 			if (!path.exported) continue;
-			List<Node> nodes = new ArrayList<Node>();
+			List<Node> nodes = new ArrayList<>();
 
 			for (AttemptAction row : path) {
 				Node node = SimpleNodeBuilder.toTree(row.snapshot, true);

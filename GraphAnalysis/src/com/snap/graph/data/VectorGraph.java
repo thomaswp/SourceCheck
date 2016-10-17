@@ -357,7 +357,7 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 		for (VectorState goal : goalContextMap.keySet()) {
 			goalCounts.put(goal, vertexMap.get(goal).goalCount());
 		}
-		ScriptGoalValuator goalValuator = new ScriptGoalValuator(goalCounts);
+		ScriptGoalValuator goalValuator = new ScriptGoalValuator(goalCounts, clusters);
 		for (VectorState goal : goalContextMap.keySet()) {
 			goalValues.put(goal, goalValuator.getGoalValue(goal));
 		}
