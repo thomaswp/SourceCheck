@@ -36,20 +36,20 @@ public class HintFactoryMap implements HintMap {
 	}
 
 	public final HashMap<Node, VectorGraph> map =
-			new HashMap<Node, VectorGraph>();
+			new HashMap<>();
 
 	/**
-	 * Gets the backbone for the given Node, which contains only the nodes in the root path from
+	 * Gets the root path for the given Node, which contains only the nodes in the root path from
 	 * this given node to its root.
 	 */
-	public static Node toBackbone(Node node) {
-		return toBackbone(node, false);
+	public static Node toRootPath(Node node) {
+		return toRootPath(node, false);
 	}
 
-	public static Node toBackbone(Node node, boolean indices) {
+	public static Node toRootPath(Node node, boolean indices) {
 		if (node == null) return null;
 
-		Node parent = toBackbone(node.parent, indices);
+		Node parent = toRootPath(node.parent, indices);
 		String type = node.type();
 		if (indices && node.parent != null) {
 			int index = 0;
@@ -84,11 +84,11 @@ public class HintFactoryMap implements HintMap {
 	}
 
 	private VectorGraph getGraph(Node node) {
-		Node backbone = toBackbone(node).root();
-		VectorGraph graph = map.get(backbone);
+		Node rootPath = toRootPath(node).root();
+		VectorGraph graph = map.get(rootPath);
 		if (graph == null) {
 			graph = new VectorGraph();
-			map.put(backbone, graph);
+			map.put(rootPath, graph);
 		}
 		return graph;
 	}
@@ -98,7 +98,7 @@ public class HintFactoryMap implements HintMap {
 	}
 
 	private static List<String> getChildren(Node node) {
-		List<String> children = new ArrayList<String>();
+		List<String> children = new ArrayList<>();
 		if (node == null) return children;
 		for (Node child : node.children) {
 			if ("null".equals(child.type())) continue;
@@ -144,10 +144,10 @@ public class HintFactoryMap implements HintMap {
 
 	@Override
 	public Iterable<Hint> getHints(Node node, int chain) {
-		List<Hint> hints = new ArrayList<Hint>();
+		List<Hint> hints = new ArrayList<>();
 
-		Node backbone = toBackbone(node).root();
-		VectorGraph graph = map.get(backbone);
+		Node rootPath = toRootPath(node).root();
+		VectorGraph graph = map.get(rootPath);
 		if (graph == null) return hints;
 
 		boolean useGraph = !node.hasType(config.script);
@@ -178,7 +178,7 @@ public class HintFactoryMap implements HintMap {
 				graph.getGoalCount(children) >= config.pruneGoals &&
 				stayed >= config.stayProportion;
 
-		VectorHint hint = new VectorHint(node, backbone.toString(), children, next, goal, caution);
+		VectorHint hint = new VectorHint(node, rootPath.toString(), children, next, goal, caution);
 		hints.add(hint);
 
 		return hints;
@@ -189,6 +189,7 @@ public class HintFactoryMap implements HintMap {
 		for (Node key : map.keySet()) {
 			VectorGraph graph = map.get(key);
 			Node parent = key;
+			// key is the root of the root, so we traverse to the leaf
 			while (parent.children.size() == 1) {
 				parent = parent.children.get(0);
 			}
@@ -204,17 +205,40 @@ public class HintFactoryMap implements HintMap {
 			graph.generateAndRemoveEdges(config.maxEdgeAddDistance, config.maxEdgeDistance);
 			graph.bellmanBackup(config.pruneGoals);
 		}
+		for (Node key : map.keySet()) {
+			VectorGraph graph = map.get(key);
+			if (!graph.hasGoal()) continue;
+			Node parent = key.copy(false);
+			// first go down the root path
+			while (parent.children.size() == 1) {
+				parent = parent.children.get(0);
+			}
+			// Record the type at the end of the root path
+			String type = parent.type();
+			parent = parent.parent;
+			// then go back up at least one, possible more if there's a bad context
+			while (parent != null && config.badContext.contains(parent.type())) {
+				type = parent.type();
+				parent = parent.parent;
+			}
+			if (parent == null) continue;
+			parent.children.clear();
+
+			VectorGraph parentGraph = map.get(parent.root());
+			int clusterCount = parentGraph.getMedianPositiveChildCountInGoals(type);
+			graph.setClusters(clusterCount);
+		}
 	}
 
 	@Override
 	public void addMap(HintMap hintMap) {
 		HashMap<Node,VectorGraph> addMap = ((HintFactoryMap) hintMap).map;
-		for (Node backbone : addMap.keySet()) {
-			VectorGraph graph = addMap.get(backbone);
-			VectorGraph myGraph = map.get(backbone);
+		for (Node rootpath : addMap.keySet()) {
+			VectorGraph graph = addMap.get(rootpath);
+			VectorGraph myGraph = map.get(rootpath);
 			if (myGraph == null) {
 				myGraph = new VectorGraph();
-				map.put(backbone, myGraph);
+				map.put(rootpath, myGraph);
 			}
 			myGraph.addGraph(graph, true);
 		}
@@ -316,25 +340,25 @@ public class HintFactoryMap implements HintMap {
 
 		public final Node oldRoot;
 		public final VectorState oldFrom;
-		public final String oldBackbone;
+		public final String oldRootPath;
 
 		public LinkHint(VectorHint mainHint, VectorHint oldHint) {
-			super(mainHint.root, mainHint.backbone, mainHint.from,
+			super(mainHint.root, mainHint.rootPathString, mainHint.from,
 					mainHint.goal.limitTo(mainHint.from, oldHint.from),
 					mainHint.goal, mainHint.caution);
 			oldRoot = oldHint.root;
 			oldFrom = oldHint.from;
-			oldBackbone = oldHint.backbone;
+			oldRootPath = oldHint.rootPathString;
 		}
 
 		@Override
 		public String from() {
-			return super.from() + " and " + oldBackbone + ": " + oldFrom;
+			return super.from() + " and " + oldRootPath + ": " + oldFrom;
 		}
 
 		@Override
 		public String to() {
-			return super.to() + " and " + oldBackbone + ": []";
+			return super.to() + " and " + oldRootPath + ": []";
 		}
 
 		@Override
@@ -355,16 +379,16 @@ public class HintFactoryMap implements HintMap {
 	public static class VectorHint extends StringHashable implements Hint {
 
 		public final Node root;
-		public final String backbone;
+		public final String rootPathString;
 		public final VectorState from, to, goal;
 		public final boolean caution;
 
 		protected final boolean swapArgs;
 
-		public VectorHint(Node root, String backbone, VectorState from, VectorState to,
+		public VectorHint(Node root, String rootPathString, VectorState from, VectorState to,
 				VectorState goal, boolean caution) {
 			this.root = root;
-			this.backbone = backbone;
+			this.rootPathString = rootPathString;
 			this.from = from;
 			this.to = to;
 			this.goal = goal;
@@ -387,12 +411,12 @@ public class HintFactoryMap implements HintMap {
 
 		@Override
 		public String from() {
-			return backbone + ": " + from;
+			return rootPathString + ": " + from;
 		}
 
 		@Override
 		public String to() {
-			return backbone + ": " + to;
+			return rootPathString + ": " + to;
 		}
 
 		@Override
@@ -465,7 +489,7 @@ public class HintFactoryMap implements HintMap {
 		public static Node applyHint(Node root, String[] to) {
 			Node nRoot = root.copy(false);
 
-			List<Node> children = new ArrayList<Node>();
+			List<Node> children = new ArrayList<>();
 			children.addAll(nRoot.children);
 
 			nRoot.children.clear();

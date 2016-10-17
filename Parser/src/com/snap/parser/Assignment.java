@@ -482,7 +482,7 @@ public class Assignment {
 
 		public final static HelpSeeking instance = new HelpSeeking();
 		public final static Date start = date(2016, 8, 10);
-		public final static String dataDir = "../data/help-seeking/fall2016";
+		public final static String dataDir = "../data/help-seeking/experts2016";
 		public final static String dataFile = dataDir + ".csv";
 
 		private final static HintConfig config = new HintConfig();

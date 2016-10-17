@@ -16,12 +16,22 @@ import com.snap.util.CountMap;
 public class VectorGraph extends InteractionGraph<VectorState> {
 
 	private final HashMap<VectorState, List<IndexedVectorState>> goalContextMap =
-			new HashMap<VectorState, List<IndexedVectorState>>();
+			new HashMap<>();
 
 	private final HashMap<VectorState, Double> goalValues = new HashMap<>();
 
 	private final transient HashMap<VectorState, Double> tmpGoalValues =
-			new HashMap<VectorState, Double>();
+			new HashMap<>();
+
+	private int clusters;
+
+	public void setClusters(int clusters) {
+		this.clusters = clusters;
+	}
+
+	public int getClusters() {
+		return clusters;
+	}
 
 	public boolean setGoal(VectorState goal, IndexedVectorState context) {
 		List<IndexedVectorState> list = getContext(goal);
@@ -39,7 +49,7 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 	private List<IndexedVectorState> getContext(VectorState goal) {
 		List<IndexedVectorState> list = goalContextMap.get(goal);
 		if (list == null) {
-			list = new ArrayList<IndexedVectorState>();
+			list = new ArrayList<>();
 			goalContextMap.put(goal, list);
 		}
 		return list;
@@ -143,7 +153,7 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 		if (goalPath == null) return null;
 		VectorState goal = goalPath.get(goalPath.size() - 1);
 
-		List<String> stateItems = new LinkedList<String>();
+		List<String> stateItems = new LinkedList<>();
 		for (String item : state.items) stateItems.add(item);
 
 		String[] goalItems = goal.items;
@@ -176,7 +186,7 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 	}
 
 	private List<VectorState> getMDPGoalPath(VectorState state) {
-		List<VectorState> path = new LinkedList<VectorState>();
+		List<VectorState> path = new LinkedList<>();
 		while (true) {
 			path.add(state);
 			List<Edge<VectorState, Void>> edges = fromMap.get(state);
@@ -197,7 +207,7 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 	}
 
 	private void contextualBellmanBackup(IndexedVectorState context, int minGoal) {
-		HashMap<VectorState, Double> cachedDistances = new HashMap<VectorState, Double>();
+		HashMap<VectorState, Double> cachedDistances = new HashMap<>();
 
 		tmpGoalValues.clear();
 
@@ -248,7 +258,10 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 	}
 
 	public void exportGoals(PrintStream out) throws FileNotFoundException {
-		List<VectorState> goals = new ArrayList<VectorState>();
+		out.println("Clusters: " + clusters);
+		out.println();
+
+		List<VectorState> goals = new ArrayList<>();
 		goals.addAll(goalContextMap.keySet());
 		Collections.sort(goals, new Comparator<VectorState>() {
 			@Override
@@ -259,7 +272,7 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 
 		for (VectorState state : goals) {
 			final HashMap<VectorState, Integer> counts =
-					new HashMap<VectorState, Integer>();
+					new HashMap<>();
 			List<IndexedVectorState> contexts = goalContextMap.get(state);
 			for (IndexedVectorState context : contexts) {
 				int count = 0;
@@ -269,7 +282,7 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 				counts.put(context, count + 1);
 			}
 			TreeMap<VectorState, Integer> sortedCounts =
-					new TreeMap<VectorState, Integer>(new Comparator<VectorState>() {
+					new TreeMap<>(new Comparator<VectorState>() {
 						@Override
 						public int compare(VectorState o1, VectorState o2) {
 							if (counts.get(o1) > counts.get(o2)) {
@@ -348,6 +361,25 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 		for (VectorState goal : goalContextMap.keySet()) {
 			goalValues.put(goal, goalValuator.getGoalValue(goal));
 		}
+	}
+
+	public int getMedianPositiveChildCountInGoals(String childType) {
+		List<Integer> counts = new LinkedList<>();
+		for (VectorState goal : goalContextMap.keySet()) {
+			int count = 0;
+			for (String item : goal.items) {
+				if  (childType.equals(item)) count++;
+			}
+			if (count > 0) {
+				int times = vertexMap.get(goal).goalCount();
+				for (int i = 0; i < times; i++) {
+					counts.add(count);
+				}
+			}
+		}
+		if (counts.size() == 0) return 0;
+		Collections.sort(counts);
+		return counts.get(counts.size() / 2);
 	}
 
 }
