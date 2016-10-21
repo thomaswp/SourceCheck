@@ -40,6 +40,11 @@ public class Stage extends Sprite {
 	}
 
 	@Override
+	public String getID() {
+		return "stage";
+	}
+
+	@Override
 	public void addChildren(boolean canon, Accumulator ac) {
 		ac.add(sprites);
 	}
