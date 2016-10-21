@@ -61,7 +61,7 @@ public class CheckHintUsage {
 
 	public static void main(String[] args) throws IOException {
 
-		Assignment assignment = Assignment.Fall2016.Squiral;
+		Assignment assignment = Assignment.Spring2016.GuessingGame1;
 
 		// Get the name-path pairs of all projects we logged
 		Map<String, AssignmentAttempt> guessingGame = assignment.load(Mode.Use, false);

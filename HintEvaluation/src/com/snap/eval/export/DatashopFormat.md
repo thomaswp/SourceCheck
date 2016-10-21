@@ -13,7 +13,7 @@ The [full spec](https://pslcdatashop.web.cmu.edu/help?page=importFormatTd) can b
 * Problem Name: The name of the problem being worked on.
 * Selection: The interface item being interacted with. Here, this depends on the next field, but usually reference the ID of a code element the student is interacting with.
 * Action: THe event the occurred. I have quite a few unique events that can occur, but most of them reference blocks (code elements) being created and moved.
-* Feedback Text: If a hint is given, what it said. Here, this is actually a JSON data structure. All of my hints instruct the student to change the children under one node of the AST, so the hint is encoded with the ID of the parent node ("parentID"), the previous children ("from") and the suggested children ("to"). It also includes the type of the parent node ("parentType"). If the parent is a `script` type, it won't have an ID, in which case that "parentID" references the parent node of the `script`, and there is also a "scriptIndex" attribute, indicating the index of the `script` under its parent.
+* Feedback Text: If a hint is given, what it said. Here, this is actually a JSON data structure. See the Feedback Text section below for more information.
 * Feedback Classification: The type of feedback provided. Here, this is the same as Action, and it differentiates among hints for code bodies (script hints) and parameters (block hints), as well as structure hints, for feedback about the number of variables/custom blocks/etc.
 * CF (AST): An abstract syntax tree representation of the student's code at the time of an event. See the next sections for more details.
 
@@ -52,3 +52,12 @@ Additionally, some elements will have special attributes:
 * varRef: Nodes with "var" type will have this reference to the variable they represent. Note that these nodes also have their own ID, which identifies the individual variable block (that the user can move around), and multiple such "var" block can reference the same variable.
 * value: A literal block may have a value. This will only be true for integers and hard-coded values, since free-text input can't be guaranteed to be unidentifiable.
 
+## Feedback Text
+
+All hints instruct the student to change the children under one node of the AST. When present, the Feedback Text colum will contain a JSON object with the following fields:
+* parentID: the ID of the parent AST node, the children of which the hint directs the user to change. If the parent is a `script` node, it will not have an ID, in which case this refers to the script's parent node.
+* parentType: the type of the parent node in the AST (e.g. snapshot, callBlock, etc.).
+* scriptIndex: if the parent is a script, this gives the child index of that script under it's parent, so that the script can be exactly identified using this value and the parentID.
+* from: the current list of children of the parent node in the AST.
+* to: the recommended list of children of the parent node in the AST, as suggested by the hint.
+* message: the actual text shown to the user, in the case of a "structure hint," which gives text rather than showing what blocks to change.

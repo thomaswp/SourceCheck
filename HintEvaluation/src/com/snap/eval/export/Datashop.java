@@ -51,7 +51,7 @@ public class Datashop {
 	};
 
 	public static void main(String[] args) throws IOException {
-		export(Assignment.Demo.Squiral);
+		export(Assignment.Spring2016.instance);
 	}
 
 	public static void export(Dataset dataset) {
@@ -71,6 +71,7 @@ public class Datashop {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	private static void export(Assignment assignment) throws IOException {
 		try {
 			File output = new File(assignment.analysisDir() + "/datashop.txt");
@@ -87,6 +88,7 @@ public class Datashop {
 	private static void export(Assignment assignment, CSVPrinter printer) throws IOException {
 		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, false);
 		for (AssignmentAttempt attempt : attempts.values()) {
+			if (attempt.submittedActionID == AssignmentAttempt.NOT_SUBMITTED) continue;
 			System.out.println(attempt.id);
 			export(assignment, attempt, printer);
 		}
@@ -114,9 +116,13 @@ public class Datashop {
 			String code = toCode(action.snapshot, anon);
 			if (code != null) {
 				lastSnapshot = action.snapshot;
-				lastCode = code;
-				if (code.length() > 64000) {
-					System.err.println("Long code: " + code.length());
+				if (code.equals(lastCode)) {
+					code = null;
+				} else {
+					lastCode = code;
+					if (code.length() > 64000) {
+						System.err.println("Long code: " + code.length());
+					}
 				}
 			}
 
@@ -191,6 +197,9 @@ public class Datashop {
 				}
 				saveData.put("from", fromArray);
 				saveData.put("to", toArray);
+				if (jsonData.has("message")) {
+					saveData.put("message", jsonData.get("message"));
+				}
 
 				feedbackText = saveData.toString();
 			}
@@ -206,7 +215,7 @@ public class Datashop {
 					message,
 					feedbackText,
 					feedbackClassification,
-					lastCode,
+					code,
 			});
 		}
 	}
