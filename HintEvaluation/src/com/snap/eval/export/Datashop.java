@@ -43,6 +43,7 @@ public class Datashop {
 			"Student Response Type",
 			"Level (Type)",
 			"Problem Name",
+			"Step Name",
 			"Selection",
 			"Action",
 			"Feedback Text",
@@ -51,7 +52,7 @@ public class Datashop {
 	};
 
 	public static void main(String[] args) throws IOException {
-		export(Assignment.Spring2016.instance);
+		export(Assignment.Fall2016.instance);
 	}
 
 	public static void export(Dataset dataset) {
@@ -204,6 +205,9 @@ public class Datashop {
 				feedbackText = saveData.toString();
 			}
 
+			String stepTarget = selection.replaceAll("[,0-9]", "");
+			String stepName = message + (stepTarget.length() > 0 ? "_" : "") + stepTarget;
+
 			printer.printRecord(new Object[] {
 					attemptID,
 					action.sessionID,
@@ -211,6 +215,7 @@ public class Datashop {
 					studentResponse,
 					levelType,
 					problemName,
+					stepName,
 					selection,
 					message,
 					feedbackText,

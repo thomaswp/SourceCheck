@@ -5,3 +5,4 @@
 *.txt
 csc200/*/submitted/*/*
 !csc200/*/submitted/*.txt
+*.zip

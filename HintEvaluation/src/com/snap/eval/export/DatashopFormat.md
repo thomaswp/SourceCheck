@@ -11,6 +11,7 @@ The [full spec](https://pslcdatashop.web.cmu.edu/help?page=importFormatTd) can b
 * Student Response Type: Either ATTEMPT or HINT_REQUEST. This isn't entirely applicable to an open programming problem, so I've just put ATTEMPT for all edits that aren't hint requests.
 * Level (Type): The type of assignment being worked on.
 * Problem Name: The name of the problem being worked on.
+* Step Name: A combination of the Aciton_Selection, with and IDs removed.
 * Selection: The interface item being interacted with. Here, this depends on the next field, but usually reference the ID of a code element the student is interacting with.
 * Action: THe event the occurred. I have quite a few unique events that can occur, but most of them reference blocks (code elements) being created and moved.
 * Feedback Text: If a hint is given, what it said. Here, this is actually a JSON data structure. See the Feedback Text section below for more information.
