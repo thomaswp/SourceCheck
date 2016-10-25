@@ -24,6 +24,7 @@ import com.snap.graph.data.Node;
 import com.snap.graph.data.Tuple;
 import com.snap.graph.subtree.SnapHintBuilder;
 import com.snap.parser.Assignment;
+import com.snap.parser.Fall2015;
 
 import distance.RTED_InfoTree_Opt;
 
@@ -33,7 +34,7 @@ public class CompleteEval {
 	private final static boolean PRUNE = true;
 	
 	public static void main(String[] args) throws IOException {
-		Assignment assignment = Assignment.Fall2015.GuessingGame1;
+		Assignment assignment = Fall2015.GuessingGame1;
 		eval(assignment);
 //		test(assignment);
 	}

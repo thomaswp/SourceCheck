@@ -28,9 +28,10 @@ import com.snap.eval.user.CheckHintUsage;
 import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.Node;
 import com.snap.parser.Assignment;
-import com.snap.parser.Assignment.Dataset;
 import com.snap.parser.AssignmentAttempt;
 import com.snap.parser.AttemptAction;
+import com.snap.parser.Dataset;
+import com.snap.parser.Fall2016;
 import com.snap.parser.Store.Mode;
 import com.snap.util.DoubleMap;
 
@@ -52,7 +53,7 @@ public class Datashop {
 	};
 
 	public static void main(String[] args) throws IOException {
-		export(Assignment.Fall2016.instance);
+		export(Fall2016.instance);
 	}
 
 	public static void export(Dataset dataset) {

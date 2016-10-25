@@ -11,7 +11,9 @@ import com.snap.graph.data.Node;
 import com.snap.graph.data.Node.Predicate;
 import com.snap.parser.Assignment;
 import com.snap.parser.AttemptAction;
+import com.snap.parser.Fall2015;
 import com.snap.parser.Grade;
+import com.snap.parser.Spring2016;
 import com.snap.parser.AssignmentAttempt;
 import com.snap.parser.Store.Mode;
 
@@ -19,8 +21,8 @@ public class AutoGrader {
 	
 	public static void main(String[] args) throws IOException {
 		Assignment assignments[] = new Assignment[] {
-				Assignment.Fall2015.GuessingGame1,
-				Assignment.Spring2016.GuessingGame1
+				Fall2015.GuessingGame1,
+				Spring2016.GuessingGame1
 		};
 		
 		for (Assignment assignment : assignments) {

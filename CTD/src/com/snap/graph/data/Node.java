@@ -5,26 +5,18 @@ import java.util.LinkedList;
 import java.util.List;
 
 import com.snap.data.Canonicalization;
-import com.snap.data.IHasID;
 
 import util.LblTree;
 
 public class Node extends StringHashable {
 
 	private String type;
+	public final String id;
 	public final Node parent;
 	public final List<Node> children = new ArrayList<Node>();
 
 	public transient Object tag;
 	public final transient List<Canonicalization> canonicalizations = new ArrayList<Canonicalization>();
-
-	public String getID() {
-		if (tag != null && tag instanceof IHasID) {
-			return ((IHasID) tag).getID();
-		}
-		return null;
-	}
-
 	public String type() {
 		return type;
 	}
@@ -41,12 +33,17 @@ public class Node extends StringHashable {
 
 	@SuppressWarnings("unused")
 	private Node() {
-		this(null, null);
+		this(null, null, null);
 	}
 
 	public Node(Node parent, String type) {
+		this(parent, type, null);
+	}
+
+	public Node(Node parent, String type, String id) {
 		this.parent = parent;
 		this.type = type;
+		this.id = id;
 	}
 
 	public Node root() {
@@ -140,12 +137,11 @@ public class Node extends StringHashable {
 		return -1;
 	}
 
-	public Node searchForNodeWithID(final Object id) {
+	public Node searchForNodeWithID(final String id) {
 		return search(new Predicate() {
 			@Override
 			public boolean eval(Node node) {
-				if (!(node.tag instanceof IHasID)) return false;
-				return id.equals(((IHasID) node.tag).getID());
+				return node.id == id;
 			}
 		});
 	}
@@ -226,7 +222,7 @@ public class Node extends StringHashable {
 	}
 
 	public static Node fromTree(Node parent, LblTree tree, boolean cache) {
-		Node node = new Node(parent, tree.getLabel());
+		Node node = new Node(parent, tree.getLabel(), null);
 		int count = tree.getChildCount();
 		for (int i = 0; i < count; i++) {
 			Node child = fromTree(node, (LblTree) tree.getChildAt(i), cache);

@@ -13,7 +13,6 @@ import java.util.Scanner;
 import java.util.TreeMap;
 
 import com.snap.data.Snapshot;
-import com.snap.parser.Assignment.Dataset;
 import com.snap.parser.Store.Mode;
 
 import difflib.Chunk;
@@ -24,14 +23,6 @@ import difflib.Patch;
 public class ParseSubmitted {
 
 	private final static int MIN_LOG_LENGTH = 30;
-
-	public static void main(String[] args) throws IOException {
-		for (Assignment assignment : Assignment.Fall2016.All) {
-			parseSubmitted(assignment);
-		}
-//		parseSubmitted(Assignment.Fall2016.GuessingGame1);
-//		printToGrade(Assignment.Fall2015.GuessingGame1);
-	}
 
 	public static void printToGrade(Assignment assignment) throws IOException {
 		Map<String, Submission> submittedRows = getOrParseSubmissions(assignment);
@@ -64,7 +55,7 @@ public class ParseSubmitted {
 		return cachedMaps.get(assignment).get(guid);
 	}
 
-	private static void parseSubmitted(Assignment assignment) throws IOException {
+	public static void parseSubmitted(Assignment assignment) throws IOException {
 		System.out.println("Parsing submitted for: " + assignment.name);
 		cachedMaps.clear();
 		File dir = new File(assignment.submittedDir());

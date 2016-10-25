@@ -19,6 +19,8 @@ import com.snap.parser.Assignment;
 import com.snap.parser.AssignmentAttempt;
 import com.snap.parser.AttemptAction;
 import com.snap.parser.Grade;
+import com.snap.parser.HintConfig;
+import com.snap.parser.Spring2016;
 import com.snap.parser.Store;
 import com.snap.parser.Store.Mode;
 
@@ -37,12 +39,12 @@ public class SnapHintBuilder {
 //		SnapParser.clean(Assignment.Spring2016.dataDir);
 
 		// Builds and caches a HintGenerator for each of these assignments
-		buildHints(Assignment.Spring2016.PolygonMaker, 1);
-		buildHints(Assignment.Spring2016.Squiral, 1);
-		buildHints(Assignment.Spring2016.GuessingGame1, 1);
-		buildHints(Assignment.Spring2016.GuessingGame2, 1);
+		buildHints(Spring2016.PolygonMaker, 1);
+		buildHints(Spring2016.Squiral, 1);
+		buildHints(Spring2016.GuessingGame1, 1);
+		buildHints(Spring2016.GuessingGame2, 1);
 		// Then copies the cache to the HintServer
-		CopyData.copyGraphs(Assignment.Spring2016.dataDir);
+		CopyData.copyGraphs(Spring2016.dataDir);
 
 //		buildHints(Assignment.HelpSeeking.BrickWall, 1);
 //		CopyData.copyGraphs(Assignment.HelpSeeking.BrickWall.dataDir);
@@ -111,7 +113,9 @@ public class SnapHintBuilder {
 	 * @param assignment
 	 */
 	public SnapHintBuilder(Assignment assignment) {
-		this(assignment, new HintFactoryMap(assignment.config()));
+		// TODO: get from assignment
+//		this(assignment, new HintFactoryMap(assignment.config()));
+		this(assignment, new HintFactoryMap(new HintConfig()));
 	}
 
 	public SnapHintBuilder(Assignment assignment, HintMap hintMap) {

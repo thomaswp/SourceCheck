@@ -19,11 +19,6 @@ import org.apache.commons.csv.CSVRecord;
  */
 public class LogSplitter {
 
-	public static void main(String[] args) throws IOException {
-		// Replace "Fall2015" with the dataset you want to load
-		splitStudentRecords(Assignment.HelpSeeking.dataFile);
-	}
-
 	// Header for iSnap log table
 	private static final String[] HEADER = new String[] {
 			"id","time","message","jsonData","assignmentID","projectID","sessionID","browserID",

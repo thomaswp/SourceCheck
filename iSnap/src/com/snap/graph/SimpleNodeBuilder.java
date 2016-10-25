@@ -5,6 +5,7 @@ import java.util.List;
 import com.snap.data.Canonicalization;
 import com.snap.data.Code;
 import com.snap.data.Code.Accumulator;
+import com.snap.data.IHasID;
 import com.snap.graph.data.Node;
 
 public class SimpleNodeBuilder {
@@ -14,7 +15,8 @@ public class SimpleNodeBuilder {
 	}
 
 	private static Node toTree(Code code, final boolean canon, Node parent) {
-		final Node node = new Node(parent, code.name(canon));
+		String id = code instanceof IHasID ? ((IHasID) code).getID() : null;
+		final Node node = new Node(parent, code.name(canon), id);
 		node.tag = code;
 		code.addChildren(canon, new Accumulator() {
 

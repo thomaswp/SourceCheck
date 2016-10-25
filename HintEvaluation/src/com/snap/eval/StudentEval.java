@@ -11,6 +11,7 @@ import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.Node;
 import com.snap.parser.Assignment;
 import com.snap.parser.AttemptAction;
+import com.snap.parser.Spring2016;
 import com.snap.parser.AssignmentAttempt;
 import com.snap.parser.Store.Mode;
 
@@ -19,7 +20,7 @@ public class StudentEval {
 	public final static int MAX = 100;
 	
 	public static void main(String[] args) throws IOException {
-		eval(Assignment.Spring2016.GuessingGame1);
+		eval(Spring2016.GuessingGame1);
 	}
 	
 	private static void eval(Assignment assignment) throws IOException {

@@ -39,6 +39,7 @@ import com.snap.parser.Assignment;
 import com.snap.parser.AssignmentAttempt;
 import com.snap.parser.AttemptAction;
 import com.snap.parser.Grade;
+import com.snap.parser.Spring2016;
 import com.snap.parser.Store.Mode;
 
 import distance.RTED_InfoTree_Opt;
@@ -61,7 +62,7 @@ public class CheckHintUsage {
 
 	public static void main(String[] args) throws IOException {
 
-		Assignment assignment = Assignment.Spring2016.GuessingGame1;
+		Assignment assignment = Spring2016.GuessingGame1;
 
 		// Get the name-path pairs of all projects we logged
 		Map<String, AssignmentAttempt> guessingGame = assignment.load(Mode.Use, false);

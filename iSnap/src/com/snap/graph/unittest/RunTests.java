@@ -11,11 +11,12 @@ import java.util.List;
 import com.snap.graph.subtree.HintGenerator;
 import com.snap.graph.subtree.SnapHintBuilder;
 import com.snap.parser.Assignment;
+import com.snap.parser.Spring2016;
 import com.snap.parser.Store;
 
 public class RunTests {
 	public static void main(String[] args) {
-		Assignment[] assignments = Assignment.Spring2016.All;
+		Assignment[] assignments = Spring2016.All;
 
 		PrintStream out = System.out;
 		PrintStream err = System.out;

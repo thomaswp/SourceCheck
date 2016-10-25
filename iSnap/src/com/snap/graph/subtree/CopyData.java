@@ -6,11 +6,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
-import com.snap.parser.Assignment;
+import com.snap.parser.Spring2016;
 
 public class CopyData {
 	public static void main(String[] args) throws IOException {
-		copyGraphs(Assignment.Spring2016.dataDir);
+		copyGraphs(Spring2016.dataDir);
 	}
 
 	protected static void copyGraphs(String fromDir) throws IOException {
@@ -23,6 +23,6 @@ public class CopyData {
 			}
 		}
 	}
-	
-	
+
+
 }

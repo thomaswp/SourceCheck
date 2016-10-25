@@ -10,7 +10,7 @@ import java.util.Set;
 import com.snap.graph.data.Node;
 import com.snap.graph.data.Tuple;
 import com.snap.graph.subtree.SnapHintBuilder;
-import com.snap.parser.Assignment;
+import com.snap.parser.Fall2015;
 
 import astrecognition.model.Convert;
 import astrecognition.model.Tree;
@@ -118,7 +118,7 @@ public class DirectEditPolicy implements HintPolicy {
 	}
 	
 	private static void testStudents() {
-		SnapHintBuilder subtree = new SnapHintBuilder(Assignment.Fall2015.GuessingGame1);
+		SnapHintBuilder subtree = new SnapHintBuilder(Fall2015.GuessingGame1);
 				
 		Map<String, List<Node>> students = subtree.nodeMap();
 		for (String student : students.keySet()) {

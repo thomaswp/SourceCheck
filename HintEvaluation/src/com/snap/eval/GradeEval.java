@@ -28,6 +28,7 @@ import com.snap.graph.data.Tuple;
 import com.snap.graph.subtree.SnapHintBuilder;
 import com.snap.graph.subtree.HintGenerator;
 import com.snap.parser.Assignment;
+import com.snap.parser.Fall2015;
 
 public class GradeEval {
 	
@@ -35,7 +36,7 @@ public class GradeEval {
 	private final static boolean PRUNE = true;
 	
 	public static void main(String[] args) throws IOException {
-		Assignment assignment = Assignment.Fall2015.GuessingGame1;
+		Assignment assignment = Fall2015.GuessingGame1;
 		
 		policyGradeEval(assignment);
 //		hintChainEval(assignment);

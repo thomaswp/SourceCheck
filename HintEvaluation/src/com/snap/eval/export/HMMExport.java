@@ -17,6 +17,7 @@ import com.snap.graph.data.Node;
 import com.snap.parser.Assignment;
 import com.snap.parser.AssignmentAttempt;
 import com.snap.parser.AttemptAction;
+import com.snap.parser.Fall2016;
 import com.snap.parser.Store.Mode;
 
 import distance.RTED_InfoTree_Opt;
@@ -29,7 +30,7 @@ public class HMMExport {
 	};
 
 	public static void main(String[] args) throws Exception {
-		for (Assignment assignment : Assignment.Fall2016.All) {
+		for (Assignment assignment : Fall2016.All) {
 			System.out.println("Generating logs for: " + assignment);
 			export(assignment);
 		}

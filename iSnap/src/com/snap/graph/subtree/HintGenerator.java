@@ -258,7 +258,7 @@ public class HintGenerator {
 	// nodeMap.
 	private Tuple<Node, Node> findClosestMatch(Node node, Map<String, Node> nodeMap,
 			Map<String, Node> pairMap) {
-		String id = node.getID();
+		String id = node.id;
 
 		// If this node has a match, return it. For valid trees, this is a base-case
 		// since the root should always have a match.
@@ -275,7 +275,7 @@ public class HintGenerator {
 		List<Node> children = parentMatch.y.children;
 		if (index < children.size()) {
 			match = children.get(index);
-			if (match.hasType(node.type()) && !nodeMap.containsKey(match.getID())) {
+			if (match.hasType(node.type()) && !nodeMap.containsKey(match.id)) {
 				return new Tuple<>(node, match);
 			}
 		}
@@ -285,7 +285,7 @@ public class HintGenerator {
 	}
 
 	private void createMap(Node node, Map<String, Node> byID) {
-		String id = node.getID();
+		String id = node.id;
 		if (id != null) {
 			if (byID.put(id, node) != null) {
 				System.err.println("Multiple nodes with ID: " + node + " (" + id + ")");

@@ -23,6 +23,7 @@ import com.snap.graph.data.Node;
 import com.snap.parser.Assignment;
 import com.snap.parser.AssignmentAttempt;
 import com.snap.parser.AttemptAction;
+import com.snap.parser.Spring2016;
 import com.snap.parser.Store.Mode;
 
 public class CheckSubgoalUsage {
@@ -47,8 +48,8 @@ public class CheckSubgoalUsage {
 	}
 
 	public static void main(String[] args) throws IOException {
-		for (Assignment assignment : Assignment.Spring2016.All) {
-			if (assignment != Assignment.Spring2016.GuessingGame1) continue;
+		for (Assignment assignment : Spring2016.All) {
+			if (assignment != Spring2016.GuessingGame1) continue;
 
 			Map<String,AssignmentAttempt> submissions = assignment.load(Mode.Use, false);
 
