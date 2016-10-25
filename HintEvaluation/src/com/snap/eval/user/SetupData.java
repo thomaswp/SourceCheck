@@ -2,10 +2,10 @@ package com.snap.eval.user;
 
 import java.io.IOException;
 
-import com.snap.parser.Assignment;
-import com.snap.parser.LogSplitter;
-import com.snap.parser.Spring2016;
-import com.snap.parser.Store.Mode;
+import edu.isnap.dataset.Assignment;
+import edu.isnap.datasets.Spring2016;
+import edu.isnap.parser.LogSplitter;
+import edu.isnap.parser.Store.Mode;
 
 public class SetupData {
 

@@ -7,12 +7,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import com.snap.data.Snapshot;
 import com.snap.graph.data.Node;
 import com.snap.graph.data.Node.Action;
 import com.snap.graph.subtree.SnapHintBuilder;
-import com.snap.parser.Fall2015;
-import com.snap.parser.Grade;
 
 import de.citec.tcs.alignment.csv.CSVExporter;
 import de.citec.tcs.alignment.sequence.Alphabet;
@@ -24,6 +21,9 @@ import de.citec.tcs.alignment.sequence.SymbolicValue;
 import de.unibi.citec.fit.objectgraphs.Graph;
 import de.unibi.citec.fit.objectgraphs.api.factories.TreeFactory;
 import de.unibi.citec.fit.objectgraphs.api.matlab.print.PlainTextPrintModule;
+import edu.isnap.dataset.Grade;
+import edu.isnap.datasets.Fall2015;
+import edu.isnap.parser.elements.Snapshot;
 
 public class FITExport {
 	

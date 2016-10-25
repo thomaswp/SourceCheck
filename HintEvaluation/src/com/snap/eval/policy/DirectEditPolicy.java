@@ -10,10 +10,10 @@ import java.util.Set;
 import com.snap.graph.data.Node;
 import com.snap.graph.data.Tuple;
 import com.snap.graph.subtree.SnapHintBuilder;
-import com.snap.parser.Fall2015;
 
 import astrecognition.model.Convert;
 import astrecognition.model.Tree;
+import edu.isnap.datasets.Fall2015;
 import pqgram.PQGram;
 import pqgram.PQGramRecommendation;
 import pqgram.Profile;

@@ -1,9 +1,9 @@
 package com.snap.eval.user;
 
-import static com.snap.parser.AttemptAction.BLOCK_CLICK_RUN;
-import static com.snap.parser.AttemptAction.HINT_DIALOG_DONE;
-import static com.snap.parser.AttemptAction.IDE_GREEN_FLAG_RUN;
-import static com.snap.parser.AttemptAction.SHOW_HINT_MESSAGES;
+import static edu.isnap.dataset.AttemptAction.BLOCK_CLICK_RUN;
+import static edu.isnap.dataset.AttemptAction.HINT_DIALOG_DONE;
+import static edu.isnap.dataset.AttemptAction.IDE_GREEN_FLAG_RUN;
+import static edu.isnap.dataset.AttemptAction.SHOW_HINT_MESSAGES;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -25,7 +25,6 @@ import org.apache.commons.csv.CSVPrinter;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.snap.data.Snapshot;
 import com.snap.eval.AutoGrader;
 import com.snap.eval.AutoGrader.Grader;
 import com.snap.eval.util.Prune;
@@ -35,14 +34,15 @@ import com.snap.graph.data.HintFactoryMap.VectorHint;
 import com.snap.graph.data.Node;
 import com.snap.graph.data.Node.Predicate;
 import com.snap.graph.data.Tuple;
-import com.snap.parser.Assignment;
-import com.snap.parser.AssignmentAttempt;
-import com.snap.parser.AttemptAction;
-import com.snap.parser.Grade;
-import com.snap.parser.Spring2016;
-import com.snap.parser.Store.Mode;
 
 import distance.RTED_InfoTree_Opt;
+import edu.isnap.dataset.Assignment;
+import edu.isnap.dataset.AssignmentAttempt;
+import edu.isnap.dataset.AttemptAction;
+import edu.isnap.dataset.Grade;
+import edu.isnap.datasets.Spring2016;
+import edu.isnap.parser.Store.Mode;
+import edu.isnap.parser.elements.Snapshot;
 import util.LblTree;
 
 public class CheckHintUsage {

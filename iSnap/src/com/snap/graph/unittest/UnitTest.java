@@ -7,13 +7,14 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.List;
 
-import com.snap.data.Snapshot;
 import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.Hint;
 import com.snap.graph.data.HintFactoryMap.VectorHint;
 import com.snap.graph.data.Node;
 import com.snap.graph.subtree.HintGenerator;
-import com.snap.parser.Assignment;
+
+import edu.isnap.dataset.Assignment;
+import edu.isnap.parser.elements.Snapshot;
 
 public class UnitTest {
 

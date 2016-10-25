@@ -13,7 +13,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
-import com.snap.data.Snapshot;
 import com.snap.eval.policy.DirectEditPolicy;
 import com.snap.eval.policy.HintFactoryPolicy;
 import com.snap.eval.policy.HintPolicy;
@@ -24,11 +23,12 @@ import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.Node;
 import com.snap.graph.subtree.SnapHintBuilder;
 import com.snap.graph.subtree.HintGenerator;
-import com.snap.parser.Assignment;
-import com.snap.parser.Fall2015;
-import com.snap.parser.Grade;
 
 import distance.RTED_InfoTree_Opt;
+import edu.isnap.dataset.Assignment;
+import edu.isnap.dataset.Grade;
+import edu.isnap.datasets.Fall2015;
+import edu.isnap.parser.elements.Snapshot;
 import util.LblTree;
 
 public class PredictionEval {

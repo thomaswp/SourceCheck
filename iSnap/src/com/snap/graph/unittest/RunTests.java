@@ -10,9 +10,10 @@ import java.util.List;
 
 import com.snap.graph.subtree.HintGenerator;
 import com.snap.graph.subtree.SnapHintBuilder;
-import com.snap.parser.Assignment;
-import com.snap.parser.Spring2016;
-import com.snap.parser.Store;
+
+import edu.isnap.dataset.Assignment;
+import edu.isnap.datasets.Spring2016;
+import edu.isnap.parser.Store;
 
 public class RunTests {
 	public static void main(String[] args) {

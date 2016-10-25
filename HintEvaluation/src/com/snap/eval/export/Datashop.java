@@ -13,27 +13,28 @@ import org.apache.commons.csv.CSVPrinter;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.snap.data.BlockDefinition;
-import com.snap.data.CallBlock;
-import com.snap.data.Canonicalization;
-import com.snap.data.Code;
-import com.snap.data.Code.Accumulator;
-import com.snap.data.IHasID;
-import com.snap.data.LiteralBlock;
-import com.snap.data.LiteralBlock.Type;
-import com.snap.data.Script;
-import com.snap.data.Snapshot;
-import com.snap.data.VarBlock;
 import com.snap.eval.user.CheckHintUsage;
 import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.Node;
-import com.snap.parser.Assignment;
-import com.snap.parser.AssignmentAttempt;
-import com.snap.parser.AttemptAction;
-import com.snap.parser.Dataset;
-import com.snap.parser.Fall2016;
-import com.snap.parser.Store.Mode;
 import com.snap.util.DoubleMap;
+
+import edu.isnap.dataset.Assignment;
+import edu.isnap.dataset.AssignmentAttempt;
+import edu.isnap.dataset.AttemptAction;
+import edu.isnap.dataset.Dataset;
+import edu.isnap.datasets.Fall2016;
+import edu.isnap.parser.Store.Mode;
+import edu.isnap.parser.elements.BlockDefinition;
+import edu.isnap.parser.elements.CallBlock;
+import edu.isnap.parser.elements.Code;
+import edu.isnap.parser.elements.LiteralBlock;
+import edu.isnap.parser.elements.Script;
+import edu.isnap.parser.elements.Snapshot;
+import edu.isnap.parser.elements.VarBlock;
+import edu.isnap.parser.elements.Code.Accumulator;
+import edu.isnap.parser.elements.LiteralBlock.Type;
+import edu.isnap.parser.elements.util.Canonicalization;
+import edu.isnap.parser.elements.util.IHasID;
 
 public class Datashop {
 

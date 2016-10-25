@@ -6,7 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
-import com.snap.parser.Spring2016;
+import edu.isnap.datasets.Spring2016;
 
 public class CopyData {
 	public static void main(String[] args) throws IOException {

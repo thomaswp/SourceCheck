@@ -13,12 +13,13 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
-import com.snap.data.Snapshot;
 import com.snap.graph.SimpleNodeBuilder;
 import com.snap.graph.data.Hint;
 import com.snap.graph.data.Node;
 import com.snap.graph.subtree.HintGenerator;
 import com.snap.graph.unittest.UnitTest;
+
+import edu.isnap.parser.elements.Snapshot;
 
 
 @SuppressWarnings("serial")

@@ -2,10 +2,9 @@ package com.snap.graph;
 
 import java.util.List;
 
-import com.snap.data.Canonicalization;
-import com.snap.data.Code;
-import com.snap.data.Code.Accumulator;
-
+import edu.isnap.parser.elements.Code;
+import edu.isnap.parser.elements.Code.Accumulator;
+import edu.isnap.parser.elements.util.Canonicalization;
 import util.LblTree;
 
 public class SimpleTreeBuilder {
