@@ -387,7 +387,10 @@ public class SnapParser {
 		HashMap<String, Grade> grades = new HashMap<>();
 
 		File file = new File(assignment.gradesFile());
-		if (!file.exists()) return grades;
+		if (!file.exists()) {
+			if (assignment.graded) System.err.println("No grades file for: " + assignment);
+			return grades;
+		}
 
 		try {
 			CSVParser parser = new CSVParser(new FileReader(file), CSVFormat.DEFAULT.withHeader());

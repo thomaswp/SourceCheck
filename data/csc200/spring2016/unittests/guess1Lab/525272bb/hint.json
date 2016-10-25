@@ -8,10 +8,10 @@
 		],
 		"goal": [
 			"receiveGo",
-			"doSetVar",
 			"doSayFor",
 			"doAsk",
 			"doSayFor",
+			"doSetVar",
 			"doUntil"
 		],
 		"root": {
@@ -39,10 +39,10 @@
 		],
 		"to": [
 			"receiveGo",
-			"doSetVar",
 			"doSayFor",
 			"doAsk",
 			"doSayFor",
+			"doSetVar",
 			"doUntil"
 		],
 		"oldTo": [],

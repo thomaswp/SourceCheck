@@ -42,16 +42,10 @@ public class InteractionGraph<T> extends Graph<T, Void> {
 	private void setBest() {
 		for (Vertex<T> v : vertexMap.values()) {
 			if (!fromMap.containsKey(v.data)) continue;
-			double bestProb = 0;
-			for (Edge<T, ?> e : fromMap.get(v.data)) {
-				if (e.isLoop()) continue;
-				bestProb = Math.max(bestProb, e.bRelativeWeight);
-			}
 			Edge<T,?> best = null;
 			double bestValue = v.bValue;
 			for (Edge<T,?> e : fromMap.get(v.data)) {
 				if (e.isLoop()) continue;
-//				if (e.bRelativeWeight * 2 < bestProb) continue;
 				double value = vertexMap.get(e.to).bValue;
 				if (value > bestValue) {
 					bestValue = value;

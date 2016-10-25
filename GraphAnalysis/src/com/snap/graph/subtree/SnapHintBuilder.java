@@ -211,23 +211,24 @@ public class SnapHintBuilder {
 		nodeMapCache = new TreeMap<>();
 		gradeMapCache = new TreeMap<>();
 
-		for (String student : students.keySet()) {
-			AssignmentAttempt path = students.get(student);
-			if (!path.exported) continue;
+		for (String attemptID : students.keySet()) {
+			AssignmentAttempt attempt = students.get(attemptID);
+			if (!attempt.exported) continue;
+			if (attempt.submittedActionID == AssignmentAttempt.NOT_SUBMITTED) continue;
 			List<Node> nodes = new ArrayList<>();
 
-			for (AttemptAction row : path) {
+			for (AttemptAction row : attempt) {
 				Node node = SimpleNodeBuilder.toTree(row.snapshot, true);
 				nodes.add(node);
 			}
 
 			if (nodes.size() == 0) continue;
-			if (assignment.graded && path.grade == null) {
-				System.err.println("No grade for: " + student);
+			if (assignment.graded && attempt.grade == null) {
+				System.err.println("No grade for: " + attemptID);
 			}
 
-			nodeMapCache.put(student, nodes);
-			gradeMapCache.put(student, path.grade);
+			nodeMapCache.put(attemptID, nodes);
+			gradeMapCache.put(attemptID, attempt.grade);
 		}
 	}
 }

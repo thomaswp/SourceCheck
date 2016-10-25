@@ -38,6 +38,7 @@
 			"doAsk",
 			"doSayFor"
 		],
-		"caution": false
+		"caution": false,
+		"expectedFailure": true
 	}
 }
