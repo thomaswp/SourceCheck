@@ -85,6 +85,7 @@ public class ScriptGoalValuator {
 
 	};
 
+	@SuppressWarnings("unused")
 	private void getClusters(CountMap<VectorState> goalCounts, int nClusters) {
 		if (nClusters <= 1 || goalCounts.size() <= nClusters) return;
 		List<VectorState> goals = new LinkedList<>();

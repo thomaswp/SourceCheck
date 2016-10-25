@@ -188,7 +188,7 @@ public class Assignment {
 //				"squiralHW", start, date(2015, 9, 13), false);
 
 		public final static Assignment GuessingGame1 = new Assignment(instance,
-				"guess1Lab", date(2015, 9, 18), false, true, null) {
+				"guess1Lab", date(2015, 9, 18), false) {
 			@Override
 			public Assignment getLocationAssignment(String attemptID) {
 				switch (attemptID) {
@@ -287,7 +287,7 @@ public class Assignment {
 		};
 
 		public final static Assignment GuessingGame1 = new Assignment(instance,
-				"guess1Lab", date(2016, 2, 9), true, true, null);
+				"guess1Lab", date(2016, 2, 9), true);
 
 		public final static Assignment GuessingGame2 = new Assignment(instance,
 				"guess2HW", date(2016, 2, 16), true, false, GuessingGame1) {
