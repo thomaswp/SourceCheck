@@ -1,6 +1,6 @@
 package astrecognition.model;
 
-import com.snap.graph.data.Node;
+import edu.isnap.ctd.graph.Node;
 
 public class Convert {
 	public static Tree nodeToTree(Node node) {

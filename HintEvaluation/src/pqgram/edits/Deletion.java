@@ -2,10 +2,9 @@ package pqgram.edits;
 
 import java.util.Map;
 
-import com.snap.graph.data.Node;
-
 import astrecognition.model.Graph;
 import astrecognition.model.Tree;
+import edu.isnap.ctd.graph.Node;
 
 public class Deletion extends PositionalEdit {
 	

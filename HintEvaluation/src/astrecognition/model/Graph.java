@@ -2,7 +2,7 @@ package astrecognition.model;
 
 import java.util.Collection;
 
-import com.snap.graph.data.Node;
+import edu.isnap.ctd.graph.Node;
 
 public abstract class Graph implements Comparable<Graph> {
 	
