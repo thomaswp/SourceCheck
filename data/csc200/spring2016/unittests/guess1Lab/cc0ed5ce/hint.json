@@ -1,0 +1,52 @@
+{
+	"from": "snapshot:[stage:[sprite:[script:[doUntil:[script]]]]]: [doAsk, doIf, doIf]",
+	"to": "snapshot:[stage:[sprite:[script:[doUntil:[script]]]]]: [doAsk, doSetVar, doIf, doIf]",
+	"data": {
+		"goal": [
+			"doAsk",
+			"doSetVar",
+			"doIf",
+			"doIf",
+			"doIf"
+		],
+		"root": {
+			"label": "script",
+			"index": 1,
+			"parent": {
+				"label": "doUntil",
+				"index": 4,
+				"parent": {
+					"label": "script",
+					"index": 0,
+					"parent": {
+						"label": "sprite",
+						"index": 0,
+						"parent": {
+							"label": "stage",
+							"index": 0,
+							"parent": {
+								"label": "snapshot",
+								"index": -1,
+								"parent": null
+							}
+						}
+					}
+				}
+			}
+		},
+		"from": [
+			"doAsk",
+			"doIf",
+			"doIf"
+		],
+		"to": [
+			"doAsk",
+			"doSetVar",
+			"doIf",
+			"doIf"
+		],
+		"caution": false,
+		"badHint": true,
+		"expectedFailure": true
+	}
+}
