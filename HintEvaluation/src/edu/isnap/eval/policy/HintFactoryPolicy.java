@@ -7,9 +7,9 @@ import java.util.Set;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Predicate;
 import edu.isnap.ctd.hint.Hint;
+import edu.isnap.ctd.hint.HintGenerator;
 import edu.isnap.ctd.hint.HintFactoryMap.VectorHint;
 import edu.isnap.ctd.util.Tuple;
-import edu.isnap.hint.HintGenerator;
 
 public class HintFactoryPolicy implements HintPolicy {
 

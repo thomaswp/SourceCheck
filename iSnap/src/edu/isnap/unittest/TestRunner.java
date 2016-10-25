@@ -8,15 +8,13 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import edu.isnap.ctd.hint.HintGenerator;
 import edu.isnap.dataset.Assignment;
-import edu.isnap.datasets.Spring2016;
-import edu.isnap.hint.HintGenerator;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.parser.Store;
 
-public class RunTests {
-	public static void main(String[] args) {
-		Assignment[] assignments = Spring2016.All;
+public class TestRunner {
+	public static void run(Assignment[] assignments) {
 
 		PrintStream out = System.out;
 		PrintStream err = System.out;

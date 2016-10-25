@@ -9,9 +9,9 @@ import java.util.List;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.Hint;
+import edu.isnap.ctd.hint.HintGenerator;
 import edu.isnap.ctd.hint.HintFactoryMap.VectorHint;
 import edu.isnap.dataset.Assignment;
-import edu.isnap.hint.HintGenerator;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.elements.Snapshot;
 

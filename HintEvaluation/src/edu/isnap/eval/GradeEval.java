@@ -15,6 +15,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
 import edu.isnap.ctd.graph.Node;
+import edu.isnap.ctd.hint.HintGenerator;
 import edu.isnap.ctd.util.Tuple;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.datasets.Fall2015;
@@ -25,7 +26,6 @@ import edu.isnap.eval.policy.HintPolicy;
 import edu.isnap.eval.policy.StudentPolicy;
 import edu.isnap.eval.util.PrintUpdater;
 import edu.isnap.eval.util.Prune;
-import edu.isnap.hint.HintGenerator;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.elements.Snapshot;

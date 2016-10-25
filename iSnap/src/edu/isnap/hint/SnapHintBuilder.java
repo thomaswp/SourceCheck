@@ -1,9 +1,7 @@
 package edu.isnap.hint;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -14,12 +12,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.HintFactoryMap;
+import edu.isnap.ctd.hint.HintGenerator;
 import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Grade;
-import edu.isnap.datasets.Spring2016;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.Store;
 import edu.isnap.parser.Store.Mode;
@@ -32,43 +30,6 @@ import edu.isnap.parser.Store.Mode;
  * Class for constructing HintGenerators from Snap data and caching them for later use.
  */
 public class SnapHintBuilder {
-
-	public static void main(String[] args) throws IOException, InstantiationException,
-			IllegalAccessException, ClassNotFoundException, SQLException {
-		// Optionally, clean out all cached assignments first
-//		SnapParser.clean(Assignment.Spring2016.dataDir);
-
-		// Builds and caches a HintGenerator for each of these assignments
-		buildHints(Spring2016.PolygonMaker, 1);
-		buildHints(Spring2016.Squiral, 1);
-		buildHints(Spring2016.GuessingGame1, 1);
-		buildHints(Spring2016.GuessingGame2, 1);
-		// Then copies the cache to the HintServer
-		CopyData.copyGraphs(Spring2016.dataDir);
-
-//		buildHints(Assignment.HelpSeeking.BrickWall, 1);
-//		CopyData.copyGraphs(Assignment.HelpSeeking.BrickWall.dataDir);
-	}
-
-
-	/**
-	 * Builds and caches a {@link HintGenerator} for the given assignment, using only data with
-	 * the supplied minGrade.
-	 */
-	private static void buildHints(Assignment assignment, double minGrade)
-			throws FileNotFoundException {
-		System.out.println("Loading: " + assignment.name);
-		SnapHintBuilder subtree = new SnapHintBuilder(assignment);
-		subtree.nodeMap();
-		System.out.print("Building subtree: ");
-		long ms = System.currentTimeMillis();
-		HintGenerator builder = subtree.buildGenerator(Mode.Overwrite, minGrade);
-		String dir = String.format("%s/graphs/%s-g%03d/", assignment.dataDir,
-				assignment.name, Math.round(minGrade * 100));
-		builder.saveGraphs(dir, 1);
-		System.out.println((System.currentTimeMillis() - ms) + "ms");
-	}
-
 
 	public final Assignment assignment;
 	private final HintMap hintMap;

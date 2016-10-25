@@ -16,7 +16,7 @@ import com.esotericsoftware.kryo.io.Input;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.Hint;
-import edu.isnap.hint.HintGenerator;
+import edu.isnap.ctd.hint.HintGenerator;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.elements.Snapshot;
 import edu.isnap.unittest.UnitTest;

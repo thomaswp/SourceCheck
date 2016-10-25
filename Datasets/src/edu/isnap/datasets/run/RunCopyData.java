@@ -1,4 +1,4 @@
-package edu.isnap.hint;
+package edu.isnap.datasets.run;
 
 import java.io.File;
 import java.io.IOException;
@@ -8,7 +8,7 @@ import java.nio.file.StandardCopyOption;
 
 import edu.isnap.datasets.Spring2016;
 
-public class CopyData {
+public class RunCopyData {
 	public static void main(String[] args) throws IOException {
 		copyGraphs(Spring2016.dataDir);
 	}

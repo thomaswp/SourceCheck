@@ -1,4 +1,4 @@
-package edu.isnap.hint;
+package edu.isnap.ctd.hint;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -20,9 +20,6 @@ import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.vector.IndexedVectorState;
 import edu.isnap.ctd.graph.vector.VectorGraph;
 import edu.isnap.ctd.graph.vector.VectorState;
-import edu.isnap.ctd.hint.Hint;
-import edu.isnap.ctd.hint.HintFactoryMap;
-import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.util.StringHashable;
 import edu.isnap.ctd.util.Tuple;
 import util.LblTree;
