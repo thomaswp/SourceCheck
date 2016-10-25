@@ -8,8 +8,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-import com.snap.graph.subtree.SnapHintBuilder;
 import com.snap.graph.subtree.HintGenerator;
+import com.snap.graph.subtree.SnapHintBuilder;
 import com.snap.parser.Assignment;
 import com.snap.parser.Store;
 
@@ -32,7 +32,7 @@ public class RunTests {
 			out.println("Testing assignment: " + assignment.name);
 
 			HintGenerator builder = new SnapHintBuilder(assignment)
-					.buildGenerator(Store.Mode.Use, 1);
+					.buildGenerator(Store.Mode.Ignore, 1);
 
 			for (File folder : new File(assignment.unitTestDir()).listFiles()) {
 				String testID = folder.getName();

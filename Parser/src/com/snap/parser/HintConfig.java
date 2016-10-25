@@ -40,8 +40,6 @@ public class HintConfig {
 				"doUntil",
 				// Sprites' children are unordered
 				"sprite",
-				// While custom blocks have variables, they're better IDd by order
-				"customBlock",
 		}) {
 			badContext.add(c);
 		}

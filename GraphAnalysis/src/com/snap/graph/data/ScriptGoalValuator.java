@@ -21,7 +21,7 @@ public class ScriptGoalValuator {
 
 	public ScriptGoalValuator(CountMap<VectorState> goalCounts, int nClusters) {
 
-		getClusters(goalCounts, nClusters);
+//		getClusters(goalCounts, nClusters);
 
 		medianCounts = new CountMap<>();
 		orderings = new ListMap<>();

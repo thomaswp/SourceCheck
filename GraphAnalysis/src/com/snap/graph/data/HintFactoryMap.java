@@ -221,10 +221,10 @@ public class HintFactoryMap implements HintMap {
 			int clusterCount = parentGraph.getMedianPositiveChildCountInGoals(type);
 			graph.setClusters(clusterCount);
 
-			// TODO: fix and use
-//			if (shouldGenerateScriptGoalValues) {
+			// TODO: if using clustering, separate it out and use separate condition
+			if (shouldGenerateScriptGoalValues) {
 				graph.generateScriptGoalValues();
-//			}
+			}
 		}
 
 		for (VectorGraph graph : map.values()) {

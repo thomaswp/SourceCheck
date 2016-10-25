@@ -36,13 +36,13 @@ public class SnapHintBuilder {
 		// Optionally, clean out all cached assignments first
 //		SnapParser.clean(Assignment.Spring2016.dataDir);
 
-//		// Builds and caches a HintGenerator for each of these assignments
-//		buildHints(Assignment.Spring2016.PolygonMaker, 1);
-//		buildHints(Assignment.Spring2016.Squiral, 1);
+		// Builds and caches a HintGenerator for each of these assignments
+		buildHints(Assignment.Spring2016.PolygonMaker, 1);
+		buildHints(Assignment.Spring2016.Squiral, 1);
 		buildHints(Assignment.Spring2016.GuessingGame1, 1);
-//		buildHints(Assignment.Spring2016.GuessingGame2, 1);
-//		// Then copies the cache to the HintServer
-//		CopyData.copyGraphs(Assignment.Spring2016.dataDir);
+		buildHints(Assignment.Spring2016.GuessingGame2, 1);
+		// Then copies the cache to the HintServer
+		CopyData.copyGraphs(Assignment.Spring2016.dataDir);
 
 //		buildHints(Assignment.HelpSeeking.BrickWall, 1);
 //		CopyData.copyGraphs(Assignment.HelpSeeking.BrickWall.dataDir);
