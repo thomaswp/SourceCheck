@@ -2,28 +2,19 @@
     <wb-module deploy-name="HintServer">
         <wb-resource deploy-path="/" source-path="/WebContent" tag="defaultRootSource"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src"/>
-        <dependent-module archiveName="GraphAnalysis.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/GraphAnalysis/GraphAnalysis">
+        <dependent-module deploy-path="/WEB-INF/lib" handle="module:/resource/SnapParser/SnapParser">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="Parser.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/Parser/Parser">
+        <dependent-module deploy-path="/WEB-INF/lib" handle="module:/resource/CTD/CTD">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="objenesis-2.1.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/Parser/objenesis-2.1.jar">
+        <dependent-module archiveName="iSnap.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/iSnap/iSnap">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="kryo-3.0.3.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/Parser/kryo-3.0.3.jar">
+        <dependent-module archiveName="Temp.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/Temp/Temp">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="reflectasm-1.10.1-shaded.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/Parser/reflectasm-1.10.1-shaded.jar">
-            <dependency-type>uses</dependency-type>
-        </dependent-module>
-        <dependent-module archiveName="minlog-1.3.0.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/Parser/minlog-1.3.0.jar">
-            <dependency-type>uses</dependency-type>
-        </dependent-module>
-        <dependent-module archiveName="RTED_v1.1.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/GraphAnalysis/RTED_v1.1.jar">
-            <dependency-type>uses</dependency-type>
-        </dependent-module>
-        <dependent-module archiveName="mysql-connector-java-5.1.28.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/GraphAnalysis/mysql-connector-java-5.1.28.jar">
+        <dependent-module archiveName="kryo-3.0.3.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/SnapParser/kryo-3.0.3.jar">
             <dependency-type>uses</dependency-type>
         </dependent-module>
         <property name="context-root" value="HintServer"/>
