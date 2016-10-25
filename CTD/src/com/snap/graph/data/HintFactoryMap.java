@@ -10,9 +10,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import com.snap.data.Canonicalization;
-import com.snap.data.Canonicalization.InvertOp;
-import com.snap.data.Canonicalization.SwapArgs;
+import com.snap.graph.data.Canonicalization.InvertOp;
+import com.snap.graph.data.Canonicalization.SwapArgs;
 import com.snap.graph.data.Node.Action;
 import com.snap.graph.data.Node.Predicate;
 import com.snap.parser.HintConfig;

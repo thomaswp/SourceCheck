@@ -1,4 +1,4 @@
-package com.snap.data;
+package com.snap.graph.data;
 
 public abstract class Canonicalization {
 	

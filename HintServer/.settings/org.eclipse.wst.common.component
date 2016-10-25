@@ -11,9 +11,6 @@
         <dependent-module archiveName="iSnap.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/iSnap/iSnap">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="Temp.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/Temp/Temp">
-            <dependency-type>uses</dependency-type>
-        </dependent-module>
         <dependent-module archiveName="kryo-3.0.3.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/SnapParser/kryo-3.0.3.jar">
             <dependency-type>uses</dependency-type>
         </dependent-module>

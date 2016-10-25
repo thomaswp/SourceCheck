@@ -12,6 +12,5 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/CTD"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/iSnap"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/SnapParser"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/Temp"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

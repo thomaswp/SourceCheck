@@ -5,7 +5,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/CTD"/>
 	<classpathentry kind="lib" path="/CTD/RTED_v1.1.jar"/>
 	<classpathentry kind="lib" path="/SnapParser/kryo-3.0.3.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/Temp"/>
 	<classpathentry kind="lib" path="/SnapParser/alignment-full-2.1.2.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>
 	<classpathentry kind="con" path="org.eclipse.jst.server.core.container/org.eclipse.jst.server.tomcat.runtimeTarget/Apache Tomcat v7.0">

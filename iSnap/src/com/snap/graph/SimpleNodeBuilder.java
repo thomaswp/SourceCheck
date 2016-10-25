@@ -50,7 +50,17 @@ public class SimpleNodeBuilder {
 
 			@Override
 			public void add(Canonicalization canon) {
-				node.canonicalizations.add(canon);
+				if (canon instanceof Canonicalization.InvertOp) {
+					node.canonicalizations.add(new com.snap.graph.data.Canonicalization.InvertOp(
+							((Canonicalization.InvertOp) canon).name));
+				} else if (canon instanceof Canonicalization.Rename) {
+					node.canonicalizations.add(new com.snap.graph.data.Canonicalization.Rename(
+							((Canonicalization.Rename) canon).name));
+				} else if (canon instanceof Canonicalization.SwapArgs) {
+					node.canonicalizations.add(new com.snap.graph.data.Canonicalization.SwapArgs());
+				} else {
+					throw new RuntimeException("Unknown canonicalization");
+				}
 			}
 		});
 

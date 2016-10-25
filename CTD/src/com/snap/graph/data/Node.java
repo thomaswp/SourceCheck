@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.snap.data.Canonicalization;
-
 import util.LblTree;
 
 public class Node extends StringHashable {

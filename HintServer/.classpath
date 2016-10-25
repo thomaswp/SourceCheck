@@ -16,6 +16,5 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry combineaccessrules="false" kind="src" path="/iSnap"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/Temp"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>

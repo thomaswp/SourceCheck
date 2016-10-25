@@ -6,7 +6,6 @@
 		<project>CTD</project>
 		<project>iSnap</project>
 		<project>SnapParser</project>
-		<project>Temp</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
