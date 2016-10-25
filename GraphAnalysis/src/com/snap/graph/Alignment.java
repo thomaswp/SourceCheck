@@ -1,6 +1,8 @@
 package com.snap.graph;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 public class Alignment {
@@ -10,27 +12,27 @@ public class Alignment {
 		int aligned = maxLength - cost;
 		return (double) (aligned + 1) / (maxLength + 1);
 	}
-	
+
 	public static int alignCost(String[] sequenceA, String[] sequenceB) {
 		return alignCost(sequenceA, sequenceB, 1, 1, 1);
 	}
-	
+
 	public static double normAlignCost(String[] sequenceA, String[] sequenceB, int insCost, int delCost, int subCost) {
 		int cost = alignCost(sequenceA, sequenceB, insCost, delCost, subCost);
 		int length = Math.max(sequenceA.length, sequenceB.length);
 		return length == 0 ? 0 : ((double) cost / length);
 	}
-	
+
 	// Credit: http://introcs.cs.princeton.edu/java/96optimization/Diff.java.html
 	public static int alignCost(String[] sequenceA, String[] sequenceB, int insCost, int delCost, int subCost) {
 		int[][] opt = createAlignmentMatrix(sequenceA, sequenceB, insCost, delCost, subCost, false);
 		return opt[sequenceA.length][sequenceB.length];
 	}
-	
+
 	public static List<int[]> alignPairs(String[] sequenceA, String[] sequenceB, int insCost, int delCost, int subCost) {
 		int[][] opt = createAlignmentMatrix(sequenceA, sequenceB, insCost, delCost, subCost, true);
 		ArrayList<int[]> pairs = new ArrayList<int[]>();
-//		
+//
 //		for (int[] row : opt) {
 //			System.out.println(Arrays.toString(row));
 //		}
@@ -40,19 +42,19 @@ public class Alignment {
 			int skipACost = opt[i+1][j];
 			int skipBCost = opt[i][j+1];
 //			int min = Math.min(replaceCost, Math.min(skipACost, skipBCost));
-			
+
 			if (sequenceA[i].equals(sequenceB[j]) && replaceCost >= 0) {
 				pairs.add(new int[] {i, j});
 				i++; j++;
 				continue;
 			}
-			
+
 			if (skipACost >= 0) {
 				pairs.add(new int[] {i, -1});
 				i++;
 				continue;
 			}
-			
+
 			if (skipBCost >= 0) {
 				pairs.add(new int[] {-1, j});
 				j++;
@@ -62,21 +64,20 @@ public class Alignment {
 			i++; j++;
 			pairs.add(new int[] {i, j});
 		}
-		
+
 		while (i < sequenceA.length) {
 			pairs.add(new int[] {i, -1});
-			i++;	
+			i++;
 		}
-		
+
 		while (j < sequenceB.length) {
 			pairs.add(new int[] {-1, j});
 			j++;
 		}
-		
+
 		return pairs;
-		
 	}
-	
+
 	public static String[] smartScriptEdit(String[] sequenceA, String[] sequenceB) {
 		List<int[]> pairs = alignPairs(sequenceA, sequenceB, 1, 1, 100);
 //		for (int[] pair : pairs) {
@@ -101,53 +102,53 @@ public class Alignment {
 					}
 					return null;
 				}
-			}	
+			}
 		}
 		return sequence.toArray(new String[sequence.size()]);
 	}
-	
+
 	public static int doEdits(List<String> sequence, String[] sequenceB, Editor editor) {
 		return doEdits(sequence, sequenceB, editor, -1);
 	}
-	
+
 	public static int doEdits(List<String> sequence, String[] sequenceB, Editor editor, int maxEdits) {
 		if (maxEdits <= 0) return 0;
 		int edits = 0;
 		while (maxEdits < 0 || edits < maxEdits) {
-			String[] sequenceA = sequence.toArray(new String[sequence.size()]); 
+			String[] sequenceA = sequence.toArray(new String[sequence.size()]);
 			List<int[]> pairs = alignPairs(sequenceA, sequenceB, 1, 1, 100);
 			if (!editor.edit(sequenceA, sequenceB, pairs, sequence)) break;
 			edits++;
 		}
-		return edits; 
+		return edits;
 	}
-	
+
 	public interface Editor {
 		boolean edit(String[] sequenceA, String[] sequenceB, List<int[]> pairs, List<String> sequence);
 	}
-	
+
 	public static Editor MoveEditor = new Editor() {
 		@Override
 		public boolean edit(String[] sequenceA, String[] sequenceB, List<int[]> pairs, List<String> sequence) {
 			return moveEdit(sequenceA, sequenceB, pairs, sequence);
 		}
 	};
-	
+
 	public static Editor AddEditor = new Editor() {
 		@Override
 		public boolean edit(String[] sequenceA, String[] sequenceB, List<int[]> pairs, List<String> sequence) {
 			return addEdit(sequenceA, sequenceB, pairs, sequence);
 		}
 	};
-	
+
 	public static Editor DeleteEditor = new Editor() {
 		@Override
 		public boolean edit(String[] sequenceA, String[] sequenceB, List<int[]> pairs, List<String> sequence) {
 			return deleteEdit(sequenceA, sequenceB, pairs, sequence);
 		}
 	};
-	
-	private static boolean moveEdit(String[] sequenceA, String[] sequenceB, List<int[]> pairs, List<String> sequence) { 
+
+	private static boolean moveEdit(String[] sequenceA, String[] sequenceB, List<int[]> pairs, List<String> sequence) {
 		for (int[] pair : pairs) {
 			if (pair[1] == -1) {
 				int toMove = pair[0];
@@ -171,7 +172,7 @@ public class Alignment {
 		}
 		return false;
 	}
-	
+
 	private static boolean deleteEdit(String[] sequenceA, String[] sequenceB, List<int[]> pairs, List<String> sequence) {
 		for (int[] pair : pairs) {
 			if (pair[1] == -1) {
@@ -187,7 +188,7 @@ public class Alignment {
 		}
 		return false;
 	}
-	
+
 	private static boolean addEdit(String[] sequenceA, String[] sequenceB, List<int[]> pairs, List<String> sequence) {
 		for (int[] pair : pairs) {
 			if (pair[0] == -1) {
@@ -244,7 +245,7 @@ public class Alignment {
 		        opt[i][j] = Math.min(Math.min(scoreDiag, scoreLeft), scoreUp);
 		    }
 		}
-		
+
 		if (flipInvalid) {
 			for (int i = aLength - 1; i >= 0; i--) {
 				if (opt[i + 1][bLength] - opt[i][bLength] != delCost) {
@@ -263,17 +264,50 @@ public class Alignment {
 					int skipJ = opt[i][j + 1];
 					int sub = opt[i + 1][j + 1];
 					boolean equal = sequenceA[i].equals(sequenceB[j]);
-					
+
 					if (skipI - value == delCost) continue;
 					if (skipJ - value == insCost) continue;
 					if (equal && sub == value) continue;
 					if (!equal && sub - value == subCost) continue;
-					
+
 					opt[i][j] *= -1;
 				}
 			}
 		}
-		
+
 		return opt;
+	}
+
+	public static int getProgress(String[] from, String[] to, int orderReward, int unorderReward) {
+		List<String> fromList = new LinkedList<>(Arrays.asList(from));
+		List<String> toList = new LinkedList<>(Arrays.asList(to));
+
+		List<Integer> indices = new LinkedList<>();
+
+		while (!fromList.isEmpty()) {
+			String item = fromList.remove(0);
+			int index = toList.indexOf(item);
+			if (index >= 0) {
+				toList.set(index, null);
+				indices.add(index);
+			}
+		}
+
+		int reward = 0;
+		int lastIndex = -1;
+		for (Integer i : indices) {
+			reward += i > lastIndex ? orderReward : unorderReward;
+			lastIndex = i;
+		}
+
+		return reward;
+	}
+
+	public static void main(String[] args) {
+		System.out.println(getProgress(new String[] {
+				"b", "a", "d"
+		}, new String[] {
+				"d", "a", "b",
+		}, 2, 1));
 	}
 }

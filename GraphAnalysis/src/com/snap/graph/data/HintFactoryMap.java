@@ -156,7 +156,8 @@ public class HintFactoryMap implements HintMap {
 		IndexedVectorState context = getContext(node);
 		VectorState next = children;
 
-		VectorState goal = graph.getGoalState(next, context, config.maxNN, config.pruneGoals);
+		VectorState goal = graph.getGoalState(next, context, config.maxNN, config.pruneGoals,
+				!useGraph);
 
 		if (goal != null && config.straightToGoal.contains(node.type())) {
 			next = goal;

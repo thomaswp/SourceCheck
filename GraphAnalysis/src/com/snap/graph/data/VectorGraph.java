@@ -83,13 +83,13 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 	}
 
 	public VectorState getGoalState(VectorState state, IndexedVectorState context,
-			int maxNN, int minGoal) {
+			int maxNN, int minGoal, boolean filterByProgress) {
 		if (state == null) return null;
-		contextualBellmanBackup(context, minGoal);
+		contextualBellmanBackup(state, context, minGoal, filterByProgress);
 
 		if (!connectedToGoal(state)) {
 			return getGoalState(getNearestNeighbor(state, maxNN, true), context, maxNN,
-					minGoal);
+					minGoal, filterByProgress);
 		}
 		List<VectorState> goalPath = getMDPGoalPath(state);
 		if (goalPath == null) return null;
@@ -98,7 +98,7 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 
 	public VectorState getHint(VectorState state, IndexedVectorState context, int maxNN,
 			int minGoal, boolean naturalEdges) {
-		contextualBellmanBackup(context, minGoal);
+		contextualBellmanBackup(state, context, minGoal, !naturalEdges);
 
 		boolean connectedToGoal = connectedToGoal(state);
 
@@ -162,19 +162,15 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 			String[] nextItems = goalPath.get(index++).items;
 			int edits = 0;
 
-			edits += Alignment.doEdits(stateItems, goalItems, Alignment.MoveEditor,
-					1 - edits);
-			int addEdits = Alignment.doEdits(stateItems, nextItems, Alignment.AddEditor,
-					1 - edits);
+			edits += Alignment.doEdits(stateItems, goalItems, Alignment.MoveEditor, 1 - edits);
+			int addEdits = Alignment.doEdits(stateItems, nextItems, Alignment.AddEditor, 1 - edits);
 			edits += addEdits;
 			if (addEdits > 0) {
 				// If we added, rearrange for free
-				edits += Alignment.doEdits(stateItems, goalItems, Alignment.MoveEditor,
-						1);
+				edits += Alignment.doEdits(stateItems, goalItems, Alignment.MoveEditor, 1);
 			}
 			// Delete gets an extra edit
-			edits += Alignment.doEdits(stateItems, goalItems, Alignment.DeleteEditor,
-					2 - edits);
+			edits += Alignment.doEdits(stateItems, goalItems, Alignment.DeleteEditor, 2 - edits);
 
 			if (edits > 0) {
 				VectorState hint = new VectorState(stateItems);
@@ -206,39 +202,55 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 		return path;
 	}
 
-	private void contextualBellmanBackup(IndexedVectorState context, int minGoal) {
+	private void contextualBellmanBackup(VectorState state, IndexedVectorState context,
+			int minGoal, boolean filterByProgress) {
 		HashMap<VectorState, Double> cachedDistances = new HashMap<>();
 
 		tmpGoalValues.clear();
+
+		int maxProgress = 0;
+		int orderReward = 2, unorderReward = 1;
 
 		for (VectorState goal : goalContextMap.keySet()) {
 			List<IndexedVectorState> list = goalContextMap.get(goal);
 			if (list.size() < minGoal)
 				continue;
-			for (IndexedVectorState state : list) {
-				state.cache();
-				Double dis = cachedDistances.get(state);
+			for (IndexedVectorState goalContext : list) {
+				goalContext.cache();
+				Double dis = cachedDistances.get(goalContext);
 				if (dis == null) {
-					dis = IndexedVectorState.distance(context, state);
-					cachedDistances.put(state, dis);
+					dis = IndexedVectorState.distance(context, goalContext);
+					cachedDistances.put(goalContext, dis);
 				}
 			}
+
+			// Find the goal state(s) that the student has made the most progress towards
+			maxProgress = Alignment.getProgress(state.items, goal.items, orderReward,
+					unorderReward);
 		}
 
 		double nextBest = Double.MIN_VALUE;
 		double bestAvgDis = Double.MIN_VALUE;
 		for (VectorState goal : goalContextMap.keySet()) {
 			List<IndexedVectorState> list = goalContextMap.get(goal);
-			if (list.size() < minGoal)
+
+			int progress = Alignment.getProgress(state.items, goal.items, orderReward,
+					unorderReward);
+
+			// If this goal has too low weight or the current state shows less towards it progress,
+			// don't use it
+			if (list.size() < minGoal || (filterByProgress &&  progress < maxProgress)) {
+				tmpGoalValues.put(goal, 0.0);
 				continue;
+			}
 
 			double weight = 0;
-			for (IndexedVectorState state : list) {
-				state.cache();
-				Double dis = cachedDistances.get(state);
+			for (IndexedVectorState goalContext : list) {
+				goalContext.cache();
+				Double dis = cachedDistances.get(goalContext);
 				if (dis == null) {
-					dis = IndexedVectorState.distance(context, state);
-					cachedDistances.put(state, dis);
+					dis = IndexedVectorState.distance(context, goalContext);
+					cachedDistances.put(goalContext, dis);
 				}
 				// TODO: Make these more justified/configurable
 				weight += 0.25f / Math.pow(0.5f + dis, 2); // max 1
