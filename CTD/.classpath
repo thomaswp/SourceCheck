@@ -17,5 +17,6 @@
 			<attribute name="org.eclipse.jst.component.nondependency" value=""/>
 		</attributes>
 	</classpathentry>
+	<classpathentry exported="true" kind="lib" path="RTED_v1.1.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

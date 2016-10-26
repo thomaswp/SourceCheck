@@ -26,6 +26,7 @@
       </plugin>
     </plugins>
   </build>
+  <!--
   <dependencies>
   	<dependency>
   		<groupId>rted</groupId>
@@ -33,4 +34,5 @@
   		<version>1.1</version>
   	</dependency>
   </dependencies>
+   -->
 </project>
