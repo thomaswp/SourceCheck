@@ -8,7 +8,6 @@ import java.util.GregorianCalendar;
 import java.util.Map;
 
 import edu.isnap.parser.SnapParser;
-import edu.isnap.parser.Store;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.Snapshot;
 

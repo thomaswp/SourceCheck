@@ -9,11 +9,18 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.esotericsoftware.kryo.Kryo;
+
+import edu.isnap.ctd.graph.Graph;
 import edu.isnap.ctd.graph.Node;
+import edu.isnap.ctd.graph.vector.IndexedVectorState;
+import edu.isnap.ctd.graph.vector.VectorGraph;
+import edu.isnap.ctd.graph.vector.VectorState;
 import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.HintFactoryMap;
 import edu.isnap.ctd.hint.HintGenerator;
 import edu.isnap.ctd.hint.HintMap;
+import edu.isnap.ctd.util.StringHashable;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
@@ -103,7 +110,7 @@ public class SnapHintBuilder {
 	public HintGenerator buildGenerator(Mode storeMode, final double minGrade) {
 		String storePath = new File(assignment.dataDir, String.format("%s-g%03d.cached",
 				assignment.name, Math.round(minGrade * 100))).getAbsolutePath();
-		HintGenerator builder = Store.getCachedObject(HintGenerator.getKryo(),
+		HintGenerator builder = Store.getCachedObject(getKryo(),
 				storePath, HintGenerator.class, storeMode,
 				new Store.Loader<HintGenerator>() {
 			@Override
@@ -195,5 +202,20 @@ public class SnapHintBuilder {
 			nodeMapCache.put(attemptID, nodes);
 			gradeMapCache.put(attemptID, attempt.grade);
 		}
+	}
+
+	public static Kryo getKryo() {
+		Kryo kryo = new Kryo();
+		kryo.register(HintGenerator.class);
+		kryo.register(StringHashable.class);
+		kryo.register(Node.class);
+		kryo.register(HintMap.class);
+		kryo.register(HintFactoryMap.class);
+		kryo.register(VectorState.class);
+		kryo.register(IndexedVectorState.class);
+		kryo.register(VectorGraph.class);
+		kryo.register(Graph.Vertex.class);
+		kryo.register(Graph.Edge.class);
+		return kryo;
 	}
 }

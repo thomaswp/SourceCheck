@@ -1,0 +1,1 @@
+mvn install:install-file -Dfile=RTED_v1.1.jar -DgroupId=rted -DartifactId=rted -Dversion=1.1 -Dpackaging=jar

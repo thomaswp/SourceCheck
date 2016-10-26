@@ -12,15 +12,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import com.esotericsoftware.kryo.Kryo;
-
 import distance.RTED_InfoTree_Opt;
-import edu.isnap.ctd.graph.Graph;
 import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.graph.vector.IndexedVectorState;
 import edu.isnap.ctd.graph.vector.VectorGraph;
-import edu.isnap.ctd.graph.vector.VectorState;
-import edu.isnap.ctd.util.StringHashable;
 import edu.isnap.ctd.util.Tuple;
 import util.LblTree;
 
@@ -75,7 +69,7 @@ public class HintGenerator {
 	 * @return
 	 */
 	public synchronized Hint getFirstHint(Node node) {
-		LinkedList<Hint> hints = new LinkedList<Hint>();
+		LinkedList<Hint> hints = new LinkedList<>();
 		getHints(node, hints, 1, 1);
 		return hints.size() > 0 ? hints.getFirst() : null;
 	}
@@ -99,7 +93,7 @@ public class HintGenerator {
 	 * @return
 	 */
 	public synchronized List<Hint> getHints(Node parent, int chain) {
-		LinkedList<Hint> hints = new LinkedList<Hint>();
+		LinkedList<Hint> hints = new LinkedList<>();
 		getHints(parent, hints, chain, Integer.MAX_VALUE);
 		hintMap.postProcess(hints);
 		return hints;
@@ -158,7 +152,7 @@ public class HintGenerator {
 
 		if (useIDs) {
 			Map<String, Node> lastIDMap = null, cumulativeIDMap =
-					new HashMap<String, Node>();
+					new HashMap<>();
 			for (Node current : solutionPath) {
 				current.cache();
 
@@ -309,10 +303,10 @@ public class HintGenerator {
 				LinkedList<int[]> editMap = opt.computeEditMapping();
 
 
-				HashSet<LblTree> addedTrees = new HashSet<LblTree>();
-				HashSet<LblTree> removedTrees = new HashSet<LblTree>();
-				HashMap<LblTree, LblTree> sameTrees = new HashMap<LblTree, LblTree>();
-				HashMap<LblTree, LblTree> sameTreesRev = new HashMap<LblTree, LblTree>();
+				HashSet<LblTree> addedTrees = new HashSet<>();
+				HashSet<LblTree> removedTrees = new HashSet<>();
+				HashMap<LblTree, LblTree> sameTrees = new HashMap<>();
+				HashMap<LblTree, LblTree> sameTreesRev = new HashMap<>();
 				for (int[] a : editMap) {
 					LblTree c1 = a[0] == 0 ? null : lastList.get(a[0] - 1);
 					LblTree c2 = a[1] == 0 ? null : list.get(a[1] - 1);
@@ -326,7 +320,7 @@ public class HintGenerator {
 					}
 				}
 
-				HashMap<LblTree, LblTree> toAdd = new HashMap<LblTree, LblTree>();
+				HashMap<LblTree, LblTree> toAdd = new HashMap<>();
 				for (LblTree t : addedTrees) {
 					LblTree parentTree = (LblTree) t.getParent();
 					if (parentTree == null) continue;
@@ -373,7 +367,7 @@ public class HintGenerator {
 	}
 
 	public boolean hasHint(Node node) {
-		List<Node> toSearch = new LinkedList<Node>();
+		List<Node> toSearch = new LinkedList<>();
 		toSearch.add(node);
 
 		while (!toSearch.isEmpty()) {
@@ -385,20 +379,5 @@ public class HintGenerator {
 		}
 
 		return false;
-	}
-
-	public static Kryo getKryo() {
-		Kryo kryo = new Kryo();
-		kryo.register(HintGenerator.class);
-		kryo.register(StringHashable.class);
-		kryo.register(Node.class);
-		kryo.register(HintMap.class);
-		kryo.register(HintFactoryMap.class);
-		kryo.register(VectorState.class);
-		kryo.register(IndexedVectorState.class);
-		kryo.register(VectorGraph.class);
-		kryo.register(Graph.Vertex.class);
-		kryo.register(Graph.Edge.class);
-		return kryo;
 	}
 }

@@ -1,0 +1,3 @@
+call mvn install:install-file -Dfile=FITObjectGraphAPI-3.0.1.jar -DgroupId=de.cit-ec.fit -DartifactId=object-graph-api -Dversion=3.0.1 -Dpackaging=jar
+call mvn install:install-file -Dfile=FITObjectGraphs-3.0.1.jar -DgroupId=de.cit-ec.fit -DartifactId=object-graphs -Dversion=3.0.1 -Dpackaging=jar
+call mvn install:install-file -Dfile=FITValidators-2.0.0.jar -DgroupId=de.cit-ec.fit -DartifactId=validators -Dversion=2.0.0 -Dpackaging=jar

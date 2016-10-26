@@ -17,6 +17,7 @@ import com.esotericsoftware.kryo.io.Input;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.Hint;
 import edu.isnap.ctd.hint.HintGenerator;
+import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.elements.Snapshot;
 import edu.isnap.unittest.UnitTest;
@@ -30,7 +31,7 @@ public class HintServlet extends HttpServlet {
 	private final static int DEFAULT_MIN_GRADE = 100;
 
 	private static HashMap<String, HintGenerator> builders =
-			new HashMap<String, HintGenerator>();
+			new HashMap<>();
 
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -122,7 +123,7 @@ public class HintServlet extends HttpServlet {
 		}
 		HintGenerator builder = builders.get(assignment);
 		if (builder == null) {
-			Kryo kryo = HintGenerator.getKryo();
+			Kryo kryo = SnapHintBuilder.getKryo();
 			String path = String.format("/WEB-INF/data/%s-g%03d.cached", assignment, minGrade);
 			InputStream stream = getServletContext().getResourceAsStream(path);
 			if (stream == null) return null;

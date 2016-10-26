@@ -19,7 +19,6 @@ import edu.isnap.ctd.graph.vector.VectorState;
 import edu.isnap.ctd.hint.Canonicalization.InvertOp;
 import edu.isnap.ctd.hint.Canonicalization.SwapArgs;
 import edu.isnap.ctd.util.StringHashable;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * Class for handling the core logic of the CTD algorithm.
@@ -379,7 +378,7 @@ public class HintFactoryMap implements HintMap {
 
 		@Override
 		public Node outcome() {
-			throw new NotImplementedException();
+			throw new UnsupportedOperationException();
 		}
 	}
 
