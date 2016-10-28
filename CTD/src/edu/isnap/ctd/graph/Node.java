@@ -13,10 +13,10 @@ public class Node extends StringHashable {
 	private String type;
 	public final String id;
 	public final Node parent;
-	public final List<Node> children = new ArrayList<Node>();
+	public final List<Node> children = new ArrayList<>();
 
 	public transient Object tag;
-	public final transient List<Canonicalization> canonicalizations = new ArrayList<Canonicalization>();
+	public final transient List<Canonicalization> canonicalizations = new ArrayList<>();
 	public String type() {
 		return type;
 	}
@@ -141,7 +141,7 @@ public class Node extends StringHashable {
 		return search(new Predicate() {
 			@Override
 			public boolean eval(Node node) {
-				return node.id == id;
+				return id.equals(node.id);
 			}
 		});
 	}

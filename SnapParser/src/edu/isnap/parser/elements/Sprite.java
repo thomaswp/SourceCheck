@@ -12,8 +12,8 @@ public class Sprite extends Code implements IHasID {
 	private static final long serialVersionUID = 1L;
 
 	public final String name;
-	public final List<String> variables = new ArrayList<String>();
-	public final List<Script> scripts = new ArrayList<Script>();
+	public final List<String> variables = new ArrayList<>();
+	public final List<Script> scripts = new ArrayList<>();
 	public final BlockDefinitionGroup blocks;
 
 	@Override

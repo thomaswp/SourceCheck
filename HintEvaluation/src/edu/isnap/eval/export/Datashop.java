@@ -19,19 +19,19 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
-import edu.isnap.datasets.Fall2016;
+import edu.isnap.datasets.Spring2016;
 import edu.isnap.eval.user.CheckHintUsage;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.BlockDefinition;
 import edu.isnap.parser.elements.CallBlock;
 import edu.isnap.parser.elements.Code;
+import edu.isnap.parser.elements.Code.Accumulator;
 import edu.isnap.parser.elements.LiteralBlock;
+import edu.isnap.parser.elements.LiteralBlock.Type;
 import edu.isnap.parser.elements.Script;
 import edu.isnap.parser.elements.Snapshot;
 import edu.isnap.parser.elements.VarBlock;
-import edu.isnap.parser.elements.Code.Accumulator;
-import edu.isnap.parser.elements.LiteralBlock.Type;
 import edu.isnap.parser.elements.util.Canonicalization;
 import edu.isnap.parser.elements.util.IHasID;
 
@@ -47,13 +47,14 @@ public class Datashop {
 			"Step Name",
 			"Selection",
 			"Action",
+			"Input",
 			"Feedback Text",
 			"Feedback Classification",
 			"CF (AST)"
 	};
 
 	public static void main(String[] args) throws IOException {
-		export(Fall2016.instance);
+		export(Spring2016.instance);
 	}
 
 	public static void export(Dataset dataset) {
@@ -88,6 +89,8 @@ public class Datashop {
 	}
 
 	private static void export(Assignment assignment, CSVPrinter printer) throws IOException {
+		System.out.println("---- Exporting: " + assignment + " ----");
+
 		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, false);
 		for (AssignmentAttempt attempt : attempts.values()) {
 			if (attempt.submittedActionID == AssignmentAttempt.NOT_SUBMITTED) continue;
@@ -212,12 +215,13 @@ public class Datashop {
 			printer.printRecord(new Object[] {
 					attemptID,
 					action.sessionID,
-					action.timestamp.getTime() / 1000,
+					action.timestamp.getTime(),
 					studentResponse,
 					levelType,
 					problemName,
 					stepName,
 					selection,
+					message,
 					message,
 					feedbackText,
 					feedbackClassification,
