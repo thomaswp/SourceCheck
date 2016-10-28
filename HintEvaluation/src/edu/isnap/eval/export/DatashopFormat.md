@@ -10,86 +10,86 @@ Datasets contain data from the following assignments:
 
 ID: lightsCameraActionHW
 
-> In this activity you will create a short story using SNAP!
-> Your short story should have, at least:
-> * A beginning, a middle, and an end
-> * One block that we did not use during lab (Explore your blocks)
-> * Two unique and different sprites that interact with each other.
->   * Neither sprite may be the default turtle
-> * Ten total broadcasts of messages between the sprites
->   * Must be at least 10 "broadcast" blocks
->
-> The activity is open to your creativity - tell a story, create characters, and experiment with moving sprites around stage.
+In this activity you will create a short story using SNAP!
+Your short story should have, at least:
+* A beginning, a middle, and an end
+* One block that we did not use during lab (Explore your blocks)
+* Two unique and different sprites that interact with each other.
+  * Neither sprite may be the default turtle
+* Ten total broadcasts of messages between the sprites
+  * Must be at least 10 "broadcast" blocks
+
+The activity is open to your creativity - tell a story, create characters, and experiment with moving sprites around stage.
 
 ### Polygon Maker (In-Lab)
 
 ID: polygonmakerLab
 
-> Step 1:
-> 
-> Create a new block that can draw any polygon.  
-> It should have a total of 3 input areas for:
-> * the size of each side
-> * the number of sides
-> * how thick the pen is
-> 
-> Step 2:
-> 
-> Perform these tests:
-> 
-> 1. # of sides = 4, size = length of 100, thickness = 5
->   * This should draw a square
-> 2. # of sides = 10, size = length of 50, thickness = 6
->   * This should draw a decagon
-> 3. # of sides = 50, size = length of 7, thickness = 2
->   * What do you think this will draw?
+Step 1:
+
+Create a new block that can draw any polygon.  
+It should have a total of 3 input areas for:
+* the size of each side
+* the number of sides
+* how thick the pen is
+
+Step 2:
+
+Perform these tests:
+
+1. # of sides = 4, size = length of 100, thickness = 5
+  * This should draw a square
+2. # of sides = 10, size = length of 50, thickness = 6
+  * This should draw a decagon
+3. # of sides = 50, size = length of 7, thickness = 2
+  * What do you think this will draw?
 
 ### Squiral (Homework)
 
 ID: squiralHW
 
-> In this activity you will build a block, in SNAP, that makes your sprite draw a squiral like [the one below](http://moodle.kkc.school.nz/file.php/203/Images/Lab01/Squiral.jpg).
+In this activity you will build a block, in SNAP, that makes your sprite draw a squiral like [the one below](http://moodle.kkc.school.nz/file.php/203/Images/Lab01/Squiral.jpg).
 
 ### Guessing Game Part 1 (In-Lab)
 
 ID: guess1Lab
 
-> For the next few weeks you will be designing a guessing game.  This activity will get you started. 
-> 
-> Item 1: The computer chooses a random number between 1 and 10 and continuously asks the user to guess the number until they guess correctly.
-> Item 2:
-> 
-> Make sure that your program contains the following:
-> * Welcome the user to the game
-> * Ask the user's name
-> * Welcome the user by name
-> * Tell the user if their guess was too high, too low, or correct
+For the next few weeks you will be designing a guessing game.  This activity will get you started. 
+
+Item 1: The computer chooses a random number between 1 and 10 and continuously asks the user to guess the number until they guess correctly.
+Item 2:
+
+Make sure that your program contains the following:
+* Welcome the user to the game
+* Ask the user's name
+* Welcome the user by name
+* Tell the user if their guess was too high, too low, or correct
 
 ### Guessing Game Part 2 (Homework)
 
 ID: guess2HW
 
-> In this activity you will expand upon the guessing game you made in class.
-> 
-> Please make sure that all items from Activity 3 are included in this assignment, as well as the following:
-> * Allow the user to choose minimum and maximum numbers that the random number will be between
-> * Keep track of how many guesses the user used
-> * Report the number of guesses when the user wins
+In this activity you will expand upon the guessing game you made in class.
+
+Please make sure that all items from Activity 3 are included in this assignment, as well as the following:
+* Allow the user to choose minimum and maximum numbers that the random number will be between
+* Keep track of how many guesses the user used
+* Report the number of guesses when the user wins
 
 ### Guessing Game Part 3 (In-Lab)
 
 ID: guess3Lab
 
-> This week you will be recreating your guessing game with a twist: The user will be choosing the secret number and the sprite will be guessing.
-> Your final version of the Guessing Game should include:
-> 1. The sprite asks the user for the minimum and maximum numbers for the range
-> 2. The user must pick a number for the sprite to guess in that range
->   * You are choosing this in your head, not creating script. You might want to write this down just in case you forget the number you choose. 
-> 3. Make the sprite guess numbers until it guesses correctly.
->   * This means the sprite is guessing until the user tells it that it is right
-> 4. Make a list that stores all of the guesses made by the sprite and use it to keep the sprite from repeating guesses.
->   * The sprite should never make the same guess twice
->   * The list should reset after every game
+This week you will be recreating your guessing game with a twist: The user will be choosing the secret number and the sprite will be guessing.
+Your final version of the Guessing Game should include:
+1. The sprite asks the user for the minimum and maximum numbers for the range
+2. The user must pick a number for the sprite to guess in that range
+  * You are choosing this in your head, not creating script. You might want to write this down just in case you forget the number you choose. 
+3. Make the sprite guess numbers until it guesses correctly.
+  * This means the sprite is guessing until the user tells it that it is right
+4. Make a list that stores all of the guesses made by the sprite and use it to keep the sprite from repeating guesses.
+  * The sprite should never make the same guess twice
+  * The list should reset after every game
 
 # Datashop Format
 
