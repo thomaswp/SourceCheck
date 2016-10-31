@@ -44,7 +44,6 @@
 			"doIf",
 			"doIf"
 		],
-		"caution": false,
-		"expectedFailure": true
+		"caution": false
 	}
 }

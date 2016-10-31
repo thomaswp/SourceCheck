@@ -11,19 +11,14 @@ import java.util.List;
 import java.util.TreeMap;
 
 import edu.isnap.ctd.graph.InteractionGraph;
-import edu.isnap.ctd.hint.ScriptGoalValuator;
 import edu.isnap.ctd.util.Alignment;
-import edu.isnap.ctd.util.CountMap;
 
 public class VectorGraph extends InteractionGraph<VectorState> {
 
 	private final HashMap<VectorState, List<IndexedVectorState>> goalContextMap =
 			new HashMap<>();
 
-	private final HashMap<VectorState, Double> goalValues = new HashMap<>();
-
-	private final transient HashMap<VectorState, Double> tmpGoalValues =
-			new HashMap<>();
+	private final transient HashMap<VectorState, Double> tmpGoalValues = new HashMap<>();
 
 	private int clusters;
 
@@ -73,11 +68,7 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 	}
 
 	private double getUncontextualGoalValue(Vertex<VectorState> vertex) {
-		if (goalValues.containsKey(vertex.data)) {
-			return goalValues.get(vertex.data);
-		} else {
-			return super.getGoalValue(vertex);
-		}
+		return super.getGoalValue(vertex);
 	}
 
 	private double getUncontextualGoalValue(VectorState state) {
@@ -210,38 +201,20 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 
 		tmpGoalValues.clear();
 
-		int maxProgress = 0;
-		int orderReward = 2, unorderReward = 1;
+		HashMap<VectorState, Double> generatedGoalValues =
+				generateGoalValues(state, filterByProgress);
 
-		for (VectorState goal : goalContextMap.keySet()) {
-			List<IndexedVectorState> list = goalContextMap.get(goal);
-			if (list.size() < minGoal)
-				continue;
-			for (IndexedVectorState goalContext : list) {
-				goalContext.cache();
-				Double dis = cachedDistances.get(goalContext);
-				if (dis == null) {
-					dis = IndexedVectorState.distance(context, goalContext);
-					cachedDistances.put(goalContext, dis);
-				}
-			}
-
-			// Find the goal state(s) that the student has made the most progress towards
-			maxProgress = Alignment.getProgress(state.items, goal.items, orderReward,
-					unorderReward);
-		}
-
+		// Here we additionally weight the goals based on the similarity between their respective
+		// contexts and the student's current context
 		double nextBest = Double.MIN_VALUE;
 		double bestAvgDis = Double.MIN_VALUE;
 		for (VectorState goal : goalContextMap.keySet()) {
 			List<IndexedVectorState> list = goalContextMap.get(goal);
 
-			int progress = Alignment.getProgress(state.items, goal.items, orderReward,
-					unorderReward);
+			Double baseValue = generatedGoalValues.get(goal);
 
-			// If this goal has too low weight or the current state shows less towards it progress,
-			// don't use it
-			if (list.size() < minGoal || (filterByProgress &&  progress < maxProgress)) {
+			// If this goal has too low weight or no base value, don't use it
+			if (list.size() < minGoal || baseValue == null) {
 				tmpGoalValues.put(goal, 0.0);
 				continue;
 			}
@@ -258,7 +231,7 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 				weight += 0.25f / Math.pow(0.5f + dis, 2); // max 1
 			}
 			weight /= list.size();
-			tmpGoalValues.put(goal, weight * getUncontextualGoalValue(goal));
+			tmpGoalValues.put(goal, weight * baseValue);
 			if (weight > nextBest) {
 				nextBest = weight;
 			}
@@ -269,6 +242,42 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 		}
 
 		bellmanBackup(minGoal);
+	}
+
+	/** Get the base value for each goal state based on the student's current state. */
+	private HashMap<VectorState, Double> generateGoalValues(VectorState state,
+			boolean filterByProgress) {
+		HashMap<VectorState, Double> goalValues = new HashMap<>();
+
+		if (filterByProgress) {
+			// If we're filtering by progress (only for scripts), we only consider goal states that
+			// the student has made the most progress towards
+			HashMap<VectorState, Integer> progressMap = new HashMap<>();
+
+			int maxProgress = 0;
+			for (VectorState goal : goalContextMap.keySet()) {
+				// TODO: move the 2 and 1 to the config
+				int progress = Alignment.getProgress(state.items, goal.items, 2, 1);
+				progressMap.put(goal, progress);
+				// Find the goal state(s) that the student has made the most progress towards
+				maxProgress = Math.max(maxProgress, progress);
+			}
+
+			// Only include goals states that have at least that much progress (there may be
+			// a tie among multiple goal states for most progress)
+			for (VectorState goal : goalContextMap.keySet()) {
+				int progress = progressMap.get(goal);
+				if (progress < maxProgress) continue;
+				goalValues.put(goal, getUncontextualGoalValue(goal));
+			}
+		} else {
+			// Otherwise include all goal states
+			for (VectorState goal : goalContextMap.keySet()) {
+				goalValues.put(goal, getUncontextualGoalValue(goal));
+			}
+		}
+
+		return goalValues;
 	}
 
 	public void exportGoals(PrintStream out) throws FileNotFoundException {
@@ -364,17 +373,6 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 		if (vertex == null || vertex.weight() == 0) return 0;
 		return (vertex.weight() - outWeight(vertex.data, true, true)) /
 				(double)vertex.weight();
-	}
-
-	public void generateScriptGoalValues() {
-		CountMap<VectorState> goalCounts = new CountMap<>();
-		for (VectorState goal : goalContextMap.keySet()) {
-			goalCounts.put(goal, vertexMap.get(goal).goalCount());
-		}
-		ScriptGoalValuator goalValuator = new ScriptGoalValuator(goalCounts, clusters);
-		for (VectorState goal : goalContextMap.keySet()) {
-			goalValues.put(goal, goalValuator.getGoalValue(goal));
-		}
 	}
 
 	public int getMedianPositiveChildCountInGoals(String childType) {

@@ -40,6 +40,9 @@ public class HintConfig {
 				"doUntil",
 				// Sprites' children are unordered
 				"sprite",
+				// Custom block inputs aren't usually added up front, so they're more distracting
+				// than helpful, and block creation order has more bearing on target goal
+				"customBlock",
 		}) {
 			badContext.add(c);
 		}

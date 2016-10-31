@@ -46,7 +46,6 @@
 			"doIf"
 		],
 		"caution": false,
-		"badHint": true,
 		"expectedFailure": true
 	}
 }

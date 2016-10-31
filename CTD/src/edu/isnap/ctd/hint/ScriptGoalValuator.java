@@ -8,9 +8,13 @@ import java.util.List;
 import edu.isnap.ctd.graph.vector.VectorState;
 import edu.isnap.ctd.util.CountMap;
 import edu.isnap.ctd.util.KMedoids;
-import edu.isnap.ctd.util.ListMap;
 import edu.isnap.ctd.util.KMedoids.DistanceMeasure;
+import edu.isnap.ctd.util.ListMap;
 
+// Currently not using this since, while it adds some value, it also adds disproportionately more
+// complexity to the algorithm and it's just too much to maintain. Also, I think much of the
+// need for it has been diminished by the switch to progress-based goals.
+@Deprecated
 public class ScriptGoalValuator {
 
 	// The median count of each item across goals

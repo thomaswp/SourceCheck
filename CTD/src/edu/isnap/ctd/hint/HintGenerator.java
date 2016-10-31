@@ -358,7 +358,6 @@ public class HintGenerator {
 
 		for (Hint hint : edges) {
 			if (list.contains(hint)) continue;
-			if (hint.from().equals(hint.to())) continue;
 			list.add(hint);
 			if (list.size() >= limit) return;
 		}

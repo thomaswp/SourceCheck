@@ -121,7 +121,7 @@ public class HintFactoryMap implements HintMap {
 				if (item.children.size() == 0) return;
 				VectorGraph graph = getGraph(item);
 				VectorState children = getVectorState(item);
-				// TODO: find a more elegant solution
+				// TODO: find a more elegant solution that doesn't involve this awkward cast
 				if (!((Set<VectorState>) graph.vertices()).contains(children)) {
 					graph.addVertex(children);
 				}
@@ -202,13 +202,6 @@ public class HintFactoryMap implements HintMap {
 				parent = parent.children.get(0);
 			}
 
-			// TODO: This is my shorthand of saying we shouldn't do this for scripts with common
-			// siblings (as the children of doIfElse do), since the weighting isn't context
-			// sensitive right now. Ideally the weighting should be, or at the very least a more
-			// comprehensive solution is needed for identifying when this is inappropriate
-			boolean shouldGenerateScriptGoalValues = parent.hasType(config.script) &&
-					!parent.parentHasType("doIfElse");
-
 			// Record the type at the end of the root path
 			String type = parent.type();
 			parent = parent.parent;
@@ -223,11 +216,6 @@ public class HintFactoryMap implements HintMap {
 			VectorGraph parentGraph = map.get(parent.root());
 			int clusterCount = parentGraph.getMedianPositiveChildCountInGoals(type);
 			graph.setClusters(clusterCount);
-
-			// TODO: if using clustering, separate it out and use separate condition
-			if (shouldGenerateScriptGoalValues) {
-				graph.generateScriptGoalValues();
-			}
 		}
 
 		for (VectorGraph graph : map.values()) {
@@ -285,7 +273,7 @@ public class HintFactoryMap implements HintMap {
 			if (!(hint instanceof VectorHint)) return;
 			VectorHint vHint = (VectorHint) hint;
 
-			if (vHint.root.hasAncestor(new Predicate() {
+			if (vHint.from().equals(vHint.to) || vHint.root.hasAncestor(new Predicate() {
 				@Override
 				public boolean eval(Node node) {
 					return extraScripts.contains(node);

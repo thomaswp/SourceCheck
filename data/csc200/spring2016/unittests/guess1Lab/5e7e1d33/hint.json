@@ -8,7 +8,6 @@
 		],
 		"goal": [
 			"doAsk",
-			"doSetVar",
 			"doIf",
 			"doIf",
 			"doIf"
