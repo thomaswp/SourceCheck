@@ -16,7 +16,7 @@ public class FindTools {
 		System.out.println("};");
 		
 		for (BlockDefinition block : snapshot.blocks.blocks) {
-			if (!block.isToolsBlock) {
+			if (!block.isImported) {
 				System.out.println("Warning, tool block not ID'd: " + block.name);
 			}
 		}

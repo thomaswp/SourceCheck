@@ -61,6 +61,10 @@ public class Assignment {
 		return dataDir + "/" + folderName + "/" + name;
 	}
 
+	public void clean() {
+		SnapParser.clean(parsedDir());
+	}
+
 	public Snapshot loadSolution() throws FileNotFoundException {
 		return Snapshot.parse(new File(dataDir + "/solutions/", name + ".xml"));
 	}

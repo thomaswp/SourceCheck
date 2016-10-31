@@ -24,13 +24,13 @@ import com.esotericsoftware.kryo.Kryo;
 
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
+import edu.isnap.dataset.AssignmentAttempt.ActionRows;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Grade;
-import edu.isnap.dataset.AssignmentAttempt.ActionRows;
 import edu.isnap.parser.ParseSubmitted.Submission;
 import edu.isnap.parser.Store.Mode;
-import edu.isnap.parser.elements.Snapshot;
 import edu.isnap.parser.elements.BlockDefinitionGroup.BlockIndex;
+import edu.isnap.parser.elements.Snapshot;
 
 /**
  * Parser for iSnap logs.
@@ -372,8 +372,7 @@ public class SnapParser {
 				}
 				threads.decrementAndGet();
 			}
-		}).run(); // TODO: Figure out why parallel doesn't work
-		// Hint - it's probably because Kryo isn't thread-safe and you use one static instance
+		}).start();
 	}
 
 

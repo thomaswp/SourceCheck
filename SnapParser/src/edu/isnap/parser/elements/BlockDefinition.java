@@ -44,7 +44,7 @@ public class BlockDefinition extends Code implements IHasID {
 			new HashSet<>(Arrays.asList(TOOLS_BLOCKS));
 
 	public final String name, type, category, guid;
-	public final boolean isToolsBlock;
+	public final boolean isImported;
 	public final Script script;
 	public final List<String> inputs = new ArrayList<>();
 	public final List<Script> scripts = new ArrayList<>();
@@ -62,7 +62,7 @@ public class BlockDefinition extends Code implements IHasID {
 
 	@SuppressWarnings("unused")
 	private BlockDefinition() {
-		this(null, null, null, null, null);
+		this(null, null, null, null, false, null);
 	}
 
 	private final static Pattern ARG_PATTERN = Pattern.compile("%'([^']*)'");
@@ -78,13 +78,13 @@ public class BlockDefinition extends Code implements IHasID {
 		return matcher.replaceAll("%s");
 	}
 
-	public BlockDefinition(String name, String type, String category, String guid, Script script) {
+	public BlockDefinition(String name, String type, String category, String guid,
+			boolean isImported, Script script) {
 		this.name = extractInputs(name, inputs);
 		this.type = type;
 		this.category = category;
 		this.guid = guid;
-		// TODO: Should also include blocks marked as imported
-		this.isToolsBlock = TOOLS_BLOCKS_SET.contains(this.name);
+		this.isImported = isImported;
 		this.script = script;
 	}
 
@@ -95,7 +95,9 @@ public class BlockDefinition extends Code implements IHasID {
 		String guid = element.getAttribute("guid");
 		Element scriptElement = XML.getFirstChildByTagName(element, "script");
 		Script script = scriptElement == null ? new Script() : Script.parse(scriptElement);
-		BlockDefinition def = new BlockDefinition(name, type, category, guid, script);
+		boolean isImported = TOOLS_BLOCKS_SET.contains(name) ||
+				"true".equals(element.getAttribute("isImported"));
+		BlockDefinition def = new BlockDefinition(name, type, category, guid, isImported, script);
 		for (Element e : XML.getGrandchildrenByTagName(element, "scripts", "script")) {
 			def.scripts.add(Script.parse(e));
 		}
@@ -127,7 +129,8 @@ public class BlockDefinition extends Code implements IHasID {
 			script.blocks.add((Block) XML.getCodeElement(blocks.get(i)));
 		}
 
-		BlockDefinition def = new BlockDefinition(name, null, null, guid, script);
+		boolean isImported = TOOLS_BLOCKS_SET.contains(name);
+		BlockDefinition def = new BlockDefinition(name, null, null, guid, isImported, script);
 
 		for (int i = 1; i < scripts.size(); i++) {
 			def.scripts.add(Script.parse(scripts.get(i)));

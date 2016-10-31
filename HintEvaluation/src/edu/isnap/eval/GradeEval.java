@@ -31,20 +31,20 @@ import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.elements.Snapshot;
 
 public class GradeEval {
-	
+
 	private final static int MAX = 1000;
 	private final static boolean PRUNE = true;
-	
+
 	public static void main(String[] args) throws IOException {
 		Assignment assignment = Fall2015.GuessingGame1;
-		
+
 		policyGradeEval(assignment);
 //		hintChainEval(assignment);
 //		pruneTest(assignment);
 	}
 
 	public static void hintChainEval(Assignment assignment) throws FileNotFoundException, IOException {
-			
+
 		eval(assignment, "chain", new ScoreConstructor() {
 			@Override
 			public Score[] construct(String student, List<Node> nodes, SnapHintBuilder subtree) {
@@ -61,12 +61,12 @@ public class GradeEval {
 			}
 		});
 	}
-	
+
 	public static void policyGradeEval(Assignment assignment) throws FileNotFoundException, IOException {
 		Snapshot solution = assignment.loadSolution();
 		Node solutionNode = SimpleNodeBuilder.toTree(solution, true);
 		DirectEditPolicy solutionPolicy = new DirectEditPolicy(solutionNode);
-				
+
 		eval(assignment, "grade", new ScoreConstructor() {
 			@Override
 			public Score[] construct(String student, List<Node> nodes, SnapHintBuilder subtree) {
@@ -83,39 +83,39 @@ public class GradeEval {
 			}
 		});
 	}
-	
+
 	@SuppressWarnings("unused")
 	private static void pruneTest(Assignment assignment) throws IOException {
-		
+
 		SnapHintBuilder subtree = new SnapHintBuilder(assignment);
-		
+
 		int max = 1;
-		
+
 		Map<String,List<Node>> nodeMap = subtree.nodeMap();
 		for (String student : nodeMap.keySet()) {
 			if (assignment.ignore(student)) continue;
-			
+
 			if (--max < 0) break;
-			
+
 			System.out.println(student);
-			
+
 			List<Node> nodes = nodeMap.get(student);
 			List<Node> nodesPruned = Prune.removeSmallerScripts(nodes);
-			
+
 			DirectEditPolicy policy = new DirectEditPolicy(nodes.get(nodes.size() - 1));
 			DirectEditPolicy policyPruned = new DirectEditPolicy(nodesPruned.get(nodesPruned.size() - 1));
-			
+
 			for (int i = 0; i < nodes.size(); i++) {
 				Node node = nodes.get(i);
 				Node nodePruned = nodesPruned.get(i);
-				
+
 				Grader grader = AutoGrader.graders[3];
 				boolean grade = grader.pass(node);
 				boolean gradePruned = grader.pass(nodePruned);
-				
-				if (grade && gradePruned) {					
+
+				if (grade && gradePruned) {
 					Set<Node> nextStepsPruned = policyPruned.nextSteps(nodePruned);
-					
+
 					boolean failed = false;
 					for (Node n : nextStepsPruned) {
 						if (!grader.pass(n)) {
@@ -124,7 +124,7 @@ public class GradeEval {
 						}
 					}
 					if (failed) continue;
-					
+
 					Set<Node> nextSteps = policy.nextSteps(node);
 					for (Node n : nextSteps) {
 						if (!grader.pass(n)) {
@@ -137,45 +137,45 @@ public class GradeEval {
 							System.out.println("-----------------------");
 							break;
 						}
-					}					
+					}
 				}
 			}
 		}
 	}
-	
+
 	private static void eval(Assignment assignment, String test, ScoreConstructor constructor) throws IOException {
-		
+
 		SnapHintBuilder subtree = new SnapHintBuilder(assignment);
-		
+
 		File outFile = new File(assignment.analysisDir() + "/" + test + (PRUNE ? "-p" : "") + ".csv");
 		outFile.getParentFile().mkdirs();
 		List<String> headers = new LinkedList<>();
 		headers.add("policy"); headers.add("student"); headers.add("action"); headers.add("total");
 		for (int i = 0; i < AutoGrader.graders.length; i++) headers.add("test" + i);
 		CSVPrinter printer = new CSVPrinter(new PrintStream(outFile), CSVFormat.DEFAULT.withHeader(headers.toArray(new String[headers.size()])));
-		
+
 		int max = MAX;
-		
+
 		Map<String,List<Node>> nodeMap = subtree.nodeMap();
 		for (String student : nodeMap.keySet()) {
 			if (assignment.ignore(student)) continue;
-			
+
 			if (--max < 0) break;
-			
+
 			System.out.println(student);
-			
+
 			List<Node> nodes = nodeMap.get(student);
 			if (PRUNE) nodes = Prune.removeSmallerScripts(nodes);
-			
+
 			Score[] scores = constructor.construct(student, nodes, subtree);
-			
+
 			AtomicInteger count = new AtomicInteger(0);
 			int total = 0;
-			
+
 			for (int i = 0; i < nodes.size(); i++) {
 				Node node = nodes.get(i);
 				HashMap<String,Boolean> grade = AutoGrader.grade(node);
-				
+
 				for (Score score : scores) {
 //					System.out.println(score.name);
 //					score.update(node, grade);
@@ -183,7 +183,7 @@ public class GradeEval {
 					total++;
 				}
 			}
-			
+
 			PrintUpdater updater = new PrintUpdater(40);
 			while (count.get() > 0) {
 				try {
@@ -201,25 +201,25 @@ public class GradeEval {
 //				score.print();
 			}
 		}
-		
+
 		printer.close();
 	}
-	
+
 	public interface ScoreConstructor {
 		Score[] construct(String student, List<Node> nodes, SnapHintBuilder subtree);
 	}
-	
+
 	protected static class Score {
-		public final HashMap<String, Tuple<Integer, Integer>> outcomes = 
+		public final HashMap<String, Tuple<Integer, Integer>> outcomes =
 				new HashMap<String, Tuple<Integer, Integer>>();
 		public int totalSteps;
-		
+
 		public final HintPolicy policy;
 		public final String name;
-		
-		// TODO: Remove duplicates?
+
+		// Remove duplicates?
 //		private Set<Tuple<VectorHint, Boolean>> seen = new HashSet<Tuple<VectorHint, Boolean>>();
-		
+
 		public Score(String name, HintPolicy policy) {
 			this.name = name;
 			this.policy = policy;
@@ -227,7 +227,7 @@ public class GradeEval {
 				outcomes.put(grader.name(), new Tuple<Integer, Integer>(0, 0));
 			}
 		}
-		
+
 		public void writeRow(CSVPrinter printer, String student) throws IOException {
 			int extraCols = 4;
 			for (int i = 0; i < 2; i++) {
@@ -262,7 +262,7 @@ public class GradeEval {
 			}
 			totalSteps += score.totalSteps;
 		}
-		
+
 		public void updateAsync(final Node node, final HashMap<String,Boolean> grade, AtomicInteger count) {
 			count.incrementAndGet();
 			new Thread(new Runnable() {
@@ -273,17 +273,17 @@ public class GradeEval {
 				}
 			}).start();
 		}
-		
+
 		public void update(Node node, HashMap<String,Boolean> grade) {
 			Set<Node> steps = policy.nextSteps(node);
-			
+
 			for (Node next : steps) {
 //				System.out.println(next);
 				HashMap<String,Boolean> nextGrade = AutoGrader.grade(next);
 				for (String obj : nextGrade.keySet()) {
 					boolean a = grade.get(obj);
 					boolean b = nextGrade.get(obj);
-					
+
 					Tuple<Integer, Integer> outcome = outcomes.get(obj);
 					if (a == true && b == false) {
 //						Tuple<VectorHint, Boolean> record = new Tuple<VectorHint, Boolean>(vHint, false);

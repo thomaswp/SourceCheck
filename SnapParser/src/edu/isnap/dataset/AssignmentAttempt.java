@@ -10,8 +10,6 @@ public class AssignmentAttempt implements Iterable<AttemptAction> {
 	public final static int UNKNOWN = -1;
 	public final static int NOT_SUBMITTED = -2;
 
-	// TODO: add attemptID
-
 	public final String id;
 	public final ActionRows rows = new ActionRows();
 	public final Grade grade;

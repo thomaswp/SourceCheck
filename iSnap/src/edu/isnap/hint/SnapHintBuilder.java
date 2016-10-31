@@ -29,9 +29,6 @@ import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.Store;
 import edu.isnap.parser.Store.Mode;
 
-// TODO: This class, and all Snap-specific files should be moved into a separate project (or just
-// the Parser project) and this Project should be saved for generic Hint Generation code, which can
-// be used by the Snap-specific code here as a library.
 
 /**
  * Class for constructing HintGenerators from Snap data and caching them for later use.

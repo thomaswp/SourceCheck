@@ -58,7 +58,7 @@ public class BlockDefinitionGroup {
 
 		List<BlockDefinition> editBlocks = new ArrayList<BlockDefinition>();
 		for (int i = 0; i < blocks.size(); i++) {
-			if (blocks.get(i).isToolsBlock) continue;
+			if (blocks.get(i).isImported) continue;
 			if (editing != null && i == editingIndex) {
 				editBlocks.add(editing);
 			} else {

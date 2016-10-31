@@ -7,8 +7,8 @@ import java.util.Set;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Predicate;
 import edu.isnap.ctd.hint.Hint;
-import edu.isnap.ctd.hint.HintGenerator;
 import edu.isnap.ctd.hint.HintFactoryMap.VectorHint;
+import edu.isnap.ctd.hint.HintGenerator;
 import edu.isnap.ctd.util.Tuple;
 
 public class HintFactoryPolicy implements HintPolicy {
@@ -16,7 +16,7 @@ public class HintFactoryPolicy implements HintPolicy {
 	public final HintGenerator builder;
 	public final int chain;
 
-	// TODO: Don't forget you're not evaluating these hints
+	// Don't forget you're not evaluating these hints
 	private final static Predicate ignoreHints = new Node.TypePredicate("stage", "sprite", "customBlock");
 
 	public HintFactoryPolicy(HintGenerator builder) {

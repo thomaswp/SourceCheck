@@ -25,11 +25,11 @@ public class Store {
 		Overwrite
 	}
 
-	private final static Kryo kryo = new Kryo();
+	private final static ThreadLocal<Kryo> kryo = new ThreadLocal<>();
 
 	public static <T> T getCachedObject(String path, Class<T> clazz, Mode cacheUse,
 			Loader<T> loader) {
-		return getCachedObject(kryo, path, clazz, cacheUse, loader);
+		return getCachedObject(kryo.get(), path, clazz, cacheUse, loader);
 	}
 
 	public static <T> T getCachedObject(Kryo kryo, String path, Class<T> clazz, Mode cacheUse,
