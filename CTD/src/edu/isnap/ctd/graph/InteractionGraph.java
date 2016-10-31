@@ -15,6 +15,8 @@ public class InteractionGraph<T> extends Graph<T, Void> {
 	}
 
 	protected double getGoalValue(Vertex<T> vertex) {
+		// The scale is arbitrary, but we start with a larger number because other things will
+		// may scale it down, and it's nice not to go < 1
 		return vertex.goalCount() * 100;
 	}
 

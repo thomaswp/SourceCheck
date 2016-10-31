@@ -41,27 +41,13 @@ public class HintFactoryMap implements HintMap {
 
 	/**
 	 * Gets the root path for the given Node, which contains only the nodes in the root path from
-	 * this given node to its root.
+	 * this given node to its root. The Node returned is the end of the path, not the root.
 	 */
 	public static Node toRootPath(Node node) {
-		return toRootPath(node, false);
-	}
-
-	public static Node toRootPath(Node node, boolean indices) {
 		if (node == null) return null;
 
-		Node parent = toRootPath(node.parent, indices);
+		Node parent = toRootPath(node.parent);
 		String type = node.type();
-		if (indices && node.parent != null) {
-			int index = 0;
-			List<Node> siblings = node.parent.children;
-			for (int i = 0; i < siblings.size(); i++) {
-				Node sibling = siblings.get(i);
-				if (sibling == node) break;
-				if (sibling.type().equals(type)) index++;
-			}
-			type += index;
-		}
 		Node child = new Node(parent, type);
 		if (parent != null) parent.children.add(child);
 
@@ -85,10 +71,11 @@ public class HintFactoryMap implements HintMap {
 	}
 
 	private VectorGraph getGraph(Node node) {
-		Node rootPath = toRootPath(node).root();
+		Node rootPathChild = toRootPath(node);
+		Node rootPath = rootPathChild.root();
 		VectorGraph graph = map.get(rootPath);
 		if (graph == null) {
-			graph = new VectorGraph();
+			graph = new VectorGraph(rootPathChild);
 			map.put(rootPath, graph);
 		}
 		return graph;
@@ -152,22 +139,18 @@ public class HintFactoryMap implements HintMap {
 		VectorGraph graph = map.get(rootPath);
 		if (graph == null) return hints;
 
-		boolean useGraph = !node.hasType(config.script);
-
 		VectorState children = getVectorState(node);
 		IndexedVectorState context = getContext(node);
 		VectorState next = children;
 
-		VectorState goal = graph.getGoalState(next, context, config.maxNN, config.pruneGoals,
-				!useGraph);
+		VectorState goal = graph.getGoalState(next, context, config);
 
 		if (goal != null && config.straightToGoal.contains(node.type())) {
 			next = goal;
 		} else {
 			for (int j = 0; j < chain; j++) {
 				// Get the best successor state from our current state
-				VectorState hint = graph.getHint(next, context, config.maxNN, config.pruneGoals,
-						useGraph);
+				VectorState hint = graph.getHint(next, context, config);
 				// If there is none, we stop where we are
 				if (hint == null || hint.equals(next)) break;
 				// Otherwise, chain to the next hint
@@ -231,7 +214,7 @@ public class HintFactoryMap implements HintMap {
 			VectorGraph graph = addMap.get(rootpath);
 			VectorGraph myGraph = map.get(rootpath);
 			if (myGraph == null) {
-				myGraph = new VectorGraph();
+				myGraph = new VectorGraph(graph.rootPathEnd);
 				map.put(rootpath, myGraph);
 			}
 			myGraph.addGraph(graph, true);

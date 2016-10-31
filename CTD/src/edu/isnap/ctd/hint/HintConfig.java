@@ -27,6 +27,11 @@ public class HintConfig {
 	public int linkUsefulRatio = 2;
 	/** Type of script nodes, which should use code hinting */
 	public String script = "script";
+	/**
+	 * When measuring progress towards a goal, nodes in order are given weight multiplied by
+	 * this factor compared to nodes that are out of order
+	 */
+	public int progressOrderFactor = 2;
 
 	/**
 	 * Code elements that have exactly one script child or unordered children and therefore should
@@ -63,5 +68,22 @@ public class HintConfig {
 		}) {
 			straightToGoal.add(c);
 		}
+	}
+
+	/**
+	 * Power used in the distance weight formula. Higher values penalize higher distances faster.
+	 * Must be >= 1.
+	 */
+	public int distanceWeightPower = 2;
+	/**
+	 * Base used in the distance weight formula. Higher values penalize higher distances slower.
+	 * Must be > 0.
+	 */
+	public double distanceWeightBase = 0.5;
+
+	public double getDistanceWeight(double distance) {
+		// TODO: See if you can find a way to may this discrete instead
+		return Math.pow(distanceWeightBase, distanceWeightPower) /
+				Math.pow(distanceWeightBase + distance, distanceWeightPower); // max 1
 	}
 }

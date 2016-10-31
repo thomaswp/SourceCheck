@@ -11,9 +11,13 @@ import java.util.List;
 import java.util.TreeMap;
 
 import edu.isnap.ctd.graph.InteractionGraph;
+import edu.isnap.ctd.graph.Node;
+import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.util.Alignment;
 
 public class VectorGraph extends InteractionGraph<VectorState> {
+
+	public final Node rootPathEnd;
 
 	private final HashMap<VectorState, List<IndexedVectorState>> goalContextMap =
 			new HashMap<>();
@@ -30,17 +34,24 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 		return clusters;
 	}
 
+	public boolean isScriptGraph(HintConfig config) {
+		return rootPathEnd.hasType(config.script);
+	}
+
+	@SuppressWarnings("unused")
+	private VectorGraph() {
+		this(null);
+	}
+
+	public VectorGraph(Node rootPathEnd) {
+		this.rootPathEnd = rootPathEnd;
+	}
+
 	public boolean setGoal(VectorState goal, IndexedVectorState context) {
 		List<IndexedVectorState> list = getContext(goal);
 		list.add(context);
 
 		return super.setGoal(goal, true);
-	}
-
-	@Override
-	public boolean addVertex(VectorState v) {
-		if (v == null) throw new RuntimeException("Vertex cannot be null");
-		return super.addVertex(v);
 	}
 
 	private List<IndexedVectorState> getContext(VectorState goal) {
@@ -50,6 +61,12 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 			goalContextMap.put(goal, list);
 		}
 		return list;
+	}
+
+	@Override
+	public boolean addVertex(VectorState v) {
+		if (v == null) throw new RuntimeException("Vertex cannot be null");
+		return super.addVertex(v);
 	}
 
 	public void addGraph(VectorGraph graph, boolean atomicWeight) {
@@ -76,33 +93,30 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 	}
 
 	public VectorState getGoalState(VectorState state, IndexedVectorState context,
-			int maxNN, int minGoal, boolean filterByProgress) {
+			HintConfig config) {
 		if (state == null) return null;
-		contextualBellmanBackup(state, context, minGoal, filterByProgress);
+		contextualBellmanBackup(state, context, config);
 
 		if (!connectedToGoal(state)) {
-			return getGoalState(getNearestNeighbor(state, maxNN, true), context, maxNN,
-					minGoal, filterByProgress);
+			return getGoalState(getNearestNeighbor(state, config, true), context, config);
 		}
 		List<VectorState> goalPath = getMDPGoalPath(state);
 		if (goalPath == null) return null;
 		return goalPath.get(goalPath.size() - 1);
 	}
 
-	public VectorState getHint(VectorState state, IndexedVectorState context, int maxNN,
-			int minGoal, boolean naturalEdges) {
-		contextualBellmanBackup(state, context, minGoal, !naturalEdges);
+	public VectorState getHint(VectorState state, IndexedVectorState context, HintConfig config) {
+		contextualBellmanBackup(state, context, config);
 
 		boolean connectedToGoal = connectedToGoal(state);
 
-		if (naturalEdges) {
+		if (!isScriptGraph(config)) {
 			if (!connectedToGoal) {
 				// Look for a nearest neighbor in the graph
-				VectorState nearestNeighbor = getNearestNeighbor(state, maxNN, true);
+				VectorState nearestNeighbor = getNearestNeighbor(state, config, true);
 				if (nearestNeighbor == null) return null;
 				// If we find one, get the hint from there
-				VectorState hintState = getHint(nearestNeighbor, context, maxNN, minGoal,
-						naturalEdges);
+				VectorState hintState = getHint(nearestNeighbor, context, config);
 				if (hintState != null) {
 					// If it exists, and it's at least as close as the nearest neighbor...
 					int disNN = VectorState.distance(state, nearestNeighbor);
@@ -126,7 +140,7 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 		} else {
 			VectorState nearestNeighbor = state;
 			if (!connectedToGoal) {
-				nearestNeighbor = getNearestNeighbor(state, maxNN, true);
+				nearestNeighbor = getNearestNeighbor(state, config, true);
 			}
 			return getSmartHint(state, nearestNeighbor);
 		}
@@ -135,7 +149,6 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 
 	private boolean connectedToGoal(VectorState state) {
 		Vertex<VectorState> vertex = vertexMap.get(state);
-		// TODO: Technically it could just be /very/ far away... but maybe that's ok
 		boolean connectedToGoal = vertex != null && vertex.bValue > 0;
 		return connectedToGoal;
 	}
@@ -196,13 +209,12 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 	}
 
 	private void contextualBellmanBackup(VectorState state, IndexedVectorState context,
-			int minGoal, boolean filterByProgress) {
+			HintConfig config) {
 		HashMap<VectorState, Double> cachedDistances = new HashMap<>();
 
 		tmpGoalValues.clear();
 
-		HashMap<VectorState, Double> generatedGoalValues =
-				generateGoalValues(state, filterByProgress);
+		HashMap<VectorState, Double> generatedGoalValues = generateGoalValues(state, config);
 
 		// Here we additionally weight the goals based on the similarity between their respective
 		// contexts and the student's current context
@@ -214,7 +226,7 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 			Double baseValue = generatedGoalValues.get(goal);
 
 			// If this goal has too low weight or no base value, don't use it
-			if (list.size() < minGoal || baseValue == null) {
+			if (list.size() < config.pruneGoals || baseValue == null) {
 				tmpGoalValues.put(goal, 0.0);
 				continue;
 			}
@@ -227,8 +239,7 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 					dis = IndexedVectorState.distance(context, goalContext);
 					cachedDistances.put(goalContext, dis);
 				}
-				// TODO: Make these more justified/configurable
-				weight += 0.25f / Math.pow(0.5f + dis, 2); // max 1
+				weight += config.getDistanceWeight(dis);
 			}
 			weight /= list.size();
 			tmpGoalValues.put(goal, weight * baseValue);
@@ -241,23 +252,22 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 			}
 		}
 
-		bellmanBackup(minGoal);
+		bellmanBackup(config.pruneGoals);
 	}
 
 	/** Get the base value for each goal state based on the student's current state. */
-	private HashMap<VectorState, Double> generateGoalValues(VectorState state,
-			boolean filterByProgress) {
+	private HashMap<VectorState, Double> generateGoalValues(VectorState state, HintConfig config) {
 		HashMap<VectorState, Double> goalValues = new HashMap<>();
 
-		if (filterByProgress) {
+		if (isScriptGraph(config)) {
 			// If we're filtering by progress (only for scripts), we only consider goal states that
 			// the student has made the most progress towards
 			HashMap<VectorState, Integer> progressMap = new HashMap<>();
 
 			int maxProgress = 0;
 			for (VectorState goal : goalContextMap.keySet()) {
-				// TODO: move the 2 and 1 to the config
-				int progress = Alignment.getProgress(state.items, goal.items, 2, 1);
+				int progress = Alignment.getProgress(state.items, goal.items,
+						config.progressOrderFactor, 1);
 				progressMap.put(goal, progress);
 				// Find the goal state(s) that the student has made the most progress towards
 				maxProgress = Math.max(maxProgress, progress);
@@ -343,11 +353,13 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 		}
 	}
 
-	public VectorState getNearestNeighbor(VectorState state, int maxDis,
+	public VectorState getNearestNeighbor(VectorState state, HintConfig config,
 			boolean connectToGoalOnly) {
-		// TODO: must be goalConnected, must be not rep <--(what does this mean? repeat?)
-		// add = 1, del = 0.1, should have highest score
-		maxDis *= 10; // scale to be an integer
+		int scale = 100;
+		// We will calculate distances scaled by a large constant to allow for fractional distance
+		// weights. We want the distance comparison to first look at additions, then deletions
+		// but not allow substitutions.
+		int maxDis = config.maxNN * scale;
 		Vertex<VectorState> nearest = null;
 		int nearestDistance = maxDis;
 		for (Vertex<VectorState> vertex : vertexMap.values()) {
@@ -355,7 +367,7 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 			if (vertex.data == null || vertex.equals(state)) continue;
 			if (connectToGoalOnly && !connectedToGoal(vertex.data)) continue;
 			// Favor deletions over insertions, but forbid subs
-			int distance = VectorState.distance(state, vertex.data, 10, 1, 10000);
+			int distance = VectorState.distance(state, vertex.data, scale, 1, 10000);
 			if (distance > nearestDistance) continue;
 			if (distance == nearestDistance && nearest != null &&
 					vertex.bValue <= nearest.bValue) {
