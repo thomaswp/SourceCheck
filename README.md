@@ -13,7 +13,7 @@ This repository contains projects for parsing Snap logs, generating data-driven 
 
 The projects here are designed for use with [Eclipse](http://www.eclipse.org/). For the HintSerer to work properly, you may need to select the "EE" version of Eclipse, or install the [Web Tools Platform](http://www.eclipse.org/webtools/). If you don't already have it, make sure to install the [m2e plugin](http://www.eclipse.org/m2e/) as well.
 
-Once you have cloned this repo, open Eclipse and choose File->Import->Maven->Existing Maven Projects and select the root folder of this repository. Select all projects and import them. 
+Once you have cloned this repo, open Eclipse and choose File->Import->Existing Projects into workspace and select the root folder of this repository. Select all projects and import them.
 
 If the projects take a while to import the first time, it is because Eclipse is downloading dependencies. The projects in this repo use [maven](http://maven.apache.org/) to manage dependencies. It should integrate normally into your workflow, but it may cause you a bit of troubleshooting. If you prefer to use maven via command line, the projects will not compile due to 3rd party dependencies. The CTD and HintEvaluation projects contain .bat scripts to install these libraries locally, but currently their respective .pom files have the dependencies commented out to make configuration easier on Eclipse, without the need to install and configure maven.
 
