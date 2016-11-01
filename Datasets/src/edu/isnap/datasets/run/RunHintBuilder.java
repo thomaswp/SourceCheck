@@ -37,7 +37,7 @@ public class RunHintBuilder {
 	 * Builds and caches a {@link HintGenerator} for the given assignment, using only data with
 	 * the supplied minGrade.
 	 */
-	private static void buildHints(Assignment assignment, double minGrade)
+	public static void buildHints(Assignment assignment, double minGrade)
 			throws FileNotFoundException {
 		System.out.println("Loading: " + assignment.name);
 		SnapHintBuilder subtree = new SnapHintBuilder(assignment);
