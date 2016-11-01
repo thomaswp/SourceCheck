@@ -291,6 +291,7 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 	}
 
 	public void exportGoals(PrintStream out) throws FileNotFoundException {
+		out.println(this.rootPathEnd.root());
 		out.println("Clusters: " + clusters);
 		out.println();
 

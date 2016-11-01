@@ -1,9 +1,10 @@
 package edu.isnap.datasets.run;
 
-import edu.isnap.parser.SnapParser;
+import edu.isnap.datasets.HelpSeeking;
 
 public class RunCleanData {
 	public static void main(String[] args) {
-		SnapParser.clean("../data/csc200");
+//		SnapParser.clean("../data/csc200");
+		HelpSeeking.BrickWall.clean();
 	}
 }

@@ -273,8 +273,13 @@ public class SnapParser {
 		HashMap<String, Grade> grades = new HashMap<>();
 		Map<String, Submission> submissions = null;
 
+		File assignmentDir = new File(assignment.parsedDir());
+		if (!assignmentDir.exists()) {
+			throw new RuntimeException("Assignment has not been added and parsed: " + assignment);
+		}
+
 		Map<String, String> attemptFiles = new TreeMap<>();
-		for (File file : new File(assignment.parsedDir()).listFiles()) {
+		for (File file : assignmentDir.listFiles()) {
 			if (!file.getName().endsWith(".csv")) continue;
 			String attemptID = file.getName().replace(".csv", "");
 			String path = assignment.getLocationAssignment(attemptID).parsedDir() + "/" +

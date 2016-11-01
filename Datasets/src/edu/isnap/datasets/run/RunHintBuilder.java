@@ -6,7 +6,7 @@ import java.sql.SQLException;
 
 import edu.isnap.ctd.hint.HintGenerator;
 import edu.isnap.dataset.Assignment;
-import edu.isnap.datasets.Spring2016;
+import edu.isnap.datasets.HelpSeeking;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.parser.Store.Mode;
 
@@ -20,16 +20,16 @@ public class RunHintBuilder {
 		// Optionally, clean out all cached assignments first
 //		SnapParser.clean(Assignment.Spring2016.dataDir);
 
-		// Builds and caches a HintGenerator for each of these assignments
-		buildHints(Spring2016.PolygonMaker, 1);
-		buildHints(Spring2016.Squiral, 1);
-		buildHints(Spring2016.GuessingGame1, 1);
-		buildHints(Spring2016.GuessingGame2, 1);
-		// Then copies the cache to the HintServer
-		RunCopyData.copyGraphs(Spring2016.dataDir);
+//		// Builds and caches a HintGenerator for each of these assignments
+//		buildHints(Spring2016.PolygonMaker, 1);
+//		buildHints(Spring2016.Squiral, 1);
+//		buildHints(Spring2016.GuessingGame1, 1);
+//		buildHints(Spring2016.GuessingGame2, 1);
+//		// Then copies the cache to the HintServer
+//		RunCopyData.copyGraphs(Spring2016.dataDir);
 
-//		buildHints(Assignment.HelpSeeking.BrickWall, 1);
-//		CopyData.copyGraphs(Assignment.HelpSeeking.BrickWall.dataDir);
+		buildHints(HelpSeeking.BrickWall, 1);
+		RunCopyData.copyGraphs(HelpSeeking.BrickWall.dataDir);
 	}
 
 
@@ -41,6 +41,7 @@ public class RunHintBuilder {
 			throws FileNotFoundException {
 		System.out.println("Loading: " + assignment.name);
 		SnapHintBuilder subtree = new SnapHintBuilder(assignment);
+		// Load the nodeMap so as no to throw off timing
 		subtree.nodeMap();
 		System.out.print("Building subtree: ");
 		long ms = System.currentTimeMillis();

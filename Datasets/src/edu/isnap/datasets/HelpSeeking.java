@@ -5,7 +5,6 @@ import java.util.Date;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
 
-/** Demo dataset from http://go.ncsu.edu/isnap - publicly sharable data */
 	public class HelpSeeking extends Dataset {
 
 		public final static HelpSeeking instance = new HelpSeeking();

@@ -2,12 +2,19 @@ package edu.isnap.datasets.run;
 
 import java.io.IOException;
 
-import edu.isnap.datasets.Demo;
+import edu.isnap.dataset.Dataset;
+import edu.isnap.datasets.HelpSeeking;
 import edu.isnap.parser.LogSplitter;
+import edu.isnap.parser.SnapParser;
 
 public class RunLogSplitter {
 	public static void main(String[] args) throws IOException {
-		// Replace "Fall2015" with the dataset you want to load
-		LogSplitter.splitStudentRecords(Demo.dataFile);
+		// Replace with the dataset you want to load
+		Dataset dataset = HelpSeeking.instance;
+
+		// Note: Prior to running this you must *manually* delete the "parsed" directory of the
+		// dataset folder
+		SnapParser.clean(dataset.dataDir);
+		LogSplitter.splitStudentRecords(dataset.dataFile);
 	}
 }
