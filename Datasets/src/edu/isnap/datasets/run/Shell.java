@@ -103,6 +103,7 @@ public class Shell {
 				e.printStackTrace();
 			}
 		} while (!line.isEmpty());
+		sc.close();
 	}
 
 }
