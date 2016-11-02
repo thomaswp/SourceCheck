@@ -1,9 +1,6 @@
 package edu.isnap.eval.user;
 
-import static edu.isnap.dataset.AttemptAction.BLOCK_CLICK_RUN;
-import static edu.isnap.dataset.AttemptAction.HINT_DIALOG_DONE;
-import static edu.isnap.dataset.AttemptAction.IDE_GREEN_FLAG_RUN;
-import static edu.isnap.dataset.AttemptAction.SHOW_HINT_MESSAGES;
+import static edu.isnap.dataset.AttemptAction.*;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -35,7 +32,7 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Grade;
-import edu.isnap.datasets.Spring2016;
+import edu.isnap.datasets.Fall2016;
 import edu.isnap.eval.AutoGrader;
 import edu.isnap.eval.AutoGrader.Grader;
 import edu.isnap.eval.util.Prune;
@@ -49,7 +46,7 @@ public class CheckHintUsage {
 	private static final long MIN_DURATON = 5 * 60 * 1000;
 
 	private static boolean isValidSubmission(AssignmentAttempt path) {
-		if (!path.exported) return false;
+		if (!path.isLikelySubmitted()) return false;
 
 		// Also ignore any that are shorted than then minimum duration (5m)
 		long duration = path.rows.getLast().timestamp.getTime() -
@@ -61,7 +58,7 @@ public class CheckHintUsage {
 
 	public static void main(String[] args) throws IOException {
 
-		Assignment assignment = Spring2016.GuessingGame1;
+		Assignment assignment = Fall2016.PolygonMaker;
 
 		// Get the name-path pairs of all projects we logged
 		Map<String, AssignmentAttempt> guessingGame = assignment.load(Mode.Use, false);
@@ -77,7 +74,6 @@ public class CheckHintUsage {
 		// Iterate over all submissions
 		for (String submission : guessingGame.keySet()) {
 			AssignmentAttempt path = guessingGame.get(submission);
-
 			// Ignore any that weren't exported (and thus couldn't have been submitted)
 			if (!isValidSubmission(path)) continue;
 
@@ -87,7 +83,7 @@ public class CheckHintUsage {
 			int nTestScriptHints = 0, nTestScriptHintsFollowed = 0;
 			int nBlockRuns = 0, nFlagRuns = 0;
 
-			List<LblTree> studentTrees = new LinkedList<LblTree>();
+			List<LblTree> studentTrees = new LinkedList<>();
 
 			@SuppressWarnings("unused")
 			Tuple<Node,Node> lastHint = null;
@@ -226,7 +222,7 @@ public class CheckHintUsage {
 					// Calculate original distance between student's code with the hint
 					int originalHintDistance = Alignment.alignCost(parent.getChildArray(), to);
 
-					lastHint = new Tuple<Node, Node>(parent, hintOutcome);
+					lastHint = new Tuple<>(parent, hintOutcome);
 					// For debugging these hints
 //					System.out.println("  " + parent + "\n->" + hintOutcome + "\n");
 
@@ -302,7 +298,7 @@ public class CheckHintUsage {
 					for (int j = i + 1; j < path.size(); j++) {
 						AttemptAction r = path.rows.get(j);
 						if (r.message.equals("HintDialogBox.done")) done = true;
-						if (done || r.message.equals("HintDialogBox.otherHints")) {
+						if (r.message.equals(HINT_DIALOG_DESTROY)) {
 							dismissTime = r.timestamp.getTime();
 							break;
 						}
@@ -345,7 +341,7 @@ public class CheckHintUsage {
 
 
 				// Check if this action was dismissing a hint
-				if (HINT_DIALOG_DONE.equals(action)) {
+				if (HINT_DIALOG_LOG_FEEDBACK.equals(action)) {
 					// TODO: inspect good and bad hints
 					if (row.data.equals("[\"up\"]")) {
 						nThumbsUp++;
@@ -394,27 +390,9 @@ public class CheckHintUsage {
 			}
 		}
 
-		projects.write(assignment.dataDir + "/analysis/" + assignment.name + "/projs.csv");
-		hints.write(assignment.dataDir + "/analysis/" + assignment.name + "/hints.csv");
-		objectives.write(assignment.dataDir + "/analysis/" + assignment.name + "/objs.csv");
-
-		// Print our results
-//		System.out.println("Submissions: " + nStudents);
-//		System.out.println("Total Hints Selected: " + nHints);
-//		System.out.println("Repeat Hints: " + nRepeatHints + "/" + nHints);
-//		System.out.println("Duplicate Hints: " + nDuplicateHInts + "/" + nRepeatHints);
-//		System.out.println("Thumbs Up: " + nThumbsUp + "/" + nHints);
-//		System.out.println("Thumbs Down: " + nThumbsDown + "/" + nHints);
-//		System.out.println("Hints Partial: " + nHintsParial + "/" + nHints);
-//		System.out.println("Hints Closer: " + nHintsCloser + "/" + nHints);
-//		System.out.println("Objective Hints: " + nObjectiveHints + "/" + nHints);
-//		System.out.println("Objective Hints Taken: " + nObjectiveHintsTaken + "/" + nObjectiveHints);
-//		System.out.println("Students got at least 1 hint: " + nStudentHint1 + "/" + nStudents);
-//		System.out.println("Students got at least 3 hint: " + nStudentHint3 + "/" + nStudents);
-//		Collections.sort(studentHintCounts);
-//		Collections.reverse(studentHintCounts);
-//		System.out.println("Students Hint count: " + studentHintCounts);
-
+		projects.write(assignment.analysisDir() + "/projs.csv");
+		hints.write(assignment.analysisDir() + "/hints.csv");
+		objectives.write(assignment.analysisDir() + "/objs.csv");
 
 		// output distance between snapshots and final submission
 //		PrintStream psSnapshot = new PrintStream(Assignment.Spring2016.GuessingGame1.dataDir + "/snapshot.csv");
@@ -437,9 +415,9 @@ public class CheckHintUsage {
 	private static void outputDistance(PrintStream psSnapshot, PrintStream psHint, HashMap<String,
 			AssignmentAttempt> submissions) throws IOException{
 		// create column names
-		List<String> headerSnapshot = new LinkedList<String>();
+		List<String> headerSnapshot = new LinkedList<>();
 		headerSnapshot.addAll(Arrays.asList("id","time","distance"));
-		List<String> headerHint = new LinkedList<String>();
+		List<String> headerHint = new LinkedList<>();
 		headerHint.addAll(Arrays.asList("id","time","distance","isTaken"));
 
 		// create printer

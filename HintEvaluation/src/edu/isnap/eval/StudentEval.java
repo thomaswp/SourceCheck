@@ -16,45 +16,45 @@ import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.Store.Mode;
 
 public class StudentEval {
-	
+
 	public final static int MAX = 100;
-	
+
 	public static void main(String[] args) throws IOException {
 		eval(Spring2016.GuessingGame1);
 	}
-	
+
 	private static void eval(Assignment assignment) throws IOException {
 
 		Map<String, AssignmentAttempt> paths = assignment.load(Mode.Use, true);
-		
+
 		for (int i = 0; i < 2; i++) {
 			int max = MAX;
-				
+
 			HashSet<String> seen = new HashSet<>();
 			HashSet<String> solutions = new HashSet<>();
 			int totalNoDouble = 0;
 			int total = 0;
 			int students = 0;
-			
+
 			int pass0 = 0;
-			
+
 			double totalGrade = 0;
 			int perfectGrade = 0;
 			double minGrade = 1;
-			
+
 			for (String student : paths.keySet()) {
 				if (assignment.ignore(student)) continue;
 				if (--max < 0) break;
-				
+
 				AssignmentAttempt solutionPath = paths.get(student);
 				List<Node> nodes = new LinkedList<>();
 				for (AttemptAction r : solutionPath) nodes.add(SimpleNodeBuilder.toTree(r.snapshot, true));
-				
+
 				if (i == 1) nodes = Prune.removeSmallerScripts(nodes);
 				HashSet<String> studentSet = new HashSet<>();
-				
 
-				Node solution = nodes.get(nodes.size() - 1);				
+
+				Node solution = nodes.get(nodes.size() - 1);
 				double grade;
 				if (solutionPath.grade != null) {
 					grade = solutionPath.grade.average();
@@ -66,20 +66,20 @@ public class StudentEval {
 				totalGrade += grade;
 				minGrade = Math.min(grade, minGrade);
 				if (grade == 1) perfectGrade++;
-				
+
 				for (Node node : nodes) {
 					String ns = node.toCanonicalString();
 					seen.add(ns);
 					studentSet.add(ns);
 				}
-	
+
 				total += nodes.size();
 				totalNoDouble += studentSet.size();
 				solutions.add(nodes.get(nodes.size() - 1).toCanonicalString());
 				students++;
 
 			}
-			
+
 			System.out.println("Pass0: " + pass0 + "/" + students);
 			System.out.println("Unique: " + seen.size() + "/" + total);
 			System.out.println("Unique no double: " + seen.size()  + "/" +  totalNoDouble);

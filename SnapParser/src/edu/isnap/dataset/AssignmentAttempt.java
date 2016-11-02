@@ -20,6 +20,18 @@ public class AssignmentAttempt implements Iterable<AttemptAction> {
 	/** The ID of the logging row in which the submitted snapshot was exported. */
 	public int submittedActionID = UNKNOWN;
 
+	/** Returns true if this attempt is known not to have been submitted for grading. */
+	public boolean isUnsubmitted() {
+		return submittedActionID == NOT_SUBMITTED;
+	}
+
+	/**
+	 * Returns true if this attempt is know to have been submitted for grading or this is unknown, but it was exported.
+	 */
+	public boolean isLikelySubmitted() {
+		return submittedActionID >= 0 || (submittedActionID == UNKNOWN && exported);
+	}
+
 	@SuppressWarnings("unused")
 	private AssignmentAttempt() {
 		this(null, null);

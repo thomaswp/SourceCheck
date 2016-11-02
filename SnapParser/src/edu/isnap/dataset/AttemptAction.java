@@ -26,6 +26,7 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	public static final String IDE_SET_SPRITE_TAB = "IDE.setSpriteTab";
 	public static final String IDE_TOGGLE_APP_MODE = "IDE.toggleAppMode";
 	public final static String HELP_BUTTON_TOGGLED = "HelpButton.toggled";
+	public final static String HINT_DIALOG_DESTROY = "HintDialogBox.destroy";
 	public final static String HINT_DIALOG_DONE = "HintDialogBox.done";
 	public final static String HINT_DIALOG_LOG_FEEDBACK = "HintDialogBox.logFeedback";
 	public final static String HINT_PROCESS_HINTS = "HintProvider.processHints";
