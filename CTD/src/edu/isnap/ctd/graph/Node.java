@@ -333,4 +333,18 @@ public class Node extends StringHashable {
 		}
 		return out;
 	}
+
+	public String[] depthFirstIteration() {
+		String[] array = new String[size()];
+		depthFirstIteration(array, 0);
+		return array;
+	}
+
+	private int depthFirstIteration(String[] array, int offset) {
+		array[offset++] = type;
+		for (Node child : children) {
+			offset = child.depthFirstIteration(array, offset);
+		}
+		return offset;
+	}
 }

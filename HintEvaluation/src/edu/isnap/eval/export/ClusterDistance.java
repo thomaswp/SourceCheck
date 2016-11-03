@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +18,7 @@ import org.apache.commons.csv.CSVPrinter;
 
 import distance.RTED_InfoTree_Opt;
 import edu.isnap.ctd.graph.Node;
+import edu.isnap.ctd.util.Alignment;
 import edu.isnap.ctd.util.DoubleMap;
 import edu.isnap.ctd.util.KMedoids.DistanceMeasure;
 import edu.isnap.dataset.Assignment;
@@ -43,10 +45,17 @@ public class ClusterDistance {
 		}
 	};
 
+	public final static DistanceMeasure<Node> DFSAlignmentMeasure = new DistanceMeasure<Node>() {
+		@Override
+		public double measure(Node a, Node b) {
+			return Alignment.alignCost(a.depthFirstIteration(), b.depthFirstIteration());
+		}
+	};
+
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 		List<Assignment> assignments = new LinkedList<>();
 		assignments.add(Fall2016.GuessingGame1);
-		write(Fall2016.GuessingGame1.analysisDir(), assignments, RTEDDistanceMeasure, 5 * 60);
+		write(Fall2016.GuessingGame1.analysisDir(), assignments, DFSAlignmentMeasure, 5 * 60);
 	}
 
 	private static void write(String path, List<Assignment> assignments,
@@ -84,12 +93,13 @@ public class ClusterDistance {
 						throw new RuntimeException("Two snapshots with ID: " + id);
 					}
 
+					System.out.println(Arrays.toString(node.depthFirstIteration()));
 					printer.printRecord(id, datasetName, assignment.name, attempt.id, count++, i == 0, i == size - 1);
 				}
 			}
 		}
 		printer.close();
-//		if (1==1) return;
+		if (1==1) return;
 
 		int n = nodes.size();
 		System.out.println("n = " + n);
