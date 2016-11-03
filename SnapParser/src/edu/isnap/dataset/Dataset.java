@@ -14,4 +14,8 @@ public abstract class Dataset {
 		this.dataFile = dataDir + ".csv";
 	}
 
+	public String getName() {
+		return getClass().getSimpleName();
+	}
+
 }

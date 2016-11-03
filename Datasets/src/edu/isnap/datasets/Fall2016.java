@@ -65,7 +65,7 @@ public class Fall2016 extends Dataset {
 	};
 
 	public final static Assignment GuessingGame1 = new Assignment(instance,
-			"guess1Lab", Assignment.date(2016, 9, 16), true, true, null) {
+			"guess1Lab", Assignment.date(2016, 9, 16), true) {
 		@Override
 		public boolean ignore(String attemptID) {
 			// Somehow managed to do GG2 before GG1... I don't even...

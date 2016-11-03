@@ -20,8 +20,8 @@ public class Assignment {
 	public final Assignment prequel;
 	public final Assignment None;
 
-	public Assignment(Dataset dataset, String name, Date end, boolean hasIDs) {
-		this(dataset, name, end, hasIDs, false, null);
+	public Assignment(Dataset dataset, String name, Date end, boolean hasNodeIDs) {
+		this(dataset, name, end, hasNodeIDs, false, null);
 	}
 
 	public Assignment(Dataset dataset, String name, Date end, boolean hasIDs, boolean graded,
