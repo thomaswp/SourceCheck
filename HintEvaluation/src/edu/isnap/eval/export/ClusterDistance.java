@@ -52,14 +52,35 @@ public class ClusterDistance {
 		}
 	};
 
+	public final static DistanceMeasure<Node> DFSNormAlignmentMeasure =
+			new DistanceMeasure<Node>() {
+		@Override
+		public double measure(Node a, Node b) {
+			return Alignment.normAlignCost(a.depthFirstIteration(), b.depthFirstIteration(),
+					1, 1, 1);
+		}
+	};
+
+	public final static DistanceMeasure<Node> NodeCountMeasure = new DistanceMeasure<Node>() {
+		@Override
+		public double measure(Node a, Node b) {
+			String[] aDF = a.depthFirstIteration();
+			Arrays.sort(aDF);
+			String[] bDF = b.depthFirstIteration();
+			Arrays.sort(bDF);
+			return Alignment.alignCost(aDF, bDF, 1, 1, 100);
+		}
+	};
+
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 		List<Assignment> assignments = new LinkedList<>();
-		assignments.add(Fall2016.GuessingGame1);
-		write(Fall2016.GuessingGame1.analysisDir(), assignments, DFSAlignmentMeasure, 5 * 60);
+		assignments.add(Fall2016.GuessingGame2);
+		write(Fall2016.GuessingGame2.analysisDir(), assignments, DFSAlignmentMeasure, 120, 1);
 	}
 
 	private static void write(String path, List<Assignment> assignments,
-			DistanceMeasure<Node> dm, int snapshotIntervalSeconds) throws FileNotFoundException, IOException {
+			DistanceMeasure<Node> dm, int snapshotIntervalSeconds, int skipRatio)
+					throws FileNotFoundException, IOException {
 
 		Map<String, Node> nodes = new TreeMap<>();
 
@@ -68,38 +89,56 @@ public class ClusterDistance {
 		File file = new File(path, "snapshots-" + (fullPath ? "path" : "submitted") + ".csv");
 		file.getParentFile().mkdirs();
 		CSVPrinter printer = new CSVPrinter(new PrintStream(file), CSVFormat.DEFAULT.withHeader(
-				"id", "dataset", "assignment", "attempt", "i", "start", "submitted"));
+				"id", "dataset", "assignment", "attempt", "i", "start", "submitted", "ast",
+				"hints"));
 
+		int k = 0;
 		for (Assignment assignment : assignments) {
-			Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, true);
+			Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, false);
 			String datasetName = assignment.dataset.getName();
 
 			for (AssignmentAttempt attempt : attempts.values()) {
 				if (!attempt.isLikelySubmitted()) continue;
+				if (k++ % skipRatio != 0) continue;
+
+				int hints = 0;
 
 				int size = attempt.size();
-				int start = fullPath ? 0 : size - 1;
 				ActionRows rows = attempt.rows;
 				long lastActionTime = 0;
 				int count = 0;
-				for (int i = start; i < size; i++) {
+				Node lastNode = null;
+				for (int i = 0; i < size; i++) {
 					AttemptAction action = rows.get(i);
+
+					if (action.message.equals(AttemptAction.HINT_DIALOG_DESTROY)) {
+						hints++;
+					}
+
+					if (action.snapshot == null) continue;
+					if (!fullPath && action.snapshot != attempt.submittedSnapshot) continue;
+
 					long timestamp = action.timestamp.getTime() / 1000;
-					if (i < size - 1 && timestamp < lastActionTime + snapshotIntervalSeconds) continue;
-					lastActionTime = timestamp;
+					if (i < size - 1 && timestamp < lastActionTime + snapshotIntervalSeconds) {
+						continue;
+					}
 					Node node = SimpleNodeBuilder.toTree(action.snapshot, true);
-					String id = datasetName + "-" + action.id;
+					if (i < size - 1 && node.equals(lastNode)) continue;
+					lastActionTime = timestamp;
+					lastNode = node;
+					String id = attempt.id + "-" + action.id;
 					if (nodes.put(id, node) != null) {
+						printer.close();
 						throw new RuntimeException("Two snapshots with ID: " + id);
 					}
 
-					System.out.println(Arrays.toString(node.depthFirstIteration()));
-					printer.printRecord(id, datasetName, assignment.name, attempt.id, count++, i == 0, i == size - 1);
+					printer.printRecord(id, datasetName, assignment.name, attempt.id, count++,
+							i == 0, action.snapshot == attempt.submittedSnapshot, node.toString(),
+							hints);
 				}
 			}
 		}
 		printer.close();
-		if (1==1) return;
 
 		int n = nodes.size();
 		System.out.println("n = " + n);

@@ -193,6 +193,9 @@ public class SnapParser {
 
 			}
 
+			if (action.snapshot != null) lastSnaphot = action.snapshot;
+			action.lastSnapshot = lastSnaphot;
+
 			// Add this row unless it has not snapshot and we want snapshots only
 			boolean addRow = !(snapshotsOnly && action.snapshot == null);
 
@@ -216,7 +219,6 @@ public class SnapParser {
 					done |= foundGraded;
 				}
 
-				if (action.snapshot != null) lastSnaphot = action.snapshot;
 				// If this is the submitted action, store that information and finish
 				if (submittedActionID != null && action.id == submittedActionID) {
 					attempt.submittedSnapshot = lastSnaphot;

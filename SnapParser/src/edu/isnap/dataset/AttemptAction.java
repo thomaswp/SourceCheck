@@ -27,6 +27,7 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	public static final String IDE_TOGGLE_APP_MODE = "IDE.toggleAppMode";
 	public final static String HELP_BUTTON_TOGGLED = "HelpButton.toggled";
 	public final static String HINT_DIALOG_DESTROY = "HintDialogBox.destroy";
+	@Deprecated
 	public final static String HINT_DIALOG_DONE = "HintDialogBox.done";
 	public final static String HINT_DIALOG_LOG_FEEDBACK = "HintDialogBox.logFeedback";
 	public final static String HINT_PROCESS_HINTS = "HintProvider.processHints";
@@ -46,12 +47,13 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 
 	private final static DateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
 
-
-
 	public final int id;
 	public final Snapshot snapshot;
 	public final Date timestamp;
 	public final String sessionID, message, data;
+
+	/** Last snapshot saved when this action occurred (possible this action's snapshot). */
+	public transient Snapshot lastSnapshot;
 
 	@SuppressWarnings("unused")
 	private AttemptAction() {
