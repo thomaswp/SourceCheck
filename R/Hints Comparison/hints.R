@@ -9,10 +9,10 @@ csv <- function(dir, file) {
 loadData <- function() {
   rm(list=ls())
   
-  dir <- "../../data/csc200/fall2016/analysis/polygonMakerLab/"
+  dir <- "../../data/csc200/fall2016/analysis/"
   
   
-  projs <<- csv(dir, "projs.csv")
+  projs <<- csv(dir, "attempts.csv")
   totals <<- ddply(projs[,-1], c(), colwise(sum)) 
   # projs <<- projs[projs$hints < 60,]
   # totalsNO <<- ddply(projs[,-1], c(), colwise(sum))
