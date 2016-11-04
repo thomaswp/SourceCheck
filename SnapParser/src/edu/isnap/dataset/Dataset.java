@@ -18,4 +18,8 @@ public abstract class Dataset {
 		return getClass().getSimpleName();
 	}
 
+	public String analysisDir() {
+		return dataDir + "/analysis";
+	}
+
 }

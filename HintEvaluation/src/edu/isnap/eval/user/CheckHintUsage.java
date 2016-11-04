@@ -31,6 +31,7 @@ import edu.isnap.ctd.util.Tuple;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
+import edu.isnap.dataset.Dataset;
 import edu.isnap.dataset.Grade;
 import edu.isnap.datasets.Fall2016;
 import edu.isnap.eval.AutoGrader;
@@ -57,25 +58,39 @@ public class CheckHintUsage {
 	}
 
 	public static void main(String[] args) throws IOException {
+		writeHints(Fall2016.instance);
+	}
 
-		Assignment assignment = Fall2016.PolygonMaker;
+	public static void writeHints(Dataset dataset) throws FileNotFoundException, IOException {
+		Spreadsheet attempts = new Spreadsheet();
+		Spreadsheet hints = new Spreadsheet();
+		for (Assignment assignment : dataset.all()) {
+			writeHints(assignment, attempts, hints);
+		}
+		attempts.write(dataset.analysisDir() + "/attempts.csv");
+		hints.write(dataset.analysisDir() + "/hints.csv");
+	}
+
+	public static void writeHints(Assignment assignment) throws FileNotFoundException, IOException {
+		Spreadsheet attempts = new Spreadsheet();
+		Spreadsheet hints = new Spreadsheet();
+		writeHints(assignment, attempts, hints);
+		attempts.write(assignment.analysisDir() + "/attempts.csv");
+		hints.write(assignment.analysisDir() + "/hints.csv");
+	}
+
+	private static void writeHints(Assignment assignment, Spreadsheet attemptsSheet, Spreadsheet hintsSheet)
+			throws FileNotFoundException, IOException {
+		System.out.println("Writing: " + assignment);
 
 		// Get the name-path pairs of all projects we logged
-		Map<String, AssignmentAttempt> guessingGame = assignment.load(Mode.Use, false);
-
-		int nStudents = 0;
-
-		HashMap<String, LblTree> hintCodeTrees = new LinkedHashMap<>();
-
-		Spreadsheet projects = new Spreadsheet();
-		Spreadsheet hints = new Spreadsheet();
-		Spreadsheet objectives = new Spreadsheet();
+		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, false);
 
 		// Iterate over all submissions
-		for (String submission : guessingGame.keySet()) {
-			AssignmentAttempt path = guessingGame.get(submission);
+		for (String attemptID : attempts.keySet()) {
+			AssignmentAttempt attempt = attempts.get(attemptID);
 			// Ignore any that weren't exported (and thus couldn't have been submitted)
-			if (!isValidSubmission(path)) continue;
+			if (!isValidSubmission(attempt)) continue;
 
 			int nHints = 0, nUnchangedHints = 0, nDuplicateHints = 0, nThumbsUp = 0,
 					nThumbsDown = 0, nHintsFollowed = 0, nHintsCloser = 0;
@@ -93,26 +108,27 @@ public class CheckHintUsage {
 			Snapshot code = null;
 
 			int edits = 0;
-			for (int i = 0; i < path.size(); i++) {
-				if (path.rows.get(i).snapshot != null) edits++;
+			for (int i = 0; i < attempt.size(); i++) {
+				if (attempt.rows.get(i).snapshot != null) edits++;
 			}
-			long startTime = path.rows.getFirst().timestamp.getTime();
-			long endTime = path.rows.getLast().timestamp.getTime();
+			long startTime = attempt.rows.getFirst().timestamp.getTime();
+			long endTime = attempt.rows.getLast().timestamp.getTime();
 
 			int edit = 0;
 
-			Set<String> completedObjs = new HashSet<>();
-			double lastCompleted = 0;
-
 			// Iterate through each row of the solution path
-			for (int i = 0; i < path.size(); i++) {
-				AttemptAction row = path.rows.get(i);
+			for (int i = 0; i < attempt.size(); i++) {
+				AttemptAction row = attempt.rows.get(i);
 
 				// If this row had an update to the code, update it
 				if (row.snapshot != null) {
 					code = row.snapshot;
 					edit++;
 				}
+
+				// If we haven't seen a snapshot, just skip (this can happen due to prequels cutting
+				// off logging or other logging errors)
+				if (code == null) continue;
 
 				// Get the student's current code and turn it into a tree
 				Node node = SimpleNodeBuilder.toTree(code, true);
@@ -121,17 +137,6 @@ public class CheckHintUsage {
 						(endTime - startTime);
 
 				HashMap<String, Boolean> grade = AutoGrader.grade(node);
-				for (String obj : grade.keySet()) {
-					if (grade.get(obj) && completedObjs.add(obj)) {
-						objectives.newRow();
-						objectives.put("id", submission);
-						objectives.put("timePerc", timePerc);
-						objectives.put("obj", obj);
-						objectives.put("duration", timePerc - lastCompleted);
-
-						lastCompleted = timePerc;
-					}
-				}
 
 				// Check if this action was showing a hint
 				String action = row.message;
@@ -176,12 +181,6 @@ public class CheckHintUsage {
 					for (int j = 0; j < from.length; j++) from[j] = fromArray.getString(j);
 					// And apply this to get a new parent node
 					Node hintOutcome = VectorHint.applyHint(parent, to);
-
-					if (contains(from, "doIfElse") && !contains(to, "doIfElse") &&
-							!contains(from, "doUntil")) {// && contains(to, "doUntil")) {
-						System.out.println(submission);
-						System.out.println("  "  + parent + "\n->" + hintOutcome);
-					}
 
 					boolean delete = false;
 					for (String f : from) {
@@ -232,9 +231,9 @@ public class CheckHintUsage {
 
 					// Look ahead for hint application in the student's code
 					int steps = 0;
-					for (int j = i+1; j < path.size(); j++) {
+					for (int j = i+1; j < attempt.size(); j++) {
 						// Get the next row with a new snapshot
-						AttemptAction nextRow = path.rows.get(j);
+						AttemptAction nextRow = attempt.rows.get(j);
 						Snapshot nextCode = nextRow.snapshot;
 						// if the row does not have a snapshot, skip this row and do not count
 						// into steps
@@ -278,25 +277,27 @@ public class CheckHintUsage {
 					lastHintNode = node;
 					lastHintData = row.data;
 
-					hints.newRow();
-					hints.put("id", submission);
-					hints.put("type", action.replace("SnapDisplay.show", "").replace("Hint", ""));
-					hints.put("editPerc", (double)edit / edits);
-					hints.put("timePerc", timePerc);
-					hints.put("followed", gotPartial ? 1 : 0);
-					hints.put("obj", objective == null ? "" : objective);
-					hints.put("objComplete", objective == null ? "" : (gotObjective ? 1 : 0));
-					hints.put("delete", delete ? 1 : 0);
-					hints.put("change", nodeChange);
-					hints.put("unchanged", unchanged ? 1 : 0);
-					hints.put("duplicate", duplicate ? 1 : 0);
+					hintsSheet.newRow();
+					hintsSheet.put("dataset", assignment.dataset.getName());
+					hintsSheet.put("assignment", assignment.name);
+					hintsSheet.put("id", attemptID);
+					hintsSheet.put("type", action.replace("SnapDisplay.show", "").replace("Hint", ""));
+					hintsSheet.put("editPerc", (double)edit / edits);
+					hintsSheet.put("timePerc", timePerc);
+					hintsSheet.put("followed", gotPartial ? 1 : 0);
+					hintsSheet.put("obj", objective == null ? "" : objective);
+					hintsSheet.put("objComplete", objective == null ? "" : (gotObjective ? 1 : 0));
+					hintsSheet.put("delete", delete ? 1 : 0);
+					hintsSheet.put("change", nodeChange);
+					hintsSheet.put("unchanged", unchanged ? 1 : 0);
+					hintsSheet.put("duplicate", duplicate ? 1 : 0);
 
 					long time = row.timestamp.getTime();
 
 					long dismissTime = 0;
 					boolean done = false;
-					for (int j = i + 1; j < path.size(); j++) {
-						AttemptAction r = path.rows.get(j);
+					for (int j = i + 1; j < attempt.size(); j++) {
+						AttemptAction r = attempt.rows.get(j);
 						if (r.message.equals("HintDialogBox.done")) done = true;
 						if (r.message.equals(HINT_DIALOG_DESTROY)) {
 							dismissTime = r.timestamp.getTime();
@@ -304,15 +305,15 @@ public class CheckHintUsage {
 						}
 					}
 					int duration = (int)(dismissTime - time) / 1000;
-					hints.put("duration", duration);
-					hints.put("done", done ? 1 : 0);
+					hintsSheet.put("duration", duration);
+					hintsSheet.put("done", done ? 1 : 0);
 
 
 					long nextActionTime = time;
-					if (i < path.size() - 1) nextActionTime =
-							path.rows.get(i + 1).timestamp.getTime();
+					if (i < attempt.size() - 1) nextActionTime =
+							attempt.rows.get(i + 1).timestamp.getTime();
 					int pause = (int)(nextActionTime - time) / 1000;
-					hints.put("pause", pause);
+					hintsSheet.put("pause", pause);
 
 					Node n = parent;
 					while (n.parent != null && !n.parent.hasType("sprite", "customBlock")) {
@@ -335,14 +336,13 @@ public class CheckHintUsage {
 						}
 
 					}
-					hints.put("scriptSize", scriptSize);
-					hints.put("testScript", testScript ? 1 : 0);
+					hintsSheet.put("scriptSize", scriptSize);
+					hintsSheet.put("testScript", testScript ? 1 : 0);
 				}
 
 
 				// Check if this action was dismissing a hint
 				if (HINT_DIALOG_LOG_FEEDBACK.equals(action)) {
-					// TODO: inspect good and bad hints
 					if (row.data.equals("[\"up\"]")) {
 						nThumbsUp++;
 					} else if (row.data.equals("[\"down\"]")) {
@@ -358,55 +358,88 @@ public class CheckHintUsage {
 				if (BLOCK_CLICK_RUN.equals(action)) nBlockRuns++;
 			}
 
-			projects.newRow();
-			projects.put("id", submission);
-			projects.put("hints", nHints);
-			projects.put("unchangedHints", nUnchangedHints);
-			projects.put("duplicateHints", nDuplicateHints);
-			projects.put("followed", nHintsFollowed);
-			projects.put("closer", nHintsCloser);
-			projects.put("thumbsUp", nThumbsUp);
-			projects.put("thumbsDown", nThumbsDown);
-			projects.put("objHints", nObjectiveHints);
-			projects.put("objHintsFollowed", nObjectiveHintsFollowed);
-			projects.put("tsHints", nTestScriptHints);
-			projects.put("tsHintsFollowed", nTestScriptHintsFollowed);
-			projects.put("flagRuns", nFlagRuns);
-			projects.put("blockRuns", nBlockRuns);
+			attemptsSheet.newRow();
+			attemptsSheet.put("dataset", assignment.dataset.getName());
+			attemptsSheet.put("assignment", assignment.name);
+			attemptsSheet.put("id", attemptID);
+			attemptsSheet.put("hints", nHints);
+			attemptsSheet.put("unchangedHints", nUnchangedHints);
+			attemptsSheet.put("duplicateHints", nDuplicateHints);
+			attemptsSheet.put("followed", nHintsFollowed);
+			attemptsSheet.put("closer", nHintsCloser);
+			attemptsSheet.put("thumbsUp", nThumbsUp);
+			attemptsSheet.put("thumbsDown", nThumbsDown);
+			attemptsSheet.put("objHints", nObjectiveHints);
+			attemptsSheet.put("objHintsFollowed", nObjectiveHintsFollowed);
+			attemptsSheet.put("tsHints", nTestScriptHints);
+			attemptsSheet.put("tsHintsFollowed", nTestScriptHintsFollowed);
+			attemptsSheet.put("flagRuns", nFlagRuns);
+			attemptsSheet.put("blockRuns", nBlockRuns);
 
-			Grade grade = path.grade;
+			Grade grade = attempt.grade;
 			if (grade != null) {
-				projects.put("grade", grade.average());
+				attemptsSheet.put("grade", grade.average());
 				for (Entry<String, Boolean> entry : grade.tests.entrySet()) {
-					projects.put(entry.getKey(), entry.getValue() ? 1 : 0);
+					attemptsSheet.put(entry.getKey(), entry.getValue() ? 1 : 0);
 				}
 			}
+		}
+	}
+
+	@SuppressWarnings("unused")
+	private void writeObjectives(Assignment assignment) throws FileNotFoundException, IOException {
+		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, false);
+
+		Spreadsheet objectives = new Spreadsheet();
+
+		// Iterate over all submissions
+		for (String attemptID : attempts.keySet()) {
+			AssignmentAttempt path = attempts.get(attemptID);
+			// Ignore any that weren't exported (and thus couldn't have been submitted)
+			if (!isValidSubmission(path)) continue;
+
+			Snapshot code = null;
+			long startTime = path.rows.getFirst().timestamp.getTime();
+			long endTime = path.rows.getLast().timestamp.getTime();
 
 
-			if (nHints <= 30) {
-				for (int j = 0; j < studentTrees.size(); j++) {
-					hintCodeTrees.put("S" + nStudents + "H" + j, studentTrees.get(j));
+			Set<String> completedObjs = new HashSet<>();
+			double lastCompleted = 0;
+
+			// Iterate through each row of the solution path
+			for (int i = 0; i < path.size(); i++) {
+				AttemptAction row = path.rows.get(i);
+
+				// If this row had an update to the code, update it
+				if (row.snapshot != null) {
+					code = row.snapshot;
+				}
+
+				// Get the student's current code and turn it into a tree
+				Node node = SimpleNodeBuilder.toTree(code, true);
+
+				double timePerc = (double)(row.timestamp.getTime() - startTime) /
+						(endTime - startTime);
+
+				HashMap<String, Boolean> grade = AutoGrader.grade(node);
+				for (String obj : grade.keySet()) {
+					if (grade.get(obj) && completedObjs.add(obj)) {
+						objectives.newRow();
+						objectives.put("id", attemptID);
+						objectives.put("timePerc", timePerc);
+						objectives.put("obj", obj);
+						objectives.put("duration", timePerc - lastCompleted);
+
+						lastCompleted = timePerc;
+					}
 				}
 			}
 		}
 
-		projects.write(assignment.analysisDir() + "/projs.csv");
-		hints.write(assignment.analysisDir() + "/hints.csv");
 		objectives.write(assignment.analysisDir() + "/objs.csv");
-
-		// output distance between snapshots and final submission
-//		PrintStream psSnapshot = new PrintStream(Assignment.Spring2016.GuessingGame1.dataDir + "/snapshot.csv");
-//		PrintStream psHint = new PrintStream(Assignment.Spring2016.GuessingGame1.dataDir + "/hint.csv");
-//		outputDistance(psSnapshot,psHint,guessingGame);
-//		psSnapshot.close();
-//		psHint.close();
-
-//		PrintStream ps = new PrintStream(Assignment.Spring2016.GuessingGame1.dataDir + "/hintsDis.csv");
-//		outputMatrix(ps, hintCodeTrees);
-//		ps.close();
 	}
 
-	private static <T> boolean contains(T[] array, T item) {
+	public static <T> boolean contains(T[] array, T item) {
 		for (T i : array) if (i.equals(item)) return true;
 		return false;
 	}
