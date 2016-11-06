@@ -10,11 +10,11 @@ import edu.isnap.ctd.util.StringHashable;
 
 public class Graph<N,E> {
 
-	protected final Set<N> vertices = new HashSet<N>();
-	protected final Set<Edge<N,E>> edges = new HashSet<Edge<N,E>>();
-	protected final HashMap<N, List<Edge<N,E>>> fromMap = new HashMap<N, List<Edge<N,E>>>();
-	protected final HashMap<N, List<Edge<N,E>>> toMap = new HashMap<N, List<Edge<N,E>>>();
-	protected final HashMap<N, Vertex<N>> vertexMap = new HashMap<N, Vertex<N>>();
+	protected final Set<N> vertices = new HashSet<>();
+	protected final Set<Edge<N,E>> edges = new HashSet<>();
+	protected final HashMap<N, List<Edge<N,E>>> fromMap = new HashMap<>();
+	protected final HashMap<N, List<Edge<N,E>>> toMap = new HashMap<>();
+	protected final HashMap<N, Vertex<N>> vertexMap = new HashMap<>();
 
 	private boolean hasGoal;
 
@@ -34,7 +34,7 @@ public class Graph<N,E> {
 
 	public boolean addVertex(N v) {
 		if (vertices.add(v)) {
-			vertexMap.put(v, new Vertex<N>(v));
+			vertexMap.put(v, new Vertex<>(v));
 			return true;
 		} else {
 			vertexMap.get(v).weight++;
@@ -104,18 +104,18 @@ public class Graph<N,E> {
 	protected Edge<N,E> addOrGetEdge(N from , N to, E edgeData) {
 		if (!vertices.contains(from)) addVertex(from);
 		if (!vertices.contains(to)) addVertex(to);
-		Edge<N,E> edge = new Edge<N,E>(from, to, edgeData);
+		Edge<N,E> edge = new Edge<>(from, to, edgeData);
 		boolean added = edges.add(edge);
 		if (added) {
 			List<Edge<N,E>> edges = fromMap.get(from);
 			if (edges == null) {
-				fromMap.put(from, edges = new ArrayList<Edge<N,E>>());
+				fromMap.put(from, edges = new ArrayList<>());
 			}
 			edges.add(edge);
 
 			edges = toMap.get(to);
 			if (edges == null) {
-				toMap.put(to, edges = new ArrayList<Edge<N,E>>());
+				toMap.put(to, edges = new ArrayList<>());
 			}
 			edges.add(edge);
 			return edge;
@@ -145,7 +145,7 @@ public class Graph<N,E> {
 			myVertex.goalCount += Math.min(v.goalCount, atomicWeight ? 1 : Integer.MAX_VALUE);
 			if (!atomicWeight) myVertex.weight += v.weight - 1;
 			if (myVertex.weight < myVertex.goalCount) {
-				System.out.println("!");
+				System.err.println("Vertex weight less than goal count!");
 			}
 		}
 		for (Edge<N, E> edge : graph.edges) {
@@ -175,7 +175,7 @@ public class Graph<N,E> {
 	}
 
 	public void prune(int minVertexWeight) {
-		List<N> toRemove = new ArrayList<N>();
+		List<N> toRemove = new ArrayList<>();
 		for (N n : vertices) {
 			Vertex<N> vertex = vertexMap.get(n);
 			if (vertex.goalCount > 0) continue;

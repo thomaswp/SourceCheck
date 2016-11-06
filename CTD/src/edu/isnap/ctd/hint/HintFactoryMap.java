@@ -27,6 +27,11 @@ public class HintFactoryMap implements HintMap {
 
 	final HintConfig config;
 
+	@Override
+	public HintConfig getHintConfig() {
+		return config;
+	}
+
 	@SuppressWarnings("unused")
 	private HintFactoryMap() {
 		this(null);
@@ -164,6 +169,11 @@ public class HintFactoryMap implements HintMap {
 				graph.getGoalCount(children) >= config.pruneGoals &&
 				stayed >= config.stayProportion;
 
+//		if (node.hasType("script") && node.children.size() == 1) {// && stayed > 0) {
+//			System.out.println(node);
+//			graph.getProportionStayed(children);
+//		}
+
 		VectorHint hint = new VectorHint(node, rootPath.toString(), children, next, goal, caution);
 		hints.add(hint);
 
@@ -256,7 +266,7 @@ public class HintFactoryMap implements HintMap {
 			if (!(hint instanceof VectorHint)) return;
 			VectorHint vHint = (VectorHint) hint;
 
-			if (vHint.from().equals(vHint.to) || vHint.root.hasAncestor(new Predicate() {
+			if (vHint.from.equals(vHint.to) || vHint.root.hasAncestor(new Predicate() {
 				@Override
 				public boolean eval(Node node) {
 					return extraScripts.contains(node);

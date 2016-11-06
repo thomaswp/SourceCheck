@@ -119,7 +119,7 @@ public class HintGenerator {
 			if (graph.nVertices() < minVertices) continue;
 			if (!graph.hasGoal()) continue;
 
-			graph.bellmanBackup(2);
+			graph.bellmanBackup(hintMap.getHintConfig().pruneGoals);
 			Node child = node;
 			String dir = rootDir;
 			while (child.children.size() > 0) {

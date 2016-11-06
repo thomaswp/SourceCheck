@@ -11,11 +11,13 @@ public interface HintMap {
 	void addEdge(Node from, Node to);
 
 	Iterable<Hint> getHints(Node node, int chain);
-	
+
 	HintMap instance();
 
+	HintConfig getHintConfig();
+
 	void setSolution(Node solution);
-	
+
 	void finish();
 
 	void addMap(HintMap hintMap);

@@ -78,9 +78,8 @@ public class SnapHintBuilder {
 	 * @param assignment
 	 */
 	public SnapHintBuilder(Assignment assignment) {
-		// TODO: get from assignment
-//		this(assignment, new HintFactoryMap(assignment.config()));
-		this(assignment, new HintFactoryMap(new HintConfig()));
+		this(assignment, new HintFactoryMap(assignment instanceof Configurable ?
+				((Configurable) assignment).getConfig() : new HintConfig()));
 	}
 
 	public SnapHintBuilder(Assignment assignment, HintMap hintMap) {
