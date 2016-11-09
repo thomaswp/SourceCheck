@@ -379,6 +379,7 @@ public class SnapParser {
 				}
 				threads.decrementAndGet();
 			}
+		// TODO: Limit threads
 		}).start();
 	}
 

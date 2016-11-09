@@ -34,8 +34,9 @@ public class Shell {
 
 		Scanner sc = new Scanner(System.in);
 		String line;
-		do {
+		while (true) {
 			line = sc.nextLine().toLowerCase();
+			if (line.isEmpty()) break;
 			switch (line) {
 			case "cleanall":
 				SnapParser.clean("../data/csc200");
@@ -104,7 +105,7 @@ public class Shell {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-		} while (!line.isEmpty());
+		}
 		sc.close();
 	}
 
