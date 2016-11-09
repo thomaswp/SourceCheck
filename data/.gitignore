@@ -3,6 +3,7 @@
 *.json
 *.json.js
 *.txt
+!csc200/*/grades/*.csv
 csc200/*/submitted/*/*
 !csc200/*/submitted/*.txt
 help-seeking/*/submitted/*/*

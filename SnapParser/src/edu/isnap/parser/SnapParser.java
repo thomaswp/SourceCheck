@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -162,7 +163,7 @@ public class SnapParser {
 				AssignmentAttempt.NOT_SUBMITTED : AssignmentAttempt.UNKNOWN;
 		List<AttemptAction> currentWork = new ArrayList<>();
 
-		String gradedID = grade == null ? null : grade.gradedID;
+		int gradedRow = grade == null ? -1 : grade.gradedRow;
 		boolean foundGraded = false;
 		Snapshot lastSnaphot = null;
 
@@ -205,7 +206,7 @@ public class SnapParser {
 				}
 
 				// The graded ID is ideally the submitted ID, so this should be redundant
-				if (String.valueOf(action.id).equals(gradedID)) {
+				if (action.id == gradedRow) {
 					foundGraded = true;
 				}
 
@@ -240,7 +241,7 @@ public class SnapParser {
 		}
 
 		if (addMetadata) {
-			if (gradedID != null && !foundGraded) {
+			if (gradedRow >= 0 && !foundGraded) {
 				System.err.println("No grade row for: " + logFile.getName());
 			}
 
@@ -395,8 +396,14 @@ public class SnapParser {
 
 		try {
 			CSVParser parser = new CSVParser(new FileReader(file), CSVFormat.DEFAULT.withHeader());
+			Map<String, Integer> headerMap = parser.getHeaderMap();
+			String[] header = new String[headerMap.size()];
+			for (Entry<String, Integer> entry : headerMap.entrySet()) {
+				header[entry.getValue()] = entry.getKey();
+			}
 			for (CSVRecord record : parser) {
-				Grade grade = new Grade(record);
+				if (record.get(0).isEmpty()) break;
+				Grade grade = new Grade(record, header);
 				grades.put(grade.id, grade);
 			}
 			parser.close();

@@ -379,8 +379,8 @@ public class CheckHintUsage {
 			Grade grade = attempt.grade;
 			if (grade != null) {
 				attemptsSheet.put("grade", grade.average());
-				for (Entry<String, Boolean> entry : grade.tests.entrySet()) {
-					attemptsSheet.put(entry.getKey(), entry.getValue() ? 1 : 0);
+				for (Entry<String, Integer> entry : grade.tests.entrySet()) {
+					attemptsSheet.put(entry.getKey(), entry.getValue());
 				}
 			}
 		}
@@ -596,7 +596,7 @@ public class CheckHintUsage {
 			AssignmentAttempt path = submissions.get(key);
 			if (!isValidSubmission(path)) continue;
 
-			HashMap<String, Boolean> grade = path.grade.tests;
+			Map<String, Integer> grade = path.grade.tests;
 			double numberGrade = path.grade.average();
 //			if (numberGrade < 0.5f) {
 //				System.out.println(key + ": " + grade);
@@ -609,7 +609,7 @@ public class CheckHintUsage {
 			row[col++] = studentFollowedCounts.get(i); row[col++] = numberGrade;
 
 			for (Grader g : AutoGrader.graders) {
-				row[col++] = grade.get(g.name()) ? 1 : 0;
+				row[col++] = grade.get(g.name());
 			}
 			printer.printRecord(row);
 
