@@ -35,6 +35,7 @@ public class Shell {
 		Scanner sc = new Scanner(System.in);
 		String line;
 		while (true) {
+			System.out.println("Enter Command:");
 			line = sc.nextLine().toLowerCase();
 			if (line.isEmpty()) break;
 			switch (line) {
