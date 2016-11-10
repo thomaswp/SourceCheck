@@ -9,17 +9,33 @@ csv <- function(dir, file) {
 loadData <- function() {
   rm(list=ls())
   
-  dir <- "../../data/csc200/fall2016/analysis/"
+  dir2015 <- "../../data/csc200/fall2015/analysis/"
+  dir2016 <- "../../data/csc200/fall2016/analysis/"
   
+  projs2015 <<- csv(dir2015, "attempts.csv")
+  projs2016 <<- csv(dir2016, "attempts.csv")
   
-  projs <<- csv(dir, "attempts.csv")
-  totals <<- ddply(projs[,-1], c(), colwise(sum)) 
+  projs <<- rbind(projs2015, projs2016)
+  
+  totals <<- ddply(projs[,-3], c("dataset", "assignment"), colwise(mean)) 
   # projs <<- projs[projs$hints < 60,]
   # totalsNO <<- ddply(projs[,-1], c(), colwise(sum))
   projs$pFollowed <<- ifelse(projs$hints == 0, 0, projs$followed / projs$hints)
   
-  hints <<- csv(dir, "hints.csv") 
+  hints <<- csv(dir2016, "hints.csv") 
   hints <<- hints[hints$id %in% projs$id,]
+}
+
+plotFollowedGrades <- function() {
+  counts <- ddply(projs2016, c("dataset", "followed", "grade"), summarize, n=length(hints))
+  counts <- counts[!is.na(counts$grade),]
+  ggplot(counts, aes(followed, grade)) + geom_point(aes(size=sqrt(n)))
+}
+
+plotHintsGrades <- function() {
+  counts <- ddply(projs2016, c("dataset", "hints", "grade"), summarize, n=length(hints))
+  counts <- counts[!is.na(counts$grade),]
+  ggplot(counts, aes(hints, grade)) + geom_point(aes(size=sqrt(n)))
 }
 
 findHintObjs <- function() {

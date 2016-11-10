@@ -26,7 +26,7 @@ public class Fall2015 extends Dataset {
 //				"squiralHW", start, date(2015, 9, 13), false);
 
 		public final static Assignment GuessingGame1 = new Assignment(instance,
-				"guess1Lab", Assignment.date(2015, 9, 18), false) {
+				"guess1Lab", Assignment.date(2015, 9, 18), false, true, null) {
 			@Override
 			public Assignment getLocationAssignment(String attemptID) {
 				switch (attemptID) {
@@ -39,7 +39,7 @@ public class Fall2015 extends Dataset {
 		};
 
 		public final static Assignment GuessingGame2 = new Assignment(instance,
-				"guess2HW", Assignment.date(2015, 9, 25), false, false, GuessingGame1) {
+				"guess2HW", Assignment.date(2015, 9, 25), false, true, GuessingGame1) {
 			@Override
 			public Assignment getLocationAssignment(String attemptID) {
 				switch (attemptID) {
@@ -68,7 +68,7 @@ public class Fall2015 extends Dataset {
 		};
 
 		public final static Assignment GuessingGame3 = new Assignment(instance,
-				"guess3Lab", Assignment.date(2015, 10, 2), false);
+				"guess3Lab", Assignment.date(2015, 10, 2), false, true, null);
 
 		public final static Assignment[] All = {
 //			LightsCameraAction, PolygonMaker, Squiral,
