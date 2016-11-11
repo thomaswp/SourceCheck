@@ -110,7 +110,6 @@ public class HintFactoryMap implements HintMap {
 		solution.recurse(new Action() {
 			@Override
 			public void run(Node item) {
-				if (item.children.size() == 0) return;
 				VectorGraph graph = getGraph(item);
 				VectorState children = getVectorState(item);
 				// TODO: find a more elegant solution that doesn't involve this awkward cast

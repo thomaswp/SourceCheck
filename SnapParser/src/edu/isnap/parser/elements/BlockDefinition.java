@@ -111,7 +111,8 @@ public class BlockDefinition extends Code implements IHasID {
 		String guid = element.getAttribute("guid");
 		List<Element> scripts = toList(XML.getGrandchildrenByTagName(element, "scripts", "script"));
 		Element mainScript = scripts.get(0);
-		List<Element> blocks = toList(XML.getChildrenByTagName(mainScript, "block"));
+		List<Element> blocks = toList(XML.getChildrenByTagName(mainScript,
+				"block", "custom-block"));
 		Element hatBlock = blocks.get(0);
 		String hatBlockId = hatBlock.getAttribute("id");
 		if (hatBlock.getAttribute("s").length() > 0) {

@@ -1,0 +1,12 @@
+* When multiple goals exist per RP, the average context similarity doesn't make sense, since it penalizes you for being far from some goal contexts, even if you're close to ~N other contexts (where N is the number of attempts)
+* Context matching should consider not just the outer context (sibling nodes to the parent) but also inner context (any child script's children - or just all grandchildren).
+* Custom block hints seem to be appearing on the wrong block, or at least come with the wrong "from"
+
+HintBarMorph.prototype.init@http://localhost/snap/hints/hints.js:986:17
+HintBarMorph@http://localhost/snap/hints/hints.js:975:5
+SnapDisplay.prototype.createHintButton@http://localhost/snap/hints/hints.js:911:23
+SnapDisplay.prototype.showScriptHint@http://localhost/snap/hints/hints.js:810:5
+SnapDisplay.prototype.showHint@http://localhost/snap/hints/hints.js:613:5
+HintProvider.prototype.processHints/<@http://localhost/snap/hints/hints.js:162:25
+HintProvider.prototype.processHints@http://localhost/snap/hints/hints.js:159:13
+HintProvider.prototype.getHintsFromServer/xhr.onload@http://localhost/snap/hints/hints.js:129:9

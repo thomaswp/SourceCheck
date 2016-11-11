@@ -96,6 +96,9 @@ public class Shell {
 					case "parsesubmitted":
 						ParseSubmitted.parseSubmitted(assignment);
 						break;
+					case "print":
+						RunPrintSubmitted.print(assignment);
+						break;
 					default:
 						System.out.println("Unknown command: " + command);
 					}
