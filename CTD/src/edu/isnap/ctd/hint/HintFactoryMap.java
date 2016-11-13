@@ -3,7 +3,7 @@ package edu.isnap.ctd.hint;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -232,7 +232,8 @@ public class HintFactoryMap implements HintMap {
 
 	@Override
 	public void postProcess(List<Hint> hints) {
-		final Set<Node> extraScripts = new HashSet<>();
+		// "Hash set" to compare by identity
+		final Map<Node, Void> extraScripts = new IdentityHashMap<>();
 		Map<VectorState, VectorHint> missingMap = new HashMap<>();
 
 		// Find scripts that should be removed and don't give hints to their children
@@ -252,7 +253,7 @@ public class HintFactoryMap implements HintMap {
 				// TODO: find a more comprehensive way of deciding on the primary script(s)
 				for (Node child : vHint.root.children) {
 					if (child.hasType(config.script) && child.children.size() < cutoff) {
-						extraScripts.add(child);
+						extraScripts.put(child, null);
 					}
 				}
 			}
@@ -268,7 +269,7 @@ public class HintFactoryMap implements HintMap {
 			if (vHint.from.equals(vHint.to) || vHint.root.hasAncestor(new Predicate() {
 				@Override
 				public boolean eval(Node node) {
-					return extraScripts.contains(node);
+					return extraScripts.containsKey(node);
 				}
 			})) {
 				toRemove.add(hint);
@@ -293,7 +294,7 @@ public class HintFactoryMap implements HintMap {
 			if (!(hint instanceof VectorHint)) return;
 			VectorHint canceledHint = (VectorHint) hint;
 
-			if (extraScripts.contains(canceledHint.root) &&
+			if (extraScripts.containsKey(canceledHint.root) &&
 					canceledHint.from.length() > 0) {
 
 				VectorHint bestMatch = null;
@@ -314,6 +315,7 @@ public class HintFactoryMap implements HintMap {
 				}
 
 				if (bestMatch != null) {
+					// TODO: Why am I getting duplicate hints here (and likely elsewhere)?
 					toAdd.add(new LinkHint(bestMatch, canceledHint));
 				}
 			}
