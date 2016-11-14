@@ -19,6 +19,9 @@ import edu.isnap.hint.ConfigurableAssignment;
 			config.pruneGoals = 1;
 			config.pruneNodes = 0;
 			config.stayProportion = 0.55;
+			// Custom block order seems pretty meaningless here, or at least hard to use effectively
+			// with so little data, so we just ignore it. (And there's only 1 sprite.)
+			config.badContext.add("snapshot");
 		}
 
 		public final static Assignment BrickWall = new ConfigurableAssignment(instance,

@@ -23,7 +23,6 @@
 			"var"
 		],
 		"caution": false,
-		"badHint": true,
-		"expectedFailure": true
+		"badHint": true
 	}
 }
