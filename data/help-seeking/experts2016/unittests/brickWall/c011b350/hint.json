@@ -1,0 +1,26 @@
+{
+	"from": "snapshot:[customBlock]: [script, var]",
+	"to": "snapshot:[customBlock]: [script]",
+	"data": {
+		"goal": [
+			"script"
+		],
+		"root": {
+			"label": "customBlock",
+			"index": 5,
+			"parent": {
+				"label": "snapshot",
+				"index": -1,
+				"parent": null
+			}
+		},
+		"from": [
+			"script",
+			"var"
+		],
+		"to": [
+			"script"
+		],
+		"caution": true
+	}
+}

@@ -1,0 +1,57 @@
+{
+	"from": "snapshot:[customBlock:[script]]: [down] and snapshot:[stage:[sprite:[script]]]: [setColor]",
+	"to": "snapshot:[customBlock:[script]]: [down, setColor] and snapshot:[stage:[sprite:[script]]]: []",
+	"data": {
+		"oldFrom": [
+			"setColor"
+		],
+		"goal": [
+			"down",
+			"setColor",
+			"setSize",
+			"forward",
+			"up"
+		],
+		"root": {
+			"label": "script",
+			"index": 0,
+			"parent": {
+				"label": "customBlock",
+				"index": 1,
+				"parent": {
+					"label": "snapshot",
+					"index": -1,
+					"parent": null
+				}
+			}
+		},
+		"from": [
+			"prototypeHatBlock",
+			"down"
+		],
+		"to": [
+			"prototypeHatBlock",
+			"down",
+			"setColor"
+		],
+		"oldTo": [],
+		"caution": false,
+		"oldRoot": {
+			"label": "script",
+			"index": 1,
+			"parent": {
+				"label": "sprite",
+				"index": 0,
+				"parent": {
+					"label": "stage",
+					"index": 0,
+					"parent": {
+						"label": "snapshot",
+						"index": -1,
+						"parent": null
+					}
+				}
+			}
+		}
+	}
+}

@@ -1,0 +1,42 @@
+{
+	"from": "snapshot:[customBlock:[script]]: [down, setSize, setColor, forward]",
+	"to": "snapshot:[customBlock:[script]]: [down, setSize, setColor, forward, up]",
+	"data": {
+		"goal": [
+			"down",
+			"setColor",
+			"setSize",
+			"forward",
+			"up"
+		],
+		"root": {
+			"label": "script",
+			"index": 0,
+			"parent": {
+				"label": "customBlock",
+				"index": 1,
+				"parent": {
+					"label": "snapshot",
+					"index": -1,
+					"parent": null
+				}
+			}
+		},
+		"from": [
+			"prototypeHatBlock",
+			"down",
+			"setSize",
+			"setColor",
+			"forward"
+		],
+		"to": [
+			"prototypeHatBlock",
+			"down",
+			"setSize",
+			"setColor",
+			"forward",
+			"up"
+		],
+		"caution": false
+	}
+}

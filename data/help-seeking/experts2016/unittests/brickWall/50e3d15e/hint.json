@@ -1,0 +1,38 @@
+{
+	"from": "snapshot:[customBlock:[script:[doSetVar]]]: [literal, literal]",
+	"to": "snapshot:[customBlock:[script:[doSetVar]]]: [literal, reportTrue]",
+	"data": {
+		"goal": [
+			"literal",
+			"reportTrue"
+		],
+		"root": {
+			"label": "doSetVar",
+			"index": 0,
+			"parent": {
+				"label": "script",
+				"index": 0,
+				"parent": {
+					"label": "customBlock",
+					"index": 5,
+					"parent": {
+						"label": "snapshot",
+						"index": -1,
+						"parent": null
+					}
+				}
+			}
+		},
+		"from": [
+			"literal",
+			"literal"
+		],
+		"to": [
+			"literal",
+			"reportTrue"
+		],
+		"caution": false
+	},
+	"badHint": true,
+	"expectedFailure": true
+}

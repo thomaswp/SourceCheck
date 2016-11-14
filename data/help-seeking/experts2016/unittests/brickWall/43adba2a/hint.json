@@ -1,0 +1,39 @@
+{
+	"from": "snapshot:[customBlock:[script]]: [evaluateCustomBlock, forward, doRepeat]",
+	"to": "snapshot:[customBlock:[script]]: [evaluateCustomBlock, forward, doRepeat, evaluateCustomBlock]",
+	"data": {
+		"goal": [
+			"evaluateCustomBlock",
+			"forward",
+			"doRepeat",
+			"evaluateCustomBlock"
+		],
+		"root": {
+			"label": "script",
+			"index": 0,
+			"parent": {
+				"label": "customBlock",
+				"index": 4,
+				"parent": {
+					"label": "snapshot",
+					"index": -1,
+					"parent": null
+				}
+			}
+		},
+		"from": [
+			"prototypeHatBlock",
+			"evaluateCustomBlock",
+			"forward",
+			"doRepeat"
+		],
+		"to": [
+			"prototypeHatBlock",
+			"evaluateCustomBlock",
+			"forward",
+			"doRepeat",
+			"evaluateCustomBlock"
+		],
+		"caution": false
+	}
+}
