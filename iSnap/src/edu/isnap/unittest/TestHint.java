@@ -59,6 +59,9 @@ public class TestHint {
 			// If the hint is bad, we don't want to pass
 			if (pass) {
 				oldOut.println("Bad hint found!");
+				oldOut.printf("  Root: %s\n  From: %s\n  To:   %s\n  Goal: %s\n",
+						main.root, Arrays.toString(main.from),
+						Arrays.toString(main.to), Arrays.toString(main.goal));
 				return false;
 			}
 			return true;
@@ -139,6 +142,11 @@ public class TestHint {
 		public boolean equals(Root root) {
 			return root != null && label.equals(root.label) && index == root.index &&
 					(parent == null || parent.equals(root.parent));
+		}
+
+		@Override
+		public String toString() {
+			return (parent == null ? "" : (parent.toString() + ", ")) + label;
 		}
 	}
 }

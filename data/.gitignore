@@ -8,4 +8,5 @@ csc200/*/submitted/*/*
 !csc200/*/submitted/*.txt
 help-seeking/*/submitted/*/*
 !help-seeking/*/submitted/*.txt
+!*/*/unittests/**
 *.zip

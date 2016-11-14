@@ -61,6 +61,9 @@ public class Shell {
 					case "split":
 						LogSplitter.splitStudentRecords(dataset.dataFile);
 						break;
+					case "test":
+						TestRunner.run(dataset.all());
+						break;
 					default:
 						System.out.println("Unknown command: " + command);
 					}
