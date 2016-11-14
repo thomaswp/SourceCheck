@@ -3,7 +3,11 @@
 	"to": "snapshot:[customBlock:[script]]: [evaluateCustomBlock, forward, doRepeat, evaluateCustomBlock]",
 	"data": {
 		"goal": [
-			"doRepeat"
+			"prototypeHatBlock",
+			"evaluateCustomBlock",
+			"forward",
+			"doRepeat",
+			"evaluateCustomBlock"
 		],
 		"root": {
 			"label": "script",

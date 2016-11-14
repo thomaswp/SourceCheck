@@ -4,7 +4,7 @@
 	"data": {
 		"goal": [
 			"evaluateCustomBlock",
-			"evaluateCustomBlock"
+			"forward"
 		],
 		"root": {
 			"label": "script",

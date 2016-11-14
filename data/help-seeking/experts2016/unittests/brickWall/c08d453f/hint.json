@@ -31,8 +31,7 @@
 			"doRepeat",
 			"evaluateCustomBlock"
 		],
-		"caution": false
-	},
-	"badHint": true,
-	"expectedFailure": true
+		"caution": false,
+		"badHint": true
+	}
 }
