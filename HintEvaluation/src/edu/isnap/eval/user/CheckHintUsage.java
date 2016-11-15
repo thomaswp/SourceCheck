@@ -34,6 +34,7 @@ import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.dataset.Grade;
 import edu.isnap.datasets.Fall2015;
+import edu.isnap.datasets.Fall2016;
 import edu.isnap.eval.AutoGrader;
 import edu.isnap.eval.AutoGrader.Grader;
 import edu.isnap.eval.util.Prune;
@@ -46,25 +47,30 @@ public class CheckHintUsage {
 
 	private static final long MIN_DURATON = 5 * 60 * 1000;
 
-	private static boolean isValidSubmission(AssignmentAttempt path) {
-		if (!path.isLikelySubmitted()) return false;
+	private static boolean isValidSubmission(AssignmentAttempt attempt) {
+		if (!attempt.isLikelySubmitted()) return false;
 
-		// Also ignore any that are shorted than then minimum duration (5m)
-		long duration = path.rows.getLast().timestamp.getTime() -
-				path.rows.getFirst().timestamp.getTime();
-		if (duration < MIN_DURATON) return false;
+		// Only check duration of real attempts (grade placeholders have no rows)
+		if (attempt.size() > 0) {
+			// Also ignore any that are shorted than then minimum duration (5m)
+			long duration = attempt.rows.getLast().timestamp.getTime() -
+					attempt.rows.getFirst().timestamp.getTime();
+			if (duration < MIN_DURATON) return false;
+		}
 
 		return true;
 	}
 
 	public static void main(String[] args) throws IOException {
-		writeHints(Fall2015.instance);
+		writeHints(Fall2016.instance);
 	}
 
 	public static void writeHints(Dataset dataset) throws FileNotFoundException, IOException {
 		Spreadsheet attempts = new Spreadsheet();
 		Spreadsheet hints = new Spreadsheet();
-		for (Assignment assignment : dataset.all()) {
+		Assignment[] all = dataset instanceof Fall2015 ?
+				Fall2015.All_WITH_GRADES_ONLY : dataset.all();
+		for (Assignment assignment : all) {
 			writeHints(assignment, attempts, hints);
 		}
 		attempts.write(dataset.analysisDir() + "/attempts.csv");
@@ -111,8 +117,8 @@ public class CheckHintUsage {
 			for (int i = 0; i < attempt.size(); i++) {
 				if (attempt.rows.get(i).snapshot != null) edits++;
 			}
-			long startTime = attempt.rows.getFirst().timestamp.getTime();
-			long endTime = attempt.rows.getLast().timestamp.getTime();
+			long startTime = attempt.size() == 0 ? -1 : attempt.rows.getFirst().timestamp.getTime();
+			long endTime =  attempt.size() == 0 ? -1 : attempt.rows.getLast().timestamp.getTime();
 
 			int edit = 0;
 
@@ -378,9 +384,10 @@ public class CheckHintUsage {
 
 			Grade grade = attempt.grade;
 			if (grade != null) {
+				int i = 0;
 				attemptsSheet.put("grade", grade.average());
 				for (Entry<String, Integer> entry : grade.tests.entrySet()) {
-					attemptsSheet.put(entry.getKey(), entry.getValue());
+					attemptsSheet.put("Goal" + i++, entry.getValue());
 				}
 			}
 		}

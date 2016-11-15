@@ -6,24 +6,78 @@ csv <- function(dir, file) {
   read.csv(paste(dir, file, sep=""))
 }
 
+se <- function(x) sqrt(var(x, na.rm=T)/sum(!is.na(x)))
+first <- function(x) {
+  if (length(x) == 0) return (NA)
+  return (x[1])
+}
+
+cohen.d <- function(xs, ys) {
+  xs <- xs[!is.na(xs)]
+  ys <- ys[!is.na(ys)]
+  m1 <- mean(xs)
+  m2 <- mean(ys)
+  sd1 <- sd(xs)
+  sd2 <- sd(ys)
+  n1 <- length(xs)
+  n2 <- length(ys)
+  
+  s <- sqrt(((n1 - 1) * sd1 * sd1 + (n2 - 1) * sd2 * sd2) / (n1 + n2 - 2))
+  
+  return ((m1 - m2) / s)
+  
+}
+
 loadData <- function() {
   rm(list=ls())
   
   dir2015 <- "../../data/csc200/fall2015/analysis/"
   dir2016 <- "../../data/csc200/fall2016/analysis/"
   
-  projs2015 <<- csv(dir2015, "attempts.csv")
-  projs2016 <<- csv(dir2016, "attempts.csv")
+  projs2015 <- csv(dir2015, "attempts.csv")
+  projs2016 <- csv(dir2016, "attempts.csv")
   
   projs <<- rbind(projs2015, projs2016)
+  projs$follow2 <- projs$followed >= 2;
+  projs$hint3 <- projs$hints >= 3;
   
-  totals <<- ddply(projs[,-3], c("dataset", "assignment"), colwise(mean)) 
+  totals <<- ddply(projs[,-3], c("dataset", "assignment"), colwise(mean))
+  gradesByHints <- ddply(projs[,-3], c("dataset", "assignment", "hint3"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), n=length(grade))
+  gradesByFollowed <- ddply(projs[,-3], c("dataset", "assignment", "follow2"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), n=length(grade))
   # projs <<- projs[projs$hints < 60,]
   # totalsNO <<- ddply(projs[,-1], c(), colwise(sum))
   projs$pFollowed <<- ifelse(projs$hints == 0, 0, projs$followed / projs$hints)
   
   hints <<- csv(dir2016, "hints.csv") 
   hints <<- hints[hints$id %in% projs$id,]
+}
+
+testGrades <- function(assignment) {
+  assignment <- "squiralHW" # TODO, remove
+  g15 <- projs[projs$dataset == "Fall2015" & projs$assignment == assignment,]
+  g16 <- projs[projs$dataset == "Fall2016" & projs$assignment == assignment,]
+  g16H <- g16[g16$hint3,]
+  g16F <- g16[g16$follow2,]
+  
+  # Significant for guess2HW
+  compareStats(g15$grade, g16$grade)
+  # Not significant  
+  compareStats(g16$grade, g16H$grade)
+  # Significant for squiralHW
+  compareStats(g16$grade, g16F$grade)
+  # Not significant
+  compareStats(g15$grade, g16F$grade)
+}
+
+compareStats <- function(x, y, test = t.test) {
+  print(paste("Mx =", mean(x), "SD =", sd(x)))
+  print(paste("My =", mean(y), "SD =", sd(y)))
+  print(paste("Medx =", median(x), "IQR =", IQR(x)))
+  print(paste("Medy =", median(y), "IQR =", IQR(y)))
+  # print(paste("Medx =", median(x), "IQR =", median(x) - IQR(x)/2, "-", median(x) + IQR(x)/2))
+  # print(paste("Medy =", median(y), "IQR =", median(y) - IQR(y)/2, "-", median(y) + IQR(y)/2))
+  print(paste("Cohen's D=", cohen.d(x,y)))
+  test(x, y)
 }
 
 plotFollowedGrades <- function() {

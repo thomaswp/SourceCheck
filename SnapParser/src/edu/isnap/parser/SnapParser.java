@@ -385,7 +385,7 @@ public class SnapParser {
 	}
 
 
-	private HashMap<String, Grade> parseGrades() {
+	public HashMap<String, Grade> parseGrades() {
 		HashMap<String, Grade> grades = new HashMap<>();
 
 		File file = new File(assignment.gradesFile());
