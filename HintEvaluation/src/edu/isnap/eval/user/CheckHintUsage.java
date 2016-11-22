@@ -2,7 +2,6 @@ package edu.isnap.eval.user;
 
 import static edu.isnap.dataset.AttemptAction.*;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -10,7 +9,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +36,7 @@ import edu.isnap.datasets.Fall2016;
 import edu.isnap.eval.AutoGrader;
 import edu.isnap.eval.AutoGrader.Grader;
 import edu.isnap.eval.util.Prune;
+import edu.isnap.eval.util.Spreadsheet;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.Snapshot;
@@ -557,35 +556,6 @@ public class CheckHintUsage {
 		// close printer
 		prtSnapshot.close();
 		prtHint.close();
-	}
-
-	private static class Spreadsheet {
-		private List<Map<String, Object>> rows = new LinkedList<>();
-		private Map<String,Object> row;
-
-		public void newRow() {
-			row = new LinkedHashMap<>();
-			rows.add(row);
-		}
-
-		public void put(String key, Object value) {
-			row.put(key, value);
-		}
-
-		public void write(String path) throws FileNotFoundException, IOException {
-			if (rows.size() == 0) return;
-			String[] header = row.keySet().toArray(new String[row.keySet().size()]);
-			File file = new File(path);
-			file.getParentFile().mkdirs();
-			CSVPrinter printer = new CSVPrinter(new PrintStream(file),
-					CSVFormat.DEFAULT.withHeader(header));
-
-			for (Map<String,Object> row : rows) {
-				printer.printRecord(row.values());
-			}
-
-			printer.close();
-		}
 	}
 
 	@SuppressWarnings("unused")

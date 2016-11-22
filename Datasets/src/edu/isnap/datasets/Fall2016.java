@@ -13,7 +13,7 @@ public class Fall2016 extends Dataset {
 	public final static String dataFile = dataDir + ".csv";
 
 	public final static Assignment LightsCameraAction = new Assignment(instance,
-			"lightsCameraActionHW", Assignment.date(2016, 9, 2), true, true, null) {
+			"lightsCameraActionHW", Assignment.date(2016, 9, 2), true) {
 		@Override
 		public boolean ignore(String attemptID) {
 			// In all cases, logging cuts out part way through

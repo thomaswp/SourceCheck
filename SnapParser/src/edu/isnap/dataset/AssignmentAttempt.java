@@ -32,6 +32,10 @@ public class AssignmentAttempt implements Iterable<AttemptAction> {
 		return submittedActionID >= 0 || (submittedActionID == UNKNOWN && exported);
 	}
 
+	public boolean isSubmitted() {
+		return submittedActionID >= 0;
+	}
+
 	@SuppressWarnings("unused")
 	private AssignmentAttempt() {
 		this(null, null);
