@@ -68,7 +68,7 @@ public class SnapParser {
 
 	public AssignmentAttempt parseSubmission(String id, boolean snapshotsOnly) throws IOException {
 		return parseRows(new File(assignment.parsedDir(), id + ".csv"),
-				null, false, null, null, snapshotsOnly, true);
+				null, null, false, null, null, snapshotsOnly, true);
 	}
 
 	private ActionRows parseActions(final File logFile) {
@@ -148,9 +148,9 @@ public class SnapParser {
 		});
 	}
 
-	private AssignmentAttempt parseRows(File logFile, Grade grade, boolean knownSubmissions,
-			Integer submittedActionID, Integer prequelEndID, boolean snapshotsOnly,
-			boolean addMetadata)
+	private AssignmentAttempt parseRows(File logFile, Grade grade, Integer startID,
+			boolean knownSubmissions, Integer submittedActionID, Integer prequelEndID,
+			boolean snapshotsOnly, boolean addMetadata)
 					throws IOException {
 		String attemptID = logFile.getName().replace(".csv", "");
 
@@ -182,6 +182,8 @@ public class SnapParser {
 			// If we're using log data from a prequel assignment, ignore rows before the prequel was
 			// submitted
 			if (prequelEndID != null && action.id <= prequelEndID) continue;
+			// If we have a start ID, ignore rows that come before it
+			if (startID != null && action.id < startID) continue;
 
 			// If we're only concerned with snapshots, and this was a Block.grabbed action,
 			// we skip it if the next action (presumably a Block.snapped) produces a snapshot
@@ -274,6 +276,7 @@ public class SnapParser {
 
 
 		HashMap<String, Grade> grades = new HashMap<>();
+		HashMap<String, Integer> startIDs = new HashMap<>();
 		Map<String, Submission> submissions = null;
 
 		File assignmentDir = new File(assignment.parsedDir());
@@ -293,6 +296,7 @@ public class SnapParser {
 		Map<String, Integer> prequelEndRows = new HashMap<>();
 		if (addMetadata) {
 			grades = parseGrades();
+			startIDs = parseStartIDs();
 			Map<String, Map<String, Submission>> allSubmissions =
 					ParseSubmitted.getAllSubmissions(assignment.dataset);
 			submissions = allSubmissions.get(assignment.name);
@@ -336,7 +340,7 @@ public class SnapParser {
 			Submission submission = knownSubmissions ? submissions.get(attemptID) : null;
 			Integer submittedRowID = submission != null ? submission.submittedRowID : null;
 			parseCSV(file, snapshotsOnly, addMetadata, attempts, knownSubmissions, submittedRowID,
-					grades, prequelEndRow, threads);
+					grades.get(attemptID), startIDs.get(attemptID), prequelEndRow, threads);
 		}
 		waitForThreads(threads);
 		return attempts;
@@ -354,12 +358,10 @@ public class SnapParser {
 
 	private void parseCSV(final File file, final boolean snapshotsOnly, final boolean addMetadata,
 			final Map<String, AssignmentAttempt> attempts, final boolean knownSubmissions,
-			final Integer submittedRowID, Map<String, Grade> grades, final Integer prequelEndRow,
-			final AtomicInteger threads) {
+			final Integer submittedRowID, final Grade grade, final Integer startID,
+			final Integer prequelEndRow, final AtomicInteger threads) {
 		final String guid = file.getName().replace(".csv", "");
 		if (assignment.ignore(guid)) return;
-
-		final Grade grade = grades.get(guid);
 
 		threads.incrementAndGet();
 		new Thread(new Runnable() {
@@ -367,8 +369,9 @@ public class SnapParser {
 			public void run() {
 				try {
 					if (grade == null || !grade.outlier) {
-						AssignmentAttempt attempt = parseRows(file, grade, knownSubmissions,
-								submittedRowID, prequelEndRow, snapshotsOnly, addMetadata);
+						AssignmentAttempt attempt = parseRows(file, grade, startID,
+								knownSubmissions, submittedRowID, prequelEndRow, snapshotsOnly,
+								addMetadata);
 						if (attempt.size() > 3) {
 							synchronized (attempts) {
 								attempts.put(guid, attempt);
@@ -384,6 +387,33 @@ public class SnapParser {
 		}).start();
 	}
 
+	public HashMap<String, Integer> parseStartIDs() {
+		HashMap<String, Integer> starts = new HashMap<>();
+
+		File file = new File(assignment.dataset.startsFile());
+		if (!file.exists()) {
+			return starts;
+		}
+
+		try {
+			CSVParser parser = new CSVParser(new FileReader(file), CSVFormat.DEFAULT.withHeader());
+
+			for (CSVRecord record : parser) {
+				String assignmentID = record.get("assignment");
+				if (!assignmentID.equals(assignment.name)) continue;
+
+				String attemptID = record.get("id");
+				int codeStart = Integer.parseInt(record.get("code"));
+				starts.put(attemptID, codeStart);
+			}
+
+			parser.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return starts;
+	}
 
 	public HashMap<String, Grade> parseGrades() {
 		HashMap<String, Grade> grades = new HashMap<>();

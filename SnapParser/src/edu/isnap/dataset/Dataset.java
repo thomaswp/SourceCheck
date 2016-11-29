@@ -22,4 +22,8 @@ public abstract class Dataset {
 		return dataDir + "/analysis";
 	}
 
+	public String startsFile() {
+		return dataDir + "/starts.csv";
+	}
+
 }

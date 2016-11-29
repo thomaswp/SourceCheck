@@ -9,4 +9,5 @@ csc200/*/submitted/*/*
 help-seeking/*/submitted/*/*
 !help-seeking/*/submitted/*.txt
 !*/*/unittests/**
+!*/*/starts.csv
 *.zip
