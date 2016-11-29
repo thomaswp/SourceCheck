@@ -45,6 +45,12 @@ import util.LblTree;
 public class CheckHintUsage {
 
 	private static final long MIN_DURATON = 5 * 60 * 1000;
+	private final static int IDLE_DURATION = 60;
+	private final static int SKIP_DURATION = 60 * 5;
+
+	public static void main(String[] args) throws IOException {
+		writeHints(Fall2016.instance);
+	}
 
 	private static boolean isValidSubmission(AssignmentAttempt attempt) {
 		if (!attempt.isLikelySubmitted()) return false;
@@ -58,10 +64,6 @@ public class CheckHintUsage {
 		}
 
 		return true;
-	}
-
-	public static void main(String[] args) throws IOException {
-		writeHints(Fall2016.instance);
 	}
 
 	public static void writeHints(Dataset dataset) throws FileNotFoundException, IOException {
@@ -84,6 +86,7 @@ public class CheckHintUsage {
 		hints.write(assignment.analysisDir() + "/hints.csv");
 	}
 
+	@SuppressWarnings("unused")
 	private static void writeHints(Assignment assignment, Spreadsheet attemptsSheet, Spreadsheet hintsSheet)
 			throws FileNotFoundException, IOException {
 		System.out.println("Writing: " + assignment);
@@ -105,7 +108,6 @@ public class CheckHintUsage {
 
 			List<LblTree> studentTrees = new LinkedList<>();
 
-			@SuppressWarnings("unused")
 			Tuple<Node,Node> lastHint = null;
 
 			Node lastHintNode = null;
@@ -118,6 +120,39 @@ public class CheckHintUsage {
 			}
 			long startTime = attempt.size() == 0 ? -1 : attempt.rows.getFirst().timestamp.getTime();
 			long endTime =  attempt.size() == 0 ? -1 : attempt.rows.getLast().timestamp.getTime();
+
+			// Calculate time statistics
+			int activeTime = 0;
+			int idleTime = 0;
+			int workSegments = 0;
+			long lastTime = 0;
+
+			for (AttemptAction action : attempt) {
+
+				if (action.id > attempt.submittedActionID) {
+					throw new RuntimeException("Attempt " + attempt.id +
+							" has actions after submission.");
+				}
+
+				long time = action.timestamp.getTime() / 1000;
+
+				if (lastTime == 0) {
+					lastTime = time;
+					workSegments++;
+					continue;
+				}
+
+				int duration = (int) (time - lastTime);
+				if (duration < SKIP_DURATION) {
+					int idleDuration = Math.max(duration - IDLE_DURATION, 0);
+					activeTime += duration - idleDuration;
+					idleTime += idleDuration;
+				} else {
+					workSegments++;
+				}
+
+				lastTime = time;
+			}
 
 			int edit = 0;
 
@@ -138,6 +173,7 @@ public class CheckHintUsage {
 				// Get the student's current code and turn it into a tree
 				Node node = SimpleNodeBuilder.toTree(code, true);
 
+				// TODO: update using active time
 				double timePerc = (double)(row.timestamp.getTime() - startTime) /
 						(endTime - startTime);
 
@@ -364,22 +400,31 @@ public class CheckHintUsage {
 			}
 
 			attemptsSheet.newRow();
+			// IDs
 			attemptsSheet.put("dataset", assignment.dataset.getName());
 			attemptsSheet.put("assignment", assignment.name);
 			attemptsSheet.put("id", attemptID);
+			// Hint stats
 			attemptsSheet.put("hints", nHints);
 			attemptsSheet.put("unchangedHints", nUnchangedHints);
 			attemptsSheet.put("duplicateHints", nDuplicateHints);
 			attemptsSheet.put("followed", nHintsFollowed);
 			attemptsSheet.put("closer", nHintsCloser);
-			attemptsSheet.put("thumbsUp", nThumbsUp);
-			attemptsSheet.put("thumbsDown", nThumbsDown);
-			attemptsSheet.put("objHints", nObjectiveHints);
-			attemptsSheet.put("objHintsFollowed", nObjectiveHintsFollowed);
-			attemptsSheet.put("tsHints", nTestScriptHints);
-			attemptsSheet.put("tsHintsFollowed", nTestScriptHintsFollowed);
-			attemptsSheet.put("flagRuns", nFlagRuns);
-			attemptsSheet.put("blockRuns", nBlockRuns);
+			// Time stats
+			attemptsSheet.put("active", activeTime);
+			attemptsSheet.put("idle", idleTime);
+			attemptsSheet.put("total", activeTime + idleTime);
+			attemptsSheet.put("segments", workSegments);
+
+			// Other stats
+//			attemptsSheet.put("thumbsUp", nThumbsUp);
+//			attemptsSheet.put("thumbsDown", nThumbsDown);
+//			attemptsSheet.put("objHints", nObjectiveHints);
+//			attemptsSheet.put("objHintsFollowed", nObjectiveHintsFollowed);
+//			attemptsSheet.put("tsHints", nTestScriptHints);
+//			attemptsSheet.put("tsHintsFollowed", nTestScriptHintsFollowed);
+//			attemptsSheet.put("flagRuns", nFlagRuns);
+//			attemptsSheet.put("blockRuns", nBlockRuns);
 
 			Grade grade = attempt.grade;
 			if (grade != null) {
