@@ -24,6 +24,7 @@ loadData <- function() {
   totalLogs <<- ddply(logs[,-3], c("dataset", "assignment"), colwise(safeMean))
   
   grades <- ddply(projs[!is.na(projs$grade),-3], c("dataset", "assignment"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), n=length(grade))
+  grades$completed <- grades$n / ifelse(grades$dataset=="Fall2016", 68, 82)
   gradesByHints <- ddply(projs[,-3], c("dataset", "assignment", "hint3"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), n=length(grade))
   gradesByFollowed <- ddply(projs[,-3], c("dataset", "assignment", "follow2"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), n=length(grade))
   # projs <<- projs[projs$hints < 60,]

@@ -38,3 +38,8 @@ compareStats <- function(x, y, test = wilcox.test) {
   print(paste("Cohen's D=", cohen.d(x,y)))
   test(x, y)
 }
+
+c.merge <- function(x, y) {
+  cols <- intersect(names(x), names(y))
+  rbind(x[,cols], y[,cols])
+}
