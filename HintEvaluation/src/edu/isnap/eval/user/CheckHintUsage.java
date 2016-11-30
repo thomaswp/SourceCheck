@@ -107,7 +107,7 @@ public class CheckHintUsage {
 			boolean hasLogs = true;
 
 
-			// For any that we're exported or for which we have no logs, we use an empty assignment
+			// For any that attempt for which we have no logs, we use an empty assignment
 			// attempt, which results in 0 for almost every column, but still includes the grades
 			if (!isValidSubmission(attempt)) {
 				attempt = new AssignmentAttempt(attemptID, attempt.grade);
