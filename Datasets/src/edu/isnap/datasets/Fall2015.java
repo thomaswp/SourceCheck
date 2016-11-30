@@ -1,16 +1,12 @@
 package edu.isnap.datasets;
 
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.Dataset;
-import edu.isnap.dataset.Grade;
-import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
 
 public class Fall2015 extends Dataset {
@@ -27,11 +23,11 @@ public class Fall2015 extends Dataset {
 
 		// Note: the first three assignments were not recorded in Fall 2015
 		public final static Assignment LightsCameraAction = new FakeAssignment(instance,
-				"lightsCameraActionHW", Assignment.date(2016, 9, 4));
+				"lightsCameraActionHW", Assignment.date(2016, 9, 4), false);
 		public final static Assignment PolygonMaker = new FakeAssignment(instance,
-				"polygonMakerLab", Assignment.date(2015, 9, 4));
+				"polygonMakerLab", Assignment.date(2015, 9, 4), true);
 		public final static Assignment Squiral = new FakeAssignment(instance,
-				"squiralHW", Assignment.date(2015, 9, 13));
+				"squiralHW", Assignment.date(2015, 9, 13), true);
 
 		public final static Assignment GuessingGame1 = new Assignment(instance,
 				"guess1Lab", Assignment.date(2015, 9, 18), false, true, null) {
@@ -82,7 +78,7 @@ public class Fall2015 extends Dataset {
 			GuessingGame1, GuessingGame2, GuessingGame3
 		};
 
-		public final static Assignment[] All_WITH_GRADES_ONLY = {
+		public final static Assignment[] All_WITH_SUBMISSIONS_ONLY = {
 			LightsCameraAction, PolygonMaker, Squiral,
 			GuessingGame1, GuessingGame2, GuessingGame3
 		};
@@ -96,24 +92,15 @@ public class Fall2015 extends Dataset {
 			return All;
 		}
 
-
 		private static class FakeAssignment extends Assignment {
-			FakeAssignment(Dataset dataset, String name, Date end) {
-				super(dataset, name, end, false, true, null);
+			FakeAssignment(Dataset dataset, String name, Date end, boolean graded) {
+				super(dataset, name, end, false, graded, null);
 			}
 
 			@Override
 			public Map<String, AssignmentAttempt> load(Mode mode, boolean snapshotsOnly,
 					boolean addMetadata) {
-				HashMap<String, Grade> grades = new SnapParser(this, Mode.Ignore).parseGrades();
-				Map<String, AssignmentAttempt> attempts = new TreeMap<>();
-				for (Entry<String, Grade> grade : grades.entrySet()) {
-					AssignmentAttempt attempt = new AssignmentAttempt(grade.getKey(),
-							grade.getValue());
-					attempt.exported = !grade.getValue().outlier;
-					attempts.put(grade.getKey(), attempt);
-				}
-				return attempts;
+				return new TreeMap<>();
 			}
 		}
 	}

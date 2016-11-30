@@ -72,7 +72,7 @@ public class ParseSubmitted {
 
 		Map<String, String> submitted = new HashMap<>();
 		for (File file : dir.listFiles()) {
-			if (!file.getName().endsWith(".xml")) {
+			if (!file.getName().toLowerCase().endsWith(".xml")) {
 				System.err.println("Unknown file in submitted folder: " + file.getAbsolutePath());
 				continue;
 			}

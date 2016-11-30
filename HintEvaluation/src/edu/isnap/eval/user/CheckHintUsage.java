@@ -32,7 +32,6 @@ import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.dataset.Grade;
 import edu.isnap.datasets.Fall2015;
-import edu.isnap.datasets.Fall2016;
 import edu.isnap.eval.AutoGrader;
 import edu.isnap.eval.AutoGrader.Grader;
 import edu.isnap.eval.util.Prune;
@@ -49,19 +48,16 @@ public class CheckHintUsage {
 	private final static int SKIP_DURATION = 60 * 5;
 
 	public static void main(String[] args) throws IOException {
-		writeHints(Fall2016.instance);
+		writeHints(Fall2015.instance);
 	}
 
 	private static boolean isValidSubmission(AssignmentAttempt attempt) {
-		if (!attempt.isLikelySubmitted()) return false;
+		if (attempt == null || !attempt.isLikelySubmitted() || attempt.size() == 0) return false;
 
-		// Only check duration of real attempts (grade placeholders have no rows)
-		if (attempt.size() > 0) {
-			// Also ignore any that are shorted than then minimum duration (5m)
-			long duration = attempt.rows.getLast().timestamp.getTime() -
-					attempt.rows.getFirst().timestamp.getTime();
-			if (duration < MIN_DURATON) return false;
-		}
+		// Also ignore any that are shorted than then minimum duration (5m)
+		long duration = attempt.rows.getLast().timestamp.getTime() -
+				attempt.rows.getFirst().timestamp.getTime();
+		if (duration < MIN_DURATON) return false;
 
 		return true;
 	}
@@ -70,7 +66,7 @@ public class CheckHintUsage {
 		Spreadsheet attempts = new Spreadsheet();
 		Spreadsheet hints = new Spreadsheet();
 		Assignment[] all = dataset instanceof Fall2015 ?
-				Fall2015.All_WITH_GRADES_ONLY : dataset.all();
+				Fall2015.All_WITH_SUBMISSIONS_ONLY : dataset.all();
 		for (Assignment assignment : all) {
 			writeHints(assignment, attempts, hints);
 		}
@@ -87,24 +83,36 @@ public class CheckHintUsage {
 	}
 
 	@SuppressWarnings("unused")
-	private static void writeHints(Assignment assignment, Spreadsheet attemptsSheet, Spreadsheet hintsSheet)
+	private static void writeHints(Assignment assignment, Spreadsheet attemptsSheet,
+			Spreadsheet hintsSheet)
 			throws FileNotFoundException, IOException {
 		System.out.println("Writing: " + assignment);
 
-		// Get the name-path pairs of all projects we logged
-		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, false);
+		// Get all submitted attempts at the assignment
+		Map<String, AssignmentAttempt> attempts =
+				assignment.loadAllSubmitted(Mode.Use, false, true);
 
 		// Iterate over all submissions
 		for (String attemptID : attempts.keySet()) {
+
 			AssignmentAttempt attempt = attempts.get(attemptID);
-			// Ignore any that weren't exported (and thus couldn't have been submitted)
-			if (!isValidSubmission(attempt)) continue;
+			Grade grade = attempt.grade;
+			if (grade != null && grade.outlier) continue;
 
 			int nHints = 0, nUnchangedHints = 0, nDuplicateHints = 0, nThumbsUp = 0,
 					nThumbsDown = 0, nHintsFollowed = 0, nHintsCloser = 0;
 			int nObjectiveHints = 0, nObjectiveHintsFollowed = 0;
 			int nTestScriptHints = 0, nTestScriptHintsFollowed = 0;
 			int nBlockRuns = 0, nFlagRuns = 0;
+			boolean hasLogs = true;
+
+
+			// For any that we're exported or for which we have no logs, we use an empty assignment
+			// attempt, which results in 0 for almost every column, but still includes the grades
+			if (!isValidSubmission(attempt)) {
+				attempt = new AssignmentAttempt(attemptID, attempt.grade);
+				hasLogs = false;
+			}
 
 			List<LblTree> studentTrees = new LinkedList<>();
 
@@ -177,7 +185,7 @@ public class CheckHintUsage {
 				double timePerc = (double)(row.timestamp.getTime() - startTime) /
 						(endTime - startTime);
 
-				HashMap<String, Boolean> grade = AutoGrader.grade(node);
+				HashMap<String, Boolean> autograde = AutoGrader.grade(node);
 
 				// Check if this action was showing a hint
 				String action = row.message;
@@ -244,8 +252,8 @@ public class CheckHintUsage {
 
 					String objective = null;
 					// Check if applying a hint will complete an objective
-					for (String key : grade.keySet()) {
-						if (!grade.get(key) && hintGrade.get(key)) {
+					for (String key : autograde.keySet()) {
+						if (!autograde.get(key) && hintGrade.get(key)) {
 							objective = key;
 							break;
 						}
@@ -404,6 +412,7 @@ public class CheckHintUsage {
 			attemptsSheet.put("dataset", assignment.dataset.getName());
 			attemptsSheet.put("assignment", assignment.name);
 			attemptsSheet.put("id", attemptID);
+			attemptsSheet.put("logs", hasLogs);
 			// Hint stats
 			attemptsSheet.put("hints", nHints);
 			attemptsSheet.put("unchangedHints", nUnchangedHints);
@@ -426,7 +435,6 @@ public class CheckHintUsage {
 //			attemptsSheet.put("flagRuns", nFlagRuns);
 //			attemptsSheet.put("blockRuns", nBlockRuns);
 
-			Grade grade = attempt.grade;
 			if (grade != null) {
 				int i = 0;
 				attemptsSheet.put("grade", grade.average());
