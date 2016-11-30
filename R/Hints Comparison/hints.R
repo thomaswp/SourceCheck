@@ -1,42 +1,7 @@
-library(ggplot2)
-library(plyr)
-library(reshape2)
+source('util.R')
 
 csv <- function(dir, file) {
   read.csv(paste(dir, file, sep=""))
-}
-
-se <- function(x) sqrt(var(x, na.rm=T)/sum(!is.na(x)))
-first <- function(x) {
-  if (length(x) == 0) return (NA)
-  return (x[1])
-}
-
-cohen.d <- function(xs, ys) {
-  xs <- xs[!is.na(xs)]
-  ys <- ys[!is.na(ys)]
-  m1 <- mean(xs)
-  m2 <- mean(ys)
-  sd1 <- sd(xs)
-  sd2 <- sd(ys)
-  n1 <- length(xs)
-  n2 <- length(ys)
-  
-  s <- sqrt(((n1 - 1) * sd1 * sd1 + (n2 - 1) * sd2 * sd2) / (n1 + n2 - 2))
-  
-  return ((m1 - m2) / s)
-  
-}
-
-compareStats <- function(x, y, test = wilcox.test) {
-  print(paste("Mx =", mean(x), "SD =", sd(x)))
-  print(paste("My =", mean(y), "SD =", sd(y)))
-  print(paste("Medx =", median(x), "IQR =", IQR(x)))
-  print(paste("Medy =", median(y), "IQR =", IQR(y)))
-  # print(paste("Medx =", median(x), "IQR =", median(x) - IQR(x)/2, "-", median(x) + IQR(x)/2))
-  # print(paste("Medy =", median(y), "IQR =", median(y) - IQR(y)/2, "-", median(y) + IQR(y)/2))
-  print(paste("Cohen's D=", cohen.d(x,y)))
-  test(x, y)
 }
 
 loadData <- function() {
@@ -53,7 +18,12 @@ loadData <- function() {
   projs$hint3 <- projs$hints >= 3;
   projs$percIdle <- projs$idle / projs$total
   
-  totals <<- ddply(projs[,-3], c("dataset", "assignment"), colwise(mean))
+  logs <<- projs[projs$logs=="true",]
+  
+  totals <<- ddply(projs[,-3], c("dataset", "assignment"), colwise(safeMean))
+  totalLogs <<- ddply(logs[,-3], c("dataset", "assignment"), colwise(safeMean))
+  
+  grades <- ddply(projs[!is.na(projs$grade),-3], c("dataset", "assignment"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), n=length(grade))
   gradesByHints <- ddply(projs[,-3], c("dataset", "assignment", "hint3"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), n=length(grade))
   gradesByFollowed <- ddply(projs[,-3], c("dataset", "assignment", "follow2"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), n=length(grade))
   # projs <<- projs[projs$hints < 60,]
@@ -65,27 +35,28 @@ loadData <- function() {
 }
 
 testTimes <- function(assignment) {
-  assignment <- "guess3Lab" # TODO, remove
-  g15 <- projs[projs$dataset == "Fall2015" & projs$assignment == assignment,]
-  g16 <- projs[projs$dataset == "Fall2016" & projs$assignment == assignment,]
-  g16H <- g16[g16$hint3,]
-  g16F <- g16[g16$follow2,]
-  
-  
+  assignment <- "guess2HW" # TODO, remove
+  ps <- projs[projs$logs=="true" & projs$assignment == assignment,]
+  g15 <- ps[ps$dataset == "Fall2015",]
+  g16 <- ps[ps$dataset == "Fall2016",]
+
+  # Not-quite-significantly more total time on GG3
   compareStats(g15$total, g16$total)
-  # Significantly less active time for 2016 on GG3
+  # Significantly more time on GG3
   compareStats(g15$active, g16$active)
+  # Significantly less idle perc on GG1 and not-quite-significantly less on GG2
   compareStats(g15$percIdle, g16$percIdle)
 }
 
 testGrades <- function(assignment) {
   assignment <- "guess2HW" # TODO, remove
-  g15 <- projs[projs$dataset == "Fall2015" & projs$assignment == assignment,]
-  g16 <- projs[projs$dataset == "Fall2016" & projs$assignment == assignment,]
+  ps <- projs[!is.na(projs$grade) & projs$assignment == assignment,]
+  g15 <- ps[ps$dataset == "Fall2015",]
+  g16 <- ps[ps$dataset == "Fall2016",]
   g16H <- g16[g16$hint3,]
   g16F <- g16[g16$follow2,]
   
-  # Significant for guess2HW
+  # Not-quite-significant for guess2HW
   compareStats(g15$grade, g16$grade)
   # Not significant  
   compareStats(g16$grade, g16H$grade)

@@ -1,0 +1,40 @@
+library(ggplot2)
+library(plyr)
+library(reshape2)
+
+safeMean <- function(x) {
+  mean(x, na.rm = T)
+}
+
+se <- function(x) sqrt(var(x, na.rm=T)/sum(!is.na(x)))
+first <- function(x) {
+  if (length(x) == 0) return (NA)
+  return (x[1])
+}
+
+cohen.d <- function(xs, ys) {
+  xs <- xs[!is.na(xs)]
+  ys <- ys[!is.na(ys)]
+  m1 <- mean(xs)
+  m2 <- mean(ys)
+  sd1 <- sd(xs)
+  sd2 <- sd(ys)
+  n1 <- length(xs)
+  n2 <- length(ys)
+  
+  s <- sqrt(((n1 - 1) * sd1 * sd1 + (n2 - 1) * sd2 * sd2) / (n1 + n2 - 2))
+  
+  return ((m1 - m2) / s)
+  
+}
+
+compareStats <- function(x, y, test = wilcox.test) {
+  print(paste("Mx =", mean(x), "SD =", sd(x)))
+  print(paste("My =", mean(y), "SD =", sd(y)))
+  print(paste("Medx =", median(x), "IQR =", IQR(x)))
+  print(paste("Medy =", median(y), "IQR =", IQR(y)))
+  # print(paste("Medx =", median(x), "IQR =", median(x) - IQR(x)/2, "-", median(x) + IQR(x)/2))
+  # print(paste("Medy =", median(y), "IQR =", median(y) - IQR(y)/2, "-", median(y) + IQR(y)/2))
+  print(paste("Cohen's D=", cohen.d(x,y)))
+  test(x, y)
+}
