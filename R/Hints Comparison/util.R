@@ -28,7 +28,13 @@ cohen.d <- function(xs, ys) {
   
 }
 
+condCompare <- function(x, cond, test = wilcox.test) {
+  compareStats(x[cond], x[!cond], test)
+}
+
 compareStats <- function(x, y, test = wilcox.test) {
+  x <- x[!is.na(x)]
+  y <- y[!is.na(y)]
   print(paste("Mx =", mean(x), "SD =", sd(x)))
   print(paste("My =", mean(y), "SD =", sd(y)))
   print(paste("Medx =", median(x), "IQR =", IQR(x)))

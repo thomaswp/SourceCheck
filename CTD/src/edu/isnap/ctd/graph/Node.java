@@ -138,6 +138,7 @@ public class Node extends StringHashable {
 	}
 
 	public Node searchForNodeWithID(final String id) {
+		if (id == null) return null;
 		return search(new Predicate() {
 			@Override
 			public boolean eval(Node node) {

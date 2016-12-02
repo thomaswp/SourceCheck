@@ -22,16 +22,15 @@ import org.json.JSONObject;
 
 import distance.RTED_InfoTree_Opt;
 import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.graph.Node.Predicate;
 import edu.isnap.ctd.hint.HintFactoryMap.VectorHint;
 import edu.isnap.ctd.util.Alignment;
-import edu.isnap.ctd.util.Tuple;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.dataset.Grade;
 import edu.isnap.datasets.Fall2015;
+import edu.isnap.datasets.Fall2016;
 import edu.isnap.eval.AutoGrader;
 import edu.isnap.eval.AutoGrader.Grader;
 import edu.isnap.eval.util.Prune;
@@ -48,7 +47,7 @@ public class CheckHintUsage {
 	private final static int SKIP_DURATION = 60 * 5;
 
 	public static void main(String[] args) throws IOException {
-		writeHints(Fall2015.instance);
+		writeHints(Fall2016.instance);
 	}
 
 	private static boolean isValidSubmission(AssignmentAttempt attempt) {
@@ -82,7 +81,6 @@ public class CheckHintUsage {
 		hints.write(assignment.analysisDir() + "/hints.csv");
 	}
 
-	@SuppressWarnings("unused")
 	private static void writeHints(Assignment assignment, Spreadsheet attemptsSheet,
 			Spreadsheet hintsSheet)
 			throws FileNotFoundException, IOException {
@@ -99,13 +97,9 @@ public class CheckHintUsage {
 			Grade grade = attempt.grade;
 			if (grade != null && grade.outlier) continue;
 
-			int nHints = 0, nUnchangedHints = 0, nDuplicateHints = 0, nThumbsUp = 0,
+			int nHints = 0, nDuplicateHints = 0, nThumbsUp = 0,
 					nThumbsDown = 0, nHintsFollowed = 0, nHintsCloser = 0;
-			int nObjectiveHints = 0, nObjectiveHintsFollowed = 0;
-			int nTestScriptHints = 0, nTestScriptHintsFollowed = 0;
-			int nBlockRuns = 0, nFlagRuns = 0;
 			boolean hasLogs = true;
-
 
 			// For any that attempt for which we have no logs, we use an empty assignment
 			// attempt, which results in 0 for almost every column, but still includes the grades
@@ -114,13 +108,9 @@ public class CheckHintUsage {
 				hasLogs = false;
 			}
 
-			List<LblTree> studentTrees = new LinkedList<>();
-
-			Tuple<Node,Node> lastHint = null;
-
-			Node lastHintNode = null;
-			String lastHintData = null;
 			Snapshot code = null;
+			HashSet<String> uniqueHints = new HashSet<>();
+			String lastHintCode = "";
 
 			int edits = 0;
 			for (int i = 0; i < attempt.size(); i++) {
@@ -185,8 +175,6 @@ public class CheckHintUsage {
 				double timePerc = (double)(row.timestamp.getTime() - startTime) /
 						(endTime - startTime);
 
-				HashMap<String, Boolean> autograde = AutoGrader.grade(node);
-
 				// Check if this action was showing a hint
 				String action = row.message;
 				if (SHOW_HINT_MESSAGES.contains(action)) {
@@ -194,14 +182,6 @@ public class CheckHintUsage {
 
 					// Get the data from this event
 					JSONObject data = new JSONObject(row.data);
-
-
-//					System.out.println("S" + nStudents + "H" + studentTrees.size());
-//					System.out.println(code.toCode());
-//					System.out.println(node.prettyPrint());
-
-					LblTree tree = Prune.removeSmallerScripts(node).toTree();
-					studentTrees.add(tree);
 
 					// Find the parent node that this hint affects
 					Node parent = findParent(row.message, code, node, data);
@@ -247,36 +227,14 @@ public class CheckHintUsage {
 					}
 					int nodeChange = hintOutcome.size() - parent.size();
 
-					// Grade the node after applying the hint
-					HashMap<String, Boolean> hintGrade = AutoGrader.grade(hintOutcome.root());
-
-					String objective = null;
-					// Check if applying a hint will complete an objective
-					for (String key : autograde.keySet()) {
-						if (!autograde.get(key) && hintGrade.get(key)) {
-							objective = key;
-							break;
-						}
-					}
-					// record the number of hints requested that can complete an objective
-					if (objective != null) nObjectiveHints++;
-
-					// get the corresponding grader for the objective completed by hint
-					Grader objectiveGrader = null;
-					for (Grader g : AutoGrader.graders)
-						if (g.name().equals(objective))
-							objectiveGrader = g;
-
 					// Calculate original distance between student's code with the hint
 					int originalHintDistance = Alignment.alignCost(parent.getChildArray(), to);
 
-					lastHint = new Tuple<>(parent, hintOutcome);
-					// For debugging these hints
-//					System.out.println("  " + parent + "\n->" + hintOutcome + "\n");
-
 					boolean gotCloser = false;
-					boolean gotPartial = false;
-					boolean gotObjective = false;
+					boolean followed = false;
+
+					long time = row.timestamp.getTime();
+					long nextActionTime = time;
 
 					// Look ahead for hint application in the student's code
 					int steps = 0;
@@ -289,42 +247,37 @@ public class CheckHintUsage {
 						if (nextCode == null)
 							continue;
 						steps++;
+						nextActionTime = nextRow.timestamp.getTime();
 
 						// If we've looked more than n (5) steps in the future, give up
 						if (steps > 5) break;
 
 						// Find the same parent node and see if it matches the hint state
 						Node nextNode = SimpleNodeBuilder.toTree(nextCode, true);
-						Node nextParent = findParent(nextNode, data);
+						Node nextParent = nextNode.searchForNodeWithID(parent.id);
+						if (nextParent == null) nextParent = findParent(nextNode, data);
 						if (nextParent == null) continue;
 
 						int newDistance = Alignment.alignCost(nextParent.getChildArray(), to);
 						if (newDistance < originalHintDistance) gotCloser = true;
 
 						if (Arrays.equals(nextParent.getChildArray(), to)) {
-							gotPartial = true;
-						}
-
-						if (objectiveGrader != null && objectiveGrader.pass(nextNode)) {
-							gotObjective = true;
+							followed = true;
 						}
 					}
 					if (gotCloser) nHintsCloser++;
-					if (gotPartial) {
+					if (followed) {
 						nHintsFollowed++;
 					}
-					if (gotObjective) nObjectiveHintsFollowed++;
 
-					boolean duplicate = false;
-					boolean unchanged;
-					if (unchanged = node.equals(lastHintNode)) {
-						nUnchangedHints++;
-						if (duplicate = row.data.equals(lastHintData)) {
-							nDuplicateHints++;
-						}
-					}
-					lastHintNode = node;
-					lastHintData = row.data;
+					// We get a simple representation for the hint, that omits some of the hint's
+					// data fields
+					String root = data.has("root") ? data.getString("root") : null;
+					String hintCode = String.join("_", root, Arrays.toString(from),
+							Arrays.toString(to));
+					boolean duplicate = !uniqueHints.add(hintCode);
+					boolean repeat = lastHintCode.equals(hintCode);
+					lastHintCode = hintCode;
 
 					hintsSheet.newRow();
 					hintsSheet.put("dataset", assignment.dataset.getName());
@@ -333,16 +286,13 @@ public class CheckHintUsage {
 					hintsSheet.put("type", action.replace("SnapDisplay.show", "").replace("Hint", ""));
 					hintsSheet.put("editPerc", (double)edit / edits);
 					hintsSheet.put("timePerc", timePerc);
-					hintsSheet.put("followed", gotPartial ? 1 : 0);
-					hintsSheet.put("obj", objective == null ? "" : objective);
-					hintsSheet.put("objComplete", objective == null ? "" : (gotObjective ? 1 : 0));
-					hintsSheet.put("delete", delete ? 1 : 0);
+					hintsSheet.put("followed", followed);
+					hintsSheet.put("delete", delete);
 					hintsSheet.put("change", nodeChange);
-					hintsSheet.put("unchanged", unchanged ? 1 : 0);
-					hintsSheet.put("duplicate", duplicate ? 1 : 0);
+					hintsSheet.put("duplicate", duplicate);
+					hintsSheet.put("repeat", repeat);
 
-					long time = row.timestamp.getTime();
-
+					// Determine how long the hint was kept up before being closed
 					long dismissTime = 0;
 					boolean done = false;
 					for (int j = i + 1; j < attempt.size(); j++) {
@@ -354,39 +304,14 @@ public class CheckHintUsage {
 						}
 					}
 					int duration = (int)(dismissTime - time) / 1000;
+					hintsSheet.put("dismissDone", done);
 					hintsSheet.put("duration", duration);
-					hintsSheet.put("done", done ? 1 : 0);
 
-
-					long nextActionTime = time;
-					if (i < attempt.size() - 1) nextActionTime =
-							attempt.rows.get(i + 1).timestamp.getTime();
+					// Determine how long after seeing the hint the student made their next action
 					int pause = (int)(nextActionTime - time) / 1000;
 					hintsSheet.put("pause", pause);
 
-					Node n = parent;
-					while (n.parent != null && !n.parent.hasType("sprite", "customBlock")) {
-						n = n.parent;
-					}
-					int scriptSize = 0;
-					boolean testScript = false;
-					if (n.hasType("script") && n.parent != null) {
-						scriptSize = n.size() - 1;
-						final int children = n.children.size();
-						if (n.parent.searchChildren(new Predicate() {
-							@Override
-							public boolean eval(Node node) {
-								return node.hasType("script") && node.children.size() > children;
-							}
-						}) >= 0) {
-							testScript = true;
-							nTestScriptHints++;
-							if (gotPartial) nTestScriptHintsFollowed++;
-						}
-
-					}
-					hintsSheet.put("scriptSize", scriptSize);
-					hintsSheet.put("testScript", testScript ? 1 : 0);
+					hintsSheet.put("hash", hintCode.hashCode());
 				}
 
 
@@ -402,9 +327,6 @@ public class CheckHintUsage {
 //						}
 					}
 				}
-
-				if (IDE_GREEN_FLAG_RUN.equals(action)) nFlagRuns++;
-				if (BLOCK_CLICK_RUN.equals(action)) nBlockRuns++;
 			}
 
 			attemptsSheet.newRow();
@@ -415,8 +337,7 @@ public class CheckHintUsage {
 			attemptsSheet.put("logs", hasLogs);
 			// Hint stats
 			attemptsSheet.put("hints", nHints);
-			attemptsSheet.put("unchangedHints", nUnchangedHints);
-			attemptsSheet.put("duplicateHints", nDuplicateHints);
+			attemptsSheet.put("duplicates", nDuplicateHints);
 			attemptsSheet.put("followed", nHintsFollowed);
 			attemptsSheet.put("closer", nHintsCloser);
 			// Time stats
@@ -426,14 +347,8 @@ public class CheckHintUsage {
 			attemptsSheet.put("segments", workSegments);
 
 			// Other stats
-//			attemptsSheet.put("thumbsUp", nThumbsUp);
-//			attemptsSheet.put("thumbsDown", nThumbsDown);
-//			attemptsSheet.put("objHints", nObjectiveHints);
-//			attemptsSheet.put("objHintsFollowed", nObjectiveHintsFollowed);
-//			attemptsSheet.put("tsHints", nTestScriptHints);
-//			attemptsSheet.put("tsHintsFollowed", nTestScriptHintsFollowed);
-//			attemptsSheet.put("flagRuns", nFlagRuns);
-//			attemptsSheet.put("blockRuns", nBlockRuns);
+			attemptsSheet.put("thumbsUp", nThumbsUp);
+			attemptsSheet.put("thumbsDown", nThumbsDown);
 
 			if (grade != null) {
 				int i = 0;

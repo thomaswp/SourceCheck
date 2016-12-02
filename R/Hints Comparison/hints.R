@@ -14,26 +14,48 @@ loadData <- function() {
   projs2016 <- csv(dir2016, "attempts.csv")
   
   projs <<- rbind(projs2015, projs2016)
-  projs$follow2 <- projs$followed >= 2;
-  projs$hint3 <- projs$hints >= 3;
-  projs$percIdle <- projs$idle / projs$total
+  projs$pFollowed <<- projs$followed / projs$hints
+  projs$follow2 <<- projs$followed >= 2;
+  projs$hint3 <<- projs$hints >= 3;
+  projs$percIdle <<- projs$idle / projs$total
   
-  projs$logs <- projs$logs == "true"
+  projs$logs <<- projs$logs == "true"
   logs <<- projs[projs$logs,]
   
   totals <<- ddply(projs[,-3], c("dataset", "assignment"), colwise(safeMean))
   totalLogs <<- ddply(logs[,-3], c("dataset", "assignment"), colwise(safeMean))
   
-  grades <- ddply(projs[!is.na(projs$grade),-3], c("dataset", "assignment"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), n=length(grade))
-  grades$completed <- grades$n / ifelse(grades$dataset=="Fall2016", 68, 82)
-  gradesByHints <- ddply(projs[,-3], c("dataset", "assignment", "hint3"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), n=length(grade))
-  gradesByFollowed <- ddply(projs[,-3], c("dataset", "assignment", "follow2"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), n=length(grade))
+  grades <<- ddply(projs[!is.na(projs$grade),-3], c("dataset", "assignment"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), n=length(grade))
+  grades$completed <<- grades$n / ifelse(grades$dataset=="Fall2016", 68, 82)
+  gradesByHints <<- ddply(projs[,-3], c("dataset", "assignment", "hint3"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), n=length(grade))
+  gradesByFollowed <<- ddply(projs[,-3], c("dataset", "assignment", "follow2"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), n=length(grade))
   # projs <<- projs[projs$hints < 60,]
   # totalsNO <<- ddply(projs[,-1], c(), colwise(sum))
   # projs$pFollowed <<- ifelse(projs$hints == 0, 0, projs$followed / projs$hints)
   
   hints <<- csv(dir2016, "hints.csv") 
   hints <<- hints[hints$id %in% projs$id,]
+  hints$duration[hints$duration < 0] <<- NA
+  hints$duration[hints$duration > 500] <<- NA
+  hints$pause[hints$pause < 0] <<- NA
+  hints$pause[hints$pause > 500] <<- NA
+}
+
+hintStats <- function() {
+  # 38.8% of hints displayed were followed
+  mean(hints$followed)
+  # 37.4% of hints were duplicates
+  mean(hints$duplicate)
+  # 14.5% of hints were exact repeats of the last hint
+  mean(hints$repeat.)
+  # 47.3% of hints were followed eventually
+  mean(ddply(hints, c("id", "hash"), summarize, f=any(followed))$f)
+  
+  ggplot(hints, aes(duration, color=(followed==1))) + geom_density()
+  ggplot(hints, aes(pause, color=(followed==1))) + geom_density()
+  # followed hints had non-significantly shorter view time and pause before action
+  condCompare(hints$duration, hints$followed == 1)
+  condCompare(hints$pause, hints$followed == 1)
 }
 
 testTimes <- function(assignment) {

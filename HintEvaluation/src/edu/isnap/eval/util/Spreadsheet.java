@@ -25,6 +25,10 @@ public class Spreadsheet {
 		row.put(key, value);
 	}
 
+	public void put(String key, boolean value) {
+		put(key, value ? "TRUE" : "FALSE");
+	}
+
 	public void write(String path) throws FileNotFoundException, IOException {
 		if (rows.size() == 0) return;
 		String[] header = row.keySet().toArray(new String[row.keySet().size()]);

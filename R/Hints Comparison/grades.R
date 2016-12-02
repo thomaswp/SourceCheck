@@ -15,5 +15,6 @@ loadData <- function() {
   grades <- c.merge(fall2015, spring2016)
   
   compare <- ddply(grades, c("dataset"), colwise(safeMean))
+  # Why does squiral'15 have only 77 non-0 grades when I have 79 valid submissions?
   compareCompletion <- ddply(grades, c("dataset"), colwise(function(x) sum(x > 0)))
 }
