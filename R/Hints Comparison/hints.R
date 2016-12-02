@@ -18,6 +18,7 @@ loadData <- function() {
   projs$follow2 <<- projs$followed >= 2;
   projs$hint3 <<- projs$hints >= 3;
   projs$percIdle <<- projs$idle / projs$total
+  projs$pass <<- projs$grade >= 0.8
   
   projs$logs <<- projs$logs == "true"
   logs <<- projs[projs$logs,]
@@ -25,10 +26,10 @@ loadData <- function() {
   totals <<- ddply(projs[,-3], c("dataset", "assignment"), colwise(safeMean))
   totalLogs <<- ddply(logs[,-3], c("dataset", "assignment"), colwise(safeMean))
   
-  grades <<- ddply(projs[!is.na(projs$grade),-3], c("dataset", "assignment"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), n=length(grade))
+  grades <<- ddply(projs[!is.na(projs$grade),-3], c("dataset", "assignment"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), percPass=mean(pass), n=length(grade))
   grades$completed <<- grades$n / ifelse(grades$dataset=="Fall2016", 68, 82)
-  gradesByHints <<- ddply(projs[,-3], c("dataset", "assignment", "hint3"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), n=length(grade))
-  gradesByFollowed <<- ddply(projs[,-3], c("dataset", "assignment", "follow2"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), n=length(grade))
+  gradesByHints <<- ddply(projs[,-3], c("dataset", "assignment", "hint3"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), percPass=mean(pass), n=length(grade))
+  gradesByFollowed <<- ddply(projs[,-3], c("dataset", "assignment", "follow2"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), percPass=mean(pass), n=length(grade))
   # projs <<- projs[projs$hints < 60,]
   # totalsNO <<- ddply(projs[,-1], c(), colwise(sum))
   # projs$pFollowed <<- ifelse(projs$hints == 0, 0, projs$followed / projs$hints)
@@ -50,12 +51,12 @@ hintStats <- function() {
   mean(hints$repeat.)
   # 47.3% of hints were followed eventually
   mean(ddply(hints, c("id", "hash"), summarize, f=any(followed))$f)
-  
-  ggplot(hints, aes(duration, color=(followed==1))) + geom_density()
-  ggplot(hints, aes(pause, color=(followed==1))) + geom_density()
+
+  ggplot(hints, aes(duration, color=followed)) + geom_density()
+  ggplot(hints, aes(pause, color=followed)) + geom_density()
   # followed hints had non-significantly shorter view time and pause before action
-  condCompare(hints$duration, hints$followed == 1)
-  condCompare(hints$pause, hints$followed == 1)
+  condCompare(hints$duration, hints$followed)
+  condCompare(hints$pause, hints$followed)
 }
 
 testTimes <- function(assignment) {
@@ -73,7 +74,7 @@ testTimes <- function(assignment) {
 }
 
 testGrades <- function(assignment) {
-  assignment <- "guess2HW" # TODO, remove
+  assignment <- "squiralHW" # TODO, remove
   ps <- projs[!is.na(projs$grade) & projs$assignment == assignment,]
   g15 <- ps[ps$dataset == "Fall2015",]
   g16 <- ps[ps$dataset == "Fall2016",]
