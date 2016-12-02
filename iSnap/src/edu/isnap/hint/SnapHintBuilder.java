@@ -26,6 +26,7 @@ import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Grade;
 import edu.isnap.hint.util.SimpleNodeBuilder;
+import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store;
 import edu.isnap.parser.Store.Mode;
 
@@ -175,14 +176,13 @@ public class SnapHintBuilder {
 
 	// Parses all attempts for this assignment
 	private void parseAttempts() throws IOException {
-		Map<String, AssignmentAttempt> students = assignment.load(Mode.Use, true);
+		Map<String, AssignmentAttempt> students = assignment.load(Mode.Use, true, true,
+				new SnapParser.LikelySubmittedOnly());
 		nodeMapCache = new TreeMap<>();
 		gradeMapCache = new TreeMap<>();
 
 		for (String attemptID : students.keySet()) {
 			AssignmentAttempt attempt = students.get(attemptID);
-			if (!attempt.exported) continue;
-			if (attempt.submittedActionID == AssignmentAttempt.NOT_SUBMITTED) continue;
 			List<Node> nodes = new ArrayList<>();
 
 			for (AttemptAction row : attempt) {

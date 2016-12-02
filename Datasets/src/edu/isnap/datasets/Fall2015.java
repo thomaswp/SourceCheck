@@ -7,6 +7,7 @@ import java.util.TreeMap;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.Dataset;
+import edu.isnap.parser.SnapParser.Filter;
 import edu.isnap.parser.Store.Mode;
 
 public class Fall2015 extends Dataset {
@@ -99,7 +100,7 @@ public class Fall2015 extends Dataset {
 
 			@Override
 			public Map<String, AssignmentAttempt> load(Mode mode, boolean snapshotsOnly,
-					boolean addMetadata) {
+					boolean addMetadata, Filter... filters) {
 				return new TreeMap<>();
 			}
 		}

@@ -226,6 +226,9 @@ public class SnapParser {
 				if (submittedActionID != null && action.id == submittedActionID) {
 					attempt.submittedSnapshot = lastSnaphot;
 					attempt.submittedActionID = action.id;
+					// The attempt must have been exported if we're seeing it, and exported should
+					// always be true if submitted is true
+					attempt.exported = true;
 					done = true;
 				}
 
@@ -271,7 +274,7 @@ public class SnapParser {
 	 * @return
 	 */
 	public Map<String, AssignmentAttempt> parseAssignment(boolean snapshotsOnly,
-			boolean addMetadata) {
+			boolean addMetadata, Filter... filters) {
 		Map<String, AssignmentAttempt> attempts = new TreeMap<>();
 
 
@@ -339,8 +342,9 @@ public class SnapParser {
 			boolean knownSubmissions = submissions != null;
 			Submission submission = knownSubmissions ? submissions.get(attemptID) : null;
 			Integer submittedRowID = submission != null ? submission.submittedRowID : null;
-			parseCSV(file, snapshotsOnly, addMetadata, attempts, knownSubmissions, submittedRowID,
-					grades.get(attemptID), startIDs.get(attemptID), prequelEndRow, threads);
+			parseCSV(file, snapshotsOnly, addMetadata, attempts, filters, knownSubmissions,
+					submittedRowID, grades.get(attemptID), startIDs.get(attemptID), prequelEndRow,
+					threads);
 		}
 		waitForThreads(threads);
 		return attempts;
@@ -357,9 +361,9 @@ public class SnapParser {
 	}
 
 	private void parseCSV(final File file, final boolean snapshotsOnly, final boolean addMetadata,
-			final Map<String, AssignmentAttempt> attempts, final boolean knownSubmissions,
-			final Integer submittedRowID, final Grade grade, final Integer startID,
-			final Integer prequelEndRow, final AtomicInteger threads) {
+			final Map<String, AssignmentAttempt> attempts, final Filter[] filters,
+			final boolean knownSubmissions, final Integer submittedRowID, final Grade grade,
+			final Integer startID, final Integer prequelEndRow, final AtomicInteger threads) {
 		final String guid = file.getName().replace(".csv", "");
 		if (assignment.ignore(guid)) return;
 
@@ -372,6 +376,9 @@ public class SnapParser {
 						AssignmentAttempt attempt = parseRows(file, grade, startID,
 								knownSubmissions, submittedRowID, prequelEndRow, snapshotsOnly,
 								addMetadata);
+						for (Filter filter : filters) {
+							if (!filter.keep(attempt)) return;
+						}
 						if (attempt.size() > 3) {
 							synchronized (attempts) {
 								attempts.put(guid, attempt);
@@ -380,8 +387,9 @@ public class SnapParser {
 					}
 				} catch (IOException e) {
 					e.printStackTrace();
+				} finally {
+					threads.decrementAndGet();
 				}
-				threads.decrementAndGet();
 			}
 		// TODO: Limit threads
 		}).start();
@@ -442,6 +450,24 @@ public class SnapParser {
 		}
 
 		return grades;
+	}
+
+	public interface Filter {
+		public boolean keep(AssignmentAttempt attempt);
+	}
+
+	public static class SubmittedOnly implements Filter {
+		@Override
+		public boolean keep(AssignmentAttempt attempt) {
+			return attempt.isSubmitted();
+		}
+	}
+
+	public static class LikelySubmittedOnly implements Filter {
+		@Override
+		public boolean keep(AssignmentAttempt attempt) {
+			return attempt.isLikelySubmitted();
+		}
 	}
 }
 

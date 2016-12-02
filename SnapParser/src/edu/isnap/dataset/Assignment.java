@@ -11,6 +11,7 @@ import java.util.Map;
 import edu.isnap.parser.ParseSubmitted;
 import edu.isnap.parser.ParseSubmitted.Submission;
 import edu.isnap.parser.SnapParser;
+import edu.isnap.parser.SnapParser.Filter;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.Snapshot;
 
@@ -113,8 +114,8 @@ public class Assignment {
 	}
 
 	public Map<String, AssignmentAttempt> load(Mode mode, boolean snapshotsOnly,
-			boolean addMetadata) {
-		return new SnapParser(this, mode).parseAssignment(snapshotsOnly, addMetadata);
+			boolean addMetadata, Filter... filters) {
+		return new SnapParser(this, mode).parseAssignment(snapshotsOnly, addMetadata, filters);
 	}
 
 	public final static String BASE_DIR = "../data/csc200";
@@ -136,7 +137,8 @@ public class Assignment {
 	public Map<String, AssignmentAttempt> loadAllSubmitted(Mode mode, boolean snapshotsOnly,
 			boolean addMetadata) {
 		// Start with all the base set of attempts
-		Map<String, AssignmentAttempt> attempts = load(mode, snapshotsOnly, addMetadata);
+		Map<String, AssignmentAttempt> attempts = load(mode, snapshotsOnly, addMetadata,
+				new SnapParser.SubmittedOnly());
 		// Then add any submission not included in the logs
 		Map<String, Submission> submissions = ParseSubmitted.getSubmissions(this);
 		HashMap<String, Grade> grades = loadGrades();

@@ -18,7 +18,8 @@ loadData <- function() {
   projs$hint3 <- projs$hints >= 3;
   projs$percIdle <- projs$idle / projs$total
   
-  logs <<- projs[projs$logs=="true",]
+  projs$logs <- projs$logs == "true"
+  logs <<- projs[projs$logs,]
   
   totals <<- ddply(projs[,-3], c("dataset", "assignment"), colwise(safeMean))
   totalLogs <<- ddply(logs[,-3], c("dataset", "assignment"), colwise(safeMean))

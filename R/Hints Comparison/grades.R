@@ -14,5 +14,6 @@ loadData <- function() {
   
   grades <- c.merge(fall2015, spring2016)
   
-  compare = ddply(grades, c("dataset"), colwise(safeMean))
+  compare <- ddply(grades, c("dataset"), colwise(safeMean))
+  compareCompletion <- ddply(grades, c("dataset"), colwise(function(x) sum(x > 0)))
 }

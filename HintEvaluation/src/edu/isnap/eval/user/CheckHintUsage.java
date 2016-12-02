@@ -32,7 +32,6 @@ import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.dataset.Grade;
 import edu.isnap.datasets.Fall2015;
-import edu.isnap.datasets.Fall2016;
 import edu.isnap.eval.AutoGrader;
 import edu.isnap.eval.AutoGrader.Grader;
 import edu.isnap.eval.util.Prune;
@@ -49,7 +48,7 @@ public class CheckHintUsage {
 	private final static int SKIP_DURATION = 60 * 5;
 
 	public static void main(String[] args) throws IOException {
-		writeHints(Fall2016.instance);
+		writeHints(Fall2015.instance);
 	}
 
 	private static boolean isValidSubmission(AssignmentAttempt attempt) {
