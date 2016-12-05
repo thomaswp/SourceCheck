@@ -141,3 +141,55 @@ buildUsers <- function() {
 }
 
 # RQ: Do unfollowed hints cause students to stop asking for them?
+# Not exactly, but followed hints definitely indicate students will keep asking
+
+buildDedup <- function() {
+  dedup <- ddply(hints, c("assignment", "id", "hash"), summarize, type=first(type), startEdit=first(editPerc), endEdit=tail(editPerc, n=1), 
+                 count=length(followed), anyF=any(followed), indexF=tail(c(NA, which(followed)), n=1), followEdit=editPerc[indexF], delete=all(delete))
+  
+  dedup$edit <- ifNA(dedup$followEdit, dedup$startEdit)
+  dedup <- dedup[order(dedup$assignment, dedup$id, dedup$edit),]
+  
+  dedup$nth <- sapply(1:nrow(dedup), function(i) {
+    row <- dedup[i,]
+    user <- dedup[dedup$assignment == row$assignment & dedup$id == row$id,]
+    nth <- match(row$hash, user$hash)
+  })
+  
+  dedup$n <- sapply(1:nrow(dedup), function(i) {
+    row <- dedup[i,]
+    user <- dedup[dedup$assignment == row$assignment & dedup$id == row$id,]
+    m <- nrow(user)
+  })
+  
+  return (dedup)
+}
+
+library(rpart)
+firstTree <- function() {
+  # Only look at first hints before 75% of edits
+  firsts <- dedup[dedup$nth==1 & dedup$edit < 0.75,]
+  firsts$cont <- firsts$n > 1
+  
+  # 93.3% of those who follow their first hint ask for another
+  mean(firsts$cont[firsts$anyF])
+  # 68.6% for those who don't
+  mean(firsts$cont[!firsts$anyF])
+  
+  # Median 12 unique hints for those who follow their first
+  median(firsts$n[firsts$anyF])
+  # Median 2 for those who don't
+  median(firsts$n[!firsts$anyF])
+  
+  tree <- rpart(cont ~ type + delete + anyF + assignment, data=firsts)
+}
+
+findChances <- function() {
+  chances <- ddply(dedup, c("assignment", "id"), summarize, unF=ifNA(first(nth[anyF]) - 1, length(nth)), everF=any(anyF), hints=length(nth))
+  # For most students who don't follow a hint, 16 only tried one bad hint, 7 tried 2 and 1 tried more (5).
+  # So it looks like for 2/3 of students, we get one shot at a hint before they give up
+  table(chances$unF, chances$everF)
+  # How many bad hints we know for sure each student was willing to go through and still ask for another
+  chances$didntGiveUpBy <- ifelse(chances$everF, chances$unF, chances$unF - 1)
+  table(chances$didntGiveUpBy)
+}

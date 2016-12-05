@@ -6,6 +6,10 @@ safeMean <- function(x) {
   mean(x, na.rm = T)
 }
 
+ifNA <- function(x, backup) {
+  ifelse(is.na(x), backup, x)
+}
+
 se <- function(x) sqrt(var(x, na.rm=T)/sum(!is.na(x)))
 first <- function(x) {
   if (length(x) == 0) return (NA)
