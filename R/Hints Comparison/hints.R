@@ -186,15 +186,20 @@ firstTree <- function() {
 
 findChances <- function() {
   chances <- ddply(dedup, c("assignment", "id"), summarize, unF=ifNA(first(nth[anyF]) - 1, length(nth)), everF=any(anyF), hints=length(nth))
-  # For most students who don't follow a hint, 16 (66.7%) only tried one bad hint, 7 tried 2 and 1 tried more (5).
-  # So it looks like for 2/3 of students, we get one shot at a hint before they give up
+  # For most students who don't follow a hint, 15 (65.2%) only tried one bad hint, 7 tried 2 and 1 tried more (5).
+  # So it looks like for 2/3 of students (who will give up), we get one shot at a hint before they give up
   table(chances$unF, chances$everF)
   
   # How many hints we know for sure each student was willing to try before giving up
   chances$didntGiveUpBy <- ifelse(chances$everF, chances$unF + 1, chances$unF)
   # 24/55=43.5% were willing to try 2+, 12/55=21.8% were willing to try 3+ hints
-  # So it looks like for the majority of students, we get one shot, and for ~80% we get 1-2 shots
+  # Remember: students who get a good hint may have been willing to wait longer for it
   table(chances$didntGiveUpBy)
   
-  # So, what are these bad hitns?
+  # So, what are these bad hints?
+  sadUsers <- chances[chances$unF < 2 & !chances$everF,]$id
 }
+
+
+
+
