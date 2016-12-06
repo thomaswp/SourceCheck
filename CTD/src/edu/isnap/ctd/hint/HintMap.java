@@ -5,17 +5,12 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
-import edu.isnap.ctd.graph.Node.Predicate;
 import edu.isnap.ctd.graph.vector.IndexedVectorState;
 import edu.isnap.ctd.graph.vector.VectorGraph;
 import edu.isnap.ctd.graph.vector.VectorState;
@@ -69,21 +64,25 @@ public class HintMap {
 		VectorState toState = getVectorState(to);
 		// Don't include loops
 		if (fromState.equals(toState)) return;
-		getGraph(to).addEdge(fromState, toState);
+		getGraph(to, true).addEdge(fromState, toState);
 	}
 
-	private VectorGraph getGraph(Node node) {
+	public VectorGraph getGraph(Node node) {
+		return getGraph(node, false);
+	}
+
+	private VectorGraph getGraph(Node node, boolean addIfMissing) {
 		Node rootPathChild = toRootPath(node);
 		Node rootPath = rootPathChild.root();
 		VectorGraph graph = map.get(rootPath);
-		if (graph == null) {
+		if (addIfMissing && graph == null) {
 			graph = new VectorGraph(rootPathChild);
 			map.put(rootPath, graph);
 		}
 		return graph;
 	}
 
-	private static VectorState getVectorState(Node node) {
+	public static VectorState getVectorState(Node node) {
 		return new VectorState(getChildren(node));
 	}
 
@@ -105,7 +104,7 @@ public class HintMap {
 		solution.recurse(new Action() {
 			@Override
 			public void run(Node item) {
-				VectorGraph graph = getGraph(item);
+				VectorGraph graph = getGraph(item, true);
 				VectorState children = getVectorState(item);
 				// TODO: find a more elegant solution that doesn't involve this awkward cast
 				if (!((Set<VectorState>) graph.vertices()).contains(children)) {
@@ -116,7 +115,7 @@ public class HintMap {
 		});
 	}
 
-	private IndexedVectorState getContext(Node item) {
+	public IndexedVectorState getContext(Node item) {
 		return getContext(item, config.maxContextSiblings);
 	}
 
@@ -128,47 +127,6 @@ public class HintMap {
 		}
 		int index = contextChild.index();
 		return new IndexedVectorState(getChildren(contextChild.parent), index, maxLength);
-	}
-
-	public Iterable<VectorHint> getHints(Node node) {
-		List<VectorHint> hints = new ArrayList<>();
-
-		Node rootPath = toRootPath(node).root();
-		VectorGraph graph = map.get(rootPath);
-		if (graph == null) return hints;
-
-		VectorState children = getVectorState(node);
-		IndexedVectorState context = getContext(node);
-		VectorState next = children;
-
-		VectorState goal = graph.getGoalState(next, context, config);
-
-		if (goal != null && config.straightToGoal.contains(node.type())) {
-			next = goal;
-		} else {
-			// Get the best successor state from our current state
-			VectorState hint = graph.getHint(next, context, config);
-			// If we find a real hint, use it
-			if (hint != null && !hint.equals(next)) {
-				next = hint;
-			}
-			if (goal == null) goal = next;
-		}
-
-		double stayed = graph.getProportionStayed(children);
-		boolean caution =
-				graph.getGoalCount(children) >= config.pruneGoals &&
-				stayed >= config.stayProportion;
-
-//		if (node.hasType("script") && node.children.size() == 1) {// && stayed > 0) {
-//			System.out.println(node);
-//			graph.getProportionStayed(children);
-//		}
-
-		VectorHint hint = new VectorHint(node, rootPath.toString(), children, next, goal, caution);
-		hints.add(hint);
-
-		return hints;
 	}
 
 	public void finish() {
@@ -218,90 +176,6 @@ public class HintMap {
 			}
 			myGraph.addGraph(graph, true);
 		}
-	}
-
-	public void postProcess(List<VectorHint> hints) {
-		// "Hash set" to compare by identity
-		final Map<Node, Void> extraScripts = new IdentityHashMap<>();
-		Map<VectorState, VectorHint> missingMap = new HashMap<>();
-
-		// Find scripts that should be removed and don't give hints to their children
-		for (VectorHint hint : hints) {
-			int extraChildren = hint.from.countOf(config.script) -
-					hint.goal.countOf(config.script);
-			if (extraChildren > 0) {
-				List<Integer> sizes = new LinkedList<>();
-				for (Node child : hint.root.children) {
-					sizes.add(child.children.size());
-				}
-				Collections.sort(sizes);
-				int cutoff = sizes.get(extraChildren);
-				// TODO: find a more comprehensive way of deciding on the primary script(s)
-				for (Node child : hint.root.children) {
-					if (child.hasType(config.script) && child.children.size() < cutoff) {
-						extraScripts.put(child, null);
-					}
-				}
-			}
-
-		}
-
-		// Remove the hints for the extra hints and make a map of missing blocks for the others
-		List<VectorHint> toRemove = new LinkedList<>();
-		for (VectorHint hint : hints) {
-			if (hint.from.equals(hint.to) || hint.root.hasAncestor(new Predicate() {
-				@Override
-				public boolean eval(Node node) {
-					return extraScripts.containsKey(node);
-				}
-			})) {
-				toRemove.add(hint);
-			} else {
-				VectorState missingChildren = hint.getMissingChildren();
-				// To benefit from a LinkHint, an existing hint must have some missing
-				// children but it shouldn't be missing all of them (completely replaced)
-				// unless it's empty to begin with, or a block hint
-				if (missingChildren.length() > 0 && (
-						!hint.root.hasType(config.script) ||
-						hint.from.length() == 0 ||
-						missingChildren.length() < hint.goal.length())) {
-					missingMap.put(missingChildren, hint);
-				}
-			}
-		}
-
-		// Instead look for another hint that could use the blocks in these
-		// scripts and make a LinkHint that points there
-		List<VectorHint> toAdd = new LinkedList<>();
-		for (VectorHint hint : hints) {
-			if (extraScripts.containsKey(hint.root) &&
-					hint.from.length() > 0) {
-
-				VectorHint bestMatch = null;
-				int bestUseful = 0;
-				int bestDistance = Integer.MAX_VALUE;
-
-				for (VectorState missing : missingMap.keySet()) {
-					int useful = missing.overlap(hint.from);
-					if (useful * config.linkUsefulRatio >= hint.from.length() &&
-							useful >= bestUseful) {
-						int distance = VectorState.distance(missing, hint.from);
-						if (useful > bestUseful || distance < bestDistance) {
-							bestUseful = useful;
-							bestDistance = distance;
-							bestMatch = missingMap.get(missing);
-						}
-					}
-				}
-
-				if (bestMatch != null) {
-					// TODO: Why am I getting duplicate hints here (and likely elsewhere)?
-					toAdd.add(new LinkHint(bestMatch, hint));
-				}
-			}
-		}
-		hints.addAll(toAdd);
-		hints.removeAll(toRemove);
 	}
 
 	/**
