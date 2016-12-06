@@ -33,49 +33,30 @@ import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.elements.Snapshot;
 
 public class SolveEval {
-	
+
 	private final static int MAX = 1000;
 	private final static boolean PRUNE = true;
-	
+
 	private final static int SEED = 1234;
 	private final static int MAX_HINTS = 1;
-		
+
 	private final static int ROUNDS = 1;
-	
+
 	private final static Random rand = new Random(SEED);
-	
+
 	public static void main(String[] args) throws IOException {
-				
+
 		Assignment assignment = Fall2015.GuessingGame1;
-		
+
 		policyGradeEval(assignment);
 //		hintChainEval(assignment);
 	}
 
-	public static void hintChainEval(Assignment assignment) throws FileNotFoundException, IOException {
-			
-		eval(assignment, "solve-chain" + MAX_HINTS, new ScoreConstructor() {
-			@Override
-			public Score[] construct(String student, List<Node> nodes, SnapHintBuilder subtree) {
-				HintMapBuilder builder0 = subtree.buildGenerator(student, 0);
-				HintMapBuilder builder1 = subtree.buildGenerator(student, 1);
-				return new Score[] {
-						new Score("All 2", new HintFactoryPolicy(builder0, 2)),
-						new Score("Exemplar 2", new HintFactoryPolicy(builder1, 2)),
-						new Score("All 3", new HintFactoryPolicy(builder0, 3)),
-						new Score("Exemplar 3", new HintFactoryPolicy(builder1, 3)),
-						new Score("All End", new HintFactoryPolicy(builder0, 25)),
-						new Score("Exemplar End", new HintFactoryPolicy(builder1, 25)),
-				};
-			}
-		});
-	}
-	
 	public static void policyGradeEval(Assignment assignment) throws FileNotFoundException, IOException {
 		Snapshot solution = assignment.loadSolution();
 		Node solutionNode = SimpleNodeBuilder.toTree(solution, true);
 		DirectEditPolicy solutionPolicy = new DirectEditPolicy(solutionNode);
-				
+
 		eval(assignment, "solve" + MAX_HINTS, new ScoreConstructor() {
 			@Override
 			public Score[] construct(String student, List<Node> nodes, SnapHintBuilder subtree) {
@@ -92,48 +73,48 @@ public class SolveEval {
 			}
 		});
 	}
-	
+
 	private static void eval(Assignment assignment, String test, ScoreConstructor constructor) throws IOException {
-		
+
 		SnapHintBuilder subtree = new SnapHintBuilder(assignment);
-		
+
 		File outFile = new File(assignment.analysisDir() + "/" + test + (PRUNE ? "-p" : "") + ".csv");
 		outFile.getParentFile().mkdirs();
 		CSVPrinter printer = new CSVPrinter(new PrintStream(outFile), CSVFormat.DEFAULT.withHeader(Score.headers()));
-		
 
-		
+
+
 		for (int round = 0; round < ROUNDS; round++) {
-		
+
 			int max = MAX;
-			
+
 			Map<String,List<Node>> nodeMap = subtree.nodeMap();
 			for (String student : nodeMap.keySet()) {
 				if (assignment.ignore(student)) continue;
-				
+
 				if (--max < 0) break;
-				
+
 				System.out.println(student);
-				
+
 				List<Node> nodes = nodeMap.get(student);
 				if (PRUNE) nodes = Prune.removeSmallerScripts(nodes);
-				
+
 				Score[] scores = constructor.construct(student, nodes, subtree);
-				
+
 				AtomicInteger count = new AtomicInteger(0);
 				int total = 0;
-				
+
 				HashMap<String, Integer> solveSteps = new HashMap<>();
 				for (int i = 0; i < nodes.size(); i++) {
 					Node node = nodes.get(i);
-	
+
 					for (Grader grader : AutoGrader.graders) {
 						String name = grader.name();
 						if (!solveSteps.containsKey(name) && grader.pass(node)) {
 							solveSteps.put(name, i);
 						}
 					}
-					
+
 					for (Score score : scores) {
 	//					System.out.println(score.name);
 	//					score.update(node, i, rand.nextInt());
@@ -141,7 +122,7 @@ public class SolveEval {
 						total++;
 					}
 				}
-				
+
 				PrintUpdater updater = new PrintUpdater(40);
 				while (count.get() > 0) {
 					try {
@@ -152,7 +133,7 @@ public class SolveEval {
 					}
 				}
 				System.out.println();
-	
+
 				for (int i = 0; i < scores.length; i++) {
 					Score score = scores[i];
 					score.writeRow(printer, student, solveSteps, round);
@@ -160,39 +141,39 @@ public class SolveEval {
 				}
 			}
 		}
-		
+
 		printer.close();
 	}
-	
+
 	public interface ScoreConstructor {
 		Score[] construct(String student, List<Node> nodes, SnapHintBuilder subtree);
 	}
-	
+
 	protected static class Score {
 		private final HashMap<String, Integer> solveSteps = new HashMap<>();
 		private final HashMap<String, Integer> solveStepsSelect = new HashMap<>();
 		private int hints, selectHints, actions;
-		
+
 		public final HintPolicy policy;
 		public final String name;
-		
+
 		public Score(String name, HintPolicy policy) {
 			this.name = name;
 			this.policy = policy;
 		}
-		
+
 		public static String[] headers() {
 			List<String> headers = new LinkedList<>();
 			headers.add("policy"); headers.add("student"); headers.add("round"); headers.add("limited"); headers.add("hints"); headers.add("actions");
 			for (int i = 0; i < AutoGrader.graders.length; i++) headers.add("test" + i);
 			return headers.toArray(new String[headers.size()]);
 		}
-		
+
 		public void writeRow(CSVPrinter printer, String student, HashMap<String, Integer> studentSolveSteps, int round) throws IOException {
 			int extraCols = 6;
 			for (int i = 0; i < 2; i++) {
 				Object[] row = new Object[AutoGrader.graders.length + extraCols];
-				row[0] = name; row[1] = student; row[2] = round; row[3] = i == 0 ? "FALSE" : "TRUE"; 
+				row[0] = name; row[1] = student; row[2] = round; row[3] = i == 0 ? "FALSE" : "TRUE";
 				row[4] = (i == 0 ? hints : selectHints); row[5] = actions;
 				for (int j = 0; j < AutoGrader.graders.length; j++) {
 					Integer solveStep = (i == 0 ? solveSteps : solveStepsSelect).get(AutoGrader.graders[j].name());
@@ -208,7 +189,7 @@ public class SolveEval {
 			}
 			printer.flush();
 		}
-		
+
 		public void updateAsync(final Node node, int step, int seed, AtomicInteger count) {
 			count.incrementAndGet();
 			new Thread(new Runnable() {
@@ -219,19 +200,19 @@ public class SolveEval {
 				}
 			}).start();
 		}
-		
+
 		public void update(Node node, int step, int seed) {
 			Set<Node> steps = policy.nextSteps(node);
 			int nSelect = Math.min(steps.size(), MAX_HINTS);
-			
+
 			synchronized (this) {
 				hints += steps.size();
 				selectHints += nSelect;
 				actions++;
 			}
-			
+
 			if (steps.size() == 0) return;
-			
+
 			Random rand = new Random(seed);
 			IntStream selectStream = rand.ints(0, steps.size()).distinct().limit(nSelect);
 			HashSet<Integer> select = new HashSet<>();

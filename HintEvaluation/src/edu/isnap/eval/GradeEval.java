@@ -43,25 +43,6 @@ public class GradeEval {
 //		pruneTest(assignment);
 	}
 
-	public static void hintChainEval(Assignment assignment) throws FileNotFoundException, IOException {
-
-		eval(assignment, "chain", new ScoreConstructor() {
-			@Override
-			public Score[] construct(String student, List<Node> nodes, SnapHintBuilder subtree) {
-				HintMapBuilder builder0 = subtree.buildGenerator(student, 0);
-				HintMapBuilder builder1 = subtree.buildGenerator(student, 1);
-				return new Score[] {
-						new Score("All 2", new HintFactoryPolicy(builder0, 2)),
-						new Score("Exemplar 2", new HintFactoryPolicy(builder1, 2)),
-						new Score("All 3", new HintFactoryPolicy(builder0, 3)),
-						new Score("Exemplar 3", new HintFactoryPolicy(builder1, 3)),
-						new Score("All End", new HintFactoryPolicy(builder0, 25)),
-						new Score("Exemplar End", new HintFactoryPolicy(builder1, 25)),
-				};
-			}
-		});
-	}
-
 	public static void policyGradeEval(Assignment assignment) throws FileNotFoundException, IOException {
 		Snapshot solution = assignment.loadSolution();
 		Node solutionNode = SimpleNodeBuilder.toTree(solution, true);
@@ -211,7 +192,7 @@ public class GradeEval {
 
 	protected static class Score {
 		public final HashMap<String, Tuple<Integer, Integer>> outcomes =
-				new HashMap<String, Tuple<Integer, Integer>>();
+				new HashMap<>();
 		public int totalSteps;
 
 		public final HintPolicy policy;
@@ -224,7 +205,7 @@ public class GradeEval {
 			this.name = name;
 			this.policy = policy;
 			for (Grader grader : AutoGrader.graders) {
-				outcomes.put(grader.name(), new Tuple<Integer, Integer>(0, 0));
+				outcomes.put(grader.name(), new Tuple<>(0, 0));
 			}
 		}
 

@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import edu.isnap.ctd.hint.HintGenerator;
 import edu.isnap.ctd.hint.HintMapBuilder;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.hint.SnapHintBuilder;
@@ -20,7 +21,7 @@ public class TestRunner {
 	long start = System.currentTimeMillis();
 	List<String> unloaded = new ArrayList<>();
 	List<String> unexpectedSuccesses = new ArrayList<>();
-	HashMap<UnitTest, HintMapBuilder> failedTests = new LinkedHashMap<>();
+	HashMap<UnitTest, HintGenerator> failedTests = new LinkedHashMap<>();
 	int passed = 0, expectedFailures = 0;
 
 	private void addRun(Assignment assignment) {
@@ -30,6 +31,7 @@ public class TestRunner {
 
 		HintMapBuilder builder = new SnapHintBuilder(assignment)
 				.buildGenerator(Store.Mode.Ignore, 1);
+		HintGenerator generator = builder.hintGenerator();
 
 		for (File folder : new File(assignment.unitTestDir()).listFiles()) {
 			String testID = folder.getName();
@@ -56,10 +58,10 @@ public class TestRunner {
 			}
 
 			UnitTest test = new UnitTest(loadName, assignment, xml, hint);
-			boolean success = test.run(builder, err);
+			boolean success = test.run(generator, err);
 			if (!success) {
 				// Get the hints again to allow for debugging
-				test.getHints(builder, out);
+				test.getHints(generator, out);
 			}
 			if (test.expectedFailure()) {
 				if (success) {
@@ -74,7 +76,7 @@ public class TestRunner {
 					out.println(loadName + " passed!");
 					passed++;
 				} else {
-					failedTests.put(test, builder);
+					failedTests.put(test, generator);
 					err.println(loadName + " failed!");
 				}
 			}

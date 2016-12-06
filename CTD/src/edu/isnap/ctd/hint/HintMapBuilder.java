@@ -3,7 +3,6 @@ package edu.isnap.ctd.hint;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -57,41 +56,8 @@ public class HintMapBuilder {
 		hintMap.finish();
 	}
 
-	/**
-	 * Gets the first hint generated for the given (root) Node, representing a student's current
-	 * snapshot.
-	 * @param node
-	 * @return
-	 */
-	public synchronized VectorHint getFirstHint(Node node) {
-		LinkedList<VectorHint> hints = new LinkedList<>();
-		getHints(node, hints, 1, 1);
-		return hints.size() > 0 ? hints.getFirst() : null;
-	}
-
-	/**
-	 * Gets all hints generated for the given (root) Node, representing a student's current
-	 * snapshot.
-	 * @param parent
-	 * @return
-	 */
-	public synchronized List<VectorHint> getHints(Node parent) {
-		return getHints(parent, 1);
-	}
-
-	/**
-	 * Gets all hints generated for the given (root) Node, representing a student's current
-	 * snapshot. "Chains" the hint the given number of times, meaning it will apply multuple
-	 * hints to get closer to the goal state.
-	 * @param parent
-	 * @param chain
-	 * @return
-	 */
-	public synchronized List<VectorHint> getHints(Node parent, int chain) {
-		LinkedList<VectorHint> hints = new LinkedList<>();
-		getHints(parent, hints, chain, Integer.MAX_VALUE);
-		hintMap.postProcess(hints);
-		return hints;
+	public HintGenerator hintGenerator() {
+		return new HintGenerator(hintMap);
 	}
 
 	/**
@@ -305,37 +271,5 @@ public class HintMapBuilder {
 			lastTree = tree;
 //			i++;
 		}
-	}
-
-	private void getHints(Node node, List<VectorHint> list, int chain, int limit) {
-		if (list.size() >= limit) return;
-
-		Iterable<VectorHint> edges = hintMap.getHints(node, chain);
-
-		// TODO: don't forget that really the skeleton need not match exactly,
-		// we should just be matching as much as possible
-
-		for (VectorHint hint : edges) {
-			if (list.contains(hint)) continue;
-			list.add(hint);
-			if (list.size() >= limit) return;
-		}
-
-		for (Node child : node.children) getHints(child, list, chain, limit);
-	}
-
-	public boolean hasHint(Node node) {
-		List<Node> toSearch = new LinkedList<>();
-		toSearch.add(node);
-
-		while (!toSearch.isEmpty()) {
-			Node next = toSearch.remove(0);
-			Iterable<VectorHint> edges = hintMap.getHints(node, 1);
-			Iterator<VectorHint> iterator = edges.iterator();
-			if (iterator.hasNext()) return true;
-			toSearch.addAll(next.children);
-		}
-
-		return false;
 	}
 }

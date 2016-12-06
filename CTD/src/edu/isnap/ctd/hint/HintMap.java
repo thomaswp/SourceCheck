@@ -130,7 +130,7 @@ public class HintMap {
 		return new IndexedVectorState(getChildren(contextChild.parent), index, maxLength);
 	}
 
-	public Iterable<VectorHint> getHints(Node node, int chain) {
+	public Iterable<VectorHint> getHints(Node node) {
 		List<VectorHint> hints = new ArrayList<>();
 
 		Node rootPath = toRootPath(node).root();
@@ -146,12 +146,10 @@ public class HintMap {
 		if (goal != null && config.straightToGoal.contains(node.type())) {
 			next = goal;
 		} else {
-			for (int j = 0; j < chain; j++) {
-				// Get the best successor state from our current state
-				VectorState hint = graph.getHint(next, context, config);
-				// If there is none, we stop where we are
-				if (hint == null || hint.equals(next)) break;
-				// Otherwise, chain to the next hint
+			// Get the best successor state from our current state
+			VectorState hint = graph.getHint(next, context, config);
+			// If we find a real hint, use it
+			if (hint != null && !hint.equals(next)) {
 				next = hint;
 			}
 			if (goal == null) goal = next;
