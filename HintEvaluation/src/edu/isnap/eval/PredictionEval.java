@@ -15,7 +15,7 @@ import org.apache.commons.csv.CSVPrinter;
 
 import distance.RTED_InfoTree_Opt;
 import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.hint.HintGenerator;
+import edu.isnap.ctd.hint.HintMapBuilder;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Grade;
 import edu.isnap.datasets.Fall2015;
@@ -51,8 +51,8 @@ public class PredictionEval {
 		eval(assignment, "prediction", new ScoreConstructor() {
 			@Override
 			public Score[] construct(String student, List<Node> nodes, SnapHintBuilder subtree) {
-				HintGenerator builder0 = subtree.buildGenerator(student, 0);
-				HintGenerator builder1 = subtree.buildGenerator(student, 1);
+				HintMapBuilder builder0 = subtree.buildGenerator(student, 0);
+				HintMapBuilder builder1 = subtree.buildGenerator(student, 1);
 				return new Score[] {
 						new BinaryScore("Hint All", new HintFactoryPolicy(builder0)),
 						new BinaryScore("Hint Exemplar", new HintFactoryPolicy(builder1)),
@@ -76,8 +76,8 @@ public class PredictionEval {
 		eval(assignment, "distance", new ScoreConstructor() {
 			@Override
 			public Score[] construct(String student, List<Node> nodes, SnapHintBuilder subtree) {
-				HintGenerator builder0 = subtree.buildGenerator(student, 0);
-				HintGenerator builder1 = subtree.buildGenerator(student, 1);
+				HintMapBuilder builder0 = subtree.buildGenerator(student, 0);
+				HintMapBuilder builder1 = subtree.buildGenerator(student, 1);
 				Node studentLast = nodes.get(nodes.size() - 1);
 				return new Score[] {
 						new DistanceScore("Hint All", new HintFactoryPolicy(builder0)),

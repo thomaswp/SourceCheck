@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-import edu.isnap.ctd.hint.HintGenerator;
+import edu.isnap.ctd.hint.HintMapBuilder;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.parser.Store;
@@ -20,7 +20,7 @@ public class TestRunner {
 	long start = System.currentTimeMillis();
 	List<String> unloaded = new ArrayList<>();
 	List<String> unexpectedSuccesses = new ArrayList<>();
-	HashMap<UnitTest, HintGenerator> failedTests = new LinkedHashMap<>();
+	HashMap<UnitTest, HintMapBuilder> failedTests = new LinkedHashMap<>();
 	int passed = 0, expectedFailures = 0;
 
 	private void addRun(Assignment assignment) {
@@ -28,7 +28,7 @@ public class TestRunner {
 		if (!testDir.exists()) return;
 		out.println("Testing assignment: " + assignment.name);
 
-		HintGenerator builder = new SnapHintBuilder(assignment)
+		HintMapBuilder builder = new SnapHintBuilder(assignment)
 				.buildGenerator(Store.Mode.Ignore, 1);
 
 		for (File folder : new File(assignment.unitTestDir()).listFiles()) {

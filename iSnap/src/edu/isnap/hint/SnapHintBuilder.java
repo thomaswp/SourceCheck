@@ -17,9 +17,8 @@ import edu.isnap.ctd.graph.vector.IndexedVectorState;
 import edu.isnap.ctd.graph.vector.VectorGraph;
 import edu.isnap.ctd.graph.vector.VectorState;
 import edu.isnap.ctd.hint.HintConfig;
-import edu.isnap.ctd.hint.HintFactoryMap;
-import edu.isnap.ctd.hint.HintGenerator;
 import edu.isnap.ctd.hint.HintMap;
+import edu.isnap.ctd.hint.HintMapBuilder;
 import edu.isnap.ctd.util.StringHashable;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
@@ -79,7 +78,7 @@ public class SnapHintBuilder {
 	 * @param assignment
 	 */
 	public SnapHintBuilder(Assignment assignment) {
-		this(assignment, new HintFactoryMap(assignment instanceof Configurable ?
+		this(assignment, new HintMap(assignment instanceof Configurable ?
 				((Configurable) assignment).getConfig() : new HintConfig()));
 	}
 
@@ -93,7 +92,7 @@ public class SnapHintBuilder {
 	 * @param storeMode
 	 * @return
 	 */
-	public HintGenerator buildGenerator(Mode storeMode) {
+	public HintMapBuilder buildGenerator(Mode storeMode) {
 		return buildGenerator(storeMode, 0);
 	}
 
@@ -104,14 +103,14 @@ public class SnapHintBuilder {
 	 * @param minGrade
 	 * @return
 	 */
-	public HintGenerator buildGenerator(Mode storeMode, final double minGrade) {
+	public HintMapBuilder buildGenerator(Mode storeMode, final double minGrade) {
 		String storePath = new File(assignment.dataDir, String.format("%s-g%03d.cached",
 				assignment.name, Math.round(minGrade * 100))).getAbsolutePath();
-		HintGenerator builder = Store.getCachedObject(getKryo(),
-				storePath, HintGenerator.class, storeMode,
-				new Store.Loader<HintGenerator>() {
+		HintMapBuilder builder = Store.getCachedObject(getKryo(),
+				storePath, HintMapBuilder.class, storeMode,
+				new Store.Loader<HintMapBuilder>() {
 			@Override
-			public HintGenerator load() {
+			public HintMapBuilder load() {
 				return buildGenerator((String)null, minGrade);
 			}
 		});
@@ -127,8 +126,8 @@ public class SnapHintBuilder {
 	 * @param minGrade
 	 * @return
 	 */
-	public HintGenerator buildGenerator(String testAttempt, double minGrade) {
-		final HintGenerator builder = new HintGenerator(hintMap.instance(), minGrade);
+	public HintMapBuilder buildGenerator(String testAttempt, double minGrade) {
+		final HintMapBuilder builder = new HintMapBuilder(hintMap.instance(), minGrade);
 		builder.startBuilding();
 		final AtomicInteger count = new AtomicInteger();
 		for (String student : nodeMap().keySet()) {
@@ -202,11 +201,11 @@ public class SnapHintBuilder {
 
 	public static Kryo getKryo() {
 		Kryo kryo = new Kryo();
-		kryo.register(HintGenerator.class);
+		kryo.register(HintMapBuilder.class);
 		kryo.register(StringHashable.class);
 		kryo.register(Node.class);
 		kryo.register(HintMap.class);
-		kryo.register(HintFactoryMap.class);
+		kryo.register(HintMap.class);
 		kryo.register(VectorState.class);
 		kryo.register(IndexedVectorState.class);
 		kryo.register(VectorGraph.class);

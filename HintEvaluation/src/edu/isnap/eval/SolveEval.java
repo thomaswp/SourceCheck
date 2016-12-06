@@ -18,7 +18,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
 import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.hint.HintGenerator;
+import edu.isnap.ctd.hint.HintMapBuilder;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.datasets.Fall2015;
 import edu.isnap.eval.AutoGrader.Grader;
@@ -57,8 +57,8 @@ public class SolveEval {
 		eval(assignment, "solve-chain" + MAX_HINTS, new ScoreConstructor() {
 			@Override
 			public Score[] construct(String student, List<Node> nodes, SnapHintBuilder subtree) {
-				HintGenerator builder0 = subtree.buildGenerator(student, 0);
-				HintGenerator builder1 = subtree.buildGenerator(student, 1);
+				HintMapBuilder builder0 = subtree.buildGenerator(student, 0);
+				HintMapBuilder builder1 = subtree.buildGenerator(student, 1);
 				return new Score[] {
 						new Score("All 2", new HintFactoryPolicy(builder0, 2)),
 						new Score("Exemplar 2", new HintFactoryPolicy(builder1, 2)),
@@ -79,8 +79,8 @@ public class SolveEval {
 		eval(assignment, "solve" + MAX_HINTS, new ScoreConstructor() {
 			@Override
 			public Score[] construct(String student, List<Node> nodes, SnapHintBuilder subtree) {
-				HintGenerator builder0 = subtree.buildGenerator(student, 0);
-				HintGenerator builder1 = subtree.buildGenerator(student, 1);
+				HintMapBuilder builder0 = subtree.buildGenerator(student, 0);
+				HintMapBuilder builder1 = subtree.buildGenerator(student, 1);
 				Node studentLast = nodes.get(nodes.size() - 1);
 				return new Score[] {
 						new Score("Hint All", new HintFactoryPolicy(builder0)),

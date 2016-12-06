@@ -4,7 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.SQLException;
 
-import edu.isnap.ctd.hint.HintGenerator;
+import edu.isnap.ctd.hint.HintMapBuilder;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.datasets.HelpSeeking;
 import edu.isnap.hint.SnapHintBuilder;
@@ -34,7 +34,7 @@ public class RunHintBuilder {
 
 
 	/**
-	 * Builds and caches a {@link HintGenerator} for the given assignment, using only data with
+	 * Builds and caches a {@link HintMapBuilder} for the given assignment, using only data with
 	 * the supplied minGrade.
 	 */
 	public static void buildHints(Assignment assignment, double minGrade)
@@ -45,10 +45,10 @@ public class RunHintBuilder {
 		subtree.nodeMap();
 		System.out.print("Building subtree: ");
 		long ms = System.currentTimeMillis();
-		HintGenerator builder = subtree.buildGenerator(Mode.Overwrite, minGrade);
+		HintMapBuilder builder = subtree.buildGenerator(Mode.Overwrite, minGrade);
 		String dir = String.format("%s/graphs/%s-g%03d/", assignment.dataDir,
 				assignment.name, Math.round(minGrade * 100));
-		builder.saveGraphs(dir, 1);
+		builder.hintMap.saveGraphs(dir, 1);
 		System.out.println((System.currentTimeMillis() - ms) + "ms");
 	}
 }

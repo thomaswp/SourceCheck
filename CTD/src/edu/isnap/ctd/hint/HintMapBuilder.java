@@ -1,9 +1,5 @@
 package edu.isnap.ctd.hint;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.PrintStream;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -14,24 +10,23 @@ import java.util.Map;
 
 import distance.RTED_InfoTree_Opt;
 import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.graph.vector.VectorGraph;
 import edu.isnap.ctd.util.Tuple;
 import util.LblTree;
 
 /**
  * A data-structure that stores all information needed to generate hints for a given assignment.
  */
-public class HintGenerator {
+public class HintMapBuilder {
 
 	public final HintMap hintMap;
 	public final double minGrade;
 
 	@SuppressWarnings("unused")
-	private HintGenerator() {
+	private HintMapBuilder() {
 		this(null, 0);
 	}
 
-	public HintGenerator(HintMap hintMap, double minGrade) {
+	public HintMapBuilder(HintMap hintMap, double minGrade) {
 		this.hintMap = hintMap;
 		this.minGrade = minGrade;
 	}
@@ -44,7 +39,7 @@ public class HintGenerator {
 	}
 
 	/**
-	 * Adds an attempt map (returned by {@link HintGenerator#addAttempt(List, boolean)} to this
+	 * Adds an attempt map (returned by {@link HintMapBuilder#addAttempt(List, boolean)} to this
 	 * generator. This can be useful if you want to cache the output of addAttempt and reconstruct
 	 * new generators from a subset of your data.
 	 */
@@ -68,8 +63,8 @@ public class HintGenerator {
 	 * @param node
 	 * @return
 	 */
-	public synchronized Hint getFirstHint(Node node) {
-		LinkedList<Hint> hints = new LinkedList<>();
+	public synchronized VectorHint getFirstHint(Node node) {
+		LinkedList<VectorHint> hints = new LinkedList<>();
 		getHints(node, hints, 1, 1);
 		return hints.size() > 0 ? hints.getFirst() : null;
 	}
@@ -80,7 +75,7 @@ public class HintGenerator {
 	 * @param parent
 	 * @return
 	 */
-	public synchronized List<Hint> getHints(Node parent) {
+	public synchronized List<VectorHint> getHints(Node parent) {
 		return getHints(parent, 1);
 	}
 
@@ -92,47 +87,11 @@ public class HintGenerator {
 	 * @param chain
 	 * @return
 	 */
-	public synchronized List<Hint> getHints(Node parent, int chain) {
-		LinkedList<Hint> hints = new LinkedList<>();
+	public synchronized List<VectorHint> getHints(Node parent, int chain) {
+		LinkedList<VectorHint> hints = new LinkedList<>();
 		getHints(parent, hints, chain, Integer.MAX_VALUE);
 		hintMap.postProcess(hints);
 		return hints;
-	}
-
-
-	/**
-	 * Saves graphs and other debugging files to the given directory for this HintGenerator.
-	 * @param rootDir The root directory in which to save the files.
-	 * @param minVertices The minimum number of vertices a graph must have to be saved.
-	 * @throws FileNotFoundException
-	 */
-	public void saveGraphs(String rootDir, int minVertices)
-			throws FileNotFoundException {
-		if (!(hintMap instanceof HintFactoryMap)) {
-			System.out.println("No Hint Factory Map");
-			return;
-		}
-
-		HashMap<Node, VectorGraph> map = ((HintFactoryMap) hintMap).map;
-		for (Node node : map.keySet()) {
-			VectorGraph graph = map.get(node);
-			if (graph.nVertices() < minVertices) continue;
-			if (!graph.hasGoal()) continue;
-
-			graph.bellmanBackup(hintMap.getHintConfig().pruneGoals);
-			Node child = node;
-			String dir = rootDir;
-			while (child.children.size() > 0) {
-				dir += child.type() + "/";
-				child = child.children.get(0);
-			}
-			new File(dir).mkdirs();
-			File file = new File(dir, child.type());
-
-			graph.export(new PrintStream(new FileOutputStream(file + ".graphml")), true,
-					0, false, true);
-			graph.exportGoals(new PrintStream(file + ".txt"));
-		}
 	}
 
 	/**
@@ -348,15 +307,15 @@ public class HintGenerator {
 		}
 	}
 
-	private void getHints(Node node, List<Hint> list, int chain, int limit) {
+	private void getHints(Node node, List<VectorHint> list, int chain, int limit) {
 		if (list.size() >= limit) return;
 
-		Iterable<Hint> edges = hintMap.getHints(node, chain);
+		Iterable<VectorHint> edges = hintMap.getHints(node, chain);
 
 		// TODO: don't forget that really the skeleton need not match exactly,
 		// we should just be matching as much as possible
 
-		for (Hint hint : edges) {
+		for (VectorHint hint : edges) {
 			if (list.contains(hint)) continue;
 			list.add(hint);
 			if (list.size() >= limit) return;
@@ -371,8 +330,8 @@ public class HintGenerator {
 
 		while (!toSearch.isEmpty()) {
 			Node next = toSearch.remove(0);
-			Iterable<Hint> edges = hintMap.getHints(node, 1);
-			Iterator<Hint> iterator = edges.iterator();
+			Iterable<VectorHint> edges = hintMap.getHints(node, 1);
+			Iterator<VectorHint> iterator = edges.iterator();
 			if (iterator.hasNext()) return true;
 			toSearch.addAll(next.children);
 		}

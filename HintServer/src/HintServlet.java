@@ -15,8 +15,8 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 
 import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.hint.Hint;
-import edu.isnap.ctd.hint.HintGenerator;
+import edu.isnap.ctd.hint.HintMapBuilder;
+import edu.isnap.ctd.hint.VectorHint;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.elements.Snapshot;
@@ -30,7 +30,7 @@ public class HintServlet extends HttpServlet {
 	private final static String DEFAULT_ASSIGNMENT = "guess1Lab";
 	private final static int DEFAULT_MIN_GRADE = 100;
 
-	private static HashMap<String, HintGenerator> builders =
+	private static HashMap<String, HintMapBuilder> builders =
 			new HashMap<>();
 
 	@Override
@@ -87,7 +87,7 @@ public class HintServlet extends HttpServlet {
 	private String getHintJSON(Snapshot snapshot, String assignment, int minGrade) {
 		String json = "";
 
-		HintGenerator builder = loadBuilder(assignment, minGrade);
+		HintMapBuilder builder = loadBuilder(assignment, minGrade);
 		if (builder == null) {
 			return "[]";
 		}
@@ -97,7 +97,7 @@ public class HintServlet extends HttpServlet {
 //		System.out.println(snapshot.toCode(true));
 		Node node = SimpleNodeBuilder.toTree(snapshot, true);
 
-		List<Hint> hints = builder.getHints(node);
+		List<VectorHint> hints = builder.getHints(node);
 
 		json += "[";
 		for (int i = 0; i < hints.size(); i++) {
@@ -112,23 +112,23 @@ public class HintServlet extends HttpServlet {
 		return json;
 	}
 
-	public static String hintToJson(Hint hint) {
+	public static String hintToJson(VectorHint hint) {
 		return String.format("{\"from\": \"%s\", \"to\": \"%s\", \"data\": %s}",
 				hint.from(), hint.to(), hint.data());
 	}
 
-	private HintGenerator loadBuilder(String assignment, int minGrade) {
+	private HintMapBuilder loadBuilder(String assignment, int minGrade) {
 		if (assignment == null || "test".equals(assignment)) {
 			assignment = DEFAULT_ASSIGNMENT;
 		}
-		HintGenerator builder = builders.get(assignment);
+		HintMapBuilder builder = builders.get(assignment);
 		if (builder == null) {
 			Kryo kryo = SnapHintBuilder.getKryo();
 			String path = String.format("/WEB-INF/data/%s-g%03d.cached", assignment, minGrade);
 			InputStream stream = getServletContext().getResourceAsStream(path);
 			if (stream == null) return null;
 			Input input = new Input(stream);
-			builder = kryo.readObject(input, HintGenerator.class);
+			builder = kryo.readObject(input, HintMapBuilder.class);
 			input.close();
 
 			builders.put(assignment, builder);

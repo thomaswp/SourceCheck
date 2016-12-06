@@ -6,24 +6,23 @@ import java.util.Set;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Predicate;
-import edu.isnap.ctd.hint.Hint;
-import edu.isnap.ctd.hint.HintFactoryMap.VectorHint;
-import edu.isnap.ctd.hint.HintGenerator;
+import edu.isnap.ctd.hint.HintMapBuilder;
+import edu.isnap.ctd.hint.VectorHint;
 import edu.isnap.ctd.util.Tuple;
 
 public class HintFactoryPolicy implements HintPolicy {
 
-	public final HintGenerator builder;
+	public final HintMapBuilder builder;
 	public final int chain;
 
 	// Don't forget you're not evaluating these hints
 	private final static Predicate ignoreHints = new Node.TypePredicate("stage", "sprite", "customBlock");
 
-	public HintFactoryPolicy(HintGenerator builder) {
+	public HintFactoryPolicy(HintMapBuilder builder) {
 		this(builder, 1);
 	}
 
-	public HintFactoryPolicy(HintGenerator builder, int chain) {
+	public HintFactoryPolicy(HintMapBuilder builder, int chain) {
 		this.builder = builder;
 		this.chain = chain;
 	}
@@ -33,11 +32,10 @@ public class HintFactoryPolicy implements HintPolicy {
 	public Set<Node> nextSteps(Node node) {
 		HashSet<Node> steps = new HashSet<>();
 
-		List<Hint> hints = builder.getHints(node, chain);
-		for (Hint hint : hints) {
-			VectorHint vHint = (VectorHint) hint;
-			if (vHint.caution) continue;
-			if (ignoreHints.eval(vHint.root)) continue;
+		List<VectorHint> hints = builder.getHints(node, chain);
+		for (VectorHint hint : hints) {
+			if (hint.caution) continue;
+			if (ignoreHints.eval(hint.root)) continue;
 
 			Node next = hint.outcome().root();
 			steps.add(next);
@@ -51,12 +49,12 @@ public class HintFactoryPolicy implements HintPolicy {
 		int steps = 0;
 		Node state = node;
 		while (steps < maxSteps) {
-			Hint hint = builder.getFirstHint(state);
+			VectorHint hint = builder.getFirstHint(state);
 			if (hint == null) break;
 			state = hint.outcome().root();
 			steps++;
 		}
-		return new Tuple<Node, Integer>(state, steps);
+		return new Tuple<>(state, steps);
 	}
 
 }

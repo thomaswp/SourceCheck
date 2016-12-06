@@ -8,7 +8,7 @@ import java.util.Arrays;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import edu.isnap.ctd.hint.HintFactoryMap.VectorHint;
+import edu.isnap.ctd.hint.VectorHint;
 
 public class TestHint {
 	public final HintPart main, old;

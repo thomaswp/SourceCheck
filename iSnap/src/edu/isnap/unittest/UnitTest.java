@@ -8,9 +8,8 @@ import java.io.PrintStream;
 import java.util.List;
 
 import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.hint.Hint;
-import edu.isnap.ctd.hint.HintGenerator;
-import edu.isnap.ctd.hint.HintFactoryMap.VectorHint;
+import edu.isnap.ctd.hint.HintMapBuilder;
+import edu.isnap.ctd.hint.VectorHint;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.elements.Snapshot;
@@ -27,7 +26,7 @@ public class UnitTest {
 		this.hintJSON = hintJSON;
 	}
 
-	public boolean run(HintGenerator builder, PrintStream out) {
+	public boolean run(HintMapBuilder builder, PrintStream out) {
 		TestHint correctHint = null;
 		try {
 			correctHint = new TestHint(hintJSON);
@@ -37,12 +36,11 @@ public class UnitTest {
 			return false;
 		}
 
-		List<Hint> hints = getHints(builder, out);
+		List<VectorHint> hints = getHints(builder, out);
 		if (hints == null) return false;
 
-		for (Hint hint : hints) {
-			if (!(hint instanceof VectorHint)) continue;
-			TestHint givenHint = new TestHint((VectorHint) hint);
+		for (VectorHint hint : hints) {
+			TestHint givenHint = new TestHint(hint);
 
 			if (correctHint.sharesRoot(givenHint)) {
 				return correctHint.test(givenHint, out);
@@ -57,7 +55,7 @@ public class UnitTest {
 		return false;
 	}
 
-	public List<Hint> getHints(HintGenerator builder, PrintStream out) {
+	public List<VectorHint> getHints(HintMapBuilder builder, PrintStream out) {
 		Snapshot snapshot = Snapshot.parse("test_" + id, xml);
 		if (snapshot == null) {
 			out.println("Cannot parse snapshot.");
@@ -65,7 +63,7 @@ public class UnitTest {
 		}
 
 		Node node = SimpleNodeBuilder.toTree(snapshot, true);
-		List<Hint> hints = builder.getHints(node);
+		List<VectorHint> hints = builder.getHints(node);
 		return hints;
 	}
 

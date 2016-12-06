@@ -22,7 +22,7 @@ import org.json.JSONObject;
 
 import distance.RTED_InfoTree_Opt;
 import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.hint.HintFactoryMap.VectorHint;
+import edu.isnap.ctd.hint.VectorHint;
 import edu.isnap.ctd.util.Alignment;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
