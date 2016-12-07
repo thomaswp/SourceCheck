@@ -47,6 +47,29 @@ public class CheckHintUsage {
 	private final static int IDLE_DURATION = 60;
 	private final static int SKIP_DURATION = 60 * 5;
 
+	private final static HashSet<String> sadHashSet = new HashSet<>();
+	static {
+		// Fall 2016 hint hashes for unfollowed hints that led students to give up
+		String[] sadHashes = ("cbda4526-377a-4541-a2f7-cc3914af8907,1081501098 "
+				+ "d166e87f-a82a-4e0c-b5fe-0d4c0483efc6,-1951526465 "
+				+ "6655648d-edfd-4445-9a71-19078115edf3,-1078585468 "
+				+ "6af85a7a-e708-449e-82b6-4d6d08bf5664,-329507030 "
+				+ "2f9bb599-3551-4d27-8a2a-f95062a9ec00,133899552 "
+				+ "7c4d8b94-36e3-466f-a5d0-1d69ded2c040,1785529237 "
+				+ "86879778-90cc-4d4e-8648-52064cb8aa3e,390526193 "
+				+ "b15bace5-74b5-4b0e-9592-e541c47b8678,905447092 "
+				+ "0caddeec-8745-4996-a775-b85d6f9da818,2091153956 "
+				+ "423d2f55-ff4c-445f-8d78-729abadd0abd,-1056504146 "
+				+ "5273ed64-1463-47f4-b2f0-5e54edd39819,-1450820717 "
+				+ "ad83bc71-54e8-481f-9f6e-43cd0fa75147,-589592238 "
+				+ "d5b8c11c-a4cb-49ae-bcaf-2b92e9e7c330,-589592238 "
+				+ "dd7e1cd5-c889-4cdf-a54d-e9eb35c3b197,882508789 "
+				+ "e4aaeb62-cc56-429d-a2d8-d853fcc8251d,-912537432").split(" ");
+		for (String sadHash : sadHashes) {
+			sadHashSet.add(sadHash);
+		}
+	}
+
 	public static void main(String[] args) throws IOException {
 		writeHints(Fall2016.instance);
 	}
@@ -90,29 +113,6 @@ public class CheckHintUsage {
 		// Get all submitted attempts at the assignment
 		Map<String, AssignmentAttempt> attempts =
 				assignment.loadAllSubmitted(Mode.Use, false, true);
-
-		// Fall 2016 hint hashes for unfollowed hints that led students to give up
-		String[] sadHashes = ("cbda4526-377a-4541-a2f7-cc3914af8907,1081501098 "
-				+ "d166e87f-a82a-4e0c-b5fe-0d4c0483efc6,-1951526465 "
-				+ "6655648d-edfd-4445-9a71-19078115edf3,-1078585468 "
-				+ "6af85a7a-e708-449e-82b6-4d6d08bf5664,-329507030 "
-				+ "0d3f3371-ec4d-4b67-abba-b11029e680ab,-2071721088 "
-				+ "2f9bb599-3551-4d27-8a2a-f95062a9ec00,133899552 "
-				+ "7c4d8b94-36e3-466f-a5d0-1d69ded2c040,1785529237 "
-				+ "86879778-90cc-4d4e-8648-52064cb8aa3e,-1622991069 "
-				+ "b15bace5-74b5-4b0e-9592-e541c47b8678,361332518 "
-				+ "0caddeec-8745-4996-a775-b85d6f9da818,2091153956 "
-				+ "423d2f55-ff4c-445f-8d78-729abadd0abd,-1056504146 "
-				+ "5273ed64-1463-47f4-b2f0-5e54edd39819,-1450820717 a"
-				+ "d83bc71-54e8-481f-9f6e-43cd0fa75147,-589592238 "
-				+ "d5b8c11c-a4cb-49ae-bcaf-2b92e9e7c330,-589592238 "
-				+ "dd7e1cd5-c889-4cdf-a54d-e9eb35c3b197,882508789 "
-				+ "e4aaeb62-cc56-429d-a2d8-d853fcc8251d,399689754").split(" ");
-		HashMap<String, Integer> sadHashMap = new HashMap<>();
-		for (String sadHash : sadHashes) {
-			String[] parts = sadHash.split(",");
-			sadHashMap.put(parts[0], Integer.parseInt(parts[1]));
-		}
 
 		// Iterate over all submissions
 		for (String attemptID : attempts.keySet()) {
@@ -345,8 +345,9 @@ public class CheckHintUsage {
 
 					hintsSheet.put("hash", hintCode.hashCode());
 
-					if (sadHashMap.containsKey(attemptID) &&
-							sadHashMap.get(attemptID).equals(hintCode.hashCode())) {
+					String key = attemptID + "," + hintCode.hashCode();
+					if (sadHashSet.contains(key)) {
+						sadHashSet.remove(key);
 						System.out.printf("%s %s %d\n%s\n", assignment.name, attemptID,
 								hintCode.hashCode(), hintToString(node, parent, hintOutcome));
 					}

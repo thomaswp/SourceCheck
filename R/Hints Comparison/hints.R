@@ -197,7 +197,10 @@ findChances <- function() {
   table(chances$didntGiveUpBy)
   
   # So, what are these bad hints?
-  sadUsers <- chances[chances$unF < 2 & !chances$everF,]$id
+  sadUsers <- chances[chances$unF == 1 & !chances$everF,]$id
+  sadHints <- dedup$hash[dedup$id %in% sadUsers & dedup$nth==1]
+  cat(paste(sadUsers, sadHints, sep=","))
+  # sadUsers <- chances[chances$unF == 2 & !chances$everF,]$id
 }
 
 
