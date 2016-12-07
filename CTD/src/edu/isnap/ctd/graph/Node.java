@@ -298,6 +298,7 @@ public class Node extends StringHashable {
 		return array;
 	}
 
+	// TODO: Move to snap-specific project
 	private final static String[] HAS_BODY = new String[] {
 			"snapshot", "stage", "sprite", "script", "customBlock",
 	};

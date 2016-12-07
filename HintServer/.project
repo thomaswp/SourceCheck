@@ -3,7 +3,6 @@
 	<name>HintServer</name>
 	<comment></comment>
 	<projects>
-		<project>CTD</project>
 		<project>iSnap</project>
 		<project>SnapParser</project>
 	</projects>

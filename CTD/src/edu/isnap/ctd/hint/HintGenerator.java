@@ -61,6 +61,18 @@ public class HintGenerator {
 		for (Node child : node.children) getHints(child, list, limit);
 	}
 
+	public VectorState getGoalState(Node node) {
+		HintConfig config = hintMap.getHintConfig();
+
+		VectorGraph graph = hintMap.getGraph(node);
+		if (graph == null) return null;
+
+		VectorState children = HintMap.getVectorState(node);
+		IndexedVectorState context = hintMap.getContext(node);
+
+		return graph.getGoalState(children, context, config);
+	}
+
 	private VectorHint getHint(Node node) {
 		HintConfig config = hintMap.getHintConfig();
 
