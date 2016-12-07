@@ -54,6 +54,8 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 
 	/** Last snapshot saved when this action occurred (possible this action's snapshot). */
 	public transient Snapshot lastSnapshot;
+	/** The cumulative active time (in seconds) the student has spent after this action. */
+	public transient int currentActiveTime;
 
 	@SuppressWarnings("unused")
 	private AttemptAction() {

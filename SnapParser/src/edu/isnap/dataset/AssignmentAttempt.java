@@ -3,6 +3,7 @@ package edu.isnap.dataset;
 import java.util.Iterator;
 import java.util.LinkedList;
 
+import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.elements.Snapshot;
 
 public class AssignmentAttempt implements Iterable<AttemptAction> {
@@ -19,6 +20,12 @@ public class AssignmentAttempt implements Iterable<AttemptAction> {
 	public Snapshot submittedSnapshot;
 	/** The ID of the logging row in which the submitted snapshot was exported. */
 	public int submittedActionID = UNKNOWN;
+	/** Total active time (in seconds) the student spent working on the assignment */
+	public int totalActiveTime;
+	/** Total idle time (in seconds) the student spent working on the assignment */
+	public int totalIdleTime;
+	/** The number of work segments, divided by {@link SnapParser#SKIP_DURATION} */
+	public int timeSegments;
 
 	/** Returns true if this attempt is known not to have been submitted for grading. */
 	public boolean isUnsubmitted() {

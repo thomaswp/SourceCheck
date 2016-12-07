@@ -38,6 +38,11 @@ import edu.isnap.parser.elements.Snapshot;
  */
 public class SnapParser {
 
+	/** Number of seconds that pass without an action before the student is considered idle */
+	public final static int IDLE_DURATION = 60;
+	/** Number of seconds that pass without an action before the student is considered not working*/
+	public final static int SKIP_DURATION = 60 * 5;
+
 	/**
 	 * Removes all cached files at the given path.
 	 * @param path
@@ -167,6 +172,11 @@ public class SnapParser {
 		boolean foundGraded = false;
 		Snapshot lastSnaphot = null;
 
+		int activeTime = 0;
+		int idleTime = 0;
+		int workSegments = 0;
+		long lastTime = 0;
+
 		for (int i = 0; i < actions.size(); i++) {
 			AttemptAction action = actions.get(i);
 
@@ -184,6 +194,28 @@ public class SnapParser {
 			if (prequelEndID != null && action.id <= prequelEndID) continue;
 			// If we have a start ID, ignore rows that come before it
 			if (startID != null && action.id < startID) continue;
+
+			// Update time statistics, regardless of the action being taken
+			{
+				long time = action.timestamp.getTime() / 1000;
+
+				if (lastTime == 0) {
+					lastTime = time;
+					workSegments++;
+				} else {
+					int duration = (int) (time - lastTime);
+					if (duration < SKIP_DURATION) {
+						int idleDuration = Math.max(duration - IDLE_DURATION, 0);
+						activeTime += duration - idleDuration;
+						idleTime += idleDuration;
+					} else {
+						workSegments++;
+					}
+
+					lastTime = time;
+					action.currentActiveTime = activeTime;
+				}
+			}
 
 			// If we're only concerned with snapshots, and this was a Block.grabbed action,
 			// we skip it if the next action (presumably a Block.snapped) produces a snapshot
@@ -259,6 +291,10 @@ public class SnapParser {
 						attemptID, submittedActionID);
 			}
 		}
+
+		attempt.totalActiveTime = activeTime;
+		attempt.totalIdleTime = idleTime;
+		attempt.timeSegments = workSegments;
 
 		return attempt;
 	}
