@@ -31,6 +31,7 @@ loadData <- function() {
   gradesByHints <<- ddply(projs[,-3], c("dataset", "assignment", "hint3"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), percPass=mean(pass), n=length(grade))
   gradesByFollowed <<- ddply(projs[,-3], c("dataset", "assignment", "follow2"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), percPass=mean(pass), n=length(grade))
   
+  timeByYear <<- ddply(projs[,-3], c("dataset", "assignment"), summarize, meanActive=safeMean(active), meanTotal=safeMean(total), meanPercIdle=safeMean(percIdle), n=length(grade))
   timeByHints <<- ddply(projs[,-3], c("dataset", "assignment", "hint3"), summarize, meanActive=safeMean(active), meanTotal=safeMean(total), meanPercIdle=safeMean(percIdle), n=length(grade))
   timeByFollowed <<- ddply(projs[,-3], c("dataset", "assignment", "follow2"), summarize, meanActive=safeMean(active), meanTotal=safeMean(total), meanPercIdle=safeMean(percIdle), n=length(grade))
   # projs <<- projs[projs$hints < 60,]
@@ -203,6 +204,22 @@ findChances <- function() {
   # sadUsers <- chances[chances$unF == 2 & !chances$everF,]$id
 }
 
+buildHintHashes <- function() {
+  hintHashes <- ddply(dedup, c("hash"), summarize, f=sum(anyF), u=sum(!anyF), n=length(anyF))
+  
+  # Rarer hints are less likely to be followed
+  table(hintHashes$n, hintHashes$f==hintHashes$n)
+  table(hintHashes$n, hintHashes$u==hintHashes$n)
+  table(hintHashes$n, hintHashes$f/hintHashes$n)
+  # 49% of dedup'd hints are followed
+  mean(dedup$anyF)
+  # but only 36% of unique hints are followed by 50%+ of takers
+  mean(hintHashes$f>hintHashes$n/2)
+  # and the average hint is followed by 38% of takers
+  mean(hintHashes$f/hintHashes$n)
+  
+  hintHashes
+}
 
 
 
