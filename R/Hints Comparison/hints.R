@@ -120,7 +120,7 @@ buildUsers <- function() {
   cor.test(users$unq, users$grade)
   table(users$grade)
   
-  # 5.9% of users who requested 1 unique hint followed it. Wow.
+  # 11.8% of users who requested 1 unique hint followed it. Wow.
   mean(users$unqF[users$unq == 1] > 0)
   # 36.3% of users who requested 2 unique hints followed at least 1
   mean(users$unqF[users$unq == 2] > 0)
@@ -137,6 +137,13 @@ buildUsers <- function() {
   mean(users$firstF[users$unq == 2])
   # Only 1/3 of users who followed 1 of 2 hints followed their first one
   mean(users$firstF[users$unq == 2 & users$unqF == 1])
+  
+  # Followed numbers seems to vary quite a bit by assignmnet
+  # 6+ followed ranges from 9-38%
+  # 9+ followed ranges from 0-31%
+  # most common is to follow 0
+  # Sweet spot (maybe..?) of 2-5 hints was relatively rare
+  ddply(users[users$unq>0,], c("assignment"), summarize, f0=mean(unqF==0), f1=mean(unqF==1), f2=mean(unqF==2), f35=mean(3 <= unqF & unqF <= 5), f68=mean(6 <= unqF & unqF <= 8), f9p=mean(9 <= unqF) )
   
   return (users)
 }
