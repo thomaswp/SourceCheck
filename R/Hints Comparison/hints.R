@@ -225,6 +225,9 @@ buildHintHashes <- function() {
   # and the average hint is followed by 38% of takers
   mean(hintHashes$f/hintHashes$n)
   
+  commonHashes <- hintHashes$hash[hintHashes$n > 2]
+  goodHashes <- hintHashes$hash[hintHashes$f >= 2]
+  
   hintHashes
 }
 
