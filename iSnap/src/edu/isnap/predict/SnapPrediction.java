@@ -2,11 +2,14 @@ package edu.isnap.predict;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 
+import difflib.StringUtills;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
 import edu.isnap.ctd.graph.vector.VectorState;
@@ -49,7 +52,9 @@ public class SnapPrediction {
 
 				private String getKey(Node root, VectorState state) {
 					String key = getKey(root);
-					if (state.items.length > 0) key += ":" + String.join("+", state.items);
+					if (state.items.length > 0) {
+						key += ":" + StringUtills.join(Arrays.asList(state.items), "+");
+					}
 					return key;
 				}
 
@@ -71,7 +76,7 @@ public class SnapPrediction {
 				keys.remove(i--);
 			}
 		}
-		keys.sort(new Comparator<String>() {
+		Collections.sort(keys, new Comparator<String>() {
 			@Override
 			public int compare(String o1, String o2) {
 				return -Integer.compare(components.get(o1).size(),
