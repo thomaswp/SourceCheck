@@ -266,6 +266,11 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 
 			int maxProgress = 0;
 			for (VectorState goal : goalContextMap.keySet()) {
+				// We ignore any goals that would be ignored by the bellman backup
+				if (vertexMap.get(goal).goalCount() < config.pruneGoals) {
+					progressMap.put(goal, 0);
+					continue;
+				}
 				int progress = Alignment.getProgress(state.items, goal.items,
 						config.progressOrderFactor, 1);
 				progressMap.put(goal, progress);
