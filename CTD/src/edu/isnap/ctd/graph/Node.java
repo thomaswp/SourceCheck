@@ -322,7 +322,7 @@ public class Node extends StringHashable {
 		}
 		String out = type;
 		if (prefixMap != null && prefixMap.containsKey(this)) {
-			out = prefixMap.get(this) + ": " + out;
+			out = prefixMap.get(this) + ":" + out;
 		}
 		if (children.size() > 0) {
 			if (inline) {
