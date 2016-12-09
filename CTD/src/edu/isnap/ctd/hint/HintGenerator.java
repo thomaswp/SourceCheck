@@ -15,7 +15,7 @@ import edu.isnap.ctd.graph.vector.VectorState;
 
 public class HintGenerator {
 
-	private final HintMap hintMap;
+	public final HintMap hintMap;
 
 	public HintGenerator(HintMap hintMap) {
 		this.hintMap = hintMap;
@@ -62,6 +62,10 @@ public class HintGenerator {
 	}
 
 	public VectorState getGoalState(Node node) {
+		return getGoalState(hintMap, node);
+	}
+
+	public static VectorState getGoalState(HintMap hintMap, Node node) {
 		HintConfig config = hintMap.getHintConfig();
 
 		VectorGraph graph = hintMap.getGraph(node);

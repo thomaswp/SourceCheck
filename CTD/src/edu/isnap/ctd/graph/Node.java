@@ -3,6 +3,7 @@ package edu.isnap.ctd.graph;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import edu.isnap.ctd.hint.Canonicalization;
 import edu.isnap.ctd.util.StringHashable;
@@ -304,10 +305,14 @@ public class Node extends StringHashable {
 	};
 
 	public String prettyPrint() {
-		return prettyPrint("");
+		return prettyPrint(null);
 	}
 
-	private String prettyPrint(String indent) {
+	public String prettyPrint(Map<Node, String> prefixMap) {
+		return prettyPrint("", prefixMap);
+	}
+
+	private String prettyPrint(String indent, Map<Node, String> prefixMap) {
 		boolean inline = true;
 		for (String hasBody : HAS_BODY) {
 			if (type.equals(hasBody)) {
@@ -316,19 +321,22 @@ public class Node extends StringHashable {
 			}
 		}
 		String out = type;
+		if (prefixMap != null && prefixMap.containsKey(this)) {
+			out = prefixMap.get(this) + ": " + out;
+		}
 		if (children.size() > 0) {
 			if (inline) {
 				out += "(";
 				for (int i = 0; i < children.size(); i++) {
 					if (i > 0) out += ", ";
-					out += children.get(i).prettyPrint(indent);
+					out += children.get(i).prettyPrint(indent, prefixMap);
 				}
 				out += ")";
 			} else {
 				out += " {\n";
 				String indentMore = indent + "  ";
 				for (int i = 0; i < children.size(); i++) {
-					out += indentMore + children.get(i).prettyPrint(indentMore) + "\n";
+					out += indentMore + children.get(i).prettyPrint(indentMore, prefixMap) + "\n";
 				}
 				out += indent + "}";
 			}

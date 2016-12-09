@@ -16,6 +16,7 @@ import com.esotericsoftware.kryo.io.Input;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.HintGenerator;
+import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.HintMapBuilder;
 import edu.isnap.ctd.hint.VectorHint;
 import edu.isnap.hint.SnapHintBuilder;
@@ -92,10 +93,12 @@ public class HintServlet extends HttpServlet {
 			return "[]";
 		}
 
+
 //		long time = System.currentTimeMillis();
 
 //		System.out.println(snapshot.toCode(true));
 		Node node = SimpleNodeBuilder.toTree(snapshot, true);
+		new HintHighlighter(generator.hintMap).highlight(node);
 
 		List<VectorHint> hints = generator.getHints(node);
 

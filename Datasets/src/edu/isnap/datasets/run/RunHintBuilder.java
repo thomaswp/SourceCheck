@@ -7,7 +7,9 @@ import java.sql.SQLException;
 import edu.isnap.ctd.hint.HintMapBuilder;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.datasets.HelpSeeking;
+import edu.isnap.datasets.Spring2016;
 import edu.isnap.hint.SnapHintBuilder;
+import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
 
 /**
@@ -18,15 +20,15 @@ public class RunHintBuilder {
 	public static void main(String[] args) throws IOException, InstantiationException,
 			IllegalAccessException, ClassNotFoundException, SQLException {
 		// Optionally, clean out all cached assignments first
-//		SnapParser.clean(Assignment.Spring2016.dataDir);
+		SnapParser.clean(Spring2016.dataDir);
 
-//		// Builds and caches a HintGenerator for each of these assignments
-//		buildHints(Spring2016.PolygonMaker, 1);
-//		buildHints(Spring2016.Squiral, 1);
-//		buildHints(Spring2016.GuessingGame1, 1);
-//		buildHints(Spring2016.GuessingGame2, 1);
-//		// Then copies the cache to the HintServer
-//		RunCopyData.copyGraphs(Spring2016.dataDir);
+		// Builds and caches a HintGenerator for each of these assignments
+		buildHints(Spring2016.PolygonMaker, 1);
+		buildHints(Spring2016.Squiral, 1);
+		buildHints(Spring2016.GuessingGame1, 1);
+		buildHints(Spring2016.GuessingGame2, 1);
+		// Then copies the cache to the HintServer
+		RunCopyData.copyGraphs(Spring2016.dataDir);
 
 		buildHints(HelpSeeking.BrickWall, 1);
 		RunCopyData.copyGraphs(HelpSeeking.BrickWall.dataDir);

@@ -31,7 +31,7 @@ public class Alignment {
 
 	public static List<int[]> alignPairs(String[] sequenceA, String[] sequenceB, int insCost, int delCost, int subCost) {
 		int[][] opt = createAlignmentMatrix(sequenceA, sequenceB, insCost, delCost, subCost, true);
-		ArrayList<int[]> pairs = new ArrayList<int[]>();
+		ArrayList<int[]> pairs = new ArrayList<>();
 //
 //		for (int[] row : opt) {
 //			System.out.println(Arrays.toString(row));
@@ -85,11 +85,11 @@ public class Alignment {
 //			String b = pair[1] == -1 ? null : sequenceB[pair[1]];
 //			System.out.println(a + " <-> " + b);
 //		}
-		List<String> sequence = new ArrayList<String>();
+		List<String> sequence = new ArrayList<>();
 		for (String s : sequenceA) sequence.add(s);
-		if (!moveEdit(sequenceA, sequenceB, pairs, sequence)) {
-			if (!addEdit(sequenceA, sequenceB, pairs, sequence)) {
-				if (!deleteEdit(sequenceA, sequenceB, pairs, sequence)) {
+		if (!doEdit(MoveEditor, sequenceA, sequenceB, pairs, sequence)) {
+			if (!doEdit(AddEditor, sequenceA, sequenceB, pairs, sequence)) {
+				if (!doEdit(DeleteEditor, sequenceA, sequenceB, pairs, sequence)) {
 					boolean same = true;
 					if (sequence.size() != sequenceB.length) same = false;
 					else {
@@ -108,47 +108,108 @@ public class Alignment {
 	}
 
 	public static int doEdits(List<String> sequence, String[] sequenceB, Editor editor) {
-		return doEdits(sequence, sequenceB, editor, -1);
+		return doEdits(sequence, sequenceB, editor, Integer.MAX_VALUE);
 	}
 
-	public static int doEdits(List<String> sequence, String[] sequenceB, Editor editor, int maxEdits) {
+	public static int doEdits(List<String> sequence, String[] sequenceB, Editor editor,
+			int maxEdits) {
 		if (maxEdits <= 0) return 0;
 		int edits = 0;
-		while (maxEdits < 0 || edits < maxEdits) {
+		while (edits < maxEdits) {
 			String[] sequenceA = sequence.toArray(new String[sequence.size()]);
 			List<int[]> pairs = alignPairs(sequenceA, sequenceB, 1, 1, 100);
-			if (!editor.edit(sequenceA, sequenceB, pairs, sequence)) break;
+			if (!doEdit(editor, sequenceA, sequenceB, pairs, sequence)) break;
 			edits++;
 		}
 		return edits;
 	}
 
+	private static boolean doEdit(Editor editor, String[] sequenceA, String[] sequenceB,
+			List<int[]> pairs, List<String> sequence) {
+		Edit edit = editor.getEdit(sequenceA, sequenceB, pairs, sequence);
+		if (edit != null) {
+			edit.edit(sequence);
+			return true;
+		}
+		return false;
+	}
+
 	public interface Editor {
-		boolean edit(String[] sequenceA, String[] sequenceB, List<int[]> pairs, List<String> sequence);
+		Edit getEdit(String[] sequenceA, String[] sequenceB, List<int[]> pairs, List<String> sequence);
 	}
 
 	public static Editor MoveEditor = new Editor() {
 		@Override
-		public boolean edit(String[] sequenceA, String[] sequenceB, List<int[]> pairs, List<String> sequence) {
+		public Edit getEdit(String[] sequenceA, String[] sequenceB, List<int[]> pairs, List<String> sequence) {
 			return moveEdit(sequenceA, sequenceB, pairs, sequence);
 		}
 	};
 
 	public static Editor AddEditor = new Editor() {
 		@Override
-		public boolean edit(String[] sequenceA, String[] sequenceB, List<int[]> pairs, List<String> sequence) {
+		public Edit getEdit(String[] sequenceA, String[] sequenceB, List<int[]> pairs, List<String> sequence) {
 			return addEdit(sequenceA, sequenceB, pairs, sequence);
 		}
 	};
 
 	public static Editor DeleteEditor = new Editor() {
 		@Override
-		public boolean edit(String[] sequenceA, String[] sequenceB, List<int[]> pairs, List<String> sequence) {
+		public Edit getEdit(String[] sequenceA, String[] sequenceB, List<int[]> pairs, List<String> sequence) {
 			return deleteEdit(sequenceA, sequenceB, pairs, sequence);
 		}
 	};
 
-	private static boolean moveEdit(String[] sequenceA, String[] sequenceB, List<int[]> pairs, List<String> sequence) {
+	public interface Edit {
+		void edit(List<String> sequence);
+	}
+
+	public static class MoveEdit implements Edit {
+		public final int from, to;
+
+		public MoveEdit(int from, int to) {
+			this.from = from;
+			this.to = to;
+		}
+
+		@Override
+		public void edit(List<String> sequence) {
+			String item = sequence.remove(from);
+			int addIndex = to;
+			if (from < to) addIndex--;
+			sequence.add(addIndex, item);
+		}
+	}
+
+	public static class AddEdit implements Edit {
+		public final String item;
+		public final int index;
+
+		public AddEdit(String item, int index) {
+			this.item = item;
+			this.index = index;
+		}
+
+		@Override
+		public void edit(List<String> sequence) {
+			sequence.add(index, item);
+		}
+	}
+
+	public static class DeleteEdit implements Edit {
+		public final int index;
+
+		public DeleteEdit(int index) {
+			this.index = index;
+		}
+
+		@Override
+		public void edit(List<String> sequence) {
+			sequence.remove(index);
+		}
+	}
+
+	private static MoveEdit moveEdit(String[] sequenceA, String[] sequenceB, List<int[]> pairs,
+			List<String> sequence) {
 		for (int[] pair : pairs) {
 			if (pair[1] == -1) {
 				int toMove = pair[0];
@@ -158,22 +219,24 @@ public class Alignment {
 						String match = sequenceB[p[1]];
 						if (!match.equals(toMatch)) continue;
 						int closestA = correspondingIndexBefore(pairs, sequence, p[1]);
-						if (closestA < toMove) {
-							sequence.remove(toMove);
-							sequence.add(closestA + 1, toMatch);
-						} else {
-							sequence.add(closestA + 1, toMatch);
-							sequence.remove(toMove);
-						}
-						return true;
+						return new MoveEdit(toMove, closestA + 1);
+//						if (closestA < toMove) {
+//							sequence.remove(toMove);
+//							sequence.add(closestA + 1, toMatch);
+//						} else {
+//							sequence.add(closestA + 1, toMatch);
+//							sequence.remove(toMove);
+//						}
+//						return true;
 					}
 				}
 			}
 		}
-		return false;
+		return null;
 	}
 
-	private static boolean deleteEdit(String[] sequenceA, String[] sequenceB, List<int[]> pairs, List<String> sequence) {
+	private static DeleteEdit deleteEdit(String[] sequenceA, String[] sequenceB, List<int[]> pairs,
+			List<String> sequence) {
 		for (int[] pair : pairs) {
 			if (pair[1] == -1) {
 				String toRemove = sequenceA[pair[0]];
@@ -181,15 +244,17 @@ public class Alignment {
 				for (String a : sequenceA) if (a.equals(toRemove)) totalA++;
 				for (String b : sequenceB) if (b.equals(toRemove)) totalB++;
 				if (totalA > totalB) {
-					sequence.remove(pair[0]);
-					return true;
+					return new DeleteEdit(pair[0]);
+//					sequence.remove(pair[0]);
+//					return true;
 				}
 			}
 		}
-		return false;
+		return null;
 	}
 
-	private static boolean addEdit(String[] sequenceA, String[] sequenceB, List<int[]> pairs, List<String> sequence) {
+	private static AddEdit addEdit(String[] sequenceA, String[] sequenceB, List<int[]> pairs,
+			List<String> sequence) {
 		for (int[] pair : pairs) {
 			if (pair[0] == -1) {
 				String toAdd = sequenceB[pair[1]];
@@ -199,15 +264,17 @@ public class Alignment {
 				if (totalA < totalB) {
 					int toSearch = pair[1];
 					int closestA = correspondingIndexBefore(pairs, sequence, toSearch);
-					sequence.add(closestA + 1, toAdd);
-					return true;
+					return new AddEdit(toAdd, closestA + 1);
+//					sequence.add(closestA + 1, toAdd);
+//					return true;
 				}
 			}
 		}
-		return false;
+		return null;
 	}
 
-	private static int correspondingIndexBefore(List<int[]> pairs, List<String> sequence, int bIndex) {
+	private static int correspondingIndexBefore(List<int[]> pairs, List<String> sequence,
+			int bIndex) {
 		int closestB = -1;
 		int closestA = -1;
 		for (int[] p : pairs) {
