@@ -12,6 +12,8 @@ import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
 import edu.isnap.ctd.graph.vector.VectorState;
 import edu.isnap.ctd.util.Alignment;
+import edu.isnap.ctd.util.BiMap;
+import edu.isnap.ctd.util.NodeAlignment;
 
 public class HintHighlighter {
 
@@ -26,6 +28,31 @@ public class HintHighlighter {
 	}
 
 	public void highlight(Node node) {
+
+		HintConfig config = hintMap.getHintConfig();
+		Node bestMatch = NodeAlignment.findBestMatch(node, hintMap.solutions,
+				config.progressOrderFactor, 1);
+
+		NodeAlignment alignment = new NodeAlignment(node, bestMatch);
+		alignment.calculateScore(config.progressOrderFactor, 1);
+
+		final IdentityHashMap<Node, String> labels = new IdentityHashMap<>();
+		final BiMap<Node, Node> mapping = alignment.mapping;
+		bestMatch.recurse(new Action() {
+			@Override
+			public void run(Node node) {
+				Node pair = mapping.getTo(node);
+				if (pair != null) {
+					labels.put(node, pair.id);
+				}
+			}
+		});
+
+		System.out.println("------------------------------");
+		System.out.println(bestMatch.prettyPrint(labels));
+
+		if (1==1) return;
+
 		node = node.copy(false);
 
 		final IdentityHashMap<Node, Highlight> colors = new IdentityHashMap<>();

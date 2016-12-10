@@ -20,6 +20,8 @@ import edu.isnap.ctd.graph.vector.VectorState;
  */
 public class HintMap {
 
+	public final List<Node> solutions = new ArrayList<>();
+
 	final HintConfig config;
 
 	public HintConfig getHintConfig() {
@@ -101,6 +103,7 @@ public class HintMap {
 	}
 
 	public void setSolution(Node solution) {
+		solutions.add(solution);
 		solution.recurse(new Action() {
 			@Override
 			public void run(Node item) {
@@ -176,6 +179,7 @@ public class HintMap {
 			}
 			myGraph.addGraph(graph, true);
 		}
+		solutions.addAll(hintMap.solutions);
 	}
 
 	/**
