@@ -14,6 +14,7 @@ import edu.isnap.ctd.graph.vector.VectorState;
 import edu.isnap.ctd.util.Alignment;
 import edu.isnap.ctd.util.BiMap;
 import edu.isnap.ctd.util.NodeAlignment;
+import edu.isnap.ctd.util.NodeAlignment.ProgressDistanceMeasure;
 
 public class HintHighlighter {
 
@@ -29,12 +30,14 @@ public class HintHighlighter {
 
 	public void highlight(Node node) {
 
+
 		HintConfig config = hintMap.getHintConfig();
-		Node bestMatch = NodeAlignment.findBestMatch(node, hintMap.solutions,
-				config.progressOrderFactor, 1);
+		ProgressDistanceMeasure dm = new ProgressDistanceMeasure(
+				config.progressOrderFactor, 1, 0.25, config.script);
+		Node bestMatch = NodeAlignment.findBestMatch(node, hintMap.solutions, dm);
 
 		NodeAlignment alignment = new NodeAlignment(node, bestMatch);
-		alignment.calculateScore(config.progressOrderFactor, 1);
+		alignment.calculateCost(dm);
 
 		final IdentityHashMap<Node, String> labels = new IdentityHashMap<>();
 		final BiMap<Node, Node> mapping = alignment.mapping;

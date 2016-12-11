@@ -22,14 +22,14 @@ public class NodeAlignment {
 	});;
 
 
-	private int score = 0;
+	private int cost = 0;
 
 	public NodeAlignment(Node from, Node to) {
 		this.from = from;
 		this.to = to;
 	}
 
-	public int calculateScore(int inOrderReward, int outOfOrderReward) {
+	public int calculateCost(DistanceMeasure distanceMeasure) {
 		ListMap<String, Node> fromMap = getChildMap(from);
 		ListMap<String, Node> toMap = getChildMap(to);
 
@@ -46,30 +46,61 @@ public class NodeAlignment {
 				continue;
 			}
 
-			align(fromNodes, toNodes, inOrderReward, outOfOrderReward);
+			align(fromNodes, toNodes, distanceMeasure);
 		}
-		return score;
+		return cost;
 	}
 
+	public interface DistanceMeasure {
+		public double measure(String type, String[] a, String[] b);
+	}
+
+	public static class ProgressDistanceMeasure implements DistanceMeasure {
+
+		public final int inOrderReward, outOfOrderReward;
+		public final double missingCost;
+		public final String scriptType;
+
+		public ProgressDistanceMeasure(int inOrderReward, int outOfOrderReward,
+				double missingCost, String scriptType) {
+			this.inOrderReward = inOrderReward;
+			this.outOfOrderReward = outOfOrderReward;
+			this.missingCost = missingCost;
+			this.scriptType = scriptType;
+		}
+
+		@Override
+		public double measure(String type, String[] a, String[] b) {
+			if (scriptType.equals(type)) {
+				return Alignment.getMissingNodeCount(a, b) * missingCost -
+						Alignment.getProgress(a, b, inOrderReward, outOfOrderReward);
+			} else {
+				int cost = -inOrderReward;
+				return Alignment.normAlignCost(a, b, cost, cost, cost);
+			}
+		}
+	};
+
 	private void align(List<Node> fromNodes, List<Node> toNodes,
-			int inOrderReward, int outOfOrderReward) {
+			DistanceMeasure distanceMeasure) {
 		String[][] fromStates = stateArray(fromNodes);
 		String[][] toStates = stateArray(toNodes);
 
-		int maxCost = 0;
+		double minCost = Integer.MAX_VALUE;
 		double[][] costMatrix = new double[fromStates.length][toStates.length];
 		for (int i = 0; i < fromStates.length; i++) {
 			for (int j = 0; j < toStates.length; j++) {
-				int cost = Alignment.getProgress(fromStates[i], toStates[j],
-						inOrderReward, outOfOrderReward);
+				double cost = distanceMeasure.measure(fromNodes.get(i).type(),
+						fromStates[i], toStates[j]);
 				costMatrix[i][j] = cost;
-				maxCost = Math.max(maxCost, cost);
+				minCost = Math.min(minCost, cost);
 			}
 		}
-		// Invert the score to make it a cost
+
+		// Ensure all costs are non-negative
 		for (int i = 0; i < fromStates.length; i++) {
 			for (int j = 0; j < toStates.length; j++) {
-				costMatrix[i][j] = maxCost - costMatrix[i][j];
+				costMatrix[i][j] = costMatrix[i][j] - minCost;
 			}
 		}
 
@@ -79,7 +110,7 @@ public class NodeAlignment {
 		for (int i = 0; i < fromStates.length; i++) {
 			int j = matching[i];
 			if (j == -1) continue;
-			score += maxCost - costMatrix[i][j];
+			cost += costMatrix[i][j] + minCost;
 			Node from = fromNodes.get(i), to = toNodes.get(j);
 			mapping.put(from, to);
 
@@ -119,17 +150,17 @@ public class NodeAlignment {
 	}
 
 	public static List<Node> findBestMatches(Node from, List<Node> matches,
-			int inOrderReward, int outOfOrderReward) {
+			DistanceMeasure distanceMeasure) {
 		List<Node> best = new LinkedList<>();
-		int bestScore = 0;
+		int bestCost = 0;
 		for (Node to : matches) {
 			NodeAlignment align = new NodeAlignment(from, to);
-			int score = align.calculateScore(inOrderReward, outOfOrderReward);
-			if (score > bestScore) {
+			int cost = align.calculateCost(distanceMeasure);
+			if (cost < bestCost) {
 				best.clear();
 			}
-			if (score >= bestScore) {
-				bestScore = score;
+			if (cost <= bestCost) {
+				bestCost = cost;
 				best.add(to);
 			}
 		}
@@ -137,10 +168,10 @@ public class NodeAlignment {
 	}
 
 	public static Node findBestMatch(Node from, List<Node> matches,
-			int inOrderReward, int outOfOrderReward) {
+			DistanceMeasure distanceMeasure) {
 		Node best = null;
 		int smallest = Integer.MAX_VALUE;
-		List<Node> bestMatches = findBestMatches(from, matches, inOrderReward, outOfOrderReward);
+		List<Node> bestMatches = findBestMatches(from, matches, distanceMeasure);
 		System.out.println("Size: " + bestMatches.size());
 		for (Node node : bestMatches) {
 			int size = node.size();

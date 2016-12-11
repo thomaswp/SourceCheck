@@ -346,6 +346,7 @@ public class Alignment {
 	}
 
 	public static int getProgress(String[] from, String[] to, int orderReward, int unorderReward) {
+		// TODO: This can and should be much more efficient
 		List<String> fromList = new LinkedList<>(Arrays.asList(from));
 		List<String> toList = new LinkedList<>(Arrays.asList(to));
 
@@ -368,6 +369,10 @@ public class Alignment {
 		}
 
 		return reward;
+	}
+
+	public static double getMissingNodeCount(String[] from, String[] to) {
+		return to.length - getProgress(to, from, 1, 1);
 	}
 
 	public static void main(String[] args) {
