@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
@@ -36,12 +37,14 @@ public class HintHighlighter {
 
 		final IdentityHashMap<Node, Highlight> colors = new IdentityHashMap<>();
 
+		// First simply ID the nodes that have a pair with the same parent (Good), a different
+		// parent (Move) and those that don't (Delete)
+		// Note that the Good label is not final, as Good nodes may need to be reordered (Order)
 		node.recurse(new Action() {
 			@Override
 			public void run(Node node) {
 				Node pair = mapping.getFrom(node);
 				if (pair != null) {
-					// TODO: order moves
 					Node parent = node.parent;
 					boolean parentMatches = parent == null ||
 							mapping.getFrom(parent) == pair.parent;
@@ -53,7 +56,89 @@ public class HintHighlighter {
 			}
 		});
 
-		// TODO: More root moves
+		// Find nodes that need to be reordered (Order)
+		node.recurse(new Action() {
+			@Override
+			public void run(Node node) {
+				// Start by finding parent nodes that have a pair
+				Node pair = mapping.getFrom(node);
+				if (pair != null) {
+					// Instead of aligning the node types, which might repeat, we align the original
+					// node indices (1, 2, 3...) with the order those node-indices appear in the
+					// paired parent's children
+
+					// Maps pair children to the index of their corresponding original children
+					// We use string, since the alignment algorithm will expect them
+					IdentityHashMap<Node, String> pairOrders = new IdentityHashMap<>();
+					// Get the original good nodes in the order they appear
+					List<Node> fromChildren = new LinkedList<>();
+					// And create the lists that will hold the indices to compare
+					List<String> fromItems = new LinkedList<>(), toItems = new LinkedList<>();
+					// We use a tree map to order the pair children by their index in their parent
+					TreeMap<Integer, Node> toChildren = new TreeMap<>();
+
+					for (Node child : node.children) {
+						// We only work with children that have a pair
+						if (colors.get(child) == Highlight.Good) {
+							// The from items are the original indices (1, 2, 3..)
+							String index = String.valueOf(fromChildren.size());
+							fromItems.add(index);
+							fromChildren.add(child);
+
+							// Get the child pair and add it in order of its index
+							Node childPair = mapping.getFrom(child);
+							pairOrders.put(childPair, index);
+							Node x = toChildren.put(childPair.index(), childPair);
+							if (x != null) {
+								// Check for multiple nodes mapped to a single one
+								System.out.println("two: " + childPair);
+							}
+						}
+					}
+					// Get the original child's index corresponding to each pair
+					for (Node pairChild : toChildren.values()) {
+						toItems.add(pairOrders.get(pairChild));
+					}
+
+					// Now we have two lists, e.g. (1, 2, 3) and (3, 1, 2)
+					// so we align them and see which ones don't end up with partners
+					List<int[]> alignPairs = Alignment.alignPairs(
+							toArray(fromItems), toArray(toItems), 1, 1, 100);
+					for (int[] ap : alignPairs) {
+						if (ap[0] >= 0 && ap[1] < 0) {
+							// Unpaired elements get marked for reordering
+							colors.put(fromChildren.get(ap[0]), Highlight.Order);
+						}
+					}
+				}
+			}
+		});
+
+		// Now find needed insertions
+		final List<Insertion> insertions = new LinkedList<>();
+		node.recurse(new Action() {
+			@Override
+			public void run(Node node) {
+				// Look for parents with pairs
+				Node pair = mapping.getFrom(node);
+				if (pair != null) {
+					// For those we iterate through their parent-pair's children
+					int insertIndex = 0;
+					for (Node child : pair.children) {
+						Node originalChild = mapping.getTo(child);
+						if (originalChild != null) {
+							// For paired children, we update the insertion index
+							insertIndex = originalChild.index() + 1;
+						} else {
+							// Otherwise we add an insertion
+							insertions.add(new Insertion(node, child.type(), insertIndex));
+						}
+					}
+				}
+			}
+		});
+
+		handleInsertionsAndMoves(colors, insertions);
 
 		printHighlight(node, colors);
 
@@ -99,6 +184,13 @@ public class HintHighlighter {
 			}
 		});
 
+		handleInsertionsAndMoves(colors, insertions);
+
+		printHighlight(node, colors);
+	}
+
+	private void handleInsertionsAndMoves(final IdentityHashMap<Node, Highlight> colors,
+			final List<Insertion> insertions) {
 		// For each deleted node, see if it should be inserted, and if so change it to a root move
 		for (Node deleted : colors.keySet()) {
 			if (colors.get(deleted) != Highlight.Delete) continue;
@@ -114,8 +206,6 @@ public class HintHighlighter {
 		for (Insertion insertion : insertions) {
 			colors.put(insertion.insert(), Highlight.Add);
 		}
-
-		printHighlight(node, colors);
 	}
 
 	private void printHighlight(Node node, final IdentityHashMap<Node, Highlight> colors) {

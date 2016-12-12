@@ -19,6 +19,7 @@ public class BiMap<T, U> {
 	public U put(T from, U to) {
 		U removedFrom = fromMap.put(from, to);
 		T removedTo = toMap.put(to, from);
+		// TODO: this logic doens't quite work for an IdentityHashMap
 		if (removedFrom != null && !removedFrom.equals(to)) toMap.remove(removedFrom);
 		if (removedTo != null && !removedTo.equals(from)) fromMap.remove(removedTo);
 		return removedFrom;

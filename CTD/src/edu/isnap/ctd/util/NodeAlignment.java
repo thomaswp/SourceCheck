@@ -92,6 +92,8 @@ public class NodeAlignment {
 			for (int j = 0; j < toStates.length; j++) {
 				String type = fromNodes.get(i).type();
 				double cost = distanceMeasure.measure(type, fromStates[i], toStates[j]);
+				// Break ties with existing mappings from parents
+				if (mapping.getFrom(fromNodes.get(i)) == toNodes.get(j)) cost -= 0.01;
 				costMatrix[i][j] = cost;
 				minCost = Math.min(minCost, cost);
 			}
