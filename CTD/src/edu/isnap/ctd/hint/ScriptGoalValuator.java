@@ -6,10 +6,10 @@ import java.util.LinkedList;
 import java.util.List;
 
 import edu.isnap.ctd.graph.vector.VectorState;
-import edu.isnap.ctd.util.CountMap;
 import edu.isnap.ctd.util.KMedoids;
 import edu.isnap.ctd.util.KMedoids.DistanceMeasure;
-import edu.isnap.ctd.util.ListMap;
+import edu.isnap.ctd.util.map.CountMap;
+import edu.isnap.ctd.util.map.ListMap;
 
 // Currently not using this since, while it adds some value, it also adds disproportionately more
 // complexity to the algorithm and it's just too much to maintain. Also, I think much of the

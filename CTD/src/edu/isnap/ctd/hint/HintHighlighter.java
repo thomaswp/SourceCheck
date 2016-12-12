@@ -12,9 +12,9 @@ import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
 import edu.isnap.ctd.graph.vector.VectorState;
 import edu.isnap.ctd.util.Alignment;
-import edu.isnap.ctd.util.BiMap;
 import edu.isnap.ctd.util.NodeAlignment;
 import edu.isnap.ctd.util.NodeAlignment.ProgressDistanceMeasure;
+import edu.isnap.ctd.util.map.BiMap;
 
 public class HintHighlighter {
 

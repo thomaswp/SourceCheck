@@ -1,12 +1,18 @@
-package edu.isnap.ctd.util;
+package edu.isnap.ctd.util.map;
 
 import java.io.PrintStream;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
-public class CountMap<K> extends HashMap<K, Integer>{
-	private static final long serialVersionUID = 1L;
+public class CountMap<K> extends ExtensionMap<K, Integer>{
+
+	public CountMap() {
+		this(MapFactory.HashMapFactory);
+	}
+
+	public CountMap(MapFactory factory) {
+		super(factory);
+	}
 
 	public int getCount(K key) {
 		Integer count = get(key);

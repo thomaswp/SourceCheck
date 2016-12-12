@@ -14,7 +14,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.util.DoubleMap;
+import edu.isnap.ctd.util.map.DoubleMap;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;

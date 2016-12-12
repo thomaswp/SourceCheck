@@ -1,26 +1,20 @@
 package edu.isnap.ctd.util;
 
-import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
 import edu.isnap.ctd.hint.HintMap;
-import edu.isnap.ctd.util.BiMap.MapFactory;
+import edu.isnap.ctd.util.map.BiMap;
+import edu.isnap.ctd.util.map.ListMap;
+import edu.isnap.ctd.util.map.MapFactory;
 
 public class NodeAlignment {
 
 	public final Node from, to;
 
-	public final BiMap<Node, Node> mapping = new BiMap<>(new MapFactory() {
-		@Override
-		public <A, B> Map<A, B> createMap() {
-			return new IdentityHashMap<>();
-		}
-	});;
-
+	public final BiMap<Node, Node> mapping = new BiMap<>(MapFactory.IdentityHashMapFactory);
 
 	private int cost = 0;
 

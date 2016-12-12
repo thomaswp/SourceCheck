@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Set;
 
 import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.util.BiMap;
 import edu.isnap.ctd.util.Tuple;
+import edu.isnap.ctd.util.map.BiMap;
 import edu.isnap.eval.util.PQGram.Profile.Constructor;
 
 public class PQGram {
