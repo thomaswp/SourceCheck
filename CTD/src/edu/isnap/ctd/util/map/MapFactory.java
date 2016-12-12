@@ -2,6 +2,7 @@ package edu.isnap.ctd.util.map;
 
 import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public interface MapFactory {
@@ -18,6 +19,13 @@ public interface MapFactory {
 		@Override
 		public <A, B> Map<A, B> createMap() {
 			return new IdentityHashMap<>();
+		}
+	};
+
+	public final MapFactory LinkedHashMapFactory = new MapFactory() {
+		@Override
+		public <A, B> Map<A, B> createMap() {
+			return new LinkedHashMap<>();
 		}
 	};
 }

@@ -23,7 +23,7 @@ public class NodeAlignment {
 		this.to = to;
 	}
 
-	public int calculateCost(DistanceMeasure distanceMeasure) {
+	public int calculateCost(DistanceMeasure distanceMeasure, boolean debug) {
 		ListMap<String, Node> fromMap = getChildMap(from);
 		ListMap<String, Node> toMap = getChildMap(to);
 
@@ -40,7 +40,7 @@ public class NodeAlignment {
 				continue;
 			}
 
-			align(fromNodes, toNodes, distanceMeasure);
+			align(fromNodes, toNodes, distanceMeasure, debug);
 		}
 		return cost;
 	}
@@ -69,23 +69,29 @@ public class NodeAlignment {
 				return Alignment.getMissingNodeCount(a, b) * missingCost -
 						Alignment.getProgress(a, b, inOrderReward, outOfOrderReward);
 			} else {
-				int cost = -inOrderReward;
+				int cost = inOrderReward;
 				return Alignment.normAlignCost(a, b, cost, cost, cost);
 			}
 		}
 	};
 
 	private void align(List<Node> fromNodes, List<Node> toNodes,
-			DistanceMeasure distanceMeasure) {
+			DistanceMeasure distanceMeasure, boolean debug) {
 		String[][] fromStates = stateArray(fromNodes);
 		String[][] toStates = stateArray(toNodes);
+
+
+		// TODO: remove debug flag
+//		if (debug && fromNodes.get(0).type().equals("doSayFor")) {
+//			System.out.println("!");
+//		}
 
 		double minCost = Integer.MAX_VALUE;
 		double[][] costMatrix = new double[fromStates.length][toStates.length];
 		for (int i = 0; i < fromStates.length; i++) {
 			for (int j = 0; j < toStates.length; j++) {
-				double cost = distanceMeasure.measure(fromNodes.get(i).type(),
-						fromStates[i], toStates[j]);
+				String type = fromNodes.get(i).type();
+				double cost = distanceMeasure.measure(type, fromStates[i], toStates[j]);
 				costMatrix[i][j] = cost;
 				minCost = Math.min(minCost, cost);
 			}
@@ -131,7 +137,7 @@ public class NodeAlignment {
 	}
 
 	private ListMap<String, Node> getChildMap(Node node) {
-		final ListMap<String, Node> map = new ListMap<>();
+		final ListMap<String, Node> map = new ListMap<>(MapFactory.LinkedHashMapFactory);
 		node.recurse(new Action() {
 			@Override
 			public void run(Node node) {
@@ -146,10 +152,10 @@ public class NodeAlignment {
 	public static List<Node> findBestMatches(Node from, List<Node> matches,
 			DistanceMeasure distanceMeasure) {
 		List<Node> best = new LinkedList<>();
-		int bestCost = 0;
+		int bestCost = Integer.MAX_VALUE;
 		for (Node to : matches) {
 			NodeAlignment align = new NodeAlignment(from, to);
-			int cost = align.calculateCost(distanceMeasure);
+			int cost = align.calculateCost(distanceMeasure, false);
 			if (cost < bestCost) {
 				best.clear();
 			}

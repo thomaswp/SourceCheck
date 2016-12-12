@@ -19,7 +19,7 @@ import edu.isnap.ctd.util.map.BiMap;
 public class HintHighlighter {
 
 	public static enum Highlight {
-		Good, Add, Delete, Move, RootMove
+		Good, Add, Delete, Order, Move
 	}
 
 	private final HintMap hintMap;
@@ -30,14 +30,43 @@ public class HintHighlighter {
 
 	public void highlight(Node node) {
 
+		node = node.copy(false);
 
+		final BiMap<Node, Node> mapping = findSolutionMapping(node);
+
+		final IdentityHashMap<Node, Highlight> colors = new IdentityHashMap<>();
+
+		node.recurse(new Action() {
+			@Override
+			public void run(Node node) {
+				Node pair = mapping.getFrom(node);
+				if (pair != null) {
+					// TODO: order moves
+					Node parent = node.parent;
+					boolean parentMatches = parent == null ||
+							mapping.getFrom(parent) == pair.parent;
+					colors.put(node, parentMatches ? Highlight.Good : Highlight.Move);
+				} else {
+					colors.put(node, Highlight.Delete);
+				}
+
+			}
+		});
+
+		// TODO: More root moves
+
+		printHighlight(node, colors);
+
+	}
+
+	private BiMap<Node, Node> findSolutionMapping(Node node) {
 		HintConfig config = hintMap.getHintConfig();
 		ProgressDistanceMeasure dm = new ProgressDistanceMeasure(
 				config.progressOrderFactor, 1, 0.25, config.script);
 		Node bestMatch = NodeAlignment.findBestMatch(node, hintMap.solutions, dm);
 
 		NodeAlignment alignment = new NodeAlignment(node, bestMatch);
-		alignment.calculateCost(dm);
+		alignment.calculateCost(dm, true);
 
 		final IdentityHashMap<Node, String> labels = new IdentityHashMap<>();
 		final BiMap<Node, Node> mapping = alignment.mapping;
@@ -51,11 +80,13 @@ public class HintHighlighter {
 			}
 		});
 
-		System.out.println("------------------------------");
-		System.out.println(bestMatch.prettyPrint(labels));
+//		System.out.println("------------------------------");
+//		System.out.println(bestMatch.prettyPrint(labels));
+		return mapping;
+	}
 
-		if (1==1) return;
 
+	public void ctdHighlight(Node node) {
 		node = node.copy(false);
 
 		final IdentityHashMap<Node, Highlight> colors = new IdentityHashMap<>();
@@ -73,7 +104,7 @@ public class HintHighlighter {
 			if (colors.get(deleted) != Highlight.Delete) continue;
 			for (Insertion insertion : insertions) {
 				if (deleted.hasType(insertion.type)) {
-					colors.put(deleted, Highlight.RootMove);
+					colors.put(deleted, Highlight.Move);
 					// TODO: find the best match, not just the first
 					break;
 				}
@@ -84,6 +115,10 @@ public class HintHighlighter {
 			colors.put(insertion.insert(), Highlight.Add);
 		}
 
+		printHighlight(node, colors);
+	}
+
+	private void printHighlight(Node node, final IdentityHashMap<Node, Highlight> colors) {
 		IdentityHashMap<Node, String> prefixMap = new IdentityHashMap<>();
 		for (Entry<Node, Highlight> entry : colors.entrySet()) {
 			prefixMap.put(entry.getKey(), entry.getValue().name().substring(0, 1));
@@ -114,7 +149,7 @@ public class HintHighlighter {
 		for (int[] pair : pairs) {
 			if (pair[0] >= 0 && pair[1] < 0) {
 				// Any unpaired child was moved, so highlight it
-				colors.put(node.children.get(pair[0]), Highlight.Move);
+				colors.put(node.children.get(pair[0]), Highlight.Order);
 			} else if (pair[0] >= 0 && pair[1] >= 0) {
 				// The others were kept in order, so add them to the map
 				indexMap.put(pair[1], pair[0]);
