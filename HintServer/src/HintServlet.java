@@ -15,10 +15,10 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 
 import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.hint.HintGenerator;
+import edu.isnap.ctd.hint.Hint;
 import edu.isnap.ctd.hint.HintHighlighter;
+import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.hint.HintMapBuilder;
-import edu.isnap.ctd.hint.VectorHint;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.elements.Snapshot;
@@ -32,12 +32,12 @@ public class HintServlet extends HttpServlet {
 	private final static String DEFAULT_ASSIGNMENT = "guess1Lab";
 	private final static int DEFAULT_MIN_GRADE = 100;
 
-	private static HashMap<String, HintGenerator> generators = new HashMap<>();
+	private static HashMap<String, HintMap> hintMaps = new HashMap<>();
 
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
-		loadGenerator(DEFAULT_ASSIGNMENT, DEFAULT_MIN_GRADE);
+		loadHintMap(DEFAULT_ASSIGNMENT, DEFAULT_MIN_GRADE);
 		resp.setContentType("text");
 		resp.getOutputStream().println("Loaded cache for " + DEFAULT_ASSIGNMENT);
 	}
@@ -88,8 +88,8 @@ public class HintServlet extends HttpServlet {
 	private String getHintJSON(Snapshot snapshot, String assignment, int minGrade) {
 		String json = "";
 
-		HintGenerator generator = loadGenerator(assignment, minGrade);
-		if (generator == null) {
+		HintMap hintMap = loadHintMap(assignment, minGrade);
+		if (hintMap == null) {
 			return "[]";
 		}
 
@@ -98,9 +98,10 @@ public class HintServlet extends HttpServlet {
 
 //		System.out.println(snapshot.toCode(true));
 		Node node = SimpleNodeBuilder.toTree(snapshot, true);
-		new HintHighlighter(generator.hintMap).highlight(node);
+		new HintHighlighter(hintMap).highlight(node);
 
-		List<VectorHint> hints = generator.getHints(node);
+//		List<VectorHint> hints = new HintGenerator(hintMap).getHints(node);
+		List<? extends Hint> hints = new HintHighlighter(hintMap).highlight(node);
 
 		json += "[";
 		for (int i = 0; i < hints.size(); i++) {
@@ -115,17 +116,17 @@ public class HintServlet extends HttpServlet {
 		return json;
 	}
 
-	public static String hintToJson(VectorHint hint) {
-		return String.format("{\"from\": \"%s\", \"to\": \"%s\", \"data\": %s}",
-				hint.from(), hint.to(), hint.data());
+	public static String hintToJson(Hint hint) {
+		return String.format("{\"from\": \"%s\", \"to\": \"%s\", \"data\": %s, \"type\": \"%s\"}",
+				hint.from(), hint.to(), hint.data(), hint.type());
 	}
 
-	private HintGenerator loadGenerator(String assignment, int minGrade) {
+	private HintMap loadHintMap(String assignment, int minGrade) {
 		if (assignment == null || "test".equals(assignment)) {
 			assignment = DEFAULT_ASSIGNMENT;
 		}
-		HintGenerator generator = generators.get(assignment);
-		if (generator == null) {
+		HintMap hintMap = hintMaps.get(assignment);
+		if (hintMap == null) {
 			Kryo kryo = SnapHintBuilder.getKryo();
 			String path = String.format("/WEB-INF/data/%s-g%03d.cached", assignment, minGrade);
 			InputStream stream = getServletContext().getResourceAsStream(path);
@@ -134,8 +135,8 @@ public class HintServlet extends HttpServlet {
 			HintMapBuilder builder = kryo.readObject(input, HintMapBuilder.class);
 			input.close();
 
-			generators.put(assignment, generator = builder.hintGenerator());
+			hintMaps.put(assignment, hintMap = builder.hintMap);
 		}
-		return generator;
+		return hintMap;
 	}
 }

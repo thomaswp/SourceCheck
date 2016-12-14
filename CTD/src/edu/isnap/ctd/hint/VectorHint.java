@@ -13,7 +13,7 @@ import edu.isnap.ctd.hint.Canonicalization.InvertOp;
 import edu.isnap.ctd.hint.Canonicalization.SwapArgs;
 import edu.isnap.ctd.util.StringHashable;
 
-public class VectorHint extends StringHashable {
+public class VectorHint extends StringHashable implements Hint {
 
 		public final Node root;
 		public final String rootPathString;
@@ -46,14 +46,17 @@ public class VectorHint extends StringHashable {
 			return true;
 		}
 
+		@Override
 		public String from() {
 			return rootPathString + ": " + from;
 		}
 
+		@Override
 		public String to() {
 			return rootPathString + ": " + to;
 		}
 
+		@Override
 		public String data() {
 			String data = "{";
 			for (Entry<String, String> entry : dataMap().entrySet()) {
@@ -141,6 +144,11 @@ public class VectorHint extends StringHashable {
 			}
 
 			return nRoot;
+		}
+
+		@Override
+		public String type() {
+			return "vector";
 		}
 
 	}

@@ -1,6 +1,7 @@
 package edu.isnap.ctd.hint;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
@@ -8,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+
+import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
@@ -29,7 +32,9 @@ public class HintHighlighter {
 		this.hintMap = hintMap;
 	}
 
-	public void highlight(Node node) {
+	public List<EditHint> highlight(Node node) {
+
+		final List<EditHint> edits = new LinkedList<>();
 
 		node = node.copy(false);
 
@@ -51,8 +56,8 @@ public class HintHighlighter {
 					colors.put(node, parentMatches ? Highlight.Good : Highlight.Move);
 				} else {
 					colors.put(node, Highlight.Delete);
+					edits.add(new Deletion(node));
 				}
-
 			}
 		});
 
@@ -107,7 +112,20 @@ public class HintHighlighter {
 					for (int[] ap : alignPairs) {
 						if (ap[0] >= 0 && ap[1] < 0) {
 							// Unpaired elements get marked for reordering
-							colors.put(fromChildren.get(ap[0]), Highlight.Order);
+							Node toReorder = fromChildren.get(ap[0]);
+							colors.put(toReorder, Highlight.Order);
+
+							// Find the best index for the Node
+							Node np = mapping.getFrom(toReorder);
+							// Work backwards from the reordered node's pair and find a preceding
+							// pair-node that is mapped to: it goes after that. If none is found,
+							// we insert at the beginning
+							int index = 0;
+							for (int i = np.index() - 1; i >= 0; i--) {
+								Node preceder = mapping.getTo(np.parent.children.get(i));
+								if (preceder != null) index = preceder.index() + 1;
+							}
+							edits.add(new Reorder(toReorder, index));
 						}
 					}
 				}
@@ -137,11 +155,13 @@ public class HintHighlighter {
 				}
 			}
 		});
+		edits.addAll(insertions);
 
-		handleInsertionsAndMoves(colors, insertions);
+		handleInsertionsAndMoves(colors, insertions, edits);
 
 		printHighlight(node, colors);
 
+		return edits;
 	}
 
 	private BiMap<Node, Node> findSolutionMapping(Node node) {
@@ -184,25 +204,37 @@ public class HintHighlighter {
 			}
 		});
 
-		handleInsertionsAndMoves(colors, insertions);
+		handleInsertionsAndMoves(colors, insertions, null);
 
 		printHighlight(node, colors);
 	}
 
 	private void handleInsertionsAndMoves(final IdentityHashMap<Node, Highlight> colors,
-			final List<Insertion> insertions) {
+			final List<Insertion> insertions, List<EditHint> edits) {
+		List<EditHint> toRemove = new LinkedList<>();
+
 		// For each deleted node, see if it should be inserted, and if so change it to a root move
-		for (Node deleted : colors.keySet()) {
+		for (EditHint edit : edits) {
+			if (!(edit instanceof Deletion)) continue;
+			Deletion deletion = (Deletion) edit;
+			Node deleted = deletion.node;
+
 			if (colors.get(deleted) != Highlight.Delete) continue;
 			for (Insertion insertion : insertions) {
-				if (deleted.hasType(insertion.type)) {
+				if (insertion.candidate == null && deleted.hasType(insertion.type)) {
 					colors.put(deleted, Highlight.Move);
 					// TODO: find the best match, not just the first
+					insertion.candidate = deleted;
+					toRemove.add(deletion);
 					break;
 				}
 			}
 		}
 
+		edits.removeAll(toRemove);
+
+		Collections.reverse(insertions);
+		System.out.println("Insertions: " + insertions);
 		for (Insertion insertion : insertions) {
 			colors.put(insertion.insert(), Highlight.Add);
 		}
@@ -283,10 +315,42 @@ public class HintHighlighter {
 
 	}
 
-	private static class Insertion {
+	public static abstract class EditHint implements Hint {
+
+		protected abstract String description();
+		protected abstract JSONObject getData();
+
+		@Override
+		public String from() {
+			return description();
+		}
+
+		@Override
+		public String to() {
+			return description();
+		}
+
+		@Override
+		public String type() {
+			return "highlight";
+		}
+
+		@Override
+		public String data() {
+			return getData().toString();
+		}
+
+		protected String getID(Node node) {
+			return "";
+		}
+	}
+
+	private static class Insertion extends EditHint {
 		public final Node parent;
 		public final String type;
 		public final int index;
+
+		public Node candidate;
 
 		public Insertion(Node parent, String type, int index) {
 			this.parent = parent;
@@ -298,6 +362,63 @@ public class HintHighlighter {
 			Node child = new Node(parent, type);
 			parent.children.add(index, child);
 			return child;
+		}
+
+		@Override
+		public String toString() {
+			return Arrays.toString(parent.getChildArray()) + ": " + index + "/" + type;
+		}
+
+		@Override
+		protected String description() {
+			return String.format("Insert %s at index %d of parent %s%s", type, index, parent,
+					candidate == null ? "" : (" using " + candidate));
+		}
+
+		@Override
+		protected JSONObject getData() {
+			JSONObject obj = new JSONObject();
+			return obj;
+		}
+	}
+
+	public static class Deletion extends EditHint {
+		public final Node node;
+
+		public Deletion(Node node) {
+			this.node = node;
+		}
+
+		@Override
+		protected String description() {
+			return "Delete: " + node;
+		}
+
+		@Override
+		protected JSONObject getData() {
+			JSONObject obj = new JSONObject();
+			return obj;
+		}
+	}
+
+	public static class Reorder extends EditHint {
+		public final Node node;
+		public final int index;
+
+		public Reorder(Node node, int index) {
+			this.node = node;
+			this.index = index;
+		}
+
+		@Override
+		protected String description() {
+			return String.format("Move from %d to %d: %s", node.index(), index, node);
+		}
+
+		@Override
+		protected JSONObject getData() {
+			JSONObject obj = new JSONObject();
+			return obj;
 		}
 	}
 
