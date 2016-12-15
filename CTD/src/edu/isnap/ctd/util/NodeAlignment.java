@@ -53,24 +53,30 @@ public class NodeAlignment {
 
 		public final int inOrderReward, outOfOrderReward;
 		public final double missingCost;
-		public final String scriptType;
+		public final String scriptType, ignoreType;
 
 		public ProgressDistanceMeasure(int inOrderReward, int outOfOrderReward,
-				double missingCost, String scriptType) {
+				double missingCost, String scriptType, String ignoreType) {
 			this.inOrderReward = inOrderReward;
 			this.outOfOrderReward = outOfOrderReward;
 			this.missingCost = missingCost;
 			this.scriptType = scriptType;
+			this.ignoreType = ignoreType;
 		}
 
 		@Override
 		public double measure(String type, String[] a, String[] b) {
 			if (scriptType.equals(type)) {
 				return Alignment.getMissingNodeCount(a, b) * missingCost -
-						Alignment.getProgress(a, b, inOrderReward, outOfOrderReward);
+						// TODO: missing cost should maybe be another value?
+						Alignment.getProgress(a, b, inOrderReward, outOfOrderReward, missingCost);
 			} else {
-				int cost = inOrderReward;
-				return Alignment.normAlignCost(a, b, cost, cost, cost);
+				// TODO: this is a little snap-specific, so perhaps modify later
+				int cost = 0;
+				for (int i = 0; i < a.length && i < b.length; i++) {
+					if (!a[i].equals(ignoreType) && a[i].equals(b[i])) cost -= inOrderReward;
+				}
+				return cost;
 			}
 		}
 	};

@@ -271,7 +271,7 @@ public class Node extends StringHashable {
 	}
 
 	private Node childrenCopy(Node parent) {
-		Node copy = new Node(parent, type);
+		Node copy = new Node(parent, type, id);
 		for (Node child : children) {
 			copy.children.add(child.childrenCopy(copy));
 		}

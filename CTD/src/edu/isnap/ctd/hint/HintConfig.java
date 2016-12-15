@@ -27,6 +27,8 @@ public class HintConfig {
 	public int linkUsefulRatio = 2;
 	/** Type of script nodes, which should use code hinting */
 	public String script = "script";
+	/** Type of literals which are automatically inserted in parameter slots*/
+	public String literal = "literal";
 	/**
 	 * When measuring progress towards a goal, nodes in order are given weight multiplied by
 	 * this factor compared to nodes that are out of order
@@ -37,7 +39,7 @@ public class HintConfig {
 	 * Code elements that have exactly one script child or unordered children and therefore should
 	 * not have their children used as context
 	 */
-	public final HashSet<String> badContext = new HashSet<String>();
+	public final HashSet<String> badContext = new HashSet<>();
 	{
 		for (String c : new String[] {
 				// These control structures hold exactly one script
@@ -58,7 +60,7 @@ public class HintConfig {
 	 * no point in, e.g., leading them through adding one variable, then another. These are the
 	 * "structure hints" on the client side
 	 */
-	public final HashSet<String> straightToGoal = new HashSet<String>();
+	public final HashSet<String> straightToGoal = new HashSet<>();
 	{
 		for (String c : new String[] {
 				"snapshot",

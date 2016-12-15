@@ -32,7 +32,7 @@ public class Alignment {
 	public static List<int[]> alignPairs(String[] sequenceA, String[] sequenceB, int insCost, int delCost, int subCost) {
 		int[][] opt = createAlignmentMatrix(sequenceA, sequenceB, insCost, delCost, subCost, true);
 		ArrayList<int[]> pairs = new ArrayList<>();
-//
+
 //		for (int[] row : opt) {
 //			System.out.println(Arrays.toString(row));
 //		}
@@ -41,7 +41,6 @@ public class Alignment {
 			int replaceCost = opt[i+1][j+1];
 			int skipACost = opt[i+1][j];
 			int skipBCost = opt[i][j+1];
-//			int min = Math.min(replaceCost, Math.min(skipACost, skipBCost));
 
 			if (sequenceA[i].equals(sequenceB[j]) && replaceCost >= 0) {
 				pairs.add(new int[] {i, j});
@@ -346,6 +345,11 @@ public class Alignment {
 	}
 
 	public static int getProgress(String[] from, String[] to, int orderReward, int unorderReward) {
+		return (int)Math.round(getProgress(from, to, orderReward, unorderReward, 0));
+	}
+
+	public static double getProgress(String[] from, String[] to, int orderReward, int unorderReward,
+			double skipCost) {
 		// TODO: This can and should be much more efficient
 		List<String> fromList = new LinkedList<>(Arrays.asList(from));
 		List<String> toList = new LinkedList<>(Arrays.asList(to));
@@ -356,7 +360,7 @@ public class Alignment {
 			String item = fromList.remove(0);
 			int index = toList.indexOf(item);
 			if (index >= 0) {
-				toList.set(index, null);
+				toList.set(index, "\0");
 				indices.add(index);
 			}
 		}
@@ -364,7 +368,12 @@ public class Alignment {
 		int reward = 0;
 		int lastIndex = -1;
 		for (Integer i : indices) {
-			reward += i > lastIndex ? orderReward : unorderReward;
+			if (to[i] != null) {
+				reward += i > lastIndex ? orderReward : unorderReward;
+				// If the index is more than 1 more than the last index, we've skipped some indices, so
+				// we add the skip penalty (if any)
+				reward -= Math.max(0, i - lastIndex - 1) * skipCost;
+			}
 			lastIndex = i;
 		}
 
@@ -376,10 +385,21 @@ public class Alignment {
 	}
 
 	public static void main(String[] args) {
+//		List<int[]> pairs = alignPairs(new String[] {
+//				"a", "b", "c", "b", "e", "c", "f", "b"
+//		}, new String[] {
+//				"a", "b", "c", "b"
+//		}, 1, 1, 100);
+//
+//		System.out.println();
+//		for (int[] pair : pairs) {
+//			System.out.println(Arrays.toString(pair));
+//		}
+
 		System.out.println(getProgress(new String[] {
-				"b", "a", "d"
+				null, "a"
 		}, new String[] {
-				"d", "a", "b",
+				null, "a"
 		}, 2, 1));
 	}
 }
