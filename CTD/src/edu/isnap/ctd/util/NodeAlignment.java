@@ -1,7 +1,9 @@
 package edu.isnap.ctd.util;
 
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
@@ -68,7 +70,7 @@ public class NodeAlignment {
 		public double measure(String type, String[] a, String[] b) {
 			if (scriptType.equals(type)) {
 				return Alignment.getMissingNodeCount(a, b) * missingCost -
-						// TODO: missing cost should maybe be another value?
+						// TODO: skip cost should maybe be another value?
 						Alignment.getProgress(a, b, inOrderReward, outOfOrderReward, missingCost);
 			} else {
 				// TODO: this is a little snap-specific, so perhaps modify later
@@ -114,9 +116,11 @@ public class NodeAlignment {
 
 		HungarianAlgorithm alg = new HungarianAlgorithm(costMatrix);
 		int[] matching = alg.execute();
+		Set<Integer> matchedTo = new HashSet<>();
 
 		for (int i = 0; i < fromStates.length; i++) {
 			int j = matching[i];
+			matchedTo.add(j);
 			if (j == -1) continue;
 			cost += costMatrix[i][j] + minCost;
 			Node from = fromNodes.get(i), to = toNodes.get(j);
@@ -132,7 +136,14 @@ public class NodeAlignment {
 					mapping.put(from.children.get(pair[0]), to.children.get(pair[1]));
 				}
 			}
+		}
 
+		// For each unmatched toState (in the proposed solution), add its cost as well
+		// This essentially penalizes unused nodes that have a matching root path in the student's
+		// current solution, but not their children
+		for (int i = 0; i < toStates.length; i++) {
+			if (matchedTo.contains(i)) continue;
+			cost += distanceMeasure.measure(toNodes.get(i).type(), new String[0], toStates[i]);
 		}
 	}
 
