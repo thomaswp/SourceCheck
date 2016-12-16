@@ -11,6 +11,9 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 
@@ -86,8 +89,6 @@ public class HintServlet extends HttpServlet {
 	}
 
 	private String getHintJSON(Snapshot snapshot, String assignment, int minGrade) {
-		String json = "";
-
 		HintMap hintMap = loadHintMap(assignment, minGrade);
 		if (hintMap == null) {
 			return "[]";
@@ -100,25 +101,27 @@ public class HintServlet extends HttpServlet {
 		Node node = SimpleNodeBuilder.toTree(snapshot, true);
 		new HintHighlighter(hintMap).highlight(node);
 
-//		List<VectorHint> hints = new HintGenerator(hintMap).getHints(node);
+//		List<? extends Hint> hints = new HintGenerator(hintMap).getHints(node);
 		List<? extends Hint> hints = new HintHighlighter(hintMap).highlight(node);
 
-		json += "[";
-		for (int i = 0; i < hints.size(); i++) {
-			if (i > 0) json += ",\n";
-			json += hintToJson(hints.get(i));
+		JSONArray array = new JSONArray();
+		for (Hint hint : hints) {
+			array.put(hintToJSON(hint));
 		}
-		json += "]";
 
 //		long elapsed = System.currentTimeMillis() - time;
 //		System.out.println(elapsed);
 
-		return json;
+		return array.toString();
 	}
 
-	public static String hintToJson(Hint hint) {
-		return String.format("{\"from\": \"%s\", \"to\": \"%s\", \"data\": %s, \"type\": \"%s\"}",
-				hint.from(), hint.to(), hint.data(), hint.type());
+	public static JSONObject hintToJSON(Hint hint) {
+		JSONObject obj = new JSONObject();
+		obj.put("from", hint.from());
+		obj.put("to", hint.to());
+		obj.put("type", hint.type());
+		obj.put("data", hint.data());
+		return obj;
 	}
 
 	private HintMap loadHintMap(String assignment, int minGrade) {

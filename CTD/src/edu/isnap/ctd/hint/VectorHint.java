@@ -1,11 +1,10 @@
 package edu.isnap.ctd.hint;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
+
+import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.vector.VectorState;
@@ -57,58 +56,19 @@ public class VectorHint extends StringHashable implements Hint {
 		}
 
 		@Override
-		public String data() {
-			String data = "{";
-			for (Entry<String, String> entry : dataMap().entrySet()) {
-				if (data.length() > 1) data += ", ";
-				data += String.format("\"%s\": %s", entry.getKey(), entry.getValue());
-			}
-			data += "}";
+		public JSONObject data() {
+			JSONObject data = new JSONObject();
+			data.put("root", Node.getNodeReference(root));
+			data.put("from", from.toJSON(swapArgs));
+			data.put("to", to.toJSON(swapArgs));
+			data.put("goal", goal.toJSON(swapArgs));
+			data.put("caution", String.valueOf(caution));
 			return data;
-		}
-
-		protected Map<String, String> dataMap() {
-			HashMap<String, String> map = new HashMap<>();
-			map.put("root", getNodeReference(root));
-			map.put("from", from.toJson(swapArgs));
-			map.put("to", to.toJson(swapArgs));
-			map.put("goal", goal.toJson(swapArgs));
-			map.put("caution", String.valueOf(caution));
-			return map;
-		}
-
-		protected static String getNodeReference(Node node) {
-			if (node == null) return null;
-
-			String label = node.type();
-			for (Canonicalization c : node.canonicalizations) {
-				if (c instanceof InvertOp) {
-//					System.out.println("Invert: " + node);
-					label = ((InvertOp) c).name;
-					break;
-				}
-			}
-
-			int index = node.index();
-			if (node.parent != null) {
-				for (Canonicalization c : node.parent.canonicalizations) {
-					if (c instanceof SwapArgs) {
-//						System.out.println("Swapping children of: " + node.parent);
-						index = node.parent.children.size() - 1 - index;
-						break;
-					}
-				}
-			}
-
-			String parent = getNodeReference(node.parent);
-
-			return String.format("{\"label\": \"%s\", \"index\": %d, \"parent\": %s}",
-					label, index, parent);
 		}
 
 		@Override
 		protected String toCanonicalStringInternal() {
-			return data();
+			return data().toString();
 		}
 
 		public Node outcome() {

@@ -4,6 +4,8 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.json.JSONArray;
+
 import edu.isnap.ctd.util.Alignment;
 import edu.isnap.ctd.util.StringHashable;
 import edu.isnap.ctd.util.Tuple;
@@ -66,10 +68,6 @@ public class VectorState extends StringHashable {
 		return new Tuple<Integer, Double>(distance, ndd);
 	}
 
-	public String toJson() {
-		return toJson(false);
-	}
-
 	public int countOf(String item) {
 		if (item == null) return 0;
 		int count = 0;
@@ -79,25 +77,22 @@ public class VectorState extends StringHashable {
 		return count;
 	}
 
-	public String toJson(boolean reverseArgs) {
-		String out = "[";
+	public String toJsonString() {
+		return toJSON(false).toString();
+	}
+
+	public JSONArray toJSON(boolean reverseArgs) {
+		JSONArray array = new JSONArray();
 		if (reverseArgs) {
 			for (int i = items.length - 1; i >= 0; i--) {
-				out = addItem(out, i);
+				array.put(items[i]);
 			}
 		} else {
 			for (int i = 0; i < items.length; i++) {
-				out = addItem(out, i);
+				array.put(items[i]);
 			}
 		}
-		out += "]";
-		return out;
-	}
-
-	private String addItem(String out, int i) {
-		if (out.length() > 1) out += ", ";
-		out += "\"" + getItem(i) + "\"";
-		return out;
+		return array;
 	}
 
 	protected String getItem(int index) {

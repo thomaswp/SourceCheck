@@ -36,7 +36,7 @@ public class HintHighlighter {
 
 		final List<EditHint> edits = new LinkedList<>();
 
-		node = node.copy(false);
+//		node = node.copy(false);
 
 		final BiMap<Node, Node> mapping = findSolutionMapping(node);
 
@@ -340,9 +340,8 @@ public class HintHighlighter {
 	}
 
 	public static abstract class EditHint implements Hint {
-
-		protected abstract JSONObject getData();
 		protected abstract void editChildren(List<String> children);
+		protected abstract String action();
 
 		public final Node parent;
 
@@ -356,8 +355,11 @@ public class HintHighlighter {
 		}
 
 		@Override
-		public String data() {
-			return getData().toString();
+		public JSONObject data() {
+			JSONObject data = new JSONObject();
+			data.put("parent", Node.getNodeReference(parent));
+			data.put("action", action());
+			return data;
 		}
 
 		@Override
@@ -400,6 +402,11 @@ public class HintHighlighter {
 		/** A candidate node elsewhere that could be used to do the replacement */
 		public Node candidate;
 
+		@Override
+		public String action() {
+			return "insert";
+		}
+
 		public Insertion(Node parent, String type, int index) {
 			super(parent);
 			this.type = type;
@@ -407,9 +414,11 @@ public class HintHighlighter {
 		}
 
 		@Override
-		protected JSONObject getData() {
-			JSONObject obj = new JSONObject();
-			return obj;
+		public JSONObject data() {
+			JSONObject data = super.data();
+			data.put("index", index);
+			data.put("type", type);
+			return data;
 		}
 
 		@Override
@@ -442,15 +451,21 @@ public class HintHighlighter {
 	public static class Deletion extends EditHint {
 		public final Node node;
 
+		@Override
+		protected String action() {
+			return "delete";
+		}
+
 		public Deletion(Node node) {
 			super(node.parent);
 			this.node = node;
 		}
 
 		@Override
-		protected JSONObject getData() {
-			JSONObject obj = new JSONObject();
-			return obj;
+		public JSONObject data() {
+			JSONObject data = new JSONObject();
+			data.put("node", Node.getNodeReference(node));
+			return data;
 		}
 
 		@Override
@@ -463,6 +478,11 @@ public class HintHighlighter {
 		public final Node node;
 		public final int index;
 
+		@Override
+		protected String action() {
+			return "reorder";
+		}
+
 		public Reorder(Node node, int index) {
 			super(node.parent);
 			this.node = node;
@@ -470,9 +490,11 @@ public class HintHighlighter {
 		}
 
 		@Override
-		protected JSONObject getData() {
-			JSONObject obj = new JSONObject();
-			return obj;
+		public JSONObject data() {
+			JSONObject data = new JSONObject();
+			data.put("node", Node.getNodeReference(node));
+			data.put("index", index);
+			return data;
 		}
 
 		@Override

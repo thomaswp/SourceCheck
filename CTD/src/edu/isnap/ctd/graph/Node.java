@@ -5,7 +5,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.json.JSONObject;
+
 import edu.isnap.ctd.hint.Canonicalization;
+import edu.isnap.ctd.hint.Canonicalization.InvertOp;
+import edu.isnap.ctd.hint.Canonicalization.SwapArgs;
 import edu.isnap.ctd.util.StringHashable;
 import util.LblTree;
 
@@ -356,5 +360,39 @@ public class Node extends StringHashable {
 			offset = child.depthFirstIteration(array, offset);
 		}
 		return offset;
+	}
+
+	// TODO: This is really quite an ugly Node reference representation...
+	public static JSONObject getNodeReference(Node node) {
+		if (node == null) return null;
+
+		String label = node.type();
+		for (Canonicalization c : node.canonicalizations) {
+			if (c instanceof InvertOp) {
+//				System.out.println("Invert: " + node);
+				label = ((InvertOp) c).name;
+				break;
+			}
+		}
+
+		int index = node.index();
+		if (node.parent != null) {
+			for (Canonicalization c : node.parent.canonicalizations) {
+				if (c instanceof SwapArgs) {
+//					System.out.println("Swapping children of: " + node.parent);
+					index = node.parent.children.size() - 1 - index;
+					break;
+				}
+			}
+		}
+
+		JSONObject parent = getNodeReference(node.parent);
+
+		JSONObject obj = new JSONObject();
+		obj.put("label", label);
+		obj.put("index", index);
+		obj.put("parent", parent);
+
+		return obj;
 	}
 }

@@ -1,6 +1,6 @@
 package edu.isnap.ctd.hint;
 
-import java.util.Map;
+import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.vector.VectorState;
@@ -31,12 +31,12 @@ public class LinkHint extends VectorHint {
 	}
 
 	@Override
-	protected Map<String, String> dataMap() {
-		Map<String, String> map =  super.dataMap();
-		map.put("oldRoot", getNodeReference(oldRoot));
-		map.put("oldFrom", oldFrom.toJson(swapArgs));
-		map.put("oldTo", VectorState.empty().toJson());
-		return map;
+	public JSONObject data() {
+		JSONObject data =  super.data();
+		data.put("oldRoot", Node.getNodeReference(oldRoot));
+		data.put("oldFrom", oldFrom.toJSON(swapArgs));
+		data.put("oldTo", VectorState.empty().toJSON(false));
+		return data;
 	}
 
 	@Override
