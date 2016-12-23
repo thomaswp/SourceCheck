@@ -39,7 +39,7 @@ loadData <- function() {
   # projs$pFollowed <<- ifelse(projs$hints == 0, 0, projs$followed / projs$hints)
   
   hints <<- csv(dir2016, "hints.csv") 
-  hints <<- hints[hints$id %in% projs$id,]
+  hints <<- hints[hints$attemptID %in% projs$id,]
   hints$duration[hints$duration < 0] <<- NA
   hints$duration[hints$duration > 500] <<- NA
   hints$pause[hints$pause < 0] <<- NA
@@ -54,7 +54,7 @@ hintStats <- function() {
   # 14.5% of hints were exact repeats of the last hint
   mean(hints$repeat.)
   # 47.3% of hints were followed eventually
-  mean(ddply(hints, c("id", "hash"), summarize, f=any(followed))$f)
+  mean(ddply(hints, c("attemptID", "hash"), summarize, f=any(followed))$f)
 
   ggplot(hints, aes(duration, color=followed)) + geom_density()
   ggplot(hints, aes(pause, color=followed)) + geom_density()
@@ -106,9 +106,9 @@ plotHintsGrades <- function() {
 }
 
 buildUsers <- function() {
-  users <- ddply(hints, c("assignment", "id"), summarize, hints=length(duplicate), unq=sum(!duplicate), unqF=length(unique(hash[followed])), firstF=followed[[1]])
+  users <- ddply(hints, c("assignment", "attemptID"), summarize, hints=length(duplicate), unq=sum(!duplicate), unqF=length(unique(hash[followed])), firstF=followed[[1]])
   users$percF <- users$unqF / users$unq
-  users$grade <- sapply(1:nrow(users), function(i) projs[as.character(projs$assignment) == users[i,]$assignment & as.character(projs$id) == users[i,]$id,]$grade)
+  users$grade <- sapply(1:nrow(users), function(i) projs[as.character(projs$assignment) == users[i,]$assignment & as.character(projs$id) == users[i,]$attemptID,]$grade)
   
   # Significant (but not as strong) correlation between unique hints requested and percent followed
   cor.test(users$unq, users$percF)
@@ -152,21 +152,22 @@ buildUsers <- function() {
 # Not exactly, but followed hints definitely indicate students will keep asking
 
 buildDedup <- function() {
-  dedup <- ddply(hints, c("assignment", "id", "hash"), summarize, type=first(type), startEdit=first(editPerc), endEdit=tail(editPerc, n=1), 
-                 count=length(followed), anyF=any(followed), indexF=tail(c(NA, which(followed)), n=1), followEdit=editPerc[indexF], delete=all(delete))
+  dedup <- ddply(hints, c("assignment", "attemptID", "hash"), summarize, type=first(type), startEdit=first(editPerc), endEdit=tail(editPerc, n=1), 
+                 count=length(followed), anyF=any(followed), indexF=tail(c(NA, which(followed)), n=1), followEdit=editPerc[indexF], delete=all(delete),
+                 rowID=rowID[ifNA(indexF, 1)])
   
   dedup$edit <- ifNA(dedup$followEdit, dedup$startEdit)
-  dedup <- dedup[order(dedup$assignment, dedup$id, dedup$edit),]
+  dedup <- dedup[order(dedup$assignment, dedup$attemptID, dedup$edit),]
   
   dedup$nth <- sapply(1:nrow(dedup), function(i) {
     row <- dedup[i,]
-    user <- dedup[dedup$assignment == row$assignment & dedup$id == row$id,]
+    user <- dedup[dedup$assignment == row$assignment & dedup$attemptID == row$attemptID,]
     nth <- match(row$hash, user$hash)
   })
   
   dedup$n <- sapply(1:nrow(dedup), function(i) {
     row <- dedup[i,]
-    user <- dedup[dedup$assignment == row$assignment & dedup$id == row$id,]
+    user <- dedup[dedup$assignment == row$assignment & dedup$attemptID == row$attemptID,]
     m <- nrow(user)
   })
   
@@ -193,7 +194,8 @@ firstTree <- function() {
 }
 
 findChances <- function() {
-  chances <- ddply(dedup, c("assignment", "id"), summarize, unF=ifNA(first(nth[anyF]) - 1, length(nth)), everF=any(anyF), hints=length(nth))
+  chances <- ddply(dedup, c("assignment", "attemptID"), summarize, unF=ifNA(first(nth[anyF]) - 1, length(nth)), 
+                   everF=any(anyF), nFollow=sum(anyF), nHints=length(nth), firstHint=rowID[1], secondHint=rowID[2])
   # For most students who don't follow a hint, 15 (65.2%) only tried one bad hint, 7 tried 2 and 1 tried more (5).
   # So it looks like for 2/3 of students (who will give up), we get one shot at a hint before they give up
   table(chances$unF, chances$everF)
@@ -205,10 +207,25 @@ findChances <- function() {
   table(chances$didntGiveUpBy)
   
   # So, what are these bad hints?
-  sadUsers <- chances[chances$unF == 1 & !chances$everF,]$id
-  sadHints <- dedup$hash[dedup$id %in% sadUsers & dedup$nth==1]
-  cat(paste(sadUsers, sadHints, sep=","))
-  # sadUsers <- chances[chances$unF == 2 & !chances$everF,]$id
+  sadUsers <- chances[chances$unF == 1 & !chances$everF,]$attemptID
+  sadHints <- dedup$rowID[dedup$attemptID %in% sadUsers & dedup$nth==1]
+}
+
+labelChances <- function(chances, n) {
+  for (assignment in unique(chances$assignment)) {
+    chances[chances$assignment==assignment,]$label <- getLabels(chances[chances$assignment==assignment,]$nHints, n)
+  }
+  return (chances)
+}
+
+getLabels <- function(x, n) {
+  qs <- quantile(x, seq(0, 1, 1 / n))
+  print(qs)
+  labels <- rep(1, length(x))
+  for (i in 2:n) {
+    labels[x > qs[i]] <- i
+  }
+  return (labels)
 }
 
 buildHintHashes <- function() {

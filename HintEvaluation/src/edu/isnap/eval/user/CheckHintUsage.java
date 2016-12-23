@@ -250,7 +250,8 @@ public class CheckHintUsage {
 					hintsSheet.newRow();
 					hintsSheet.put("dataset", assignment.dataset.getName());
 					hintsSheet.put("assignment", assignment.name);
-					hintsSheet.put("id", attemptID);
+					hintsSheet.put("attemptID", attemptID);
+					hintsSheet.put("rowID", row.id);
 					hintsSheet.put("type", action.replace("SnapDisplay.show", "").replace("Hint", ""));
 					hintsSheet.put("editPerc", (double)edit / edits);
 					hintsSheet.put("timePerc", timePerc);
@@ -282,8 +283,6 @@ public class CheckHintUsage {
 					hintsSheet.put("hash", hintCode.hashCode());
 
 					hintsSheet.put("diff", HintPrinter.hintToString(node, hintOutcome));
-					HintPrinter.Fall2016GoodHints.maybePrintHint(attemptID, hintCode.hashCode(),
-							assignment.name, node, hintOutcome);
 				}
 
 
