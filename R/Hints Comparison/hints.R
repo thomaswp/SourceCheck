@@ -248,5 +248,28 @@ buildHintHashes <- function() {
   hintHashes
 }
 
+loadFirstHints <- function() {
+  firstHints <- read.csv("data/firstHints.csv")
+  firstHints$timing <- ordered(firstHints$timing, levels=c("Start", "Early", "Mid", "Late"))
+  firstHints <- merge(firstHints, chances, by.x="id", by.y="firstHint")
+  firstHints$score <- firstHints$relevant + firstHints$correct + firstHints$interp
+  firstHints$zInsight <- ifNA(firstHints$insight, 1)
+  
+  firstHints
+}
+
+testFirstHints <- function() {
+  fhs <- ddply(firstHints, c("label"), summarize, n=length(timing), mT = mean(as.numeric(timing)), mRel=mean(relevant), mCorrect=mean(correct), mInterp=mean(interp), mInsight=safeMean(zInsight), mScore=mean(score))
+  
+  # Notes: All results are preliminary based on pilot ratings; many failed tests are omited
+  
+  # Total first hint score is significantly higher for for students who request more than minimal hints (med 8 vs 6)
+  condCompare(firstHints$score, firstHints$label > 1)
+  # Students with a 2-3 relevant score first hint are significantly (3x) more likely to ask for more than minimal hints
+  fisher.test(table(firstHints$relevant > 1, firstHints$label > 1))
+  # Significant correlation between relevance score and number of future hints requested
+  cor.test(firstHints$relevant, firstHints$label, method="spearman")
+}
+
 
 
