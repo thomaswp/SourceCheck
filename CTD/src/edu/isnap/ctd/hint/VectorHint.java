@@ -62,7 +62,7 @@ public class VectorHint extends StringHashable implements Hint {
 			data.put("from", from.toJSON(swapArgs));
 			data.put("to", to.toJSON(swapArgs));
 			data.put("goal", goal.toJSON(swapArgs));
-			data.put("caution", String.valueOf(caution));
+			data.put("caution", caution);
 			return data;
 		}
 

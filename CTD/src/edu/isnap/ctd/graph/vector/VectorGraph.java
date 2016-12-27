@@ -387,6 +387,7 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 	}
 
 	public double getProportionStayed(VectorState children) {
+		// TODO: This consistently returns negative values and certainly should not
 		Vertex<VectorState> vertex = vertexMap.get(children);
 		if (vertex == null || vertex.weight() == 0) return 0;
 		return (vertex.weight() - outWeight(vertex.data, true, true)) /
