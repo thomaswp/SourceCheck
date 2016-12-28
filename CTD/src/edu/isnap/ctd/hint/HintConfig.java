@@ -72,6 +72,16 @@ public class HintConfig {
 		}
 	}
 
+	public final HashSet<String> haveSideScripts = new HashSet<>();
+	{
+		for (String c : new String[] {
+				"stage",
+				"sprite",
+		}) {
+			haveSideScripts.add(c);
+		}
+	}
+
 	/**
 	 * Power used in the distance weight formula. Higher values penalize higher distances faster.
 	 * Must be >= 1.

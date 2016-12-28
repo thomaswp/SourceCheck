@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Scanner;
 
@@ -100,8 +101,9 @@ public class HintServlet extends HttpServlet {
 //		System.out.println(snapshot.toCode(true));
 		Node node = SimpleNodeBuilder.toTree(snapshot, true);
 
-//		List<? extends Hint> hints = new HintGenerator(hintMap).getHints(node);
-		List<? extends Hint> hints = new HintHighlighter(hintMap).highlight(node);
+		List<Hint> hints = new LinkedList<>();
+//		hints.addAll(new HintGenerator(hintMap).getHints(node));
+		hints.addAll(new HintHighlighter(hintMap).highlight(node));
 
 		JSONArray array = new JSONArray();
 		for (Hint hint : hints) {

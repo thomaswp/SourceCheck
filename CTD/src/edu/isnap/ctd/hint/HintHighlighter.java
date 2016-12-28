@@ -1,6 +1,7 @@
 package edu.isnap.ctd.hint;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
@@ -19,6 +20,8 @@ import edu.isnap.ctd.util.Cast;
 import edu.isnap.ctd.util.NodeAlignment;
 import edu.isnap.ctd.util.NodeAlignment.ProgressDistanceMeasure;
 import edu.isnap.ctd.util.map.BiMap;
+import edu.isnap.ctd.util.map.CountMap;
+import edu.isnap.ctd.util.map.ListMap;
 
 public class HintHighlighter {
 
@@ -53,7 +56,32 @@ public class HintHighlighter {
 					Node parent = node.parent;
 					boolean parentMatches = parent == null ||
 							mapping.getFrom(parent) == pair.parent;
-					colors.put(node, parentMatches ? Highlight.Good : Highlight.Move);
+					Highlight highlight = parentMatches ? Highlight.Good : Highlight.Move;
+					colors.put(node, highlight);
+					if (highlight == Highlight.Move) {
+						// For those without a matching parent, we need to insert them where
+						// they belong
+						Node moveParent = mapping.getTo(pair.parent);
+						if (moveParent != null) {
+							int insertIndex = 0;
+							// Look back through your pair's earlier siblings...
+							for (int i = pair.index() - 1; i >= 0; i++) {
+								Node sibling = pair.parent.children.get(i);
+								// If you can find one with a pair in the moveParent
+								Node siblingPair = mapping.getTo(sibling);
+								if (siblingPair != null && siblingPair.parent == moveParent) {
+									// Set the insert index to right after it
+									insertIndex = siblingPair.index() + 1;
+									break;
+								}
+							}
+
+							Insertion insertion = new Insertion(moveParent, node.type(),
+									insertIndex);
+							insertion.candidate = node;
+							edits.add(insertion);
+						}
+					}
 				} else {
 					colors.put(node, Highlight.Delete);
 					edits.add(new Deletion(node));
@@ -160,7 +188,7 @@ public class HintHighlighter {
 		});
 		edits.addAll(insertions);
 
-		handleInsertionsAndMoves(colors, insertions, edits);
+		handleInsertionsAndMoves(colors, insertions, edits, hintMap.config);
 
 		// Remove excess deletions, whose parents are also deleted or moved
 		// Note: we wait until the end in case they turn into Moves
@@ -183,7 +211,9 @@ public class HintHighlighter {
 		HintConfig config = hintMap.getHintConfig();
 		ProgressDistanceMeasure dm = new ProgressDistanceMeasure(
 				config.progressOrderFactor, 1, 0.25, config.script, config.literal);
-		Node bestMatch = NodeAlignment.findBestMatch(node, hintMap.solutions, dm);
+		List<Node> solutions = preprocessSolutions(hintMap);
+		Node bestMatch = NodeAlignment.findBestMatch(node, solutions, dm);
+		if (bestMatch == null) throw new RuntimeException("No matches!");
 
 		NodeAlignment alignment = new NodeAlignment(node, bestMatch);
 		alignment.calculateCost(dm, true);
@@ -206,6 +236,65 @@ public class HintHighlighter {
 	}
 
 
+	private List<Node> preprocessSolutions(HintMap hintMap) {
+		final HintConfig config = hintMap.config;
+		final ListMap<Node, Integer> scriptCounts = new ListMap<>();
+		for (Node node : hintMap.solutions) {
+			node.recurse(new Action() {
+				@Override
+				public void run(Node node) {
+					if (!config.haveSideScripts.contains(node.type())) return;
+					int scripts = 0;
+					for (Node child : node.children) {
+						if (child.hasType(config.script)) {
+							scripts++;
+						}
+					}
+					scriptCounts.add(HintMap.toRootPath(node).root(), scripts);
+				}
+			});
+		}
+
+		final CountMap<Node> scriptMedians = new CountMap<>();
+		for (Node node : scriptCounts.keySet()) {
+			List<Integer> counts = scriptCounts.get(node);
+			Collections.sort(counts);
+			int median = counts.get(counts.size() / 2);
+			scriptMedians.put(node, median);
+		}
+
+		List<Node> solutions = new LinkedList<>();
+		for (Node node : hintMap.solutions) {
+			Node copy = node.copy(false);
+			copy.recurse(new Action() {
+				@Override
+				public void run(Node node) {
+					if (!config.haveSideScripts.contains(node.type())) return;
+					int median = scriptMedians.getCount(HintMap.toRootPath(node).root());
+					List<Integer> sizes = new LinkedList<>();
+					for (Node child : node.children) {
+						if (child.hasType(config.script)) {
+							sizes.add(child.size());
+						}
+					}
+					if (sizes.size() <= median) return;
+					Collections.sort(sizes);
+					int minSize = sizes.get(sizes.size() - median);
+					for (int i = 0; i < node.children.size(); i++) {
+						Node child = node.children.get(i);
+						if (child.hasType(config.script) && child.size() < minSize) {
+//							System.out.println("Preprocess removed: " + node.children.get(i));
+							node.children.remove(i--);
+						}
+					}
+				}
+			});
+			solutions.add(copy);
+		}
+
+		return solutions;
+	}
+
 	public void ctdHighlight(Node node) {
 		node = node.copy(false);
 
@@ -219,13 +308,13 @@ public class HintHighlighter {
 			}
 		});
 
-		handleInsertionsAndMoves(colors, insertions, null);
+		handleInsertionsAndMoves(colors, insertions, null, hintMap.config);
 
 		printHighlight(node, colors);
 	}
 
 	private void handleInsertionsAndMoves(final IdentityHashMap<Node, Highlight> colors,
-			final List<Insertion> insertions, List<EditHint> edits) {
+			final List<Insertion> insertions, List<EditHint> edits, HintConfig config) {
 		List<EditHint> toRemove = new LinkedList<>();
 
 		// For each deleted node, see if it should be inserted, and if so change it to a root move
@@ -244,7 +333,9 @@ public class HintHighlighter {
 
 				// Replacements are deletions that are at the same location as an insertion
 				if (insertion.replacement == null && matchParent &&
-						deleted.index() == insertion.index) {
+						deleted.index() == insertion.index &&
+						// Don't replace blocks in a script; they should be deleted/inserted
+						!deleted.parentHasType(config.script)) {
 					insertion.replacement = deleted;
 					toRemove.add(deletion);
 					break;
@@ -365,14 +456,14 @@ public class HintHighlighter {
 		@Override
 		public String from() {
 			LinkedList<String> items = new LinkedList<>(Arrays.asList(parent.getChildArray()));
-			return rootString(parent) + ": " + items;
+			return action() + ": " + rootString(parent) + ": " + items;
 		}
 
 		@Override
 		public String to() {
 			LinkedList<String> items = new LinkedList<>(Arrays.asList(parent.getChildArray()));
 			editChildren(items);
-			return rootString(parent) + ": " + items;
+			return action() + ": " + rootString(parent) + ": " + items;
 		}
 
 		protected String getID(Node node) {
@@ -418,6 +509,8 @@ public class HintHighlighter {
 			JSONObject data = super.data();
 			data.put("index", index);
 			data.put("type", type);
+			data.put("replacement", replacement != null);
+			data.put("candidate", Node.getNodeReference(candidate));
 			return data;
 		}
 
@@ -433,7 +526,7 @@ public class HintHighlighter {
 		public String from() {
 			String text = super.from();
 			if (candidate != null) {
-				text += " using " + rootString(replacement);
+				text += " using " + rootString(candidate);
 			}
 			return text;
 		}
@@ -442,7 +535,7 @@ public class HintHighlighter {
 		public String to() {
 			String text = super.to();
 			if (candidate != null) {
-				text += " using " + rootString(replacement);
+				text += " using " + rootString(candidate);
 			}
 			return text;
 		}
@@ -463,7 +556,7 @@ public class HintHighlighter {
 
 		@Override
 		public JSONObject data() {
-			JSONObject data = new JSONObject();
+			JSONObject data = super.data();
 			data.put("node", Node.getNodeReference(node));
 			return data;
 		}
@@ -491,7 +584,7 @@ public class HintHighlighter {
 
 		@Override
 		public JSONObject data() {
-			JSONObject data = new JSONObject();
+			JSONObject data = super.data();
 			data.put("node", Node.getNodeReference(node));
 			data.put("index", index);
 			return data;
