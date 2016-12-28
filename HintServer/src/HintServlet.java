@@ -19,7 +19,7 @@ import com.esotericsoftware.kryo.io.Input;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.Hint;
-import edu.isnap.ctd.hint.HintGenerator;
+import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.hint.HintMapBuilder;
 import edu.isnap.hint.SnapHintBuilder;
@@ -100,8 +100,8 @@ public class HintServlet extends HttpServlet {
 //		System.out.println(snapshot.toCode(true));
 		Node node = SimpleNodeBuilder.toTree(snapshot, true);
 
-		List<? extends Hint> hints = new HintGenerator(hintMap).getHints(node);
-//		List<? extends Hint> hints = new HintHighlighter(hintMap).highlight(node);
+//		List<? extends Hint> hints = new HintGenerator(hintMap).getHints(node);
+		List<? extends Hint> hints = new HintHighlighter(hintMap).highlight(node);
 
 		JSONArray array = new JSONArray();
 		for (Hint hint : hints) {
