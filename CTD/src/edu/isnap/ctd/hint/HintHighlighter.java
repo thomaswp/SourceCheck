@@ -65,7 +65,7 @@ public class HintHighlighter {
 						if (moveParent != null) {
 							int insertIndex = 0;
 							// Look back through your pair's earlier siblings...
-							for (int i = pair.index() - 1; i >= 0; i++) {
+							for (int i = pair.index() - 1; i >= 0; i--) {
 								Node sibling = pair.parent.children.get(i);
 								// If you can find one with a pair in the moveParent
 								Node siblingPair = mapping.getTo(sibling);
