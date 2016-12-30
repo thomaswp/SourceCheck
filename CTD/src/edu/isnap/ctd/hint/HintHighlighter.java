@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.Node;
@@ -509,9 +510,21 @@ public class HintHighlighter {
 			JSONObject data = super.data();
 			data.put("index", index);
 			data.put("type", type);
-			data.put("replacement", replacement != null);
+			data.put("replacement", Node.getNodeReference(replacement));
 			data.put("candidate", Node.getNodeReference(candidate));
+			LinkedList<String> items = new LinkedList<>(Arrays.asList(parent.getChildArray()));
+			data.put("from", toJSONArray(items));
+			editChildren(items);
+			data.put("to", toJSONArray(items));
 			return data;
+		}
+
+		private JSONArray toJSONArray(LinkedList<String> items) {
+			JSONArray array = new JSONArray();
+			for (String item : items) {
+				array.put(item);
+			}
+			return array;
 		}
 
 		@Override
