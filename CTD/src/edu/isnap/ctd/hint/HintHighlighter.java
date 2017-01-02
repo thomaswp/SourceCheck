@@ -205,6 +205,8 @@ public class HintHighlighter {
 
 //		printHighlight(node, colors);
 
+		Collections.sort(edits);
+
 		return edits;
 	}
 
@@ -431,9 +433,10 @@ public class HintHighlighter {
 
 	}
 
-	public static abstract class EditHint implements Hint {
+	public static abstract class EditHint implements Hint, Comparable<EditHint> {
 		protected abstract void editChildren(List<String> children);
 		protected abstract String action();
+		protected abstract double priority();
 
 		public final Node parent;
 
@@ -482,6 +485,11 @@ public class HintHighlighter {
 			editChildren(items);
 			String to = items.toString();
 			return rootString(parent) + ": " + from + " -> " + to;
+		}
+
+		@Override
+		public int compareTo(EditHint o) {
+			return Double.compare(o.priority(), priority());
 		}
 	}
 
@@ -552,6 +560,11 @@ public class HintHighlighter {
 			}
 			return text;
 		}
+
+		@Override
+		protected double priority() {
+			return 5 + (candidate == null ? 0  : 1);
+		}
 	}
 
 	public static class Deletion extends EditHint {
@@ -577,6 +590,11 @@ public class HintHighlighter {
 		@Override
 		protected void editChildren(List<String> children) {
 			children.remove(node.index());
+		}
+
+		@Override
+		protected double priority() {
+			return 1;
 		}
 	}
 
@@ -609,6 +627,11 @@ public class HintHighlighter {
 			int aIndex = index;
 			if (rIndex < aIndex) aIndex--;
 			children.add(aIndex, children.remove(rIndex));
+		}
+
+		@Override
+		protected double priority() {
+			return 3;
 		}
 	}
 
