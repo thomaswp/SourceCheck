@@ -182,6 +182,12 @@ public class HintHighlighter {
 						} else {
 							// Otherwise we add an insertion
 							insertions.add(new Insertion(node, child.type(), insertIndex));
+							// If this is a non-script, we treat this new insertion as a "match"
+							// and increment the insert index if possible
+							if (!node.parentHasType(hintMap.config.script)) {
+								// We do have to make sure not to go out of bounds, though
+								insertIndex = Math.min(node.children.size(), insertIndex + 1);
+							}
 						}
 					}
 				}
@@ -237,8 +243,14 @@ public class HintHighlighter {
 	}
 
 
+	/**
+	 * Remove side scripts from the submitted solutions. We do this to prevent side-script matches
+	 * from have too much influence in the matching process.
+	 */
 	private List<Node> preprocessSolutions(HintMap hintMap) {
 		final HintConfig config = hintMap.config;
+
+		// First figure out how many scripts each solution has at each node
 		final ListMap<Node, Integer> scriptCounts = new ListMap<>();
 		for (Node node : hintMap.solutions) {
 			node.recurse(new Action() {
@@ -256,6 +268,7 @@ public class HintHighlighter {
 			});
 		}
 
+		// Then calculate the median number of scripts for all solutions
 		final CountMap<Node> scriptMedians = new CountMap<>();
 		for (Node node : scriptCounts.keySet()) {
 			List<Integer> counts = scriptCounts.get(node);
@@ -264,6 +277,7 @@ public class HintHighlighter {
 			scriptMedians.put(node, median);
 		}
 
+		// Then remove the smallest scripts from solutions which have more than the median count
 		List<Node> solutions = new LinkedList<>();
 		for (Node node : hintMap.solutions) {
 			Node copy = node.copy(false);
