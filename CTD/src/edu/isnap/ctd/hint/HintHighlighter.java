@@ -184,7 +184,7 @@ public class HintHighlighter {
 							insertions.add(new Insertion(node, child.type(), insertIndex));
 							// If this is a non-script, we treat this new insertion as a "match"
 							// and increment the insert index if possible
-							if (!node.parentHasType(hintMap.config.script)) {
+							if (!node.hasType(hintMap.config.script)) {
 								// We do have to make sure not to go out of bounds, though
 								insertIndex = Math.min(node.children.size(), insertIndex + 1);
 							}
