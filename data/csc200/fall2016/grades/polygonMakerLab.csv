@@ -8,7 +8,7 @@ Project ID,Graded ID,3 Block Inputs,Pen thickness,Repeat # of Sides,Move Size,Tu
 1c07dbfc-8469-418a-b99e-48d8477e5985,94499,2,2,2,2,2
 2081e688-d231-48fb-99fe-cbd60c18a478,122307,2,2,2,2,2
 22bf0171-bfe3-4eb9-a54c-cb6663313d62,94676,2,2,2,2,2
-24a9f1e7-b7e6-42fb-bb9d-5d17d937ced9,147596,2,2,2,2,2
+24a9f1e7-b7e6-42fb-bb9d-5d17d937ced9,147596,2,1,2,2,2
 2510dd58-4ada-44b5-92c8-4587c658f66a,120882,2,2,2,2,2
 2791981a-3038-4c65-88a2-979296fb4112,87303,1,2,1,2,1
 2efbb432-5ab8-4e8f-9f93-f20bf6701da5,148231,2,2,2,2,2
@@ -65,5 +65,5 @@ f83f6a48-99ea-4641-a522-2a3267311fee,124253,2,2,2,2,2
 fb08a7a2-b201-470e-bea6-65313f196eb5,94761,2,1,2,2,2
 nolog-3419ABBB-182A-467D-8181-6F3DDD8AEC3A,-1,2,2,2,2,2
 ,,,,,,
-Conflicts: ,2,,,,,
+Conflicts: ,3,,,,,
 Remaining:,0,,,,,
