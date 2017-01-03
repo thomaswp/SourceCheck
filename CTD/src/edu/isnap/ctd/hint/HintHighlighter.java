@@ -360,7 +360,8 @@ public class HintHighlighter {
 
 				// Moves are deletions that could be instead moved to perform a needed insertion
 				// TODO: find the best match, not just the first
-				if (insertion.candidate == null && sameType) {
+				if (insertion.candidate == null && sameType &&
+						!insertion.type.equals(config.literal)) {
 					colors.put(deleted, Highlight.Move);
 					insertion.candidate = deleted;
 					toRemove.add(deletion);
@@ -377,7 +378,6 @@ public class HintHighlighter {
 		for (Entry<Node, Highlight> entry : colors.entrySet()) {
 			prefixMap.put(entry.getKey(), entry.getValue().name().substring(0, 1));
 		}
-
 		System.out.println(node.prettyPrint(prefixMap));
 	}
 
