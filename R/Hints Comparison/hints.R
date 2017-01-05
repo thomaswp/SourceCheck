@@ -283,32 +283,35 @@ library(Exact)
 testRatedHints <- function() {
   ratedHints <- loadRatedHints()
   
-  # Followed hints are rated significantly higher for first and second  
+  # Followed hints are rated significantly higher for first and second
+  # Also worth noting: followed first and second hints had a mean score of 7.5 and 8.5 respectively,
+  # so students seem to have quite high standards
   condCompare(ratedHints$score_1, ratedHints$firstFollow)
   condCompare(ratedHints$score_2, ratedHints$secondFollow)
   
-  # Dependence between following first and second hint are significant
-  exact.test(table(ratedHints$firstFollow, ratedHints$secondFollow))
-  # 4.8x as likely: 8/13 vs 6/25
+  secondHints <- ratedHints[!is.na(ratedHints$secondHint),]
+  
+  # Dependence between following first and second hint is borderline significant
+  exact.test(table(secondHints$firstFollow, secondHints$secondFollow), method="boschloo", model="Multinomial")
+  # Quicker, less powerful version of the above that shows near-significance
+  exact.test(table(secondHints$firstFollow, secondHints$secondFollow))
+  # 2.15x as likely: 10/17 vs 6/22
   table(ratedHints$firstFollow, ratedHints$secondFollow)
 
   # No correlation between first hint score and second hint following  
   cor.test(ratedHints$score_1, as.numeric(ratedHints$secondFollow))
   
-  # Students who receive a 3-correct first hint are not-quite-significantly less likely than those who 
+  # Students who receive a 3-correct first hint are significantly less likely than those who 
   # receive a 1-correct first hint to have a label of 1 (few hints)
   mosaic(table(ratedHints$label, ratedHints$correct_1))
   firstNot2 <- ratedHints[ratedHints$correct_1 != 2,]
   exact.test(table(firstNot2$correct_1, firstNot2$label == 1))
   # Very expensive version, possibly more powerful
   # exact.test(table(firstNot2$label == 1, firstNot2$correct_1), alternative="two.sided", method="Boschloo", model="multinomial")
-  # They are also significantly more likely to follow 2+ hints (but be careful, as this could just be because they're more likely to follow _this_ hint)
-  exact.test(table(firstNot2$correct_1, firstNot2$nFollow > 1))
+  # They are also more likely to follow 1+ hints afterwards, but it's not sifnificant
   firstNot2$nFollowLater = firstNot2$nFollow - firstNot2$firstFollow
-  # Indeed, without the first hint, it trends but isn't significant
   exact.test(table(firstNot2$correct_1, firstNot2$nFollowLater > 0))
 
-  secondHints <- ratedHints[!is.na(ratedHints$secondHint),]
   
   # For both hints, label correlates to each 
   fhs <- ddply(ratedHints, c("label"), summarize, n=length(timing_1), mT = mean(as.numeric(timing_1)), mRel=mean(relevant_1), mCorrect=mean(correct_1), mInterp=mean(interp_1), mInsight=safeMean(zInsight_1), mScore=mean(score_1))
@@ -316,19 +319,18 @@ testRatedHints <- function() {
   
   # First hint score is a marginally significant predicor of label
   condCompare(ratedHints$score_1, ratedHints$label == 1)
+  # It does significantly correlate
   cor.test(ratedHints$score_1, ratedHints$label, method="spearman")
   
-  # Second label and hint score are correlated, and label marginally singificantly predicts score
+  # Second label and hint score are correlated, and label (marginally) singificantly predicts score
   condCompare(ratedHints$score_2, ratedHints$label == 1)
   condCompare(ratedHints$score_2, ratedHints$label == 3)
   cor.test(ratedHints$score_2, ratedHints$label, method="spearman")
   cor.test(ratedHints$score_2, ratedHints$nHints, method="spearman")
   # Same with relevance
-  condCompare(ratedHints$relevant_2, ratedHints$label == 1)
+  condCompare(ratedHints$relevant_2, ratedHints$label == 3)
   cor.test(ratedHints$relevant_2, ratedHints$label, method="spearman")
   cor.test(ratedHints$relevant_2, ratedHints$nHints, method="spearman")
-  
-  
 }
 
 
