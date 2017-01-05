@@ -259,19 +259,20 @@ buildHintHashes <- function() {
 }
 
 loadHintsFile <- function(path) {
-  firstHints <- read.csv(path)
-  firstHints$timing <- ordered(firstHints$timing, levels=c("Start", "Early", "Mid", "Late"))
-  firstHints$score <- firstHints$relevant + firstHints$correct + firstHints$interp
-  firstHints$zInsight <- ifNA(firstHints$insight, 1)
-  firstHints
+  ratings <- read.csv(path)
+  ratings$timing <- ordered(ratings$timing, levels=c("Start", "Early", "Mid", "Late"))
+  ratings$score <- ratings$relevant + ratings$correct + ratings$interp
+  ratings$zInsight <- ifNA(ratings$insight, 1)
+  ratings
 }
 
 loadRatedHints <- function() {
-  firstHints <- loadHintsFile("data/firstHints.csv")
+  ratings <- rbind(loadHintsFile("data/firstHints.csv"), loadHintsFile("data/secondHints.csv"))
+  firstHints <- ratings[ratings$id %in% chances$firstHint,]
   names(firstHints) <- sapply(names(firstHints), function(name) paste(name, "1", sep="_"))
-  secondHints <- loadHintsFile("data/secondHints.csv")
+  secondHints <- ratings[ratings$id %in% chances$secondHint,]
   names(secondHints) <- sapply(names(secondHints), function(name) paste(name, "2", sep="_"))
-  ratedHints <- merge(chances, firstHints, by.x="firstHint", by.y="id_1")
+  ratedHints <- merge(chances, firstHints, by.x="firstHint", by.y="id_1", all=T)
   ratedHints <- merge(ratedHints, secondHints, by.x="secondHint", by.y="id_2", all=T)
   ratedHints
 }

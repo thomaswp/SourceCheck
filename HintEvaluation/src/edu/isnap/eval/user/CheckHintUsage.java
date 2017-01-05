@@ -245,7 +245,8 @@ public class CheckHintUsage {
 					// We get a simple representation for the hint, that omits some of the hint's
 					// data fields
 					String root = data.has("root") ? data.getString("root") : null;
-					String hintCode = String.join("_", root, Arrays.toString(from),
+					String message = data.has("message") ? data.getString("message") : null;
+					String hintCode = String.join("_", root, message, Arrays.toString(from),
 							Arrays.toString(to));
 					boolean duplicate = !uniqueHints.add(hintCode);
 					boolean repeat = lastHintCode.equals(hintCode);
