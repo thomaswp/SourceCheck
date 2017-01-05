@@ -161,7 +161,8 @@ buildDedup <- function() {
                  followRowID=ifelse(!is.na(indexF), rowID[indexF], NA), rowID=rowID[1])
   
   dedup$edit <- ifNA(dedup$followEdit, dedup$startEdit)
-  dedup <- dedup[order(dedup$assignment, dedup$attemptID, dedup$edit),]
+  # dedup <- dedup[order(dedup$assignment, dedup$attemptID, dedup$edit),]
+  dedup <- dedup[order(dedup$assignment, dedup$attemptID, dedup$startEdit),]
   
   dedup$nth <- sapply(1:nrow(dedup), function(i) {
     row <- dedup[i,]
