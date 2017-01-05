@@ -277,7 +277,6 @@ loadRatedHints <- function() {
 }
 
 library(vcd)
-library(Barnard)
 library(Exact)
 testRatedHints <- function() {
   ratedHints <- loadRatedHints()
@@ -286,9 +285,7 @@ testRatedHints <- function() {
   condCompare(ratedHints$score_1, ratedHints$firstFollow)
   condCompare(ratedHints$score_2, ratedHints$secondFollow)
   
-  # PRELIMINARY RESULTS using only my ratings
-  
-  # Dependence between following first and second hint _may_ be significant
+  # Dependence between following first and second hint are significant
   exact.test(table(ratedHints$firstFollow, ratedHints$secondFollow))
   # 4.8x as likely: 8/13 vs 6/25
   table(ratedHints$firstFollow, ratedHints$secondFollow)
@@ -319,12 +316,12 @@ testRatedHints <- function() {
   condCompare(ratedHints$score_1, ratedHints$label == 1)
   cor.test(ratedHints$score_1, ratedHints$label, method="spearman")
   
-  # Second hint score _may_ predict label (or vice versa, reall)
+  # Second label and hint score are correlated, and label marginally singificantly predicts score
   condCompare(ratedHints$score_2, ratedHints$label == 1)
   condCompare(ratedHints$score_2, ratedHints$label == 3)
   cor.test(ratedHints$score_2, ratedHints$label, method="spearman")
   cor.test(ratedHints$score_2, ratedHints$nHints, method="spearman")
-  # Relevance _may_ as well
+  # Same with relevance
   condCompare(ratedHints$relevant_2, ratedHints$label == 1)
   cor.test(ratedHints$relevant_2, ratedHints$label, method="spearman")
   cor.test(ratedHints$relevant_2, ratedHints$nHints, method="spearman")
