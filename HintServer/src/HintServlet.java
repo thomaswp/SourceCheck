@@ -20,6 +20,7 @@ import com.esotericsoftware.kryo.io.Input;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.Hint;
+import edu.isnap.ctd.hint.HintGenerator;
 import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.hint.HintMapBuilder;
@@ -79,17 +80,19 @@ public class HintServlet extends HttpServlet {
 		if (assignment == null){
 			assignment = DEFAULT_ASSIGNMENT;
 		}
+		String hintTypes = req.getParameter("hintTypes");
 
 		if (hint != null) {
 			out.println(UnitTest.saveUnitTest(assignment, xml, hint));
 		} else {
-			String hintJSON = getHintJSON(snapshot, assignment, minGrade);
+			String hintJSON = getHintJSON(snapshot, assignment, minGrade, hintTypes);
 			resp.setContentType("text/json");
 			out.println(hintJSON);
 		}
 	}
 
-	private String getHintJSON(Snapshot snapshot, String assignment, int minGrade) {
+	private String getHintJSON(Snapshot snapshot, String assignment, int minGrade,
+			String hintTypes) {
 		HintMap hintMap = loadHintMap(assignment, minGrade);
 		if (hintMap == null) {
 			return "[]";
@@ -102,8 +105,14 @@ public class HintServlet extends HttpServlet {
 		Node node = SimpleNodeBuilder.toTree(snapshot, true);
 
 		List<Hint> hints = new LinkedList<>();
-//		hints.addAll(new HintGenerator(hintMap).getHints(node));
-		hints.addAll(new HintHighlighter(hintMap).highlight(node));
+		// Return the hints for each type requested, or bubble hints if none is provided
+		if (hintTypes != null) hintTypes = hintTypes.toLowerCase();
+		if (hintTypes == null || hintTypes.contains("bubble")) {
+			hints.addAll(new HintGenerator(hintMap).getHints(node));
+		}
+		if (hintTypes != null && hintTypes.contains("highlight")){
+			hints.addAll(new HintHighlighter(hintMap).highlight(node));
+		}
 
 		JSONArray array = new JSONArray();
 		for (Hint hint : hints) {
