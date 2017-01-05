@@ -158,7 +158,7 @@ buildUsers <- function() {
 buildDedup <- function() {
   dedup <- ddply(hints, c("assignment", "attemptID", "hash"), summarize, type=first(type), startEdit=first(editPerc), endEdit=tail(editPerc, n=1), 
                  count=length(followed), anyF=any(followed), indexF=tail(c(NA, which(followed)), n=1), followEdit=editPerc[indexF], delete=all(delete),
-                 rowID=rowID[ifNA(indexF, 1)])
+                 followRowID=ifelse(!is.na(indexF), rowID[indexF], NA), rowID=rowID[1])
   
   dedup$edit <- ifNA(dedup$followEdit, dedup$startEdit)
   dedup <- dedup[order(dedup$assignment, dedup$attemptID, dedup$edit),]
