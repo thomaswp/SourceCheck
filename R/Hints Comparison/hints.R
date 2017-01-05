@@ -44,6 +44,10 @@ loadData <- function() {
   hints$duration[hints$duration > 500] <<- NA
   hints$pause[hints$pause < 0] <<- NA
   hints$pause[hints$pause > 500] <<- NA
+  
+  users <<- buildUsers()
+  dedup <<- buildDedup()
+  chances <<- buildChances()
 }
 
 hintStats <- function() {
@@ -154,7 +158,7 @@ buildUsers <- function() {
 buildDedup <- function() {
   dedup <- ddply(hints, c("assignment", "attemptID", "hash"), summarize, type=first(type), startEdit=first(editPerc), endEdit=tail(editPerc, n=1), 
                  count=length(followed), anyF=any(followed), indexF=tail(c(NA, which(followed)), n=1), followEdit=editPerc[indexF], delete=all(delete),
-                 rowID=rowID[ifNA(indexF, 1)])
+                 followRowID=ifelse(!is.na(indexF), rowID[indexF], NA), rowID=rowID[1])
   
   dedup$edit <- ifNA(dedup$followEdit, dedup$startEdit)
   dedup <- dedup[order(dedup$assignment, dedup$attemptID, dedup$edit),]
@@ -193,9 +197,10 @@ firstTree <- function() {
   tree <- rpart(cont ~ type + delete + anyF + assignment, data=firsts)
 }
 
-findChances <- function() {
+buildChances <- function() {
   chances <- ddply(dedup, c("assignment", "attemptID"), summarize, unF=ifNA(first(nth[anyF]) - 1, length(nth)), 
-                   everF=any(anyF), nFollow=sum(anyF), nHints=length(nth), firstHint=rowID[1], secondHint=rowID[2])
+                   everF=any(anyF), nFollow=sum(anyF), nHints=length(nth), firstHint=rowID[1], secondHint=rowID[2],
+                   firstFollow=anyF[1], secondFollow=anyF[2])
   # For most students who don't follow a hint, 15 (65.2%) only tried one bad hint, 7 tried 2 and 1 tried more (5).
   # So it looks like for 2/3 of students (who will give up), we get one shot at a hint before they give up
   table(chances$unF, chances$everF)
@@ -209,18 +214,23 @@ findChances <- function() {
   # So, what are these bad hints?
   sadUsers <- chances[chances$unF == 1 & !chances$everF,]$attemptID
   sadHints <- dedup$rowID[dedup$attemptID %in% sadUsers & dedup$nth==1]
+  
+  chances <- labelChances(chances, 3)
+  chances
 }
 
 labelChances <- function(chances, n) {
+  chances$label <- 0
   for (assignment in unique(chances$assignment)) {
-    chances[chances$assignment==assignment,]$label <- getLabels(chances[chances$assignment==assignment,]$nHints, n)
+    labels <- getLabels(chances[chances$assignment==assignment,]$nHints, n)
+    chances[chances$assignment==assignment,]$label <- labels
   }
   return (chances)
 }
 
 getLabels <- function(x, n) {
   qs <- quantile(x, seq(0, 1, 1 / n))
-  print(qs)
+  # print(qs)
   labels <- rep(1, length(x))
   for (i in 2:n) {
     labels[x > qs[i]] <- i
@@ -248,27 +258,75 @@ buildHintHashes <- function() {
   hintHashes
 }
 
-loadFirstHints <- function() {
-  firstHints <- read.csv("data/firstHints.csv")
+loadHintsFile <- function(path) {
+  firstHints <- read.csv(path)
   firstHints$timing <- ordered(firstHints$timing, levels=c("Start", "Early", "Mid", "Late"))
-  firstHints <- merge(firstHints, chances, by.x="id", by.y="firstHint")
   firstHints$score <- firstHints$relevant + firstHints$correct + firstHints$interp
   firstHints$zInsight <- ifNA(firstHints$insight, 1)
-  
   firstHints
 }
 
-testFirstHints <- function() {
-  fhs <- ddply(firstHints, c("label"), summarize, n=length(timing), mT = mean(as.numeric(timing)), mRel=mean(relevant), mCorrect=mean(correct), mInterp=mean(interp), mInsight=safeMean(zInsight), mScore=mean(score))
+loadRatedHints <- function() {
+  firstHints <- loadHintsFile("data/firstHints.csv")
+  names(firstHints) <- sapply(names(firstHints), function(name) paste(name, "1", sep="_"))
+  secondHints <- loadHintsFile("data/secondHints.csv")
+  names(secondHints) <- sapply(names(secondHints), function(name) paste(name, "2", sep="_"))
+  ratedHints <- merge(chances, firstHints, by.x="firstHint", by.y="id_1")
+  ratedHints <- merge(ratedHints, secondHints, by.x="secondHint", by.y="id_2", all=T)
+  ratedHints
+}
+
+library(vcd)
+library(Exact)
+testRatedHints <- function() {
+  ratedHints <- loadRatedHints()
   
-  # Notes: All results are preliminary based on pilot ratings; many failed tests are omited
+  # Followed hints are rated significantly higher for first and second  
+  condCompare(ratedHints$score_1, ratedHints$firstFollow)
+  condCompare(ratedHints$score_2, ratedHints$secondFollow)
   
-  # Total first hint score is significantly higher for for students who request more than minimal hints (med 8 vs 6)
-  condCompare(firstHints$score, firstHints$label > 1)
-  # Students with a 2-3 relevant score first hint are significantly (3x) more likely to ask for more than minimal hints
-  fisher.test(table(firstHints$relevant > 1, firstHints$label > 1))
-  # Significant correlation between relevance score and number of future hints requested
-  cor.test(firstHints$relevant, firstHints$label, method="spearman")
+  # Dependence between following first and second hint are significant
+  exact.test(table(ratedHints$firstFollow, ratedHints$secondFollow))
+  # 4.8x as likely: 8/13 vs 6/25
+  table(ratedHints$firstFollow, ratedHints$secondFollow)
+
+  # No correlation between first hint score and second hint following  
+  cor.test(ratedHints$score_1, as.numeric(ratedHints$secondFollow))
+  
+  # Students who receive a 3-correct first hint are not-quite-significantly less likely than those who 
+  # receive a 1-correct first hint to have a label of 1 (few hints)
+  mosaic(table(ratedHints$label, ratedHints$correct_1))
+  firstNot2 <- ratedHints[ratedHints$correct_1 != 2,]
+  exact.test(table(firstNot2$correct_1, firstNot2$label == 1))
+  # Very expensive version, possibly more powerful
+  # exact.test(table(firstNot2$label == 1, firstNot2$correct_1), alternative="two.sided", method="Boschloo", model="multinomial")
+  # They are also significantly more likely to follow 2+ hints (but be careful, as this could just be because they're more likely to follow _this_ hint)
+  exact.test(table(firstNot2$correct_1, firstNot2$nFollow > 1))
+  firstNot2$nFollowLater = firstNot2$nFollow - firstNot2$firstFollow
+  # Indeed, without the first hint, it trends but isn't significant
+  exact.test(table(firstNot2$correct_1, firstNot2$nFollowLater > 0))
+
+  secondHints <- ratedHints[!is.na(ratedHints$secondHint),]
+  
+  # For both hints, label correlates to each 
+  fhs <- ddply(ratedHints, c("label"), summarize, n=length(timing_1), mT = mean(as.numeric(timing_1)), mRel=mean(relevant_1), mCorrect=mean(correct_1), mInterp=mean(interp_1), mInsight=safeMean(zInsight_1), mScore=mean(score_1))
+  shs <- ddply(secondHints, c("label"), summarize, n=length(timing_2), mT = mean(as.numeric(timing_2)), mRel=mean(relevant_2), mCorrect=mean(correct_2), mInterp=mean(interp_2), mInsight=safeMean(zInsight_2), mScore=mean(score_2))
+  
+  # First hint score is a marginally significant predicor of label
+  condCompare(ratedHints$score_1, ratedHints$label == 1)
+  cor.test(ratedHints$score_1, ratedHints$label, method="spearman")
+  
+  # Second label and hint score are correlated, and label marginally singificantly predicts score
+  condCompare(ratedHints$score_2, ratedHints$label == 1)
+  condCompare(ratedHints$score_2, ratedHints$label == 3)
+  cor.test(ratedHints$score_2, ratedHints$label, method="spearman")
+  cor.test(ratedHints$score_2, ratedHints$nHints, method="spearman")
+  # Same with relevance
+  condCompare(ratedHints$relevant_2, ratedHints$label == 1)
+  cor.test(ratedHints$relevant_2, ratedHints$label, method="spearman")
+  cor.test(ratedHints$relevant_2, ratedHints$nHints, method="spearman")
+  
+  
 }
 
 
