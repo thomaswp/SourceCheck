@@ -114,7 +114,9 @@ buildUsers <- function() {
   users$percF <- users$unqF / users$unq
   users$grade <- sapply(1:nrow(users), function(i) projs[as.character(projs$assignment) == users[i,]$assignment & as.character(projs$id) == users[i,]$attemptID,]$grade)
   
-  # Significant (but not as strong) correlation between unique hints requested and percent followed
+  
+  # Significant correlation between hints, and even more so unique hints requested and percent followed
+  cor.test(users$hints, users$percF)
   cor.test(users$unq, users$percF)
   
   # No significant correlations between grades and anything
@@ -124,7 +126,7 @@ buildUsers <- function() {
   cor.test(users$unq, users$grade)
   table(users$grade)
   
-  # 11.8% of users who requested 1 unique hint followed it. Wow.
+  # 12.5% of users who requested 1 unique hint followed it. Wow.
   mean(users$unqF[users$unq == 1] > 0)
   # 36.3% of users who requested 2 unique hints followed at least 1
   mean(users$unqF[users$unq == 2] > 0)
@@ -134,10 +136,10 @@ buildUsers <- function() {
   mean(users$unqF[users$unq > 3] > 0)
   # 88.9% followed at least 2
   mean(users$unqF[users$unq > 3] > 1)
-  # 51.9% followed at least half
+  # 59.3% followed at least half
   mean(users$percF[users$unq > 3] >= 0.5)
   
-  # Only 18.2% of users who followed 2 hints followed their first one
+  # Only 18.2% of users who followed exactly 2 hints followed their first one
   mean(users$firstF[users$unq == 2])
   # Only 1/3 of users who followed 1 of 2 hints followed their first one
   mean(users$firstF[users$unq == 2 & users$unqF == 1])
@@ -185,9 +187,9 @@ firstTree <- function() {
   firsts <- dedup[dedup$nth==1 & dedup$edit < 0.75,]
   firsts$cont <- firsts$n > 1
   
-  # 93.3% of those who follow their first hint ask for another
+  # 94.4% of those who follow their first hint ask for another
   mean(firsts$cont[firsts$anyF])
-  # 68.6% for those who don't
+  # 68.8% for those who don't
   mean(firsts$cont[!firsts$anyF])
   
   # Median 12 unique hints for those who follow their first
@@ -331,6 +333,18 @@ testRatedHints <- function() {
   condCompare(ratedHints$relevant_2, ratedHints$label == 3)
   cor.test(ratedHints$relevant_2, ratedHints$label, method="spearman")
   cor.test(ratedHints$relevant_2, ratedHints$nHints, method="spearman")
+
+  # Oddly, filtering out late hints reverses the trend to some extent  
+  earlyFirst <- ratedHints[ratedHints$timing_1 != "Late",]
+  cor.test(earlyFirst$score_1, earlyFirst$label, method="spearman")
+  # Same with second hints  
+  earlySecond <- ratedHints[ratedHints$timing_2 != "Late",]
+  cor.test(earlySecond$score_2, earlySecond$label, method="spearman")
+  
+  # Hmm... first hint score is significantly, negatively correlated with progress
+  cor.test(ratedHints$score_1, as.numeric(ratedHints$timing_1), method="spearman")
+  # Negative but not significant for the second hint
+  cor.test(ratedHints$score_2, as.numeric(ratedHints$timing_2), method="spearman")
 }
 
 
