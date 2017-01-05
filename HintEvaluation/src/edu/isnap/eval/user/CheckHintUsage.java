@@ -205,6 +205,7 @@ public class CheckHintUsage {
 
 					long time = row.timestamp.getTime();
 					long nextActionTime = time;
+					long followTime = time;
 
 					// Look ahead for hint application in the student's code
 					int steps = 0;
@@ -217,7 +218,7 @@ public class CheckHintUsage {
 						if (nextCode == null)
 							continue;
 						steps++;
-						nextActionTime = nextRow.timestamp.getTime();
+						if (nextActionTime == time) nextActionTime = nextRow.timestamp.getTime();
 
 						// If we've looked more than n (5) steps in the future, give up
 						if (steps > 5) break;
@@ -232,6 +233,7 @@ public class CheckHintUsage {
 						if (newDistance < originalHintDistance) gotCloser = true;
 
 						if (Arrays.equals(nextParent.getChildArray(), to)) {
+							followTime = nextRow.timestamp.getTime();
 							followed = true;
 						}
 					}
@@ -281,6 +283,13 @@ public class CheckHintUsage {
 					// Determine how long after seeing the hint the student made their next action
 					int pause = (int)(nextActionTime - time) / 1000;
 					hintsSheet.put("pause", pause);
+
+					if (followed) {
+						int followPause = (int)(followTime - time) / 1000;
+						hintsSheet.put("followPause", followPause);
+					} else {
+						hintsSheet.put("followPause", "");
+					}
 
 					hintsSheet.put("hash", hintCode.hashCode());
 
