@@ -203,7 +203,7 @@ firstTree <- function() {
 buildChances <- function() {
   chances <- ddply(dedup, c("assignment", "attemptID"), summarize, unF=ifNA(first(nth[anyF]) - 1, length(nth)), 
                    everF=any(anyF), nFollow=sum(anyF), nHints=length(nth), firstHint=rowID[1], secondHint=rowID[2],
-                   firstFollow=anyF[1], secondFollow=anyF[2])
+                   thirdHint=rowID[3], firstFollow=anyF[1], secondFollow=anyF[2], thirdFollow=anyF[3])
   # For most students who don't follow a hint, 15 (65.2%) only tried one bad hint, 7 tried 2 and 1 tried more (5).
   # So it looks like for 2/3 of students (who will give up), we get one shot at a hint before they give up
   table(chances$unF, chances$everF)
