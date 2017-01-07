@@ -18,6 +18,16 @@ testAgreement <- function() {
   agreement(r1$Correctness, r2$Correctness)
   # 0.696
   agreement(r1$Interpretability, r2$Interpretability)
+  # 0.48
+  agreement(r1$Insightfulness, r2$Insightfulness)
+  
+  # total agreement
+  tR1 <- c(r1$Relevance, r1$Correctness, r1$Interpretability, r1$Insightfulness)
+  tR2 <- c(r2$Relevance, r2$Correctness, r2$Interpretability, r2$Insightfulness)
+  
+  #0.726 0
+  agreement(tR1, tR2)
+  
 }
 
 ## Interrater agreement for assignments grading
@@ -45,6 +55,18 @@ testAgreementForGG1 <- function(){
   
   #0.349
   agreement(gg1R1$Tell.if.correct, gg1R2$Tell.if.correct)
+  
+  # total agreement
+  tgg1R1 <- c(gg1R1$Greet.by.name, gg1R1$Store.random.number, 
+              gg1R1$Loop.until.it.s.guessed, gg1R1$Ask.for.guess,
+              gg1R1$Tell.if.too.high.low, gg1R1$Tell.if.correct)
+  
+  tgg1R2 <- c(gg1R2$Greet.by.name, gg1R2$Store.random.number, 
+              gg1R2$Loop.until.it.s.guessed, gg1R2$Ask.for.guess,
+              gg1R2$Tell.if.too.high.low, gg1R2$Tell.if.correct)
+  
+  #0.724 0
+  agreement(tgg1R1, tgg1R2)
 }
 
 
@@ -70,6 +92,18 @@ testAgreementForGG2 <- function(){
   
   #0.717
   agreement(gg2R1$Reports.guesses, gg2R2$Reports.guesses)
+  
+  # total agreement
+  tgg2R1 <- c(gg2R1$Greets.by.name, gg2R1$Repeats.until.guessed, 
+              gg2R1$Gives.feedback, gg2R1$Min.and.max,
+              gg2R1$Counts.guesses, gg2R1$Reports.guesses)
+  
+  tgg2R2 <- c(gg2R2$Greets.by.name, gg2R2$Repeats.until.guessed, 
+              gg2R2$Gives.feedback, gg2R2$Min.and.max,
+              gg2R2$Counts.guesses, gg2R2$Reports.guesses)
+  
+  #0.765 0
+  agreement(tgg2R1, tgg2R2)
 }
 
 testAgreementForGG3 <- function(){
@@ -94,6 +128,18 @@ testAgreementForGG3 <- function(){
   
   #0.23
   agreement(gg3R1$Check.guess, gg3R2$Check.guess)
+  
+  # total agreement
+  tgg3R1 <- c(gg3R1$Gets.Min.Max, gg3R1$Resets.List, 
+              gg3R1$Repeats, gg3R1$Guess.not.in.list,
+              gg3R1$Guess.added, gg3R1$Check.guess)
+  
+  tgg3R2 <- c(gg3R2$Gets.Min.Max, gg3R2$Resets.List, 
+              gg3R2$Repeats, gg3R2$Guess.not.in.list,
+              gg3R2$Guess.added, gg3R2$Check.guess)
+  
+  #0.729 0
+  agreement(tgg3R1, tgg3R2)
 }
 
 testAgreementForPM <- function(){
@@ -115,7 +161,17 @@ testAgreementForPM <- function(){
   
   #1
   agreement(pmR1$Turn.sides...360, pmR2$Turn.sides...360)
+ 
+  # total agreement
+  tpmR1 <- c(pmR1$X3.Block.Inputs, pmR1$Pen.thickness, 
+             pmR1$Repeat...of.Sides, pmR1$Move.Size,
+             pmR1$Turn.sides...360)
   
+  tpmR2 <- c(pmR2$X3.Block.Inputs, pmR2$Pen.thickness, 
+             pmR2$Repeat...of.Sides, pmR2$Move.Size,
+             pmR2$Turn.sides...360)
+  #0.731 0
+  agreement(tpmR1, tpmR2) 
 }
 
 testAgreementForSquiral <- function(){
@@ -140,5 +196,18 @@ testAgreementForSquiral <- function(){
  
   #0.872
   agreement(sR1$Variable.Increment, sR2$Variable.Increment)
+  
+  
+  # total agreement
+  tsR1 <- c(sR1$X1.Block.Input, sR1$Pen.down, 
+            sR1$Variable.Initialization, sR1$Repeat.Rotations...4,
+            sR1$Move...Turn, sR1$Variable.Increment)
+  
+  tsR2 <- c(sR2$X1.Block.Input, sR2$Pen.down, 
+            sR2$Variable.Initialization, sR2$Repeat.Rotations...4,
+            sR2$Move...Turn, sR2$Variable.Increment)
+  
+  #0.826 0
+  agreement(tsR1, tsR2) 
   
 }
