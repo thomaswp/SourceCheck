@@ -178,7 +178,9 @@ public class HintHighlighter {
 						Node originalChild = mapping.getTo(child);
 						if (originalChild != null) {
 							// For paired children, we update the insertion index
-							insertIndex = originalChild.index() + 1;
+							if (originalChild.parent == node) {
+								insertIndex = originalChild.index() + 1;
+							}
 						} else {
 							// Otherwise we add an insertion
 							insertions.add(new Insertion(node, child.type(), insertIndex));
@@ -525,6 +527,9 @@ public class HintHighlighter {
 			super(parent);
 			this.type = type;
 			this.index = index;
+			if (index > parent.children.size()) {
+				throw new RuntimeException("Insert index out of range");
+			}
 		}
 
 		@Override
