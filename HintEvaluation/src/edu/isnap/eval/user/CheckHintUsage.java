@@ -335,10 +335,13 @@ public class CheckHintUsage {
 
 			if (grade != null) {
 				int i = 0;
+				int score = 0;
 				attemptsSheet.put("grade", grade.average());
 				for (Entry<String, Integer> entry : grade.tests.entrySet()) {
+					score += entry.getValue();
 					attemptsSheet.put("Goal" + i++, entry.getValue());
 				}
+				attemptsSheet.put("gradePC", score / 2.0 / i);
 			}
 		}
 	}
