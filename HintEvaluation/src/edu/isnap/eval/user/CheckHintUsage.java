@@ -205,6 +205,7 @@ public class CheckHintUsage {
 
 					long time = row.timestamp.getTime();
 					long nextActionTime = time;
+					long followTime = time;
 
 					// Look ahead for hint application in the student's code
 					int steps = 0;
@@ -217,7 +218,7 @@ public class CheckHintUsage {
 						if (nextCode == null)
 							continue;
 						steps++;
-						nextActionTime = nextRow.timestamp.getTime();
+						if (nextActionTime == time) nextActionTime = nextRow.timestamp.getTime();
 
 						// If we've looked more than n (5) steps in the future, give up
 						if (steps > 5) break;
@@ -232,6 +233,7 @@ public class CheckHintUsage {
 						if (newDistance < originalHintDistance) gotCloser = true;
 
 						if (Arrays.equals(nextParent.getChildArray(), to)) {
+							followTime = nextRow.timestamp.getTime();
 							followed = true;
 						}
 					}
@@ -243,7 +245,8 @@ public class CheckHintUsage {
 					// We get a simple representation for the hint, that omits some of the hint's
 					// data fields
 					String root = data.has("root") ? data.getString("root") : null;
-					String hintCode = String.join("_", root, Arrays.toString(from),
+					String message = data.has("message") ? data.getString("message") : null;
+					String hintCode = String.join("_", root, message, Arrays.toString(from),
 							Arrays.toString(to));
 					boolean duplicate = !uniqueHints.add(hintCode);
 					boolean repeat = lastHintCode.equals(hintCode);
@@ -281,6 +284,13 @@ public class CheckHintUsage {
 					// Determine how long after seeing the hint the student made their next action
 					int pause = (int)(nextActionTime - time) / 1000;
 					hintsSheet.put("pause", pause);
+
+					if (followed) {
+						int followPause = (int)(followTime - time) / 1000;
+						hintsSheet.put("followPause", followPause);
+					} else {
+						hintsSheet.put("followPause", "");
+					}
 
 					hintsSheet.put("hash", hintCode.hashCode());
 
@@ -325,10 +335,13 @@ public class CheckHintUsage {
 
 			if (grade != null) {
 				int i = 0;
+				int score = 0;
 				attemptsSheet.put("grade", grade.average());
 				for (Entry<String, Integer> entry : grade.tests.entrySet()) {
+					score += entry.getValue();
 					attemptsSheet.put("Goal" + i++, entry.getValue());
 				}
+				attemptsSheet.put("gradePC", score / 2.0 / i);
 			}
 		}
 	}

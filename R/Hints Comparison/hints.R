@@ -26,10 +26,10 @@ loadData <- function() {
   totals <<- ddply(projs[,-3], c("dataset", "assignment"), colwise(safeMean))
   totalLogs <<- ddply(logs[,-3], c("dataset", "assignment"), colwise(safeMean))
   
-  grades <<- ddply(projs[!is.na(projs$grade),-3], c("dataset", "assignment"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), percPass=mean(pass), n=length(grade))
+  grades <<- ddply(projs[!is.na(projs$grade),-3], c("dataset", "assignment"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), percPass=mean(pass), meanGradePC=mean(gradePC), n=length(grade))
   grades$completed <<- grades$n / ifelse(grades$dataset=="Fall2016", 68, 82)
-  gradesByHints <<- ddply(projs[,-3], c("dataset", "assignment", "hint3"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), percPass=mean(pass), n=length(grade))
-  gradesByFollowed <<- ddply(projs[,-3], c("dataset", "assignment", "follow2"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), percPass=mean(pass), n=length(grade))
+  gradesByHints <<- ddply(projs[,-3], c("dataset", "assignment", "hint3"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), percPass=mean(pass), meanGradePC=mean(gradePC), n=length(grade))
+  gradesByFollowed <<- ddply(projs[,-3], c("dataset", "assignment", "follow2"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), percPass=mean(pass), meanGradePC=mean(gradePC), n=length(grade))
   
   timeByYear <<- ddply(projs[,-3], c("dataset", "assignment"), summarize, meanActive=safeMean(active), meanTotal=safeMean(total), meanPercIdle=safeMean(percIdle), n=length(grade))
   timeByHints <<- ddply(projs[,-3], c("dataset", "assignment", "hint3"), summarize, meanActive=safeMean(active), meanTotal=safeMean(total), meanPercIdle=safeMean(percIdle), n=length(grade))
@@ -44,10 +44,47 @@ loadData <- function() {
   hints$duration[hints$duration > 500] <<- NA
   hints$pause[hints$pause < 0] <<- NA
   hints$pause[hints$pause > 500] <<- NA
+  # Estimate of time spent considering the hint is the min of
+  # time spent with dialog open, time before next action and 60s
+  hints$focusTime <<- pmin(ifNA(pmin(hints$duration, hints$pause), 60), 60)
   
   users <<- buildUsers()
+  allUsers <<- buildAllUsers()
   dedup <<- buildDedup()
   chances <<- buildChances()
+}
+
+buildProjs2016 <- function() {
+  projs2016 <- allUsers[allUsers$dataset == "Fall2016",]
+  
+  grades <- ddply(projs2016, c("assignment"), summarize, g=mean(grade))
+  projs2016$perf <- sapply(1:nrow(projs2016), function(i) {
+    assignment <- projs2016$assignment[i]
+    mg <- grades$g[grades$assignment==assignment]
+    sign(projs2016$grade[i] - mg)
+  })
+  # So far partial credit grades seem to trend the same as grades
+  # grades <- ddply(projs2016, c("assignment"), summarize, g=mean(gradePC))
+  # projs2016$perfPC <- sapply(1:nrow(projs2016), function(i) {
+  #   assignment <- projs2016$assignment[i]
+  #   mg <- grades$g[grades$assignment==assignment]
+  #   sign(projs2016$gradePC[i] - mg)
+  # })
+  projs2016
+}
+
+testProjs2016 <- function() {
+  projs2016 <- buildProjs2016()
+  hws <- projs2016[projs2016$assignment=="guess2HW" | projs2016$assignment=="squiralHW",]
+  hws$unq[is.na(hws$unq)] <- 0
+  hws$unqF[is.na(hws$unqF)] <- 0
+  hws$hint1 <- hws$unq > 0
+  hws$hint3 <- hws$unq >= 3
+  hws$follow1 <- hws$unqF > 0
+  ddply(hws, c("assignment"), summarize, n=length(perf), pOver=mean(perf==1))
+  # ddply(hws, c("assignment", "hint3"), summarize, n=length(perf), pOver=mean(perf==1))
+  ddply(hws, c("assignment", "follow1"), summarize, n=length(perf), pOver=mean(perf==1))
+  
 }
 
 hintStats <- function() {
@@ -110,11 +147,20 @@ plotHintsGrades <- function() {
 }
 
 buildUsers <- function() {
-  users <- ddply(hints, c("assignment", "attemptID"), summarize, hints=length(duplicate), unq=sum(!duplicate), unqF=length(unique(hash[followed])), firstF=followed[[1]])
+  users <- buildAllUsers()
+  users[!is.na(users$unq),]
+}
+
+buildAllUsers <- function() {
+  users <- ddply(hints, c("assignment", "attemptID"), summarize, hints=length(duplicate), unq=sum(!duplicate), unqF=length(unique(hash[followed])), firstF=followed[[1]], focusTime=sum(focusTime))
+  users <- merge(users, projs[,c("dataset", "id", "assignment", "active", "total", "grade")], by.x=c("attemptID", "assignment"), by.y=c("id", "assignment"), all=T)
   users$percF <- users$unqF / users$unq
-  users$grade <- sapply(1:nrow(users), function(i) projs[as.character(projs$assignment) == users[i,]$assignment & as.character(projs$id) == users[i,]$attemptID,]$grade)
-  
-  # Significant (but not as strong) correlation between unique hints requested and percent followed
+  users
+}
+
+testUsers <- function() {
+  # Significant correlation between hints, and even more so unique hints requested and percent followed
+  cor.test(users$hints, users$percF)
   cor.test(users$unq, users$percF)
   
   # No significant correlations between grades and anything
@@ -124,7 +170,7 @@ buildUsers <- function() {
   cor.test(users$unq, users$grade)
   table(users$grade)
   
-  # 11.8% of users who requested 1 unique hint followed it. Wow.
+  # 12.5% of users who requested 1 unique hint followed it. Wow.
   mean(users$unqF[users$unq == 1] > 0)
   # 36.3% of users who requested 2 unique hints followed at least 1
   mean(users$unqF[users$unq == 2] > 0)
@@ -134,10 +180,10 @@ buildUsers <- function() {
   mean(users$unqF[users$unq > 3] > 0)
   # 88.9% followed at least 2
   mean(users$unqF[users$unq > 3] > 1)
-  # 51.9% followed at least half
+  # 59.3% followed at least half
   mean(users$percF[users$unq > 3] >= 0.5)
   
-  # Only 18.2% of users who followed 2 hints followed their first one
+  # Only 18.2% of users who followed exactly 2 hints followed their first one
   mean(users$firstF[users$unq == 2])
   # Only 1/3 of users who followed 1 of 2 hints followed their first one
   mean(users$firstF[users$unq == 2 & users$unqF == 1])
@@ -149,7 +195,29 @@ buildUsers <- function() {
   # Sweet spot (maybe..?) of 2-5 hints was relatively rare
   ddply(users[users$unq>0,], c("assignment"), summarize, f0=mean(unqF==0), f1=mean(unqF==1), f2=mean(unqF==2), f35=mean(3 <= unqF & unqF <= 5), f68=mean(6 <= unqF & unqF <= 8), f9p=mean(9 <= unqF) )
   
+  # Hints requested by assignment in bins 1, 2, 3-12, 13+
+  ddply(users, c("assignment"), n=length(unq), summarize, h1=mean(unq==1), h2=mean(unq==2), h12=mean(unq>2 & unq<13), hm=mean(unq>=13), max=max(unq))
+  ddply(users, c("assignment"), n=length(unq), summarize, h1=sum(unq==1), h2=sum(unq==2), h13=sum(unq>2 & unq<13), hm=sum(unq>=13), max=max(unq))
+  ggplot(users) + geom_density(aes(x=hintsPerMinute, color=assignment))
+  ggplot(users) + geom_density(aes(x=hintsPerMinute))
+  ggplot(users) + geom_histogram(aes(x=hintsPerMinute))
+  ggplot(users) + geom_boxplot(aes(y=hintsPerMinute, x=assignment))
+  
   return (users)
+}
+
+library(gridExtra)
+plotHists <- function(x, y) {
+  hist_top <- ggplot()+geom_histogram(aes(x))
+  empty <- ggplot()+geom_point(aes(1,1), colour="white")+
+    theme(axis.ticks=element_blank(), 
+          panel.background=element_blank(), 
+          axis.text.x=element_blank(), axis.text.y=element_blank(),           
+          axis.title.x=element_blank(), axis.title.y=element_blank())
+  
+  scatter <- ggplot(NULL, aes(x, y))+geom_point(shape=1) + geom_smooth(method=lm, se=F)
+  hist_right <- ggplot()+geom_histogram(aes(y))+coord_flip()
+  grid.arrange(hist_top, empty, scatter, hist_right, ncol=2, nrow=2, widths=c(4, 1), heights=c(1, 4))
 }
 
 # RQ: Do unfollowed hints cause students to stop asking for them?
@@ -161,7 +229,8 @@ buildDedup <- function() {
                  followRowID=ifelse(!is.na(indexF), rowID[indexF], NA), rowID=rowID[1])
   
   dedup$edit <- ifNA(dedup$followEdit, dedup$startEdit)
-  dedup <- dedup[order(dedup$assignment, dedup$attemptID, dedup$edit),]
+  # dedup <- dedup[order(dedup$assignment, dedup$attemptID, dedup$edit),]
+  dedup <- dedup[order(dedup$assignment, dedup$attemptID, dedup$startEdit),]
   
   dedup$nth <- sapply(1:nrow(dedup), function(i) {
     row <- dedup[i,]
@@ -184,9 +253,9 @@ firstTree <- function() {
   firsts <- dedup[dedup$nth==1 & dedup$edit < 0.75,]
   firsts$cont <- firsts$n > 1
   
-  # 93.3% of those who follow their first hint ask for another
+  # 94.4% of those who follow their first hint ask for another
   mean(firsts$cont[firsts$anyF])
-  # 68.6% for those who don't
+  # 68.8% for those who don't
   mean(firsts$cont[!firsts$anyF])
   
   # Median 12 unique hints for those who follow their first
@@ -200,7 +269,7 @@ firstTree <- function() {
 buildChances <- function() {
   chances <- ddply(dedup, c("assignment", "attemptID"), summarize, unF=ifNA(first(nth[anyF]) - 1, length(nth)), 
                    everF=any(anyF), nFollow=sum(anyF), nHints=length(nth), firstHint=rowID[1], secondHint=rowID[2],
-                   firstFollow=anyF[1], secondFollow=anyF[2])
+                   thirdHint=rowID[3], firstFollow=anyF[1], secondFollow=anyF[2], thirdFollow=anyF[3])
   # For most students who don't follow a hint, 15 (65.2%) only tried one bad hint, 7 tried 2 and 1 tried more (5).
   # So it looks like for 2/3 of students (who will give up), we get one shot at a hint before they give up
   table(chances$unF, chances$everF)
@@ -245,7 +314,7 @@ buildHintHashes <- function() {
   table(hintHashes$n, hintHashes$f==hintHashes$n)
   table(hintHashes$n, hintHashes$u==hintHashes$n)
   table(hintHashes$n, hintHashes$f/hintHashes$n)
-  # 49% of dedup'd hints are followed
+  # 48.3% of dedup'd hints are followed
   mean(dedup$anyF)
   # but only 36% of unique hints are followed by 50%+ of takers
   mean(hintHashes$f>hintHashes$n/2)
@@ -259,19 +328,20 @@ buildHintHashes <- function() {
 }
 
 loadHintsFile <- function(path) {
-  firstHints <- read.csv(path)
-  firstHints$timing <- ordered(firstHints$timing, levels=c("Start", "Early", "Mid", "Late"))
-  firstHints$score <- firstHints$relevant + firstHints$correct + firstHints$interp
-  firstHints$zInsight <- ifNA(firstHints$insight, 1)
-  firstHints
+  ratings <- read.csv(path)
+  ratings$timing <- ordered(ratings$timing, levels=c("Start", "Early", "Mid", "Late"))
+  ratings$score <- ratings$relevant + ratings$correct + ratings$interp
+  ratings$zInsight <- ifNA(ratings$insight, 1)
+  ratings
 }
 
 loadRatedHints <- function() {
-  firstHints <- loadHintsFile("data/firstHints.csv")
+  ratings <- rbind(loadHintsFile("data/firstHints.csv"), loadHintsFile("data/secondHints.csv"))
+  firstHints <- ratings[ratings$id %in% chances$firstHint,]
   names(firstHints) <- sapply(names(firstHints), function(name) paste(name, "1", sep="_"))
-  secondHints <- loadHintsFile("data/secondHints.csv")
+  secondHints <- ratings[ratings$id %in% chances$secondHint,]
   names(secondHints) <- sapply(names(secondHints), function(name) paste(name, "2", sep="_"))
-  ratedHints <- merge(chances, firstHints, by.x="firstHint", by.y="id_1")
+  ratedHints <- merge(chances, firstHints, by.x="firstHint", by.y="id_1", all=T)
   ratedHints <- merge(ratedHints, secondHints, by.x="secondHint", by.y="id_2", all=T)
   ratedHints
 }
@@ -281,32 +351,35 @@ library(Exact)
 testRatedHints <- function() {
   ratedHints <- loadRatedHints()
   
-  # Followed hints are rated significantly higher for first and second  
+  # Followed hints are rated significantly higher for first and second
+  # Also worth noting: followed first and second hints had a mean score of 7.5 and 8.5 respectively,
+  # so students seem to have quite high standards
   condCompare(ratedHints$score_1, ratedHints$firstFollow)
   condCompare(ratedHints$score_2, ratedHints$secondFollow)
   
-  # Dependence between following first and second hint are significant
-  exact.test(table(ratedHints$firstFollow, ratedHints$secondFollow))
-  # 4.8x as likely: 8/13 vs 6/25
+  secondHints <- ratedHints[!is.na(ratedHints$secondHint),]
+  
+  # Dependence between following first and second hint is borderline significant
+  exact.test(table(secondHints$firstFollow, secondHints$secondFollow), method="boschloo", model="Multinomial")
+  # Quicker, less powerful version of the above that shows near-significance
+  exact.test(table(secondHints$firstFollow, secondHints$secondFollow))
+  # 2.15x as likely: 10/17 vs 6/22
   table(ratedHints$firstFollow, ratedHints$secondFollow)
 
   # No correlation between first hint score and second hint following  
   cor.test(ratedHints$score_1, as.numeric(ratedHints$secondFollow))
   
-  # Students who receive a 3-correct first hint are not-quite-significantly less likely than those who 
+  # Students who receive a 3-correct first hint are significantly less likely than those who 
   # receive a 1-correct first hint to have a label of 1 (few hints)
   mosaic(table(ratedHints$label, ratedHints$correct_1))
   firstNot2 <- ratedHints[ratedHints$correct_1 != 2,]
   exact.test(table(firstNot2$correct_1, firstNot2$label == 1))
   # Very expensive version, possibly more powerful
   # exact.test(table(firstNot2$label == 1, firstNot2$correct_1), alternative="two.sided", method="Boschloo", model="multinomial")
-  # They are also significantly more likely to follow 2+ hints (but be careful, as this could just be because they're more likely to follow _this_ hint)
-  exact.test(table(firstNot2$correct_1, firstNot2$nFollow > 1))
+  # They are also more likely to follow 1+ hints afterwards, but it's not sifnificant
   firstNot2$nFollowLater = firstNot2$nFollow - firstNot2$firstFollow
-  # Indeed, without the first hint, it trends but isn't significant
   exact.test(table(firstNot2$correct_1, firstNot2$nFollowLater > 0))
 
-  secondHints <- ratedHints[!is.na(ratedHints$secondHint),]
   
   # For both hints, label correlates to each 
   fhs <- ddply(ratedHints, c("label"), summarize, n=length(timing_1), mT = mean(as.numeric(timing_1)), mRel=mean(relevant_1), mCorrect=mean(correct_1), mInterp=mean(interp_1), mInsight=safeMean(zInsight_1), mScore=mean(score_1))
@@ -314,19 +387,30 @@ testRatedHints <- function() {
   
   # First hint score is a marginally significant predicor of label
   condCompare(ratedHints$score_1, ratedHints$label == 1)
+  # It does significantly correlate
   cor.test(ratedHints$score_1, ratedHints$label, method="spearman")
   
-  # Second label and hint score are correlated, and label marginally singificantly predicts score
+  # Second label and hint score are correlated, and label (marginally) singificantly predicts score
   condCompare(ratedHints$score_2, ratedHints$label == 1)
   condCompare(ratedHints$score_2, ratedHints$label == 3)
   cor.test(ratedHints$score_2, ratedHints$label, method="spearman")
   cor.test(ratedHints$score_2, ratedHints$nHints, method="spearman")
   # Same with relevance
-  condCompare(ratedHints$relevant_2, ratedHints$label == 1)
+  condCompare(ratedHints$relevant_2, ratedHints$label == 3)
   cor.test(ratedHints$relevant_2, ratedHints$label, method="spearman")
   cor.test(ratedHints$relevant_2, ratedHints$nHints, method="spearman")
+
+  # Oddly, filtering out late hints reverses the trend to some extent  
+  earlyFirst <- ratedHints[ratedHints$timing_1 != "Late",]
+  cor.test(earlyFirst$score_1, earlyFirst$label, method="spearman")
+  # Same with second hints  
+  earlySecond <- ratedHints[ratedHints$timing_2 != "Late",]
+  cor.test(earlySecond$score_2, earlySecond$label, method="spearman")
   
-  
+  # Hmm... first hint score is significantly, negatively correlated with progress
+  cor.test(ratedHints$score_1, as.numeric(ratedHints$timing_1), method="spearman")
+  # Negative but not significant for the second hint
+  cor.test(ratedHints$score_2, as.numeric(ratedHints$timing_2), method="spearman")
 }
 
 
