@@ -76,10 +76,13 @@ buildProjs2016 <- function() {
 testProjs2016 <- function() {
   projs2016 <- buildProjs2016()
   hws <- projs2016[projs2016$assignment=="guess2HW" | projs2016$assignment=="squiralHW",]
+  hws$unq[is.na(hws$unq)] <- 0
+  hws$unqF[is.na(hws$unqF)] <- 0
   hws$hint1 <- hws$unq > 0
+  hws$hint3 <- hws$unq >= 3
   hws$follow1 <- hws$unqF > 0
-  ddply(hws, c("assignment", "hint1"), summarize, n=length(perf), pOver=mean(perf==1))
-  ddply(hws, c("assignment", "hint3"), summarize, n=length(perf), pOver=mean(perf==1))
+  ddply(hws, c("assignment"), summarize, n=length(perf), pOver=mean(perf==1))
+  # ddply(hws, c("assignment", "hint3"), summarize, n=length(perf), pOver=mean(perf==1))
   ddply(hws, c("assignment", "follow1"), summarize, n=length(perf), pOver=mean(perf==1))
   
 }
