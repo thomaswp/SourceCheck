@@ -44,6 +44,9 @@ loadData <- function() {
   hints$duration[hints$duration > 500] <<- NA
   hints$pause[hints$pause < 0] <<- NA
   hints$pause[hints$pause > 500] <<- NA
+  # Estimate of time spent considering the hint is the min of
+  # time spent with dialog open, time before next action and 60s
+  hints$focusTime <<- pmin(ifNA(pmin(hints$duration, hints$pause), 60), 60)
   
   users <<- buildUsers()
   dedup <<- buildDedup()
@@ -110,7 +113,7 @@ plotHintsGrades <- function() {
 }
 
 buildUsers <- function() {
-  users <- ddply(hints, c("assignment", "attemptID"), summarize, hints=length(duplicate), unq=sum(!duplicate), unqF=length(unique(hash[followed])), firstF=followed[[1]])
+  users <- ddply(hints, c("assignment", "attemptID"), summarize, hints=length(duplicate), unq=sum(!duplicate), unqF=length(unique(hash[followed])), firstF=followed[[1]], focusTime=sum(focusTime))
   users$percF <- users$unqF / users$unq
   users$grade <- sapply(1:nrow(users), function(i) projs[as.character(projs$assignment) == users[i,]$assignment & as.character(projs$id) == users[i,]$attemptID,]$grade)
   
