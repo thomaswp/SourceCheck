@@ -26,10 +26,10 @@ loadData <- function() {
   totals <<- ddply(projs[,-3], c("dataset", "assignment"), colwise(safeMean))
   totalLogs <<- ddply(logs[,-3], c("dataset", "assignment"), colwise(safeMean))
   
-  grades <<- ddply(projs[!is.na(projs$grade),-3], c("dataset", "assignment"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), percPass=mean(pass), n=length(grade))
+  grades <<- ddply(projs[!is.na(projs$grade),-3], c("dataset", "assignment"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), percPass=mean(pass), meanGradePC=mean(gradePC), n=length(grade))
   grades$completed <<- grades$n / ifelse(grades$dataset=="Fall2016", 68, 82)
-  gradesByHints <<- ddply(projs[,-3], c("dataset", "assignment", "hint3"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), percPass=mean(pass), n=length(grade))
-  gradesByFollowed <<- ddply(projs[,-3], c("dataset", "assignment", "follow2"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), percPass=mean(pass), n=length(grade))
+  gradesByHints <<- ddply(projs[,-3], c("dataset", "assignment", "hint3"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), percPass=mean(pass), meanGradePC=mean(gradePC), n=length(grade))
+  gradesByFollowed <<- ddply(projs[,-3], c("dataset", "assignment", "follow2"), summarize, meanGrade=mean(grade), sdGrade=sd(grade), percPass=mean(pass), meanGradePC=mean(gradePC), n=length(grade))
   
   timeByYear <<- ddply(projs[,-3], c("dataset", "assignment"), summarize, meanActive=safeMean(active), meanTotal=safeMean(total), meanPercIdle=safeMean(percIdle), n=length(grade))
   timeByHints <<- ddply(projs[,-3], c("dataset", "assignment", "hint3"), summarize, meanActive=safeMean(active), meanTotal=safeMean(total), meanPercIdle=safeMean(percIdle), n=length(grade))
@@ -44,10 +44,47 @@ loadData <- function() {
   hints$duration[hints$duration > 500] <<- NA
   hints$pause[hints$pause < 0] <<- NA
   hints$pause[hints$pause > 500] <<- NA
+  # Estimate of time spent considering the hint is the min of
+  # time spent with dialog open, time before next action and 60s
+  hints$focusTime <<- pmin(ifNA(pmin(hints$duration, hints$pause), 60), 60)
   
   users <<- buildUsers()
+  allUsers <<- buildAllUsers()
   dedup <<- buildDedup()
   chances <<- buildChances()
+}
+
+buildProjs2016 <- function() {
+  projs2016 <- allUsers[allUsers$dataset == "Fall2016",]
+  
+  grades <- ddply(projs2016, c("assignment"), summarize, g=mean(grade))
+  projs2016$perf <- sapply(1:nrow(projs2016), function(i) {
+    assignment <- projs2016$assignment[i]
+    mg <- grades$g[grades$assignment==assignment]
+    sign(projs2016$grade[i] - mg)
+  })
+  # So far partial credit grades seem to trend the same as grades
+  # grades <- ddply(projs2016, c("assignment"), summarize, g=mean(gradePC))
+  # projs2016$perfPC <- sapply(1:nrow(projs2016), function(i) {
+  #   assignment <- projs2016$assignment[i]
+  #   mg <- grades$g[grades$assignment==assignment]
+  #   sign(projs2016$gradePC[i] - mg)
+  # })
+  projs2016
+}
+
+testProjs2016 <- function() {
+  projs2016 <- buildProjs2016()
+  hws <- projs2016[projs2016$assignment=="guess2HW" | projs2016$assignment=="squiralHW",]
+  hws$unq[is.na(hws$unq)] <- 0
+  hws$unqF[is.na(hws$unqF)] <- 0
+  hws$hint1 <- hws$unq > 0
+  hws$hint3 <- hws$unq >= 3
+  hws$follow1 <- hws$unqF > 0
+  ddply(hws, c("assignment"), summarize, n=length(perf), pOver=mean(perf==1))
+  # ddply(hws, c("assignment", "hint3"), summarize, n=length(perf), pOver=mean(perf==1))
+  ddply(hws, c("assignment", "follow1"), summarize, n=length(perf), pOver=mean(perf==1))
+  
 }
 
 hintStats <- function() {
@@ -110,11 +147,18 @@ plotHintsGrades <- function() {
 }
 
 buildUsers <- function() {
-  users <- ddply(hints, c("assignment", "attemptID"), summarize, hints=length(duplicate), unq=sum(!duplicate), unqF=length(unique(hash[followed])), firstF=followed[[1]])
+  users <- buildAllUsers()
+  users[!is.na(users$unq),]
+}
+
+buildAllUsers <- function() {
+  users <- ddply(hints, c("assignment", "attemptID"), summarize, hints=length(duplicate), unq=sum(!duplicate), unqF=length(unique(hash[followed])), firstF=followed[[1]], focusTime=sum(focusTime))
+  users <- merge(users, projs[,c("dataset", "id", "assignment", "active", "total", "grade")], by.x=c("attemptID", "assignment"), by.y=c("id", "assignment"), all=T)
   users$percF <- users$unqF / users$unq
-  users$grade <- sapply(1:nrow(users), function(i) projs[as.character(projs$assignment) == users[i,]$assignment & as.character(projs$id) == users[i,]$attemptID,]$grade)
-  
-  
+  users
+}
+
+testUsers <- function() {
   # Significant correlation between hints, and even more so unique hints requested and percent followed
   cor.test(users$hints, users$percF)
   cor.test(users$unq, users$percF)
@@ -151,7 +195,29 @@ buildUsers <- function() {
   # Sweet spot (maybe..?) of 2-5 hints was relatively rare
   ddply(users[users$unq>0,], c("assignment"), summarize, f0=mean(unqF==0), f1=mean(unqF==1), f2=mean(unqF==2), f35=mean(3 <= unqF & unqF <= 5), f68=mean(6 <= unqF & unqF <= 8), f9p=mean(9 <= unqF) )
   
+  # Hints requested by assignment in bins 1, 2, 3-12, 13+
+  ddply(users, c("assignment"), n=length(unq), summarize, h1=mean(unq==1), h2=mean(unq==2), h12=mean(unq>2 & unq<13), hm=mean(unq>=13), max=max(unq))
+  ddply(users, c("assignment"), n=length(unq), summarize, h1=sum(unq==1), h2=sum(unq==2), h13=sum(unq>2 & unq<13), hm=sum(unq>=13), max=max(unq))
+  ggplot(users) + geom_density(aes(x=hintsPerMinute, color=assignment))
+  ggplot(users) + geom_density(aes(x=hintsPerMinute))
+  ggplot(users) + geom_histogram(aes(x=hintsPerMinute))
+  ggplot(users) + geom_boxplot(aes(y=hintsPerMinute, x=assignment))
+  
   return (users)
+}
+
+library(gridExtra)
+plotHists <- function(x, y) {
+  hist_top <- ggplot()+geom_histogram(aes(x))
+  empty <- ggplot()+geom_point(aes(1,1), colour="white")+
+    theme(axis.ticks=element_blank(), 
+          panel.background=element_blank(), 
+          axis.text.x=element_blank(), axis.text.y=element_blank(),           
+          axis.title.x=element_blank(), axis.title.y=element_blank())
+  
+  scatter <- ggplot(NULL, aes(x, y))+geom_point(shape=1) + geom_smooth(method=lm, se=F)
+  hist_right <- ggplot()+geom_histogram(aes(y))+coord_flip()
+  grid.arrange(hist_top, empty, scatter, hist_right, ncol=2, nrow=2, widths=c(4, 1), heights=c(1, 4))
 }
 
 # RQ: Do unfollowed hints cause students to stop asking for them?
@@ -248,7 +314,7 @@ buildHintHashes <- function() {
   table(hintHashes$n, hintHashes$f==hintHashes$n)
   table(hintHashes$n, hintHashes$u==hintHashes$n)
   table(hintHashes$n, hintHashes$f/hintHashes$n)
-  # 49% of dedup'd hints are followed
+  # 48.3% of dedup'd hints are followed
   mean(dedup$anyF)
   # but only 36% of unique hints are followed by 50%+ of takers
   mean(hintHashes$f>hintHashes$n/2)

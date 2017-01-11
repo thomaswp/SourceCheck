@@ -276,6 +276,7 @@ public class Node extends StringHashable {
 
 	private Node childrenCopy(Node parent) {
 		Node copy = new Node(parent, type, id);
+		copy.tag = tag;
 		for (Node child : children) {
 			copy.children.add(child.childrenCopy(copy));
 		}
@@ -327,6 +328,9 @@ public class Node extends StringHashable {
 		String out = type;
 		if (prefixMap != null && prefixMap.containsKey(this)) {
 			out = prefixMap.get(this) + ":" + out;
+			if (id != null && !id.equals(type)) {
+				out += "[" + id + "]";
+			}
 		}
 		if (children.size() > 0) {
 			if (inline) {
