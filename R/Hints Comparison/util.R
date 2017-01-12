@@ -32,7 +32,9 @@ cohen.d <- function(xs, ys) {
   
 }
 
-condCompare <- function(x, cond, test = wilcox.test) {
+condCompare <- function(x, cond, test = wilcox.test, filter = T) {
+  x <- x[filter]
+  cond <- cond[filter]
   compareStats(x[cond], x[!cond], test)
 }
 

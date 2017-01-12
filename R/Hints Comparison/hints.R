@@ -73,18 +73,45 @@ buildProjs2016 <- function() {
   projs2016
 }
 
+library(beanplot)
 testProjs2016 <- function() {
   projs2016 <- buildProjs2016()
   hws <- projs2016[projs2016$assignment=="guess2HW" | projs2016$assignment=="squiralHW",]
+  hws$assignment <- ordered(hws$assignment, c("squiralHW", "guess2HW"))
   hws$unq[is.na(hws$unq)] <- 0
   hws$unqF[is.na(hws$unqF)] <- 0
   hws$hint1 <- hws$unq > 0
+  hws$hint2 <- hws$unq >= 2
   hws$hint3 <- hws$unq >= 3
   hws$follow1 <- hws$unqF > 0
+  hws$h3f1 <- hws$hint3 & hws$follow1
   ddply(hws, c("assignment"), summarize, n=length(perf), pOver=mean(perf==1))
-  # ddply(hws, c("assignment", "hint3"), summarize, n=length(perf), pOver=mean(perf==1))
-  ddply(hws, c("assignment", "follow1"), summarize, n=length(perf), pOver=mean(perf==1))
+  ddply(hws, c("assignment", "hint1"), summarize, n=length(perf), pOver=mean(perf==1), pPass=mean(grade >= 0.8), mGrade=mean(grade), sdGrade=sd(grade))
+  ddply(hws, c("assignment", "follow1"), summarize, n=length(perf), pOver=mean(perf==1), pPass=mean(grade >= 0.8), mGrade=mean(grade), sdGrade=sd(grade))
+  ddply(hws, c("assignment", "hint3"), summarize, n=length(perf), pOver=mean(perf==1), pPass=mean(grade >= 0.8), mGrade=mean(grade), sdGrade=sd(grade))
+  ddply(hws, c("assignment", "h3f1"), summarize, n=length(perf), pOver=mean(perf==1), pPass=mean(grade >= 0.8), mGrade=mean(grade), sdGrade=sd(grade))
+  ddply(hws[hws$hint1,], c("assignment", "follow1"), summarize, n=length(perf), pOver=mean(perf==1), pPass=mean(grade >= 0.8), mGrade=mean(grade), sdGrade=sd(grade))
   
+  h1 <- hws
+  h1$label <- "hint1"
+  h1$val <- h1$hint1
+  f1 <- hws
+  f1$label <- "hint3"
+  f1$val <- h1$hint3
+  data <- rbind(h1, f1)
+  data$label <- ordered(data$label, c("hint1", "hint3"))
+  ggplot(data, aes(x=val, y=grade)) + geom_violin() + geom_boxplot(width=0.15, fill="#eeeeee") + stat_summary(fun.y="mean", geom="point", color="red") + facet_grid(assignment ~ label)
+  
+  hws$usage <- ordered(ifelse(hws$unq == 0, "none", ifelse(hws$unq < 3, "low", "med")), c("none", "low", "med"))
+  ggplot(hws, aes(x=usage, y=grade)) + geom_violin() + geom_boxplot(width=0.15, fill="#eeeeee") + stat_summary(fun.y="mean", geom="point", color="red") + facet_grid(assignment ~ .)
+  ggplot(hws, aes(x=hint3, y=grade)) + geom_violin() + geom_boxplot(width=0.15, fill="#eeeeee") + stat_summary(fun.y="mean", geom="point", color="red") + facet_grid(assignment ~ .)
+  
+  ggplot(hws[hws$hint1,], aes(x=follow1, y=grade)) + geom_violin() + geom_boxplot(width=0.15, fill="#eeeeee") + stat_summary(fun.y="mean", geom="point", color="red") + facet_grid(assignment ~ .)
+  
+  ggplot(hws) + geom_boxplot(aes(x=follow1, y=grade)) + facet_grid(. ~ assignment)
+  ggplot(hws) + geom_density(aes(x=grade, color=hint1)) + facet_grid(. ~ assignment)
+  
+  beanplot(grade ~ follow1, data=hws)
 }
 
 hintStats <- function() {
@@ -226,7 +253,7 @@ plotHists <- function(x, y) {
 buildDedup <- function() {
   dedup <- ddply(hints, c("assignment", "attemptID", "hash"), summarize, type=first(type), startEdit=first(editPerc), endEdit=tail(editPerc, n=1), 
                  count=length(followed), anyF=any(followed), indexF=tail(c(NA, which(followed)), n=1), followEdit=editPerc[indexF], delete=all(delete),
-                 followRowID=ifelse(!is.na(indexF), rowID[indexF], NA), rowID=rowID[1])
+                 followRowID=ifelse(!is.na(indexF), rowID[indexF], NA), rowID=rowID[1], pauseF=pause[ifNA(indexF, 1)], durationF=duration[ifNA(indexF, 1)])
   
   dedup$edit <- ifNA(dedup$followEdit, dedup$startEdit)
   # dedup <- dedup[order(dedup$assignment, dedup$attemptID, dedup$edit),]
