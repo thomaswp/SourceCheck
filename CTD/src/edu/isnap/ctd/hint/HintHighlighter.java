@@ -79,10 +79,9 @@ public class HintHighlighter {
 							Insertion insertion = new Insertion(moveParent, node.type(),
 									insertIndex);
 							insertion.candidate = node;
-							// If this is a non-script parent, inserting the node should replace the
-							// current node at this index
-							if (!moveParent.hasType(config.script) &&
-									!config.haveSideScripts.contains(moveParent) &&
+							// If this is a function call parent, inserting the node should replace
+							// the current node at this index
+							if (isFunctionCall(moveParent) &&
 									insertIndex < moveParent.children.size()) {
 								insertion.replacement = moveParent.children.get(insertIndex);
 							}
@@ -103,10 +102,9 @@ public class HintHighlighter {
 				// Start by finding parent nodes that have a pair
 				Node pair = mapping.getFrom(node);
 				if (pair != null) {
-					// Non-script nodes are easy, since their order should be the same as their pair
+					// Argument nodes are easy, since their order should be the same as their pair
 					if (node.parent != null && node.parent == mapping.getTo(pair.parent) &&
-							!node.parentHasType(config.script) &&
-							!config.haveSideScripts.contains(node.parent.type())) {
+							isFunctionCall(node.parent)) {
 						if (node.index() != pair.index()) {
 							colors.put(node, Highlight.Order);
 							edits.add(new Reorder(node, pair.index()));
@@ -202,16 +200,15 @@ public class HintHighlighter {
 							// Otherwise we add an insertion
 							Insertion insertion = new Insertion(node, child.type(), insertIndex);
 							insertions.add(insertion);
+							// If the node is being inserted in a function call then it replaces
+							// whatever already exists at this index in the parent
+							if (isFunctionCall(node) && insertIndex < node.children.size()) {
+								System.out.println(node);
+								insertion.replacement = node.children.get(insertIndex);
+							}
+							// If this is a non-script, we treat this new insertion as a "match"
+							// and increment the insert index if possible
 							if (!node.hasType(config.script)) {
-								// If the node is being inserted in a non-script then it replaces
-								// whatever already exists at this index in the parent
-								if (!config.haveSideScripts.contains(node) &&
-										insertIndex < node.children.size()) {
-									insertion.replacement = node.children.get(insertIndex);
-								}
-
-								// If this is a non-script, we treat this new insertion as a "match"
-								// and increment the insert index if possible
 								// We do have to make sure not to go out of bounds, though
 								insertIndex = Math.min(node.children.size(), insertIndex + 1);
 							}
@@ -250,6 +247,12 @@ public class HintHighlighter {
 		Collections.sort(edits);
 
 		return edits;
+	}
+
+	private final boolean isFunctionCall(Node node) {
+		// TODO: Figure out a more precise way of determining this
+		HintConfig config = hintMap.config;
+		return !node.hasType(config.script) && !config.haveSideScripts.contains(node.type());
 	}
 
 	private BiMap<Node, Node> findSolutionMapping(Node node) {
