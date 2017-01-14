@@ -2,11 +2,9 @@ package edu.isnap.ctd.hint;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
@@ -15,7 +13,6 @@ import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
-import edu.isnap.ctd.graph.vector.VectorState;
 import edu.isnap.ctd.util.Alignment;
 import edu.isnap.ctd.util.Cast;
 import edu.isnap.ctd.util.NodeAlignment;
@@ -45,6 +42,8 @@ public class HintHighlighter {
 		final BiMap<Node, Node> mapping = findSolutionMapping(node);
 
 		final IdentityHashMap<Node, Highlight> colors = new IdentityHashMap<>();
+
+		final HintConfig config = hintMap.config;
 
 		// First simply ID the nodes that have a pair with the same parent (Good), a different
 		// parent (Move) and those that don't (Delete)
@@ -80,6 +79,13 @@ public class HintHighlighter {
 							Insertion insertion = new Insertion(moveParent, node.type(),
 									insertIndex);
 							insertion.candidate = node;
+							// If this is a non-script parent, inserting the node should replace the
+							// current node at this index
+							if (!moveParent.hasType(config.script) &&
+									!config.haveSideScripts.contains(moveParent) &&
+									insertIndex < moveParent.children.size()) {
+								insertion.replacement = moveParent.children.get(insertIndex);
+							}
 							edits.add(insertion);
 						}
 					}
@@ -97,6 +103,17 @@ public class HintHighlighter {
 				// Start by finding parent nodes that have a pair
 				Node pair = mapping.getFrom(node);
 				if (pair != null) {
+					// Non-script nodes are easy, since their order should be the same as their pair
+					if (node.parent != null && node.parent == mapping.getTo(pair.parent) &&
+							!node.parentHasType(config.script) &&
+							!config.haveSideScripts.contains(node.parent.type())) {
+						if (node.index() != pair.index()) {
+							colors.put(node, Highlight.Order);
+							edits.add(new Reorder(node, pair.index()));
+						}
+						return;
+					}
+
 					// Instead of aligning the node types, which might repeat, we align the original
 					// node indices (1, 2, 3...) with the order those node-indices appear in the
 					// paired parent's children
@@ -183,10 +200,18 @@ public class HintHighlighter {
 							}
 						} else {
 							// Otherwise we add an insertion
-							insertions.add(new Insertion(node, child.type(), insertIndex));
-							// If this is a non-script, we treat this new insertion as a "match"
-							// and increment the insert index if possible
-							if (!node.hasType(hintMap.config.script)) {
+							Insertion insertion = new Insertion(node, child.type(), insertIndex);
+							insertions.add(insertion);
+							if (!node.hasType(config.script)) {
+								// If the node is being inserted in a non-script then it replaces
+								// whatever already exists at this index in the parent
+								if (!config.haveSideScripts.contains(node) &&
+										insertIndex < node.children.size()) {
+									insertion.replacement = node.children.get(insertIndex);
+								}
+
+								// If this is a non-script, we treat this new insertion as a "match"
+								// and increment the insert index if possible
 								// We do have to make sure not to go out of bounds, though
 								insertIndex = Math.min(node.children.size(), insertIndex + 1);
 							}
@@ -197,7 +222,7 @@ public class HintHighlighter {
 		});
 		edits.addAll(insertions);
 
-		handleInsertionsAndMoves(colors, insertions, edits, hintMap.config);
+		handleInsertionsAndMoves(colors, insertions, edits, config);
 
 		// Remove excess deletions, whose parents are also deleted or moved
 		// Note: we wait until the end in case they turn into Moves
@@ -207,6 +232,15 @@ public class HintHighlighter {
 				Highlight highlight = colors.get(deletion.parent);
 				if (highlight == Highlight.Delete || highlight == Highlight.Move) {
 					edits.remove(i--);
+					continue;
+				}
+
+				// Also remove any deletions that are implicit in an inertion's replacement
+				for (Insertion insertion : insertions) {
+					if (insertion.replacement == deletion.node) {
+						edits.remove(i--);
+						break;
+					}
 				}
 			}
 		}
@@ -350,16 +384,6 @@ public class HintHighlighter {
 				// this should be handled by a reorder
 				if (sameType && matchParent) continue;
 
-				// Replacements are deletions that are at the same location as an insertion
-				if (insertion.replacement == null && matchParent &&
-						deleted.index() == insertion.index &&
-						// Don't replace blocks in a script; they should be deleted/inserted
-						!deleted.parentHasType(config.script)) {
-					insertion.replacement = deleted;
-					toRemove.add(deletion);
-					break;
-				}
-
 				// Moves are deletions that could be instead moved to perform a needed insertion
 				// TODO: find the best match, not just the first
 				if (insertion.candidate == null && sameType &&
@@ -381,72 +405,6 @@ public class HintHighlighter {
 			prefixMap.put(entry.getKey(), entry.getValue().name().substring(0, 1));
 		}
 		System.out.println(node.prettyPrint(prefixMap));
-	}
-
-	private void highlight(Node node, Map<Node, Highlight> colors, List<Insertion> insertions) {
-		if (node.hasType("script")) {
-			System.out.println();
-		}
-
-		// Get the goal state a hint would point us to
-		VectorState goalState = HintGenerator.getGoalState(hintMap, node);
-		if (goalState == null) return;
-		String[] children = node.getChildArray();
-
-		// Copy the children to a mutable list
-		List<String> sequence = new LinkedList<>(Arrays.asList(children));
-		// We're going to move nodes, so keep a map from sequence-index to original children-index
-		HashMap<Integer, Integer> indexMap = new HashMap<>();
-		// Perform any move edits and take an array snapshot
-		Alignment.doEdits(sequence, goalState.items, Alignment.MoveEditor);
-		String[] moved = toArray(sequence);
-		// Compare the original children and the moved children and get a mapping
-		List<int[]> pairs = Alignment.alignPairs(children, moved, 1, 1, 100);
-		for (int[] pair : pairs) {
-			if (pair[0] >= 0 && pair[1] < 0) {
-				// Any unpaired child was moved, so highlight it
-				colors.put(node.children.get(pair[0]), Highlight.Order);
-			} else if (pair[0] >= 0 && pair[1] >= 0) {
-				// The others were kept in order, so add them to the map
-				indexMap.put(pair[1], pair[0]);
-			}
-		}
-
-		// Do the same thing with deletion
-		Alignment.doEdits(sequence, goalState.items, Alignment.DeleteEditor);
-		String[] deleted = toArray(sequence);
-		pairs = Alignment.alignPairs(moved, deleted, 1, 1, 100);
-		for (int[] pair : pairs) {
-			if (pair[0] >= 0 && indexMap.containsKey(pair[0])) {
-				// If the deleted version doen't have the node, mark it; otherwise, it's good
-				Highlight highlight = pair[1] >= 0 ? Highlight.Good : Highlight.Delete;
-				colors.put(node.children.get(indexMap.get(pair[0])), highlight);
-			}
-		}
-
-		// Now do something similar with additions
-		Alignment.doEdits(sequence, goalState.items, Alignment.AddEditor);
-		String[] added = toArray(sequence);
-		pairs = Alignment.alignPairs(moved, added, 1, 1, 100);
-		// Turn the pairs into a added-index/moved-index mapping
-		HashMap<Integer, Integer> pairMap = new HashMap<>();
-		for (int[] pair : pairs) {
-			pairMap.put(pair[1], pair[0]);
-		}
-		// Keep track of the index at which to insert the added nodes
-		int insertIndex = 0;
-		for (int i = 0; i < added.length; i++) {
-			// Get the moved-index of each node in the goal
-			int originalIndex = pairMap.get(i);
-			if (originalIndex == -1) {
-				// If it doesn't exist, add it at the current index
-				insertions.add(new Insertion(node, added[i], insertIndex));
-			} else {
-				// Otherwise update the index
-				insertIndex = originalIndex + 1;
-			}
-		}
-
 	}
 
 	public static abstract class EditHint implements Hint, Comparable<EditHint> {
