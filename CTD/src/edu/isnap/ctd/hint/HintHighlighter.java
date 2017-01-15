@@ -351,24 +351,6 @@ public class HintHighlighter {
 		return solutions;
 	}
 
-	public void ctdHighlight(Node node) {
-		node = node.copy(false);
-
-		final IdentityHashMap<Node, Highlight> colors = new IdentityHashMap<>();
-		final List<Insertion> insertions = new LinkedList<>();
-
-		node.recurse(new Action() {
-			@Override
-			public void run(Node node) {
-				highlight(node, colors, insertions);
-			}
-		});
-
-		handleInsertionsAndMoves(colors, insertions, null, hintMap.config);
-
-		printHighlight(node, colors);
-	}
-
 	private void handleInsertionsAndMoves(final IdentityHashMap<Node, Highlight> colors,
 			final List<Insertion> insertions, List<EditHint> edits, HintConfig config) {
 		List<EditHint> toRemove = new LinkedList<>();
