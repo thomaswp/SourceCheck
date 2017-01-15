@@ -384,6 +384,7 @@ public class HintHighlighter {
 		edits.removeAll(toRemove);
 	}
 
+	@SuppressWarnings("unused")
 	private void printHighlight(Node node, final IdentityHashMap<Node, Highlight> colors) {
 		IdentityHashMap<Node, String> prefixMap = new IdentityHashMap<>();
 		for (Entry<Node, Highlight> entry : colors.entrySet()) {
