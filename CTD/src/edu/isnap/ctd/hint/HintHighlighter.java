@@ -354,6 +354,7 @@ public class HintHighlighter {
 	private void handleInsertionsAndMoves(final IdentityHashMap<Node, Highlight> colors,
 			final List<Insertion> insertions, List<EditHint> edits, HintConfig config) {
 		List<EditHint> toRemove = new LinkedList<>();
+		List<EditHint> toAdd = new LinkedList<>();
 
 		// For each deleted node, see if it should be inserted, and if so change it to a root move
 		for (EditHint edit : edits) {
@@ -365,9 +366,18 @@ public class HintHighlighter {
 			for (Insertion insertion : insertions) {
 				boolean matchParent = deleted.parent == insertion.parent;
 				boolean sameType = deleted.hasType(insertion.type);
-				// It's not a move/replace if the two operations have the same type and parent;
-				// this should be handled by a reorder
-				if (sameType && matchParent) continue;
+
+				// If it's an insertion/deletion of the same type in the same script parent, it's
+				// just a reorder
+				if (sameType && matchParent && insertion.parent.hasType(config.script)) {
+					colors.put(deleted, Highlight.Move);
+					toAdd.add(new Reorder(deleted, insertion.index));
+					toRemove.add(deletion);
+					toRemove.add(insertion);
+					// Set the insertion candidate, so it's not somehow used later in the loop
+					insertion.candidate = deleted;
+					break;
+				}
 
 				// Moves are deletions that could be instead moved to perform a needed insertion
 				// TODO: find the best match, not just the first
@@ -382,6 +392,7 @@ public class HintHighlighter {
 		}
 
 		edits.removeAll(toRemove);
+		edits.addAll(toAdd);
 	}
 
 	@SuppressWarnings("unused")
