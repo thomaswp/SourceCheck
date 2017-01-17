@@ -384,6 +384,13 @@ testRatedHints <- function() {
   condCompare(ratedHints$score_1, ratedHints$firstFollow)
   condCompare(ratedHints$score_2, ratedHints$secondFollow)
   
+  # First hints rated at least the median (7) score were >3x as likely to be followed (3/21=47.1% vs 16/34=14.3%)
+  ratedHints$firstBetter <- ratedHints$score_1 >= median(ratedHints$score_1)
+  ddply(ratedHints, c("firstBetter"), summarize, pFollow=mean(firstFollow), followed=sum(firstFollow), n=length(firstFollow))
+  # Second hints rated at least the median (7) score were >3x as likely to be followed (3/21=47.1% vs 16/34=14.3%)
+  ratedHints$secondBetter <- ratedHints$score_2 >= median(ratedHints$score_2, na.rm=T)
+  ddply(ratedHints[!is.na(ratedHints$secondHint),], c("secondBetter"), summarize, pFollow=mean(firstFollow), followed=sum(firstFollow), n=length(firstFollow))
+  
   secondHints <- ratedHints[!is.na(ratedHints$secondHint),]
   
   # Dependence between following first and second hint is borderline significant
