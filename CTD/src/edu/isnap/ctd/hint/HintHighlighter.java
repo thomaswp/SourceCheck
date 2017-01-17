@@ -335,7 +335,8 @@ public class HintHighlighter {
 					}
 					if (sizes.size() <= median) return;
 					Collections.sort(sizes);
-					int minSize = sizes.get(sizes.size() - median);
+					int minSize = median == 0 ? Integer.MAX_VALUE :
+						sizes.get(sizes.size() - median);
 					for (int i = 0; i < node.children.size(); i++) {
 						Node child = node.children.get(i);
 						if (child.hasType(config.script) && child.size() < minSize) {
