@@ -438,7 +438,10 @@ testRatedHints <- function() {
   
   # For both hints, label correlates to each 
   fhs <- ddply(ratedHints, c("label"), summarize, n=length(timing_1), mT = mean(as.numeric(timing_1)), mRel=mean(relevant_1), sdRel=sd(relevant_1), mCorrect=mean(correct_1), sdCorrect=sd(correct_1), mInterp=mean(interp_1), sdInter=sd(interp_1), mInsight=safeMean(zInsight_1), mScore=mean(score_1), sdScore=sd(score_1))
-  shs <- ddply(secondHints, c("label"), summarize, n=length(timing_2), mT = mean(as.numeric(timing_2)), mRel=mean(relevant_2), mCorrect=mean(correct_2), mInterp=mean(interp_2), mInsight=safeMean(zInsight_2), mScore=mean(score_2))
+  shs <- ddply(secondHints, c("label"), summarize, n=length(timing_2), mT = mean(as.numeric(timing_2)), mRel=mean(relevant_2), sdRel=sd(relevant_2), mCorrect=mean(correct_2), sdCorrect=sd(correct_2), mInterp=mean(interp_2), sdInter=sd(interp_2), mInsight=safeMean(zInsight_2), mScore=mean(score_2), sdScore=sd(score_2))
+  
+  kruskal.test(ratedHints$score_1, ratedHints$label)
+  kruskal.test(secondHints$score_1, secondHints$label)
   
   # First hint score is a marginally significant predicor of label
   condCompare(ratedHints$score_1, ratedHints$label == 1)
