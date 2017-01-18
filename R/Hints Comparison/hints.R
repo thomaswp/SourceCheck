@@ -92,6 +92,11 @@ testProjs2016 <- function() {
   ddply(hws, c("assignment", "h3f1"), summarize, n=length(perf), pOver=mean(perf==1), pPass=mean(grade >= 0.8), mGrade=mean(grade), sdGrade=sd(grade))
   ddply(hws[hws$hint1,], c("assignment", "follow1"), summarize, n=length(perf), pOver=mean(perf==1), pPass=mean(grade >= 0.8), mGrade=mean(grade), sdGrade=sd(grade))
   
+  hws$nHints <- ifelse(hws$unq == 0, NA, hws$unq)
+  hws <- labelChances(hws, 3)
+  hws$labelHigh <- hws$label > 1
+  ddply(hws, c("assignment", "labelHigh"), summarize, n=length(perf), pOver=mean(perf==1), pPass=mean(grade >= 0.8), mGrade=mean(grade), sdGrade=sd(grade))
+  
   h1 <- hws
   h1$label <- "hint1"
   h1$val <- h1$hint1
@@ -315,21 +320,23 @@ buildChances <- function() {
   chances
 }
 
-labelChances <- function(chances, n) {
-  chances$label <- 0
-  for (assignment in unique(chances$assignment)) {
-    labels <- getLabels(chances[chances$assignment==assignment,]$nHints, n)
-    chances[chances$assignment==assignment,]$label <- labels
+labelChances <- function(data, n) {
+  data$label <- 0
+  for (assignment in unique(data$assignment)) {
+    print(assignment)
+    labels <- getLabels(data[data$assignment==assignment,]$nHints, n)
+    data[data$assignment==assignment,]$label <- labels
   }
-  return (chances)
+  return (data)
 }
 
 getLabels <- function(x, n) {
-  qs <- quantile(x, seq(0, 1, 1 / n))
-  # print(qs)
+  qs <- quantile(x[!is.na(x)], seq(0, 1, 1 / n))
+  print(qs)
   labels <- rep(1, length(x))
+  labels[is.na(x)] <- 0
   for (i in 2:n) {
-    labels[x > qs[i]] <- i
+    labels[!is.na(x) & x > qs[i]] <- i
   }
   return (labels)
 }
@@ -373,6 +380,20 @@ loadRatedHints <- function() {
   ratedHints
 }
 
+testAllHints <- function() {
+  ratings <- rbind(loadHintsFile("data/firstHints.csv"), loadHintsFile("data/secondHints.csv"))
+  ratings <- ratings[ratings$id %in% chances$firstHint | ratings$id %in% chances$secondHint,]
+  cor.test(ratings$relevant, ratings$correct, method="spearman")
+  cor.test(ratings$correct, ratings$interp, method="spearman")
+  cor.test(ratings$relevant, ratings$interp, method="spearman")
+  
+  ratings <- merge(ratings, hints, by.x="id", by.y="rowID")
+  # no significant correlation between score and duration dialog was viewed
+  cor.test(ratings$score, ratings$duration, method="spearman")
+  # small, negative, significant correlation between score and pause before next action
+  cor.test(ratings$score, ratings$pause, method="spearman")
+}
+
 library(vcd)
 library(Exact)
 testRatedHints <- function() {
@@ -387,7 +408,7 @@ testRatedHints <- function() {
   # First hints rated at least the median (7) score were >3x as likely to be followed (3/21=47.1% vs 16/34=14.3%)
   ratedHints$firstBetter <- ratedHints$score_1 >= median(ratedHints$score_1)
   ddply(ratedHints, c("firstBetter"), summarize, pFollow=mean(firstFollow), followed=sum(firstFollow), n=length(firstFollow))
-  # Second hints rated at least the median (7) score were >3x as likely to be followed (3/21=47.1% vs 16/34=14.3%)
+  # Second hints rated at least the median (8) score were >3x as likely to be followed (3/21=47.1% vs 16/34=14.3%)
   ratedHints$secondBetter <- ratedHints$score_2 >= median(ratedHints$score_2, na.rm=T)
   ddply(ratedHints[!is.na(ratedHints$secondHint),], c("secondBetter"), summarize, pFollow=mean(firstFollow), followed=sum(firstFollow), n=length(firstFollow))
   
@@ -423,6 +444,12 @@ testRatedHints <- function() {
   condCompare(ratedHints$score_1, ratedHints$label == 1)
   # It does significantly correlate
   cor.test(ratedHints$score_1, ratedHints$label, method="spearman")
+  # But not to number of hitns
+  cor.test(ratedHints$score_1, ratedHints$nHints, method="spearman")
+  
+  # Significance is not achieved with nHints >= 3, though it is marginal for score_2
+  condCompare(ratedHints$score_1, ratedHints$nHints >=3)
+  condCompare(ratedHints$score_2, ratedHints$nHints >=3)
   
   # Second label and hint score are correlated, and label (marginally) singificantly predicts score
   condCompare(ratedHints$score_2, ratedHints$label == 1)
@@ -433,6 +460,9 @@ testRatedHints <- function() {
   condCompare(ratedHints$relevant_2, ratedHints$label == 3)
   cor.test(ratedHints$relevant_2, ratedHints$label, method="spearman")
   cor.test(ratedHints$relevant_2, ratedHints$nHints, method="spearman")
+  
+  condCompare(ratedHints$label, ratedHints$score_1 + ratedHints$score_2 >= 15)
+  table(ratedHints$label, ratedHints$score_1 + ratedHints$score_2 >= 15)
 
   # Oddly, filtering out late hints reverses the trend to some extent  
   earlyFirst <- ratedHints[ratedHints$timing_1 != "Late",]

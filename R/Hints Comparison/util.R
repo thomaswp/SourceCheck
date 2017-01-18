@@ -49,10 +49,23 @@ compareStats <- function(x, y, test = wilcox.test) {
   # print(paste("Medx =", median(x), "IQR =", median(x) - IQR(x)/2, "-", median(x) + IQR(x)/2))
   # print(paste("Medy =", median(y), "IQR =", median(y) - IQR(y)/2, "-", median(y) + IQR(y)/2))
   print(paste("Cohen's D=", cohen.d(x,y)))
-  test(x, y)
+  t <- test(x, y)
+  if (identical(test, wilcox.test)) print(wilcoxLatex(t))
+  t
 }
 
 c.merge <- function(x, y) {
   cols <- intersect(names(x), names(y))
   rbind(x[,cols], y[,cols])
+}
+
+spearmanLatex <- function(x, y) {
+  test <- cor.test(x, y, method="spearman")
+  sprintf("($\rho=%.03f$; $S=%.0f$; $p=%.03f$)",
+          test$estimate, test$statistic, test$p.value)
+}
+
+wilcoxLatex <- function(test) {
+  sprintf("($W=%.1f$; $p=%.03f$)",
+          test$statistic, test$p.value)
 }
