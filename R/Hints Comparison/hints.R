@@ -475,6 +475,10 @@ testRatedHints <- function() {
   cor.test(ratedHints$score_1, as.numeric(ratedHints$timing_1), method="spearman")
   # Negative but not significant for the second hint
   cor.test(ratedHints$score_2, as.numeric(ratedHints$timing_2), method="spearman")
+  
+  # Students stop asking for hints after a hint that is at least median Quality only 
+  # 16.7\% of the time (11/66), while they stop 42.1\% of the time after other hints (16/38). 
+  table(ratedHints$score_1 >= 7 & ratedHints$score_2 >= 8, ratedHints$nHints > 2)
 }
 
 
