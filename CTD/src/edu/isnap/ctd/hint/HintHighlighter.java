@@ -169,11 +169,13 @@ public class HintHighlighter {
 							int index = 0;
 							for (int i = np.index() - 1; i >= 0; i--) {
 								Node preceder = mapping.getTo(np.parent.children.get(i));
-								if (preceder != null) {
+								// Make sure they have the same parent so we know the index is valid
+								if (preceder != null && preceder.parent == toReorder.parent) {
 									index = preceder.index() + 1;
 									break;
 								}
 							}
+
 							edits.add(new Reorder(toReorder, index));
 						}
 					}
@@ -606,8 +608,9 @@ public class HintHighlighter {
 			super(node.parent);
 			this.node = node;
 			this.index = index;
-			if (index < 0 || index >= node.parent.children.size()) {
-				storeException("Reorder index out of bounds: " + index);
+			if (index < 0 || index > node.parent.children.size()) {
+				storeException("Reorder index out of bounds: " + index + " for size " +
+						node.parent.children.size());
 			}
 
 		}
