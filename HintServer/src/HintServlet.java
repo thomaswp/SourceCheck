@@ -115,14 +115,14 @@ public class HintServlet extends HttpServlet {
 			try {
 				hints.addAll(new HintGenerator(hintMap).getHints(node));
 			} catch (Exception e) {
-				array.put(errorToJSON(e));
+				array.put(errorToJSON(e, true));
 			}
 		}
 		if (hintTypes != null && hintTypes.contains("highlight")){
 			try {
 				hints.addAll(new HintHighlighter(hintMap).highlight(node));
 			} catch (Exception e) {
-				array.put(errorToJSON(e));
+				array.put(errorToJSON(e, true));
 			}
 		}
 
@@ -142,11 +142,12 @@ public class HintServlet extends HttpServlet {
 			obj.put("data", hint.data());
 			return obj;
 		} catch (Exception e) {
-			return errorToJSON(e);
+			return errorToJSON(e, true);
 		}
 	}
 
-	private static JSONObject errorToJSON(Exception e) {
+	private static JSONObject errorToJSON(Exception e, boolean print) {
+		if (print) e.printStackTrace();
 		JSONObject error = new JSONObject();
 		error.put("error", true);
 		error.put("message", e.getClass().getName() + ": " +  e.getMessage());

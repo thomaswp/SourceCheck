@@ -104,7 +104,9 @@ public class HintHighlighter {
 				if (pair != null) {
 					// Argument nodes are easy, since their order should be the same as their pair
 					if (node.parent != null && node.parent == mapping.getTo(pair.parent) &&
-							isFunctionCall(node.parent)) {
+							isFunctionCall(node.parent) &&
+							// Make sure the two function calls have the same number of children
+							node.parent.children.size() == pair.parent.size()) {
 						if (node.index() != pair.index()) {
 							colors.put(node, Highlight.Order);
 							edits.add(new Reorder(node, pair.index()));
@@ -248,10 +250,13 @@ public class HintHighlighter {
 		return edits;
 	}
 
+	// Function calls (blocks) are nodes which are not themselves scripts but have an ancestor
+	// which is a script. This precludes snapshots, sprites, custom blocks, variables, etc,
+	// while including blocks and lists
 	private final boolean isFunctionCall(Node node) {
-		// TODO: Figure out a more precise way of determining this
 		HintConfig config = hintMap.config;
-		return !node.hasType(config.script) && !config.haveSideScripts.contains(node.type());
+		return !node.hasType(config.script) &&
+				node.hasAncestor(new Node.TypePredicate(config.script));
 	}
 
 	private BiMap<Node, Node> findSolutionMapping(Node node) {
@@ -411,6 +416,8 @@ public class HintHighlighter {
 
 		public final Node parent;
 
+		protected transient RuntimeException e;
+
 		public EditHint(Node parent) {
 			this.parent = parent;
 		}
@@ -420,8 +427,20 @@ public class HintHighlighter {
 			return "highlight";
 		}
 
+		// If we get bad parameters, we want to log the trace of how it happened, but we don't
+		// want to throw the exception until this hint is read, so as not to interrupt the
+		// rest of the hint generation
+		protected void storeException(String message) {
+			try {
+				throw new RuntimeException(message);
+			} catch (RuntimeException e) {
+				this.e = e;
+			}
+		}
+
 		@Override
 		public JSONObject data() {
+			if (e != null) throw e;
 			JSONObject data = new JSONObject();
 			data.put("parent", Node.getNodeReference(parent));
 			data.put("action", action());
@@ -430,12 +449,14 @@ public class HintHighlighter {
 
 		@Override
 		public String from() {
+			if (e != null) throw e;
 			LinkedList<String> items = new LinkedList<>(Arrays.asList(parent.getChildArray()));
 			return action() + ": " + rootString(parent) + ": " + items;
 		}
 
 		@Override
 		public String to() {
+			if (e != null) throw e;
 			LinkedList<String> items = new LinkedList<>(Arrays.asList(parent.getChildArray()));
 			editChildren(items);
 			return action() + ": " + rootString(parent) + ": " + items;
@@ -483,7 +504,7 @@ public class HintHighlighter {
 			this.type = type;
 			this.index = index;
 			if (index > parent.children.size()) {
-				throw new RuntimeException("Insert index out of range");
+				storeException("Insert index out of range");
 			}
 		}
 
@@ -585,6 +606,10 @@ public class HintHighlighter {
 			super(node.parent);
 			this.node = node;
 			this.index = index;
+			if (index < 0 || index >= node.parent.children.size()) {
+				storeException("Reorder index out of bounds: " + index);
+			}
+
 		}
 
 		@Override
