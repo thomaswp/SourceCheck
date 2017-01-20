@@ -1,6 +1,9 @@
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -99,7 +102,8 @@ public class HintServlet extends HttpServlet {
 		}
 
 
-//		long time = System.currentTimeMillis();
+		JSONArray array = new JSONArray();
+
 
 //		System.out.println(snapshot.toCode(true));
 		Node node = SimpleNodeBuilder.toTree(snapshot, true);
@@ -108,30 +112,49 @@ public class HintServlet extends HttpServlet {
 		// Return the hints for each type requested, or bubble hints if none is provided
 		if (hintTypes != null) hintTypes = hintTypes.toLowerCase();
 		if (hintTypes == null || hintTypes.contains("bubble")) {
-			hints.addAll(new HintGenerator(hintMap).getHints(node));
+			try {
+				hints.addAll(new HintGenerator(hintMap).getHints(node));
+			} catch (Exception e) {
+				array.put(errorToJSON(e));
+			}
 		}
 		if (hintTypes != null && hintTypes.contains("highlight")){
-			hints.addAll(new HintHighlighter(hintMap).highlight(node));
+			try {
+				hints.addAll(new HintHighlighter(hintMap).highlight(node));
+			} catch (Exception e) {
+				array.put(errorToJSON(e));
+			}
 		}
 
-		JSONArray array = new JSONArray();
 		for (Hint hint : hints) {
 			array.put(hintToJSON(hint));
 		}
-
-//		long elapsed = System.currentTimeMillis() - time;
-//		System.out.println(elapsed);
 
 		return array.toString();
 	}
 
 	public static JSONObject hintToJSON(Hint hint) {
-		JSONObject obj = new JSONObject();
-		obj.put("from", hint.from());
-		obj.put("to", hint.to());
-		obj.put("type", hint.type());
-		obj.put("data", hint.data());
-		return obj;
+		try {
+			JSONObject obj = new JSONObject();
+			obj.put("from", hint.from());
+			obj.put("to", hint.to());
+			obj.put("type", hint.type());
+			obj.put("data", hint.data());
+			return obj;
+		} catch (Exception e) {
+			return errorToJSON(e);
+		}
+	}
+
+	private static JSONObject errorToJSON(Exception e) {
+		JSONObject error = new JSONObject();
+		error.put("error", true);
+		error.put("message", e.getClass().getName() + ": " +  e.getMessage());
+		StringWriter sw = new StringWriter();
+		e.printStackTrace(new PrintWriter(sw));
+		error.put("stack", sw.toString());
+		error.put("time", new Date().toString());
+		return error;
 	}
 
 	private HintMap loadHintMap(String assignment, int minGrade) {

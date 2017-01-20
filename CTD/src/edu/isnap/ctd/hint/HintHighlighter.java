@@ -203,7 +203,6 @@ public class HintHighlighter {
 							// If the node is being inserted in a function call then it replaces
 							// whatever already exists at this index in the parent
 							if (isFunctionCall(node) && insertIndex < node.children.size()) {
-								System.out.println(node);
 								insertion.replacement = node.children.get(insertIndex);
 							}
 							// If this is a non-script, we treat this new insertion as a "match"
