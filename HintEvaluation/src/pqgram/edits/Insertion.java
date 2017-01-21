@@ -9,26 +9,26 @@ import astrecognition.model.Tree;
 import edu.isnap.ctd.graph.Node;
 
 public class Insertion extends PositionalEdit {
-	
+
 	private static String INSERTION_STRING = "%d: Insert %s on to %s (%d, %d) {%s}";
-	
+
 	private int end;
 	private Collection<String> inheritedChildren;
-	
+
 	public Insertion(String a, String b, Graph aG, Graph bG, int start, int end) {
 		super(a, b, aG, bG, start);
 		this.end = end;
-		this.inheritedChildren = new ArrayList<String>();
+		this.inheritedChildren = new ArrayList<>();
 	}
-	
+
 	public int getStart() {
 		return super.getPosition();
 	}
-	
+
 	public int getEnd() {
 		return this.end;
 	}
-	
+
 	public void addInheritedChild(String inheritedChild) {
 		this.inheritedChildren.add(inheritedChild);
 	}
@@ -41,16 +41,16 @@ public class Insertion extends PositionalEdit {
 		}
 		return String.format(INSERTION_STRING, this.lineNumber, this.b, this.a, this.start, this.end, inheritedChildrenList);
 	}
-	
+
 	@Override
 	public Node outcome(Map<String, Tree> fromMap, Map<String, Tree> toMap) {
 		if (!fromMap.containsKey(a)) return null;
-		Node fromParent = fromMap.get(a).tag.copy(false);
+		Node fromParent = fromMap.get(a).tag.copy();
 		Node to = toMap.get(b).tag;
 		Node toParent = to.parent;
 		if (fromParent == null || toParent == null) return null;
-		fromParent = fromParent.copy(false);
-		
+		fromParent = fromParent.copy();
+
 		// Walk through the both parents' children
 		int toIndex = 0, fromIndex = 0;
 		while (true) {
@@ -72,8 +72,8 @@ public class Insertion extends PositionalEdit {
 				fromIndex++;
 			}
 		}
-		
-		
+
+
 		Node insert = new Node(fromParent, to.type());
 		fromParent.children.add(fromIndex, insert);
 		return fromParent.root();

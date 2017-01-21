@@ -83,7 +83,7 @@ public class VectorHint extends StringHashable implements Hint {
 		}
 
 		public static Node applyHint(Node root, String[] to) {
-			Node nRoot = root.copy(false);
+			Node nRoot = root.copy();
 
 			List<Node> children = new ArrayList<>();
 			children.addAll(nRoot.children);

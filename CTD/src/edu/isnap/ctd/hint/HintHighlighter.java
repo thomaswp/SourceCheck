@@ -79,9 +79,9 @@ public class HintHighlighter {
 							Insertion insertion = new Insertion(moveParent, node.type(),
 									insertIndex);
 							insertion.candidate = node;
-							// If this is a function call parent, inserting the node should replace
+							// If this is a code element parent, inserting the node should replace
 							// the current node at this index
-							if (isFunctionCall(moveParent) &&
+							if (isCodeElement(moveParent) &&
 									insertIndex < moveParent.children.size()) {
 								insertion.replacement = moveParent.children.get(insertIndex);
 							}
@@ -104,8 +104,8 @@ public class HintHighlighter {
 				if (pair != null) {
 					// Argument nodes are easy, since their order should be the same as their pair
 					if (node.parent != null && node.parent == mapping.getTo(pair.parent) &&
-							isFunctionCall(node.parent) &&
-							// Make sure the two function calls have the same number of children
+							isCodeElement(node.parent) &&
+							// Make sure the two code elements have the same number of children
 							node.parent.children.size() == pair.parent.size()) {
 						if (node.index() != pair.index()) {
 							colors.put(node, Highlight.Order);
@@ -185,13 +185,15 @@ public class HintHighlighter {
 
 		// Now find needed insertions
 		final List<Insertion> insertions = new LinkedList<>();
-		node.recurse(new Action() {
+		// This time, iterate over the nodes in the pair
+		Node nodeMatch = mapping.getFrom(node);
+		nodeMatch.recurse(new Action() {
 			@Override
-			public void run(Node node) {
-				// Look for parents with pairs
-				Node pair = mapping.getFrom(node);
-				if (pair != null) {
-					// For those we iterate through their parent-pair's children
+			public void run(Node pair) {
+				// See if the pair has a corresponding node in the student's tree
+				Node node = mapping.getTo(pair);
+				if (node != null) {
+					// If so, we iterate through its children and add them
 					int insertIndex = 0;
 					for (Node child : pair.children) {
 						Node originalChild = mapping.getTo(child);
@@ -204,9 +206,9 @@ public class HintHighlighter {
 							// Otherwise we add an insertion
 							Insertion insertion = new Insertion(node, child.type(), insertIndex);
 							insertions.add(insertion);
-							// If the node is being inserted in a function call then it replaces
+							// If the node is being inserted in a code element then it replaces
 							// whatever already exists at this index in the parent
-							if (isFunctionCall(node) && insertIndex < node.children.size()) {
+							if (isCodeElement(node) && insertIndex < node.children.size()) {
 								insertion.replacement = node.children.get(insertIndex);
 							}
 							// If this is a non-script, we treat this new insertion as a "match"
@@ -217,6 +219,22 @@ public class HintHighlighter {
 							}
 						}
 					}
+				} else if (mapping.getTo(pair.parent) == null) {
+					// If not, and the pair's parent has no corresponding node either, it won't
+					// be added by the above code, so we need to add it. Unfortunately, there's
+					// no where to add it to the student's code, since it's parent has no
+					// corresponding node, so we use the pair-parent and mark it as a special case.
+					// It's useful to list these insertions anyway, since it allows us to mark nodes
+					// as Move instead of Delete when they're used in not-yet-added parents
+
+					// This really only makes sense for code element
+					if (!isCodeElement(pair)) return;
+
+					// We clone the pair-parent and remove the pair, so the insert text is
+					// descriptive
+					Node parentClone = pair.parent.copy();
+					parentClone.children.remove(pair.index());
+					insertions.add(new Insertion(parentClone, pair.type(), pair.index(), true));
 				}
 			}
 		});
@@ -243,6 +261,14 @@ public class HintHighlighter {
 					}
 				}
 			}
+
+			// Remove any inserts that have a missing parent and no candidate, as they won't show
+			Insertion insertion = Cast.cast(edits.get(i), Insertion.class);
+			if (insertion != null) {
+				if (insertion.missingParent && insertion.candidate == null) {
+					edits.remove(i--);
+				}
+			}
 		}
 
 //		printHighlight(node, colors);
@@ -252,10 +278,10 @@ public class HintHighlighter {
 		return edits;
 	}
 
-	// Function calls (blocks) are nodes which are not themselves scripts but have an ancestor
+	// Code elements (blocks) are nodes which are not themselves scripts but have an ancestor
 	// which is a script. This precludes snapshots, sprites, custom blocks, variables, etc,
 	// while including blocks and lists
-	private final boolean isFunctionCall(Node node) {
+	private final boolean isCodeElement(Node node) {
 		HintConfig config = hintMap.config;
 		return !node.hasType(config.script) &&
 				node.hasAncestor(new Node.TypePredicate(config.script));
@@ -327,7 +353,7 @@ public class HintHighlighter {
 		// Then remove the smallest scripts from solutions which have more than the median count
 		List<Node> solutions = new LinkedList<>();
 		for (Node node : hintMap.solutions) {
-			Node copy = node.copy(false);
+			Node copy = node.copy();
 			copy.recurse(new Action() {
 				@Override
 				public void run(Node node) {
@@ -449,17 +475,22 @@ public class HintHighlighter {
 			return data;
 		}
 
+		private LinkedList<String> getParentChildren() {
+			if (parent == null) return new LinkedList<>();
+			return new LinkedList<>(Arrays.asList(parent.getChildArray()));
+		}
+
 		@Override
 		public String from() {
 			if (e != null) throw e;
-			LinkedList<String> items = new LinkedList<>(Arrays.asList(parent.getChildArray()));
+			LinkedList<String> items = getParentChildren();
 			return action() + ": " + rootString(parent) + ": " + items;
 		}
 
 		@Override
 		public String to() {
 			if (e != null) throw e;
-			LinkedList<String> items = new LinkedList<>(Arrays.asList(parent.getChildArray()));
+			LinkedList<String> items = getParentChildren();
 			editChildren(items);
 			return action() + ": " + rootString(parent) + ": " + items;
 		}
@@ -490,6 +521,7 @@ public class HintHighlighter {
 	private static class Insertion extends EditHint {
 		public final String type;
 		public final int index;
+		public final boolean missingParent;
 
 		/** The node the inserted node should replace (in the same location) */
 		public Node replacement;
@@ -502,9 +534,14 @@ public class HintHighlighter {
 		}
 
 		public Insertion(Node parent, String type, int index) {
+			this(parent, type, index, false);
+		}
+
+		public Insertion(Node parent, String type, int index, boolean missingParent) {
 			super(parent);
 			this.type = type;
 			this.index = index;
+			this.missingParent = missingParent;
 			if (index > parent.children.size()) {
 				storeException("Insert index out of range");
 			}
@@ -513,6 +550,7 @@ public class HintHighlighter {
 		@Override
 		public JSONObject data() {
 			JSONObject data = super.data();
+			data.put("missingParent", missingParent);
 			data.put("index", index);
 			data.put("type", type);
 			data.put("replacement", Node.getNodeReference(replacement));
@@ -522,6 +560,16 @@ public class HintHighlighter {
 			editChildren(items);
 			data.put("to", toJSONArray(items));
 			return data;
+		}
+
+		@Override
+		protected String rootString(Node node) {
+			// Mark missing parents in the preview
+			String rootString = super.rootString(node);
+			if (missingParent) {
+				rootString = "{" + rootString + "}";
+			}
+			return rootString;
 		}
 
 		private JSONArray toJSONArray(LinkedList<String> items) {
@@ -544,7 +592,7 @@ public class HintHighlighter {
 		public String from() {
 			String text = super.from();
 			if (candidate != null) {
-				text += " using " + rootString(candidate);
+				text += " using " + super.rootString(candidate);
 			}
 			return text;
 		}
@@ -553,7 +601,7 @@ public class HintHighlighter {
 		public String to() {
 			String text = super.to();
 			if (candidate != null) {
-				text += " using " + rootString(candidate);
+				text += " using " + super.rootString(candidate);
 			}
 			return text;
 		}

@@ -7,15 +7,15 @@ import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
 
 public class Prune {
-	
+
 	public static List<Node> removeSmallerScripts(List<Node> nodes) {
 		List<Node> list = new ArrayList<>();
 		for (Node node : nodes) list.add(removeSmallerScripts(node));
 		return list;
 	}
-	
+
 	public static Node removeSmallerScripts(Node node) {
-		node = node.copy(false);
+		node = node.copy();
 		node.recurse(new Action() {
 			@Override
 			public void run(Node node) {

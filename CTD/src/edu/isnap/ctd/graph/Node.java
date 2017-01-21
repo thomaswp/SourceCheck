@@ -263,8 +263,8 @@ public class Node extends StringHashable {
 		return index < children.size() && children.get(index).hasType(type);
 	}
 
-	public Node copy(boolean setParent) {
-		Node rootCopy = root().childrenCopy(setParent ? parent : null);
+	public Node copy() {
+		Node rootCopy = root().childrenCopy(null);
 		return findParallelNode(rootCopy, this);
 	}
 
