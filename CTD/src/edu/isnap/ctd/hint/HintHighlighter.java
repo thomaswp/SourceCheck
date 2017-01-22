@@ -280,7 +280,8 @@ public class HintHighlighter {
 				// Remove excess deletions, whose parents are also deleted or moved
 				// Note: we wait until the end in case they turn into Moves
 				Highlight highlight = colors.get(deletion.parent);
-				if (highlight == Highlight.Delete || highlight == Highlight.Move) {
+				if (highlight == Highlight.Delete || highlight == Highlight.Move ||
+						highlight == Highlight.Replaced) {
 					edits.remove(i--);
 					continue;
 				}
