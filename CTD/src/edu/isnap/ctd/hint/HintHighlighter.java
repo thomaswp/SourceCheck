@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
@@ -24,7 +25,7 @@ import edu.isnap.ctd.util.map.ListMap;
 public class HintHighlighter {
 
 	public static enum Highlight {
-		Good, Add, Delete, Order, Move
+		Good, Add, Delete, Order, Move, Replaced
 	}
 
 	private final HintMap hintMap;
@@ -45,7 +46,20 @@ public class HintHighlighter {
 
 		final HintConfig config = hintMap.config;
 
-		// First simply ID the nodes that have a pair with the same parent (Good), a different
+		// First identify all unpaired nodes and mark them for deletion (though this can be
+		// overridden if we can find a use for them)
+		node.recurse(new Action() {
+			@Override
+			public void run(Node node) {
+				Node pair = mapping.getFrom(node);
+				if (pair == null) {
+					colors.put(node, Highlight.Delete);
+					edits.add(new Deletion(node));
+				}
+			}
+		});
+
+		// Then simply ID the nodes that have a pair with the same parent (Good), a different
 		// parent (Move) and those that don't (Delete)
 		// Note that the Good label is not final, as Good nodes may need to be reordered (Order)
 		node.recurse(new Action() {
@@ -76,8 +90,7 @@ public class HintHighlighter {
 								}
 							}
 
-							Insertion insertion = new Insertion(moveParent, node.type(),
-									insertIndex);
+							Insertion insertion = new Insertion(moveParent, pair, insertIndex);
 							insertion.candidate = node;
 							// If this is a code element parent, inserting the node should replace
 							// the current node at this index
@@ -204,7 +217,7 @@ public class HintHighlighter {
 							}
 						} else {
 							// Otherwise we add an insertion
-							Insertion insertion = new Insertion(node, child.type(), insertIndex);
+							Insertion insertion = new Insertion(node, child, insertIndex);
 							insertions.add(insertion);
 							// If the node is being inserted in a code element then it replaces
 							// whatever already exists at this index in the parent
@@ -234,19 +247,38 @@ public class HintHighlighter {
 					// descriptive
 					Node parentClone = pair.parent.copy();
 					parentClone.children.remove(pair.index());
-					insertions.add(new Insertion(parentClone, pair.type(), pair.index(), true));
+					Insertion insertion = new Insertion(parentClone, pair, pair.index(), true);
+					insertions.add(insertion);
 				}
 			}
 		});
 		edits.addAll(insertions);
 
-		handleInsertionsAndMoves(colors, insertions, edits, config);
+		handleInsertionsAndMoves(colors, insertions, edits, mapping);
 
-		// Remove excess deletions, whose parents are also deleted or moved
-		// Note: we wait until the end in case they turn into Moves
+		// If any insert into a script should contain the children of the existing node at that
+		// index, we want to express that as a replacement
 		for (int i = 0; i < edits.size(); i++) {
+			Insertion insertion = Cast.cast(edits.get(i), Insertion.class);
+			if (insertion != null) {
+				addScriptReplacement(insertion, mapping, edits, colors);
+			}
+		}
+
+		// Remove unneeded edits
+		for (int i = 0; i < edits.size(); i++) {
+			// Remove any inserts that have a missing parent and no candidate, as they won't show
+			Insertion insertion = Cast.cast(edits.get(i), Insertion.class);
+			if (insertion != null) {
+				if (insertion.missingParent && insertion.candidate == null) {
+					edits.remove(i--);
+				}
+			}
+
 			Deletion deletion = Cast.cast(edits.get(i), Deletion.class);
 			if (deletion != null) {
+				// Remove excess deletions, whose parents are also deleted or moved
+				// Note: we wait until the end in case they turn into Moves
 				Highlight highlight = colors.get(deletion.parent);
 				if (highlight == Highlight.Delete || highlight == Highlight.Move) {
 					edits.remove(i--);
@@ -254,19 +286,11 @@ public class HintHighlighter {
 				}
 
 				// Also remove any deletions that are implicit in an inertion's replacement
-				for (Insertion insertion : insertions) {
-					if (insertion.replacement == deletion.node) {
+				for (Insertion inst : insertions) {
+					if (inst.replacement == deletion.node) {
 						edits.remove(i--);
 						break;
 					}
-				}
-			}
-
-			// Remove any inserts that have a missing parent and no candidate, as they won't show
-			Insertion insertion = Cast.cast(edits.get(i), Insertion.class);
-			if (insertion != null) {
-				if (insertion.missingParent && insertion.candidate == null) {
-					edits.remove(i--);
 				}
 			}
 		}
@@ -276,6 +300,53 @@ public class HintHighlighter {
 		Collections.sort(edits);
 
 		return edits;
+	}
+
+	private void addScriptReplacement(Insertion insertion, BiMap<Node, Node> mapping,
+			List<EditHint> edits, Map<Node, Highlight> colors) {
+		HintConfig config = hintMap.config;
+
+		// To be eligible for a script replacement, an insertion must have no replacement and have a
+		// script parent with a child at the insertion index
+		if (insertion.replacement != null || !insertion.parent.hasType(config.script) ||
+				insertion.parent.children.size() <= insertion.index) return;
+
+		// Additionally the at the index of insert must be marked for deletion and be of a different
+		// type than the inserted node
+		Node deleted = insertion.parent.children.get(insertion.index);
+		if (colors.get(deleted) != Highlight.Delete) return;
+		if (deleted.type().equals(insertion.type)) return;
+
+		// Lastly, there must be at least one child node that is paired to a child of the pair node
+		// that is the cause for the insertion
+		List<Node> nodeChildren = deleted.allChildren();
+		List<Node> pairChildren = insertion.pair.allChildren();
+		int matches = 0;
+		for (Node n1 : nodeChildren) {
+			for (Node n2 : pairChildren) {
+				if (mapping.getFrom(n1) == n2) {
+					matches++;
+				}
+			}
+		}
+		if (matches == 0) {
+			return;
+		}
+
+		// In this case, we set the replacement, change the deleted node to replaced and remove the
+		// deletion
+		insertion.replacement = deleted;
+		colors.put(deleted, Highlight.Replaced);
+
+		// Find the deletion and remove it
+		for (int i = 0; i < edits.size(); i++) {
+			EditHint edit = edits.get(i);
+			if (!(edit instanceof Deletion)) continue;
+			if (deleted == ((Deletion) edit).node) {
+				edits.remove(i);
+				break;
+			}
+		}
 	}
 
 	// Code elements (blocks) are nodes which are not themselves scripts but have an ancestor
@@ -385,7 +456,9 @@ public class HintHighlighter {
 	}
 
 	private void handleInsertionsAndMoves(final IdentityHashMap<Node, Highlight> colors,
-			final List<Insertion> insertions, List<EditHint> edits, HintConfig config) {
+			final List<Insertion> insertions, List<EditHint> edits, BiMap<Node, Node> mapping) {
+		HintConfig config = hintMap.config;
+
 		List<EditHint> toRemove = new LinkedList<>();
 		List<EditHint> toAdd = new LinkedList<>();
 
@@ -395,7 +468,9 @@ public class HintHighlighter {
 			Deletion deletion = (Deletion) edit;
 			Node deleted = deletion.node;
 
+			// If a deletion has been changed in the loop (e.g. to a move), ignore it
 			if (colors.get(deleted) != Highlight.Delete) continue;
+
 			for (Insertion insertion : insertions) {
 				boolean matchParent = deleted.parent == insertion.parent;
 				boolean sameType = deleted.hasType(insertion.type);
@@ -409,15 +484,28 @@ public class HintHighlighter {
 					toRemove.add(insertion);
 					// Set the insertion candidate, so it's not somehow used later in the loop
 					insertion.candidate = deleted;
+					// Also add this new pairing to the mapping
+					mapping.put(deleted, insertion.pair);
 					break;
 				}
 
 				// Moves are deletions that could be instead moved to perform a needed insertion
 				// TODO: find the best match, not just the first
-				if (insertion.candidate == null && sameType &&
+				if (sameType && insertion.candidate == null &&
 						!insertion.type.equals(config.literal)) {
 					colors.put(deleted, Highlight.Move);
+					// Also mark children as moved so they can't be paired as well
+					// TODO: this could be problematic if children are matched before their parents
+					deleted.recurse(new Action() {
+						@Override
+						public void run(Node node) {
+							colors.put(node, Highlight.Move);
+						}
+					});
+
 					insertion.candidate = deleted;
+					// Also add this new pairing to the mapping
+					mapping.put(deleted, insertion.pair);
 					toRemove.add(deletion);
 					break;
 				}
@@ -523,6 +611,9 @@ public class HintHighlighter {
 		public final int index;
 		public final boolean missingParent;
 
+		// Used to mark the pair node in the solution this insertion represents
+		private final transient Node pair;
+
 		/** The node the inserted node should replace (in the same location) */
 		public Node replacement;
 		/** A candidate node elsewhere that could be used to do the replacement */
@@ -533,15 +624,16 @@ public class HintHighlighter {
 			return "insert";
 		}
 
-		public Insertion(Node parent, String type, int index) {
-			this(parent, type, index, false);
+		public Insertion(Node parent, Node pair, int index) {
+			this(parent, pair, index, false);
 		}
 
-		public Insertion(Node parent, String type, int index, boolean missingParent) {
+		public Insertion(Node parent, Node pair, int index, boolean missingParent) {
 			super(parent);
-			this.type = type;
+			this.type = pair.type();
 			this.index = index;
 			this.missingParent = missingParent;
+			this.pair = pair;
 			if (index > parent.children.size()) {
 				storeException("Insert index out of range");
 			}
@@ -608,7 +700,7 @@ public class HintHighlighter {
 
 		@Override
 		protected double priority() {
-			return 5 + (candidate == null ? 0  : 1);
+			return 5 + (candidate == null ? 0  : 1) + (replacement == null ? 0 : 1);
 		}
 	}
 

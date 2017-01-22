@@ -113,6 +113,18 @@ public class Node extends StringHashable {
 		return null;
 	}
 
+	public List<Node> allChildren() {
+		return allChildren(new LinkedList<Node>());
+	}
+
+	public List<Node> allChildren(List<Node> list) {
+		for (Node child : children) {
+			list.add(child);
+			child.allChildren(list);
+		}
+		return list;
+	}
+
 	public List<Node> searchAll(Predicate predicate) {
 		List<Node> list = new LinkedList<>();
 		searchAll(predicate, list);
