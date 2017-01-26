@@ -469,6 +469,10 @@ public class HintHighlighter {
 			Deletion deletion = (Deletion) edit;
 			Node deleted = deletion.node;
 
+			// We're only interested in candidate nodes that are in scripts. This ignores things
+			// like variables, sprites and custom block definitions
+			if (!deleted.hasAncestor(new Node.TypePredicate(config.script))) continue;
+
 			// If a deletion has been changed in the loop (e.g. to a move), ignore it
 			if (colors.get(deleted) != Highlight.Delete) continue;
 
