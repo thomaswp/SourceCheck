@@ -477,6 +477,9 @@ public class HintHighlighter {
 			if (colors.get(deleted) != Highlight.Delete) continue;
 
 			for (Insertion insertion : insertions) {
+				// We're also only interested in working with insertions into scripts
+				if (!insertion.parent.hasAncestor(new Node.TypePredicate(config.script))) continue;
+
 				boolean matchParent = deleted.parent == insertion.parent;
 				boolean sameType = deleted.hasType(insertion.type);
 
