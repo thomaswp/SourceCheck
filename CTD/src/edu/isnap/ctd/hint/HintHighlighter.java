@@ -2,6 +2,7 @@ package edu.isnap.ctd.hint;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -456,6 +457,16 @@ public class HintHighlighter {
 	private void handleInsertionsAndMoves(final IdentityHashMap<Node, Highlight> colors,
 			final List<Insertion> insertions, List<EditHint> edits, BiMap<Node, Node> mapping) {
 		HintConfig config = hintMap.config;
+
+		// Ensure that insertions with missing parents are paired last, giving priority to
+		// actionable inserts when assigning candidates
+		Collections.sort(insertions, new Comparator<Insertion>() {
+			@Override
+			public int compare(Insertion o1, Insertion o2) {
+				if (o1.missingParent == o2.missingParent) return 0;
+				return o1.missingParent ? -1 : 1;
+			}
+		});
 
 		List<EditHint> toRemove = new LinkedList<>();
 		List<EditHint> toAdd = new LinkedList<>();
