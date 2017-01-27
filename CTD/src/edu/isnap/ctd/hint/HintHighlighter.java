@@ -101,9 +101,6 @@ public class HintHighlighter {
 							edits.add(insertion);
 						}
 					}
-				} else {
-					colors.put(node, Highlight.Delete);
-					edits.add(new Deletion(node));
 				}
 			}
 		});
