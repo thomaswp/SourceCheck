@@ -74,10 +74,12 @@ buildProjs2016 <- function() {
 }
 
 library(beanplot)
+library(scales)
 testProjs2016 <- function() {
   projs2016 <- buildProjs2016()
   hws <- projs2016[projs2016$assignment=="guess2HW" | projs2016$assignment=="squiralHW",]
   hws$assignment <- ordered(hws$assignment, c("squiralHW", "guess2HW"))
+  hws$prettyAssignment <- ordered(ifelse(hws$assignment=="squiralHW", "Squiral", "Guessing Game 2"), c("Squiral", "Guessing Game 2"))
   hws$unq[is.na(hws$unq)] <- 0
   hws$unqF[is.na(hws$unqF)] <- 0
   hws$hint1 <- hws$unq > 0
@@ -85,16 +87,22 @@ testProjs2016 <- function() {
   hws$hint3 <- hws$unq >= 3
   hws$follow1 <- hws$unqF > 0
   hws$h3f1 <- hws$hint3 & hws$follow1
+  hws$cat <- ordered(ifelse(hws$hint1, ifelse(hws$follow1, "F1", "H1"), "H0"), c("H0", "H1", "F1"))
+  hws$cat <- ordered(ifelse(hws$hint1, ifelse(hws$hint3, "H3", "H1"), "H0"), c("H0", "H1", "H3"))
   ddply(hws, c("assignment"), summarize, n=length(perf), pOver=mean(perf==1))
   ddply(hws, c("assignment", "hint1"), summarize, n=length(perf), pOver=mean(perf==1), pPass=mean(grade >= 0.8), mGrade=mean(grade), sdGrade=sd(grade))
+  # USED IN PAPER
   ddply(hws, c("assignment", "follow1"), summarize, n=length(perf), pOver=mean(perf==1), pPass=mean(grade >= 0.8), mGrade=mean(grade), sdGrade=sd(grade))
   ddply(hws, c("assignment", "hint3"), summarize, n=length(perf), pOver=mean(perf==1), pPass=mean(grade >= 0.8), mGrade=mean(grade), sdGrade=sd(grade))
   ddply(hws, c("assignment", "h3f1"), summarize, n=length(perf), pOver=mean(perf==1), pPass=mean(grade >= 0.8), mGrade=mean(grade), sdGrade=sd(grade))
+  ddply(hws, c("assignment", "cat"), summarize, n=length(perf), pOver=mean(perf==1), pPass=mean(grade >= 0.8), mGrade=mean(grade), sdGrade=sd(grade))
   ddply(hws[hws$hint1,], c("assignment", "follow1"), summarize, n=length(perf), pOver=mean(perf==1), pPass=mean(grade >= 0.8), mGrade=mean(grade), sdGrade=sd(grade))
   
   hws$nHints <- ifelse(hws$unq == 0, NA, hws$unq)
   hws <- labelChances(hws, 3)
+  hws$labelComb <- pmin(hws$label, 2)
   hws$labelHigh <- hws$label > 1
+  ddply(hws, c("assignment", "labelComb"), summarize, n=length(perf), pOver=mean(perf==1), pPass=mean(grade >= 0.8), mGrade=mean(grade), sdGrade=sd(grade))
   ddply(hws, c("assignment", "labelHigh"), summarize, n=length(perf), pOver=mean(perf==1), pPass=mean(grade >= 0.8), mGrade=mean(grade), sdGrade=sd(grade))
   
   h1 <- hws
@@ -109,7 +117,16 @@ testProjs2016 <- function() {
   
   hws$usage <- ordered(ifelse(hws$unq == 0, "none", ifelse(hws$unq < 3, "low", "med")), c("none", "low", "med"))
   ggplot(hws, aes(x=usage, y=grade)) + geom_violin() + geom_boxplot(width=0.15, fill="#eeeeee") + stat_summary(fun.y="mean", geom="point", color="red") + facet_grid(. ~ assignment)
+  ggplot(hws, aes(x=cat, y=grade)) + geom_violin() + geom_boxplot(width=0.15, fill="#eeeeee") + stat_summary(fun.y="mean", geom="point", color="red") + facet_grid(. ~ assignment)
   ggplot(hws, aes(x=hint3, y=grade)) + geom_violin() + geom_boxplot(width=0.15, fill="#eeeeee") + stat_summary(fun.y="mean", geom="point", color="red") + facet_grid(. ~ assignment)
+  # USED IN THE PAPER
+  ggplot(hws, aes(x=follow1, y=grade)) + 
+    geom_violin() + geom_boxplot(width=0.15, fill="#eeeeee") + 
+    stat_summary(fun.y="mean", geom="point", color="red") + 
+    facet_grid(. ~ prettyAssignment) +
+    theme_bw() +
+    scale_y_continuous(labels=percent, name="Grade (%)") +
+    scale_x_discrete(labels=c("False (F0)", "True (F1)"), name="One Hint Followed")
   
   ggplot(hws[hws$hint1,], aes(x=follow1, y=grade)) + geom_violin() + geom_boxplot(width=0.15, fill="#eeeeee") + stat_summary(fun.y="mean", geom="point", color="red") + facet_grid(assignment ~ .)
   
@@ -398,6 +415,11 @@ library(vcd)
 library(Exact)
 testRatedHints <- function() {
   ratedHints <- loadRatedHints()
+  ratedHints$pFollowed <- ratedHints$nFollow / ratedHints$nHints
+  ratedHints$pFollowed1 <- (ratedHints$nFollow - ratedHints$firstFollow) / (ratedHints$nHints - 1)
+  #ratedHints$pFollowed1[is.nan(ratedHints$pFollowed1)] <- 0
+  ratedHints$pFollowed2 <- (ratedHints$nFollow - ratedHints$firstFollow - ratedHints$secondFollow) / (ratedHints$nHints - 2)
+  #ratedHints$pFollowed2[is.nan(ratedHints$pFollowed2)] <- 0
   
   # Followed hints are rated significantly higher for first and second
   # Also worth noting: followed first and second hints had a mean score of 7.5 and 8.5 respectively,
@@ -449,6 +471,9 @@ testRatedHints <- function() {
   cor.test(ratedHints$score_1, ratedHints$label, method="spearman")
   # But not to number of hitns
   cor.test(ratedHints$score_1, ratedHints$nHints, method="spearman")
+  # Doesn't correlate with future hints followed or percentage followed
+  cor.test(ratedHints$score_1, ratedHints$nFollow - ratedHints$firstFollow, method="spearman")
+  cor.test(ratedHints$score_1, ratedHints$pFollowed1, method="spearman")
   
   # Significance is not achieved with nHints >= 3, though it is marginal for score_2
   condCompare(ratedHints$score_1, ratedHints$nHints >=3)
@@ -459,6 +484,13 @@ testRatedHints <- function() {
   condCompare(ratedHints$score_2, ratedHints$label == 3)
   cor.test(ratedHints$score_2, ratedHints$label, method="spearman")
   cor.test(ratedHints$score_2, ratedHints$nHints, method="spearman")
+  # Strong correlation between second hint rating and future hints followed
+  cor.test(ratedHints$score_2, ratedHints$nFollow - ratedHints$firstFollow - ratedHints$secondFollow, method="spearman")
+  plot(jitter(ratedHints$score_2), jitter(ratedHints$nFollow - ratedHints$firstFollow - ratedHints$secondFollow))
+  # And marginal significant correlation with percentage of future hints followed
+  cor.test(ratedHints$score_2, ratedHints$pFollowed2, method="spearman")
+  plot(jitter(ratedHints$score_2), jitter(ratedHints$pFollowed2))
+  
   # Same with relevance
   condCompare(ratedHints$relevant_2, ratedHints$label == 3)
   cor.test(ratedHints$relevant_2, ratedHints$label, method="spearman")
