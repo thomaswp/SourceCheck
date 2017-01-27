@@ -464,7 +464,7 @@ public class HintHighlighter {
 			@Override
 			public int compare(Insertion o1, Insertion o2) {
 				if (o1.missingParent == o2.missingParent) return 0;
-				return o1.missingParent ? -1 : 1;
+				return o1.missingParent ? 1 : -1;
 			}
 		});
 
