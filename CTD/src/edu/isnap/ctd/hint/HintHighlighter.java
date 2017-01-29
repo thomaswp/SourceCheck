@@ -275,11 +275,18 @@ public class HintHighlighter {
 
 			Deletion deletion = Cast.cast(edits.get(i), Deletion.class);
 			if (deletion != null) {
+				// Don't bother deleting certain function calls, which students may add as
+				// personalization but don't harm the final product. May be assignment specific.
+				if (config.harmlessCalls.contains(deletion.node.type())) {
+					edits.remove(i--);
+					continue;
+				}
+
 				// Remove excess deletions, whose parents are also deleted or moved
 				// Note: we wait until the end in case they turn into Moves
-				Highlight highlight = colors.get(deletion.parent);
-				if (highlight == Highlight.Delete || highlight == Highlight.Move ||
-						highlight == Highlight.Replaced) {
+				Highlight parentHighlight = colors.get(deletion.parent);
+				if (parentHighlight == Highlight.Delete || parentHighlight == Highlight.Move ||
+						parentHighlight == Highlight.Replaced) {
 					edits.remove(i--);
 					continue;
 				}

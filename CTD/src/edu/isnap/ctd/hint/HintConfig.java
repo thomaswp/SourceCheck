@@ -82,6 +82,20 @@ public class HintConfig {
 		}
 	}
 
+	public final HashSet<String> harmlessCalls = new HashSet<>();
+	{
+		for (String c : new String[] {
+				"receiveGo",
+				"setColor",
+				"setHue",
+				"clear",
+				"receiveKey",
+				"receiveInteraction",
+		}) {
+			harmlessCalls.add(c);
+		}
+	}
+
 	/**
 	 * Power used in the distance weight formula. Higher values penalize higher distances faster.
 	 * Must be >= 1.
