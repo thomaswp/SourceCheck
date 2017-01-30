@@ -4,6 +4,8 @@ source("util.R")
 library(irr)
 
 agreement <- function(x, y) {
+  x <- as.numeric(x == 2)
+  y <- as.numeric(y == 2)
   df <- data.frame(x=x, y=y)
   kappa2(df, weight='squared')
 }
