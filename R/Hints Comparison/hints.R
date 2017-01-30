@@ -73,7 +73,6 @@ buildProjs2016 <- function() {
   projs2016
 }
 
-library(beanplot)
 library(scales)
 testProjs2016 <- function() {
   projs2016 <- buildProjs2016()
@@ -255,8 +254,8 @@ testUsers <- function() {
   return (users)
 }
 
-library(gridExtra)
 plotHists <- function(x, y) {
+  library(gridExtra)
   hist_top <- ggplot()+geom_histogram(aes(x))
   empty <- ggplot()+geom_point(aes(1,1), colour="white")+
     theme(axis.ticks=element_blank(), 
@@ -273,7 +272,8 @@ plotHists <- function(x, y) {
 # Not exactly, but followed hints definitely indicate students will keep asking
 
 buildDedup <- function() {
-  dedup <- ddply(hints, c("assignment", "attemptID", "hash"), summarize, type=first(type), startEdit=first(editPerc), endEdit=tail(editPerc, n=1), 
+  hints$editBin <- round(hints$editPerc, 1)
+  dedup <- ddply(hints, c("assignment", "attemptID", "hash", "editBin"), summarize, type=first(type), startEdit=first(editPerc), endEdit=tail(editPerc, n=1), 
                  count=length(followed), anyF=any(followed), indexF=tail(c(NA, which(followed)), n=1), followEdit=editPerc[indexF], delete=all(delete),
                  followRowID=ifelse(!is.na(indexF), rowID[indexF], NA), rowID=rowID[1], pauseF=pause[ifNA(indexF, 1)], durationF=duration[ifNA(indexF, 1)])
   
@@ -463,7 +463,7 @@ testRatedHints <- function() {
   shs <- ddply(secondHints, c("label"), summarize, n=length(timing_2), mT = mean(as.numeric(timing_2)), mRel=mean(relevant_2), sdRel=sd(relevant_2), mCorrect=mean(correct_2), sdCorrect=sd(correct_2), mInterp=mean(interp_2), sdInter=sd(interp_2), mInsight=safeMean(zInsight_2), mScore=mean(score_2), sdScore=sd(score_2))
   
   kruskal.test(ratedHints$score_1, ratedHints$label)
-  kruskal.test(secondHints$score_1, secondHints$label)
+  kruskal.test(secondHints$score_2, secondHints$label)
   
   # First hint score is a marginally significant predicor of label
   condCompare(ratedHints$score_1, ratedHints$label == 1)
