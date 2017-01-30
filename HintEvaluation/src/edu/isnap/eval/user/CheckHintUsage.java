@@ -295,6 +295,7 @@ public class CheckHintUsage {
 
 					hintsSheet.put("hash", hintCode.hashCode());
 
+					hintsSheet.put("codeHash", code.toCode(false).hashCode());
 					hintsSheet.put("diff", HintPrinter.hintToString(node, hintOutcome));
 				}
 

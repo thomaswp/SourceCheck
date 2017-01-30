@@ -206,14 +206,7 @@ buildAllUsers <- function() {
 
 testUsers <- function() {
   # Significant correlation between hints, and even more so unique hints requested and percent followed
-  cor.test(users$unq, users$percF)
-  
-  # No significant correlations between grades and anything
-  # but remember grades are uniformly high
-  cor.test(users$percF, users$grade)
-  cor.test(users$unqF, users$grade)
-  cor.test(users$unq, users$grade)
-  table(users$grade)
+  cor.test(users$unq, users$percF, method="spearman")
   
   # 12.5% of users who requested 1 unique hint followed it. Wow.
   mean(users$unqF[users$unq == 1] > 0)
@@ -275,10 +268,12 @@ buildDedup <- function() {
   for (i in 1:nrow(hints)) {
     row <- hints[i,]
     minTime <- row$time - 1000 * 60
-    possibleIDs <- hints[hints$assignment == row$assignment & hints$attemptID == row$attemptID & hints$hash == row$hash & hints$rowID <= row$rowID & hints$time >= minTime,]$rowID
+    possibleIDs <- hints[hints$assignment == row$assignment & hints$attemptID == row$attemptID & hints$hash == row$hash & hints$rowID <= row$rowID & 
+                           (hints$time >= minTime | hints$codeHash == row$codeHash),]$rowID
     hints[i,"dedupID"] <- min(possibleIDs)
   }
   #dedup <- ddply(hints, c("assignment", "attemptID", "hash"), summarize, 
+  #dedup <- ddply(hints, c("assignment", "attemptID", "hash", "editPerc"), summarize, 
   dedup <- ddply(hints, c("assignment", "attemptID", "hash", "dedupID"), summarize, 
                  type=first(type), startEdit=first(editPerc), endEdit=tail(editPerc, n=1), 
                  count=length(followed), anyF=any(followed), indexF=tail(c(NA, which(followed)), n=1), followEdit=editPerc[indexF], delete=all(delete),
@@ -434,10 +429,10 @@ testRatedHints <- function() {
   condCompare(ratedHints$score_1, ratedHints$firstFollow)
   condCompare(ratedHints$score_2, ratedHints$secondFollow)
   
-  # First hints rated at least the median (7) score were >3x as likely to be followed (3/21=47.1% vs 16/34=14.3%)
+  # First hints rated at least the median (7) score were >3x as likely to be followed (2/23=8.7% vs 14/48=29.2%)
   ratedHints$firstBetter <- ratedHints$score_1 >= median(ratedHints$score_1)
   ddply(ratedHints, c("firstBetter"), summarize, pFollow=mean(firstFollow), followed=sum(firstFollow), n=length(firstFollow))
-  # Second hints rated at least the median (8) score were >3x as likely to be followed (3/21=47.1% vs 16/34=14.3%)
+  # Second hints rated at least the median (8) score were >3x as likely to be followed (3/21=14.3% vs 11/32=34.4%)
   ratedHints$secondBetter <- ratedHints$score_2 >= median(ratedHints$score_2, na.rm=T)
   ddply(ratedHints[!is.na(ratedHints$secondHint),], c("secondBetter"), summarize, pFollow=mean(firstFollow), followed=sum(firstFollow), n=length(firstFollow))
   
