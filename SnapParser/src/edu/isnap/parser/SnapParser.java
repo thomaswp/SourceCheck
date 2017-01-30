@@ -94,7 +94,7 @@ public class SnapParser {
 					Snapshot lastSnaphot = null;
 
 					for (CSVRecord record : parser) {
-						String timestampString = record.get(1);
+						String timestampString = record.get("time");
 						Date timestamp = null;
 						try {
 							timestamp = format.parse(timestampString);
@@ -102,11 +102,12 @@ public class SnapParser {
 							e.printStackTrace();
 						}
 
-						String action = record.get(2);
-						String data = record.get(3);
-						String session = record.get(6);
-						String xml = record.get(8);
-						String idS = record.get(0);
+						// TODO: Add userID
+						String action = record.get("message");
+						String data = record.get("data");
+						String session = record.get("sessionID");
+						String xml = record.get("code");
+						String idS = record.get("id");
 						int id = -1;
 						try {
 							id = Integer.parseInt(idS);

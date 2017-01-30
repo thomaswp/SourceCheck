@@ -118,7 +118,7 @@ public class Assignment {
 		return new SnapParser(this, mode).parseAssignment(snapshotsOnly, addMetadata, filters);
 	}
 
-	public final static String BASE_DIR = "../data/csc200";
+	public final static String CSC200_BASE_DIR = "../data/csc200";
 
 	// Note: end dates are generally 2 days past last class due date
 	public static Date date(int year, int month, int day) {

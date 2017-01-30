@@ -6,6 +6,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.commons.csv.CSVFormat;
@@ -19,13 +20,8 @@ import org.apache.commons.csv.CSVRecord;
  */
 public class LogSplitter {
 
-	// Header for iSnap log table
-	private static final String[] HEADER = new String[] {
-			"id","time","message","jsonData","assignmentID","projectID","sessionID","browserID",
-			"code"
-	};
-
-	private final static Map<String, CSVPrinter> csvPrinters = new HashMap<String, CSVPrinter>();
+	private final static Map<String, CSVPrinter> csvPrinters = new HashMap<>();
+	private static String[] headers;
 
 	/**
 	 * Scans the CSV file name, and sends scanner to the processRows method
@@ -36,9 +32,15 @@ public class LogSplitter {
 		String outputFolder = file.substring(0, file.lastIndexOf(".")) + "/parsed";
 		new File(outputFolder).mkdirs();
 		CSVParser parser = new CSVParser(new FileReader(file), CSVFormat.DEFAULT.withHeader());
+		Map<String, Integer> headerMap = parser.getHeaderMap();
+		headers = new String[headerMap.size()];
+		for (Entry<String, Integer> entry : headerMap.entrySet()) {
+			headers[entry.getValue()] = entry.getKey();
+		}
 		int i = 0;
 		System.out.println("Splitting records:");
 		for (CSVRecord record : parser) {
+			// TODO: add userID
 			String assignmentID = record.get(4);
 			String projectID = record.get(5);
 			writeRecord(assignmentID,projectID, outputFolder, record);
@@ -73,7 +75,7 @@ public class LogSplitter {
 			if(printer == null){
 				printer = new CSVPrinter(
 						new FileWriter(currentFolderPath + "/" + projectID + ".csv"),
-						CSVFormat.EXCEL.withHeader(HEADER));
+						CSVFormat.EXCEL.withHeader(headers));
 				csvPrinters.put(keyword, printer);
 			}
 

@@ -9,7 +9,7 @@ public class Fall2016 extends Dataset {
 
 	public final static Fall2016 instance = new Fall2016();
 	public final static Date start = Assignment.date(2015, 8, 17);
-	public final static String dataDir = Assignment.BASE_DIR + "/fall2016";
+	public final static String dataDir = Assignment.CSC200_BASE_DIR + "/fall2016";
 	public final static String dataFile = dataDir + ".csv";
 
 	public final static Assignment LightsCameraAction = new Assignment(instance,

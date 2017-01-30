@@ -9,6 +9,7 @@ import edu.isnap.datasets.Demo;
 import edu.isnap.datasets.Fall2015;
 import edu.isnap.datasets.Fall2016;
 import edu.isnap.datasets.HelpSeeking;
+import edu.isnap.datasets.Samples;
 import edu.isnap.datasets.Spring2016;
 import edu.isnap.parser.LogSplitter;
 import edu.isnap.parser.ParseSubmitted;
@@ -24,6 +25,7 @@ public class Shell {
 			Fall2016.instance,
 			Demo.instance,
 			HelpSeeking.instance,
+			Samples.instance,
 	};
 
 	public static void main(String[] args) {
