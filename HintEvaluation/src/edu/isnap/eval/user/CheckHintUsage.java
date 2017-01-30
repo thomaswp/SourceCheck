@@ -257,6 +257,7 @@ public class CheckHintUsage {
 					hintsSheet.put("assignment", assignment.name);
 					hintsSheet.put("attemptID", attemptID);
 					hintsSheet.put("rowID", row.id);
+					hintsSheet.put("time", time);
 					hintsSheet.put("type", action.replace("SnapDisplay.show", "").replace("Hint", ""));
 					hintsSheet.put("editPerc", (double)edit / edits);
 					hintsSheet.put("timePerc", timePerc);

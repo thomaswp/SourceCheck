@@ -48,9 +48,9 @@ loadData <- function() {
   # time spent with dialog open, time before next action and 60s
   hints$focusTime <<- pmin(ifNA(pmin(hints$duration, hints$pause), 60), 60)
   
+  dedup <<- buildDedup()
   users <<- buildUsers()
   allUsers <<- buildAllUsers()
-  dedup <<- buildDedup()
   chances <<- buildChances()
 }
 
@@ -131,8 +131,6 @@ testProjs2016 <- function() {
   
   ggplot(hws) + geom_boxplot(aes(x=follow1, y=grade)) + facet_grid(. ~ assignment)
   ggplot(hws) + geom_density(aes(x=grade, color=hint1)) + facet_grid(. ~ assignment)
-  
-  beanplot(grade ~ follow1, data=hws)
 }
 
 hintStats <- function() {
@@ -200,7 +198,7 @@ buildUsers <- function() {
 }
 
 buildAllUsers <- function() {
-  users <- ddply(hints, c("assignment", "attemptID"), summarize, hints=length(duplicate), unq=sum(!duplicate), unqF=length(unique(hash[followed])), firstF=followed[[1]], focusTime=sum(focusTime))
+  users <- ddply(dedup, c("assignment", "attemptID"), summarize, unq=length(anyF), unqF=sum(anyF), firstF=anyF[[1]])
   users <- merge(users, projs[,c("dataset", "id", "assignment", "active", "total", "grade")], by.x=c("attemptID", "assignment"), by.y=c("id", "assignment"), all=T)
   users$percF <- users$unqF / users$unq
   users
@@ -208,7 +206,6 @@ buildAllUsers <- function() {
 
 testUsers <- function() {
   # Significant correlation between hints, and even more so unique hints requested and percent followed
-  cor.test(users$hints, users$percF)
   cor.test(users$unq, users$percF)
   
   # No significant correlations between grades and anything
@@ -244,8 +241,9 @@ testUsers <- function() {
   ddply(users[users$unq>0,], c("assignment"), summarize, f0=mean(unqF==0), f1=mean(unqF==1), f2=mean(unqF==2), f35=mean(3 <= unqF & unqF <= 5), f68=mean(6 <= unqF & unqF <= 8), f9p=mean(9 <= unqF) )
   
   # Hints requested by assignment in bins 1, 2, 3-12, 13+
-  ddply(users, c("assignment"), n=length(unq), summarize, h1=mean(unq==1), h2=mean(unq==2), h12=mean(unq>2 & unq<13), hm=mean(unq>=13), max=max(unq))
-  ddply(users, c("assignment"), n=length(unq), summarize, h1=sum(unq==1), h2=sum(unq==2), h13=sum(unq>2 & unq<13), hm=sum(unq>=13), max=max(unq))
+  hMed <- median(users$unq[users$unq>2])
+  ddply(users, c("assignment"), n=length(unq), summarize, h1=mean(unq==1), h2=mean(unq==2), h12=mean(unq>2 & unq<hMed), hm=mean(unq>=hMed), max=max(unq))
+  ddply(users, c("assignment"), n=length(unq), summarize, h1=sum(unq==1), h2=sum(unq==2), h13=sum(unq>2 & unq<hMed), hm=sum(unq>=hMed), max=max(unq))
   ggplot(users) + geom_density(aes(x=hintsPerMinute, color=assignment))
   ggplot(users) + geom_density(aes(x=hintsPerMinute))
   ggplot(users) + geom_histogram(aes(x=hintsPerMinute))
@@ -273,7 +271,16 @@ plotHists <- function(x, y) {
 
 buildDedup <- function() {
   hints$editBin <- round(hints$editPerc, 1)
-  dedup <- ddply(hints, c("assignment", "attemptID", "hash", "editBin"), summarize, type=first(type), startEdit=first(editPerc), endEdit=tail(editPerc, n=1), 
+  hints$timeBin <- round(hints$time / 1000 / 60)
+  for (i in 1:nrow(hints)) {
+    row <- hints[i,]
+    minTime <- row$time - 1000 * 60
+    possibleIDs <- hints[hints$assignment == row$assignment & hints$attemptID == row$attemptID & hints$hash == row$hash & hints$rowID <= row$rowID & hints$time >= minTime,]$rowID
+    hints[i,"dedupID"] <- min(possibleIDs)
+  }
+  #dedup <- ddply(hints, c("assignment", "attemptID", "hash"), summarize, 
+  dedup <- ddply(hints, c("assignment", "attemptID", "hash", "dedupID"), summarize, 
+                 type=first(type), startEdit=first(editPerc), endEdit=tail(editPerc, n=1), 
                  count=length(followed), anyF=any(followed), indexF=tail(c(NA, which(followed)), n=1), followEdit=editPerc[indexF], delete=all(delete),
                  followRowID=ifelse(!is.na(indexF), rowID[indexF], NA), rowID=rowID[1], pauseF=pause[ifNA(indexF, 1)], durationF=duration[ifNA(indexF, 1)])
   
