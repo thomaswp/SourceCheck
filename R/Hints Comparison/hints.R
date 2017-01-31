@@ -312,6 +312,15 @@ testAllHints <- function() {
   cor.test(ratings$score, ratings$pause, method="spearman")
 }
 
+exportRatings <- function() {
+  ratings <- rbind(loadHintsFile("data/firstHints.csv"), loadHintsFile("data/secondHints.csv"))
+  ratings <- ratings[ratings$id %in% chances$firstHint | ratings$id %in% chances$secondHint,]
+  ratings$hintNumber <- (ratings$id %in% chances$secondHint) + 1
+  ratings <- merge(ratings, hints[,c("assignment", "attemptID", "rowID", "time", "followed", "duration", "pause")], by.x="id", by.y="rowID")
+  ratings <- merge(ratings, chances[,c("assignment", "attemptID", "label", "nHints", "nFollow")])
+  ratings
+}
+
 library(vcd)
 library(Exact)
 testRatedHints <- function() {
