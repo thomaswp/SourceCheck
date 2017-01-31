@@ -16,20 +16,20 @@ testAgreement <- function() {
   r1 <- r1[r1$Row.ID %in% usedHints,]
   r2 <- r2[r2$Row.ID %in% usedHints,]
   
-  # 0.840
+  # 0.857
   agreement(r1$Relevance, r2$Relevance)
-  # 0.729
+  # 0.756
   agreement(r1$Correctness, r2$Correctness)
-  # 0.637
+  # 0.685
   agreement(r1$Interpretability, r2$Interpretability)
-  # 0.48
+  # 0.508
   agreement(r1$Insightfulness, r2$Insightfulness)
   
   # total agreement
   tR1 <- c(r1$Relevance, r1$Correctness, r1$Interpretability, r1$Insightfulness)
   tR2 <- c(r2$Relevance, r2$Correctness, r2$Interpretability, r2$Insightfulness)
   
-  #0.726 0
+  #0.728 0
   agreement(tR1, tR2)
   
 }
