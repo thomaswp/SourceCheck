@@ -300,6 +300,10 @@ testAllHints <- function() {
   cor.test(ratings$relevant, ratings$correct, method="spearman")
   cor.test(ratings$correct, ratings$interp, method="spearman")
   cor.test(ratings$relevant, ratings$interp, method="spearman")
+  # USED IN PAPER
+  spearmanLatex(ratings$relevant, ratings$correct)
+  spearmanLatex(ratings$correct, ratings$interp)
+  spearmanLatex(ratings$relevant, ratings$interp)
   
   ratings <- merge(ratings, hints, by.x="id", by.y="rowID")
   # no significant correlation between score and duration dialog was viewed
@@ -318,16 +322,18 @@ testRatedHints <- function() {
   ratedHints$pFollowed2 <- (ratedHints$nFollow - ratedHints$firstFollow - ratedHints$secondFollow) / (ratedHints$nHints - 2)
   #ratedHints$pFollowed2[is.nan(ratedHints$pFollowed2)] <- 0
   
+  # USED IN PAPER
   # Followed hints are rated significantly higher for first and second
   # Also worth noting: followed first and second hints had a mean score of 7.5 and 8.5 respectively,
   # so students seem to have quite high standards
   condCompare(ratedHints$score_1, ratedHints$firstFollow)
   condCompare(ratedHints$score_2, ratedHints$secondFollow)
   
-  # First hints rated at least the median (7) score were >3x as likely to be followed (2/23=8.7% vs 14/48=29.2%)
+  # USED IN PAPER
+  # First hints rated at least the median (7) score were >4x as likely to be followed (2/21=9.5% vs 14/34=41.2%)
   ratedHints$firstBetter <- ratedHints$score_1 >= median(ratedHints$score_1)
   ddply(ratedHints, c("firstBetter"), summarize, pFollow=mean(firstFollow), followed=sum(firstFollow), n=length(firstFollow))
-  # Second hints rated at least the median (8) score were ~3x as likely to be followed (3/21=14.3% vs 11/32=34.4%)
+  # Second hints rated at least the median (8) score were ~3x as likely to be followed (3/18=16.7% vs 11/21=52.3%)
   ratedHints$secondBetter <- ratedHints$score_2 >= median(ratedHints$score_2, na.rm=T)
   ddply(ratedHints[!is.na(ratedHints$secondHint),], c("secondBetter"), summarize, pFollow=mean(firstFollow), followed=sum(firstFollow), n=length(firstFollow))
   
@@ -353,7 +359,7 @@ testRatedHints <- function() {
   firstNot2$nFollowLater = firstNot2$nFollow - firstNot2$firstFollow
   exact.test(table(firstNot2$correct_1, firstNot2$nFollowLater > 0))
 
-  
+  # USED IN PAPER
   # For both hints, label correlates to each 
   fhs <- ddply(ratedHints, c("label"), summarize, n=length(timing_1), mT = mean(as.numeric(timing_1)), mRel=mean(relevant_1), sdRel=sd(relevant_1), mCorrect=mean(correct_1), sdCorrect=sd(correct_1), mInterp=mean(interp_1), sdInter=sd(interp_1), mInsight=safeMean(zInsight_1), mScore=mean(score_1), sdScore=sd(score_1))
   shs <- ddply(secondHints, c("label"), summarize, n=length(timing_2), mT = mean(as.numeric(timing_2)), mRel=mean(relevant_2), sdRel=sd(relevant_2), mCorrect=mean(correct_2), sdCorrect=sd(correct_2), mInterp=mean(interp_2), sdInter=sd(interp_2), mInsight=safeMean(zInsight_2), mScore=mean(score_2), sdScore=sd(score_2))
@@ -364,13 +370,18 @@ testRatedHints <- function() {
   
   # First hint score is a marginally significant predicor of label
   condCompare(ratedHints$score_1, ratedHints$label == 1)
+  # USED IN PAPER
   # It does significantly correlate
   cor.test(ratedHints$score_1, ratedHints$label, method="spearman")
+  spearmanLatex(ratedHints$score_1, ratedHints$label)
   # But not to number of hitns
   cor.test(ratedHints$score_1, ratedHints$nHints, method="spearman")
   # Doesn't correlate with future hints followed or percentage followed
   cor.test(ratedHints$score_1, ratedHints$nFollow - ratedHints$firstFollow, method="spearman")
+  # USED IN PAPER
+  # Not-significant correlation between score and future percentage of hints followed
   cor.test(ratedHints$score_1, ratedHints$pFollowed1, method="spearman")
+  spearmanLatex(ratedHints$score_1, ratedHints$pFollowed1)
   
   # Significance is not achieved with nHints >= 3, though it is marginal for score_2
   condCompare(ratedHints$score_1, ratedHints$nHints >=3)
@@ -379,13 +390,17 @@ testRatedHints <- function() {
   # Second label and hint score are correlated, and label (marginally) singificantly predicts score
   condCompare(ratedHints$score_2, ratedHints$label == 1)
   condCompare(ratedHints$score_2, ratedHints$label == 3)
+  # USED IN PAPER
   cor.test(ratedHints$score_2, ratedHints$label, method="spearman")
+  spearmanLatex(ratedHints$score_2, ratedHints$label)
   cor.test(ratedHints$score_2, ratedHints$nHints, method="spearman")
   # Strong correlation between second hint rating and future hints followed
   cor.test(ratedHints$score_2, ratedHints$nFollow - ratedHints$firstFollow - ratedHints$secondFollow, method="spearman")
   plot(jitter(ratedHints$score_2), jitter(ratedHints$nFollow - ratedHints$firstFollow - ratedHints$secondFollow))
-  # And marginal significant correlation with percentage of future hints followed
+  # USED IN PAPER
+  # And significant correlation with percentage of future hints followed
   cor.test(ratedHints$score_2, ratedHints$pFollowed2, method="spearman")
+  spearmanLatex(ratedHints$score_2, ratedHints$pFollowed2)
   plot(jitter(ratedHints$score_2), jitter(ratedHints$pFollowed2))
   
   # Same with relevance
@@ -408,9 +423,10 @@ testRatedHints <- function() {
   # Negative but not significant for the second hint
   cor.test(ratedHints$score_2, as.numeric(ratedHints$timing_2), method="spearman")
   
+  # USED IN PAPER
   # Students stop asking for hints after a hint that is at least median Quality only 
-  # 16.7\% of the time (11/66), while they stop 42.1\% of the time after other hints (16/38). 
-  table(ratedHints$score_1 >= 7 & ratedHints$score_2 >= 8, ratedHints$nHints > 2)
+  # 18.2\% of the time (10/55), while they stop 41.0\% of the time after other hints (16/39). 
+  table(ratedHints$score_1 >= 7, ratedHints$nHints > 1) + table(ratedHints$score_2 >= 8, ratedHints$nHints > 2)
 }
 
 
