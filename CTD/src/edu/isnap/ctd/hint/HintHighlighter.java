@@ -29,10 +29,16 @@ public class HintHighlighter {
 		Good, Add, Delete, Order, Move, Replaced
 	}
 
-	private final HintMap hintMap;
+	private final List<Node> solutions;
+	private final HintConfig config;
 
 	public HintHighlighter(HintMap hintMap) {
-		this.hintMap = hintMap;
+		this(hintMap.solutions, hintMap.config);
+	}
+
+	public HintHighlighter(List<Node> solutions, HintConfig config) {
+		this.solutions = preprocessSolutions(solutions, config);
+		this.config = config;
 	}
 
 	public List<EditHint> highlight(Node node) {
@@ -44,8 +50,6 @@ public class HintHighlighter {
 		final BiMap<Node, Node> mapping = findSolutionMapping(node);
 
 		final IdentityHashMap<Node, Highlight> colors = new IdentityHashMap<>();
-
-		final HintConfig config = hintMap.config;
 
 		// First identify all unpaired nodes and mark them for deletion (though this can be
 		// overridden if we can find a use for them)
@@ -310,7 +314,6 @@ public class HintHighlighter {
 
 	private void addScriptReplacement(Insertion insertion, BiMap<Node, Node> mapping,
 			List<EditHint> edits, Map<Node, Highlight> colors) {
-		HintConfig config = hintMap.config;
 
 		// To be eligible for a script replacement, an insertion must have no replacement and have a
 		// script parent with a child at the insertion index
@@ -359,16 +362,13 @@ public class HintHighlighter {
 	// which is a script. This precludes snapshots, sprites, custom blocks, variables, etc,
 	// while including blocks and lists
 	private final boolean isCodeElement(Node node) {
-		HintConfig config = hintMap.config;
 		return !node.hasType(config.script) &&
 				node.hasAncestor(new Node.TypePredicate(config.script));
 	}
 
 	private BiMap<Node, Node> findSolutionMapping(Node node) {
-		HintConfig config = hintMap.getHintConfig();
 		ProgressDistanceMeasure dm = new ProgressDistanceMeasure(
 				config.progressOrderFactor, 1, 0.25, config.script, config.literal);
-		List<Node> solutions = preprocessSolutions(hintMap);
 		Node bestMatch = NodeAlignment.findBestMatch(node, solutions, dm);
 		if (bestMatch == null) throw new RuntimeException("No matches!");
 
@@ -397,12 +397,12 @@ public class HintHighlighter {
 	 * Remove side scripts from the submitted solutions. We do this to prevent side-script matches
 	 * from have too much influence in the matching process.
 	 */
-	private List<Node> preprocessSolutions(HintMap hintMap) {
-		final HintConfig config = hintMap.config;
+	private static List<Node> preprocessSolutions(List<Node> allSolutions,
+			final HintConfig config) {
 
 		// First figure out how many scripts each solution has at each node
 		final ListMap<Node, Integer> scriptCounts = new ListMap<>();
-		for (Node node : hintMap.solutions) {
+		for (Node node : allSolutions) {
 			node.recurse(new Action() {
 				@Override
 				public void run(Node node) {
@@ -429,7 +429,7 @@ public class HintHighlighter {
 
 		// Then remove the smallest scripts from solutions which have more than the median count
 		List<Node> solutions = new LinkedList<>();
-		for (Node node : hintMap.solutions) {
+		for (Node node : allSolutions) {
 			Node copy = node.copy();
 			copy.recurse(new Action() {
 				@Override
@@ -463,7 +463,6 @@ public class HintHighlighter {
 
 	private void handleInsertionsAndMoves(final IdentityHashMap<Node, Highlight> colors,
 			final List<Insertion> insertions, List<EditHint> edits, BiMap<Node, Node> mapping) {
-		HintConfig config = hintMap.config;
 
 		// Ensure that insertions with missing parents are paired last, giving priority to
 		// actionable inserts when assigning candidates
