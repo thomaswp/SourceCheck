@@ -5,28 +5,32 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 import difflib.StringUtills;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
 import edu.isnap.ctd.graph.vector.VectorState;
+import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.dataset.AssignmentAttempt;
-import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.hint.util.Spreadsheet;
-import edu.isnap.parser.elements.Snapshot;
 
-public class RootPathPrediction extends SnapPrediction {
+public class RootPathPrediction extends SnapGradePrediction {
 
 	private final ListMap<String, String> components = new ListMap<>();
 	private final List<String> keys = new ArrayList<>(components.keySet());
 
 	@Override
-	public void init(List<AssignmentAttempt> attempts) {
-		for (AssignmentAttempt attempt : attempts) {
-			Snapshot submission = attempt.submittedSnapshot;
-			Node node = SimpleNodeBuilder.toTree(submission, true);
+	protected String getName() {
+		return "rootpath";
+	}
+
+	@Override
+	public void init(Map<AssignmentAttempt, Node> attemptMap, HintConfig config) {
+		for (AssignmentAttempt attempt : attemptMap.keySet()) {
+			Node node = attemptMap.get(attempt);
 			final String id = attempt.id;
 
 			node.recurse(new Action() {

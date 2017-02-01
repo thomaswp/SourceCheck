@@ -18,6 +18,7 @@ import edu.isnap.ctd.graph.Node.Action;
 import edu.isnap.ctd.util.Alignment;
 import edu.isnap.ctd.util.Cast;
 import edu.isnap.ctd.util.NodeAlignment;
+import edu.isnap.ctd.util.NodeAlignment.DistanceMeasure;
 import edu.isnap.ctd.util.NodeAlignment.ProgressDistanceMeasure;
 import edu.isnap.ctd.util.map.BiMap;
 import edu.isnap.ctd.util.map.CountMap;
@@ -366,9 +367,13 @@ public class HintHighlighter {
 				node.hasAncestor(new Node.TypePredicate(config.script));
 	}
 
+	public static DistanceMeasure getDistanceMeasure(HintConfig config) {
+		return new ProgressDistanceMeasure(config.progressOrderFactor, 1, 0.25, config.script,
+				config.literal);
+	}
+
 	private BiMap<Node, Node> findSolutionMapping(Node node) {
-		ProgressDistanceMeasure dm = new ProgressDistanceMeasure(
-				config.progressOrderFactor, 1, 0.25, config.script, config.literal);
+		DistanceMeasure dm = getDistanceMeasure(config);
 		Node bestMatch = NodeAlignment.findBestMatch(node, solutions, dm);
 		if (bestMatch == null) throw new RuntimeException("No matches!");
 
@@ -628,7 +633,7 @@ public class HintHighlighter {
 		}
 	}
 
-	private static class Insertion extends EditHint {
+	public static class Insertion extends EditHint {
 		public final String type;
 		public final int index;
 		public final boolean missingParent;
