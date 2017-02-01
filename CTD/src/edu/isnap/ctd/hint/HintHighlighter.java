@@ -378,7 +378,7 @@ public class HintHighlighter {
 		if (bestMatch == null) throw new RuntimeException("No matches!");
 
 		NodeAlignment alignment = new NodeAlignment(node, bestMatch);
-		alignment.calculateCost(dm, true);
+		alignment.calculateCost(dm);
 
 		final IdentityHashMap<Node, String> labels = new IdentityHashMap<>();
 		final BiMap<Node, Node> mapping = alignment.mapping;

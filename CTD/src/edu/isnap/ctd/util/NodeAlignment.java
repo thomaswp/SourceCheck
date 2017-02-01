@@ -25,7 +25,11 @@ public class NodeAlignment {
 		this.to = to;
 	}
 
-	public int calculateCost(DistanceMeasure distanceMeasure, boolean debug) {
+	public double calculateCost(DistanceMeasure distanceMeasure) {
+		return calculateCost(distanceMeasure, false);
+	}
+
+	private int calculateCost(DistanceMeasure distanceMeasure, boolean debug) {
 		ListMap<String, Node> fromMap = getChildMap(from);
 		ListMap<String, Node> toMap = getChildMap(to);
 
@@ -191,7 +195,7 @@ public class NodeAlignment {
 		Node best = null;
 		int smallest = Integer.MAX_VALUE;
 		List<Node> bestMatches = findBestMatches(from, matches, distanceMeasure);
-		System.out.println("Size: " + bestMatches.size());
+//		System.out.println("Size: " + bestMatches.size());
 		for (Node node : bestMatches) {
 			int size = node.size();
 			if (size < smallest) {
