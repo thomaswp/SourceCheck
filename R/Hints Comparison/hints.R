@@ -120,7 +120,7 @@ testProjs2016 <- function() {
   ggplot(hws, aes(x=hint3, y=grade)) + geom_violin() + geom_boxplot(width=0.15, fill="#eeeeee") + stat_summary(fun.y="mean", geom="point", color="red") + facet_grid(. ~ assignment)
   # USED IN THE PAPER
   ggplot(hws, aes(x=follow1, y=grade)) + 
-    geom_violin() + geom_boxplot(width=0.15, fill="#eeeeee") + 
+    geom_violin() + geom_boxplot(width=0.15, fill="#eeeeee", fatten=3) + 
     stat_summary(fun.y="mean", geom="point", color="red") + 
     facet_grid(. ~ prettyAssignment) +
     theme_bw() +
