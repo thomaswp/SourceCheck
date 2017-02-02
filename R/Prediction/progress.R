@@ -7,7 +7,7 @@ library(plyr)
 plotProgres <- function() {
   progress <- read.csv("../../data/csc200/fall2016/analysis/squiralHW/progress.csv")
   progress$label <- progress$grade >= 0.8
-  progress$label <- ordered(ifelse(progress$grade >= 0.8, ifelse(progress$grade==1, "perfect", "good"), "bad"), c("bad", "good", "perfect"))
+  # progress$label <- ordered(ifelse(progress$grade >= 0.8, ifelse(progress$grade==1, "perfect", "good"), "bad"), c("bad", "good", "perfect"))
   progress$minute <- floor(progress$time / 60)
   
   ggplot(progress, aes(x=time, y=progress, color=label, group=attempt)) + geom_line()
@@ -38,6 +38,12 @@ buildStudents <- function() {
     students <- rbind(students, row)
   }
   students[-1,]
+}
+
+snapshots <- function() {
+  m <- 10
+  progress$diff <- abs(m - progress$minute)
+  ddply(progress, c("attempt"), summarize, minIndex=tail(which(diff == min(diff)), 1))  
 }
 
 library(rpart)
