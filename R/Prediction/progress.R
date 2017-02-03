@@ -43,7 +43,7 @@ buildStudents <- function() {
 snapshots <- function() {
   m <- 10
   progress$diff <- abs(m - progress$minute)
-  ddply(progress, c("attempt"), summarize, minIndex=tail(which(diff == min(diff)), 1))  
+  snapshots <- ddply(progress, c("attempt", "label"), summarize, minIndex=tail(which(diff == min(diff)), 1), minute=minute[minIndex], rowID=rowID[minIndex])  
 }
 
 library(rpart)
