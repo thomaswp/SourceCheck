@@ -15,7 +15,8 @@ import edu.isnap.hint.util.Spreadsheet;
 
 public class ProgressAttributes implements AttributeGenerator {
 
-	private final HashMap<String, Node> hintMap = new HashMap<>();
+	private final HashMap<String, Node> matches = new HashMap<>();
+	private final HashMap<String, Double> grades = new HashMap<>();
 	private DistanceMeasure distanceMeasure;
 
 	@Override
@@ -26,36 +27,49 @@ public class ProgressAttributes implements AttributeGenerator {
 	@Override
 	public void init(Map<AssignmentAttempt, Node> attemptMap, HintConfig config) {
 
+		List<Node> goodSubmitted = new LinkedList<>();
 		List<Node> allSubmitted = new LinkedList<>();
+		Map<Node, Double> submittedGrades = new HashMap<>();
 		for (AssignmentAttempt attempt : attemptMap.keySet()) {
-			if (attempt.grade.average() == 1) {
-				allSubmitted.add(SnapGradePrediction.getSubmittedNode(attempt));
+			Node submitted = SnapGradePrediction.getSubmittedNode(attempt);
+			double grade = attempt.grade.average();
+			if (grade == 1) {
+				goodSubmitted.add(submitted);
 			}
+			allSubmitted.add(submitted);
+			submittedGrades.put(submitted, grade);
 		}
 
 		distanceMeasure = HintHighlighter.getDistanceMeasure(config);
 
-		int i = 0;
+		int i = 0, j = 0;
 		for (AssignmentAttempt attempt : attemptMap.keySet()) {
-			List<Node> otherSubmitted = new LinkedList<>(allSubmitted);
+			List<Node> otherGoodSubmitted = new LinkedList<>(goodSubmitted);
 			if (attempt.grade.average() == 1) {
-				otherSubmitted.remove(i++);
+				otherGoodSubmitted.remove(i++);
 			}
+			List<Node> otherSubmitted = new LinkedList<>(allSubmitted);
+			otherSubmitted.remove(j++);
 
 			Node currentCode = attemptMap.get(attempt);
-			Node match = NodeAlignment.findBestMatch(
+			Node goodMatch = NodeAlignment.findBestMatch(
+					currentCode, otherGoodSubmitted, distanceMeasure);
+			matches.put(attempt.id, goodMatch);
+
+			Node closestMatch = NodeAlignment.findBestMatch(
 					currentCode, otherSubmitted, distanceMeasure);
-			hintMap.put(attempt.id, match);
+			grades.put(attempt.id, submittedGrades.get(closestMatch));
 		}
 	}
 
 	@Override
 	public void addAttributes(Spreadsheet spreadsheet, AssignmentAttempt attempt, Node node) {
-		Node match = hintMap.get(attempt.id);
+		Node match = matches.get(attempt.id);
 		double progress = -new NodeAlignment(node, match).calculateCost(
 				distanceMeasure);
 		double maxProgress = -new NodeAlignment(node, node).calculateCost(
 				distanceMeasure);
+		spreadsheet.put("closestGrade", grades.get(attempt.id));
 		spreadsheet.put("progress", progress);
 		spreadsheet.put("pProgress", progress / maxProgress);
 	}
