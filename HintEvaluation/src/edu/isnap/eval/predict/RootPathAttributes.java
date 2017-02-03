@@ -1,13 +1,11 @@
 package edu.isnap.eval.predict;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
-import difflib.StringUtills;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
 import edu.isnap.ctd.graph.vector.VectorState;
@@ -15,20 +13,15 @@ import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.dataset.AssignmentAttempt;
-import edu.isnap.datasets.Fall2016;
 import edu.isnap.hint.util.Spreadsheet;
 
-public class RootPathPrediction extends SnapGradePrediction {
-
-	public static void main(String[] args) {
-		new RootPathPrediction().predict(Fall2016.Squiral);
-	}
+public class RootPathAttributes implements AttributeGenerator {
 
 	private final ListMap<String, String> components = new ListMap<>();
-	private final List<String> keys = new ArrayList<>(components.keySet());
+	private final List<String> keys = new ArrayList<>();
 
 	@Override
-	protected String getName() {
+	public String getName() {
 		return "rootpath";
 	}
 
@@ -51,9 +44,9 @@ public class RootPathPrediction extends SnapGradePrediction {
 
 				private String getKey(Node root, VectorState state) {
 					String key = getKey(root);
-					if (state.items.length > 0) {
-						key += ":" + StringUtills.join(Arrays.asList(state.items), "+");
-					}
+//					if (state.items.length > 0) {
+//						key += ":" + StringUtills.join(Arrays.asList(state.items), "+");
+//					}
 					return key;
 				}
 
@@ -68,6 +61,7 @@ public class RootPathPrediction extends SnapGradePrediction {
 			});
 		}
 
+		keys.addAll(components.keySet());
 		for (int i = 0; i < keys.size(); i++) {
 			if (components.get(keys.get(i)).size() <= 2) {
 				keys.remove(i--);
@@ -83,9 +77,9 @@ public class RootPathPrediction extends SnapGradePrediction {
 	}
 
 	@Override
-	protected void addAttributes(Spreadsheet spreadsheet, AssignmentAttempt attempt) {
+	public void addAttributes(Spreadsheet spreadsheet, AssignmentAttempt attempt, Node node) {
 		for (String key : keys) {
-			spreadsheet.put(key, components.get(key).contains(attempt.id));
+			spreadsheet.put(key, Collections.frequency(components.get(key), attempt.id));
 		}
 	}
 }

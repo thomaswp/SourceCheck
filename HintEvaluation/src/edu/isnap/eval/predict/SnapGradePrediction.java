@@ -3,36 +3,60 @@ package edu.isnap.eval.predict;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
+import edu.isnap.dataset.AttemptAction;
+import edu.isnap.datasets.Fall2015;
+import edu.isnap.datasets.Fall2016;
 import edu.isnap.hint.Configurable;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
 
-public abstract class SnapGradePrediction {
+public class SnapGradePrediction {
 
-	protected abstract void init(Map<AssignmentAttempt, Node> attemptMap, HintConfig config);
-	protected abstract void addAttributes(Spreadsheet spreadsheet, AssignmentAttempt attempt);
-	protected abstract String getName();
+	public static void main(String[] args) {
+		new SnapGradePrediction(Fall2016.GuessingGame2, Fall2015.GuessingGame2)
+			.predict(10, new RootPathAttributes(), new ProgressAttributes());
+	}
+
+	private final Assignment[] assignments;
+
+	public SnapGradePrediction(Assignment... assignments) {
+		this.assignments = assignments;
+	}
 
 	public static Node getSubmittedNode(AssignmentAttempt attempt) {
 		return SimpleNodeBuilder.toTree(attempt.submittedSnapshot, true);
 	}
 
-	public void predict(Assignment... assignments) {
+	public void predict(AttributeGenerator... generators) {
+		predict(-1, generators);
+	}
+
+	public void predict(int minute, AttributeGenerator... generators) {
+		int second = minute * 60;
 
 		Map<AssignmentAttempt, Node> attempts = new LinkedHashMap<>();
 		for (Assignment assignment : assignments) {
 			for (AssignmentAttempt attempt : assignment.load(Mode.Use, true, true,
 					new SnapParser.SubmittedOnly()).values()) {
 				// Here we can select another node, e.g. at a midpoint
-				attempts.put(attempt, getSubmittedNode(attempt));
+				if (minute < 0) {
+					attempts.put(attempt, getSubmittedNode(attempt));
+				} else {
+					for (AttemptAction action : attempt) {
+						if (action.currentActiveTime >= second) {
+							attempts.put(attempt, SimpleNodeBuilder.toTree(
+									action.lastSnapshot, true));
+							break;
+						}
+					}
+				}
 			}
 
 		}
@@ -42,23 +66,31 @@ public abstract class SnapGradePrediction {
 				config = ((Configurable) assignment).getConfig();
 			}
 		}
-		init(attempts, config);
+
+		for (AttributeGenerator generator : generators) {
+			generator.init(attempts, config);
+		}
 
 		Spreadsheet spreadsheet = new Spreadsheet();
 		for (AssignmentAttempt attempt : attempts.keySet()) {
 			spreadsheet.newRow();
+			for (AttributeGenerator generator : generators) {
+				generator.addAttributes(spreadsheet, attempt, attempts.get(attempt));
+			}
 //			spreadsheet.put("id", attempt.id);
-			spreadsheet.put("grade", attempt.grade.average());
+//			spreadsheet.put("grade", attempt.grade.average());
 			spreadsheet.put("gradePass", attempt.grade.average() >= 0.8);
 //			spreadsheet.put("time", attempt.totalActiveTime);
-			for (Entry<String, Integer> entry : attempt.grade.tests.entrySet()) {
-				spreadsheet.put("Obj_" + entry.getKey().replace(" ", "_"), entry.getValue() == 2);
-			}
-			addAttributes(spreadsheet, attempt);
+//			for (Entry<String, Integer> entry : attempt.grade.tests.entrySet()) {
+//				spreadsheet.put("Obj_" + entry.getKey().replace(" ", "_"), entry.getValue() == 2);
+//			}
 		}
 
 		try {
-			spreadsheet.write(assignments[0].analysisDir() + "/pred-" + getName() + ".csv");
+			String m = minute < 0 ? "" : ("-" + minute);
+			String g = "";
+			for (AttributeGenerator gen : generators) g += "-" + gen.getName();
+			spreadsheet.write(assignments[0].analysisDir() + "/pred" + g + m + ".csv");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
