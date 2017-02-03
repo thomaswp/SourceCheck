@@ -1,4 +1,4 @@
-package edu.isnap.predict;
+package edu.isnap.eval.predict;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,9 +15,14 @@ import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.dataset.AssignmentAttempt;
+import edu.isnap.datasets.Fall2016;
 import edu.isnap.hint.util.Spreadsheet;
 
 public class RootPathPrediction extends SnapGradePrediction {
+
+	public static void main(String[] args) {
+		new RootPathPrediction().predict(Fall2016.Squiral);
+	}
 
 	private final ListMap<String, String> components = new ListMap<>();
 	private final List<String> keys = new ArrayList<>(components.keySet());

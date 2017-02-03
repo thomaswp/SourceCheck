@@ -1,4 +1,4 @@
-package edu.isnap.predict;
+package edu.isnap.eval.predict;
 
 import java.util.HashMap;
 import java.util.LinkedList;

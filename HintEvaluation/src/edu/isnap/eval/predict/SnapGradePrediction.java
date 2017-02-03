@@ -1,4 +1,4 @@
-package edu.isnap.predict;
+package edu.isnap.eval.predict;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
