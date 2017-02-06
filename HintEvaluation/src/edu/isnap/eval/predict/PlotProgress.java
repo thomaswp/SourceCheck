@@ -13,7 +13,7 @@ import edu.isnap.ctd.util.NodeAlignment.DistanceMeasure;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
-import edu.isnap.datasets.Fall2015;
+import edu.isnap.datasets.Fall2016;
 import edu.isnap.hint.ConfigurableAssignment;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.hint.util.Spreadsheet;
@@ -22,7 +22,7 @@ import edu.isnap.parser.Store.Mode;
 
 public class PlotProgress {
 	public static void main(String[] args) {
-		Assignment assignment = Fall2015.GuessingGame2;
+		Assignment assignment = Fall2016.Squiral;
 		Spreadsheet spreadsheet = new Spreadsheet();
 
 		HintConfig config = ConfigurableAssignment.getConfig(assignment);
@@ -65,6 +65,7 @@ public class PlotProgress {
 					spreadsheet.newRow();
 					spreadsheet.put("attempt", attempt.id);
 					spreadsheet.put("time", action.currentActiveTime);
+					spreadsheet.put("rowID", action.id);
 					spreadsheet.put("pTime", action.currentActiveTime / attempt.totalActiveTime);
 					spreadsheet.put("grade", grade);
 					spreadsheet.put("gradePC", partialGrade);
