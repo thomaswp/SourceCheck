@@ -125,7 +125,7 @@ testProjs2016 <- function() {
     facet_grid(. ~ prettyAssignment) +
     theme_bw() +
     scale_y_continuous(labels=percent, name="Grade (%)") +
-    scale_x_discrete(labels=c("False (F0)", "True (F1)"), name="One Hint Followed")
+    scale_x_discrete(labels=c("False (F0)", "True (F1)"), name="At Least One Hint Followed")
   
   ggplot(hws[hws$hint1,], aes(x=follow1, y=grade)) + geom_violin() + geom_boxplot(width=0.15, fill="#eeeeee") + stat_summary(fun.y="mean", geom="point", color="red") + facet_grid(assignment ~ .)
   
