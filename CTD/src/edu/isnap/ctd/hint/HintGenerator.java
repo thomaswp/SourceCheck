@@ -128,12 +128,14 @@ public class HintGenerator {
 					if (child.hasType(config.script)) sizes.add(child.children.size());
 				}
 				Collections.sort(sizes);
+
 				int cutoff = Integer.MAX_VALUE;
 				// If all children are extra children, the cutoff size is infinite (above)
 				// Otherwise, we get the nth smallest child and use that as the cutoff
 				if (extraChildren < sizes.size()) {
-					sizes.get(extraChildren);
+					cutoff = sizes.get(extraChildren);
 				}
+
 				// TODO: find a more comprehensive way of deciding on the primary script(s)
 				for (Node child : hint.root.children) {
 					if (child.hasType(config.script) && child.children.size() < cutoff) {
