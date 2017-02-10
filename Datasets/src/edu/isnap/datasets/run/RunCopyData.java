@@ -14,11 +14,18 @@ public class RunCopyData {
 	}
 
 	protected static void copyGraphs(String fromDir) throws IOException {
+		copyGraphs(fromDir, "");
+	}
+
+	protected static void copyGraphs(String fromDir, String datasetSuffix) throws IOException {
+		if (datasetSuffix.length() > 0) datasetSuffix = "-" + datasetSuffix;
 		String toDir = "../HintServer/WebContent/WEB-INF/data";
+		String ext = ".cached";
 		for (String file : new File(fromDir).list()) {
-			Path fromPath = new File(fromDir, file).toPath();
-			Path toPath = new File(toDir, file).toPath();
-			if (file.endsWith(".cached")) {
+			if (file.endsWith(ext)) {
+				Path fromPath = new File(fromDir, file).toPath();
+				String toName = file.replace(ext, datasetSuffix + ext);
+				Path toPath = new File(toDir, toName).toPath();
 				Files.copy(fromPath, toPath, StandardCopyOption.REPLACE_EXISTING);
 			}
 		}

@@ -45,7 +45,7 @@ public class HintServlet extends HttpServlet {
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
-		loadHintMap(DEFAULT_ASSIGNMENT, DEFAULT_MIN_GRADE);
+		loadHintMap(DEFAULT_ASSIGNMENT, null, DEFAULT_MIN_GRADE);
 		resp.setContentType("text");
 		resp.getOutputStream().println("Loaded cache for " + DEFAULT_ASSIGNMENT);
 	}
@@ -83,20 +83,21 @@ public class HintServlet extends HttpServlet {
 		if (assignment == null){
 			assignment = DEFAULT_ASSIGNMENT;
 		}
+		String dataset = req.getParameter("dataset");
 		String hintTypes = req.getParameter("hintTypes");
 
 		if (hint != null) {
 			out.println(UnitTest.saveUnitTest(assignment, xml, hint));
 		} else {
-			String hintJSON = getHintJSON(snapshot, assignment, minGrade, hintTypes);
+			String hintJSON = getHintJSON(snapshot, assignment, dataset, minGrade, hintTypes);
 			resp.setContentType("text/json");
 			out.println(hintJSON);
 		}
 	}
 
-	private String getHintJSON(Snapshot snapshot, String assignment, int minGrade,
+	private String getHintJSON(Snapshot snapshot, String assignment, String dataset, int minGrade,
 			String hintTypes) {
-		HintMap hintMap = loadHintMap(assignment, minGrade);
+		HintMap hintMap = loadHintMap(assignment, dataset, minGrade);
 		if (hintMap == null) {
 			return "[]";
 		}
@@ -158,21 +159,23 @@ public class HintServlet extends HttpServlet {
 		return error;
 	}
 
-	private HintMap loadHintMap(String assignment, int minGrade) {
+	private HintMap loadHintMap(String assignment, String dataset, int minGrade) {
 		if (assignment == null || "test".equals(assignment)) {
 			assignment = DEFAULT_ASSIGNMENT;
 		}
-		HintMap hintMap = hintMaps.get(assignment);
+		String key = assignment + dataset + minGrade;
+		HintMap hintMap = hintMaps.get(key);
 		if (hintMap == null) {
 			Kryo kryo = SnapHintBuilder.getKryo();
-			String path = String.format("/WEB-INF/data/%s-g%03d.cached", assignment, minGrade);
+			String path = String.format("/WEB-INF/data/%s-g%03d%s.cached", assignment, minGrade,
+					dataset == null ? "" : ("-" + dataset));
 			InputStream stream = getServletContext().getResourceAsStream(path);
 			if (stream == null) return null;
 			Input input = new Input(stream);
 			HintMapBuilder builder = kryo.readObject(input, HintMapBuilder.class);
 			input.close();
 
-			hintMaps.put(assignment, hintMap = builder.hintMap);
+			hintMaps.put(key, hintMap = builder.hintMap);
 		}
 		return hintMap;
 	}
