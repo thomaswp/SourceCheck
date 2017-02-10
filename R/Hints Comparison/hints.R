@@ -125,7 +125,7 @@ testProjs2016 <- function() {
     facet_grid(. ~ prettyAssignment) +
     theme_bw() +
     scale_y_continuous(labels=percent, name="Grade (%)") +
-    scale_x_discrete(labels=c("False (F0)", "True (F1)"), name="One Hint Followed")
+    scale_x_discrete(labels=c("False (F0)", "True (F1)"), name="At Least One Hint Followed")
   
   ggplot(hws[hws$hint1,], aes(x=follow1, y=grade)) + geom_violin() + geom_boxplot(width=0.15, fill="#eeeeee") + stat_summary(fun.y="mean", geom="point", color="red") + facet_grid(assignment ~ .)
   
@@ -223,7 +223,7 @@ buildDedup <- function() {
   #dedup <- ddply(hints, c("assignment", "attemptID", "hash"), summarize, 
   #dedup <- ddply(hints, c("assignment", "attemptID", "hash", "editPerc"), summarize, 
   dedup <- ddply(hints, c("assignment", "attemptID", "hash", "dedupID"), summarize, 
-                 type=first(type), startEdit=first(editPerc), endEdit=tail(editPerc, n=1), 
+                 type=first(type), startEdit=first(editPerc), endEdit=tail(editPerc, n=1), startTime=first(time), endTime=tail(time, 1),
                  count=length(followed), anyF=any(followed), indexF=tail(c(NA, which(followed)), n=1), followEdit=editPerc[indexF], delete=all(delete),
                  followRowID=ifelse(!is.na(indexF), rowID[indexF], NA), rowID=rowID[1], pauseF=pause[ifNA(indexF, 1)], durationF=duration[ifNA(indexF, 1)])
   
@@ -297,6 +297,7 @@ loadRatedHints <- function() {
 testAllHints <- function() {
   ratings <- rbind(loadHintsFile("data/firstHints.csv"), loadHintsFile("data/secondHints.csv"))
   ratings <- ratings[ratings$id %in% chances$firstHint | ratings$id %in% chances$secondHint,]
+  ddply(ratings, c(), summarize, n=length(timing), mT = mean(as.numeric(timing)), mRel=mean(relevant), sdRel=sd(relevant), mCorrect=mean(correct), sdCorrect=sd(correct), mInterp=mean(interp), sdInter=sd(interp), mScore=mean(score), sdScore=sd(score))
   cor.test(ratings$relevant, ratings$correct, method="spearman")
   cor.test(ratings$correct, ratings$interp, method="spearman")
   cor.test(ratings$relevant, ratings$interp, method="spearman")
