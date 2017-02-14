@@ -1,7 +1,6 @@
 package edu.isnap.eval.agreement;
 
-import java.io.File;
-import java.io.FileNotFoundException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -16,8 +15,12 @@ import edu.isnap.ctd.hint.HintHighlighter.EditHint;
 import edu.isnap.ctd.hint.HintHighlighter.Insertion;
 import edu.isnap.ctd.util.map.BiMap;
 import edu.isnap.ctd.util.map.MapFactory;
+import edu.isnap.dataset.AssignmentAttempt;
+import edu.isnap.dataset.AttemptAction;
+import edu.isnap.datasets.Fall2016;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.hint.util.SimpleNodeBuilder.IDer;
+import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.Code;
 import edu.isnap.parser.elements.Script;
 import edu.isnap.parser.elements.Snapshot;
@@ -27,26 +30,61 @@ import edu.isnap.util.Diff;
 public class Agreement {
 
 	public static void main(String[] args) {
-		try {
-			Snapshot a = Snapshot.parse(new File("A.xml"));
-			Snapshot b = Snapshot.parse(new File("B.xml"));
+//		try {
+//			Snapshot a = Snapshot.parse(new File("A.xml"));
+//			Snapshot b = Snapshot.parse(new File("B.xml"));
+//			testEditConsistency(a, b);
+//		} catch (FileNotFoundException e) {
+//			e.printStackTrace();
+//		}
 
-			Node from = SimpleNodeBuilder.toTree(a, true, ider);
-			Node to = SimpleNodeBuilder.toTree(b, true, ider);
-
-			List<EditHint> edits = findEdits(from, to);
-
-			EditHint.applyEdits(from, edits);
-
-			prune(to); prune(from);
-			System.out.println(Diff.diff(to.prettyPrint(), from.prettyPrint()));
-			System.out.println("Equal: " + to.equals(from));
-
-
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
+		Map<String, AssignmentAttempt> attempts = Fall2016.GuessingGame1.load(Mode.Use, true);
+		for (AssignmentAttempt attempt : attempts.values()) {
+			Snapshot last = null;
+			for (AttemptAction action : attempt) {
+				if (last != null) {
+					testEditConsistency(last, action.snapshot);
+				}
+				last = action.snapshot;
+			}
+			break;
 		}
 
+	}
+
+	private static boolean testEditConsistency(Snapshot a, Snapshot b) {
+		Node from = SimpleNodeBuilder.toTree(a, true, ider);
+		Node to = SimpleNodeBuilder.toTree(b, true, ider);
+		Node originalFrom = from.copy();
+
+		List<EditHint> edits = findEdits(from, to);
+
+		// Capture edit strings before applying edits
+		List<String> editStrings = new ArrayList<>();
+		for (EditHint edit : edits) editStrings.add(edit.toString());
+
+		try {
+			EditHint.applyEdits(from, edits);
+		} catch (Exception e) {
+			e.printStackTrace();
+			EditHint.applyEdits(originalFrom, edits);
+			return false;
+		}
+
+		prune(to); prune(from);
+
+		boolean equal = to.equals(from);
+		if (!equal) {
+//			System.out.println(originalFrom.prettyPrintWithIDs());
+//			System.out.println(to.prettyPrintWithIDs());
+
+			for (String editString : editStrings) {
+				System.out.println(editString);
+			}
+			System.out.println(Diff.diff(to.prettyPrint(), from.prettyPrint()));
+		}
+
+		return equal;
 	}
 
 	private final static IDer ider = new IDer() {
@@ -77,10 +115,9 @@ public class Agreement {
 	public static Node prune(Node node) {
 		for (int i = 0; i < node.children.size(); i++) {
 			Node child = node.children.get(i);
+			prune(child);
 			if (prunable.contains(child.type()) && child.children.isEmpty()) {
 				node.children.remove(i--);
-			} else {
-				prune(child);
 			}
 		}
 		return node;
@@ -91,7 +128,7 @@ public class Agreement {
 		Map<String, Node> fromIDMap = getIDMap(from);
 		Map<String, Node> toIDMap = getIDMap(to);
 
-		List<EditHint> renames = new LinkedList<>();
+		List<EditHint> renames = new ArrayList<>();
 		BiMap<Node, Node> mapping = new BiMap<>(MapFactory.IdentityHashMapFactory);
 		for (String id : fromIDMap.keySet()) {
 			Node fromNode = fromIDMap.get(id);
@@ -109,13 +146,6 @@ public class Agreement {
 		List<EditHint> hints = new HintHighlighter(new LinkedList<Node>(), new HintConfig())
 				.highlight(from, mapping);
 		hints.addAll(renames);
-
-		System.out.println(from.prettyPrintWithIDs());
-		System.out.println(to.prettyPrintWithIDs());
-
-		for (EditHint hint : hints) {
-			System.out.println(hint);
-		}
 
 		return hints;
 	}

@@ -1,5 +1,6 @@
 package edu.isnap.ctd.hint;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -48,7 +49,7 @@ public class HintHighlighter {
 	}
 
 	public List<EditHint> highlight(Node node, final BiMap<Node, Node> mapping) {
-		final List<EditHint> edits = new LinkedList<>();
+		final List<EditHint> edits = new ArrayList<>();
 		final IdentityHashMap<Node, Highlight> colors = new IdentityHashMap<>();
 
 		// First identify all unpaired nodes and mark them for deletion (though this can be
