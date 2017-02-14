@@ -195,7 +195,7 @@ public class CheckHintUsage {
 							break;
 						}
 					}
-					int nodeChange = hintOutcome.size() - parent.size();
+					int nodeChange = hintOutcome.treeSize() - parent.treeSize();
 
 					// Calculate original distance between student's code with the hint
 					int originalHintDistance = Alignment.alignCost(parent.getChildArray(), to);

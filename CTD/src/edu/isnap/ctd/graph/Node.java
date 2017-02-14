@@ -303,9 +303,9 @@ public class Node extends StringHashable {
 		return parent.children.get(child.index());
 	}
 
-	public int size() {
+	public int treeSize() {
 		int size = 1;
-		for (Node child : children) size += child.size();
+		for (Node child : children) size += child.treeSize();
 		return size;
 	}
 
@@ -370,7 +370,7 @@ public class Node extends StringHashable {
 	}
 
 	public String[] depthFirstIteration() {
-		String[] array = new String[size()];
+		String[] array = new String[treeSize()];
 		depthFirstIteration(array, 0);
 		return array;
 	}

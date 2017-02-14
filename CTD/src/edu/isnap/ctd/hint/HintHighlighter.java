@@ -121,7 +121,7 @@ public class HintHighlighter {
 					if (node.parent != null && node.parent == mapping.getTo(pair.parent) &&
 							isCodeElement(node.parent) &&
 							// Make sure the two code elements have the same number of children
-							node.parent.children.size() == pair.parent.size()) {
+							node.parent.children.size() == pair.parent.treeSize()) {
 						if (node.index() != pair.index()) {
 							colors.put(node, Highlight.Order);
 							edits.add(new Reorder(node, pair.index()));
@@ -443,7 +443,7 @@ public class HintHighlighter {
 					List<Integer> sizes = new LinkedList<>();
 					for (Node child : node.children) {
 						if (child.hasType(config.script)) {
-							sizes.add(child.size());
+							sizes.add(child.treeSize());
 						}
 					}
 					if (sizes.size() <= median) return;
@@ -452,7 +452,7 @@ public class HintHighlighter {
 						sizes.get(sizes.size() - median);
 					for (int i = 0; i < node.children.size(); i++) {
 						Node child = node.children.get(i);
-						if (child.hasType(config.script) && child.size() < minSize) {
+						if (child.hasType(config.script) && child.treeSize() < minSize) {
 //							System.out.println("Preprocess removed: " + node.children.get(i));
 							node.children.remove(i--);
 						}

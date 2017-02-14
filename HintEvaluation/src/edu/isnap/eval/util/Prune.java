@@ -25,9 +25,9 @@ public class Prune {
 					for (int i = 0; i < node.children.size(); i++) {
 						Node child = node.children.get(i);
 						if (child.hasType("sprite") || child.hasType("script")) {
-							int size = child.size();
+							int size = child.treeSize();
 							if (size > largestSize) {
-								largestSize = Math.max(largestSize, child.size());
+								largestSize = Math.max(largestSize, child.treeSize());
 								largestChild = child;
 							}
 						}

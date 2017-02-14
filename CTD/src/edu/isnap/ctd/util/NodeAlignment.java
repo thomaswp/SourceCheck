@@ -197,7 +197,7 @@ public class NodeAlignment {
 		List<Node> bestMatches = findBestMatches(from, matches, distanceMeasure);
 //		System.out.println("Size: " + bestMatches.size());
 		for (Node node : bestMatches) {
-			int size = node.size();
+			int size = node.treeSize();
 			if (size < smallest) {
 				best = node;
 				smallest = size;
