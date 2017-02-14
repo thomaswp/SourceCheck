@@ -1,7 +1,7 @@
 package edu.isnap.ctd.graph;
 
 import java.util.ArrayList;
-import java.util.IdentityHashMap;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -331,14 +331,7 @@ public class Node extends StringHashable {
 	}
 
 	public String prettyPrintWithIDs() {
-		final Map<Node, String> idMap = new IdentityHashMap<>();
-		recurse(new Action() {
-			@Override
-			public void run(Node node) {
-				idMap.put(node, node.id);
-			}
-		});
-		return prettyPrint(idMap);
+		return prettyPrint(new HashMap<Node, String>());
 	}
 
 	private String prettyPrint(String indent, Map<Node, String> prefixMap) {
@@ -350,8 +343,8 @@ public class Node extends StringHashable {
 			}
 		}
 		String out = type;
-		if (prefixMap != null && prefixMap.containsKey(this)) {
-			out = prefixMap.get(this) + ":" + out;
+		if (prefixMap != null) {
+			if (prefixMap.containsKey(this)) out = prefixMap.get(this) + ":" + out;
 			if (id != null && !id.equals(type)) {
 				out += "[" + id + "]";
 			}

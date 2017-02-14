@@ -11,11 +11,15 @@ import edu.isnap.parser.elements.util.IHasID;
 public class SimpleNodeBuilder {
 
 	public static Node toTree(Code code, final boolean canon) {
-		return toTree(code, canon, null);
+		return toTree(code, canon, null, DefaultIDer);
 	}
 
-	private static Node toTree(Code code, final boolean canon, Node parent) {
-		String id = code instanceof IHasID ? ((IHasID) code).getID() : null;
+	public static Node toTree(Code code, final boolean canon, IDer ider) {
+		return toTree(code, canon, null, ider);
+	}
+
+	private static Node toTree(Code code, final boolean canon, Node parent, final IDer ider) {
+		String id = ider.getID(code, parent);
 		final Node node = new Node(parent, code.name(canon), id);
 		node.tag = code;
 		code.addChildren(canon, new Accumulator() {
@@ -36,7 +40,7 @@ public class SimpleNodeBuilder {
 				if (code == null) {
 					add("null");
 				} else {
-					Node child = toTree(code, canon, node);
+					Node child = toTree(code, canon, node, ider);
 					node.children.add(child);
 				}
 			}
@@ -66,4 +70,15 @@ public class SimpleNodeBuilder {
 
 		return node;
 	}
+
+	public interface IDer {
+		String getID(Code code, Node parent);
+	}
+
+	private static IDer DefaultIDer = new IDer() {
+		@Override
+		public String getID(Code code, Node parent) {
+			return code instanceof IHasID ? ((IHasID) code).getID() : null;
+		}
+	};
 }

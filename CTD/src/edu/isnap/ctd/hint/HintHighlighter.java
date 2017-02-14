@@ -43,13 +43,12 @@ public class HintHighlighter {
 	}
 
 	public List<EditHint> highlight(Node node) {
+		BiMap<Node, Node> mapping = findSolutionMapping(node);
+		return highlight(node, mapping);
+	}
 
+	public List<EditHint> highlight(Node node, final BiMap<Node, Node> mapping) {
 		final List<EditHint> edits = new LinkedList<>();
-
-//		node = node.copy(false);
-
-		final BiMap<Node, Node> mapping = findSolutionMapping(node);
-
 		final IdentityHashMap<Node, Highlight> colors = new IdentityHashMap<>();
 
 		// First identify all unpaired nodes and mark them for deletion (though this can be
