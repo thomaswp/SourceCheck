@@ -20,6 +20,7 @@ import edu.isnap.dataset.AttemptAction;
 import edu.isnap.datasets.Fall2016;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.hint.util.SimpleNodeBuilder.IDer;
+import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.Code;
 import edu.isnap.parser.elements.Script;
@@ -38,13 +39,16 @@ public class Agreement {
 //			e.printStackTrace();
 //		}
 
-		Map<String, AssignmentAttempt> attempts = Fall2016.GuessingGame1.load(Mode.Use, true);
+		Map<String, AssignmentAttempt> attempts = Fall2016.GuessingGame1.load(Mode.Use, true, true,
+				new SnapParser.SubmittedOnly());
 		for (AssignmentAttempt attempt : attempts.values()) {
 			Snapshot last = null;
 			for (AttemptAction action : attempt) {
-				if (last != null) {
-					testEditConsistency(last, action.snapshot);
-				}
+//				if (last != null && action.id == 217580) {
+					if (!testEditConsistency(last, action.snapshot)) {
+						System.out.println(action.id);
+					}
+//				}
 				last = action.snapshot;
 			}
 			break;
@@ -67,6 +71,7 @@ public class Agreement {
 			EditHint.applyEdits(from, edits);
 		} catch (Exception e) {
 			e.printStackTrace();
+			edits = findEdits(originalFrom, to);
 			EditHint.applyEdits(originalFrom, edits);
 			return false;
 		}
@@ -75,9 +80,9 @@ public class Agreement {
 
 		boolean equal = to.equals(from);
 		if (!equal) {
-//			System.out.println(originalFrom.prettyPrintWithIDs());
-//			System.out.println(to.prettyPrintWithIDs());
 
+			System.out.println(originalFrom.prettyPrintWithIDs());
+			System.out.println(to.prettyPrintWithIDs());
 			for (String editString : editStrings) {
 				System.out.println(editString);
 			}
@@ -143,6 +148,7 @@ public class Agreement {
 			}
 		}
 
+		// TODO: need to make sure we're not omitting some edits (e.g. deleting a harmless block)
 		List<EditHint> hints = new HintHighlighter(new LinkedList<Node>(), new HintConfig())
 				.highlight(from, mapping);
 		hints.addAll(renames);

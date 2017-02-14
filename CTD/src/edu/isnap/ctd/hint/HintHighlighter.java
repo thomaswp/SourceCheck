@@ -82,7 +82,9 @@ public class HintHighlighter {
 						// For those without a matching parent, we need to insert them where
 						// they belong
 						Node moveParent = mapping.getTo(pair.parent);
-						if (moveParent != null) {
+						if (moveParent == null) {
+							// TODO: Add an insert with a missing parent
+						} else {
 							int insertIndex = 0;
 							// Look back through your pair's earlier siblings...
 							for (int i = pair.index() - 1; i >= 0; i--) {
@@ -199,8 +201,6 @@ public class HintHighlighter {
 			}
 		});
 
-		// Now find needed insertions
-		final List<Insertion> insertions = new LinkedList<>();
 		// This time, iterate over the nodes in the pair
 		Node nodeMatch = mapping.getFrom(node);
 		nodeMatch.recurse(new Action() {
@@ -221,7 +221,7 @@ public class HintHighlighter {
 						} else {
 							// Otherwise we add an insertion
 							Insertion insertion = new Insertion(node, child, insertIndex);
-							insertions.add(insertion);
+							edits.add(insertion);
 							// If the node is being inserted in a code element then it replaces
 							// whatever already exists at this index in the parent
 							if (isCodeElement(node) && insertIndex < node.children.size()) {
@@ -251,11 +251,18 @@ public class HintHighlighter {
 					Node parentClone = pair.parent.copy();
 					parentClone.children.remove(pair.index());
 					Insertion insertion = new Insertion(parentClone, pair, pair.index(), true);
-					insertions.add(insertion);
+					edits.add(insertion);
 				}
 			}
 		});
-		edits.addAll(insertions);
+
+
+		// Filter out insertions
+		final List<Insertion> insertions = new LinkedList<>();
+		for (EditHint hint : edits) {
+			Insertion insert = Cast.cast(hint, Insertion.class);
+			if (insert != null) insertions.add(insert);
+		}
 
 		handleInsertionsAndMoves(colors, insertions, edits, mapping);
 
@@ -754,6 +761,9 @@ public class HintHighlighter {
 
 		@Override
 		public void apply() {
+			// If the parent is missing, we keep the candidate and can't insert anything yet
+			if (missingParent) return;
+
 			Node toInsert;
 			if (candidate != null) {
 				candidate.parent.children.remove(candidate.index());
