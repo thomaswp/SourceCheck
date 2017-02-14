@@ -555,6 +555,8 @@ public class HintHighlighter {
 		protected abstract void editChildren(List<String> children);
 		protected abstract String action();
 		protected abstract double priority();
+		protected abstract int editIndex();
+		public abstract void apply();
 
 		public final Node parent;
 
@@ -630,6 +632,21 @@ public class HintHighlighter {
 		public int compareTo(EditHint o) {
 			return Double.compare(o.priority(), priority());
 		}
+
+		public static void applyEdits(Node node, List<EditHint> hints) {
+			Collections.sort(hints, new Comparator<EditHint>() {
+				@Override
+				public int compare(EditHint o1, EditHint o2) {
+					// Apply edits to longer root paths first
+					int rpc = Integer.compare(
+							o1.parent.rootPathLength(), o2.parent.rootPathLength());
+					if (rpc != 0) return -rpc;
+
+					return -Integer.compare(o1.editIndex(), o2.editIndex());
+				}
+			});
+			for (EditHint hint : hints) hint.apply();
+		}
 	}
 
 	public static class Insertion extends EditHint {
@@ -648,6 +665,11 @@ public class HintHighlighter {
 		@Override
 		public String action() {
 			return "insert";
+		}
+
+		@Override
+		protected int editIndex() {
+			return index;
 		}
 
 		public Insertion(Node parent, Node pair, int index) {
@@ -728,6 +750,21 @@ public class HintHighlighter {
 		protected double priority() {
 			return 5 + (candidate == null ? 0  : 1) + (replacement == null ? 0 : 1);
 		}
+
+		@Override
+		public void apply() {
+			Node toInsert;
+			if (candidate != null) {
+				candidate.parent.children.remove(candidate.index());
+				toInsert = candidate.copyWithNewParent(parent);
+			} else {
+				toInsert = new Node(parent, type);
+			}
+			if (replacement != null) {
+				parent.children.remove(index);
+			}
+			parent.children.add(index, toInsert);
+		}
 	}
 
 	public static class Deletion extends EditHint {
@@ -736,6 +773,11 @@ public class HintHighlighter {
 		@Override
 		protected String action() {
 			return "delete";
+		}
+
+		@Override
+		protected int editIndex() {
+			return node.index();
 		}
 
 		public Deletion(Node node) {
@@ -759,6 +801,11 @@ public class HintHighlighter {
 		protected double priority() {
 			return 1;
 		}
+
+		@Override
+		public void apply() {
+			node.parent.children.remove(node.index());
+		}
 	}
 
 	public static class Reorder extends EditHint {
@@ -768,6 +815,11 @@ public class HintHighlighter {
 		@Override
 		protected String action() {
 			return "reorder";
+		}
+
+		@Override
+		protected int editIndex() {
+			return index;
 		}
 
 		public Reorder(Node node, int index) {
@@ -800,6 +852,15 @@ public class HintHighlighter {
 		@Override
 		protected double priority() {
 			return 3;
+		}
+
+		@Override
+		public void apply() {
+			int rIndex = node.index();
+			int aIndex = index;
+			if (rIndex < aIndex) aIndex--;
+			node.parent.children.remove(rIndex);
+			node.parent.children.add(aIndex, node);
 		}
 	}
 

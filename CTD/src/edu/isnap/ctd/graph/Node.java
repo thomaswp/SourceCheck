@@ -277,23 +277,23 @@ public class Node extends StringHashable {
 	}
 
 	public Node copy() {
-		Node rootCopy = root().childrenCopy(null);
+		Node rootCopy = root().copyWithNewParent(null);
 		return findParallelNode(rootCopy, this);
+	}
+
+	public Node copyWithNewParent(Node parent) {
+		Node copy = new Node(parent, type, id);
+		copy.tag = tag;
+		for (Node child : children) {
+			copy.children.add(child.copyWithNewParent(copy));
+		}
+		return copy;
 	}
 
 	public Node addChild(String type) {
 		Node child = new Node(this, type);
 		children.add(child);
 		return child;
-	}
-
-	private Node childrenCopy(Node parent) {
-		Node copy = new Node(parent, type, id);
-		copy.tag = tag;
-		for (Node child : children) {
-			copy.children.add(child.childrenCopy(copy));
-		}
-		return copy;
 	}
 
 	private static Node findParallelNode(Node root, Node child) {
@@ -415,5 +415,10 @@ public class Node extends StringHashable {
 		obj.put("parent", parent);
 
 		return obj;
+	}
+
+	public int rootPathLength() {
+		if (parent == null) return 1;
+		return 1 + parent.rootPathLength();
 	}
 }
