@@ -45,13 +45,13 @@ public class Agreement {
 		for (AssignmentAttempt attempt : attempts.values()) {
 			Snapshot last = null;
 			for (AttemptAction action : attempt) {
-				if (last != null) {// && action.id == 196640) {
+				if (last != null) { // && action.id == 220575) {
 					System.out.println(action.id);
 					testEditConsistency(last, action.snapshot);
 				}
 				last = action.snapshot;
 			}
-			if (i++ > 4) break;
+			if (i++ >= 0) break;
 		}
 
 	}
@@ -79,8 +79,8 @@ public class Agreement {
 		prune(to); prune(from);
 		boolean equal = to.equals(from);
 		if (!equal) {
-//			System.out.println(originalFrom.prettyPrintWithIDs());
-//			System.out.println(originalTo.prettyPrintWithIDs());
+			System.out.println(originalFrom.prettyPrintWithIDs());
+			System.out.println(originalTo.prettyPrintWithIDs());
 			for (String editString : editStrings) {
 				System.out.println(editString);
 			}
@@ -142,6 +142,20 @@ public class Agreement {
 		for (String id : fromIDMap.keySet()) {
 			Node fromNode = fromIDMap.get(id);
 			Node toNode = toIDMap.get(id);
+
+			// Check if we've already paired this node
+			Node oldToNode = mapping.getFrom(fromNode);
+			if (oldToNode != null) {
+				// Check if it was a pairing based on the original ID
+				if (fromNode.id.equals(oldToNode.id)) {
+					// If so, we override with the pairing based on contents
+					mapping.removeFrom(fromNode);
+				} else {
+					// Otherwise we ignore this pairing
+					continue;
+				}
+			}
+
 			mapping.put(fromNode, toNode);
 
 			// You can relabel a block and it keeps its ID, so we check for that here
@@ -160,6 +174,12 @@ public class Agreement {
 
 			if (fromNode == null && toNode.hasType("script") &&
 					toNode.parentHasType("sprite", "stage")) {
+
+//				if (mapping.getTo(toNode) != null) {
+////					System.out.println("!!!!!");
+//					continue;
+//				}
+
 				// TODO: warn that we've added a script
 				Node parentPair = fromIDMap.get(toNode.parent.id);
 				if (parentPair != null) {
@@ -189,6 +209,10 @@ public class Agreement {
 			@Override
 			public void run(Node node) {
 				idMap.put(node.id, node);
+				// Include both the overridden, index-based id and the default contents-based id
+//				if (node.tag instanceof Script) {
+//					idMap.put(((Script) node.tag).getID(), node);
+//				}
 			}
 		});
 		return idMap;

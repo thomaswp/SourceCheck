@@ -572,8 +572,7 @@ public class HintHighlighter {
 		protected abstract void editChildren(List<String> children);
 		protected abstract String action();
 		protected abstract double priority();
-		protected abstract int editIndex();
-		public abstract void apply();
+		public abstract void apply(List<Application> applications);
 
 		public final Node parent;
 
@@ -651,22 +650,41 @@ public class HintHighlighter {
 		}
 
 		public static void applyEdits(Node node, List<EditHint> hints) {
+			List<Application> applications = new ArrayList<>();
+			for (EditHint hint : hints) hint.apply(applications);
+
 			// Start with hints in reverse order, since multiple inserts at the same index should
 			// be applies in reverse to create the correct final order
-			Collections.reverse(hints);
-			Collections.sort(hints, new Comparator<EditHint>() {
+			Collections.reverse(applications);
+			Collections.sort(applications, new Comparator<Application>() {
 				@Override
-				public int compare(EditHint o1, EditHint o2) {
+				public int compare(Application o1, Application o2) {
 					// Apply edits to longer root paths first
 					int rpc = Integer.compare(
 							o1.parent.rootPathLength(), o2.parent.rootPathLength());
 					if (rpc != 0) return -rpc;
 
-					return -Integer.compare(o1.editIndex(), o2.editIndex());
+					return -Integer.compare(o1.index, o2.index);
 				}
 			});
-			for (EditHint hint : hints) hint.apply();
+			for (Application application : applications) application.action.apply();
 		}
+	}
+
+	private static class Application {
+		final Node parent;
+		final int index;
+		final EditAction action;
+
+		public Application(Node parent, int index, EditAction action) {
+			this.parent = parent;
+			this.index = index;
+			this.action = action;
+		}
+	}
+
+	private interface EditAction {
+		void apply();
 	}
 
 	public static class Insertion extends EditHint {
@@ -685,11 +703,6 @@ public class HintHighlighter {
 		@Override
 		public String action() {
 			return "insert";
-		}
-
-		@Override
-		protected int editIndex() {
-			return index;
 		}
 
 		public Insertion(Node parent, Node pair, int index) {
@@ -772,14 +785,21 @@ public class HintHighlighter {
 		}
 
 		@Override
-		public void apply() {
-			Node toInsert;
+		public void apply(List<Application> applications) {
+			final Node toInsert;
 			if (candidate != null) {
-				int index = candidate.index();
-				// It's possible this has already been removed (e.g. as a replacement for another
-				// insert), so we only remove it if it's still a child of its parent
-				if (index >= 0) candidate.parent.children.remove(index);
 				toInsert = candidate.copyWithNewParent(parent);
+
+				applications.add(new Application(candidate.parent, candidate.index(),
+						new EditAction() {
+					@Override
+					public void apply() {
+						// It's possible this has already been removed (e.g. as a replacement for
+						// another insert), so we only remove it if it's still a child of its parent
+						int index = candidate.index();
+						if (index >= 0) candidate.parent.children.remove(index);
+					}
+				}));
 			} else {
 				toInsert = new Node(parent, type);
 			}
@@ -787,10 +807,16 @@ public class HintHighlighter {
 			// If the parent is missing, we stop after removing the candidate
 			if (missingParent) return;
 
-			if (replacement != null) {
-				parent.children.remove(index);
-			}
-			parent.children.add(index, toInsert);
+			applications.add(new Application(parent, index, new EditAction() {
+				@Override
+				public void apply() {
+					if (replacement != null) {
+						int index = replacement.index();
+						if (index >= 0) parent.children.remove(index);
+					}
+					parent.children.add(index, toInsert);
+				}
+			}));
 		}
 	}
 
@@ -800,11 +826,6 @@ public class HintHighlighter {
 		@Override
 		protected String action() {
 			return "delete";
-		}
-
-		@Override
-		protected int editIndex() {
-			return node.index();
 		}
 
 		public Deletion(Node node) {
@@ -830,8 +851,14 @@ public class HintHighlighter {
 		}
 
 		@Override
-		public void apply() {
-			node.parent.children.remove(node.index());
+		public void apply(List<Application> applications) {
+			final int index = node.index();
+			applications.add(new Application(parent, index, new EditAction() {
+				@Override
+				public void apply() {
+					node.parent.children.remove(index);
+				}
+			}));
 		}
 	}
 
@@ -842,11 +869,6 @@ public class HintHighlighter {
 		@Override
 		protected String action() {
 			return "reorder";
-		}
-
-		@Override
-		protected int editIndex() {
-			return index;
 		}
 
 		public Reorder(Node node, int index) {
@@ -882,12 +904,21 @@ public class HintHighlighter {
 		}
 
 		@Override
-		public void apply() {
-			int rIndex = node.index();
-			int aIndex = index;
-			if (rIndex < aIndex) aIndex--;
-			node.parent.children.remove(rIndex);
-			node.parent.children.add(aIndex, node);
+		public void apply(List<Application> applications) {
+			final int rIndex = node.index();
+			applications.add(new Application(parent, rIndex, new EditAction() {
+				@Override
+				public void apply() {
+					node.parent.children.remove(rIndex);
+				}
+			}));
+			final int aIndex = index;
+			applications.add(new Application(parent, aIndex, new EditAction() {
+				@Override
+				public void apply() {
+					node.parent.children.add(aIndex, node);
+				}
+			}));
 		}
 	}
 

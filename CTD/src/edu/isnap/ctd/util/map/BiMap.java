@@ -41,6 +41,16 @@ public class BiMap<T, U> {
 		return toMap.containsKey(item);
 	}
 
+	public void removeFrom(T item) {
+		U pair = fromMap.remove(item);
+		if (pair != null) toMap.remove(item);
+	}
+
+	public void removeTo(U item) {
+		T pair = toMap.remove(item);
+		if (pair != null) fromMap.remove(item);
+	}
+
 	@Override
 	public String toString() {
 		return fromMap.toString();
