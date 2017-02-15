@@ -289,6 +289,7 @@ public class HintHighlighter {
 			if (insertion != null) {
 				if (insertion.missingParent && insertion.candidate == null) {
 					edits.remove(i--);
+					continue;
 				}
 			}
 
@@ -317,6 +318,7 @@ public class HintHighlighter {
 						break;
 					}
 				}
+				// NOTE: this has to be the last check, since it doesn't have a continue
 			}
 		}
 

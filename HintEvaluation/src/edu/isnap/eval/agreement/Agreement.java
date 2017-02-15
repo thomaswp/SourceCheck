@@ -41,17 +41,17 @@ public class Agreement {
 
 		Map<String, AssignmentAttempt> attempts = Fall2016.GuessingGame1.load(Mode.Use, true, true,
 				new SnapParser.SubmittedOnly());
+		int i = 0;
 		for (AssignmentAttempt attempt : attempts.values()) {
 			Snapshot last = null;
 			for (AttemptAction action : attempt) {
-				if (last != null) {// && action.id == 221347) {
-					if (!testEditConsistency(last, action.snapshot)) {
-						System.out.println(action.id);
-					}
+				if (last != null) {// && action.id == 196640) {
+					System.out.println(action.id);
+					testEditConsistency(last, action.snapshot);
 				}
 				last = action.snapshot;
 			}
-			break;
+			if (i++ > 4) break;
 		}
 
 	}
@@ -59,7 +59,7 @@ public class Agreement {
 	private static boolean testEditConsistency(Snapshot a, Snapshot b) {
 		Node from = SimpleNodeBuilder.toTree(a, true, ider);
 		Node to = SimpleNodeBuilder.toTree(b, true, ider);
-		Node originalFrom = from.copy();
+		Node originalFrom = from.copy(), originalTo = to.copy();
 
 		List<EditHint> edits = findEdits(from, to);
 
@@ -77,11 +77,10 @@ public class Agreement {
 		}
 
 		prune(to); prune(from);
-
 		boolean equal = to.equals(from);
 		if (!equal) {
 //			System.out.println(originalFrom.prettyPrintWithIDs());
-//			System.out.println(to.prettyPrintWithIDs());
+//			System.out.println(originalTo.prettyPrintWithIDs());
 			for (String editString : editStrings) {
 				System.out.println(editString);
 			}
@@ -96,10 +95,16 @@ public class Agreement {
 		public String getID(Code code, Node parent) {
 			String id = code instanceof IHasID ? ((IHasID) code).getID() : null;
 			if (code instanceof Script || id == null) {
-				return String.format("%s(%s:%d)", code.type(), parent.id, parent.children.size());
-
+				return getID(code.type(), parent);
 			}
 			return id;
+		}
+
+		@Override
+		public String getID(String type, Node parent) {
+			int index = 0;
+			for (Node child : parent.children) if (child.hasType(type)) index++;
+			return String.format("%s{%s:%d}", type, parent.id, index);
 		}
 	};
 
@@ -137,19 +142,6 @@ public class Agreement {
 		for (String id : fromIDMap.keySet()) {
 			Node fromNode = fromIDMap.get(id);
 			Node toNode = toIDMap.get(id);
-
-			if (toNode == null && fromNode.hasType("script") &&
-					fromNode.parentHasType("sprite", "stage")) {
-				// TODO: warn that we've added a script
-				Node parentPair = toIDMap.get(fromNode.parent.id);
-				if (parentPair != null) {
-					toNode = new Node(parentPair, "script", fromNode.id);
-					parentPair.children.add(toNode);
-				} else {
-					System.err.println("Warning: Added sprite with script");
-				}
-			}
-
 			mapping.put(fromNode, toNode);
 
 			// You can relabel a block and it keeps its ID, so we check for that here
@@ -157,6 +149,27 @@ public class Agreement {
 				Insertion rename = new Insertion(fromNode.parent, toNode, fromNode.index());
 				rename.replacement = fromNode;
 				renames.add(rename);
+			}
+		}
+
+		// Look for added scripts/lists and add them automatically to the from node, since the
+		// highlighter cannot do this itself, and they don't constitute an edit
+		for (String id : toIDMap.keySet()) {
+			Node fromNode = fromIDMap.get(id);
+			Node toNode = toIDMap.get(id);
+
+			if (fromNode == null && toNode.hasType("script") &&
+					toNode.parentHasType("sprite", "stage")) {
+				// TODO: warn that we've added a script
+				Node parentPair = fromIDMap.get(toNode.parent.id);
+				if (parentPair != null) {
+					fromNode = new Node(parentPair, toNode.type(), toNode.id);
+					parentPair.children.add(fromNode);
+				} else {
+					System.err.println("Warning: Added sprite with script");
+				}
+
+				mapping.put(fromNode, toNode);
 			}
 		}
 

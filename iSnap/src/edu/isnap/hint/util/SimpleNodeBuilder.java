@@ -25,7 +25,7 @@ public class SimpleNodeBuilder {
 		code.addChildren(canon, new Accumulator() {
 
 			void add(String code) {
-				node.children.add(new Node(node, code));
+				node.children.add(new Node(node, code, ider.getID(code, node)));
 			}
 
 			@Override
@@ -73,12 +73,18 @@ public class SimpleNodeBuilder {
 
 	public interface IDer {
 		String getID(Code code, Node parent);
+		String getID(String code, Node parent);
 	}
 
 	private static IDer DefaultIDer = new IDer() {
 		@Override
 		public String getID(Code code, Node parent) {
 			return code instanceof IHasID ? ((IHasID) code).getID() : null;
+		}
+
+		@Override
+		public String getID(String code, Node parent) {
+			return null;
 		}
 	};
 }
