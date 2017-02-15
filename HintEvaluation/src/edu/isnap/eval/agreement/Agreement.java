@@ -44,11 +44,11 @@ public class Agreement {
 		for (AssignmentAttempt attempt : attempts.values()) {
 			Snapshot last = null;
 			for (AttemptAction action : attempt) {
-//				if (last != null && action.id == 217580) {
+				if (last != null) {// && action.id == 221347) {
 					if (!testEditConsistency(last, action.snapshot)) {
 						System.out.println(action.id);
 					}
-//				}
+				}
 				last = action.snapshot;
 			}
 			break;
@@ -80,9 +80,8 @@ public class Agreement {
 
 		boolean equal = to.equals(from);
 		if (!equal) {
-
-			System.out.println(originalFrom.prettyPrintWithIDs());
-			System.out.println(to.prettyPrintWithIDs());
+//			System.out.println(originalFrom.prettyPrintWithIDs());
+//			System.out.println(to.prettyPrintWithIDs());
 			for (String editString : editStrings) {
 				System.out.println(editString);
 			}
@@ -138,6 +137,19 @@ public class Agreement {
 		for (String id : fromIDMap.keySet()) {
 			Node fromNode = fromIDMap.get(id);
 			Node toNode = toIDMap.get(id);
+
+			if (toNode == null && fromNode.hasType("script") &&
+					fromNode.parentHasType("sprite", "stage")) {
+				// TODO: warn that we've added a script
+				Node parentPair = toIDMap.get(fromNode.parent.id);
+				if (parentPair != null) {
+					toNode = new Node(parentPair, "script", fromNode.id);
+					parentPair.children.add(toNode);
+				} else {
+					System.err.println("Warning: Added sprite with script");
+				}
+			}
+
 			mapping.put(fromNode, toNode);
 
 			// You can relabel a block and it keeps its ID, so we check for that here
@@ -147,6 +159,8 @@ public class Agreement {
 				renames.add(rename);
 			}
 		}
+
+
 
 		// TODO: need to make sure we're not omitting some edits (e.g. deleting a harmless block)
 		List<EditHint> hints = new HintHighlighter(new LinkedList<Node>(), new HintConfig())

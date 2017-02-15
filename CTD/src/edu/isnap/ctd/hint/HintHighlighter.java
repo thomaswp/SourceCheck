@@ -79,12 +79,19 @@ public class HintHighlighter {
 					Highlight highlight = parentMatches ? Highlight.Good : Highlight.Move;
 					colors.put(node, highlight);
 					if (highlight == Highlight.Move) {
-						// For those without a matching parent, we need to insert them where
-						// they belong
 						Node moveParent = mapping.getTo(pair.parent);
 						if (moveParent == null) {
-							// TODO: Add an insert with a missing parent
+							// If the pair's parent has no original parent, we add a placeholder
+							// insert with a missing parent so the node is marked for movement
+							Node parentClone = pair.parent.copy();
+							parentClone.children.remove(pair.index());
+							Insertion insertion = new Insertion(
+									parentClone, pair, pair.index(), true);
+							insertion.candidate = node;
+							edits.add(insertion);
 						} else {
+							// For those without a matching parent, we need to insert them where
+							// they belong
 							int insertIndex = 0;
 							// Look back through your pair's earlier siblings...
 							for (int i = pair.index() - 1; i >= 0; i--) {
@@ -642,6 +649,9 @@ public class HintHighlighter {
 		}
 
 		public static void applyEdits(Node node, List<EditHint> hints) {
+			// Start with hints in reverse order, since multiple inserts at the same index should
+			// be applies in reverse to create the correct final order
+			Collections.reverse(hints);
 			Collections.sort(hints, new Comparator<EditHint>() {
 				@Override
 				public int compare(EditHint o1, EditHint o2) {
@@ -761,16 +771,20 @@ public class HintHighlighter {
 
 		@Override
 		public void apply() {
-			// If the parent is missing, we keep the candidate and can't insert anything yet
-			if (missingParent) return;
-
 			Node toInsert;
 			if (candidate != null) {
-				candidate.parent.children.remove(candidate.index());
+				int index = candidate.index();
+				// It's possible this has already been removed (e.g. as a replacement for another
+				// insert), so we only remove it if it's still a child of its parent
+				if (index >= 0) candidate.parent.children.remove(index);
 				toInsert = candidate.copyWithNewParent(parent);
 			} else {
 				toInsert = new Node(parent, type);
 			}
+
+			// If the parent is missing, we stop after removing the candidate
+			if (missingParent) return;
+
 			if (replacement != null) {
 				parent.children.remove(index);
 			}
