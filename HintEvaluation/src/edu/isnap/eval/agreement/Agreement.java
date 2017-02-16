@@ -30,6 +30,8 @@ import edu.isnap.util.Diff;
 
 public class Agreement {
 
+
+
 	public static void main(String[] args) {
 //		try {
 //			Snapshot a = Snapshot.parse(new File("A.xml"));
@@ -45,13 +47,14 @@ public class Agreement {
 		for (AssignmentAttempt attempt : attempts.values()) {
 			Snapshot last = null;
 			for (AttemptAction action : attempt) {
-				if (last != null) { // && action.id == 220575) {
-					System.out.println(action.id);
-					testEditConsistency(last, action.snapshot);
+				if (last != null) {// && action.id == 222243) {
+					if (!testEditConsistency(last, action.snapshot)) {
+						System.out.println(action.id);
+					}
 				}
 				last = action.snapshot;
 			}
-			if (i++ >= 0) break;
+			if (i++ >= 10) break;
 		}
 
 	}
@@ -143,11 +146,13 @@ public class Agreement {
 			Node fromNode = fromIDMap.get(id);
 			Node toNode = toIDMap.get(id);
 
+			if (toNode == null) continue;
+
 			// Check if we've already paired this node
 			Node oldToNode = mapping.getFrom(fromNode);
 			if (oldToNode != null) {
-				// Check if it was a pairing based on the original ID
-				if (fromNode.id.equals(oldToNode.id)) {
+				// Check if it was a (different) pairing based on the original ID
+				if (toNode != oldToNode && fromNode.id.equals(oldToNode.id)) {
 					// If so, we override with the pairing based on contents
 					mapping.removeFrom(fromNode);
 				} else {
@@ -155,16 +160,35 @@ public class Agreement {
 					continue;
 				}
 			}
+			// Then do the reverse to check if we're overriding a pairing based on contents
+			Node oldFromNode = mapping.getTo(toNode);
+			if (oldFromNode != null) {
+				if (fromNode != oldFromNode && toNode.id.equals(oldFromNode.id)) {
+					mapping.removeTo(toNode);
+				} else {
+					continue;
+				}
+			}
 
 			mapping.put(fromNode, toNode);
+//			if (fromNode.hasType("script")) {
+//				System.out.println("---> " + fromNode + " -> " + toNode);
+//				for (Node key : mapping.keysetFrom()) {
+//					if (key.hasType("script")) System.out.println(key.id + " -> " + mapping.getFrom(key).id);
+//				}
+//			}
 
 			// You can relabel a block and it keeps its ID, so we check for that here
-			if (toNode != null && !fromNode.hasType(toNode.type())) {
+			if (!fromNode.hasType(toNode.type())) {
 				Insertion rename = new Insertion(fromNode.parent, toNode, fromNode.index());
 				rename.replacement = fromNode;
 				renames.add(rename);
 			}
 		}
+
+//		for (Node key : mapping.keysetFrom()) {
+//			if (key.hasType("script")) System.out.println(key.id + " -> " + mapping.getFrom(key).id);
+//		}
 
 		// Look for added scripts/lists and add them automatically to the from node, since the
 		// highlighter cannot do this itself, and they don't constitute an edit
@@ -175,10 +199,9 @@ public class Agreement {
 			if (fromNode == null && toNode.hasType("script") &&
 					toNode.parentHasType("sprite", "stage")) {
 
-//				if (mapping.getTo(toNode) != null) {
-////					System.out.println("!!!!!");
-//					continue;
-//				}
+				if (mapping.getTo(toNode) != null) {
+					continue;
+				}
 
 				// TODO: warn that we've added a script
 				Node parentPair = fromIDMap.get(toNode.parent.id);
@@ -209,10 +232,11 @@ public class Agreement {
 			@Override
 			public void run(Node node) {
 				idMap.put(node.id, node);
-				// Include both the overridden, index-based id and the default contents-based id
-//				if (node.tag instanceof Script) {
-//					idMap.put(((Script) node.tag).getID(), node);
-//				}
+				// Include both the overridden, index-based id and and id based on the first child
+				if (node.hasType("script") && !node.children.isEmpty() &&
+						node.parentHasType("sprite", "stage")) {
+					idMap.put(String.format("script{%s}", node.children.get(0).id), node);
+				}
 			}
 		});
 		return idMap;
