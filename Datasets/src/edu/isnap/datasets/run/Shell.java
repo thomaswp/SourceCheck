@@ -11,6 +11,7 @@ import edu.isnap.datasets.Fall2016;
 import edu.isnap.datasets.HelpSeeking;
 import edu.isnap.datasets.Samples;
 import edu.isnap.datasets.Spring2016;
+import edu.isnap.datasets.Spring2017;
 import edu.isnap.parser.LogSplitter;
 import edu.isnap.parser.ParseSubmitted;
 import edu.isnap.parser.SnapParser;
@@ -23,6 +24,7 @@ public class Shell {
 			Fall2015.instance,
 			Spring2016.instance,
 			Fall2016.instance,
+			Spring2017.instance,
 			Demo.instance,
 			HelpSeeking.instance,
 			Samples.instance,

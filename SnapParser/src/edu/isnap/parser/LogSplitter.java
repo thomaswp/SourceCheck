@@ -40,9 +40,8 @@ public class LogSplitter {
 		int i = 0;
 		System.out.println("Splitting records:");
 		for (CSVRecord record : parser) {
-			// TODO: add userID
-			String assignmentID = record.get(4);
-			String projectID = record.get(5);
+			String assignmentID = record.get("assignmentID");
+			String projectID = record.get("projectID");
 			writeRecord(assignmentID,projectID, outputFolder, record);
 			if (i++ % 1000 == 0) System.out.print("+");
 			if (i % 50000 == 0) System.out.println();

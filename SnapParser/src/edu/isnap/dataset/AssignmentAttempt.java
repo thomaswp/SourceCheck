@@ -73,9 +73,11 @@ public class AssignmentAttempt implements Iterable<AttemptAction> {
 		 * Version of the AttemptAction and its stored classes, such as Snapshot.
 		 * Change it when they should be reloaded and the cache invalidated.
 		 */
-		public final static String VERSION = "1.0.3";
+		public final static String VERSION = "1.1.0";
 
 		private String version = VERSION;
+
+		public String userID;
 
 		@Override
 		public boolean isUpToDate() {
