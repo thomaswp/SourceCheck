@@ -10,7 +10,7 @@ import java.util.Random;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
-import edu.isnap.datasets.Fall2016;
+import edu.isnap.datasets.Spring2017;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
 
@@ -21,8 +21,8 @@ public class HintSelection {
 
 	public static void main(String[] args) {
 		Assignment[] assignments = {
-				Fall2016.Squiral,
-				Fall2016.GuessingGame1
+				Spring2017.Squiral,
+				Spring2017.GuessingGame1
 		};
 		for (Assignment assignment : assignments) {
 			select(assignment, "twprice");
@@ -32,7 +32,9 @@ public class HintSelection {
 	public static void select(Assignment assignment, String... users) {
 
 		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, false, true,
-				new SnapParser.SubmittedOnly());
+				new SnapParser.LikelySubmittedOnly(),
+				// Filter out testing by the lab until I can get actual submission data
+				new SnapParser.StartedAfter(Assignment.date(2017, 1, 29)));
 
 		for (AssignmentAttempt attempt : attempts.values()) {
 			List<Integer> earlyHints = new ArrayList<>();
