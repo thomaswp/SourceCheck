@@ -205,7 +205,6 @@ public class SnapHintBuilder {
 		kryo.register(StringHashable.class);
 		kryo.register(Node.class);
 		kryo.register(HintMap.class);
-		kryo.register(HintMap.class);
 		kryo.register(VectorState.class);
 		kryo.register(IndexedVectorState.class);
 		kryo.register(VectorGraph.class);

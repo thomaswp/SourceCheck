@@ -162,7 +162,7 @@ public class SnapParser {
 					e.printStackTrace();
 				}
 
-				Collections.sort(solution);
+				Collections.sort(solution.rows);
 
 				return solution;
 			}
@@ -180,6 +180,7 @@ public class SnapParser {
 		Date minDate = assignment.start, maxDate = assignment.end;
 
 		AssignmentAttempt attempt = new AssignmentAttempt(attemptID, grade);
+		attempt.rows.userID = actions.userID;
 		attempt.submittedActionID = knownSubmissions ?
 				AssignmentAttempt.NOT_SUBMITTED : AssignmentAttempt.UNKNOWN;
 		List<AttemptAction> currentWork = new ArrayList<>();
@@ -282,7 +283,7 @@ public class SnapParser {
 
 				if (done || saveWork) {
 					// Add the work we've seen so far to the attempt;
-					attempt.rows.addAll(currentWork);
+					attempt.rows.rows.addAll(currentWork);
 					currentWork.clear();
 				}
 				if (done) {
