@@ -93,6 +93,8 @@ public class SnapParser {
 					BlockIndex editingIndex = null;
 					Snapshot lastSnaphot = null;
 
+					boolean hasUserIDs = parser.getHeaderMap().containsKey("userID");
+
 					for (CSVRecord record : parser) {
 						String timestampString = record.get("time");
 						Date timestamp = null;
@@ -102,9 +104,10 @@ public class SnapParser {
 							e.printStackTrace();
 						}
 
-						// TODO: Add userID
+
 						String action = record.get("message");
 						String data = record.get("data");
+						String userID = hasUserIDs ? record.get("userID") : null;
 						String session = record.get("sessionID");
 						String xml = record.get("code");
 						String idS = record.get("id");
@@ -112,6 +115,18 @@ public class SnapParser {
 						try {
 							id = Integer.parseInt(idS);
 						} catch (NumberFormatException e) { }
+
+						if (userID != null && !userID.equals("none")) {
+							if (solution.userID == null) {
+								solution.userID = userID;
+							} else if (AttemptAction.IDE_EXPORT_PROJECT.equals("userID") &&
+									!solution.userID.equals(userID)) {
+								parser.close();
+								throw new RuntimeException(String.format(
+										"Project %s exported under multiple userIDs: %s and %s",
+										logFile.getPath(), solution.userID, userID));
+							}
+						}
 
 						AttemptAction row = new AttemptAction(id, attemptID, timestamp, session,
 								action, data, xml);
