@@ -9,10 +9,10 @@ import edu.isnap.hint.ConfigurableAssignment;
 
 	public class HelpSeeking extends Dataset {
 
-		public final static HelpSeeking instance = new HelpSeeking();
 		public final static Date start = Assignment.date(2016, 8, 10);
 		public final static String dataDir = "../data/help-seeking/experts2016";
 		public final static String dataFile = dataDir + ".csv";
+		public final static HelpSeeking instance = new HelpSeeking();
 
 		private final static HintConfig config = new HintConfig();
 		static {

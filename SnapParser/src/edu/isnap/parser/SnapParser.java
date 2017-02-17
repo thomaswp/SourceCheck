@@ -119,7 +119,7 @@ public class SnapParser {
 						if (userID != null && !userID.equals("none")) {
 							if (solution.userID == null) {
 								solution.userID = userID;
-							} else if (AttemptAction.IDE_EXPORT_PROJECT.equals("userID") &&
+							} else if (AttemptAction.IDE_EXPORT_PROJECT.equals(action) &&
 									!solution.userID.equals(userID)) {
 								parser.close();
 								throw new RuntimeException(String.format(
@@ -519,6 +519,19 @@ public class SnapParser {
 		@Override
 		public boolean keep(AssignmentAttempt attempt) {
 			return attempt.isLikelySubmitted();
+		}
+	}
+
+	public static class StartedAfter implements Filter {
+		private final Date after;
+
+		public StartedAfter(Date after) {
+			this.after = after;
+		}
+
+		@Override
+		public boolean keep(AssignmentAttempt attempt) {
+			return attempt.rows.size() > 0 && attempt.rows.get(0).timestamp.after(after);
 		}
 	}
 }
