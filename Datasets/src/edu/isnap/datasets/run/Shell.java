@@ -68,6 +68,11 @@ public class Shell {
 					case "test":
 						TestRunner.run(dataset.all());
 						break;
+					case "parse":
+						for (Assignment assignment : dataset.all()) {
+							assignment.load(Mode.Overwrite, true);
+						}
+						break;
 					default:
 						System.out.println("Unknown command: " + command);
 					}
