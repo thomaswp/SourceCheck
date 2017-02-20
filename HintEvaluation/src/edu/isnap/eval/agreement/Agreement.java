@@ -1,11 +1,19 @@
 package edu.isnap.eval.agreement;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
@@ -17,7 +25,9 @@ import edu.isnap.ctd.util.map.BiMap;
 import edu.isnap.ctd.util.map.MapFactory;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
+import edu.isnap.dataset.Dataset;
 import edu.isnap.datasets.Fall2016;
+import edu.isnap.datasets.Spring2016;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.hint.util.SimpleNodeBuilder.IDer;
 import edu.isnap.parser.SnapParser;
@@ -32,15 +42,11 @@ public class Agreement {
 
 
 
-	public static void main(String[] args) {
-//		try {
-//			Snapshot a = Snapshot.parse(new File("A.xml"));
-//			Snapshot b = Snapshot.parse(new File("B.xml"));
-//			testEditConsistency(a, b);
-//		} catch (FileNotFoundException e) {
-//			e.printStackTrace();
-//		}
+	public static void main(String[] args) throws FileNotFoundException, IOException {
+		extractEdits(Fall2016.instance, Spring2016.instance);
+	}
 
+	public static void testLogEdits() {
 		Map<String, AssignmentAttempt> attempts = Fall2016.GuessingGame1.load(Mode.Use, true, true,
 				new SnapParser.SubmittedOnly());
 		int i = 0;
@@ -56,7 +62,40 @@ public class Agreement {
 			}
 			if (i++ >= 10) break;
 		}
+	}
 
+	private static void extractEdits(Dataset dataset, Dataset hintDataset)
+			throws FileNotFoundException, IOException {
+
+
+		CSVParser parser = new CSVParser(new FileReader(new File(dataset.dataDir, "hints.csv")),
+				CSVFormat.DEFAULT.withHeader());
+
+		for (CSVRecord record : parser) {
+			String codeXML = record.get("code");
+			String h1CodeXML = record.get("h1Code");
+			String h2CodeXML = record.get("h2Code");
+
+			String userID = record.get("userID");
+			String rowID = record.get("rowID");
+			String id = userID + " (" + rowID + ") ";
+
+			if (!"twprice (163755) ".equals(id)) continue;
+
+			Snapshot code = Snapshot.parse("code", codeXML);
+			Snapshot h1Code = Snapshot.parse("h1", h1CodeXML);
+			Snapshot h2Code = Snapshot.parse("h2", h2CodeXML);
+
+			if (!testEditConsistency(code, h1Code)) {
+				System.out.println(id + 1);
+			}
+
+			if (!testEditConsistency(code, h2Code)) {
+				System.out.println(id + 2);
+			}
+		}
+
+		parser.close();
 	}
 
 	private static boolean testEditConsistency(Snapshot a, Snapshot b) {

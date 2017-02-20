@@ -641,7 +641,7 @@ public class HintHighlighter {
 			String from = items.toString();
 			editChildren(items);
 			String to = items.toString();
-			return rootString(parent) + ": " + from + " -> " + to;
+			return action().substring(0, 1) + ": " + rootString(parent) + ": " + from + " -> " + to;
 		}
 
 		@Override
@@ -813,6 +813,9 @@ public class HintHighlighter {
 					if (replacement != null) {
 						int index = replacement.index();
 						if (index >= 0) parent.children.remove(index);
+						for (Node child : replacement.children) {
+							toInsert.children.add(child.copyWithNewParent(toInsert));
+						}
 					}
 					parent.children.add(index, toInsert);
 				}
