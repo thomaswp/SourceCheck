@@ -80,6 +80,8 @@ public class Agreement {
 			String rowID = record.get("rowID");
 			String id = userID + " (" + rowID + ") ";
 
+//			if (!"twprice (194230) ".equals(id)) continue;
+
 			Snapshot code = Snapshot.parse("code", codeXML);
 			Snapshot h1Code = Snapshot.parse("h1", h1CodeXML);
 			Snapshot h2Code = Snapshot.parse("h2", h2CodeXML);
