@@ -49,6 +49,11 @@ public class HintHighlighter {
 	}
 
 	public List<EditHint> highlight(Node node, final BiMap<Node, Node> mapping) {
+		return highlight(node, mapping, true);
+	}
+
+	public List<EditHint> highlight(Node node, final BiMap<Node, Node> mapping,
+			boolean reuseDeletedBlocks) {
 		final List<EditHint> edits = new ArrayList<>();
 		final IdentityHashMap<Node, Highlight> colors = new IdentityHashMap<>();
 
@@ -271,7 +276,9 @@ public class HintHighlighter {
 			if (insert != null) insertions.add(insert);
 		}
 
-		handleInsertionsAndMoves(colors, insertions, edits, mapping);
+		if (reuseDeletedBlocks) {
+			handleInsertionsAndMoves(colors, insertions, edits, mapping);
+		}
 
 		// If any insert into a script should contain the children of the existing node at that
 		// index, we want to express that as a replacement

@@ -80,8 +80,6 @@ public class Agreement {
 			String rowID = record.get("rowID");
 			String id = userID + " (" + rowID + ") ";
 
-			if (!"twprice (163755) ".equals(id)) continue;
-
 			Snapshot code = Snapshot.parse("code", codeXML);
 			Snapshot h1Code = Snapshot.parse("h1", h1CodeXML);
 			Snapshot h2Code = Snapshot.parse("h2", h2CodeXML);
@@ -259,7 +257,7 @@ public class Agreement {
 
 		// TODO: need to make sure we're not omitting some edits (e.g. deleting a harmless block)
 		List<EditHint> hints = new HintHighlighter(new LinkedList<Node>(), new HintConfig())
-				.highlight(from, mapping);
+				.highlight(from, mapping, false);
 		hints.addAll(renames);
 
 		return hints;
