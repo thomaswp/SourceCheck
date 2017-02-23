@@ -369,6 +369,9 @@ public class HintHighlighter {
 		// In this case, we set the replacement, change the deleted node to replaced and remove the
 		// deletion
 		insertion.replacement = deleted;
+		// Because we're replacing in a script, we want to keep the original node's children when
+		// we replace it
+		insertion.keepChildrenInReplacement = true;
 		colors.put(deleted, Highlight.Replaced);
 
 		// Find the deletion and remove it
@@ -712,6 +715,9 @@ public class HintHighlighter {
 
 		// Used to mark the pair node in the solution this insertion represents
 		private final transient Node pair;
+		// Used when applying insertions with replacements to determine whether the original node's
+		// children should be copied to the replacement
+		private transient boolean keepChildrenInReplacement;
 
 		/** The node the inserted node should replace (in the same location) */
 		public Node replacement;
@@ -803,6 +809,14 @@ public class HintHighlighter {
 		}
 
 		@Override
+		public String toString() {
+			String base = super.toString();
+			if (candidate == null) return base;
+			base += " w/ " + rootString(candidate);
+			return base;
+		}
+
+		@Override
 		public void apply(List<Application> applications) {
 			final Node toInsert;
 			if (candidate != null) {
@@ -836,8 +850,10 @@ public class HintHighlighter {
 					if (replacement != null) {
 						int index = replacement.index();
 						if (index >= 0) parent.children.remove(index);
-						for (Node child : replacement.children) {
-							toInsert.children.add(child.copyWithNewParent(toInsert));
+						if (keepChildrenInReplacement) {
+							for (Node child : replacement.children) {
+								toInsert.children.add(child.copyWithNewParent(toInsert));
+							}
 						}
 					}
 					parent.children.add(index, toInsert);
