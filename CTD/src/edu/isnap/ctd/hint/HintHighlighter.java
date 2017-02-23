@@ -95,7 +95,7 @@ public class HintHighlighter {
 							insertion.candidate = node;
 							edits.add(insertion);
 						} else {
-							// For those without a matching parent, we need to insert them where
+							// For those with a matching parent, we need to insert them where
 							// they belong
 							int insertIndex = 0;
 							// Look back through your pair's earlier siblings...
@@ -213,7 +213,7 @@ public class HintHighlighter {
 			}
 		});
 
-		// This time, iterate over the nodes in the pair
+		// Insertions: This time, iterate over the nodes in the pair
 		Node nodeMatch = mapping.getFrom(node);
 		nodeMatch.recurse(new Action() {
 			@Override
