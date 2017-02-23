@@ -27,7 +27,7 @@ import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.datasets.Fall2016;
-import edu.isnap.datasets.Spring2016;
+import edu.isnap.datasets.Spring2017;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.hint.util.SimpleNodeBuilder.IDer;
 import edu.isnap.parser.SnapParser;
@@ -43,7 +43,7 @@ public class Agreement {
 
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
-		extractEdits(Fall2016.instance, Spring2016.instance);
+		extractEdits(Spring2017.instance, Fall2016.instance);
 	}
 
 	public static void testLogEdits() {
