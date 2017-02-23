@@ -662,16 +662,20 @@ public class HintHighlighter {
 
 			// Start with hints in reverse order, since multiple inserts at the same index should
 			// be applies in reverse to create the correct final order
-			Collections.reverse(applications);
 			Collections.sort(applications, new Comparator<Application>() {
 				@Override
 				public int compare(Application o1, Application o2) {
 					// Apply edits to longer root paths first
-					int rpc = Integer.compare(
+					int rpc = -Integer.compare(
 							o1.parent.rootPathLength(), o2.parent.rootPathLength());
-					if (rpc != 0) return -rpc;
+					if (rpc != 0) return rpc;
 
-					return -Integer.compare(o1.index, o2.index);
+					int ic = -Integer.compare(o1.index, o2.index);
+					if (ic != 0) return ic;
+
+					// In the case of insertions at the same index, we compare the pair index
+					// to insert the in the same order they were the pair code
+					return -Integer.compare(o1.pairIndex, o2.pairIndex);
 				}
 			});
 			for (Application application : applications) application.action.apply();
@@ -681,11 +685,18 @@ public class HintHighlighter {
 	private static class Application {
 		final Node parent;
 		final int index;
+		final int pairIndex;
 		final EditAction action;
 
 		public Application(Node parent, int index, EditAction action) {
+			// Non-insertions go first
+			this(parent, index, Integer.MAX_VALUE, action);
+		}
+
+		public Application(Node parent, int index, int pairIndex, EditAction action) {
 			this.parent = parent;
 			this.index = index;
+			this.pairIndex = pairIndex;
 			this.action = action;
 		}
 	}
@@ -795,7 +806,12 @@ public class HintHighlighter {
 		public void apply(List<Application> applications) {
 			final Node toInsert;
 			if (candidate != null) {
-				toInsert = candidate.copyWithNewParent(parent);
+				// Need to use the actual candidate in case other applications edit its children
+				// but this will cause its parent to be incorrect. This is ok, since we actually
+				// need its original parent to be used in the removal below, but still seems
+				// like a bad idea, so in short:
+				// TODO: fix this
+				toInsert = candidate; //.copyWithNewParent(parent);
 
 				applications.add(new Application(candidate.parent, candidate.index(),
 						new EditAction() {
@@ -814,7 +830,7 @@ public class HintHighlighter {
 			// If the parent is missing, we stop after removing the candidate
 			if (missingParent) return;
 
-			applications.add(new Application(parent, index, new EditAction() {
+			applications.add(new Application(parent, index, pair.index(), new EditAction() {
 				@Override
 				public void apply() {
 					if (replacement != null) {
