@@ -354,11 +354,24 @@ public class HintHighlighter {
 		// that is the cause for the insertion
 		List<Node> nodeChildren = deleted.allChildren();
 		List<Node> pairChildren = insertion.pair.allChildren();
+		// Because we're replacing in a script, we may want to keep the original node's children
+		// when we replace it, but it depends on where we find our matches
+		// TODO: This isn't a very comprehensive solution: we really need to deal with children of
+		// moved blocks in a more thorough manner
+		boolean keepChildren = false;
 		int matches = 0;
 		for (Node n1 : nodeChildren) {
+			// Don't match literals
+			if (n1.hasType(config.literal)) continue;
 			for (Node n2 : pairChildren) {
 				if (mapping.getFrom(n1) == n2) {
 					matches++;
+					if (n2.parent == insertion.pair ||
+							(n2.parentHasType(config.script) && n2.parent == insertion.pair)) {
+						// If the match comes from a direct child of the pair (or a script that is)
+						// we want to keep the children.
+						keepChildren = true;
+					}
 				}
 			}
 		}
@@ -369,9 +382,7 @@ public class HintHighlighter {
 		// In this case, we set the replacement, change the deleted node to replaced and remove the
 		// deletion
 		insertion.replacement = deleted;
-		// Because we're replacing in a script, we want to keep the original node's children when
-		// we replace it
-		insertion.keepChildrenInReplacement = true;
+		insertion.keepChildrenInReplacement = keepChildren;
 		colors.put(deleted, Highlight.Replaced);
 
 		// Find the deletion and remove it

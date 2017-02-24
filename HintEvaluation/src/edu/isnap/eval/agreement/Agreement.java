@@ -40,7 +40,7 @@ import edu.isnap.util.Diff;
 
 public class Agreement {
 
-
+	private static boolean PRINT = true;
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 		extractEdits(Spring2017.instance, Fall2016.instance);
@@ -80,7 +80,7 @@ public class Agreement {
 			String rowID = record.get("rowID");
 			String id = userID + " (" + rowID + ") ";
 
-//			if (!"twprice (115278) ".equals(id)) continue;
+//			if (!"twprice (124354) ".equals(id)) continue;
 
 			Snapshot code = Snapshot.parse("code", codeXML);
 			Snapshot h1Code = Snapshot.parse("h1", h1CodeXML);
@@ -120,7 +120,7 @@ public class Agreement {
 
 		prune(to); prune(from);
 		boolean equal = to.equals(from);
-		if (!equal) {
+		if (!equal && PRINT) {
 			System.out.println(originalFrom.prettyPrintWithIDs());
 			System.out.println(originalTo.prettyPrintWithIDs());
 			for (String editString : editStrings) {
@@ -256,9 +256,9 @@ public class Agreement {
 		}
 
 
-
-		// TODO: need to make sure we're not omitting some edits (e.g. deleting a harmless block)
-		List<EditHint> hints = new HintHighlighter(new LinkedList<Node>(), new HintConfig())
+		HintConfig config = new HintConfig();
+		config.harmlessCalls.clear();
+		List<EditHint> hints = new HintHighlighter(new LinkedList<Node>(), config)
 				.highlight(from, mapping, false);
 		hints.addAll(renames);
 
