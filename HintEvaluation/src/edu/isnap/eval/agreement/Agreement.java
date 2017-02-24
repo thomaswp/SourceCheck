@@ -14,6 +14,8 @@ import java.util.Map;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.json.JSONArray;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
@@ -21,6 +23,7 @@ import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.HintHighlighter.EditHint;
 import edu.isnap.ctd.hint.HintHighlighter.Insertion;
+import edu.isnap.ctd.hint.HintJSON;
 import edu.isnap.ctd.util.map.BiMap;
 import edu.isnap.ctd.util.map.MapFactory;
 import edu.isnap.dataset.AssignmentAttempt;
@@ -78,7 +81,7 @@ public class Agreement {
 
 			String userID = record.get("userID");
 			String rowID = record.get("rowID");
-			String id = userID + " (" + rowID + ") ";
+			String prefix = userID + " (" + rowID + ") ";
 
 //			if (!"rzhi (122231) ".equals(id)) continue;
 
@@ -87,15 +90,32 @@ public class Agreement {
 			Snapshot h2Code = Snapshot.parse("h2", h2CodeXML);
 
 			if (!testEditConsistency(code, h1Code)) {
-				System.out.println(id + 1);
+				System.out.println(prefix + 1);
 			}
 
 			if (!testEditConsistency(code, h2Code)) {
-				System.out.println(id + 2);
+				System.out.println(prefix + 2);
 			}
+
+			printEditSQL(userID, rowID, 1, code, h1Code);
+			printEditSQL(userID, rowID, 2, code, h2Code);
 		}
 
 		parser.close();
+	}
+
+	private static void printEditSQL(String userID, String rowID, int phase,
+			Snapshot a, Snapshot b) {
+		Node from = SimpleNodeBuilder.toTree(a, true, ider);
+		Node to = SimpleNodeBuilder.toTree(b, true, ider);
+		List<EditHint> edits = findEdits(from, to);
+		JSONArray hintArray = HintJSON.hintArray(edits);
+		String json = hintArray.toString();
+		json = StringEscapeUtils.escapeSql(json);
+		String sql = String.format(
+				"UPDATE hints SET h%dEdits='%s' WHERE userID='%s' AND rowID=%s;",
+				phase, json, userID, rowID);
+		System.out.println(sql);
 	}
 
 	private static boolean testEditConsistency(Snapshot a, Snapshot b) {
