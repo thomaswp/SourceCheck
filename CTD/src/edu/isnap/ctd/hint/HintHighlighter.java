@@ -16,6 +16,7 @@ import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
+import edu.isnap.ctd.graph.Node.Predicate;
 import edu.isnap.ctd.util.Alignment;
 import edu.isnap.ctd.util.Cast;
 import edu.isnap.ctd.util.NodeAlignment;
@@ -858,9 +859,39 @@ public class HintHighlighter {
 			applications.add(new Application(parent, index, pair.index(), new EditAction() {
 				@Override
 				public void apply() {
+					int index = Insertion.this.index;
+					Node parent = Insertion.this.parent;
 					if (replacement != null) {
-						int index = replacement.index();
-						if (index >= 0) parent.children.remove(index);
+						int rIndex = replacement.index();
+						if (rIndex >= 0) {
+							index = rIndex;
+							replacement.parent.children.remove(rIndex);
+						} else if (keepChildrenInReplacement) {
+							// Special case for renamed nodes
+							// TODO: as most special cases, this is a bit of a hack
+							// If the replacement has been moved, we want to relabel the replacement
+							// in its new locations, so we find its new parent, remove it and
+							// set parent and index appropriately
+							Node newParent = parent.root().search(new Predicate() {
+								@Override
+								public boolean eval(Node node) {
+									for (Node child : node.children) {
+										if (child == replacement) return true;
+									}
+									return false;
+								}
+							});
+							if (newParent != null) {
+								parent = newParent;
+								for (int i = 0; i < parent.children.size(); i++) {
+									if (parent.children.get(i) == replacement) {
+										index = i;
+										parent.children.remove(i);
+										break;
+									}
+								}
+							}
+						}
 						if (keepChildrenInReplacement) {
 							for (Node child : replacement.children) {
 								toInsert.children.add(child.copyWithNewParent(toInsert));
