@@ -125,6 +125,8 @@ public class NodeAlignment {
 		for (int i = 0; i < fromStates.length; i++) {
 			int j = matching[i];
 			matchedTo.add(j);
+			// TODO: why don't we penalize unmatched nodes in fromStates?
+			// Especially when we do penalize unmatched nodes in toStates below...
 			if (j == -1) continue;
 			cost += costMatrix[i][j] + minCost;
 			Node from = fromNodes.get(i), to = toNodes.get(j);
