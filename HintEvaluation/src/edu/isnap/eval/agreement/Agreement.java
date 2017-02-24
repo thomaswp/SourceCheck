@@ -221,6 +221,7 @@ public class Agreement {
 			if (!fromNode.hasType(toNode.type())) {
 				Insertion rename = new Insertion(fromNode.parent, toNode, fromNode.index());
 				rename.replacement = fromNode;
+				rename.keepChildrenInReplacement = true;
 				renames.add(rename);
 			}
 		}

@@ -723,12 +723,12 @@ public class HintHighlighter {
 		public final String type;
 		public final int index;
 		public final boolean missingParent;
+		// Used when applying insertions with replacements to determine whether the original node's
+		// children should be copied to the replacement
+		public boolean keepChildrenInReplacement;
 
 		// Used to mark the pair node in the solution this insertion represents
 		private final transient Node pair;
-		// Used when applying insertions with replacements to determine whether the original node's
-		// children should be copied to the replacement
-		private transient boolean keepChildrenInReplacement;
 
 		/** The node the inserted node should replace (in the same location) */
 		public Node replacement;
