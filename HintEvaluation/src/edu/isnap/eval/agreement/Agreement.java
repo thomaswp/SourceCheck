@@ -5,11 +5,14 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -24,13 +27,16 @@ import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.HintHighlighter.EditHint;
 import edu.isnap.ctd.hint.HintHighlighter.Insertion;
 import edu.isnap.ctd.hint.HintJSON;
+import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.util.map.BiMap;
 import edu.isnap.ctd.util.map.MapFactory;
+import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.datasets.Fall2016;
 import edu.isnap.datasets.Spring2017;
+import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.hint.util.SimpleNodeBuilder.IDer;
 import edu.isnap.parser.SnapParser;
@@ -46,7 +52,7 @@ public class Agreement {
 	private static boolean PRINT = true;
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
-		extractEdits(Spring2017.instance, Fall2016.instance);
+		compareEdits(Spring2017.instance, Fall2016.Squiral, Fall2016.GuessingGame1);
 	}
 
 	public static void testLogEdits() {
@@ -67,7 +73,107 @@ public class Agreement {
 		}
 	}
 
-	private static void extractEdits(Dataset dataset, Dataset hintDataset)
+	private static void compareEdits(Dataset testDataset, Assignment... trainingAssignments)
+			throws FileNotFoundException, IOException {
+
+
+		CSVParser parser = new CSVParser(new FileReader(new File(testDataset.dataDir, "hints.csv")),
+				CSVFormat.DEFAULT.withHeader());
+
+		HashMap<String, HintHighlighter> highlighters = new HashMap<>();
+		for (Assignment assignment : trainingAssignments) {
+			SnapHintBuilder builder = new SnapHintBuilder(assignment);
+			HintMap hintMap = builder.buildGenerator(Mode.Use, 1).hintMap;
+			highlighters.put(assignment.name, new HintHighlighter(hintMap));
+		}
+		// Since sometimes assignments are incorrect in the logs, we have to redirect prequel
+		// assignments
+		// TODO: This is neither robust nor complete. The only real solution is search through
+		// all assignments for one with the given row, since the database just doesn't have the
+		// complete information
+		for (Assignment assignment : testDataset.all()) {
+			if (assignment.prequel != null) {
+				if (!highlighters.containsKey(assignment.name)) {
+					HintHighlighter highlighter = highlighters.get(assignment.prequel.name);
+					if (highlighter != null) {
+						highlighters.put(assignment.name, highlighter);
+					}
+				}
+			}
+		}
+
+		Map<String, Map<String, List<EditHint>>> editMap = new LinkedHashMap<>();
+		Map<String, Node> nodeMap = new HashMap<>();
+
+		for (CSVRecord record : parser) {
+
+			String codeXML = record.get("code");
+			String h1CodeXML = record.get("h1Code");
+			String h2CodeXML = record.get("h2Code");
+
+			String userID = record.get("userID");
+			String rowID = record.get("rowID");
+			String assignmentID = record.get("assignmentID");
+			String prefix = userID + " (" + rowID + ") ";
+
+			Snapshot code = Snapshot.parse("code", codeXML);
+			Snapshot h1Code = Snapshot.parse("h1", h1CodeXML);
+			Snapshot h2Code = Snapshot.parse("h2", h2CodeXML);
+
+			HintHighlighter highlighter = highlighters.get(assignmentID);
+
+
+			Node fromNode = nodeMap.get(rowID);
+			if (fromNode == null) {
+				nodeMap.put(rowID, fromNode = SimpleNodeBuilder.toTree(code, true, ider));
+			}
+
+			Node toNodeAll = SimpleNodeBuilder.toTree(h2Code, true, ider);
+
+//			System.out.println(prefix + 2);
+
+			Map<String, List<EditHint>> rowMap = editMap.get(rowID);
+			if (rowMap == null) editMap.put(rowID, rowMap = new TreeMap<>());
+			rowMap.put(userID, findEdits(fromNode, toNodeAll));
+			if (!rowMap.containsKey("highlight")) {
+				rowMap.put("highlight", highlighter.highlight(fromNode));
+			}
+		}
+
+
+		HashMap<String, int[][]> comps = new HashMap<>();
+
+		for (String row : editMap.keySet()) {
+			Map<String, List<EditHint>> rowMap = editMap.get(row);
+			Collection<List<EditHint>> values = rowMap.values();
+			List<String> keys = new ArrayList<>(rowMap.keySet());
+			Node node = nodeMap.get(row);
+			int i = 0;
+			for (List<EditHint> editsA : values) {
+				int j = 0;
+				for (List<EditHint> editsB : values) {
+					if (j > i) {
+						String key = keys.get(i) + " vs " + keys.get(j);
+						int[][] confusionMatrix = EditComparer.compare(node, editsA, editsB);
+						int[][] last = comps.get(key);
+						comps.put(key, EditComparer.sumMatrices(confusionMatrix, last));
+					}
+					j++;
+				}
+				i++;
+			}
+		}
+
+		for (String key : comps.keySet()) {
+			System.out.println(key);
+			EditComparer.printMatrix(comps.get(key));
+			System.out.println();
+		}
+
+		parser.close();
+	}
+
+	private static void extractEdits(Dataset dataset)
 			throws FileNotFoundException, IOException {
 
 
@@ -192,6 +298,12 @@ public class Agreement {
 			}
 		}
 		return node;
+	}
+
+	private static List<EditHint> findEdits(Snapshot from, Snapshot to) {
+		Node fromNode = SimpleNodeBuilder.toTree(from, true, ider);
+		Node toNode = SimpleNodeBuilder.toTree(to, true, ider);
+		return findEdits(fromNode, toNode);
 	}
 
 	private static List<EditHint> findEdits(Node from, Node to) {
