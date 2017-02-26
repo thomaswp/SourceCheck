@@ -383,6 +383,19 @@ public class Node extends StringHashable {
 		return offset;
 	}
 
+	public Node nthDepthFirstNode(int index) {
+		if (index == 0) return this;
+		index--;
+		for (Node child : children) {
+			int size = child.treeSize();
+			if (size > index) {
+				return child.nthDepthFirstNode(index);
+			}
+			index -= size;
+		}
+		return null;
+	}
+
 	// TODO: This is really quite an ugly Node reference representation...
 	public static JSONObject getNodeReference(Node node) {
 		if (node == null) return null;

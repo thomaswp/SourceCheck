@@ -14,6 +14,7 @@ import java.util.TreeMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import distance.RTED_InfoTree_Opt;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
 import edu.isnap.ctd.graph.Node.Predicate;
@@ -25,6 +26,8 @@ import edu.isnap.ctd.util.NodeAlignment.ProgressDistanceMeasure;
 import edu.isnap.ctd.util.map.BiMap;
 import edu.isnap.ctd.util.map.CountMap;
 import edu.isnap.ctd.util.map.ListMap;
+import edu.isnap.ctd.util.map.MapFactory;
+import util.LblTree;
 
 public class HintHighlighter {
 
@@ -1008,5 +1011,69 @@ public class HintHighlighter {
 
 	private static String[] toArray(List<String> items) {
 		return items.toArray(new String[items.size()]);
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<EditHint> highlightRTED(Node node) {
+		RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(1, 1, 1);
+		LblTree tree = node.toTree();
+
+		double minDis = Double.MAX_VALUE;
+		Node best = null;
+		for (Node solution : solutions) {
+			double dis = opt.nonNormalizedTreeDist(tree, solution.toTree());
+			if (dis < minDis) {
+				best = solution;
+				minDis = dis;
+			}
+		}
+
+		LblTree bestTree = best.toTree();
+		opt.init(tree, bestTree);
+		LinkedList<int[]> rtedMapping = opt.computeEditMapping();
+		List<LblTree> fromList = Collections.list(tree.depthFirstEnumeration());
+		List<LblTree> toList = Collections.list(bestTree.depthFirstEnumeration());
+
+		BiMap<Node, Node> mapping = new BiMap<>(MapFactory.IdentityHashMapFactory);
+		for (int[] a : rtedMapping) {
+			LblTree c1 = a[0] == 0 ? null : fromList.get(a[0] - 1);
+			LblTree c2 = a[1] == 0 ? null : toList.get(a[1] - 1);
+			if (c1 != null && c2 != null) {
+				mapping.put((Node) c1.getUserObject(), (Node) c2.getUserObject());
+			}
+		}
+
+//		NodeAlignment alignment = new NodeAlignment(node, best);
+//		alignment.calculateCost(getDistanceMeasure(config));
+//		BiMap<Node,Node> mapping = alignment.mapping;
+
+		return highlight(node, mapping);
+	}
+
+	public List<EditHint> highlightStringEdit(Node node) {
+		String[] nodeSeq = node.depthFirstIteration();
+
+		double minDis = Double.MAX_VALUE;
+		Node best = null;
+		for (Node solution : solutions) {
+			double dis = Alignment.alignCost(nodeSeq, solution.depthFirstIteration());
+			if (dis < minDis) {
+				best = solution;
+				minDis = dis;
+			}
+		}
+
+		String[] bestSeq = best.depthFirstIteration();
+		List<int[]> alignPairs = Alignment.alignPairs(nodeSeq, bestSeq, 1, 1, 1);
+
+		BiMap<Node, Node> mapping = new BiMap<>(MapFactory.IdentityHashMapFactory);
+		for (int[] a : alignPairs) {
+			if (a[0] == -1 || a[1] == -1) continue;
+			Node from = node.nthDepthFirstNode(a[0]);
+			Node to = best.nthDepthFirstNode(a[1]);
+			mapping.put(from, to);
+		}
+
+		return highlight(node, mapping);
 	}
 }

@@ -5,7 +5,6 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -36,6 +35,7 @@ import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.datasets.Fall2016;
 import edu.isnap.datasets.Spring2017;
+import edu.isnap.eval.agreement.EditComparer.EditDifference;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.hint.util.SimpleNodeBuilder.IDer;
@@ -102,7 +102,8 @@ public class Agreement {
 			}
 		}
 
-		Map<String, Map<String, List<EditHint>>> editMap = new LinkedHashMap<>();
+		Map<String, Map<String, List<EditHint>>> expertMap = new LinkedHashMap<>();
+		Map<String, Map<String, List<EditHint>>> comparisonMap = new LinkedHashMap<>();
 		Map<String, Node> nodeMap = new HashMap<>();
 
 		for (CSVRecord record : parser) {
@@ -114,7 +115,6 @@ public class Agreement {
 			String userID = record.get("userID");
 			String rowID = record.get("rowID");
 			String assignmentID = record.get("assignmentID");
-			String prefix = userID + " (" + rowID + ") ";
 
 			Snapshot code = Snapshot.parse("code", codeXML);
 			Snapshot h1Code = Snapshot.parse("h1", h1CodeXML);
@@ -122,51 +122,64 @@ public class Agreement {
 
 			HintHighlighter highlighter = highlighters.get(assignmentID);
 
+//			if (!userID.equals("twprice")) continue;
 
 			Node fromNode = nodeMap.get(rowID);
 			if (fromNode == null) {
 				nodeMap.put(rowID, fromNode = SimpleNodeBuilder.toTree(code, true, ider));
 			}
 
+			Node toNodeIdeal = SimpleNodeBuilder.toTree(h1Code, true, ider);
 			Node toNodeAll = SimpleNodeBuilder.toTree(h2Code, true, ider);
 
-//			System.out.println(prefix + 2);
+			Map<String, List<EditHint>> expertRowMap = expertMap.get(rowID);
+			if (expertRowMap == null) {
+				expertMap.put(rowID, expertRowMap = new TreeMap<>());
+			}
 
-			Map<String, List<EditHint>> rowMap = editMap.get(rowID);
-			if (rowMap == null) editMap.put(rowID, rowMap = new TreeMap<>());
-			rowMap.put(userID, findEdits(fromNode, toNodeAll));
-			if (!rowMap.containsKey("highlight")) {
-				rowMap.put("highlight", highlighter.highlight(fromNode));
+			Map<String, List<EditHint>> comparisonRowMap = comparisonMap.get(rowID);
+			if (comparisonRowMap == null) {
+				comparisonMap.put(rowID, comparisonRowMap = new TreeMap<>());
+			}
+
+			List<EditHint> idealEdits = findEdits(fromNode, toNodeIdeal);
+			List<EditHint> allEdits = findEdits(fromNode, toNodeAll);
+			expertRowMap.put(userID + "-ideal", idealEdits);
+			expertRowMap.put(userID + "-all", allEdits);
+			comparisonRowMap.put(userID + "-all", allEdits);
+
+
+			if (!expertRowMap.containsKey("highlight")) {
+				comparisonRowMap.put("highlight", highlighter.highlight(fromNode));
+				comparisonRowMap.put("highlight-rted", highlighter.highlightRTED(fromNode));
+				comparisonRowMap.put("highlight-sed", highlighter.highlightStringEdit(fromNode));
 			}
 		}
 
 
-		HashMap<String, int[][]> comps = new HashMap<>();
+		HashMap<String, EditDifference> comps = new LinkedHashMap<>();
 
-		for (String row : editMap.keySet()) {
-			Map<String, List<EditHint>> rowMap = editMap.get(row);
-			Collection<List<EditHint>> values = rowMap.values();
-			List<String> keys = new ArrayList<>(rowMap.keySet());
+		for (String row : expertMap.keySet()) {
+//			System.out.println(row);
+			Map<String, List<EditHint>> expertRowMap = expertMap.get(row);
+			Map<String, List<EditHint>> comparisonRowMap = comparisonMap.get(row);
 			Node node = nodeMap.get(row);
-			int i = 0;
-			for (List<EditHint> editsA : values) {
-				int j = 0;
-				for (List<EditHint> editsB : values) {
-					if (j > i) {
-						String key = keys.get(i) + " vs " + keys.get(j);
-						int[][] confusionMatrix = EditComparer.compare(node, editsA, editsB);
-						int[][] last = comps.get(key);
-						comps.put(key, EditComparer.sumMatrices(confusionMatrix, last));
-					}
-					j++;
+			for (String keyA : expertRowMap.keySet()) {
+				List<EditHint> editsA = expertRowMap.get(keyA);
+				for (String keyB : comparisonRowMap.keySet()) {
+					if (keyB.startsWith(keyA.substring(0, 4))) continue;
+					List<EditHint> editsB = comparisonRowMap.get(keyB);
+					String key = keyA + " vs " + keyB;
+					EditDifference diff = EditComparer.compare(node, editsA, editsB);
+					EditDifference last = comps.get(key);
+					comps.put(key, EditDifference.sum(diff, last));
 				}
-				i++;
 			}
 		}
 
 		for (String key : comps.keySet()) {
 			System.out.println(key);
-			EditComparer.printMatrix(comps.get(key));
+			comps.get(key).print();
 			System.out.println();
 		}
 
@@ -375,10 +388,10 @@ public class Agreement {
 					continue;
 				}
 
-				// TODO: warn that we've added a script
 				Node parentPair = fromIDMap.get(toNode.parent.id);
 				if (parentPair != null) {
 					fromNode = new Node(parentPair, toNode.type(), toNode.id);
+					fromNode.tag = "temp";
 					parentPair.children.add(fromNode);
 				} else {
 					System.err.println("Warning: Added sprite with script");
