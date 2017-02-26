@@ -61,7 +61,7 @@ public class Alignment {
 			}
 
 			i++; j++;
-			pairs.add(new int[] {i, j});
+			if (i < sequenceA.length && j < sequenceB.length) pairs.add(new int[] {i, j});
 		}
 
 		while (i < sequenceA.length) {
