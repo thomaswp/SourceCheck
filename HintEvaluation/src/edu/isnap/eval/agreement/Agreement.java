@@ -55,6 +55,7 @@ public class Agreement {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 		compareEdits(Spring2017.instance, Fall2016.Squiral, Fall2016.GuessingGame1);
+//		compareEdits(Spring2017.instance, Spring2016.Squiral, Spring2016.GuessingGame1);
 	}
 
 	public static void testLogEdits() {
@@ -196,8 +197,10 @@ public class Agreement {
 				}
 			}
 
+			File file = new File(assignment.analysisDir(), "/agreement.csv");
+			file.getParentFile().mkdirs();
 			CSVPrinter printer = new CSVPrinter(
-					new FileWriter(assignment.analysisDir() + "/agreement.csv"),
+					new FileWriter(file),
 					CSVFormat.DEFAULT.withHeader(EditDifference.CSV_HEADER));
 			for (String key : comps.keySet()) {
 				String[] parts = key.split(" vs ");
