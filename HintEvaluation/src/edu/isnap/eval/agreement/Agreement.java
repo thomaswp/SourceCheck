@@ -11,7 +11,9 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -80,11 +82,19 @@ public class Agreement {
 		CSVParser parser = new CSVParser(new FileReader(new File(testDataset.dataDir, "hints.csv")),
 				CSVFormat.DEFAULT.withHeader());
 
+//		Random rand = new Random(1234);
+
 		HashMap<String, HintHighlighter> highlighters = new HashMap<>();
 		for (Assignment assignment : trainingAssignments) {
 			SnapHintBuilder builder = new SnapHintBuilder(assignment);
 			HintMap hintMap = builder.buildGenerator(Mode.Use, 1).hintMap;
-			highlighters.put(assignment.name, new HintHighlighter(hintMap));
+			List<Node> solutions = new ArrayList<>(hintMap.solutions);
+//			Collections.shuffle(solutions, rand);
+//			for (int i = solutions.size(); i >= 0; i--) {
+//				if (i % 2 == 0) solutions.remove(i);
+//			}
+			highlighters.put(assignment.name, new HintHighlighter(
+					solutions, hintMap.getHintConfig()));
 		}
 		// Since sometimes assignments are incorrect in the logs, we have to redirect prequel
 		// assignments
@@ -105,6 +115,7 @@ public class Agreement {
 		Map<String, Map<String, List<EditHint>>> expertMap = new LinkedHashMap<>();
 		Map<String, Map<String, List<EditHint>>> comparisonMap = new LinkedHashMap<>();
 		Map<String, Node> nodeMap = new HashMap<>();
+		Map<String, String> assignmentMap = new HashMap<>();
 
 		for (CSVRecord record : parser) {
 
@@ -127,6 +138,7 @@ public class Agreement {
 			Node fromNode = nodeMap.get(rowID);
 			if (fromNode == null) {
 				nodeMap.put(rowID, fromNode = SimpleNodeBuilder.toTree(code, true, ider));
+				assignmentMap.put(rowID, assignmentID);
 			}
 
 			Node toNodeIdeal = SimpleNodeBuilder.toTree(h1Code, true, ider);
@@ -151,36 +163,42 @@ public class Agreement {
 
 			if (!expertRowMap.containsKey("highlight")) {
 				comparisonRowMap.put("highlight", highlighter.highlight(fromNode));
-				comparisonRowMap.put("highlight-rted", highlighter.highlightRTED(fromNode));
+//				comparisonRowMap.put("highlight-rted", highlighter.highlightRTED(fromNode));
 				comparisonRowMap.put("highlight-sed", highlighter.highlightStringEdit(fromNode));
 			}
 		}
 
+		Set<String> assignments = new TreeSet<>(assignmentMap.values());
 
-		HashMap<String, EditDifference> comps = new LinkedHashMap<>();
+		for (String assignment : assignments) {
+			System.out.println(assignment);
+			System.out.println("--------------");
 
-		for (String row : expertMap.keySet()) {
-//			System.out.println(row);
-			Map<String, List<EditHint>> expertRowMap = expertMap.get(row);
-			Map<String, List<EditHint>> comparisonRowMap = comparisonMap.get(row);
-			Node node = nodeMap.get(row);
-			for (String keyA : expertRowMap.keySet()) {
-				List<EditHint> editsA = expertRowMap.get(keyA);
-				for (String keyB : comparisonRowMap.keySet()) {
-					if (keyB.startsWith(keyA.substring(0, 4))) continue;
-					List<EditHint> editsB = comparisonRowMap.get(keyB);
-					String key = keyA + " vs " + keyB;
-					EditDifference diff = EditComparer.compare(node, editsA, editsB);
-					EditDifference last = comps.get(key);
-					comps.put(key, EditDifference.sum(diff, last));
+			HashMap<String, EditDifference> comps = new LinkedHashMap<>();
+
+			for (String row : expertMap.keySet()) {
+	//			System.out.println(row);
+				Map<String, List<EditHint>> expertRowMap = expertMap.get(row);
+				Map<String, List<EditHint>> comparisonRowMap = comparisonMap.get(row);
+				Node node = nodeMap.get(row);
+				for (String keyA : expertRowMap.keySet()) {
+					List<EditHint> editsA = expertRowMap.get(keyA);
+					for (String keyB : comparisonRowMap.keySet()) {
+						if (keyB.startsWith(keyA.substring(0, 4))) continue;
+						List<EditHint> editsB = comparisonRowMap.get(keyB);
+						String key = keyA + " vs " + keyB;
+						EditDifference diff = EditComparer.compare(node, editsA, editsB);
+						EditDifference last = comps.get(key);
+						comps.put(key, EditDifference.sum(diff, last));
+					}
 				}
 			}
-		}
 
-		for (String key : comps.keySet()) {
-			System.out.println(key);
-			comps.get(key).print();
-			System.out.println();
+			for (String key : comps.keySet()) {
+				System.out.println(key);
+				comps.get(key).print();
+				System.out.println();
+			}
 		}
 
 		parser.close();
