@@ -3,6 +3,7 @@ package edu.isnap.eval.agreement;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,12 +12,11 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.json.JSONArray;
@@ -168,15 +168,15 @@ public class Agreement {
 			}
 		}
 
-		Set<String> assignments = new TreeSet<>(assignmentMap.values());
-
-		for (String assignment : assignments) {
+		for (Assignment assignment : trainingAssignments) {
 			System.out.println(assignment);
 			System.out.println("--------------");
 
 			HashMap<String, EditDifference> comps = new LinkedHashMap<>();
 
 			for (String row : expertMap.keySet()) {
+				if (!assignmentMap.get(row).equals(assignment.name)) continue;
+
 	//			System.out.println(row);
 				Map<String, List<EditHint>> expertRowMap = expertMap.get(row);
 				Map<String, List<EditHint>> comparisonRowMap = comparisonMap.get(row);
@@ -194,11 +194,16 @@ public class Agreement {
 				}
 			}
 
+			CSVPrinter printer = new CSVPrinter(
+					new FileWriter(assignment.analysisDir() + "/agreement.csv"),
+					CSVFormat.DEFAULT.withHeader(EditDifference.CSV_HEADER));
 			for (String key : comps.keySet()) {
-				System.out.println(key);
-				comps.get(key).print();
+				String[] parts = key.split(" vs ");
+				comps.get(key).print(parts[0], parts[1]);
+				comps.get(key).printCSV(parts[0], parts[1], printer);
 				System.out.println();
 			}
+			printer.close();
 		}
 
 		parser.close();

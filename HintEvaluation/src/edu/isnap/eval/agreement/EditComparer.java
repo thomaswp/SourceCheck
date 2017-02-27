@@ -1,9 +1,12 @@
 package edu.isnap.eval.agreement;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.csv.CSVPrinter;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
@@ -147,8 +150,13 @@ public class EditComparer {
 			return 0;
 		}
 
-		public void print() {
-			String[] labels = new String[] { "-", "d", "r", "m" };
+		public void print(String from, String to) {
+			printCSV(from, to, null);
+		}
+
+		public void printCSV(String from, String to, CSVPrinter printer) {
+			if (printer == null) System.out.println(from + " vs " + to);
+			String[] labels = new String[] { "keep", "delete", "reorder", "move" };
 
 			for (int i = 0; i < 4; i++) {
 				if (i == 2) continue; // skip reorder
@@ -158,19 +166,34 @@ public class EditComparer {
 					l += confusionMatrix[j][i];
 					if (i == j) tp += confusionMatrix[i][j];
 				}
-				printStats(tp, l, p, labels[i]);
+				printStats(printer, from, to, tp, l, p, labels[i]);
 			}
 
 			int tp = insertMatches[0], p = tp + insertMatches[2], l = tp + insertMatches[3];
-			printStats(tp, l, p, "i");
+			printStats(printer, from, to, tp, l, p, "insert");
 		}
 
-		private static void printStats(int tp, int l, int p, String label) {
+		public final static String[] CSV_HEADER = new String[] {
+			"actual", "pred", "edit", "stat", "value", "correct", "total"
+		};
+
+		private static void printStats(CSVPrinter printer, String from, String to,
+				int tp, int l, int p, String label) {
 			double precision = (double)tp / l;
 			double recall = (double)tp / p;
-			System.out.printf("R[%s]: %.02f (%d/%d)\tP[%s]: %.02f (%d/%d)\n",
-					label, recall, tp, p,
-					label, precision, tp, l);
+			if (printer == null) {
+				String shortLabel = label.substring(0, 1);
+				System.out.printf("R[%s]: %.02f (%d/%d)\tP[%s]: %.02f (%d/%d)\n",
+						shortLabel, recall, tp, p,
+						shortLabel, precision, tp, l);
+			} else {
+				try {
+					printer.printRecord(from, to, label, "precision", precision, tp, p);
+					printer.printRecord(from, to, label, "recall", recall, tp, l);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
 		}
 
 		public static EditDifference sum(EditDifference a, EditDifference b) {
