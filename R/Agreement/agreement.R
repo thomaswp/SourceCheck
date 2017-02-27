@@ -9,6 +9,8 @@ loadData <- function() {
 plotAll <- function(data) {
   ggplot(data[data$actual == "all" & data$edit != "keep" & data$pred != "highlight-sed",], aes(x=edit, y=value)) + 
     geom_bar(aes(fill=pred), position="dodge", stat="identity") + 
+    geom_text(aes(group=pred, label=correct, vjust=ifelse(value>0.1,1.5,-1)), position = position_dodge(width=1)) +
+    geom_text(aes(y = 0, group=pred, label=total, vjust=-1), position = position_dodge(width=1)) +
     facet_grid(. ~ stat)
 }
 

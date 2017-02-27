@@ -169,7 +169,8 @@ public class EditComparer {
 				printStats(printer, from, to, tp, l, p, labels[i]);
 			}
 
-			int tp = insertMatches[0], p = tp + insertMatches[2], l = tp + insertMatches[3];
+			int tp = insertMatches[0], n = insertMatches[1],
+					p = tp + n + insertMatches[2], l = tp + n + insertMatches[3];
 			printStats(printer, from, to, tp, l, p, "insert");
 		}
 
@@ -188,8 +189,8 @@ public class EditComparer {
 						shortLabel, precision, tp, l);
 			} else {
 				try {
-					printer.printRecord(from, to, label, "precision", precision, tp, p);
-					printer.printRecord(from, to, label, "recall", recall, tp, l);
+					printer.printRecord(from, to, label, "precision", precision, tp, l);
+					printer.printRecord(from, to, label, "recall", recall, tp, p);
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
