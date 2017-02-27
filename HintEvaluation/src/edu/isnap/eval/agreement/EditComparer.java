@@ -47,19 +47,33 @@ public class EditComparer {
 
 	private static Map<Node, EditHint> getEditMap(List<EditHint> edits) {
 		Map<Node, EditHint> map = new IdentityHashMap<>();
-		// TODO: check for duplicates
 		for (EditHint edit : edits) {
 			if (edit instanceof Deletion) {
-				map.put(((Deletion) edit).node, edit);
+				safeAdd(map, ((Deletion) edit).node, edit);
 			} else if (edit instanceof Reorder) {
-				map.put(((Reorder) edit).node, edit);
+				safeAdd(map, ((Reorder) edit).node, edit);
 			} if (edit instanceof Insertion) {
 				Node candidate = ((Insertion) edit).candidate;
-				if (candidate != null) map.put(candidate, edit);
-				// TODO: handle replacements?
+				if (candidate != null) safeAdd(map, candidate, edit);
+				Node replacement = ((Insertion) edit).replacement;
+				if (replacement != null) safeAdd(map, replacement, edit, true);
 			}
 		}
 		return map;
+	}
+
+	private static void safeAdd(Map<Node, EditHint> map, Node node, EditHint edit) {
+		safeAdd(map, node, edit, false);
+	}
+
+	private static void safeAdd(Map<Node, EditHint> map, Node node, EditHint edit, boolean defer) {
+		if (defer && map.containsKey(node)) return;
+		EditHint replaced = map.put(node, edit);
+		if (replaced != null) {
+			if (!(replaced instanceof Insertion && ((Insertion) replaced).replacement == node)) {
+				System.err.println(node + ": " + replaced + " -> " + edit);
+			}
+		}
 	}
 
 	public static class EditDifference {
@@ -105,14 +119,6 @@ public class EditComparer {
 			}
 			insertMatches[2] = a.size();
 			insertMatches[3] = b.size();
-//			for (Insertion ins : a) {
-//				System.out.println(ins);
-//			}
-//			System.out.println("-----");
-//			for (Insertion ins : b) {
-//				System.out.println(ins);
-//			}
-
 		}
 
 		public void compareEdit(Node node, EditHint editA, EditHint editB) {
@@ -134,6 +140,9 @@ public class EditComparer {
 			} if (edit instanceof Insertion) {
 				Node candidate = ((Insertion) edit).candidate;
 				if (candidate == node) return 3;
+				// Replacements are essentially deletions
+				Node replacement = ((Insertion) edit).replacement;
+				if (replacement == node) return 1;
 			}
 			return 0;
 		}
