@@ -183,10 +183,12 @@ public class Agreement {
 				Node node = nodeMap.get(row);
 				for (String keyA : expertRowMap.keySet()) {
 					List<EditHint> editsA = expertRowMap.get(keyA);
+					String typeA = getType(keyA);
 					for (String keyB : comparisonRowMap.keySet()) {
 						if (keyB.startsWith(keyA.substring(0, 4))) continue;
 						List<EditHint> editsB = comparisonRowMap.get(keyB);
-						String key = keyA + " vs " + keyB;
+						String typeB = getType(keyB);
+						String key = typeA + " vs " + typeB;
 						EditDifference diff = EditComparer.compare(node, editsA, editsB);
 						EditDifference last = comps.get(key);
 						comps.put(key, EditDifference.sum(diff, last));
@@ -209,7 +211,14 @@ public class Agreement {
 		parser.close();
 	}
 
-	private static void extractEdits(Dataset dataset)
+	private static String getType(String key) {
+		if (key.endsWith("-all")) return "all";
+		if (key.endsWith("-ideal")) return "ideal";
+		return key;
+	}
+
+	@SuppressWarnings("unused")
+	private static void testExtracttEdits(Dataset dataset)
 			throws FileNotFoundException, IOException {
 
 
