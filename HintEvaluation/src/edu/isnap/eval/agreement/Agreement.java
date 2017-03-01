@@ -160,6 +160,7 @@ public class Agreement {
 			expertRowMap.put(userID + "-ideal", idealEdits);
 			expertRowMap.put(userID + "-all", allEdits);
 			comparisonRowMap.put(userID + "-all", allEdits);
+//			comparisonRowMap.put(userID + "-ideal", idealEdits);
 
 
 			if (!expertRowMap.containsKey("highlight")) {

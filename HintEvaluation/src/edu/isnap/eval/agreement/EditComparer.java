@@ -85,6 +85,8 @@ public class EditComparer {
 
 		public int[] insertMatches = new int[4];
 
+		public int perfectMatches = 1, count = 1;
+
 		public EditDifference() {
 			for (int i = 0; i < confusionMatrix.length; i++) {
 				confusionMatrix[i] = new int[confusionMatrix.length];
@@ -122,17 +124,15 @@ public class EditComparer {
 			}
 			insertMatches[2] = a.size();
 			insertMatches[3] = b.size();
+
+			if (insertMatches[1] + insertMatches[2] + insertMatches[3] > 0) perfectMatches = 0;
 		}
 
 		public void compareEdit(Node node, EditHint editA, EditHint editB) {
 			int indexA = getActionIndex(node, editA);
 			int indexB = getActionIndex(node, editB);
-//			if (indexB == 1 && indexA != indexB) {
-//				System.out.println(node);
-//				System.out.println("    " + editA + "\n vs " + editB);
-//				System.out.println();
-//			}
 			confusionMatrix[indexA][indexB]++;
+			if (indexA != indexB) perfectMatches = 0;
 		}
 
 		public static int getActionIndex(Node node, EditHint edit) {
@@ -172,6 +172,7 @@ public class EditComparer {
 			int tp = insertMatches[0], n = insertMatches[1],
 					p = tp + n + insertMatches[2], l = tp + n + insertMatches[3];
 			printStats(printer, from, to, tp, l, p, "insert");
+			if (printer == null) System.out.println("Perfect: " + perfectMatches + "/" + count);
 		}
 
 		public final static String[] CSV_HEADER = new String[] {
@@ -207,6 +208,9 @@ public class EditComparer {
 			for (int i = 0; i < diff.insertMatches.length; i++) {
 				diff.insertMatches[i] = a.insertMatches[i] + b.insertMatches[i];
 			}
+
+			diff.perfectMatches = a.perfectMatches + b.perfectMatches;
+			diff.count = a.count + b.count;
 
 			return diff;
 		}
