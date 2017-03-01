@@ -39,6 +39,31 @@ public class EditComparer {
 		return diff;
 	}
 
+	public static EditDifference compare(Node from, List<EditHint> a1, List<EditHint> a2,
+			List<EditHint> b, boolean intersect) {
+		final Map<Node, EditHint> mapA1 = getEditMap(a1);
+		final Map<Node, EditHint> mapA2 = getEditMap(a2);
+		final Map<Node, EditHint> mapB = getEditMap(b);
+
+		final EditDifference diff = new EditDifference();
+
+		from.recurse(new Action() {
+			@Override
+			public void run(Node node) {
+				if (node.hasType("script", "literal", "list")) return;
+				EditHint editA1 = mapA1.get(node);
+				EditHint editA2 = mapA2.get(node);
+				EditHint editB = mapB.get(node);
+				diff.compareEdit(node, editA1, editA2, editB, intersect);
+			}
+		});
+
+		diff.compareInserts(from, filterInsertions(a1), filterInsertions(a2), filterInsertions(b),
+				intersect);
+
+		return diff;
+	}
+
 	private static List<Insertion> filterInsertions(List<EditHint> edits) {
 		List<Insertion> inserts = new ArrayList<>();
 		for (EditHint edit : edits) {
@@ -93,38 +118,6 @@ public class EditComparer {
 		}
 	}
 
-	/** Assumes a and b have unique edits already */
-	public static List<EditHint> union(List<EditHint> a, List<EditHint> b) {
-		List<EditHint> all = new ArrayList<>();
-		all.addAll(a);
-		for (EditHint edit : b) {
-			if (!contains(a, edit)) all.add(edit);
-		}
-		return all;
-	}
-
-	/** Assumes a and b have unique edits already */
-	public static List<EditHint> intersection(List<EditHint> a, List<EditHint> b) {
-		List<EditHint> all = new ArrayList<>();
-		for (EditHint edit : a) {
-			if (contains(b, edit)) all.add(edit);
-		}
-		return all;
-	}
-
-	private static boolean contains(List<EditHint> edits, EditHint edit) {
-		for (EditHint e : edits) {
-			if (equal(e, edit)) return true;
-		}
-		return false;
-	}
-
-	public static boolean equal(EditHint a, EditHint b) {
-		if (a.getClass() != b.getClass()) return false;
-		// TODO
-		return false;
-	}
-
 	public static class EditDifference {
 
 		public int[][] confusionMatrix = new int[4][];
@@ -170,14 +163,62 @@ public class EditComparer {
 			insertMatches[3] = b.size();
 		}
 
+
+		public void compareInserts(Node node, List<Insertion> a1, List<Insertion> a2,
+				List<Insertion> b, boolean intersect) {
+			compareInserts(node, intersect ? intersection(a1, a2) : union(a1, a2), b);
+		}
+
+		/** Assumes a and b have unique edits already */
+		private static List<Insertion> union(List<Insertion> a, List<Insertion> b) {
+			List<Insertion> all = new ArrayList<>();
+			all.addAll(a);
+			for (Insertion edit : b) {
+				if (!contains(a, edit)) all.add(edit);
+			}
+			return all;
+		}
+
+		/** Assumes a and b have unique edits already */
+		private static List<Insertion> intersection(List<Insertion> a, List<Insertion> b) {
+			List<Insertion> all = new ArrayList<>();
+			for (Insertion edit : a) {
+				if (contains(b, edit)) all.add(edit);
+			}
+			return all;
+		}
+
+		private static boolean contains(List<Insertion> edits, Insertion edit) {
+			for (Insertion e : edits) {
+				if (equal(e, edit)) return true;
+			}
+			return false;
+		}
+
+		private static boolean equal(Insertion a, Insertion b) {
+			if (a.index != b.index) return false;
+			if (!a.type.equals(b.type)) return false;
+			if (a.parent != b.parent) return false;
+			return true;
+		}
+
 		public void compareEdit(Node node, EditHint editA, EditHint editB) {
 			int indexA = getActionIndex(node, editA);
 			int indexB = getActionIndex(node, editB);
-//			if (indexB == 1 && indexA != indexB) {
-//				System.out.println(node);
-//				System.out.println("    " + editA + "\n vs " + editB);
-//				System.out.println();
-//			}
+			confusionMatrix[indexA][indexB]++;
+		}
+
+		public void compareEdit(Node node, EditHint editA1, EditHint editA2, EditHint editB,
+				boolean intersect) {
+			int indexA1 = getActionIndex(node, editA1);
+			int indexA2 = getActionIndex(node, editA2);
+			int indexB = getActionIndex(node, editB);
+			int indexA = indexA1;
+			if (intersect) {
+				if (indexA1 != indexA2) indexA = 0;
+			} else {
+				if (indexA2 == indexB) indexA = indexA2;
+			}
 			confusionMatrix[indexA][indexB]++;
 		}
 

@@ -15,6 +15,8 @@ loadData <- function() {
   data$edit <- ordered(data$edit, c("keep", "delete", "move", "insert"))
   data$stat <- paste0(toupper(substring(data$stat, 1,1)), substring(data$stat, 2))
   data$stat <- ordered(data$stat, c("Recall", "Precision"))
+  
+  return (data)
 }
 
 plotAll <- function(data) {
