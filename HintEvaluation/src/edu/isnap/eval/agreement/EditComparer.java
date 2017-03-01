@@ -51,18 +51,32 @@ public class EditComparer {
 	private static Map<Node, EditHint> getEditMap(List<EditHint> edits) {
 		Map<Node, EditHint> map = new IdentityHashMap<>();
 		for (EditHint edit : edits) {
-			if (edit instanceof Deletion) {
-				safeAdd(map, ((Deletion) edit).node, edit);
-			} else if (edit instanceof Reorder) {
-				safeAdd(map, ((Reorder) edit).node, edit);
-			} if (edit instanceof Insertion) {
-				Node candidate = ((Insertion) edit).candidate;
-				if (candidate != null) safeAdd(map, candidate, edit);
-				Node replacement = ((Insertion) edit).replacement;
-				if (replacement != null) safeAdd(map, replacement, edit, true);
-			}
+			Node node = getRef(edit);
+			if (node != null) safeAdd(map, node, edit);
+			Node replaceRef = getReplacementRef(edit);
+			if (node != null) safeAdd(map, replaceRef, edit, true);
 		}
 		return map;
+	}
+
+	private static Node getRef(EditHint edit) {
+		if (edit instanceof Deletion) {
+			return ((Deletion) edit).node;
+		} else if (edit instanceof Reorder) {
+			return ((Reorder) edit).node;
+		} if (edit instanceof Insertion) {
+			Node candidate = ((Insertion) edit).candidate;
+			if (candidate != null) return candidate;
+		}
+		return null;
+	}
+
+	private static Node getReplacementRef(EditHint edit) {
+		if ((edit instanceof Insertion)) {
+			Node replacement = ((Insertion) edit).replacement;
+			if (replacement != null) return replacement;
+		}
+		return null;
 	}
 
 	private static void safeAdd(Map<Node, EditHint> map, Node node, EditHint edit) {
@@ -77,6 +91,38 @@ public class EditComparer {
 				System.err.println(node + ": " + replaced + " -> " + edit);
 			}
 		}
+	}
+
+	/** Assumes a and b have unique edits already */
+	public static List<EditHint> union(List<EditHint> a, List<EditHint> b) {
+		List<EditHint> all = new ArrayList<>();
+		all.addAll(a);
+		for (EditHint edit : b) {
+			if (!contains(a, edit)) all.add(edit);
+		}
+		return all;
+	}
+
+	/** Assumes a and b have unique edits already */
+	public static List<EditHint> intersection(List<EditHint> a, List<EditHint> b) {
+		List<EditHint> all = new ArrayList<>();
+		for (EditHint edit : a) {
+			if (contains(b, edit)) all.add(edit);
+		}
+		return all;
+	}
+
+	private static boolean contains(List<EditHint> edits, EditHint edit) {
+		for (EditHint e : edits) {
+			if (equal(e, edit)) return true;
+		}
+		return false;
+	}
+
+	public static boolean equal(EditHint a, EditHint b) {
+		if (a.getClass() != b.getClass()) return false;
+		// TODO
+		return false;
 	}
 
 	public static class EditDifference {

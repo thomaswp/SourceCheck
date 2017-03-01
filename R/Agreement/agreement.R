@@ -23,7 +23,7 @@ plotAll <- function(data) {
     geom_text(aes(group=pred, label=correct, vjust=ifelse(value>0.2,1.5,-1)), position = position_dodge(width=1)) +
     geom_text(aes(y = 0, group=pred, label=total, vjust=-1), position = position_dodge(width=1)) +
     facet_grid(stat ~ assignment) + 
-    scale_fill_manual(name="Predictor", labels=c("[UPDATE!]", "HC"), values=twoColors) +
+    scale_fill_manual(name="Predictor", labels=c("[UPDATE!]", "TC"), values=twoColors) +
     scale_x_discrete(name="Edit Type", labels=c("Delete", "Move", "Insert")) +
     scale_y_continuous(name="Value") +
     theme_bw()
@@ -35,7 +35,7 @@ plotIdeal <- function(data) {
     geom_text(aes(group=pred, label=correct, vjust=ifelse(value>0.2,1.5,-1)), position = position_dodge(width=1)) +
     geom_text(aes(y = 0, group=pred, label=total, vjust=-1), position = position_dodge(width=1)) +
     facet_grid(. ~ assignment) + 
-    scale_fill_manual(name="Predictor", labels=c("[UPDATE!]", "HC"), values=twoColors) +
+    scale_fill_manual(name="Predictor", labels=c("[UPDATE!]", "TC"), values=twoColors) +
     scale_x_discrete(name="Edit Type", labels=c("Delete", "Move", "Insert")) +
     scale_y_continuous(name="Recall") +
     theme_bw()
