@@ -165,7 +165,7 @@ public class Agreement {
 			if (!expertRowMap.containsKey("highlight")) {
 				comparisonRowMap.put("highlight", highlighter.highlight(fromNode));
 //				comparisonRowMap.put("highlight-rted", highlighter.highlightRTED(fromNode));
-//				comparisonRowMap.put("highlight-sed", highlighter.highlightStringEdit(fromNode));
+				comparisonRowMap.put("highlight-sed", highlighter.highlightStringEdit(fromNode));
 			}
 		}
 
@@ -181,11 +181,7 @@ public class Agreement {
 	//			System.out.println(row);
 				Map<String, List<EditHint>> expertRowMap = expertMap.get(row);
 				Map<String, List<EditHint>> comparisonRowMap = comparisonMap.get(row);
-
 				Node node = nodeMap.get(row);
-
-//				checkUnionAndIntersect(comps, expertRowMap, comparisonRowMap, node);
-
 				for (String keyA : expertRowMap.keySet()) {
 					List<EditHint> editsA = expertRowMap.get(keyA);
 					String typeA = getType(keyA);
@@ -216,30 +212,6 @@ public class Agreement {
 		}
 
 		parser.close();
-	}
-
-	private static void checkUnionAndIntersect(
-			HashMap<String, EditDifference> comps, Map<String, List<EditHint>> expertRowMap,
-			Map<String, List<EditHint>> comparisonRowMap, Node node) {
-		List<List<EditHint>> idealEdits = new ArrayList<>();
-		for (String key : expertRowMap.keySet()) {
-			if (!key.endsWith("-ideal")) continue;
-			idealEdits.add(expertRowMap.get(key));
-		}
-		if (idealEdits.size() == 2) {
-			for (String keyB : comparisonRowMap.keySet()) {
-				if (!keyB.startsWith("highlight")) continue;
-				for (int i = 0; i < 2; i++) {
-					List<EditHint> editsB = comparisonRowMap.get(keyB);
-					String keyA = i == 0 ? "ideal-int" : "ideal-uni";
-					String key = keyA + " vs " + keyB;
-					EditDifference diff = EditComparer.compare(
-							node, idealEdits.get(0), idealEdits.get(1), editsB, i == 0);
-					EditDifference last = comps.get(key);
-					comps.put(key, EditDifference.sum(diff, last));
-				}
-			}
-		}
 	}
 
 	private static String getType(String key) {
