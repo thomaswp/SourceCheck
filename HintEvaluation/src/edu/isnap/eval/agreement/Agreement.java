@@ -160,14 +160,17 @@ public class Agreement {
 			expertRowMap.put(userID + "-ideal", idealEdits);
 			expertRowMap.put(userID + "-all", allEdits);
 			comparisonRowMap.put(userID + "-all", allEdits);
-//			comparisonRowMap.put(userID + "-ideal", idealEdits);
 
 
 			if (!expertRowMap.containsKey("highlight")) {
 				comparisonRowMap.put("highlight", highlighter.highlight(fromNode));
 //				comparisonRowMap.put("highlight-rted", highlighter.highlightRTED(fromNode));
-				comparisonRowMap.put("highlight-sed", highlighter.highlightStringEdit(fromNode));
+//				comparisonRowMap.put("highlight-sed", highlighter.highlightStringEdit(fromNode));
 			}
+//			if (!assignmentID.equals("squiralHW")) {
+//				System.out.println(rowID + " / " + userID);
+//				EditComparer.compare(fromNode, allEdits, comparisonRowMap.get("highlight"));
+//			}
 		}
 
 		for (Assignment assignment : trainingAssignments) {
@@ -401,7 +404,7 @@ public class Agreement {
 			// You can relabel a block and it keeps its ID, so we check for that here
 			if (!fromNode.hasType(toNode.type())) {
 				Insertion rename = new Insertion(fromNode.parent, toNode, fromNode.index());
-				rename.replacement = fromNode;
+				rename.replaced = fromNode;
 				rename.keepChildrenInReplacement = true;
 				renames.add(rename);
 			}

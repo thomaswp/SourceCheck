@@ -43,4 +43,5 @@ plotIdeal <- function(data) {
 
 squash <- function() {
   totals <- ddply(data[data$edit != "keep" & data$pred != "highlight-sed",], c("assignment", "actual",  "stat", "pred"), summarize, tCorrect=sum(correct), tTotal=sum(total), tValue=tCorrect/tTotal)
+  totalsKeep <- ddply(data[data$edit == "keep" & data$pred != "highlight-sed",], c("assignment", "actual",  "stat", "pred"), summarize, tCorrect=sum(correct), tTotal=sum(total), tValue=tCorrect/tTotal)
 }

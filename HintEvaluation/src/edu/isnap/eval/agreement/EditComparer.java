@@ -27,6 +27,9 @@ public class EditComparer {
 		from.recurse(new Action() {
 			@Override
 			public void run(Node node) {
+				// Ignore nodes we can't present a hint about anyway
+				// These actually help the algorithm's agreement quite a bit, so I promise we're
+				// not helping our results here. This is mostly correctly deleted literals.
 				if (node.hasType("script", "literal", "list")) return;
 				EditHint editA = mapA.get(node);
 				EditHint editB = mapB.get(node);
@@ -58,7 +61,7 @@ public class EditComparer {
 			} if (edit instanceof Insertion) {
 				Node candidate = ((Insertion) edit).candidate;
 				if (candidate != null) safeAdd(map, candidate, edit);
-				Node replacement = ((Insertion) edit).replacement;
+				Node replacement = ((Insertion) edit).replaced;
 				if (replacement != null) safeAdd(map, replacement, edit, true);
 			}
 		}
@@ -73,7 +76,7 @@ public class EditComparer {
 		if (defer && map.containsKey(node)) return;
 		EditHint replaced = map.put(node, edit);
 		if (replaced != null) {
-			if (!(replaced instanceof Insertion && ((Insertion) replaced).replacement == node)) {
+			if (!(replaced instanceof Insertion && ((Insertion) replaced).replaced == node)) {
 				System.err.println(node + ": " + replaced + " -> " + edit);
 			}
 		}
@@ -97,14 +100,14 @@ public class EditComparer {
 			for (int m = 0; m < 2; m++) {
 				for (int ai = 0; ai < a.size(); ai++) {
 					Insertion insA = a.get(ai);
-					if (insA.missingParent || "temp".equals(insA.parent.tag)) {
+					if (ignoreInsertion(insA)) {
 						a.remove(ai--);
 						continue;
 					}
 
 					for (int bi = 0; bi < b.size(); bi++) {
 						Insertion insB = b.get(bi);
-						if (insB.missingParent || "temp".equals(insB.parent.tag)) {
+						if (ignoreInsertion(insB)) {
 							b.remove(bi--);
 							continue;
 						}
@@ -125,7 +128,20 @@ public class EditComparer {
 			insertMatches[2] = a.size();
 			insertMatches[3] = b.size();
 
+//			for (Insertion i : a) System.out.println(i);
+//			System.out.println("------- vs -------");
+//			for (Insertion i : b) System.out.println(i);
+
 			if (insertMatches[1] + insertMatches[2] + insertMatches[3] > 0) perfectMatches = 0;
+		}
+
+		private boolean ignoreInsertion(Insertion insertion) {
+			return insertion.missingParent || "temp".equals(insertion.parent.tag);
+			// TODO: for consistency, you may want to add this for the CRC, but it doesn't change
+			// the percentages almost at all
+//					"script".equals(insertion.type) ||
+//					"literal".equals(insertion.type) ||
+//					"list".equals(insertion.type);
 		}
 
 		public void compareEdit(Node node, EditHint editA, EditHint editB) {
@@ -144,7 +160,7 @@ public class EditComparer {
 				Node candidate = ((Insertion) edit).candidate;
 				if (candidate == node) return 3;
 				// Replacements are essentially deletions
-				Node replacement = ((Insertion) edit).replacement;
+				Node replacement = ((Insertion) edit).replaced;
 				if (replacement == node) return 1;
 			}
 			return 0;

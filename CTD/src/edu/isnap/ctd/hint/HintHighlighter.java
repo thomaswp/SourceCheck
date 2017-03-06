@@ -120,7 +120,7 @@ public class HintHighlighter {
 							// the current node at this index
 							if (isCodeElement(moveParent) &&
 									insertIndex < moveParent.children.size()) {
-								insertion.replacement = moveParent.children.get(insertIndex);
+								insertion.replaced = moveParent.children.get(insertIndex);
 							}
 							edits.add(insertion);
 						}
@@ -241,7 +241,7 @@ public class HintHighlighter {
 							// If the node is being inserted in a code element then it replaces
 							// whatever already exists at this index in the parent
 							if (isCodeElement(node) && insertIndex < node.children.size()) {
-								insertion.replacement = node.children.get(insertIndex);
+								insertion.replaced = node.children.get(insertIndex);
 							}
 							// If this is a non-script, we treat this new insertion as a "match"
 							// and increment the insert index if possible
@@ -324,7 +324,7 @@ public class HintHighlighter {
 
 				// Also remove any deletions that are implicit in an inertion's replacement
 				for (Insertion inst : insertions) {
-					if (inst.replacement == deletion.node) {
+					if (inst.replaced == deletion.node) {
 						edits.remove(i--);
 						break;
 					}
@@ -345,7 +345,7 @@ public class HintHighlighter {
 
 		// To be eligible for a script replacement, an insertion must have no replacement and have a
 		// script parent with a child at the insertion index
-		if (insertion.replacement != null || !insertion.parent.hasType(config.script) ||
+		if (insertion.replaced != null || !insertion.parent.hasType(config.script) ||
 				insertion.parent.children.size() <= insertion.index) return;
 
 		// Additionally the at the index of insert must be marked for deletion and be of a different
@@ -385,7 +385,7 @@ public class HintHighlighter {
 
 		// In this case, we set the replacement, change the deleted node to replaced and remove the
 		// deletion
-		insertion.replacement = deleted;
+		insertion.replaced = deleted;
 		insertion.keepChildrenInReplacement = keepChildren;
 		colors.put(deleted, Highlight.Replaced);
 
@@ -735,7 +735,7 @@ public class HintHighlighter {
 		private final transient Node pair;
 
 		/** The node the inserted node should replace (in the same location) */
-		public Node replacement;
+		public Node replaced;
 		/** A candidate node elsewhere that could be used to do the replacement */
 		public Node candidate;
 
@@ -765,7 +765,7 @@ public class HintHighlighter {
 			data.put("missingParent", missingParent);
 			data.put("index", index);
 			data.put("type", type);
-			data.put("replacement", Node.getNodeReference(replacement));
+			data.put("replacement", Node.getNodeReference(replaced));
 			data.put("candidate", Node.getNodeReference(candidate));
 			LinkedList<String> items = new LinkedList<>(Arrays.asList(parent.getChildArray()));
 			data.put("from", toJSONArray(items));
@@ -794,7 +794,7 @@ public class HintHighlighter {
 
 		@Override
 		protected void editChildren(List<String> children) {
-			if (replacement != null) {
+			if (replaced != null) {
 				children.remove(index);
 			}
 			children.add(index, type);
@@ -820,7 +820,7 @@ public class HintHighlighter {
 
 		@Override
 		protected double priority() {
-			return 5 + (candidate == null ? 0  : 1) + (replacement == null ? 0 : 1);
+			return 5 + (candidate == null ? 0  : 1) + (replaced == null ? 0 : 1);
 		}
 
 		@Override
@@ -864,11 +864,11 @@ public class HintHighlighter {
 				public void apply() {
 					int index = Insertion.this.index;
 					Node parent = Insertion.this.parent;
-					if (replacement != null) {
-						int rIndex = replacement.index();
+					if (replaced != null) {
+						int rIndex = replaced.index();
 						if (rIndex >= 0) {
 							index = rIndex;
-							replacement.parent.children.remove(rIndex);
+							replaced.parent.children.remove(rIndex);
 						} else if (keepChildrenInReplacement) {
 							// Special case for renamed nodes
 							// TODO: as most special cases, this is a bit of a hack
@@ -879,7 +879,7 @@ public class HintHighlighter {
 								@Override
 								public boolean eval(Node node) {
 									for (Node child : node.children) {
-										if (child == replacement) return true;
+										if (child == replaced) return true;
 									}
 									return false;
 								}
@@ -887,7 +887,7 @@ public class HintHighlighter {
 							if (newParent != null) {
 								parent = newParent;
 								for (int i = 0; i < parent.children.size(); i++) {
-									if (parent.children.get(i) == replacement) {
+									if (parent.children.get(i) == replaced) {
 										index = i;
 										parent.children.remove(i);
 										break;
@@ -896,7 +896,7 @@ public class HintHighlighter {
 							}
 						}
 						if (keepChildrenInReplacement) {
-							for (Node child : replacement.children) {
+							for (Node child : replaced.children) {
 								toInsert.children.add(child.copyWithNewParent(toInsert));
 							}
 						}
