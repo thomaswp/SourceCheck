@@ -60,6 +60,10 @@ public class HintMapBuilder {
 		return new HintGenerator(hintMap);
 	}
 
+	public HintHighlighter hintHighlighter() {
+		return new HintHighlighter(hintMap);
+	}
+
 	/**
 	 * Add data from an assignment attempt to the HintGenerator.
 	 * @param solutionPath A list of Nodes, representing Snapshots of the attempt from start to

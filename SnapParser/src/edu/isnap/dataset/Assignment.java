@@ -61,6 +61,10 @@ public class Assignment {
 		return dir("parsed");
 	}
 
+	public String hintRepairDir() {
+		return dir("hintRepair");
+	}
+
 	public String dir(String folderName) {
 		return dataDir + "/" + folderName + "/" + name;
 	}

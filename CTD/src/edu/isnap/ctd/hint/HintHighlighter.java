@@ -392,8 +392,8 @@ public class HintHighlighter {
 			}
 		});
 
-		System.out.println("------------------------------");
-		System.out.println(bestMatch.prettyPrint(labels));
+//		System.out.println("------------------------------");
+//		System.out.println(bestMatch.prettyPrint(labels));
 		return mapping;
 	}
 
