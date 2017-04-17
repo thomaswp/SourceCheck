@@ -89,6 +89,10 @@ public class SnapParser {
 					CSVParser parser = new CSVParser(new FileReader(logFile),
 							CSVFormat.EXCEL.withHeader());
 
+					// Backwards compatibility from when we used to call it jsonData
+					String dataKey = "data";
+					if (!parser.getHeaderMap().containsKey(dataKey)) dataKey = "jsonData";
+
 					DateFormat format = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
 					BlockIndex editingIndex = null;
 					Snapshot lastSnaphot = null;
@@ -106,7 +110,7 @@ public class SnapParser {
 
 
 						String action = record.get("message");
-						String data = record.get("data");
+						String data = record.get(dataKey);
 						String userID = hasUserIDs ? record.get("userID") : null;
 						String session = record.get("sessionID");
 						String xml = record.get("code");
