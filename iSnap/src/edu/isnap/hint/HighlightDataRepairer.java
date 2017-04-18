@@ -40,12 +40,18 @@ public class HighlightDataRepairer {
 		for (AssignmentAttempt attempt : assignment.load(Mode.Use, false, false).values()) {
 			JSONObject actionObject = new JSONObject();
 			int count = 0;
+			boolean assignmentSwitch = false;
 			for (AttemptAction action : attempt) {
+				assignmentSwitch |= AttemptAction.ASSIGNMENT_SET_ID_FROM.equals(action.message);
 				if (AttemptAction.HINT_PROCESS_HINTS.equals(action.message)) {
 					if (action.data.equals("\"\"")) {
 						if (action.lastSnapshot == null) {
-							System.err.println(
-									"Hint with no snapshot: " + attempt.id + "/" + action.id);
+							// If the assignment was switched before this error, it's just missing
+							// data because it didn't used to record a snapshot when this happens
+							if (!assignmentSwitch) {
+								System.err.println(
+										"Hint with no snapshot: " + attempt.id + "/" + action.id);
+							}
 							continue;
 						}
 						List<EditHint> hints = highlighter.highlight(

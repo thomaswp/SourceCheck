@@ -8,6 +8,6 @@ import edu.isnap.hint.HighlightDataRepairer;
 
 public class RunHintDataRepairer {
 	public static void main(String[] args) throws IOException {
-		HighlightDataRepairer.repair(Spring2017.PolygonMaker, Fall2016.instance, 1);
+		HighlightDataRepairer.repair(Spring2017.GuessingGame3, Fall2016.instance, 1);
 	}
 }
