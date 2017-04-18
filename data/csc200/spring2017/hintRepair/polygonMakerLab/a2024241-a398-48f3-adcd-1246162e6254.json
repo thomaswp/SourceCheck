@@ -1,0 +1,1106 @@
+{
+    "90398": [
+        {
+            "data": {
+                "parent": {
+                    "index": -1,
+                    "label": "snapshot"
+                },
+                "missingParent": false,
+                "action": "insert",
+                "index": 1,
+                "from": ["stage"],
+                "to": [
+                    "stage",
+                    "customBlock"
+                ],
+                "type": "customBlock"
+            },
+            "from": "insert: snapshot: [stage]",
+            "to": "insert: snapshot: [stage, customBlock]",
+            "type": "highlight"
+        },
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "index": -1,
+                                "label": "snapshot"
+                            },
+                            "index": 0,
+                            "label": "stage"
+                        },
+                        "index": 0,
+                        "label": "sprite"
+                    },
+                    "index": 0,
+                    "label": "script"
+                },
+                "missingParent": false,
+                "action": "insert",
+                "index": 1,
+                "from": [
+                    "receiveGo",
+                    "doSayFor"
+                ],
+                "to": [
+                    "receiveGo",
+                    "down",
+                    "doSayFor"
+                ],
+                "type": "down"
+            },
+            "from": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, doSayFor]",
+            "to": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, down, doSayFor]",
+            "type": "highlight"
+        },
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "index": -1,
+                                "label": "snapshot"
+                            },
+                            "index": 0,
+                            "label": "stage"
+                        },
+                        "index": 0,
+                        "label": "sprite"
+                    },
+                    "index": 0,
+                    "label": "script"
+                },
+                "missingParent": false,
+                "action": "insert",
+                "index": 1,
+                "from": [
+                    "receiveGo",
+                    "doSayFor"
+                ],
+                "to": [
+                    "receiveGo",
+                    "evaluateCustomBlock",
+                    "doSayFor"
+                ],
+                "type": "evaluateCustomBlock"
+            },
+            "from": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, doSayFor]",
+            "to": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, evaluateCustomBlock, doSayFor]",
+            "type": "highlight"
+        },
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "index": -1,
+                                "label": "snapshot"
+                            },
+                            "index": 0,
+                            "label": "stage"
+                        },
+                        "index": 0,
+                        "label": "sprite"
+                    },
+                    "index": 0,
+                    "label": "script"
+                },
+                "node": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "parent": {
+                                    "index": -1,
+                                    "label": "snapshot"
+                                },
+                                "index": 0,
+                                "label": "stage"
+                            },
+                            "index": 0,
+                            "label": "sprite"
+                        },
+                        "index": 0,
+                        "label": "script"
+                    },
+                    "index": 1,
+                    "label": "doSayFor"
+                },
+                "action": "delete"
+            },
+            "from": "delete: snapshot:[stage:[sprite:[script]]]: [receiveGo, doSayFor]",
+            "to": "delete: snapshot:[stage:[sprite:[script]]]: [receiveGo]",
+            "type": "highlight"
+        }
+    ],
+    "90430": [
+        {
+            "data": {
+                "parent": {
+                    "index": -1,
+                    "label": "snapshot"
+                },
+                "missingParent": false,
+                "action": "insert",
+                "index": 1,
+                "from": ["stage"],
+                "to": [
+                    "stage",
+                    "customBlock"
+                ],
+                "type": "customBlock"
+            },
+            "from": "insert: snapshot: [stage]",
+            "to": "insert: snapshot: [stage, customBlock]",
+            "type": "highlight"
+        },
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "index": -1,
+                                "label": "snapshot"
+                            },
+                            "index": 0,
+                            "label": "stage"
+                        },
+                        "index": 0,
+                        "label": "sprite"
+                    },
+                    "index": 0,
+                    "label": "script"
+                },
+                "missingParent": false,
+                "action": "insert",
+                "index": 1,
+                "from": [
+                    "receiveGo",
+                    "doSayFor"
+                ],
+                "to": [
+                    "receiveGo",
+                    "down",
+                    "doSayFor"
+                ],
+                "type": "down"
+            },
+            "from": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, doSayFor]",
+            "to": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, down, doSayFor]",
+            "type": "highlight"
+        },
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "index": -1,
+                                "label": "snapshot"
+                            },
+                            "index": 0,
+                            "label": "stage"
+                        },
+                        "index": 0,
+                        "label": "sprite"
+                    },
+                    "index": 0,
+                    "label": "script"
+                },
+                "missingParent": false,
+                "action": "insert",
+                "index": 1,
+                "from": [
+                    "receiveGo",
+                    "doSayFor"
+                ],
+                "to": [
+                    "receiveGo",
+                    "evaluateCustomBlock",
+                    "doSayFor"
+                ],
+                "type": "evaluateCustomBlock"
+            },
+            "from": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, doSayFor]",
+            "to": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, evaluateCustomBlock, doSayFor]",
+            "type": "highlight"
+        },
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "index": -1,
+                                "label": "snapshot"
+                            },
+                            "index": 0,
+                            "label": "stage"
+                        },
+                        "index": 0,
+                        "label": "sprite"
+                    },
+                    "index": 0,
+                    "label": "script"
+                },
+                "node": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "parent": {
+                                    "index": -1,
+                                    "label": "snapshot"
+                                },
+                                "index": 0,
+                                "label": "stage"
+                            },
+                            "index": 0,
+                            "label": "sprite"
+                        },
+                        "index": 0,
+                        "label": "script"
+                    },
+                    "index": 1,
+                    "label": "doSayFor"
+                },
+                "action": "delete"
+            },
+            "from": "delete: snapshot:[stage:[sprite:[script]]]: [receiveGo, doSayFor]",
+            "to": "delete: snapshot:[stage:[sprite:[script]]]: [receiveGo]",
+            "type": "highlight"
+        }
+    ],
+    "90421": [
+        {
+            "data": {
+                "parent": {
+                    "index": -1,
+                    "label": "snapshot"
+                },
+                "missingParent": false,
+                "action": "insert",
+                "index": 1,
+                "from": ["stage"],
+                "to": [
+                    "stage",
+                    "customBlock"
+                ],
+                "type": "customBlock"
+            },
+            "from": "insert: snapshot: [stage]",
+            "to": "insert: snapshot: [stage, customBlock]",
+            "type": "highlight"
+        },
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "index": -1,
+                                "label": "snapshot"
+                            },
+                            "index": 0,
+                            "label": "stage"
+                        },
+                        "index": 0,
+                        "label": "sprite"
+                    },
+                    "index": 0,
+                    "label": "script"
+                },
+                "missingParent": false,
+                "action": "insert",
+                "index": 1,
+                "from": [
+                    "receiveGo",
+                    "doSayFor"
+                ],
+                "to": [
+                    "receiveGo",
+                    "down",
+                    "doSayFor"
+                ],
+                "type": "down"
+            },
+            "from": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, doSayFor]",
+            "to": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, down, doSayFor]",
+            "type": "highlight"
+        },
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "index": -1,
+                                "label": "snapshot"
+                            },
+                            "index": 0,
+                            "label": "stage"
+                        },
+                        "index": 0,
+                        "label": "sprite"
+                    },
+                    "index": 0,
+                    "label": "script"
+                },
+                "missingParent": false,
+                "action": "insert",
+                "index": 1,
+                "from": [
+                    "receiveGo",
+                    "doSayFor"
+                ],
+                "to": [
+                    "receiveGo",
+                    "evaluateCustomBlock",
+                    "doSayFor"
+                ],
+                "type": "evaluateCustomBlock"
+            },
+            "from": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, doSayFor]",
+            "to": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, evaluateCustomBlock, doSayFor]",
+            "type": "highlight"
+        },
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "index": -1,
+                                "label": "snapshot"
+                            },
+                            "index": 0,
+                            "label": "stage"
+                        },
+                        "index": 0,
+                        "label": "sprite"
+                    },
+                    "index": 0,
+                    "label": "script"
+                },
+                "node": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "parent": {
+                                    "index": -1,
+                                    "label": "snapshot"
+                                },
+                                "index": 0,
+                                "label": "stage"
+                            },
+                            "index": 0,
+                            "label": "sprite"
+                        },
+                        "index": 0,
+                        "label": "script"
+                    },
+                    "index": 1,
+                    "label": "doSayFor"
+                },
+                "action": "delete"
+            },
+            "from": "delete: snapshot:[stage:[sprite:[script]]]: [receiveGo, doSayFor]",
+            "to": "delete: snapshot:[stage:[sprite:[script]]]: [receiveGo]",
+            "type": "highlight"
+        }
+    ],
+    "90432": [
+        {
+            "data": {
+                "parent": {
+                    "index": -1,
+                    "label": "snapshot"
+                },
+                "missingParent": false,
+                "action": "insert",
+                "index": 1,
+                "from": ["stage"],
+                "to": [
+                    "stage",
+                    "customBlock"
+                ],
+                "type": "customBlock"
+            },
+            "from": "insert: snapshot: [stage]",
+            "to": "insert: snapshot: [stage, customBlock]",
+            "type": "highlight"
+        },
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "index": -1,
+                                "label": "snapshot"
+                            },
+                            "index": 0,
+                            "label": "stage"
+                        },
+                        "index": 0,
+                        "label": "sprite"
+                    },
+                    "index": 0,
+                    "label": "script"
+                },
+                "missingParent": false,
+                "action": "insert",
+                "index": 1,
+                "from": [
+                    "receiveGo",
+                    "doSayFor"
+                ],
+                "to": [
+                    "receiveGo",
+                    "down",
+                    "doSayFor"
+                ],
+                "type": "down"
+            },
+            "from": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, doSayFor]",
+            "to": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, down, doSayFor]",
+            "type": "highlight"
+        },
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "index": -1,
+                                "label": "snapshot"
+                            },
+                            "index": 0,
+                            "label": "stage"
+                        },
+                        "index": 0,
+                        "label": "sprite"
+                    },
+                    "index": 0,
+                    "label": "script"
+                },
+                "missingParent": false,
+                "action": "insert",
+                "index": 1,
+                "from": [
+                    "receiveGo",
+                    "doSayFor"
+                ],
+                "to": [
+                    "receiveGo",
+                    "evaluateCustomBlock",
+                    "doSayFor"
+                ],
+                "type": "evaluateCustomBlock"
+            },
+            "from": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, doSayFor]",
+            "to": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, evaluateCustomBlock, doSayFor]",
+            "type": "highlight"
+        },
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "index": -1,
+                                "label": "snapshot"
+                            },
+                            "index": 0,
+                            "label": "stage"
+                        },
+                        "index": 0,
+                        "label": "sprite"
+                    },
+                    "index": 0,
+                    "label": "script"
+                },
+                "node": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "parent": {
+                                    "index": -1,
+                                    "label": "snapshot"
+                                },
+                                "index": 0,
+                                "label": "stage"
+                            },
+                            "index": 0,
+                            "label": "sprite"
+                        },
+                        "index": 0,
+                        "label": "script"
+                    },
+                    "index": 1,
+                    "label": "doSayFor"
+                },
+                "action": "delete"
+            },
+            "from": "delete: snapshot:[stage:[sprite:[script]]]: [receiveGo, doSayFor]",
+            "to": "delete: snapshot:[stage:[sprite:[script]]]: [receiveGo]",
+            "type": "highlight"
+        }
+    ],
+    "90424": [
+        {
+            "data": {
+                "parent": {
+                    "index": -1,
+                    "label": "snapshot"
+                },
+                "missingParent": false,
+                "action": "insert",
+                "index": 1,
+                "from": ["stage"],
+                "to": [
+                    "stage",
+                    "customBlock"
+                ],
+                "type": "customBlock"
+            },
+            "from": "insert: snapshot: [stage]",
+            "to": "insert: snapshot: [stage, customBlock]",
+            "type": "highlight"
+        },
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "index": -1,
+                                "label": "snapshot"
+                            },
+                            "index": 0,
+                            "label": "stage"
+                        },
+                        "index": 0,
+                        "label": "sprite"
+                    },
+                    "index": 0,
+                    "label": "script"
+                },
+                "missingParent": false,
+                "action": "insert",
+                "index": 1,
+                "from": [
+                    "receiveGo",
+                    "doSayFor"
+                ],
+                "to": [
+                    "receiveGo",
+                    "down",
+                    "doSayFor"
+                ],
+                "type": "down"
+            },
+            "from": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, doSayFor]",
+            "to": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, down, doSayFor]",
+            "type": "highlight"
+        },
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "index": -1,
+                                "label": "snapshot"
+                            },
+                            "index": 0,
+                            "label": "stage"
+                        },
+                        "index": 0,
+                        "label": "sprite"
+                    },
+                    "index": 0,
+                    "label": "script"
+                },
+                "missingParent": false,
+                "action": "insert",
+                "index": 1,
+                "from": [
+                    "receiveGo",
+                    "doSayFor"
+                ],
+                "to": [
+                    "receiveGo",
+                    "evaluateCustomBlock",
+                    "doSayFor"
+                ],
+                "type": "evaluateCustomBlock"
+            },
+            "from": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, doSayFor]",
+            "to": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, evaluateCustomBlock, doSayFor]",
+            "type": "highlight"
+        },
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "index": -1,
+                                "label": "snapshot"
+                            },
+                            "index": 0,
+                            "label": "stage"
+                        },
+                        "index": 0,
+                        "label": "sprite"
+                    },
+                    "index": 0,
+                    "label": "script"
+                },
+                "node": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "parent": {
+                                    "index": -1,
+                                    "label": "snapshot"
+                                },
+                                "index": 0,
+                                "label": "stage"
+                            },
+                            "index": 0,
+                            "label": "sprite"
+                        },
+                        "index": 0,
+                        "label": "script"
+                    },
+                    "index": 1,
+                    "label": "doSayFor"
+                },
+                "action": "delete"
+            },
+            "from": "delete: snapshot:[stage:[sprite:[script]]]: [receiveGo, doSayFor]",
+            "to": "delete: snapshot:[stage:[sprite:[script]]]: [receiveGo]",
+            "type": "highlight"
+        }
+    ],
+    "90434": [
+        {
+            "data": {
+                "parent": {
+                    "index": -1,
+                    "label": "snapshot"
+                },
+                "missingParent": false,
+                "action": "insert",
+                "index": 1,
+                "from": ["stage"],
+                "to": [
+                    "stage",
+                    "customBlock"
+                ],
+                "type": "customBlock"
+            },
+            "from": "insert: snapshot: [stage]",
+            "to": "insert: snapshot: [stage, customBlock]",
+            "type": "highlight"
+        },
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "index": -1,
+                                "label": "snapshot"
+                            },
+                            "index": 0,
+                            "label": "stage"
+                        },
+                        "index": 0,
+                        "label": "sprite"
+                    },
+                    "index": 0,
+                    "label": "script"
+                },
+                "missingParent": false,
+                "action": "insert",
+                "index": 1,
+                "from": [
+                    "receiveGo",
+                    "doSayFor"
+                ],
+                "to": [
+                    "receiveGo",
+                    "down",
+                    "doSayFor"
+                ],
+                "type": "down"
+            },
+            "from": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, doSayFor]",
+            "to": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, down, doSayFor]",
+            "type": "highlight"
+        },
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "index": -1,
+                                "label": "snapshot"
+                            },
+                            "index": 0,
+                            "label": "stage"
+                        },
+                        "index": 0,
+                        "label": "sprite"
+                    },
+                    "index": 0,
+                    "label": "script"
+                },
+                "missingParent": false,
+                "action": "insert",
+                "index": 1,
+                "from": [
+                    "receiveGo",
+                    "doSayFor"
+                ],
+                "to": [
+                    "receiveGo",
+                    "evaluateCustomBlock",
+                    "doSayFor"
+                ],
+                "type": "evaluateCustomBlock"
+            },
+            "from": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, doSayFor]",
+            "to": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, evaluateCustomBlock, doSayFor]",
+            "type": "highlight"
+        },
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "index": -1,
+                                "label": "snapshot"
+                            },
+                            "index": 0,
+                            "label": "stage"
+                        },
+                        "index": 0,
+                        "label": "sprite"
+                    },
+                    "index": 0,
+                    "label": "script"
+                },
+                "node": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "parent": {
+                                    "index": -1,
+                                    "label": "snapshot"
+                                },
+                                "index": 0,
+                                "label": "stage"
+                            },
+                            "index": 0,
+                            "label": "sprite"
+                        },
+                        "index": 0,
+                        "label": "script"
+                    },
+                    "index": 1,
+                    "label": "doSayFor"
+                },
+                "action": "delete"
+            },
+            "from": "delete: snapshot:[stage:[sprite:[script]]]: [receiveGo, doSayFor]",
+            "to": "delete: snapshot:[stage:[sprite:[script]]]: [receiveGo]",
+            "type": "highlight"
+        }
+    ],
+    "90415": [
+        {
+            "data": {
+                "parent": {
+                    "index": -1,
+                    "label": "snapshot"
+                },
+                "missingParent": false,
+                "action": "insert",
+                "index": 1,
+                "from": ["stage"],
+                "to": [
+                    "stage",
+                    "customBlock"
+                ],
+                "type": "customBlock"
+            },
+            "from": "insert: snapshot: [stage]",
+            "to": "insert: snapshot: [stage, customBlock]",
+            "type": "highlight"
+        },
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "index": -1,
+                                "label": "snapshot"
+                            },
+                            "index": 0,
+                            "label": "stage"
+                        },
+                        "index": 0,
+                        "label": "sprite"
+                    },
+                    "index": 0,
+                    "label": "script"
+                },
+                "missingParent": false,
+                "action": "insert",
+                "index": 1,
+                "from": [
+                    "receiveGo",
+                    "doSayFor"
+                ],
+                "to": [
+                    "receiveGo",
+                    "down",
+                    "doSayFor"
+                ],
+                "type": "down"
+            },
+            "from": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, doSayFor]",
+            "to": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, down, doSayFor]",
+            "type": "highlight"
+        },
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "index": -1,
+                                "label": "snapshot"
+                            },
+                            "index": 0,
+                            "label": "stage"
+                        },
+                        "index": 0,
+                        "label": "sprite"
+                    },
+                    "index": 0,
+                    "label": "script"
+                },
+                "missingParent": false,
+                "action": "insert",
+                "index": 1,
+                "from": [
+                    "receiveGo",
+                    "doSayFor"
+                ],
+                "to": [
+                    "receiveGo",
+                    "evaluateCustomBlock",
+                    "doSayFor"
+                ],
+                "type": "evaluateCustomBlock"
+            },
+            "from": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, doSayFor]",
+            "to": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, evaluateCustomBlock, doSayFor]",
+            "type": "highlight"
+        },
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "index": -1,
+                                "label": "snapshot"
+                            },
+                            "index": 0,
+                            "label": "stage"
+                        },
+                        "index": 0,
+                        "label": "sprite"
+                    },
+                    "index": 0,
+                    "label": "script"
+                },
+                "node": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "parent": {
+                                    "index": -1,
+                                    "label": "snapshot"
+                                },
+                                "index": 0,
+                                "label": "stage"
+                            },
+                            "index": 0,
+                            "label": "sprite"
+                        },
+                        "index": 0,
+                        "label": "script"
+                    },
+                    "index": 1,
+                    "label": "doSayFor"
+                },
+                "action": "delete"
+            },
+            "from": "delete: snapshot:[stage:[sprite:[script]]]: [receiveGo, doSayFor]",
+            "to": "delete: snapshot:[stage:[sprite:[script]]]: [receiveGo]",
+            "type": "highlight"
+        }
+    ],
+    "90428": [
+        {
+            "data": {
+                "parent": {
+                    "index": -1,
+                    "label": "snapshot"
+                },
+                "missingParent": false,
+                "action": "insert",
+                "index": 1,
+                "from": ["stage"],
+                "to": [
+                    "stage",
+                    "customBlock"
+                ],
+                "type": "customBlock"
+            },
+            "from": "insert: snapshot: [stage]",
+            "to": "insert: snapshot: [stage, customBlock]",
+            "type": "highlight"
+        },
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "index": -1,
+                                "label": "snapshot"
+                            },
+                            "index": 0,
+                            "label": "stage"
+                        },
+                        "index": 0,
+                        "label": "sprite"
+                    },
+                    "index": 0,
+                    "label": "script"
+                },
+                "missingParent": false,
+                "action": "insert",
+                "index": 1,
+                "from": [
+                    "receiveGo",
+                    "doSayFor"
+                ],
+                "to": [
+                    "receiveGo",
+                    "down",
+                    "doSayFor"
+                ],
+                "type": "down"
+            },
+            "from": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, doSayFor]",
+            "to": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, down, doSayFor]",
+            "type": "highlight"
+        },
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "index": -1,
+                                "label": "snapshot"
+                            },
+                            "index": 0,
+                            "label": "stage"
+                        },
+                        "index": 0,
+                        "label": "sprite"
+                    },
+                    "index": 0,
+                    "label": "script"
+                },
+                "missingParent": false,
+                "action": "insert",
+                "index": 1,
+                "from": [
+                    "receiveGo",
+                    "doSayFor"
+                ],
+                "to": [
+                    "receiveGo",
+                    "evaluateCustomBlock",
+                    "doSayFor"
+                ],
+                "type": "evaluateCustomBlock"
+            },
+            "from": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, doSayFor]",
+            "to": "insert: snapshot:[stage:[sprite:[script]]]: [receiveGo, evaluateCustomBlock, doSayFor]",
+            "type": "highlight"
+        },
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "index": -1,
+                                "label": "snapshot"
+                            },
+                            "index": 0,
+                            "label": "stage"
+                        },
+                        "index": 0,
+                        "label": "sprite"
+                    },
+                    "index": 0,
+                    "label": "script"
+                },
+                "node": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "parent": {
+                                    "index": -1,
+                                    "label": "snapshot"
+                                },
+                                "index": 0,
+                                "label": "stage"
+                            },
+                            "index": 0,
+                            "label": "sprite"
+                        },
+                        "index": 0,
+                        "label": "script"
+                    },
+                    "index": 1,
+                    "label": "doSayFor"
+                },
+                "action": "delete"
+            },
+            "from": "delete: snapshot:[stage:[sprite:[script]]]: [receiveGo, doSayFor]",
+            "to": "delete: snapshot:[stage:[sprite:[script]]]: [receiveGo]",
+            "type": "highlight"
+        }
+    ]
+}

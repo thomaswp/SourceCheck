@@ -6,6 +6,7 @@
 !csc200/*/grades/*.csv
 csc200/*/submitted/*/*
 !csc200/*/submitted/*.txt
+!csc200/*/hintRepair/*/*.json
 help-seeking/*/submitted/*/*
 !help-seeking/*/submitted/*.txt
 !*/*/unittests/**
