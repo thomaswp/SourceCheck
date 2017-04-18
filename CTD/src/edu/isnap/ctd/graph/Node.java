@@ -1,6 +1,7 @@
 package edu.isnap.ctd.graph;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -276,23 +277,23 @@ public class Node extends StringHashable {
 	}
 
 	public Node copy() {
-		Node rootCopy = root().childrenCopy(null);
+		Node rootCopy = root().copyWithNewParent(null);
 		return findParallelNode(rootCopy, this);
+	}
+
+	public Node copyWithNewParent(Node parent) {
+		Node copy = new Node(parent, type, id);
+		copy.tag = tag;
+		for (Node child : children) {
+			copy.children.add(child.copyWithNewParent(copy));
+		}
+		return copy;
 	}
 
 	public Node addChild(String type) {
 		Node child = new Node(this, type);
 		children.add(child);
 		return child;
-	}
-
-	private Node childrenCopy(Node parent) {
-		Node copy = new Node(parent, type, id);
-		copy.tag = tag;
-		for (Node child : children) {
-			copy.children.add(child.childrenCopy(copy));
-		}
-		return copy;
 	}
 
 	private static Node findParallelNode(Node root, Node child) {
@@ -302,9 +303,9 @@ public class Node extends StringHashable {
 		return parent.children.get(child.index());
 	}
 
-	public int size() {
+	public int treeSize() {
 		int size = 1;
-		for (Node child : children) size += child.size();
+		for (Node child : children) size += child.treeSize();
 		return size;
 	}
 
@@ -329,6 +330,10 @@ public class Node extends StringHashable {
 		return prettyPrint("", prefixMap);
 	}
 
+	public String prettyPrintWithIDs() {
+		return prettyPrint(new HashMap<Node, String>());
+	}
+
 	private String prettyPrint(String indent, Map<Node, String> prefixMap) {
 		boolean inline = true;
 		for (String hasBody : HAS_BODY) {
@@ -338,8 +343,8 @@ public class Node extends StringHashable {
 			}
 		}
 		String out = type;
-		if (prefixMap != null && prefixMap.containsKey(this)) {
-			out = prefixMap.get(this) + ":" + out;
+		if (prefixMap != null) {
+			if (prefixMap.containsKey(this)) out = prefixMap.get(this) + ":" + out;
 			if (id != null && !id.equals(type)) {
 				out += "[" + id + "]";
 			}
@@ -365,7 +370,7 @@ public class Node extends StringHashable {
 	}
 
 	public String[] depthFirstIteration() {
-		String[] array = new String[size()];
+		String[] array = new String[treeSize()];
 		depthFirstIteration(array, 0);
 		return array;
 	}
@@ -376,6 +381,19 @@ public class Node extends StringHashable {
 			offset = child.depthFirstIteration(array, offset);
 		}
 		return offset;
+	}
+
+	public Node nthDepthFirstNode(int index) {
+		if (index == 0) return this;
+		index--;
+		for (Node child : children) {
+			int size = child.treeSize();
+			if (size > index) {
+				return child.nthDepthFirstNode(index);
+			}
+			index -= size;
+		}
+		return null;
 	}
 
 	// TODO: This is really quite an ugly Node reference representation...
@@ -410,5 +428,10 @@ public class Node extends StringHashable {
 		obj.put("parent", parent);
 
 		return obj;
+	}
+
+	public int rootPathLength() {
+		if (parent == null) return 1;
+		return 1 + parent.rootPathLength();
 	}
 }

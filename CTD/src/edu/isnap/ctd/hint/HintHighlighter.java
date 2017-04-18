@@ -1,5 +1,6 @@
 package edu.isnap.ctd.hint;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -13,8 +14,10 @@ import java.util.TreeMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import distance.RTED_InfoTree_Opt;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
+import edu.isnap.ctd.graph.Node.Predicate;
 import edu.isnap.ctd.util.Alignment;
 import edu.isnap.ctd.util.Cast;
 import edu.isnap.ctd.util.NodeAlignment;
@@ -23,6 +26,8 @@ import edu.isnap.ctd.util.NodeAlignment.ProgressDistanceMeasure;
 import edu.isnap.ctd.util.map.BiMap;
 import edu.isnap.ctd.util.map.CountMap;
 import edu.isnap.ctd.util.map.ListMap;
+import edu.isnap.ctd.util.map.MapFactory;
+import util.LblTree;
 
 public class HintHighlighter {
 
@@ -43,13 +48,17 @@ public class HintHighlighter {
 	}
 
 	public List<EditHint> highlight(Node node) {
+		BiMap<Node, Node> mapping = findSolutionMapping(node);
+		return highlight(node, mapping);
+	}
 
-		final List<EditHint> edits = new LinkedList<>();
+	public List<EditHint> highlight(Node node, final BiMap<Node, Node> mapping) {
+		return highlight(node, mapping, true);
+	}
 
-//		node = node.copy(false);
-
-		final BiMap<Node, Node> mapping = findSolutionMapping(node);
-
+	public List<EditHint> highlight(Node node, final BiMap<Node, Node> mapping,
+			boolean reuseDeletedBlocks) {
+		final List<EditHint> edits = new ArrayList<>();
 		final IdentityHashMap<Node, Highlight> colors = new IdentityHashMap<>();
 
 		// First identify all unpaired nodes and mark them for deletion (though this can be
@@ -79,10 +88,19 @@ public class HintHighlighter {
 					Highlight highlight = parentMatches ? Highlight.Good : Highlight.Move;
 					colors.put(node, highlight);
 					if (highlight == Highlight.Move) {
-						// For those without a matching parent, we need to insert them where
-						// they belong
 						Node moveParent = mapping.getTo(pair.parent);
-						if (moveParent != null) {
+						if (moveParent == null) {
+							// If the pair's parent has no original parent, we add a placeholder
+							// insert with a missing parent so the node is marked for movement
+							Node parentClone = pair.parent.copy();
+							parentClone.children.remove(pair.index());
+							Insertion insertion = new Insertion(
+									parentClone, pair, pair.index(), true);
+							insertion.candidate = node;
+							edits.add(insertion);
+						} else {
+							// For those with a matching parent, we need to insert them where
+							// they belong
 							int insertIndex = 0;
 							// Look back through your pair's earlier siblings...
 							for (int i = pair.index() - 1; i >= 0; i--) {
@@ -102,7 +120,7 @@ public class HintHighlighter {
 							// the current node at this index
 							if (isCodeElement(moveParent) &&
 									insertIndex < moveParent.children.size()) {
-								insertion.replacement = moveParent.children.get(insertIndex);
+								insertion.replaced = moveParent.children.get(insertIndex);
 							}
 							edits.add(insertion);
 						}
@@ -122,7 +140,7 @@ public class HintHighlighter {
 					if (node.parent != null && node.parent == mapping.getTo(pair.parent) &&
 							isCodeElement(node.parent) &&
 							// Make sure the two code elements have the same number of children
-							node.parent.children.size() == pair.parent.size()) {
+							node.parent.children.size() == pair.parent.treeSize()) {
 						if (node.index() != pair.index()) {
 							colors.put(node, Highlight.Order);
 							edits.add(new Reorder(node, pair.index()));
@@ -199,9 +217,7 @@ public class HintHighlighter {
 			}
 		});
 
-		// Now find needed insertions
-		final List<Insertion> insertions = new LinkedList<>();
-		// This time, iterate over the nodes in the pair
+		// Insertions: This time, iterate over the nodes in the pair
 		Node nodeMatch = mapping.getFrom(node);
 		nodeMatch.recurse(new Action() {
 			@Override
@@ -221,11 +237,11 @@ public class HintHighlighter {
 						} else {
 							// Otherwise we add an insertion
 							Insertion insertion = new Insertion(node, child, insertIndex);
-							insertions.add(insertion);
+							edits.add(insertion);
 							// If the node is being inserted in a code element then it replaces
 							// whatever already exists at this index in the parent
 							if (isCodeElement(node) && insertIndex < node.children.size()) {
-								insertion.replacement = node.children.get(insertIndex);
+								insertion.replaced = node.children.get(insertIndex);
 							}
 							// If this is a non-script, we treat this new insertion as a "match"
 							// and increment the insert index if possible
@@ -251,13 +267,22 @@ public class HintHighlighter {
 					Node parentClone = pair.parent.copy();
 					parentClone.children.remove(pair.index());
 					Insertion insertion = new Insertion(parentClone, pair, pair.index(), true);
-					insertions.add(insertion);
+					edits.add(insertion);
 				}
 			}
 		});
-		edits.addAll(insertions);
 
-		handleInsertionsAndMoves(colors, insertions, edits, mapping);
+
+		// Filter out insertions
+		final List<Insertion> insertions = new LinkedList<>();
+		for (EditHint hint : edits) {
+			Insertion insert = Cast.cast(hint, Insertion.class);
+			if (insert != null) insertions.add(insert);
+		}
+
+		if (reuseDeletedBlocks) {
+			handleInsertionsAndMoves(colors, insertions, edits, mapping);
+		}
 
 		// If any insert into a script should contain the children of the existing node at that
 		// index, we want to express that as a replacement
@@ -275,6 +300,7 @@ public class HintHighlighter {
 			if (insertion != null) {
 				if (insertion.missingParent && insertion.candidate == null) {
 					edits.remove(i--);
+					continue;
 				}
 			}
 
@@ -298,11 +324,12 @@ public class HintHighlighter {
 
 				// Also remove any deletions that are implicit in an inertion's replacement
 				for (Insertion inst : insertions) {
-					if (inst.replacement == deletion.node) {
+					if (inst.replaced == deletion.node) {
 						edits.remove(i--);
 						break;
 					}
 				}
+				// NOTE: this has to be the last check, since it doesn't have a continue
 			}
 		}
 
@@ -318,7 +345,7 @@ public class HintHighlighter {
 
 		// To be eligible for a script replacement, an insertion must have no replacement and have a
 		// script parent with a child at the insertion index
-		if (insertion.replacement != null || !insertion.parent.hasType(config.script) ||
+		if (insertion.replaced != null || !insertion.parent.hasType(config.script) ||
 				insertion.parent.children.size() <= insertion.index) return;
 
 		// Additionally the at the index of insert must be marked for deletion and be of a different
@@ -331,11 +358,24 @@ public class HintHighlighter {
 		// that is the cause for the insertion
 		List<Node> nodeChildren = deleted.allChildren();
 		List<Node> pairChildren = insertion.pair.allChildren();
+		// Because we're replacing in a script, we may want to keep the original node's children
+		// when we replace it, but it depends on where we find our matches
+		// TODO: This isn't a very comprehensive solution: we really need to deal with children of
+		// moved blocks in a more thorough manner
+		boolean keepChildren = false;
 		int matches = 0;
 		for (Node n1 : nodeChildren) {
+			// Don't match literals
+			if (n1.hasType(config.literal)) continue;
 			for (Node n2 : pairChildren) {
 				if (mapping.getFrom(n1) == n2) {
 					matches++;
+					if (n2.parent == insertion.pair ||
+							(n2.parentHasType(config.script) && n2.parent == insertion.pair)) {
+						// If the match comes from a direct child of the pair (or a script that is)
+						// we want to keep the children.
+						keepChildren = true;
+					}
 				}
 			}
 		}
@@ -345,7 +385,8 @@ public class HintHighlighter {
 
 		// In this case, we set the replacement, change the deleted node to replaced and remove the
 		// deletion
-		insertion.replacement = deleted;
+		insertion.replaced = deleted;
+		insertion.keepChildrenInReplacement = keepChildren;
 		colors.put(deleted, Highlight.Replaced);
 
 		// Find the deletion and remove it
@@ -444,7 +485,7 @@ public class HintHighlighter {
 					List<Integer> sizes = new LinkedList<>();
 					for (Node child : node.children) {
 						if (child.hasType(config.script)) {
-							sizes.add(child.size());
+							sizes.add(child.treeSize());
 						}
 					}
 					if (sizes.size() <= median) return;
@@ -453,7 +494,7 @@ public class HintHighlighter {
 						sizes.get(sizes.size() - median);
 					for (int i = 0; i < node.children.size(); i++) {
 						Node child = node.children.get(i);
-						if (child.hasType(config.script) && child.size() < minSize) {
+						if (child.hasType(config.script) && child.treeSize() < minSize) {
 //							System.out.println("Preprocess removed: " + node.children.get(i));
 							node.children.remove(i--);
 						}
@@ -556,6 +597,7 @@ public class HintHighlighter {
 		protected abstract void editChildren(List<String> children);
 		protected abstract String action();
 		protected abstract double priority();
+		public abstract void apply(List<Application> applications);
 
 		public final Node parent;
 
@@ -624,25 +666,76 @@ public class HintHighlighter {
 			String from = items.toString();
 			editChildren(items);
 			String to = items.toString();
-			return rootString(parent) + ": " + from + " -> " + to;
+			return action().substring(0, 1) + ": " + rootString(parent) + ": " + from + " -> " + to;
 		}
 
 		@Override
 		public int compareTo(EditHint o) {
 			return Double.compare(o.priority(), priority());
 		}
+
+		public static void applyEdits(Node node, List<EditHint> hints) {
+			List<Application> applications = new ArrayList<>();
+			for (EditHint hint : hints) hint.apply(applications);
+
+			// Start with hints in reverse order, since multiple inserts at the same index should
+			// be applies in reverse to create the correct final order
+			Collections.sort(applications, new Comparator<Application>() {
+				@Override
+				public int compare(Application o1, Application o2) {
+					// Apply edits to longer root paths first
+					int rpc = -Integer.compare(
+							o1.parent.rootPathLength(), o2.parent.rootPathLength());
+					if (rpc != 0) return rpc;
+
+					int ic = -Integer.compare(o1.index, o2.index);
+					if (ic != 0) return ic;
+
+					// In the case of insertions at the same index, we compare the pair index
+					// to insert the in the same order they were the pair code
+					return -Integer.compare(o1.pairIndex, o2.pairIndex);
+				}
+			});
+			for (Application application : applications) application.action.apply();
+		}
+	}
+
+	private static class Application {
+		final Node parent;
+		final int index;
+		final int pairIndex;
+		final EditAction action;
+
+		public Application(Node parent, int index, EditAction action) {
+			// Non-insertions go first
+			this(parent, index, Integer.MAX_VALUE, action);
+		}
+
+		public Application(Node parent, int index, int pairIndex, EditAction action) {
+			this.parent = parent;
+			this.index = index;
+			this.pairIndex = pairIndex;
+			this.action = action;
+		}
+	}
+
+	private interface EditAction {
+		void apply();
 	}
 
 	public static class Insertion extends EditHint {
 		public final String type;
 		public final int index;
 		public final boolean missingParent;
+		// Used when applying insertions with replacements to determine whether the original node's
+		// children should be copied to the replacement
+		public boolean keepChildrenInReplacement;
 
 		// Used to mark the pair node in the solution this insertion represents
 		private final transient Node pair;
 
 		/** The node the inserted node should replace (in the same location) */
-		public Node replacement;
+		public Node replaced;
 		/** A candidate node elsewhere that could be used to do the replacement */
 		public Node candidate;
 
@@ -672,7 +765,7 @@ public class HintHighlighter {
 			data.put("missingParent", missingParent);
 			data.put("index", index);
 			data.put("type", type);
-			data.put("replacement", Node.getNodeReference(replacement));
+			data.put("replacement", Node.getNodeReference(replaced));
 			data.put("candidate", Node.getNodeReference(candidate));
 			LinkedList<String> items = new LinkedList<>(Arrays.asList(parent.getChildArray()));
 			data.put("from", toJSONArray(items));
@@ -701,7 +794,7 @@ public class HintHighlighter {
 
 		@Override
 		protected void editChildren(List<String> children) {
-			if (replacement != null) {
+			if (replaced != null) {
 				children.remove(index);
 			}
 			children.add(index, type);
@@ -727,7 +820,90 @@ public class HintHighlighter {
 
 		@Override
 		protected double priority() {
-			return 5 + (candidate == null ? 0  : 1) + (replacement == null ? 0 : 1);
+			return 5 + (candidate == null ? 0  : 1) + (replaced == null ? 0 : 1);
+		}
+
+		@Override
+		public String toString() {
+			String base = super.toString();
+			if (candidate == null) return base;
+			base += " w/ " + rootString(candidate);
+			return base;
+		}
+
+		@Override
+		public void apply(List<Application> applications) {
+			final Node toInsert;
+			if (candidate != null) {
+				// Need to use the actual candidate in case other applications edit its children
+				// but this will cause its parent to be incorrect. This is ok, since we actually
+				// need its original parent to be used in the removal below, but still seems
+				// like a bad idea, so in short:
+				// TODO: fix this
+				toInsert = candidate; //.copyWithNewParent(parent);
+
+				applications.add(new Application(candidate.parent, candidate.index(),
+						new EditAction() {
+					@Override
+					public void apply() {
+						// It's possible this has already been removed (e.g. as a replacement for
+						// another insert), so we only remove it if it's still a child of its parent
+						int index = candidate.index();
+						if (index >= 0) candidate.parent.children.remove(index);
+					}
+				}));
+			} else {
+				toInsert = new Node(parent, type);
+			}
+
+			// If the parent is missing, we stop after removing the candidate
+			if (missingParent) return;
+
+			applications.add(new Application(parent, index, pair.index(), new EditAction() {
+				@Override
+				public void apply() {
+					int index = Insertion.this.index;
+					Node parent = Insertion.this.parent;
+					if (replaced != null) {
+						int rIndex = replaced.index();
+						if (rIndex >= 0) {
+							index = rIndex;
+							replaced.parent.children.remove(rIndex);
+						} else if (keepChildrenInReplacement) {
+							// Special case for renamed nodes
+							// TODO: as most special cases, this is a bit of a hack
+							// If the replacement has been moved, we want to relabel the replacement
+							// in its new locations, so we find its new parent, remove it and
+							// set parent and index appropriately
+							Node newParent = parent.root().search(new Predicate() {
+								@Override
+								public boolean eval(Node node) {
+									for (Node child : node.children) {
+										if (child == replaced) return true;
+									}
+									return false;
+								}
+							});
+							if (newParent != null) {
+								parent = newParent;
+								for (int i = 0; i < parent.children.size(); i++) {
+									if (parent.children.get(i) == replaced) {
+										index = i;
+										parent.children.remove(i);
+										break;
+									}
+								}
+							}
+						}
+						if (keepChildrenInReplacement) {
+							for (Node child : replaced.children) {
+								toInsert.children.add(child.copyWithNewParent(toInsert));
+							}
+						}
+					}
+					parent.children.add(index, toInsert);
+				}
+			}));
 		}
 	}
 
@@ -759,6 +935,17 @@ public class HintHighlighter {
 		@Override
 		protected double priority() {
 			return 1;
+		}
+
+		@Override
+		public void apply(List<Application> applications) {
+			final int index = node.index();
+			applications.add(new Application(parent, index, new EditAction() {
+				@Override
+				public void apply() {
+					node.parent.children.remove(index);
+				}
+			}));
 		}
 	}
 
@@ -802,9 +989,91 @@ public class HintHighlighter {
 		protected double priority() {
 			return 3;
 		}
+
+		@Override
+		public void apply(List<Application> applications) {
+			final int rIndex = node.index();
+			applications.add(new Application(parent, rIndex, new EditAction() {
+				@Override
+				public void apply() {
+					node.parent.children.remove(rIndex);
+				}
+			}));
+			final int aIndex = index;
+			applications.add(new Application(parent, aIndex, new EditAction() {
+				@Override
+				public void apply() {
+					node.parent.children.add(aIndex, node);
+				}
+			}));
+		}
 	}
 
 	private static String[] toArray(List<String> items) {
 		return items.toArray(new String[items.size()]);
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<EditHint> highlightRTED(Node node) {
+		RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(1, 1, 1);
+		LblTree tree = node.toTree();
+
+		double minDis = Double.MAX_VALUE;
+		Node best = null;
+		for (Node solution : solutions) {
+			double dis = opt.nonNormalizedTreeDist(tree, solution.toTree());
+			if (dis < minDis) {
+				best = solution;
+				minDis = dis;
+			}
+		}
+
+		LblTree bestTree = best.toTree();
+		opt.init(tree, bestTree);
+		LinkedList<int[]> rtedMapping = opt.computeEditMapping();
+		List<LblTree> fromList = Collections.list(tree.depthFirstEnumeration());
+		List<LblTree> toList = Collections.list(bestTree.depthFirstEnumeration());
+
+		BiMap<Node, Node> mapping = new BiMap<>(MapFactory.IdentityHashMapFactory);
+		for (int[] a : rtedMapping) {
+			LblTree c1 = a[0] == 0 ? null : fromList.get(a[0] - 1);
+			LblTree c2 = a[1] == 0 ? null : toList.get(a[1] - 1);
+			if (c1 != null && c2 != null) {
+				mapping.put((Node) c1.getUserObject(), (Node) c2.getUserObject());
+			}
+		}
+
+//		NodeAlignment alignment = new NodeAlignment(node, best);
+//		alignment.calculateCost(getDistanceMeasure(config));
+//		BiMap<Node,Node> mapping = alignment.mapping;
+
+		return highlight(node, mapping);
+	}
+
+	public List<EditHint> highlightStringEdit(Node node) {
+		String[] nodeSeq = node.depthFirstIteration();
+
+		double minDis = Double.MAX_VALUE;
+		Node best = null;
+		for (Node solution : solutions) {
+			double dis = Alignment.alignCost(nodeSeq, solution.depthFirstIteration());
+			if (dis < minDis) {
+				best = solution;
+				minDis = dis;
+			}
+		}
+
+		String[] bestSeq = best.depthFirstIteration();
+		List<int[]> alignPairs = Alignment.alignPairs(nodeSeq, bestSeq, 1, 1, 1);
+
+		BiMap<Node, Node> mapping = new BiMap<>(MapFactory.IdentityHashMapFactory);
+		for (int[] a : alignPairs) {
+			if (a[0] == -1 || a[1] == -1) continue;
+			Node from = node.nthDepthFirstNode(a[0]);
+			Node to = best.nthDepthFirstNode(a[1]);
+			mapping.put(from, to);
+		}
+
+		return highlight(node, mapping);
 	}
 }

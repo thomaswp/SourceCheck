@@ -1,9 +1,6 @@
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -16,7 +13,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.json.JSONArray;
-import org.json.JSONObject;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
@@ -25,6 +21,7 @@ import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.Hint;
 import edu.isnap.ctd.hint.HintGenerator;
 import edu.isnap.ctd.hint.HintHighlighter;
+import edu.isnap.ctd.hint.HintJSON;
 import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.hint.HintMapBuilder;
 import edu.isnap.hint.SnapHintBuilder;
@@ -116,47 +113,22 @@ public class HintServlet extends HttpServlet {
 			try {
 				hints.addAll(new HintGenerator(hintMap).getHints(node));
 			} catch (Exception e) {
-				array.put(errorToJSON(e, true));
+				array.put(HintJSON.errorToJSON(e, true));
 			}
 		}
 		if (hintTypes != null && hintTypes.contains("highlight")){
 			try {
 				hints.addAll(new HintHighlighter(hintMap).highlight(node));
 			} catch (Exception e) {
-				array.put(errorToJSON(e, true));
+				array.put(HintJSON.errorToJSON(e, true));
 			}
 		}
 
 		for (Hint hint : hints) {
-			array.put(hintToJSON(hint));
+			array.put(HintJSON.hintToJSON(hint));
 		}
 
 		return array.toString();
-	}
-
-	public static JSONObject hintToJSON(Hint hint) {
-		try {
-			JSONObject obj = new JSONObject();
-			obj.put("from", hint.from());
-			obj.put("to", hint.to());
-			obj.put("type", hint.type());
-			obj.put("data", hint.data());
-			return obj;
-		} catch (Exception e) {
-			return errorToJSON(e, true);
-		}
-	}
-
-	private static JSONObject errorToJSON(Exception e, boolean print) {
-		if (print) e.printStackTrace();
-		JSONObject error = new JSONObject();
-		error.put("error", true);
-		error.put("message", e.getClass().getName() + ": " +  e.getMessage());
-		StringWriter sw = new StringWriter();
-		e.printStackTrace(new PrintWriter(sw));
-		error.put("stack", sw.toString());
-		error.put("time", new Date().toString());
-		return error;
 	}
 
 	private HintMap loadHintMap(String assignment, String dataset, int minGrade) {

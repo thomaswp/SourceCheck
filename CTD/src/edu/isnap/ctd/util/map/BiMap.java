@@ -1,6 +1,8 @@
 package edu.isnap.ctd.util.map;
 
+import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class BiMap<T, U> {
 
@@ -19,10 +21,17 @@ public class BiMap<T, U> {
 	public U put(T from, U to) {
 		U removedFrom = fromMap.put(from, to);
 		T removedTo = toMap.put(to, from);
-		// TODO: this logic doens't quite work for an IdentityHashMap
-		if (removedFrom != null && !removedFrom.equals(to)) toMap.remove(removedFrom);
-		if (removedTo != null && !removedTo.equals(from)) fromMap.remove(removedTo);
+		if (removedFrom != null && !equal(removedFrom, to)) toMap.remove(removedFrom);
+		if (removedTo != null && !equal(removedTo, from)) fromMap.remove(removedTo);
 		return removedFrom;
+	}
+
+	private boolean equal(Object a, Object b) {
+		if (fromMap instanceof IdentityHashMap) {
+			return a == b;
+		}
+		if (a == null) return b == null;
+		return a.equals(b);
 	}
 
 	public U getFrom(T item) {
@@ -39,6 +48,24 @@ public class BiMap<T, U> {
 
 	public boolean containsTo(U item) {
 		return toMap.containsKey(item);
+	}
+
+	public void removeFrom(T item) {
+		U pair = fromMap.remove(item);
+		if (pair != null) toMap.remove(pair);
+	}
+
+	public void removeTo(U item) {
+		T pair = toMap.remove(item);
+		if (pair != null) fromMap.remove(pair);
+	}
+
+	public Set<T> keysetFrom() {
+		return fromMap.keySet();
+	}
+
+	public Set<U> keysetTo() {
+		return toMap.keySet();
 	}
 
 	@Override

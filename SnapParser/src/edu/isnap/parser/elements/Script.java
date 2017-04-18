@@ -11,7 +11,7 @@ import edu.isnap.parser.elements.util.XML;
 public class Script extends Code implements IHasID {
 	private static final long serialVersionUID = 1L;
 
-	public final List<Block> blocks = new ArrayList<Block>();
+	public final List<Block> blocks = new ArrayList<>();
 	public final String customBlockID;
 
 	@Override
