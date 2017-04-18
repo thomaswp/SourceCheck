@@ -334,8 +334,12 @@ public class SnapParser {
 			// If the solution was exported and submitted, but the log data does not contain
 			// the submitted snapshot, check to see what's wrong manually
 			if (submittedActionID != null && attempt.submittedSnapshot == null) {
-				if (attempt.size() > 0) System.out.println(attemptID + ": " + attempt.rows.getLast().id);
-				else System.out.println(attemptID + ": 0 / " + actions.size() + " / " + prequelEndID);
+				if (attempt.size() > 0) {
+					System.out.println(attemptID + ": " + attempt.rows.getLast().id);
+				} else {
+					System.out.println(assignment.name + " " +
+							attemptID + ": 0 / " + actions.size() + " / " + prequelEndID);
+				}
 				System.err.printf("Submitted id not found for %s: %s\n",
 						attemptID, submittedActionID);
 			}

@@ -60,6 +60,21 @@ public class Spring2017 extends Dataset {
 			}
 			return super.getLocationAssignment(attemptID);
 		};
+
+		@Override
+		public Integer getSubmittedRow(String attemptID) {
+			switch (attemptID) {
+				// Made a small edit much later, after GG2, but export was essentially the same.
+				case "bb6fd568-3a1a-4990-bf38-a1aa3c9edde2": return 141498;
+			}
+			return super.getSubmittedRow(attemptID);
+		}
+
+		@Override
+		public boolean ignore(String attemptID) {
+			// Skipped straight to GG2 without doing GG1 on its own.
+			return "c654eec5-0ae4-4e09-8c48-634cbade53d5".equals(attemptID);
+		};
 	};
 
 	public final static Assignment GuessingGame2 = new Assignment(instance,
