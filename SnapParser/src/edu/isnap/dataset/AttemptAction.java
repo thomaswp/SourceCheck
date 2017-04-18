@@ -59,23 +59,33 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	/** The cumulative active time (in seconds) the student has spent after this action. */
 	public transient int currentActiveTime;
 
+	private static Snapshot loadSnapshot(String attemptID, Date timestamp, String snapshotXML) {
+		String name = attemptID;
+		synchronized (format) {
+			name += timestamp == null ? null : (": " + format.format(timestamp));
+		}
+		return Snapshot.parse(name, snapshotXML);
+	}
+
 	@SuppressWarnings("unused")
 	private AttemptAction() {
-		this(0, null, null, null, null, null, null);
+		this(0, null, null, null, null, null);
 	}
 
 	public AttemptAction(int id, String attemptID, Date timestamp, String sessionID, String message,
 			String data, String snapshotXML) {
+		this(id, timestamp, sessionID, message, data,
+				loadSnapshot(attemptID, timestamp, snapshotXML));
+	}
+
+	public AttemptAction(int id, Date timestamp, String sessionID, String message, String data,
+			Snapshot snapshot) {
 		this.id = id;
 		this.timestamp = timestamp;
 		this.sessionID = sessionID;
 		this.message = message;
 		this.data = data;
-		String name = attemptID;
-		synchronized (format) {
-			name += timestamp == null ? null : (": " + format.format(timestamp));
-		}
-		this.snapshot = Snapshot.parse(name, snapshotXML);
+		this.snapshot = snapshot;
 	}
 
 	@Override

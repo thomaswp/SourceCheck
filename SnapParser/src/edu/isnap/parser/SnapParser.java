@@ -3,6 +3,7 @@ package edu.isnap.parser;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -173,6 +174,18 @@ public class SnapParser {
 		});
 	}
 
+	private JSONObject loadRepairedHints(String attemptID) {
+		File file = new File(assignment.hintRepairDir() + "/" + attemptID + ".json");
+		if (!file.exists()) return null;
+		try {
+			String content = new String(Files.readAllBytes(file.toPath()));
+			return new JSONObject(content);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
 	private AssignmentAttempt parseRows(File logFile, Grade grade, Integer startID,
 			boolean knownSubmissions, Integer submittedActionID, Integer prequelEndID,
 			boolean snapshotsOnly, boolean addMetadata)
@@ -193,6 +206,9 @@ public class SnapParser {
 		boolean foundGraded = false;
 		Snapshot lastSnaphot = null;
 
+		JSONObject repairedHints = null;
+		if (addMetadata) repairedHints = loadRepairedHints(attemptID);
+
 		int activeTime = 0;
 		int idleTime = 0;
 		int workSegments = 0;
@@ -200,6 +216,18 @@ public class SnapParser {
 
 		for (int i = 0; i < actions.size(); i++) {
 			AttemptAction action = actions.get(i);
+
+			// In Spring 2017 there was a logging error that failed to log processed hints
+			// The are recreated by the HighlightDataRepairer and stored as .json files, which
+			// can be loaded and re-inserted into the data.
+			if (repairedHints != null && AttemptAction.HINT_PROCESS_HINTS.equals(action.message)) {
+				String key = String.valueOf(action.id);
+				if (repairedHints.has(key)) {
+					String data = repairedHints.getJSONArray(key).toString();
+					action = new AttemptAction(action.id, action.timestamp, action.sessionID,
+							action.message, data, action.snapshot);
+				}
+			}
 
 			// Ignore actions outside of our time range
 			if (addMetadata && action.timestamp != null && (

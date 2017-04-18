@@ -19,6 +19,14 @@ import edu.isnap.dataset.Dataset;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.Store.Mode;
 
+/**
+ * In Spring 2017 there was a in the javascript logger that cause the HintProvider.ProcessHints
+ * message not to include any data. This script is used to recalculate the hints that would have
+ * been provided. It saves these hints into .json files in the hintRepair directory, and these
+ * are loaded by the SnapParse if present. Note that this script must be run with the version of
+ * hint generation that was used in the data collection, since the most recent version may provide
+ * different hints. It also need to be given the same hintDataset for calculating hints.
+ */
 public class HighlightDataRepairer {
 	public static void repair(Assignment assignment, Dataset hintDataset, double minGrade)
 			throws IOException {
@@ -34,6 +42,7 @@ public class HighlightDataRepairer {
 			return;
 		}
 
+		// If this ever happens with another hint generator, it will need to be used here instead
 		HintHighlighter highlighter = new SnapHintBuilder(hintAssignment).buildGenerator(
 				Mode.Ignore, minGrade).hintHighlighter();
 
@@ -70,6 +79,18 @@ public class HighlightDataRepairer {
 				BufferedWriter writer = new BufferedWriter(new FileWriter(file));
 				writer.write(actionObject.toString(4));
 				writer.close();
+			}
+		}
+	}
+
+	public static void testRepair(Assignment assignment) {
+		for (AssignmentAttempt attempt : assignment.load(Mode.Use, false).values()) {
+			for (AttemptAction action : attempt) {
+				if (action.lastSnapshot == null) continue;
+				if (AttemptAction.HINT_PROCESS_HINTS.equals(action.message) &&
+						action.data.equals("\"\"")) {
+					System.out.println("Failed to repair: " + attempt.id + "/" + action.id);
+				}
 			}
 		}
 	}
