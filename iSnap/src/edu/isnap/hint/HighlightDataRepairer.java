@@ -68,7 +68,7 @@ public class HighlightDataRepairer {
 						assignment.hintRepairDir() + "/" + attempt.id + ".json");
 				file.getParentFile().mkdirs();
 				BufferedWriter writer = new BufferedWriter(new FileWriter(file));
-				writer.write(actionObject.toString());
+				writer.write(actionObject.toString(4));
 				writer.close();
 			}
 		}
