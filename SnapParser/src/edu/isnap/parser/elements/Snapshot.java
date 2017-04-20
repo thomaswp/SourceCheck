@@ -27,8 +27,8 @@ public class Snapshot extends Code implements IHasID {
 	public final String guid;
 	public final String name;
 	public final Stage stage;
-	public final BlockDefinition editing;
 	public final BlockDefinitionGroup blocks;
+	public final List<BlockDefinition> editing = new ArrayList<>();
 	public final List<String> variables = new ArrayList<>();
 
 	@Override
@@ -41,15 +41,11 @@ public class Snapshot extends Code implements IHasID {
 		return canon ? type() : name;
 	}
 
-	public void setEditingIndex(BlockIndex index) {
-		if ((index == null) != (editing == null)) {
-			System.err.println("Editing index exists iff editing exists");
-		}
-
+	private void setEditing() {
 		Map<Integer, BlockDefinitionGroup> blockLists =
 				BlockDefinitionGroup.getBlockDefGroups(this);
 		for (int spriteIndex : blockLists.keySet()) {
-			blockLists.get(spriteIndex).setEditing(editing, index, spriteIndex);
+			blockLists.get(spriteIndex).setEditingAndIndices(spriteIndex, editing);
 		}
 	}
 
@@ -58,11 +54,11 @@ public class Snapshot extends Code implements IHasID {
 		this(null, null, null, null);
 	}
 
-	public Snapshot(String guid, String name, Stage stage, BlockDefinition editing) {
+	public Snapshot(String guid, String name, Stage stage, List<BlockDefinition> editing) {
 		this.guid = guid;
 		this.name = name;
 		this.stage = stage;
-		this.editing = editing;
+		this.editing.addAll(editing);
 		this.blocks = new BlockDefinitionGroup(getID());
 	}
 
@@ -94,13 +90,17 @@ public class Snapshot extends Code implements IHasID {
 			Element stage = XML.getFirstChildByTagName(project, "stage");
 			String guid = stage.getAttribute("guid");
 
-			BlockDefinition editingBlock = null;
+			List<BlockDefinition> editingBlocks = new ArrayList<>();
 			Element editing = XML.getFirstChildByTagName(project, "editing");
 			if (editing != null && editing.hasChildNodes()) {
-				editingBlock = BlockDefinition.parseEditing(editing);
+				String defaultGUID = editing.getAttribute("guid");
+				if (defaultGUID.isEmpty()) defaultGUID = null;
+				for (Element scripts : XML.getChildrenByTagName(editing, "scripts")) {
+					editingBlocks.add(BlockDefinition.parseEditing(scripts, defaultGUID));
+				}
 			}
 
-			Snapshot snapshot = new Snapshot(guid, name, Stage.parse(stage), editingBlock);
+			Snapshot snapshot = new Snapshot(guid, name, Stage.parse(stage), editingBlocks);
 			for (Code code : XML.getCodeInFirstChild(project, "blocks")) {
 				snapshot.blocks.add((BlockDefinition) code);
 			}
@@ -109,9 +109,7 @@ public class Snapshot extends Code implements IHasID {
 				snapshot.variables.add(variable.getAttribute("name"));
 			}
 
-			if (snapshot.editing != null && snapshot.editing.guid != null) {
-				snapshot.setEditingIndex(new BlockIndex(snapshot.editing.guid));
-			}
+			snapshot.setEditing();
 
 			// Unparsed children:
 			// <code>: Snap-to-code mappings to translating Snap
@@ -162,9 +160,6 @@ public class Snapshot extends Code implements IHasID {
 	}
 
 	public BlockIndex getEditingIndex(String name, String type, String category) {
-		if (editing == null) return null;
-		if (editing.guid != null) return new BlockIndex(editing.guid);
-
 		name = BlockDefinition.extractInputs(name, null);
 
 		BlockIndex index = null;

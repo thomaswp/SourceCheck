@@ -31,6 +31,7 @@ import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Grade;
 import edu.isnap.parser.ParseSubmitted.Submission;
 import edu.isnap.parser.Store.Mode;
+import edu.isnap.parser.elements.BlockDefinition;
 import edu.isnap.parser.elements.BlockDefinitionGroup.BlockIndex;
 import edu.isnap.parser.elements.Snapshot;
 
@@ -139,6 +140,14 @@ public class SnapParser {
 							lastSnaphot = row.snapshot;
 						}
 
+						// Before BlockDefinitions had GUIDs, they weren't easily identifiable. This
+						// is a 99% accurate work-around that stores the index of a the custom
+						// block when editing starts and then sets the editing block's index to that
+						// index until the editor is closed. Note that we store the index at the
+						// start because the spec/type/category may change when editing. Not also
+						// that before GUIDs only one block could be edited at a time, so there
+						// should only ever be one editing index at a time. If GUIDs are present
+						// this does nothing.
 						if (AttemptAction.BLOCK_EDITOR_START.equals(action)) {
 							JSONObject json = new JSONObject(data);
 							String name = json.getString("spec");
@@ -152,9 +161,13 @@ public class SnapParser {
 							editingIndex = null;
 						}
 						if (row.snapshot != null) {
-							if (row.snapshot.editing == null) editingIndex = null;
-							else if (row.snapshot.editing.guid == null) {
-								row.snapshot.setEditingIndex(editingIndex);
+							if (row.snapshot.editing.size() == 0) editingIndex = null;
+							else if (row.snapshot.editing.size() == 1) {
+								BlockDefinition editing = row.snapshot.editing.get(0);
+								if (editing.guid == null) {
+									// Only set the blockIndex if we're not using GUIDs
+									editing.blockIndex = editingIndex;
+								}
 							}
 						}
 

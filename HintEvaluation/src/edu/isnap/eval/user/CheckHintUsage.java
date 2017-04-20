@@ -594,9 +594,10 @@ public class CheckHintUsage {
 		Node parent = findParent(root, data);
 
 		// Hack for custom block structure hints that failed to log rootTypes
+		// TODO: does this work for multiple editing blocks?
 		if (parent == null && "SnapDisplay.showStructureHint".equals(message)) {
-			if (snapshot.editing != null) {
-				parent = root.searchForNodeWithID(snapshot.editing.getID());
+			if (snapshot.editing.size() >= 1) {
+				parent = root.searchForNodeWithID(snapshot.editing.get(0).getID());
 			}
 		}
 
