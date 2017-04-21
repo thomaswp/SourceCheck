@@ -110,7 +110,7 @@ public class BlockDefinition extends Code implements IHasID {
 		return def;
 	}
 
-	public static BlockDefinition parseEditing(Element element, String defaultGUID) {
+	public static BlockDefinition parseFromScripts(Element element, String defaultGUID) {
 		String guid = element.getAttribute("guid");
 		// GUID used to be stored in the <editing> tag, so we allow the parent to pass it in for
 		// backwards compatibility

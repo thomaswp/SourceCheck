@@ -96,7 +96,10 @@ public class Snapshot extends Code implements IHasID {
 				String defaultGUID = editing.getAttribute("guid");
 				if (defaultGUID.isEmpty()) defaultGUID = null;
 				for (Element scripts : XML.getChildrenByTagName(editing, "scripts")) {
-					editingBlocks.add(BlockDefinition.parseEditing(scripts, defaultGUID));
+					editingBlocks.add(BlockDefinition.parseFromScripts(scripts, defaultGUID));
+				}
+				for (Element editingDefinition : XML.getChildrenByTagName(editing, "block-definition")) {
+					editingBlocks.add(BlockDefinition.parse(editingDefinition));
 				}
 			}
 
