@@ -138,9 +138,11 @@ public class Snapshot extends Code implements IHasID {
 		.add(variables.size() == 0 ?
 				null :
 				("variables: " + canonicalizeVariables(variables, canon).toString() + "\n"))
+		.ifNotCanon()
 		.add("editing:")
 		.indent()
 		.add(editing)
+		.endIf()
 		.close()
 		.end();
 	}

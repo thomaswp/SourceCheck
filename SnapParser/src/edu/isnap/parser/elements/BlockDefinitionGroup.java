@@ -104,5 +104,10 @@ public class BlockDefinitionGroup {
 					index.spriteIndex == spriteIndex &&
 					index.blockDefIndex == blockDefIndex;
 		}
+
+		@Override
+		public String toString() {
+			return String.format("[%d,%d]", spriteIndex, blockDefIndex);
+		}
 	}
 }

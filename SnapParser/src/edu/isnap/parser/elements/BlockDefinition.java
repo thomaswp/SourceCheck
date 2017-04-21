@@ -159,7 +159,8 @@ public class BlockDefinition extends Code implements IHasID {
 		return new CodeBuilder(canon)
 		.add(name, "customBlock")
 		.addSParameters(canonicalizeVariables(inputs, canon))
-		.add(" ")
+		.indent()
+		.add("script: ")
 		.add(script)
 		.ifNotCanon()
 		.add("scripts:")
@@ -167,6 +168,7 @@ public class BlockDefinition extends Code implements IHasID {
 		.add(scripts)
 		.close()
 		.endIf()
+		.close()
 		.end();
 	}
 
