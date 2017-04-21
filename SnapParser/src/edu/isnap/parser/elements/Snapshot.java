@@ -58,7 +58,7 @@ public class Snapshot extends Code implements IHasID {
 		this.guid = guid;
 		this.name = name;
 		this.stage = stage;
-		this.editing.addAll(editing);
+		if (editing != null) this.editing.addAll(editing);
 		this.blocks = new BlockDefinitionGroup(getID());
 	}
 
