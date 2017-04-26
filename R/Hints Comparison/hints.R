@@ -224,7 +224,7 @@ buildDedup <- function() {
   #dedup <- ddply(hints, c("assignment", "attemptID", "hash", "editPerc"), summarize, 
   dedup <- ddply(hints, c("assignment", "attemptID", "hash", "dedupID"), summarize, 
                  type=first(type), startEdit=first(editPerc), endEdit=tail(editPerc, n=1), startTime=first(time), endTime=tail(time, 1),
-                 count=length(followed), anyF=any(followed), indexF=tail(c(NA, which(followed)), n=1), followEdit=editPerc[indexF], delete=all(delete),
+                 count=length(followed), anyF=any(followed), indexF=tail(c(NA, which(followed)), n=1), followEdit=editPerc[indexF], followTime=time[indexF], delete=all(delete),
                  followRowID=ifelse(!is.na(indexF), rowID[indexF], NA), rowID=rowID[1], pauseF=pause[ifNA(indexF, 1)], durationF=duration[ifNA(indexF, 1)])
   
   dedup$edit <- ifNA(dedup$followEdit, dedup$startEdit)
@@ -244,6 +244,47 @@ buildDedup <- function() {
   })
   
   return (dedup)
+}
+
+checkFollowProx <- function() {
+  nearFollowed <- sapply(1:nrow(dedup), function(i) {
+    row <- dedup[i,]
+    followed <- hints$assignment == row$assignment & hints$attemptID == row$attemptID & hints$followed & hints$time > row$startTime
+    if (!any(followed)) return (NA)
+    (min(abs(hints[followed,]$time - row$startTime))) / 1000
+  })
+  nearFollowed
+  # USED: an additional 16.4 percentage points of unfollowed hints were w/i 60s of a followed hint
+  # indicated that that majority of help requests 
+  sum(!dedup$anyF & ifNA(nearFollowed < 60, F)) / nrow(dedup)
+}
+
+checkTimeClusters <- function() {
+  hints$cluster <- 0
+  hints$sinceLast <- NA
+  lastRow <- hints[1,]
+  cluster <- 0
+  for (i in 2:nrow(hints)) {
+    row <- hints[i,]
+    if (row$assignment == lastRow$assignment && row$attemptID == lastRow$attemptID) {
+      row$sinceLast <- (row$time - lastRow$time) / 1000
+      if (row$sinceLast > 30) cluster <- cluster + 1
+      row$cluster <- cluster
+    } else {
+      cluster <- 0
+    }
+    lastRow <- row
+    hints[i,] <- row
+  }
+  hints$clusterF <- sapply(1:nrow(hints), function(i) {
+    row <- hints[i,]
+    any(row$assignment == hints$assignment & row$attemptID == hints$attemptID & row$cluster == hints$cluster & hints$followed)
+  })
+  hints$clusterSize <- sapply(1:nrow(hints), function(i) {
+    row <- hints[i,]
+    sum(row$assignment == hints$assignment & row$attemptID == hints$attemptID & row$cluster == hints$cluster)
+  })
+  hints
 }
 
 buildChances <- function() {
