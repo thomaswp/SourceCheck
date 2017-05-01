@@ -1,0 +1,46 @@
+snapshot {
+    stage {
+        sprite {
+            @defBlock MOVE {
+                setHeading
+                @or {
+                    forward
+                    doIf (reportLessThan(xPosition, literal), script {
+                        forward
+                    })
+                }
+            }
+            script {
+                greenFlagClicked
+                gotoX
+                @anyOrder {
+                    clear
+                    down
+                    setHeading
+                    setSize
+                    setColor
+                }
+            }
+            script {
+                receiveKey
+                clear
+            }
+            script {
+                receiveKey
+                @block MOVE
+            }
+            script {
+                receiveKey
+                @block MOVE
+            }
+            script {
+                receiveKey
+                @block MOVE
+            }
+            script {
+                receiveKey
+                @block MOVE
+            }
+        }
+    }
+}
