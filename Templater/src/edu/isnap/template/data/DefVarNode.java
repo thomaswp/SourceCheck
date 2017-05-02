@@ -11,7 +11,7 @@ public class DefVarNode extends DefaultNode {
 	}
 
 	@Override
-	protected List<BNode> getVariants(Context context) {
+	public List<BNode> getVariants(Context context) {
 		Boolean oldValue = context.varDefs.get(name);
 		List<BNode> variants = new LinkedList<>();
 		context.varDefs.put(name, true);

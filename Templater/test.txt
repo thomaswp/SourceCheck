@@ -3,7 +3,7 @@ snapshot {
         sprite {
             @defVar CHECK {
                 script {
-                    greenFlagClicked
+                    receiveGo
                     gotoXY
                     @anyOrder {
                         clear

@@ -22,11 +22,19 @@ public class DefaultNode {
 		return getVariants(new Context());
 	}
 
-	protected List<BNode> getVariants(Context context) {
+	public List<BNode> getVariants(Context context) {
 
 		if (children.size() == 0) {
+			BNode node = new BNode(type, inline());
+			Integer litArgs = context.defaultAgs.get(type);
+			if (litArgs != null) {
+				for (int i = 0; i < litArgs; i++) {
+					node.children.add(new BNode("literal", false));
+				}
+			}
+
 			List<BNode> variants = new LinkedList<>();
-			variants.add(new BNode(type, inline()));
+			variants.add(node);
 			return variants;
 		}
 

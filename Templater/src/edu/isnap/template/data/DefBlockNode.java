@@ -13,7 +13,7 @@ public class DefBlockNode extends DefaultNode {
 	}
 
 	@Override
-	protected List<BNode> getVariants(Context context) {
+	public List<BNode> getVariants(Context context) {
 		variants = super.getVariants(context);
 		context.blocksDefs.put(name, this);
 		return new LinkedList<>();

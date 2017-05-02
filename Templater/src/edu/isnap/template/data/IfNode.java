@@ -17,7 +17,7 @@ public class IfNode extends DefaultNode {
 	}
 
 	@Override
-	protected List<BNode> getVariants(Context context) {
+	public List<BNode> getVariants(Context context) {
 		if (!context.varDefs.containsKey(name)) throw new RuntimeException("No var def: " + name);
 		if (context.varDefs.get(name) == ifTrue) {
 			return super.getVariants(context);

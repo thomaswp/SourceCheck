@@ -11,7 +11,7 @@ public class OrNode extends DefaultNode {
 	}
 
 	@Override
-	protected List<BNode> getVariants(Context context) {
+	public List<BNode> getVariants(Context context) {
 		List<BNode> variants = new LinkedList<>();
 		for (DefaultNode child : children) {
 			variants.addAll(child.getVariants(context));

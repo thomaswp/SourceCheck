@@ -12,7 +12,7 @@ public class AnyOrderNode extends DefaultNode {
 	}
 
 	@Override
-	protected List<BNode> getVariants(Context context) {
+	public List<BNode> getVariants(Context context) {
 		if (children.size() == 0) {
 			List<BNode> variants = new LinkedList<>();
 			variants.add(new BNode(type, inline()));

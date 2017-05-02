@@ -1,11 +1,16 @@
 package edu.isnap.template.parse;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 
+import edu.isnap.ctd.graph.Node;
+import edu.isnap.hint.util.SimpleNodeBuilder;
+import edu.isnap.parser.elements.Snapshot;
 import edu.isnap.template.data.BNode;
+import edu.isnap.template.data.Context;
 import edu.isnap.template.data.DefaultNode;
 
 public class Parser {
@@ -13,13 +18,19 @@ public class Parser {
 		byte[] encoded = Files.readAllBytes(Paths.get("test.txt"));
 		String template = new String(encoded);
 		DefaultNode node = new Parser(template).parse();
-		List<BNode> variants = node.getVariants();
+
+
+		Node sample = SimpleNodeBuilder.toTree(Snapshot.parse(new File("Etch-a-Sketch.xml")), true);
+
+		List<BNode> variants = node.getVariants(Context.fromSample(sample));
 		for (BNode variant : variants) {
 			System.out.println("--------------------");
 			System.out.println(variant.toNode().prettyPrint());
 		}
 		System.out.println("--------------------");
 		System.out.println(variants.size());
+
+		System.out.println(sample.prettyPrint());
 	}
 
 	private String[] parts;
