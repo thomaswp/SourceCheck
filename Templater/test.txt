@@ -1,45 +1,66 @@
 snapshot {
     stage {
         sprite {
-            @defBlock MOVE {
-                setHeading
-                @or {
-                    forward
-                    doIf (reportLessThan(xPosition, literal), script {
-                        forward
-                    })
+            @defVar CHECK {
+                script {
+                    greenFlagClicked
+                    gotoXY
+                    @anyOrder {
+                        clear
+                        down
+                        setHeading
+                        setSize
+                        setColor
+                    }
                 }
-            }
-            script {
-                greenFlagClicked
-                gotoX
-                @anyOrder {
+                script {
+                    receiveKey
                     clear
-                    down
-                    setHeading
-                    setSize
-                    setColor
                 }
-            }
-            script {
-                receiveKey
-                clear
-            }
-            script {
-                receiveKey
-                @block MOVE
-            }
-            script {
-                receiveKey
-                @block MOVE
-            }
-            script {
-                receiveKey
-                @block MOVE
-            }
-            script {
-                receiveKey
-                @block MOVE
+                script {
+                    receiveKey
+                    setHeading
+                    @if CHECK {
+                        doIf (reportLessThan(xPosition, literal), script {
+                            forward
+                        })
+                    } @else CHECK {
+                        forward
+                    }
+                }
+                script {
+                    receiveKey
+                    setHeading
+                    @if CHECK {
+                        doIf (reportLessThan(yPosition, literal), script {
+                            forward
+                        })
+                    } @else CHECK {
+                        forward
+                    }
+                }
+                script {
+                    receiveKey
+                    setHeading
+                    @if CHECK {
+                        doIf (reportLessThan(literal, xPosition), script {
+                            forward
+                        })
+                    } @else CHECK {
+                        forward
+                    }
+                }
+                script {
+                    receiveKey
+                    setHeading
+                    @if CHECK {
+                        doIf (reportLessThan(literal, yPosition), script {
+                            forward
+                        })
+                    } @else CHECK {
+                        forward
+                    }
+                }
             }
         }
     }

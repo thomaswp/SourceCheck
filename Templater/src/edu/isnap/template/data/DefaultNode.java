@@ -23,17 +23,20 @@ public class DefaultNode {
 	}
 
 	protected List<BNode> getVariants(Context context) {
-		List<BNode> variants = new LinkedList<>();
 
 		if (children.size() == 0) {
-			variants.add(new BNode(type));
+			List<BNode> variants = new LinkedList<>();
+			variants.add(new BNode(type, inline()));
 			return variants;
 		}
 
 		List<List<BNode>> childVariants = new LinkedList<>();
 
 		for (DefaultNode child : children) {
-			childVariants.add(child.getVariants(context));
+			List<BNode> vars = child.getVariants(context);
+			if (vars.size() > 0) {
+				childVariants.add(vars);
+			}
 		}
 
 		return getVariants(childVariants);
@@ -48,7 +51,7 @@ public class DefaultNode {
 		List<BNode> list = new ArrayList<>(size);
 
 		for (int i = 0; i < size; i++) {
-			BNode root = new BNode(type);
+			BNode root = new BNode(type, inline());
 			int offset = 1;
 			for (int j = 0; j < childVariants.size(); j++) {
 				List<BNode> variants = childVariants.get(j);
@@ -68,7 +71,15 @@ public class DefaultNode {
 			case "@or": node = new OrNode(); break;
 			case "@defBlock": node = new DefBlockNode(); break;
 			case "@block": node = new BlockNode(); break;
-			default: node = new DefaultNode();
+			case "@defVar": node = new DefVarNode(); break;
+			case "@if": node = new IfNode(true); break;
+			case "@else": node = new IfNode(false); break;
+			case "@anyOrder": node = new AnyOrderNode(); break;
+			default:
+				if (type.startsWith("@")) {
+					throw new RuntimeException("Unnown annotation: " + type);
+				}
+				node = new DefaultNode();
 		}
 		node.type = type;
 		return node;

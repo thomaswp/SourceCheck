@@ -16,8 +16,10 @@ public class Parser {
 		List<BNode> variants = node.getVariants();
 		for (BNode variant : variants) {
 			System.out.println("--------------------");
-			System.out.println(variant.toNode(null).prettyPrint());
+			System.out.println(variant.toNode().prettyPrint());
 		}
+		System.out.println("--------------------");
+		System.out.println(variants.size());
 	}
 
 	private String[] parts;
