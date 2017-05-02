@@ -104,8 +104,7 @@ public class SnapHintBuilder {
 	 * @return
 	 */
 	public HintMapBuilder buildGenerator(Mode storeMode, final double minGrade) {
-		String storePath = new File(assignment.dataDir, String.format("%s-g%03d.cached",
-				assignment.name, Math.round(minGrade * 100))).getAbsolutePath();
+		String storePath = getStorePath(assignment, minGrade);
 		HintMapBuilder builder = Store.getCachedObject(getKryo(),
 				storePath, HintMapBuilder.class, storeMode,
 				new Store.Loader<HintMapBuilder>() {
@@ -115,6 +114,15 @@ public class SnapHintBuilder {
 			}
 		});
 		return builder;
+	}
+
+	public static String getStorePath(Assignment assignment, double minGrade) {
+		return getStorePath(assignment.dataDir, assignment.name, minGrade);
+	}
+
+	public static String getStorePath(String baseDir, String assignmentName, double minGrade) {
+		return new File(baseDir, String.format("%s-g%03d.cached",
+				assignmentName, Math.round(minGrade * 100))).getAbsolutePath();
 	}
 
 	/**

@@ -1,12 +1,19 @@
 package edu.isnap.template.parse;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Output;
+
 import edu.isnap.ctd.graph.Node;
+import edu.isnap.ctd.hint.HintConfig;
+import edu.isnap.ctd.hint.HintMap;
+import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.elements.Snapshot;
 import edu.isnap.template.data.BNode;
@@ -21,8 +28,25 @@ public class Parser {
 
 
 		Node sample = SimpleNodeBuilder.toTree(Snapshot.parse(new File("Etch-a-Sketch.xml")), true);
-
 		List<BNode> variants = node.getVariants(Context.fromSample(sample));
+
+		HintMap hintMap = new HintMap(new HintConfig());
+		for (BNode variant : variants) {
+			hintMap.solutions.add(variant.toNode());
+		}
+
+		Kryo kryo = SnapHintBuilder.getKryo();
+		String path = SnapHintBuilder.getStorePath(
+				"../HintServer/WebContent/WEB-INF/data", "lineArt", 1);
+		Output output = new Output(new FileOutputStream(path));
+		kryo.writeObject(output, hintMap);
+		output.close();
+
+
+		printVariants(sample, variants);
+	}
+
+	private static void printVariants(Node sample, List<BNode> variants) {
 		for (BNode variant : variants) {
 			System.out.println("--------------------");
 			System.out.println(variant.toNode().prettyPrint());
