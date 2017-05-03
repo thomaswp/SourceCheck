@@ -1,6 +1,5 @@
 package edu.isnap.ctd.util;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -10,6 +9,7 @@ import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
 import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.util.map.BiMap;
+import edu.isnap.ctd.util.map.CountMap;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.ctd.util.map.MapFactory;
 
@@ -80,7 +80,7 @@ public class NodeAlignment {
 
 		@Override
 		public double measure(String type, String[] a, String[] b) {
-			if (scriptType.equals(type)) {
+			if (type == null || scriptType.equals(type)) {
 				return Alignment.getMissingNodeCount(a, b) * missingCost -
 						// TODO: skip cost should maybe be another value?
 						Alignment.getProgress(a, b, inOrderReward, outOfOrderReward, missingCost);
@@ -110,22 +110,35 @@ public class NodeAlignment {
 
 		double minCost = Integer.MAX_VALUE;
 		double[][] costMatrix = new double[fromStates.length][toStates.length];
+		CountMap<Double> costCounts = new CountMap<>();
 		for (int i = 0; i < fromStates.length; i++) {
 			for (int j = 0; j < toStates.length; j++) {
 				String type = fromNodes.get(i).type();
 				double cost = distanceMeasure.measure(type, fromStates[i], toStates[j]);
-				if (useSubCost && fromStates[i].length > 0 &&
-						Arrays.equals(fromStates[i], toStates[j])) {
+				costCounts.change(cost, 1);
+				costMatrix[i][j] = cost;
+				minCost = Math.min(minCost, cost);
+			}
+		}
+		for (int i = 0; i < fromStates.length; i++) {
+			for (int j = 0; j < toStates.length; j++) {
+				double cost = costMatrix[i][j];
+				// Only break ties for entries
+				if (costCounts.get(cost) <= 1) continue;
+				if (useSubCost) {
 					// Break ties for 0-cost matches with the cost of their children
 					// This is useful for dealing program with similar structures that differ
 					// further down the tree
-					// TODO: Make _way_ more efficient; use only for actual ties
-					double subCost = new NodeAlignment(fromNodes.get(i), toNodes.get(j), false)
-							.calculateCost(distanceMeasure);
-					cost += subCost * 0.01;
+//					double subCost = new NodeAlignment(fromNodes.get(i), toNodes.get(j), false)
+//							.calculateCost(distanceMeasure);
+					// Instead of using the exact cost, we use an estimated cost based on a depth-
+					// first traversal of the children, which is usually a darn good estimate
+					double subCost = getSubCostEsitmate(fromNodes.get(i), toNodes.get(j),
+							distanceMeasure);
+					cost += subCost * 0.001;
 				}
 				// Break further ties with existing mappings from parents
-				if (mapping.getFrom(fromNodes.get(i)) == toNodes.get(j)) cost -= 0.001;
+				if (mapping.getFrom(fromNodes.get(i)) == toNodes.get(j)) cost -= 0.0001;
 				costMatrix[i][j] = cost;
 				minCost = Math.min(minCost, cost);
 			}
@@ -171,6 +184,12 @@ public class NodeAlignment {
 			if (matchedTo.contains(i)) continue;
 			cost += distanceMeasure.measure(toNodes.get(i).type(), new String[0], toStates[i]);
 		}
+	}
+
+	private double getSubCostEsitmate(Node a, Node b, DistanceMeasure dm) {
+		String[] aDFI = a.depthFirstIteration();
+		String[] bDFI = b.depthFirstIteration();
+		return dm.measure(null, aDFI, bDFI);
 	}
 
 	private String[][] stateArray(List<Node> nodes) {
