@@ -355,45 +355,110 @@ public class Alignment {
 
 	public static double getProgress(String[] from, String[] to, int[] toOrderGroups,
 			int orderReward, int unorderReward, double skipCost) {
-		// TODO: This can and should be much more efficient
-		List<String> fromList = new LinkedList<>(Arrays.asList(from));
-		List<String> toList = new LinkedList<>(Arrays.asList(to));
 
-		List<Integer> indices = new LinkedList<>();
+		int[] toIndices = new int[to.length];
+		return getProgress(from, to, toOrderGroups, orderReward, unorderReward, skipCost,
+				toIndices);
+	}
 
-		while (!fromList.isEmpty()) {
-			String item = fromList.remove(0);
-			int index = toList.indexOf(item);
-			if (index >= 0) {
-				toList.set(index, "\0");
-				indices.add(index);
+	public static int[] reorderIndices(String[] from, String[] to, int[] toOrderGroups) {
+		int[] toIndices = new int[to.length];
+		// Get the raw to-indices (the cost doesn't matter, so we just use 1s)
+		getProgress(from, to, toOrderGroups, 1, 1, 1, toIndices);
+
+		// Find any unused indices in the toIndices array and set them sequentially
+
+		// First create an array of all the unused indices, which will be out of order
+		int[] unusedIndices = new int[toIndices.length];
+		Arrays.fill(unusedIndices, Integer.MAX_VALUE);
+		int index = 0;
+		for (int i = 0; i < unusedIndices.length; i++) {
+			boolean found = false;
+			for (int j = 0; j < toIndices.length; j++) {
+				if (toIndices[j] == i) {
+					found = true;
+					break;
+				}
+			}
+			if (!found) {
+				unusedIndices[index++] = i;
 			}
 		}
 
+		// Then sort it to be in order, will the blanks (MAX_VALUE) at the end
+		Arrays.sort(unusedIndices);
+
+		// Then fill in the unused indices in toIndices with the sequential missing values
+		index = 0;
+		for (int i = 0; i < toIndices.length; i++) {
+			if (toIndices[i] == -1) {
+				toIndices[i] = unusedIndices[index++];
+			}
+		}
+
+		return toIndices;
+	}
+
+	private static double getProgress(String[] from, String[] to, int[] toOrderGroups,
+			int orderReward, int unorderReward, double skipCost, int[] toIndices) {
+		// TODO: This can and should be much more efficient
+		List<String> toList = new LinkedList<>(Arrays.asList(to));
+
+		int[] indices = new int[from.length];
+		for (int i = 0; i < from.length; i++) {
+			String item = from[i];
+			int index = toList.indexOf(item);
+			if (index >= 0) {
+				toList.set(index, "\0");
+				indices[i] = index;
+			} else {
+				indices[i] = -1;
+			}
+		}
+
+		Arrays.fill(toIndices, -1);
+
 		double reward = 0;
 		int lastIndex = -1;
+		int maxIndex = -1;
 		for (Integer index : indices) {
-			int i = index;
+			if (index < 0) continue;
+			int adjIndex = index;
 			int group;
-			if (toOrderGroups != null && (group = toOrderGroups[i]) > 0) {
+//			System.out.println(index);
+			if (toOrderGroups != null && (group = toOrderGroups[adjIndex]) > 0) {
 				// If the matched "to" item is in an order group (for which all items in the group
 				// are unordered), we should match i to the index of the earliest item in this group
 				// which comes after the last index, since the actual match could have been
 				// reordered to that index without loss of meaning
-				while (i > 0 && i - 1 > lastIndex && toOrderGroups[i - 1] == group) {
-					i--;
+
+				// First check if the index can be decreased within the order group without going
+				// <= the max seen index (to avoid duplicate adjusted indices)
+				while (adjIndex > 0 && adjIndex - 1 > maxIndex &&
+						toOrderGroups[adjIndex - 1] == group) {
+					adjIndex--;
+//					System.out.println("m-> " + adjIndex);
 				}
-				while (i + 1 < to.length && i <= lastIndex && toOrderGroups[i + 1] == group) {
-					i++;
+				// Next check if the index is out of order and increasing it to maxIndex + 1 will
+				// make in order
+				int nextIndex = maxIndex + 1;
+				if (nextIndex < toOrderGroups.length && adjIndex <= lastIndex  &&
+						toOrderGroups[nextIndex] == group) {
+					adjIndex = nextIndex;
+//					System.out.println("p-> " + adjIndex);
 				}
 			}
-			if (to[i] != null) {
-				reward += i > lastIndex ? orderReward : unorderReward;
+			// Set the actual to-index used after adjustments above
+			toIndices[index] = adjIndex;
+
+			if (to[adjIndex] != null) {
+				reward += adjIndex > lastIndex ? orderReward : unorderReward;
 				// If the index is more than 1 more than the last index, we've skipped some indices,
 				// so we add the skip penalty (if any)
-				reward -= Math.max(0, i - lastIndex - 1) * skipCost;
+				reward -= Math.max(0, adjIndex - lastIndex - 1) * skipCost;
 			}
-			lastIndex = i;
+			lastIndex = adjIndex;
+			maxIndex = Math.max(maxIndex, adjIndex);
 		}
 
 		return reward;
@@ -422,5 +487,13 @@ public class Alignment {
 		}, new int[] {
 				0, 1, 1, 2, 2
 		}, 2, 1, 0.25));
+
+		System.out.println(Arrays.toString(reorderIndices(new String[] {
+				"c", "a", "b", "c", "d", "e"
+		}, new String[] {
+				"a", "a", "c", "b", "e", "d"
+		}, new int[] {
+				0, 1, 1, 0, 0, 0
+		})));
 	}
 }
