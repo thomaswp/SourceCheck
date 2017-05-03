@@ -1,5 +1,6 @@
 package edu.isnap.ctd.util;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -20,9 +21,16 @@ public class NodeAlignment {
 
 	private int cost = 0;
 
+	private final boolean useSubCost;
+
 	public NodeAlignment(Node from, Node to) {
+		this(from, to, true);
+	}
+
+	private NodeAlignment(Node from, Node to, boolean useSubCost) {
 		this.from = from;
 		this.to = to;
+		this.useSubCost = useSubCost;
 	}
 
 	public double calculateCost(DistanceMeasure distanceMeasure) {
@@ -87,6 +95,8 @@ public class NodeAlignment {
 		}
 	};
 
+
+
 	private void align(List<Node> fromNodes, List<Node> toNodes,
 			DistanceMeasure distanceMeasure, boolean debug) {
 		String[][] fromStates = stateArray(fromNodes);
@@ -104,8 +114,18 @@ public class NodeAlignment {
 			for (int j = 0; j < toStates.length; j++) {
 				String type = fromNodes.get(i).type();
 				double cost = distanceMeasure.measure(type, fromStates[i], toStates[j]);
-				// Break ties with existing mappings from parents
-				if (mapping.getFrom(fromNodes.get(i)) == toNodes.get(j)) cost -= 0.01;
+				if (useSubCost && fromStates[i].length > 0 &&
+						Arrays.equals(fromStates[i], toStates[j])) {
+					// Break ties for 0-cost matches with the cost of their children
+					// This is useful for dealing program with similar structures that differ
+					// further down the tree
+					// TODO: Make _way_ more efficient; use only for actual ties
+					double subCost = new NodeAlignment(fromNodes.get(i), toNodes.get(j), false)
+							.calculateCost(distanceMeasure);
+					cost += subCost * 0.01;
+				}
+				// Break further ties with existing mappings from parents
+				if (mapping.getFrom(fromNodes.get(i)) == toNodes.get(j)) cost -= 0.001;
 				costMatrix[i][j] = cost;
 				minCost = Math.min(minCost, cost);
 			}
