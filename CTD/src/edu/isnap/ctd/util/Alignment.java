@@ -350,6 +350,11 @@ public class Alignment {
 
 	public static double getProgress(String[] from, String[] to, int orderReward, int unorderReward,
 			double skipCost) {
+		return getProgress(from, to, null, orderReward, unorderReward, skipCost);
+	}
+
+	public static double getProgress(String[] from, String[] to, int[] toOrderGroups,
+			int orderReward, int unorderReward, double skipCost) {
 		// TODO: This can and should be much more efficient
 		List<String> fromList = new LinkedList<>(Arrays.asList(from));
 		List<String> toList = new LinkedList<>(Arrays.asList(to));
@@ -365,13 +370,27 @@ public class Alignment {
 			}
 		}
 
-		int reward = 0;
+		double reward = 0;
 		int lastIndex = -1;
-		for (Integer i : indices) {
+		for (Integer index : indices) {
+			int i = index;
+			int group;
+			if (toOrderGroups != null && (group = toOrderGroups[i]) > 0) {
+				// If the matched "to" item is in an order group (for which all items in the group
+				// are unordered), we should match i to the index of the earliest item in this group
+				// which comes after the last index, since the actual match could have been
+				// reordered to that index without loss of meaning
+				while (i > 0 && i - 1 > lastIndex && toOrderGroups[i - 1] == group) {
+					i--;
+				}
+				while (i + 1 < to.length && i <= lastIndex && toOrderGroups[i + 1] == group) {
+					i++;
+				}
+			}
 			if (to[i] != null) {
 				reward += i > lastIndex ? orderReward : unorderReward;
-				// If the index is more than 1 more than the last index, we've skipped some indices, so
-				// we add the skip penalty (if any)
+				// If the index is more than 1 more than the last index, we've skipped some indices,
+				// so we add the skip penalty (if any)
 				reward -= Math.max(0, i - lastIndex - 1) * skipCost;
 			}
 			lastIndex = i;
@@ -397,9 +416,11 @@ public class Alignment {
 //		}
 
 		System.out.println(getProgress(new String[] {
-				null, "a"
+				"a", "b", "c", "d", "e"
 		}, new String[] {
-				null, "a"
-		}, 2, 1));
+				"a", "c", "b", "e", "d"
+		}, new int[] {
+				0, 1, 1, 2, 2
+		}, 2, 1, 0.25));
 	}
 }

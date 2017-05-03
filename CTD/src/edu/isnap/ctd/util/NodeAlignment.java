@@ -19,7 +19,7 @@ public class NodeAlignment {
 
 	public final BiMap<Node, Node> mapping = new BiMap<>(MapFactory.IdentityHashMapFactory);
 
-	private int cost = 0;
+	private int cost;
 
 	private final boolean useSubCost;
 
@@ -38,6 +38,8 @@ public class NodeAlignment {
 	}
 
 	private int calculateCost(DistanceMeasure distanceMeasure, boolean debug) {
+		cost = 0;
+
 		ListMap<String, Node> fromMap = getChildMap(from);
 		ListMap<String, Node> toMap = getChildMap(to);
 
@@ -95,13 +97,10 @@ public class NodeAlignment {
 		}
 	};
 
-
-
 	private void align(List<Node> fromNodes, List<Node> toNodes,
 			DistanceMeasure distanceMeasure, boolean debug) {
 		String[][] fromStates = stateArray(fromNodes);
 		String[][] toStates = stateArray(toNodes);
-
 
 		// TODO: remove debug flag
 //		if (debug && fromNodes.get(0).type().equals("doSayFor")) {
