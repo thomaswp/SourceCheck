@@ -99,9 +99,7 @@ public class HintServlet extends HttpServlet {
 			return "[]";
 		}
 
-
 		JSONArray array = new JSONArray();
-
 
 //		System.out.println(snapshot.toCode(true));
 		Node node = SimpleNodeBuilder.toTree(snapshot, true);

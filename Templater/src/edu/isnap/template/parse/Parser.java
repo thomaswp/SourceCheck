@@ -13,6 +13,7 @@ import com.esotericsoftware.kryo.io.Output;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.HintMap;
+import edu.isnap.ctd.hint.HintMapBuilder;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.elements.Snapshot;
@@ -34,14 +35,14 @@ public class Parser {
 		for (BNode variant : variants) {
 			hintMap.solutions.add(variant.toNode());
 		}
+		HintMapBuilder hmb = new HintMapBuilder(hintMap, 1);
 
 		Kryo kryo = SnapHintBuilder.getKryo();
 		String path = SnapHintBuilder.getStorePath(
 				"../HintServer/WebContent/WEB-INF/data", "lineArt", 1);
 		Output output = new Output(new FileOutputStream(path));
-		kryo.writeObject(output, hintMap);
+		kryo.writeObject(output, hmb);
 		output.close();
-
 
 		printVariants(sample, variants);
 	}
