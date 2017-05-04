@@ -30,6 +30,7 @@ import edu.isnap.ctd.hint.HintHighlighter.Insertion;
 import edu.isnap.ctd.hint.HintJSON;
 import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.util.map.BiMap;
+import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.ctd.util.map.MapFactory;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
@@ -179,12 +180,16 @@ public class Agreement {
 
 			HashMap<String, EditDifference> comps = new LinkedHashMap<>();
 
+			ListMap<String, Integer> totalCompEdits = new ListMap<>();
+			int snapshotCount = 0;
+
 			for (String row : expertMap.keySet()) {
 				if (!assignmentMap.get(row).equals(assignment.name)) continue;
 
 	//			System.out.println(row);
 				Map<String, List<EditHint>> expertRowMap = expertMap.get(row);
 				Map<String, List<EditHint>> comparisonRowMap = comparisonMap.get(row);
+
 				Node node = nodeMap.get(row);
 				for (String keyA : expertRowMap.keySet()) {
 					List<EditHint> editsA = expertRowMap.get(keyA);
@@ -199,6 +204,15 @@ public class Agreement {
 						comps.put(key, EditDifference.sum(diff, last));
 					}
 				}
+
+				for (String keyB : comparisonRowMap.keySet()) {
+					totalCompEdits.add(keyB, comparisonRowMap.get(keyB).size());
+				}
+				snapshotCount++;
+			}
+
+			for (String key : totalCompEdits.keySet()) {
+				System.out.println(key + ": " + totalCompEdits.get(key));
 			}
 
 			File file = new File(assignment.analysisDir(), "/agreement.csv");
