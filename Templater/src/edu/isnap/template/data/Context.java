@@ -11,6 +11,12 @@ public class Context {
 	public HashMap<String, Boolean> varDefs = new HashMap<>();
 	public HashMap<String, Integer> defaultAgs = new HashMap<>();
 
+	private int nextOrderGroup = 1;
+
+	public int nextOrderGroup() {
+		return nextOrderGroup++;
+	}
+
 	public static Context fromSample(Node sample) {
 		final Context context = new Context();
 		sample.recurse(new Action() {

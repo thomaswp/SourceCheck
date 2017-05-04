@@ -20,9 +20,11 @@ public class Node extends StringHashable {
 	public final String id;
 	public final Node parent;
 	public final List<Node> children = new ArrayList<>();
+	public int orderGroup;
 
 	public transient Object tag;
 	public final transient List<Canonicalization> canonicalizations = new ArrayList<>();
+
 	public String type() {
 		return type;
 	}
@@ -52,8 +54,8 @@ public class Node extends StringHashable {
 		this.id = id;
 	}
 
-	public Node addCanonicalization(Canonicalization canonicalization) {
-		this.canonicalizations.add(canonicalization);
+	public Node setOrderGroup(int group) {
+		this.orderGroup = group;
 		return this;
 	}
 
@@ -289,6 +291,7 @@ public class Node extends StringHashable {
 	public Node copyWithNewParent(Node parent) {
 		Node copy = new Node(parent, type, id);
 		copy.tag = tag;
+		copy.orderGroup = orderGroup;
 		for (Node child : children) {
 			copy.children.add(child.copyWithNewParent(copy));
 		}
@@ -353,6 +356,9 @@ public class Node extends StringHashable {
 			if (id != null && !id.equals(type)) {
 				out += "[" + id + "]";
 			}
+		}
+		if (orderGroup != 0) {
+			out += "<" + orderGroup + ">";
 		}
 		if (children.size() > 0) {
 			if (inline) {

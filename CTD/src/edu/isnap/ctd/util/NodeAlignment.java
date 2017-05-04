@@ -8,8 +8,6 @@ import java.util.Set;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
-import edu.isnap.ctd.hint.Canonicalization;
-import edu.isnap.ctd.hint.Canonicalization.OrderGroup;
 import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.HintMap;
@@ -251,12 +249,7 @@ public class NodeAlignment {
 			Node node = nodes.get(i);
 			int[] orders = new int[node.children.size()];
 			for (int j = 0; j < orders.length; j++) {
-				for (Canonicalization can : node.children.get(j).canonicalizations) {
-					if (can instanceof OrderGroup) {
-						orders[j] = ((OrderGroup) can).group;
-						break;
-					}
-				}
+				orders[j] = node.children.get(j).orderGroup;
 			}
 			orderGroups[i] = orders;
 		}
@@ -320,12 +313,12 @@ public class NodeAlignment {
 		n1.children.add(new Node (n1, "f"));
 
 		Node n2 = new Node(null, "script");
-		n2.children.add(new Node (n2, "b").addCanonicalization(new OrderGroup(1)));
-		n2.children.add(new Node (n2, "a").addCanonicalization(new OrderGroup(1)));
+		n2.children.add(new Node (n2, "b").setOrderGroup(1));
+		n2.children.add(new Node (n2, "a").setOrderGroup(1));
 		n2.children.add(new Node (n2, "c"));
-		n2.children.add(new Node (n2, "f").addCanonicalization(new OrderGroup(2)));
-		n2.children.add(new Node (n2, "d").addCanonicalization(new OrderGroup(2)));
-		n2.children.add(new Node (n2, "e").addCanonicalization(new OrderGroup(2)));
+		n2.children.add(new Node (n2, "f").setOrderGroup(2));
+		n2.children.add(new Node (n2, "d").setOrderGroup(2));
+		n2.children.add(new Node (n2, "e").setOrderGroup(2));
 		n2.children.add(new Node (n2, "g"));
 
 		System.out.println(n1);

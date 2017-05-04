@@ -19,12 +19,4 @@ public abstract class Canonicalization {
 			super(name);
 		}
 	}
-
-	public static class OrderGroup extends Canonicalization {
-		public final int group;
-
-		public OrderGroup(int group) {
-			this.group = group;
-		}
-	}
 }
