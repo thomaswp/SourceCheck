@@ -1,5 +1,6 @@
 package edu.isnap.ctd.util;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -7,6 +8,10 @@ import java.util.Set;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
+import edu.isnap.ctd.hint.Canonicalization;
+import edu.isnap.ctd.hint.Canonicalization.OrderGroup;
+import edu.isnap.ctd.hint.HintConfig;
+import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.util.map.BiMap;
 import edu.isnap.ctd.util.map.CountMap;
@@ -62,7 +67,7 @@ public class NodeAlignment {
 	}
 
 	public interface DistanceMeasure {
-		public double measure(String type, String[] a, String[] b);
+		public double measure(String type, String[] a, String[] b, int[] bOrderGroups);
 	}
 
 	public static class ProgressDistanceMeasure implements DistanceMeasure {
@@ -81,13 +86,15 @@ public class NodeAlignment {
 		}
 
 		@Override
-		public double measure(String type, String[] a, String[] b) {
+		public double measure(String type, String[] a, String[] b, int[] bOrderGroups) {
 			if (type == null || scriptType.equals(type)) {
 				return Alignment.getMissingNodeCount(a, b) * missingCost -
-						// TODO: skip cost should maybe be another value?
-						Alignment.getProgress(a, b, inOrderReward, outOfOrderReward, missingCost);
+						Alignment.getProgress(a, b, bOrderGroups,
+								// TODO: skip cost should maybe be another value?
+								inOrderReward, outOfOrderReward, missingCost);
 			} else {
 				// TODO: this is a little snap-specific, so perhaps modify later
+				// TODO: support order groups
 				int cost = 0;
 				for (int i = 0; i < a.length && i < b.length; i++) {
 					if (!a[i].equals(ignoreType) && a[i].equals(b[i])) cost -= inOrderReward;
@@ -101,6 +108,7 @@ public class NodeAlignment {
 			DistanceMeasure distanceMeasure, boolean debug) {
 		String[][] fromStates = stateArray(fromNodes);
 		String[][] toStates = stateArray(toNodes);
+		int[][] toOrderGroups = orderGroups(toNodes);
 
 		// TODO: remove debug flag
 //		if (debug && fromNodes.get(0).type().equals("doSayFor")) {
@@ -113,7 +121,8 @@ public class NodeAlignment {
 		for (int i = 0; i < fromStates.length; i++) {
 			for (int j = 0; j < toStates.length; j++) {
 				String type = fromNodes.get(i).type();
-				double cost = distanceMeasure.measure(type, fromStates[i], toStates[j]);
+				double cost = distanceMeasure.measure(type, fromStates[i], toStates[j],
+						toOrderGroups[j]);
 				costCounts.change(cost, 1);
 				costMatrix[i][j] = cost;
 				minCost = Math.min(minCost, cost);
@@ -164,6 +173,31 @@ public class NodeAlignment {
 			Node from = fromNodes.get(i), to = toNodes.get(j);
 			mapping.put(from, to);
 
+			// Get any reordering of the to states that needs to be done and see if anything is
+			// out of order
+			int[] reorders = Alignment.reorderIndices(fromStates[i], toStates[j], toOrderGroups[j]);
+			boolean needsReorder = needsReorder(reorders);
+			if (needsReorder) {
+				// If so, re-add the children of to in the correct order
+				List<Node> reordered = new LinkedList<>();
+				for (int k = 0; k < reorders.length; k++) {
+					reordered.add(null);
+				}
+				for (int k = 0; k < reorders.length; k++) {
+					reordered.set(reorders[k], to.children.get(k));
+				}
+				to.children.clear();
+				to.children.addAll(reordered);
+				toStates[j] = to.getChildArray();
+
+				// Sanity check
+				Arrays.sort(reorders);
+				if (needsReorder(reorders)) {
+					throw new RuntimeException("Invalid reorder indices: " +
+							Arrays.toString(reorders));
+				}
+			}
+
 			// Try to align the children of these paired nodes and add them to the mapping,
 			// but don't worry about score, since that's accounted for in the progress score
 			// These mappings may be overwritten later if the nodes themselves are matched as
@@ -181,14 +215,26 @@ public class NodeAlignment {
 		// current solution, but not their children
 		for (int i = 0; i < toStates.length; i++) {
 			if (matchedTo.contains(i)) continue;
-			cost += distanceMeasure.measure(toNodes.get(i).type(), new String[0], toStates[i]);
+			cost += distanceMeasure.measure(
+					toNodes.get(i).type(), new String[0], toStates[i], null);
 		}
+	}
+
+	private boolean needsReorder(int[] reorders) {
+		boolean needsReorder = false;
+		for (int k = 0; k < reorders.length; k++) {
+			if (reorders[k] != k) {
+				needsReorder = true;
+				break;
+			}
+		}
+		return needsReorder;
 	}
 
 	private double getSubCostEsitmate(Node a, Node b, DistanceMeasure dm) {
 		String[] aDFI = a.depthFirstIteration();
 		String[] bDFI = b.depthFirstIteration();
-		return dm.measure(null, aDFI, bDFI);
+		return dm.measure(null, aDFI, bDFI, null);
 	}
 
 	private String[][] stateArray(List<Node> nodes) {
@@ -197,6 +243,24 @@ public class NodeAlignment {
 			states[i] = nodes.get(i).getChildArray();
 		}
 		return states;
+	}
+
+	private int[][] orderGroups(List<Node> nodes) {
+		int[][] orderGroups = new int[nodes.size()][];
+		for (int i = 0; i < orderGroups.length; i++) {
+			Node node = nodes.get(i);
+			int[] orders = new int[node.children.size()];
+			for (int j = 0; j < orders.length; j++) {
+				for (Canonicalization can : node.children.get(j).canonicalizations) {
+					if (can instanceof OrderGroup) {
+						orders[j] = ((OrderGroup) can).group;
+						break;
+					}
+				}
+			}
+			orderGroups[i] = orders;
+		}
+		return orderGroups;
 	}
 
 	private ListMap<String, Node> getChildMap(Node node) {
@@ -244,5 +308,38 @@ public class NodeAlignment {
 			}
 		}
 		return best;
+	}
+
+	public static void main1(String[] args) {
+		Node n1 = new Node(null, "script");
+		n1.children.add(new Node (n1, "a"));
+		n1.children.add(new Node (n1, "b"));
+		n1.children.add(new Node (n1, "c"));
+		n1.children.add(new Node (n1, "d"));
+		n1.children.add(new Node (n1, "e"));
+		n1.children.add(new Node (n1, "f"));
+
+		Node n2 = new Node(null, "script");
+		n2.children.add(new Node (n2, "b").addCanonicalization(new OrderGroup(1)));
+		n2.children.add(new Node (n2, "a").addCanonicalization(new OrderGroup(1)));
+		n2.children.add(new Node (n2, "c"));
+		n2.children.add(new Node (n2, "f").addCanonicalization(new OrderGroup(2)));
+		n2.children.add(new Node (n2, "d").addCanonicalization(new OrderGroup(2)));
+		n2.children.add(new Node (n2, "e").addCanonicalization(new OrderGroup(2)));
+		n2.children.add(new Node (n2, "g"));
+
+		System.out.println(n1);
+		System.out.println(n2);
+
+		NodeAlignment na = new NodeAlignment(n1, n2);
+		double cost = na.calculateCost(HintHighlighter.getDistanceMeasure(new HintConfig()));
+
+		System.out.println(n2);
+
+		System.out.println(cost);
+		for (Node n1c : na.mapping.keysetFrom()) {
+			Node n2c = na.mapping.getFrom(n1c);
+			System.out.println(n1c + "  -->  " + n2c);
+		}
 	}
 }

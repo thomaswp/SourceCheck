@@ -52,6 +52,11 @@ public class Node extends StringHashable {
 		this.id = id;
 	}
 
+	public Node addCanonicalization(Canonicalization canonicalization) {
+		this.canonicalizations.add(canonicalization);
+		return this;
+	}
+
 	public Node root() {
 		if (parent == null) return this;
 		return parent.root();

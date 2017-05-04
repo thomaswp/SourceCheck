@@ -480,20 +480,20 @@ public class Alignment {
 //			System.out.println(Arrays.toString(pair));
 //		}
 
-		System.out.println(getProgress(new String[] {
-				"a", "b", "c", "d", "e"
-		}, new String[] {
-				"a", "c", "b", "e", "d"
-		}, new int[] {
-				0, 1, 1, 2, 2
-		}, 2, 1, 0.25));
+//		System.out.println(getProgress(new String[] {
+//				"a", "b", "c", "d", "e"
+//		}, new String[] {
+//				"a", "c", "b", "e", "d"
+//		}, new int[] {
+//				0, 1, 1, 2, 2
+//		}, 2, 1, 0.25));
 
 		System.out.println(Arrays.toString(reorderIndices(new String[] {
-				"c", "a", "b", "c", "d", "e"
+				"c", "d", "e", "f"
 		}, new String[] {
-				"a", "a", "c", "b", "e", "d"
+				"c", "f", "d", "e", "g"
 		}, new int[] {
-				0, 1, 1, 0, 0, 0
+				0, 1, 1, 1, 0
 		})));
 	}
 }
