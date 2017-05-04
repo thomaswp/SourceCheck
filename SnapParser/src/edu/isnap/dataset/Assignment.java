@@ -65,6 +65,10 @@ public class Assignment {
 		return dir("hintRepair");
 	}
 
+	public String templateFileBase() {
+		return dir("templates");
+	}
+
 	public String dir(String folderName) {
 		return dataDir + "/" + folderName + "/" + name;
 	}

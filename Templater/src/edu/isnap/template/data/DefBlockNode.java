@@ -15,7 +15,7 @@ public class DefBlockNode extends DefaultNode {
 	@Override
 	public List<BNode> getVariants(Context context) {
 		variants = super.getVariants(context);
-		context.blocksDefs.put(name, this);
+		context.blocksDefs.put(name(), this);
 		return new LinkedList<>();
 	}
 

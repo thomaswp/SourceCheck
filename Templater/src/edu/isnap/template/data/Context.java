@@ -8,7 +8,7 @@ import edu.isnap.ctd.graph.Node.Action;
 public class Context {
 
 	public HashMap<String, DefBlockNode> blocksDefs = new HashMap<>();
-	public HashMap<String, Boolean> varDefs = new HashMap<>();
+	public HashMap<String, String> varDefs = new HashMap<>();
 	public HashMap<String, Integer> defaultAgs = new HashMap<>();
 
 	private int nextOrderGroup = 1;

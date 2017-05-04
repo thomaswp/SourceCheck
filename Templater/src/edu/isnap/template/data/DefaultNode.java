@@ -6,8 +6,12 @@ import java.util.List;
 
 public class DefaultNode {
 	public String type;
-	public String name;
+	public List<String> args = new LinkedList<>();
 	public List<DefaultNode> children = new LinkedList<>();
+
+	public String name() {
+		return args.size() == 0 ? null : args.get(0);
+	}
 
 	@Override
 	public String toString() {
@@ -81,7 +85,7 @@ public class DefaultNode {
 			case "@block": node = new BlockNode(); break;
 			case "@defVar": node = new DefVarNode(); break;
 			case "@if": node = new IfNode(true); break;
-			case "@else": node = new IfNode(false); break;
+			case "@unless": node = new IfNode(false); break;
 			case "@anyOrder": node = new AnyOrderNode(); break;
 			default:
 				if (type.startsWith("@")) {

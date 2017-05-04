@@ -24,7 +24,7 @@ snapshot {
                         doIf (reportLessThan(xPosition, literal), script {
                             forward
                         })
-                    } @else CHECK {
+                    } @unless CHECK {
                         forward
                     }
                 }
@@ -35,7 +35,7 @@ snapshot {
                         doIf (reportLessThan(yPosition, literal), script {
                             forward
                         })
-                    } @else CHECK {
+                    } @unless CHECK {
                         forward
                     }
                 }
@@ -46,7 +46,7 @@ snapshot {
                         doIf (reportLessThan(literal, xPosition), script {
                             forward
                         })
-                    } @else CHECK {
+                    } @unless CHECK {
                         forward
                     }
                 }
@@ -57,7 +57,7 @@ snapshot {
                         doIf (reportLessThan(literal, yPosition), script {
                             forward
                         })
-                    } @else CHECK {
+                    } @unless CHECK {
                         forward
                     }
                 }

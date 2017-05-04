@@ -24,5 +24,10 @@
   		<artifactId>isnap</artifactId>
   		<version>0.0.1-SNAPSHOT</version>
   	</dependency>
+  	<dependency>
+  		<groupId>edu.isnap</groupId>
+  		<artifactId>templater</artifactId>
+  		<version>0.0.1-SNAPSHOT</version>
+  	</dependency>
   </dependencies>
 </project>

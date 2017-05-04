@@ -14,9 +14,7 @@ public class AnyOrderNode extends DefaultNode {
 		List<BNode> variants = super.getVariants(context);
 		int group = context.nextOrderGroup();
 		for (BNode variant : variants) {
-			for (BNode child : variant.children) {
-				child.orderGroup = group;
-			}
+			variant.orderGroup = group;
 		}
 		return variants;
 	}

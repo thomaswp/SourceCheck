@@ -29,6 +29,12 @@ public class BNode {
 	private void addToParent(Node parent) {
 		if (inline) {
 			for (BNode child : children) {
+				if (orderGroup != 0) {
+					if (child.orderGroup != 0 && child.orderGroup != orderGroup) {
+						System.err.println("Multiple order groups for child: " + child.orderGroup);
+					}
+					child.orderGroup = orderGroup;
+				}
 				child.addToParent(parent);
 			}
 		} else {

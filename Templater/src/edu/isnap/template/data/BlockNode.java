@@ -6,11 +6,11 @@ public class BlockNode extends DefaultNode {
 
 	@Override
 	public List<BNode> getVariants(Context context) {
-		if (!context.blocksDefs.containsKey(name)) {
-			throw new RuntimeException("No block def: " + name);
+		if (!context.blocksDefs.containsKey(name())) {
+			throw new RuntimeException("No block def: " + name());
 		}
 
-		DefBlockNode blockDef = context.blocksDefs.get(name);
+		DefBlockNode blockDef = context.blocksDefs.get(name());
 		return blockDef.variants;
 	}
 

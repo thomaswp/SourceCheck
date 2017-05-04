@@ -12,12 +12,22 @@ public class DefVarNode extends DefaultNode {
 
 	@Override
 	public List<BNode> getVariants(Context context) {
-		Boolean oldValue = context.varDefs.get(name);
+		String name = name();
+		String oldValue = context.varDefs.get(name);
+
+		List<String> values = new LinkedList<>(args);
+		values.remove(0);
+		if (values.size() == 0) {
+			values.add("true");
+			values.add("false");
+		}
+
 		List<BNode> variants = new LinkedList<>();
-		context.varDefs.put(name, true);
-		variants.addAll(super.getVariants(context));
-		context.varDefs.put(name, false);
-		variants.addAll(super.getVariants(context));
+		for (String value : values) {
+			context.varDefs.put(name, value);
+			variants.addAll(super.getVariants(context));
+		}
+
 		context.varDefs.put(name, oldValue);
 		return variants;
 	}
