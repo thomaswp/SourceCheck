@@ -7,7 +7,7 @@ import edu.isnap.template.parse.Parser;
 
 public class RunTemplater {
 	public static void main(String[] args) throws IOException {
-		Parser.parseTemplate(BJCSolutions2017.U1_L1_Alonzo);
-//		Parser.parseTemplate(BJCSolutions2017.U1_P1_LineArt);
+		Parser.parseTemplate(BJCSolutions2017.U1_L2_Gossip);
+//		Parser.parseTemplate(BJCSolutions2017.U1_L1_Alonzo);
 	}
 }

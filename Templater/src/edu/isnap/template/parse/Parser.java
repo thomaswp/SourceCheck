@@ -53,6 +53,7 @@ public class Parser {
 	private static void printVariants(Node sample, List<BNode> variants) {
 		for (BNode variant : variants) {
 			System.out.println("--------------------");
+			System.out.println(variant);
 			System.out.println(variant.toNode().prettyPrint());
 		}
 		System.out.println("--------------------");
@@ -100,10 +101,15 @@ public class Parser {
 	private DefaultNode parseNode() {
 		DefaultNode node = DefaultNode.create(read());
 		if (node.type.startsWith("@")) {
-			while (!"{".equals(peek())) {
+			if (!"{".equals(peek())) {
 				String next = read();
-				if ("(".equals(next) || ")".equals(next)) continue;
-				node.args.add(next);
+				if ("(".equals(next)) {
+					while (!")".equals((next = read()))) {
+						node.args.add(next);
+					}
+				} else {
+					node.args.add(next);
+				}
 			}
 		}
 //		System.out.println("Enterring " + node.type + " [" + peek() + "]");

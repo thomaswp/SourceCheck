@@ -1,7 +1,7 @@
 snapshot {
     stage {
         sprite {
-            @defVar STAGE (start, greet, loop, ghost) {
+            @defVar (STAGE, start, greet, loop, ghost) {
                 script {
                     receiveInteraction
                     @if (STAGE, start, greet) {

@@ -46,4 +46,9 @@ public class BNode {
 			}
 		}
 	}
+
+	@Override
+	public String toString() {
+		return type + (inline ? "[i]" : "") + ":" + children;
+	}
 }

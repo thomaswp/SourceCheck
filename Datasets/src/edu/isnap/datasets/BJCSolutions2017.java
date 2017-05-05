@@ -18,8 +18,12 @@ public class BJCSolutions2017 extends Dataset {
 	public final static Assignment U1_P1_LineArt = new Assignment(instance,
 			"U1_P1_LineArt", null, true, false, null);
 
+	public static final Assignment U1_L2_Gossip = new Assignment(instance,
+			"U1_L2_Gossip", null, true, false, null);
+
 	public final static Assignment[] All = {
 			U1_L1_Alonzo,
+			U1_L2_Gossip,
 			U1_P1_LineArt
 	};
 

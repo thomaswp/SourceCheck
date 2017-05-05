@@ -88,6 +88,7 @@ public class DefaultNode {
 			case "@unless": node = new IfNode(false); break;
 			case "@anyOrder": node = new AnyOrderNode(); break;
 			case "@optional": node = new OptionalNode(); break;
+			case "@repeat": node = new RepeatNode(); break;
 			default:
 				if (type.startsWith("@")) {
 					throw new RuntimeException("Unnown annotation: " + type);

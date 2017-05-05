@@ -1,0 +1,57 @@
+snapshot {
+    stage {
+        sprite {
+            script {
+                evaluateCustomBlock
+            }
+            script {
+                evaluateCustomBlock
+            }
+            script {
+                receiveMessage
+                doWait
+                bubble(evaluateCustomBlock)
+            }
+        }
+        sprite {
+            script {
+                evaluateCustomBlock
+            }
+            script {
+                evaluateCustomBlock
+            }
+            script {
+                evaluateCustomBlock
+            }
+            script {
+                receiveInteraction
+                bubble(evaluateCustomBlock)
+                doBroadcast
+            }
+        }
+    }
+    @defBlock LIST_BLOCK {
+        customBlock {
+            script {
+                doReport(reportListItem(literal, reportNewList(list(
+                    @repeat (3, 7) {
+                        literal
+                    }
+                ))))
+            }
+        }
+    }
+    @block LIST_BLOCK
+    @block LIST_BLOCK
+    customBlock {
+        script {
+            doReport(reportJoinWords(list(evaluateCustomBlock, literal, evaluateCustomBlock, literal, evaluateCustomBlock)))
+        }
+    }
+    @block LIST_BLOCK
+    customBlock {
+        script {
+            doReport(reportJoinWords(list(literal, evaluateCustomBlock, literal, evaluateCustomBlock, literal, evaluateCustomBlock)))
+        }
+    }
+}
