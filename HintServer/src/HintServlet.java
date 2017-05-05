@@ -116,7 +116,9 @@ public class HintServlet extends HttpServlet {
 		}
 		if (hintTypes != null && hintTypes.contains("highlight")){
 			try {
-				hints.addAll(new HintHighlighter(hintMap).highlight(node));
+				HintHighlighter highlighter = new HintHighlighter(hintMap);
+				highlighter.consoleOutput = true;
+				hints.addAll(highlighter.highlight(node));
 			} catch (Exception e) {
 				array.put(HintJSON.errorToJSON(e, true));
 			}

@@ -22,7 +22,7 @@ public class NodeAlignment {
 
 	public final BiMap<Node, Node> mapping = new BiMap<>(MapFactory.IdentityHashMapFactory);
 
-	private int cost;
+	private double cost;
 
 	private final boolean useSubCost;
 
@@ -40,7 +40,7 @@ public class NodeAlignment {
 		return calculateCost(distanceMeasure, false);
 	}
 
-	private int calculateCost(DistanceMeasure distanceMeasure, boolean debug) {
+	private double calculateCost(DistanceMeasure distanceMeasure, boolean debug) {
 		cost = 0;
 
 		ListMap<String, Node> fromMap = getChildMap(from);
@@ -166,8 +166,16 @@ public class NodeAlignment {
 			matchedTo.add(j);
 			// TODO: why don't we penalize unmatched nodes in fromStates?
 			// Especially when we do penalize unmatched nodes in toStates below...
+			// Currently it works because out "cost" function is actually a reward function, so
+			// failing to match a from state loses you a reward. This wouldn't work if cost was
+			// generally more than 0. However, we probably shouldn't simply add a penalty, as this
+			// would double-penalize unmatched from states
 			if (j == -1) continue;
-			cost += costMatrix[i][j] + minCost;
+
+			// Recalculate the distance to remove tie-breaking costs
+			double matchCost = distanceMeasure.measure(fromNodes.get(i).type(), fromStates[i],
+					toStates[j], toOrderGroups[j]);
+			cost += matchCost;
 			Node from = fromNodes.get(i), to = toNodes.get(j);
 			mapping.put(from, to);
 
@@ -184,16 +192,19 @@ public class NodeAlignment {
 				for (int k = 0; k < reorders.length; k++) {
 					reordered.set(reorders[k], to.children.get(k));
 				}
-				to.children.clear();
-				to.children.addAll(reordered);
-				toStates[j] = to.getChildArray();
 
 				// Sanity check
 				Arrays.sort(reorders);
-				if (needsReorder(reorders)) {
+				if (reorders.length != to.children.size() || needsReorder(reorders)) {
+					// For debugging
+					Alignment.reorderIndices(fromStates[i], toStates[j], toOrderGroups[j]);
 					throw new RuntimeException("Invalid reorder indices: " +
 							Arrays.toString(reorders));
 				}
+
+				to.children.clear();
+				to.children.addAll(reordered);
+				toStates[j] = to.getChildArray();
 			}
 
 			// Try to align the children of these paired nodes and add them to the mapping,
@@ -272,10 +283,10 @@ public class NodeAlignment {
 	public static List<Node> findBestMatches(Node from, List<Node> matches,
 			DistanceMeasure distanceMeasure) {
 		List<Node> best = new LinkedList<>();
-		int bestCost = Integer.MAX_VALUE;
+		double bestCost = Double.MAX_VALUE;
 		for (Node to : matches) {
 			NodeAlignment align = new NodeAlignment(from, to);
-			int cost = align.calculateCost(distanceMeasure, false);
+			double cost = align.calculateCost(distanceMeasure, false);
 			if (cost < bestCost) {
 				best.clear();
 			}

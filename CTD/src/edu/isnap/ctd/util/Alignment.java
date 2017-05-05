@@ -447,9 +447,12 @@ public class Alignment {
 					adjIndex = nextIndex;
 //					System.out.println("p-> " + adjIndex);
 				}
+
+				// Set the actual to-index used after adjustments above
+				if (index != adjIndex) {
+					toIndices[index] = adjIndex;
+				}
 			}
-			// Set the actual to-index used after adjustments above
-			toIndices[index] = adjIndex;
 
 			if (to[adjIndex] != null) {
 				reward += adjIndex > lastIndex ? orderReward : unorderReward;
@@ -480,20 +483,20 @@ public class Alignment {
 //			System.out.println(Arrays.toString(pair));
 //		}
 
-//		System.out.println(getProgress(new String[] {
-//				"a", "b", "c", "d", "e"
-//		}, new String[] {
-//				"a", "c", "b", "e", "d"
-//		}, new int[] {
-//				0, 1, 1, 2, 2
-//		}, 2, 1, 0.25));
-
-		System.out.println(Arrays.toString(reorderIndices(new String[] {
-				"c", "d", "e", "f"
+		System.out.println(getProgress(new String[] {
+				"a", "b", "c"
 		}, new String[] {
-				"c", "f", "d", "e", "g"
+				"a", "b", "x", "c"
 		}, new int[] {
-				0, 1, 1, 1, 0
-		})));
+				0, 1, 1, 0
+		}, 2, 1, 0.25));
+
+//		System.out.println(Arrays.toString(reorderIndices(new String[] {
+//				"c", "d", "e", "f"
+//		}, new String[] {
+//				"c", "f", "d", "e", "g"
+//		}, new int[] {
+//				0, 1, 1, 1, 0
+//		})));
 	}
 }

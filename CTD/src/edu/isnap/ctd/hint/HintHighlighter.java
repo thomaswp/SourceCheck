@@ -35,6 +35,8 @@ public class HintHighlighter {
 		Good, Add, Delete, Order, Move, Replaced
 	}
 
+	public boolean consoleOutput = false;
+
 	private final List<Node> solutions;
 	private final HintConfig config;
 
@@ -435,8 +437,10 @@ public class HintHighlighter {
 			}
 		});
 
-//		System.out.println("------------------------------");
-//		System.out.println(bestMatch.prettyPrint(labels));
+		if (consoleOutput) {
+			System.out.println("------------------------------");
+			System.out.println(bestMatch.prettyPrint(labels));
+		}
 		return mapping;
 	}
 

@@ -365,6 +365,10 @@ public class Node extends StringHashable {
 				out += "(";
 				for (int i = 0; i < children.size(); i++) {
 					if (i > 0) out += ", ";
+					if (children.get(i) == null) {
+						out += "null";
+						continue;
+					}
 					out += children.get(i).prettyPrint(indent, prefixMap);
 				}
 				out += ")";
@@ -372,6 +376,10 @@ public class Node extends StringHashable {
 				out += " {\n";
 				String indentMore = indent + "  ";
 				for (int i = 0; i < children.size(); i++) {
+					if (children.get(i) == null) {
+						out += indentMore + "null\n";
+						continue;
+					}
 					out += indentMore + children.get(i).prettyPrint(indentMore, prefixMap) + "\n";
 				}
 				out += indent + "}";
