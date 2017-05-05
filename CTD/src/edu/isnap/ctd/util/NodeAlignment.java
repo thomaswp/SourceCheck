@@ -66,6 +66,7 @@ public class NodeAlignment {
 
 	public interface DistanceMeasure {
 		public double measure(String type, String[] a, String[] b, int[] bOrderGroups);
+		public double matchedOrphanReward();
 	}
 
 	public static class ProgressDistanceMeasure implements DistanceMeasure {
@@ -99,6 +100,13 @@ public class NodeAlignment {
 				}
 				return cost;
 			}
+		}
+
+		@Override
+		public double matchedOrphanReward() {
+			// A matched orphan node should be equivalent to the node being out of order, and we
+			// also have to counteract the cost of the node being missing from its original parent
+			return outOfOrderReward + missingCost;
 		}
 	};
 
@@ -177,7 +185,15 @@ public class NodeAlignment {
 					toStates[j], toOrderGroups[j]);
 			cost += matchCost;
 			Node from = fromNodes.get(i), to = toNodes.get(j);
+
+			// If we are pairing nodes that have not been paired from their parents, there should
+			// be some reward for this, determined by the distance measure
+			if (!mapping.containsFrom(from) && !mapping.containsFrom(to)) {
+				cost -= distanceMeasure.matchedOrphanReward();
+			}
 			mapping.put(from, to);
+
+
 
 			// Get any reordering of the to states that needs to be done and see if anything is
 			// out of order

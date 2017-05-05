@@ -417,9 +417,8 @@ public class HintHighlighter {
 
 	private BiMap<Node, Node> findSolutionMapping(Node node) {
 		DistanceMeasure dm = getDistanceMeasure(config);
-//		long time = System.currentTimeMillis();
+		long startTime = System.currentTimeMillis();
 		Node bestMatch = NodeAlignment.findBestMatch(node, solutions, dm);
-//		System.out.println(System.currentTimeMillis() - time);
 		if (bestMatch == null) throw new RuntimeException("No matches!");
 
 		NodeAlignment alignment = new NodeAlignment(node, bestMatch);
@@ -439,6 +438,7 @@ public class HintHighlighter {
 
 		if (consoleOutput) {
 			System.out.println("------------------------------");
+			System.out.println("Time to match: " + (System.currentTimeMillis() - startTime));
 			System.out.println(bestMatch.prettyPrint(labels));
 		}
 		return mapping;
