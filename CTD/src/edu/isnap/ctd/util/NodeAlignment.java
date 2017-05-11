@@ -66,7 +66,7 @@ public class NodeAlignment {
 
 	public interface DistanceMeasure {
 		public double measure(String type, String[] a, String[] b, int[] bOrderGroups);
-		public double matchedOrphanReward();
+		public double matchedOrphanReward(String type);
 	}
 
 	public static class ProgressDistanceMeasure implements DistanceMeasure {
@@ -93,7 +93,7 @@ public class NodeAlignment {
 								inOrderReward, outOfOrderReward, missingCost);
 			} else {
 				// TODO: this is a little snap-specific, so perhaps modify later
-				// TODO: support order groups
+				// TODO: support order groups in parameters
 				int cost = 0;
 				for (int i = 0; i < a.length && i < b.length; i++) {
 					if (!a[i].equals(ignoreType) && a[i].equals(b[i])) cost -= inOrderReward;
@@ -103,7 +103,8 @@ public class NodeAlignment {
 		}
 
 		@Override
-		public double matchedOrphanReward() {
+		public double matchedOrphanReward(String type) {
+			if (ignoreType.equals(type)) return 0;
 			// A matched orphan node should be equivalent to the node being out of order, and we
 			// also have to counteract the cost of the node being missing from its original parent
 			return outOfOrderReward + missingCost;
@@ -117,9 +118,6 @@ public class NodeAlignment {
 		int[][] toOrderGroups = orderGroups(toNodes);
 
 		// TODO: remove debug flag
-//		if (debug && fromNodes.get(0).type().equals("doSayFor")) {
-//			System.out.println("!");
-//		}
 
 		double minCost = Integer.MAX_VALUE;
 		double[][] costMatrix = new double[fromStates.length][toStates.length];
@@ -169,6 +167,18 @@ public class NodeAlignment {
 		int[] matching = alg.execute();
 		Set<Integer> matchedTo = new HashSet<>();
 
+		// We pre-compute whether each of the from and to nodes have been previous put in the
+		// mapping. We do this beforehand because adding contradictory matches may remove some
+		// nodes from the mapping temporarily until they are repaired.
+		boolean[] mappedFrom = new boolean[fromNodes.size()];
+		for (int i = 0; i < mappedFrom.length; i++) {
+			mappedFrom[i] = mapping.containsFrom(fromNodes.get(i));
+		}
+		boolean[] mappedTo = new boolean[toNodes.size()];
+		for (int i = 0; i < mappedTo.length; i++) {
+			mappedTo[i] = mapping.containsTo(toNodes.get(i));
+		}
+
 		for (int i = 0; i < fromStates.length; i++) {
 			int j = matching[i];
 			matchedTo.add(j);
@@ -180,20 +190,20 @@ public class NodeAlignment {
 			// would double-penalize unmatched from states
 			if (j == -1) continue;
 
+			String type = fromNodes.get(i).type();
+
 			// Recalculate the distance to remove tie-breaking costs
-			double matchCost = distanceMeasure.measure(fromNodes.get(i).type(), fromStates[i],
+			double matchCost = distanceMeasure.measure(type, fromStates[i],
 					toStates[j], toOrderGroups[j]);
 			cost += matchCost;
 			Node from = fromNodes.get(i), to = toNodes.get(j);
 
 			// If we are pairing nodes that have not been paired from their parents, there should
 			// be some reward for this, determined by the distance measure
-			if (!mapping.containsFrom(from) && !mapping.containsFrom(to)) {
-				cost -= distanceMeasure.matchedOrphanReward();
+			if (!mappedFrom[i] && !mappedTo[j]) {
+				cost -= distanceMeasure.matchedOrphanReward(type);
 			}
 			mapping.put(from, to);
-
-
 
 			// Get any reordering of the to states that needs to be done and see if anything is
 			// out of order

@@ -368,6 +368,7 @@ public class HintHighlighter {
 		int matches = 0;
 		for (Node n1 : nodeChildren) {
 			// Don't match literals
+			// TODO: This produces empty hints when working with lists or literals
 			if (n1.hasType(config.literal)) continue;
 			for (Node n2 : pairChildren) {
 				if (mapping.getFrom(n1) == n2) {
@@ -438,6 +439,8 @@ public class HintHighlighter {
 
 		if (consoleOutput) {
 			System.out.println("------------------------------");
+//			System.out.println(node.prettyPrint());
+//			System.out.println("++++++++++");
 			System.out.println("Time to match: " + (System.currentTimeMillis() - startTime));
 			System.out.println(bestMatch.prettyPrint(labels));
 		}
