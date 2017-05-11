@@ -10,6 +10,7 @@ public class BNode {
 	public final boolean inline;
 	public final List<BNode> children = new LinkedList<>();
 	public int orderGroup;
+	public boolean anything;
 
 	public BNode(String type, boolean inline) {
 		this.type = type;
@@ -19,7 +20,7 @@ public class BNode {
 	public Node toNode() {
 		if (inline) throw new RuntimeException("Cannot convert inline BNode to Node");
 		Node node = new Node(null, type);
-		node.orderGroup = orderGroup;
+		node.setOrderGroup(orderGroup);
 		for (BNode child : children) {
 			child.addToParent(node);
 		}
@@ -27,6 +28,7 @@ public class BNode {
 	}
 
 	private void addToParent(Node parent) {
+		parent.writableAnnotations().matchAnyChildren = anything;
 		if (inline) {
 			for (BNode child : children) {
 				if (orderGroup != 0) {
@@ -39,7 +41,7 @@ public class BNode {
 			}
 		} else {
 			Node node = new Node(parent, type);
-			node.orderGroup = orderGroup;
+			node.setOrderGroup(orderGroup);
 			parent.children.add(node);
 			for (BNode child : children) {
 				child.addToParent(node);

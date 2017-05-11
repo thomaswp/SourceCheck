@@ -92,6 +92,11 @@ public class Parser {
 		return "{".equals(token) || "(".equals(token);
 	}
 
+	private boolean isEnd() {
+		String token = peek();
+		return "}".equals(token) || ")".equals(token);
+	}
+
 	private boolean matches(String start, String end) {
 		if ("{".equals(start)) return "}".equals(end);
 		if ("(".equals(start)) return ")".equals(end);
@@ -101,7 +106,7 @@ public class Parser {
 	private DefaultNode parseNode() {
 		DefaultNode node = DefaultNode.create(read());
 		if (node.type.startsWith("@")) {
-			if (!"{".equals(peek())) {
+			if (!"{".equals(peek()) && !isEnd()) {
 				String next = read();
 				if ("(".equals(next)) {
 					while (!")".equals((next = read()))) {

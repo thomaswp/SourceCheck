@@ -276,7 +276,7 @@ public class NodeAlignment {
 			Node node = nodes.get(i);
 			int[] orders = new int[node.children.size()];
 			for (int j = 0; j < orders.length; j++) {
-				orders[j] = node.children.get(j).orderGroup;
+				orders[j] = node.children.get(j).readOnlyAnnotations().orderGroup;
 			}
 			orderGroups[i] = orders;
 		}

@@ -17,10 +17,13 @@ import util.LblTree;
 public class Node extends StringHashable {
 
 	private String type;
+	// Annotations used to specify that nodes have a non-concrete meaning, such as having a partial
+	// order or wildcard children
+	private Annotations annotations;
+
 	public final String id;
 	public final Node parent;
 	public final List<Node> children = new ArrayList<>();
-	public int orderGroup;
 
 	public transient Object tag;
 	public final transient List<Canonicalization> canonicalizations = new ArrayList<>();
@@ -39,6 +42,17 @@ public class Node extends StringHashable {
 		if (parent != null) parent.recache();
 	}
 
+	public Annotations writableAnnotations() {
+		if (annotations == null) {
+			annotations = new Annotations();
+		}
+		return annotations;
+	}
+
+	public Annotations readOnlyAnnotations() {
+		return annotations == null ? Annotations.EMPTY : annotations;
+	}
+
 	@SuppressWarnings("unused")
 	private Node() {
 		this(null, null, null);
@@ -55,7 +69,7 @@ public class Node extends StringHashable {
 	}
 
 	public Node setOrderGroup(int group) {
-		this.orderGroup = group;
+		writableAnnotations().orderGroup = group;
 		return this;
 	}
 
@@ -291,7 +305,7 @@ public class Node extends StringHashable {
 	public Node copyWithNewParent(Node parent) {
 		Node copy = new Node(parent, type, id);
 		copy.tag = tag;
-		copy.orderGroup = orderGroup;
+		copy.annotations = annotations.copy();
 		for (Node child : children) {
 			copy.children.add(child.copyWithNewParent(copy));
 		}
@@ -357,8 +371,8 @@ public class Node extends StringHashable {
 				out += "[" + id + "]";
 			}
 		}
-		if (orderGroup != 0) {
-			out += "<" + orderGroup + ">";
+		if (annotations != null) {
+			out += annotations;
 		}
 		if (children.size() > 0) {
 			if (inline) {
@@ -452,5 +466,27 @@ public class Node extends StringHashable {
 	public int rootPathLength() {
 		if (parent == null) return 1;
 		return 1 + parent.rootPathLength();
+	}
+
+	public static class Annotations {
+		public static final Annotations EMPTY = new Annotations();
+
+		public boolean matchAnyChildren;
+		public int orderGroup;
+
+		public Annotations copy() {
+			Annotations copy = new Annotations();
+			copy.orderGroup = orderGroup;
+			copy.matchAnyChildren = matchAnyChildren;
+			return copy;
+		}
+
+		@Override
+		public String toString() {
+			String out = "";
+			if (orderGroup != 0) out += "<" + orderGroup + ">";
+			if (matchAnyChildren) out += "<*>";
+			return out;
+		}
 	}
 }
