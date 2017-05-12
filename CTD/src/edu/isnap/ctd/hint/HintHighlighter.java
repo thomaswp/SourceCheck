@@ -236,11 +236,16 @@ public class HintHighlighter {
 							}
 						} else {
 							// Otherwise we add an insertion
+							if (isCodeElement(node)) {
+								// The insert index algorithm could have gone out of bounds for
+								// a code element's children (args)
+								insertIndex = Math.min(insertIndex, node.children.size() - 1);
+							}
 							Insertion insertion = new Insertion(node, child, insertIndex);
 							edits.add(insertion);
 							// If the node is being inserted in a code element then it replaces
 							// whatever already exists at this index in the parent
-							if (isCodeElement(node) && insertIndex < node.children.size()) {
+							if (isCodeElement(node)) {
 								insertion.replaced = node.children.get(insertIndex);
 							}
 							// If this is a non-script, we treat this new insertion as a "match"
@@ -827,7 +832,7 @@ public class HintHighlighter {
 
 		@Override
 		protected double priority() {
-			return 5 + (candidate == null ? 0  : 1) + (replaced == null ? 0 : 1);
+			return 3 + (candidate == null ? 0  : 1) + (replaced == null ? 0 : 1);
 		}
 
 		@Override
@@ -994,7 +999,7 @@ public class HintHighlighter {
 
 		@Override
 		protected double priority() {
-			return 3;
+			return 5;
 		}
 
 		@Override
