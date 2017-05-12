@@ -305,7 +305,7 @@ public class Node extends StringHashable {
 	public Node copyWithNewParent(Node parent) {
 		Node copy = new Node(parent, type, id);
 		copy.tag = tag;
-		copy.annotations = annotations.copy();
+		copy.annotations = annotations == null ? null : annotations.copy();
 		for (Node child : children) {
 			copy.children.add(child.copyWithNewParent(copy));
 		}
