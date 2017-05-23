@@ -303,12 +303,17 @@ public class Node extends StringHashable {
 	}
 
 	public Node copyWithNewParent(Node parent) {
-		Node copy = new Node(parent, type, id);
-		copy.tag = tag;
-		copy.annotations = annotations == null ? null : annotations.copy();
+		Node copy = shallowCopy(parent);
 		for (Node child : children) {
 			copy.children.add(child.copyWithNewParent(copy));
 		}
+		return copy;
+	}
+
+	public Node shallowCopy(Node parent) {
+		Node copy = new Node(parent, type, id);
+		copy.tag = tag;
+		copy.annotations = annotations == null ? null : annotations.copy();
 		return copy;
 	}
 
@@ -488,5 +493,16 @@ public class Node extends StringHashable {
 			if (matchAnyChildren) out += "<*>";
 			return out;
 		}
+	}
+
+	public void resetAnnotations() {
+		recurse(new Action() {
+			@Override
+			public void run(Node node) {
+				if (node.readOnlyAnnotations().matchAnyChildren) {
+					node.children.clear();
+				}
+			}
+		});
 	}
 }

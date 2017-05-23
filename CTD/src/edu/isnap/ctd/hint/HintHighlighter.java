@@ -428,9 +428,20 @@ public class HintHighlighter {
 		NodeAlignment alignment = new NodeAlignment(node, bestMatch);
 		alignment.calculateCost(dm);
 
+		if (consoleOutput) {
+			System.out.println("------------------------------");
+//			System.out.println(node.prettyPrint());
+//			System.out.println("++++++++++");
+			System.out.println("Time to match: " + (System.currentTimeMillis() - startTime));
+			System.out.println(prettyPrintMatching(bestMatch, alignment.mapping));
+		}
+
+		return alignment.mapping;
+	}
+
+	public static String prettyPrintMatching(Node to, final BiMap<Node, Node> mapping) {
 		final IdentityHashMap<Node, String> labels = new IdentityHashMap<>();
-		final BiMap<Node, Node> mapping = alignment.mapping;
-		bestMatch.recurse(new Action() {
+		to.recurse(new Action() {
 			@Override
 			public void run(Node node) {
 				Node pair = mapping.getTo(node);
@@ -439,15 +450,7 @@ public class HintHighlighter {
 				}
 			}
 		});
-
-		if (consoleOutput) {
-			System.out.println("------------------------------");
-//			System.out.println(node.prettyPrint());
-//			System.out.println("++++++++++");
-			System.out.println("Time to match: " + (System.currentTimeMillis() - startTime));
-			System.out.println(bestMatch.prettyPrint(labels));
-		}
-		return mapping;
+		return to.prettyPrint(labels);
 	}
 
 

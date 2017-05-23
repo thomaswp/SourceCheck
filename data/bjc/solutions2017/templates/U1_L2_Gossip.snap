@@ -34,9 +34,7 @@ snapshot {
         customBlock {
             script {
                 doReport(reportListItem(literal, reportNewList(list(
-                    @repeat (3, 7) {
-                        literal
-                    }
+                    @anything
                 ))))
             }
         }

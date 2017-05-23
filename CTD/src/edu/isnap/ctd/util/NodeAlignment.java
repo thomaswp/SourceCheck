@@ -43,6 +43,7 @@ public class NodeAlignment {
 	private double calculateCost(DistanceMeasure distanceMeasure, boolean debug) {
 		cost = 0;
 
+		to.resetAnnotations();
 		ListMap<String, Node> fromMap = getChildMap(from);
 		ListMap<String, Node> toMap = getChildMap(to);
 
@@ -59,8 +60,9 @@ public class NodeAlignment {
 				continue;
 			}
 
-			align(fromNodes, toNodes, distanceMeasure, debug);
+			align(fromNodes, toNodes, distanceMeasure, fromMap, debug);
 		}
+
 		return cost;
 	}
 
@@ -112,7 +114,7 @@ public class NodeAlignment {
 	};
 
 	private void align(List<Node> fromNodes, List<Node> toNodes,
-			DistanceMeasure distanceMeasure, boolean debug) {
+			DistanceMeasure distanceMeasure, final ListMap<String, Node> fromMap, boolean debug) {
 		String[][] fromStates = stateArray(fromNodes);
 		String[][] toStates = stateArray(toNodes);
 		int[][] toOrderGroups = orderGroups(toNodes);
@@ -127,6 +129,8 @@ public class NodeAlignment {
 				String type = fromNodes.get(i).type();
 				double cost = distanceMeasure.measure(type, fromStates[i], toStates[j],
 						toOrderGroups[j]);
+				// If the to node can match anything, matching has 0 cost
+				if (toNodes.get(j).readOnlyAnnotations().matchAnyChildren) cost = 0;
 				costCounts.change(cost, 1);
 				costMatrix[i][j] = cost;
 				minCost = Math.min(minCost, cost);
@@ -190,13 +194,46 @@ public class NodeAlignment {
 			// would double-penalize unmatched from states
 			if (j == -1) continue;
 
-			String type = fromNodes.get(i).type();
+			final Node from = fromNodes.get(i), to = toNodes.get(j);
+
+			// If to's children match anything, edit them to match the children of from
+			if (to.readOnlyAnnotations().matchAnyChildren) {
+				mapping.put(from, to);
+				to.children.clear();
+				from.recurse(new Action() {
+					@Override
+					public void run(Node node) {
+						if (node == from) return;
+						// Make a copy of the node and match them together
+						Node parent = mapping.getFrom(node.parent);
+						Node copy = node.shallowCopy(parent);
+						parent.children.add(copy);
+						mapping.put(node, copy);
+
+						// Remove the from-child from the fromMap, so it doesn't get matched to
+						// other things later on
+						List<Node> list = fromMap.get(parentNodeKey(node));
+						if (list != null) {
+							for (int i = 0; i < list.size(); i++) {
+								if (list.get(i) == node) {
+									list.remove(i);
+									break;
+								}
+							}
+						}
+					}
+				});
+
+				// Then we're done, so continue
+				continue;
+			}
+
+			String type = from.type();
 
 			// Recalculate the distance to remove tie-breaking costs
 			double matchCost = distanceMeasure.measure(type, fromStates[i],
 					toStates[j], toOrderGroups[j]);
 			cost += matchCost;
-			Node from = fromNodes.get(i), to = toNodes.get(j);
 
 			// If we are pairing nodes that have not been paired from their parents, there should
 			// be some reward for this, determined by the distance measure
@@ -298,12 +335,19 @@ public class NodeAlignment {
 		node.recurse(new Action() {
 			@Override
 			public void run(Node node) {
-				if (node.children.isEmpty()) return;
-				String key = HintMap.toRootPath(node).root().toCanonicalString();
+				if (node.children.isEmpty() && node.parent != null &&
+						!node.readOnlyAnnotations().matchAnyChildren) {
+					return;
+				}
+				String key = parentNodeKey(node);
 				map.add(key, node);
 			}
 		});
 		return map;
+	}
+
+	private String parentNodeKey(Node node) {
+		return HintMap.toRootPath(node).root().toCanonicalString();
 	}
 
 	public static List<Node> findBestMatches(Node from, List<Node> matches,
