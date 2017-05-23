@@ -1,32 +1,37 @@
 snapshot {
     stage {
         sprite {
-            script {
-                evaluateCustomBlock
+            @repeat (3, 3) {
+                script {
+                    evaluateCustomBlock
+                }
             }
             script {
-                evaluateCustomBlock
+                @or {
+                    receiveInteraction,
+                    receiveGo
+                }
+                @optional { setScale }
+                bubble(evaluateCustomBlock)
+                doBroadcast
+            }
+        }
+        sprite {
+            @repeat (2, 2) {
+                script {
+                    evaluateCustomBlock
+                }
+            }
+            @optional {
+                script {
+                    receiveGo
+                    setScale
+                }
             }
             script {
                 receiveMessage
                 doWait
                 bubble(evaluateCustomBlock)
-            }
-        }
-        sprite {
-            script {
-                evaluateCustomBlock
-            }
-            script {
-                evaluateCustomBlock
-            }
-            script {
-                evaluateCustomBlock
-            }
-            script {
-                receiveInteraction
-                bubble(evaluateCustomBlock)
-                doBroadcast
             }
         }
     }
@@ -47,9 +52,21 @@ snapshot {
         }
     }
     @block LIST_BLOCK
-    customBlock {
-        script {
-            doReport(reportJoinWords(list(literal, evaluateCustomBlock, literal, evaluateCustomBlock, literal, evaluateCustomBlock)))
+
+    @defVar (RESP) {
+        customBlock {
+            script {
+                doReport(reportJoinWords(list(
+                    @if (RESP) {
+                        evaluateCustomBlock
+                    }
+                    literal, evaluateCustomBlock, literal, evaluateCustomBlock, literal, evaluateCustomBlock
+                )))
+
+            }
+        }
+        @if (RESP) {
+            @block LIST_BLOCK
         }
     }
 }
