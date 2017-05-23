@@ -415,8 +415,7 @@ public class HintHighlighter {
 	}
 
 	public static DistanceMeasure getDistanceMeasure(HintConfig config) {
-		return new ProgressDistanceMeasure(config.progressOrderFactor, 1, 0.25, config.script,
-				config.literal);
+		return new ProgressDistanceMeasure(config.progressOrderFactor, 1, 0.25, config);
 	}
 
 	private BiMap<Node, Node> findSolutionMapping(Node node) {
@@ -981,7 +980,9 @@ public class HintHighlighter {
 				storeException("Reorder index out of bounds: " + index + " for size " +
 						node.parent.children.size());
 			}
-
+			if (index == node.index()) {
+				storeException("Empty reorder");
+			}
 		}
 
 		@Override

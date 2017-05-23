@@ -54,20 +54,55 @@ public class NodeAlignment {
 			List<Node> toNodes = toMap.get(key);
 
 			if (toNodes == null) {
+				// TODO: We used to set these to null - was there a good reason?
+				// I don't think the mapping can actually have a value for any of these nodes yet
+				// except when a node has children in from and not to, in which case it shouldn't
+				// be unmatched
 				for (Node node : fromNodes) {
-					mapping.put(node, null);
+					Node last = mapping.getFrom(node);
+					if (last != null) {
+						System.err.println("NodeAlignment.calculateCost() - unexpected result");
+					}
 				}
 				continue;
 			}
 
-			align(fromNodes, toNodes, distanceMeasure, fromMap, debug);
+			// Containers are nodes that shouldn't have their descendants matched with those of
+			// other containers e.g. Sprites, so we make sure only descendants of a given container
+			// are aligned
+			// TODO: This is 10x slower than traditional matching - need to significantly speed up
+			ListMap<Node, Node> fromContainers = new ListMap<>(MapFactory.IdentityHashMapFactory);
+			ListMap<Node, Node> toContainers = new ListMap<>(MapFactory.IdentityHashMapFactory);
+			for (Node from : fromNodes) {
+				fromContainers.add(getContainer(distanceMeasure, from), from);
+			}
+			for (Node to : toNodes) {
+				toContainers.add(mapping.getTo(getContainer(distanceMeasure, to)), to);
+			}
+
+			for (Node container : fromContainers.keySet()) {
+				List<Node> containedFrom = fromContainers.get(container);
+				List<Node> containedTo = toContainers.get(container);
+				if (containedTo == null) continue;
+				align(containedFrom, containedTo, distanceMeasure, fromMap, debug);
+			}
 		}
 
 		return cost;
 	}
 
+	private static Node getContainer(DistanceMeasure distanceMeasure, Node from) {
+		Node parent = from.parent;
+		while (parent != null && parent.parent != null &&
+				!distanceMeasure.isContainer(parent.type())) {
+			parent = parent.parent;
+		}
+		return parent;
+	}
+
 	public interface DistanceMeasure {
 		public double measure(String type, String[] a, String[] b, int[] bOrderGroups);
+		public boolean isContainer(String type);
 		public double matchedOrphanReward(String type);
 	}
 
@@ -75,20 +110,19 @@ public class NodeAlignment {
 
 		public final int inOrderReward, outOfOrderReward;
 		public final double missingCost;
-		public final String scriptType, ignoreType;
+		public final HintConfig config;
 
 		public ProgressDistanceMeasure(int inOrderReward, int outOfOrderReward,
-				double missingCost, String scriptType, String ignoreType) {
+				double missingCost, HintConfig config) {
 			this.inOrderReward = inOrderReward;
 			this.outOfOrderReward = outOfOrderReward;
 			this.missingCost = missingCost;
-			this.scriptType = scriptType;
-			this.ignoreType = ignoreType;
+			this.config = config;
 		}
 
 		@Override
 		public double measure(String type, String[] a, String[] b, int[] bOrderGroups) {
-			if (type == null || scriptType.equals(type)) {
+			if (type == null || config.script.equals(type)) {
 				return Alignment.getMissingNodeCount(a, b) * missingCost -
 						Alignment.getProgress(a, b, bOrderGroups,
 								// TODO: skip cost should maybe be another value?
@@ -98,7 +132,7 @@ public class NodeAlignment {
 				// TODO: support order groups in parameters
 				int cost = 0;
 				for (int i = 0; i < a.length && i < b.length; i++) {
-					if (!a[i].equals(ignoreType) && a[i].equals(b[i])) cost -= inOrderReward;
+					if (!a[i].equals(config.literal) && a[i].equals(b[i])) cost -= inOrderReward;
 				}
 				return cost;
 			}
@@ -106,10 +140,15 @@ public class NodeAlignment {
 
 		@Override
 		public double matchedOrphanReward(String type) {
-			if (ignoreType.equals(type)) return 0;
+			if (config.literal.equals(type)) return 0;
 			// A matched orphan node should be equivalent to the node being out of order, and we
 			// also have to counteract the cost of the node being missing from its original parent
 			return outOfOrderReward + missingCost;
+		}
+
+		@Override
+		public boolean isContainer(String type) {
+			return config.containers.contains(type);
 		}
 	};
 

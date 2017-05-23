@@ -82,6 +82,16 @@ public class HintConfig {
 		}
 	}
 
+	/** Nodes that should be self-contained, and their children should not be inter-matched */
+	public final HashSet<String> containers = new HashSet<>();
+	{
+		for (String c : new String[] {
+				"sprite",
+		}) {
+			containers.add(c);
+		}
+	}
+
 	public final HashSet<String> harmlessCalls = new HashSet<>();
 	{
 		for (String c : new String[] {
