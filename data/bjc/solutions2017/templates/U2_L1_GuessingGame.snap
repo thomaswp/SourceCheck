@@ -1,0 +1,75 @@
+snapshot {
+    stage {
+        sprite {
+            script {
+                evaluateCustomBlock
+            }
+        }
+    }
+    customBlock {
+        script {
+            @defVar (CHECK, NONE, VAR, ASK) {
+                @defBlock ANSWER {
+                    @if (CHECK, VAR) { var }
+                    @unless (CHECK, VAR) { getLastAnswer }
+                }
+                @defBlock FEEDBACK {
+                    @or {
+                        @inline {
+                            @anyOrder {
+                                doIf(reportLessThan(var, @block ANSWER), script {
+                                    doSayFor
+                                })
+                                doIf(reportLessThan(@block ANSWER, var), script {
+                                    doSayFor
+                                })
+                            }
+                        }
+                        @inline {
+                            doIfElse(reportLessThan(
+                                @anyOrder {
+                                    var, @block ANSWER
+                                }
+                            ), script {
+                                doSayFor
+                            }, script {
+                                doSayFor
+                            })
+                        }
+                    }
+                }
+
+                doDeclareVariables(list(
+                    literal
+                    @if (CHECK, VAR) { literal }
+                ))
+                doSetVar(literal, reportRandom(literal, literal))
+                @if (CHECK, VAR) {
+                    doSetVar(literal, literal)
+                }
+                @if (CHECK, ASK) {
+                    doAsk
+                }
+                doUntil(reportEquals(
+                    var
+                    @block ANSWER
+                ), script {
+                    @if(CHECK, ASK) {
+                        @optional {
+                            @block FEEDBACK
+                        }
+                    }
+                    doAsk(literal)
+                    @if (CHECK, VAR) { 
+                        doSetVar(literal, getLastAnswer) 
+                        @optional {
+                            @block FEEDBACK
+                        }
+                    }
+
+                })
+                doSayFor(literal, literal)
+            }
+        }
+    }
+}

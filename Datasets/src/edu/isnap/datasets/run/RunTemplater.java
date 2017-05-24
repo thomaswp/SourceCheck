@@ -7,7 +7,6 @@ import edu.isnap.template.parse.Parser;
 
 public class RunTemplater {
 	public static void main(String[] args) throws IOException {
-		Parser.parseTemplate(BJCSolutions2017.U1_L3_Pinwheel);
-//		Parser.parseTemplate(BJCSolutions2017.U1_L1_Alonzo);
+		Parser.parseTemplate(BJCSolutions2017.U2_L1_GuessingGame);
 	}
 }

@@ -39,6 +39,8 @@ public class BJCSolutions2017 extends Dataset {
 
 	public final static Assignment U1_P1_LineArt = new BJCAssignment("U1_P1_LineArt");
 
+	public final static Assignment U2_L1_GuessingGame = new BJCAssignment("U2_L1_GuessingGame");
+
 	public final static Assignment[] All = {
 			U1_L1_Alonzo,
 			U1_L2_Gossip,

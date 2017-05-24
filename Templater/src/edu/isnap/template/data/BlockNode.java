@@ -1,5 +1,6 @@
 package edu.isnap.template.data;
 
+import java.util.LinkedList;
 import java.util.List;
 
 public class BlockNode extends DefaultNode {
@@ -11,7 +12,11 @@ public class BlockNode extends DefaultNode {
 		}
 
 		DefBlockNode blockDef = context.blocksDefs.get(name());
-		return blockDef.variants;
+		List<BNode> variants = new LinkedList<>();
+		for (BNode node : blockDef.variants) {
+			variants.add(node.copy());
+		}
+		return variants;
 	}
 
 }

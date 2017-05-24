@@ -53,4 +53,14 @@ public class BNode {
 	public String toString() {
 		return type + (inline ? "[i]" : "") + ":" + children;
 	}
+
+	public BNode copy() {
+		BNode copy = new BNode(type, inline);
+		copy.orderGroup = orderGroup;
+		copy.anything = anything;
+		for (BNode child : children) {
+			copy.children.add(child.copy());
+		}
+		return copy;
+	}
 }
