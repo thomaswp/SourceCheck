@@ -114,11 +114,10 @@ public class NodeAlignment {
 		public final double missingCost;
 		public final HintConfig config;
 
-		public ProgressDistanceMeasure(int inOrderReward, int outOfOrderReward,
-				double missingCost, HintConfig config) {
-			this.inOrderReward = inOrderReward;
-			this.outOfOrderReward = outOfOrderReward;
-			this.missingCost = missingCost;
+		public ProgressDistanceMeasure(HintConfig config) {
+			this.inOrderReward = config.progressOrderFactor;
+			this.missingCost = config.progressMissingFactor;
+			this.outOfOrderReward = 1;
 			this.config = config;
 		}
 

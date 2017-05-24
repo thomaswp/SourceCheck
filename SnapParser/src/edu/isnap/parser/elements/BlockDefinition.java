@@ -162,6 +162,8 @@ public class BlockDefinition extends Code implements IHasID {
 		.indent()
 		.add("script: ")
 		.add(script)
+		// TODO: These should be included in canon, just filtered out for solutions as side scripts.
+		// We can reuse side-scripts in custom blocks just like in main scripts
 		.ifNotCanon()
 		.add("scripts:")
 		.indent()

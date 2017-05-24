@@ -34,6 +34,12 @@ public class HintConfig {
 	 * this factor compared to nodes that are out of order
 	 */
 	public int progressOrderFactor = 2;
+	/**
+	 * When measuring progress towards a goal, nodes in the student's solution but not in the goal
+	 * solution are given negative weight multiplied by this factor compared to nodes that are
+	 * out of order
+	 */
+	public double progressMissingFactor;
 
 	/**
 	 * Code elements that have exactly one script child or unordered children and therefore should

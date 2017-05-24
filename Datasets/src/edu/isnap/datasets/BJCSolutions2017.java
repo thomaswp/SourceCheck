@@ -2,8 +2,10 @@ package edu.isnap.datasets;
 
 import java.util.Date;
 
+import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
+import edu.isnap.hint.ConfigurableAssignment;
 
 public class BJCSolutions2017 extends Dataset {
 
@@ -12,14 +14,26 @@ public class BJCSolutions2017 extends Dataset {
 	public final static String dataFile = dataDir + ".csv";
 	public final static BJCSolutions2017 instance = new BJCSolutions2017();
 
-	public final static Assignment U1_L1_Alonzo = new Assignment(instance,
-			"U1_L1_Alonzo", null, true, false, null);
+	private static class BJCAssignment extends ConfigurableAssignment {
 
-	public final static Assignment U1_P1_LineArt = new Assignment(instance,
-			"U1_P1_LineArt", null, true, false, null);
+		public BJCAssignment(String name) {
+			super(instance, name, null, false);
+		}
 
-	public static final Assignment U1_L2_Gossip = new Assignment(instance,
-			"U1_L2_Gossip", null, true, false, null);
+		@Override
+		public HintConfig getConfig() {
+			HintConfig config = new HintConfig();
+			config.progressMissingFactor = 0.1f;
+			return config;
+		}
+
+	}
+
+	public final static Assignment U1_L1_Alonzo = new BJCAssignment("U1_L1_Alonzo");
+
+	public static final Assignment U1_L2_Gossip = new BJCAssignment("U1_L2_Gossip");
+
+	public final static Assignment U1_P1_LineArt = new BJCAssignment("U1_P1_LineArt");
 
 	public final static Assignment[] All = {
 			U1_L1_Alonzo,

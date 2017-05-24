@@ -415,7 +415,7 @@ public class HintHighlighter {
 	}
 
 	public static DistanceMeasure getDistanceMeasure(HintConfig config) {
-		return new ProgressDistanceMeasure(config.progressOrderFactor, 1, 0.25, config);
+		return new ProgressDistanceMeasure(config);
 	}
 
 	private BiMap<Node, Node> findSolutionMapping(Node node) {
