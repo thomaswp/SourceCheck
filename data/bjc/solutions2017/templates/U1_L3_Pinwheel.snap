@@ -1,29 +1,7 @@
 snapshot {
     stage {
         sprite {
-            script {
-                down
-                setColor(literal)
-            }
-            script {
-                clear
-            }
-            @repeat (1, 1) {
-                script {
-                    doRepeat(literal, script {
-                        forward(literal)
-                        doWait(literal)
-                        forward(literal)
-                        doWait(literal)
-                        turn(reportQuotient(literal, literal))
-                    })
-                }
-            }
-        }
-        @repeat (1, 1) {
-            script {
-                evaluateCustomBlock(@anything)
-            }
+            @anything
         }
     }
     @optional {
