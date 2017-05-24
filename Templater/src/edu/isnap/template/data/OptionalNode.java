@@ -14,10 +14,7 @@ public class OptionalNode extends DefaultNode {
 	public List<BNode> getVariants(Context context) {
 		List<BNode> variants = new LinkedList<>();
 		variants.addAll(super.getVariants(context));
-		for (BNode node : super.getVariants(context)) {
-			node.children.clear();
-			variants.add(node);
-		}
+		variants.add(new BNode(type, inline()));
 		return variants;
 	}
 }
