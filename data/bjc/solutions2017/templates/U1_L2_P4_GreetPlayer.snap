@@ -14,7 +14,9 @@ snapshot {
         stage {
             sprite {
                 @if (BLOCK) {
-                    evaluateCustomBlock
+                    script {
+                        evaluateCustomBlock
+                    }
                 } @unless (BLOCK) {
                     @block BODY
                 }
