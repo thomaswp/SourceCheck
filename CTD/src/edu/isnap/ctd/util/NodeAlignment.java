@@ -70,19 +70,21 @@ public class NodeAlignment {
 			// Containers are nodes that shouldn't have their descendants matched with those of
 			// other containers e.g. Sprites, so we make sure only descendants of a given container
 			// are aligned
-			// TODO: This is 10x slower than traditional matching - need to significantly speed up
-			ListMap<Node, Node> fromContainers = new ListMap<>(MapFactory.IdentityHashMapFactory);
-			ListMap<Node, Node> toContainers = new ListMap<>(MapFactory.IdentityHashMapFactory);
+			// TODO: Why do String IDs work so much faster than IDHashMap
+			ListMap<String, Node> fromContainers = new ListMap<>();
+			ListMap<String, Node> toContainers = new ListMap<>();
 			for (Node from : fromNodes) {
-				fromContainers.add(getContainer(distanceMeasure, from), from);
+				Node container = getContainer(distanceMeasure, from);
+				fromContainers.add(container == null ? null : container.id, from);
 			}
 			for (Node to : toNodes) {
-				toContainers.add(mapping.getTo(getContainer(distanceMeasure, to)), to);
+				Node container = mapping.getTo(getContainer(distanceMeasure, to));
+				toContainers.add(container == null ? null : container.id, to);
 			}
 
-			for (Node container : fromContainers.keySet()) {
-				List<Node> containedFrom = fromContainers.get(container);
-				List<Node> containedTo = toContainers.get(container);
+			for (String containerID : fromContainers.keySet()) {
+				List<Node> containedFrom = fromContainers.get(containerID);
+				List<Node> containedTo = toContainers.get(containerID);
 				if (containedTo == null) continue;
 				align(containedFrom, containedTo, distanceMeasure, fromMap, debug);
 			}
