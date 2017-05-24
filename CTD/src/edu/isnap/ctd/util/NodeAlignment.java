@@ -37,10 +37,6 @@ public class NodeAlignment {
 	}
 
 	public double calculateCost(DistanceMeasure distanceMeasure) {
-		return calculateCost(distanceMeasure, false);
-	}
-
-	private double calculateCost(DistanceMeasure distanceMeasure, boolean debug) {
 		cost = 0;
 
 		to.resetAnnotations();
@@ -86,7 +82,7 @@ public class NodeAlignment {
 				List<Node> containedFrom = fromContainers.get(containerID);
 				List<Node> containedTo = toContainers.get(containerID);
 				if (containedTo == null) continue;
-				align(containedFrom, containedTo, distanceMeasure, fromMap, debug);
+				align(containedFrom, containedTo, distanceMeasure, fromMap);
 			}
 		}
 
@@ -154,19 +150,18 @@ public class NodeAlignment {
 	};
 
 	private void align(List<Node> fromNodes, List<Node> toNodes,
-			DistanceMeasure distanceMeasure, final ListMap<String, Node> fromMap, boolean debug) {
+			DistanceMeasure distanceMeasure, final ListMap<String, Node> fromMap) {
 		String[][] fromStates = stateArray(fromNodes);
 		String[][] toStates = stateArray(toNodes);
 		int[][] toOrderGroups = orderGroups(toNodes);
 
-		// TODO: remove debug flag
+		String type = fromNodes.get(0).type();
 
 		double minCost = Integer.MAX_VALUE;
 		double[][] costMatrix = new double[fromStates.length][toStates.length];
 		CountMap<Double> costCounts = new CountMap<>();
 		for (int i = 0; i < fromStates.length; i++) {
 			for (int j = 0; j < toStates.length; j++) {
-				String type = fromNodes.get(i).type();
 				double cost = distanceMeasure.measure(type, fromStates[i], toStates[j],
 						toOrderGroups[j]);
 				// If the to node can match anything, matching has 0 cost
@@ -268,8 +263,6 @@ public class NodeAlignment {
 				continue;
 			}
 
-			String type = from.type();
-
 			// Recalculate the distance to remove tie-breaking costs
 			double matchCost = distanceMeasure.measure(type, fromStates[i],
 					toStates[j], toOrderGroups[j]);
@@ -343,7 +336,7 @@ public class NodeAlignment {
 		return needsReorder;
 	}
 
-	private double getSubCostEsitmate(Node a, Node b, DistanceMeasure dm) {
+	public static double getSubCostEsitmate(Node a, Node b, DistanceMeasure dm) {
 		String[] aDFI = a.depthFirstIteration();
 		String[] bDFI = b.depthFirstIteration();
 		return dm.measure(null, aDFI, bDFI, null);
@@ -396,7 +389,7 @@ public class NodeAlignment {
 		double bestCost = Double.MAX_VALUE;
 		for (Node to : matches) {
 			NodeAlignment align = new NodeAlignment(from, to);
-			double cost = align.calculateCost(distanceMeasure, false);
+			double cost = align.calculateCost(distanceMeasure);
 			if (cost < bestCost) {
 				best.clear();
 			}

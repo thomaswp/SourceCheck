@@ -145,7 +145,8 @@ public class HintHighlighter {
 							colors.put(node, Highlight.Order);
 							edits.add(new Reorder(node, pair.index()));
 						}
-						return;
+						// We don't return here, since these nodes could have children that need to
+						// be reordered, as addressed below
 					}
 
 					// Instead of aligning the node types, which might repeat, we align the original
@@ -524,13 +525,17 @@ public class HintHighlighter {
 	private void handleInsertionsAndMoves(final IdentityHashMap<Node, Highlight> colors,
 			final List<Insertion> insertions, List<EditHint> edits, BiMap<Node, Node> mapping) {
 
-		// Ensure that insertions with missing parents are paired last, giving priority to
-		// actionable inserts when assigning candidates
-		Collections.sort(insertions, new Comparator<Insertion>() {
+		DistanceMeasure dm = getDistanceMeasure(config);
+
+		List<Deletion> deletions = new LinkedList<>();
+		for (EditHint edit : edits) {
+			if (edit instanceof Deletion) deletions.add((Deletion) edit);
+		}
+		// Pair deletions with parents first to ensure we match parents before children
+		Collections.sort(deletions, new Comparator<Deletion>() {
 			@Override
-			public int compare(Insertion o1, Insertion o2) {
-				if (o1.missingParent == o2.missingParent) return 0;
-				return o1.missingParent ? 1 : -1;
+			public int compare(Deletion o1, Deletion o2) {
+				return Integer.compare(o1.node.depth(), o2.node.depth());
 			}
 		});
 
@@ -538,9 +543,7 @@ public class HintHighlighter {
 		List<EditHint> toAdd = new LinkedList<>();
 
 		// For each deleted node, see if it should be inserted, and if so change it to a root move
-		for (EditHint edit : edits) {
-			if (!(edit instanceof Deletion)) continue;
-			Deletion deletion = (Deletion) edit;
+		for (Deletion deletion : deletions) {
 			Node deleted = deletion.node;
 
 			// We're only interested in candidate nodes that are in scripts. This ignores things
@@ -549,6 +552,9 @@ public class HintHighlighter {
 
 			// If a deletion has been changed in the loop (e.g. to a move), ignore it
 			if (colors.get(deleted) != Highlight.Delete) continue;
+
+			Insertion bestMoveMatch = null;
+			double bestMoveCost = Double.MAX_VALUE;
 
 			for (Insertion insertion : insertions) {
 				// We're also only interested in working with insertions into scripts
@@ -568,34 +574,47 @@ public class HintHighlighter {
 					insertion.candidate = deleted;
 					// Also add this new pairing to the mapping
 					mapping.put(deleted, insertion.pair);
+
+					// If we can do a reorder, ensure no move matching occurs
+					bestMoveMatch = null;
 					break;
 				}
 
 				// Moves are deletions that could be instead moved to perform a needed insertion
-				// TODO: find the best match, not just the first
 				if (sameType && insertion.candidate == null &&
 						!insertion.type.equals(config.literal)) {
-					colors.put(deleted, Highlight.Move);
-					// Also mark children as moved so they can't be paired as well
-					// TODO: this could be problematic if children are matched before their parents
-					deleted.recurse(new Action() {
-						@Override
-						public void run(Node node) {
-							colors.put(node, Highlight.Move);
-						}
-					});
-
-					insertion.candidate = deleted;
-					// Also add this new pairing to the mapping
-					mapping.put(deleted, insertion.pair);
-					toRemove.add(deletion);
-					break;
+					double cost = NodeAlignment.getSubCostEsitmate(deleted, insertion.pair, dm);
+					// Ensure that insertions with missing parents are paired last, giving priority
+					// to actionable inserts when assigning candidates
+					if (insertion.missingParent) cost += Double.MAX_VALUE / 2;
+					if (cost < bestMoveCost) {
+						bestMoveCost = cost;
+						bestMoveMatch = insertion;
+					}
 				}
+			}
+
+			if (bestMoveMatch != null) {
+				colors.put(deleted, Highlight.Move);
+				// Also mark children as moved so they can't be paired as well
+				deleted.recurse(new Action() {
+					@Override
+					public void run(Node node) {
+						colors.put(node, Highlight.Move);
+					}
+				});
+
+				bestMoveMatch.candidate = deleted;
+				// Also add this new pairing to the mapping
+				mapping.put(deleted, bestMoveMatch.pair);
+				toRemove.add(deletion);
 			}
 		}
 
 		edits.removeAll(toRemove);
 		edits.addAll(toAdd);
+
+
 	}
 
 	@SuppressWarnings("unused")
