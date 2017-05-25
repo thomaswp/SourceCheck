@@ -17,7 +17,7 @@ snapshot {
                         forward(
                             @if (ARGS, 0) { literal }
                             @unless (ARGS, 0) {
-                                reportDifference(literal, var)
+                                reportProduct(literal, var)
                             }
                         )
                         doWait(literal)
