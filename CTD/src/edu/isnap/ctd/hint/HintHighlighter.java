@@ -17,6 +17,8 @@ import org.json.JSONObject;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
 import edu.isnap.ctd.graph.Node.Predicate;
+import edu.isnap.ctd.hint.Canonicalization.InvertOp;
+import edu.isnap.ctd.hint.Canonicalization.SwapArgs;
 import edu.isnap.ctd.util.Alignment;
 import edu.isnap.ctd.util.Cast;
 import edu.isnap.ctd.util.NodeAlignment;
@@ -634,10 +636,24 @@ public class HintHighlighter {
 
 		public final Node parent;
 
+		protected final boolean argsCanonSwapped;
 		protected transient RuntimeException e;
 
 		public EditHint(Node parent) {
 			this.parent = parent;
+
+			boolean swap = false;
+			for (Canonicalization c : parent.canonicalizations) {
+				if (c instanceof InvertOp || c instanceof SwapArgs) {
+					swap = true;
+					break;
+				}
+			}
+			argsCanonSwapped = swap;
+		}
+
+		protected int getDataIndex(int index) {
+			return argsCanonSwapped ? parent.children.size() - 1 - index : index;
 		}
 
 		@Override
@@ -674,6 +690,7 @@ public class HintHighlighter {
 		public String from() {
 			if (e != null) throw e;
 			LinkedList<String> items = getParentChildren();
+			if (argsCanonSwapped) Collections.reverse(items);
 			return action() + ": " + rootString(parent) + ": " + items;
 		}
 
@@ -682,6 +699,7 @@ public class HintHighlighter {
 			if (e != null) throw e;
 			LinkedList<String> items = getParentChildren();
 			editChildren(items);
+			if (argsCanonSwapped) Collections.reverse(items);
 			return action() + ": " + rootString(parent) + ": " + items;
 		}
 
@@ -756,7 +774,6 @@ public class HintHighlighter {
 		void apply();
 	}
 
-	// TODO: Undo canonicalizations! (how have we not yet)
 	public static class Insertion extends EditHint {
 		public final String type;
 		public final int index;
@@ -797,14 +814,14 @@ public class HintHighlighter {
 		public JSONObject data() {
 			JSONObject data = super.data();
 			data.put("missingParent", missingParent);
-			data.put("index", index);
+			data.put("index", getDataIndex(index));
 			data.put("type", type);
 			data.put("replacement", Node.getNodeReference(replaced));
 			data.put("candidate", Node.getNodeReference(candidate));
 			LinkedList<String> items = new LinkedList<>(Arrays.asList(parent.getChildArray()));
-			data.put("from", toJSONArray(items));
+			data.put("from", toJSONArray(items, argsCanonSwapped));
 			editChildren(items);
-			data.put("to", toJSONArray(items));
+			data.put("to", toJSONArray(items, argsCanonSwapped));
 			return data;
 		}
 
@@ -818,10 +835,10 @@ public class HintHighlighter {
 			return rootString;
 		}
 
-		private JSONArray toJSONArray(LinkedList<String> items) {
+		private JSONArray toJSONArray(LinkedList<String> items, boolean swapArgs) {
 			JSONArray array = new JSONArray();
-			for (String item : items) {
-				array.put(item);
+			for (int i = 0; i < items.size(); i++) {
+				array.put(items.get(swapArgs ? items.size() - 1 - i : i));
 			}
 			return array;
 		}
@@ -1009,7 +1026,7 @@ public class HintHighlighter {
 		public JSONObject data() {
 			JSONObject data = super.data();
 			data.put("node", Node.getNodeReference(node));
-			data.put("index", index);
+			data.put("index", getDataIndex(index));
 			return data;
 		}
 

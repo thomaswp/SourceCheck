@@ -28,7 +28,9 @@ public class BNode {
 	}
 
 	private void addToParent(Node parent) {
-		parent.writableAnnotations().matchAnyChildren = anything;
+		if (anything) {
+			parent.writableAnnotations().matchAnyChildren = true;
+		}
 		if (inline) {
 			for (BNode child : children) {
 				if (orderGroup != 0) {

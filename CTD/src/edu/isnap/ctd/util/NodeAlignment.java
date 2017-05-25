@@ -176,6 +176,12 @@ public class NodeAlignment {
 				double cost = costMatrix[i][j];
 				// Only break ties for entries
 				if (costCounts.get(cost) <= 1) continue;
+				// For any matches, break ties based on the existing mappings
+				if (toNodes.get(j).readOnlyAnnotations().matchAnyChildren) {
+					if (mapping.getFrom(fromNodes.get(i)) == toNodes.get(j)) cost -= 1;
+					costMatrix[i][j] = cost;
+					continue;
+				}
 				if (useSubCost) {
 					// Break ties for 0-cost matches with the cost of their children
 					// This is useful for dealing program with similar structures that differ

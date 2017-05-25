@@ -56,7 +56,7 @@ snapshot {
                     script {
                         receiveCondition(reportTouchingObject(literal))
                         setHeading(reportDifference(literal, direction))
-                        @unless (STAGE, START) doChangeVar(literal, literal)
+                        @unless (STAGE, START) { doChangeVar(literal, literal) }
                     }
                     @if (STAGE, PADDLES) {
                         script {
