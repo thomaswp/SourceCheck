@@ -13,18 +13,19 @@ snapshot {
                     @if (CHECK, VAR) { var }
                     @unless (CHECK, VAR) { getLastAnswer }
                 }
+                @defBlock IFS_FEEDBACK {
+                    @anyOrder {
+                        doIf(reportLessThan(var, @block ANSWER), script {
+                            doSayFor
+                        })
+                        doIf(reportLessThan(@block ANSWER, var), script {
+                            doSayFor
+                        })
+                    }
+                }
                 @defBlock FEEDBACK {
                     @or {
-                        @inline {
-                            @anyOrder {
-                                doIf(reportLessThan(var, @block ANSWER), script {
-                                    doSayFor
-                                })
-                                doIf(reportLessThan(@block ANSWER, var), script {
-                                    doSayFor
-                                })
-                            }
-                        }
+                        @block IFS_FEEDBACK
                         @inline {
                             doIfElse(reportLessThan(
                                 @anyOrder {
@@ -63,7 +64,7 @@ snapshot {
                     @if (CHECK, VAR) { 
                         doSetVar(literal, getLastAnswer) 
                         @optional {
-                            @block FEEDBACK
+                            @block IFS_FEEDBACK
                         }
                     }
 
