@@ -188,4 +188,16 @@ public class BlockDefinition extends Code implements IHasID {
 		if (guid != null && guid.length() > 0) return guid;
 		return String.format("%s[%s,%s,%s](%s)", parentID, name, type, category, inputs.toString());
 	}
+
+	private static String getCustomBlockSelector(String name) {
+		return name.replace("%s", "_").replaceAll("\\s", "").replaceAll("[^A-Za-z_]", "*");
+	}
+
+	public static String getCustomBlockCall(String name) {
+		name = name.replaceAll("%[^\\s]*", "%s");
+		if (TOOLS_BLOCKS_SET.contains(name)) {
+			return getCustomBlockSelector(name);
+		}
+		return "evaluateCustomBlock";
+	}
 }
