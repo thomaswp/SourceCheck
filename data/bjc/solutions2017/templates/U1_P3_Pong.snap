@@ -6,9 +6,10 @@ snapshot {
                     sprite {
                         script {
                             receiveGo
-                            @optional { setScale(literal) }
-                            gotoXY(literal, literal)
-                            @unless (STAGE, START) { doSetVar(literal, literal) }
+                            @anyOrder {
+                                @optional { setScale(literal) }
+                                gotoXY(literal, literal)
+                            }
                             @if (FOREVER) {
                                 doForever(script {
                                     doIf(reportAnd(reportKeyPressed(literal), reportLessThan(yPosition, literal)), script {
@@ -40,9 +41,12 @@ snapshot {
                 sprite {
                     script {
                         receiveGo
-                        @optional { setScale(literal) }
-                        gotoXY(literal, literal)
-                        setHeading(@anything)
+                        @anyOrder {
+                            @unless (STAGE, START) { doSetVar(literal, literal) }
+                            @optional { setScale(literal) }
+                            gotoXY(literal, literal)
+                            setHeading(@anything)
+                        }
                         doForever(script {
                             @unless (STAGE, START) {
                                 doIf(reportAnd(reportLessThan(literal, xPosition), reportTouchingObject(literal)), script {
