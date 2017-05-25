@@ -1,0 +1,963 @@
+<project name="U2_P4_TicTacToe" app="iSnap 2.1, http://go.ncsu.edu/isnap" version="1">
+	<data>{}</data>
+	<notes/>
+	<thumbnail>data:image/png;base64,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</thumbnail>
+	<stage name="Stage" guid="835c1fe7-8b97-4c4d-989e-73fd3cc951f2" width="480" height="360" costume="0" tempo="60" threadsafe="false" lines="round" codify="false" inheritance="false" sublistIDs="false" scheduled="false" id="1">
+		<pentrails>data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAeAAAAFoCAYAAACPNyggAAAOhUlEQVR4Xu3VwQkAAAjEMN1/abewn7jAQRC64wgQIECAAIF3gX1fNEiAAAECBAiMAHsCAgQIECAQCAhwgG6SAAECBAgIsB8gQIAAAQKBgAAH6CYJECBAgIAA+wECBAgQIBAICHCAbpIAAQIECAiwHyBAgAABAoGAAAfoJgkQIECAgAD7AQIECBAgEAgIcIBukgABAgQICLAfIECAAAECgYAAB+gmCRAgQICAAPsBAgQIECAQCAhwgG6SAAECBAgIsB8gQIAAAQKBgAAH6CYJECBAgIAA+wECBAgQIBAICHCAbpIAAQIECAiwHyBAgAABAoGAAAfoJgkQIECAgAD7AQIECBAgEAgIcIBukgABAgQICLAfIECAAAECgYAAB+gmCRAgQICAAPsBAgQIECAQCAhwgG6SAAECBAgIsB8gQIAAAQKBgAAH6CYJECBAgIAA+wECBAgQIBAICHCAbpIAAQIECAiwHyBAgAABAoGAAAfoJgkQIECAgAD7AQIECBAgEAgIcIBukgABAgQICLAfIECAAAECgYAAB+gmCRAgQICAAPsBAgQIECAQCAhwgG6SAAECBAgIsB8gQIAAAQKBgAAH6CYJECBAgIAA+wECBAgQIBAICHCAbpIAAQIECAiwHyBAgAABAoGAAAfoJgkQIECAgAD7AQIECBAgEAgIcIBukgABAgQICLAfIECAAAECgYAAB+gmCRAgQICAAPsBAgQIECAQCAhwgG6SAAECBAgIsB8gQIAAAQKBgAAH6CYJECBAgIAA+wECBAgQIBAICHCAbpIAAQIECAiwHyBAgAABAoGAAAfoJgkQIECAgAD7AQIECBAgEAgIcIBukgABAgQICLAfIECAAAECgYAAB+gmCRAgQICAAPsBAgQIECAQCAhwgG6SAAECBAgIsB8gQIAAAQKBgAAH6CYJECBAgIAA+wECBAgQIBAICHCAbpIAAQIECAiwHyBAgAABAoGAAAfoJgkQIECAgAD7AQIECBAgEAgIcIBukgABAgQICLAfIECAAAECgYAAB+gmCRAgQICAAPsBAgQIECAQCAhwgG6SAAECBAgIsB8gQIAAAQKBgAAH6CYJECBAgIAA+wECBAgQIBAICHCAbpIAAQIECAiwHyBAgAABAoGAAAfoJgkQIECAgAD7AQIECBAgEAgIcIBukgABAgQICLAfIECAAAECgYAAB+gmCRAgQICAAPsBAgQIECAQCAhwgG6SAAECBAgIsB8gQIAAAQKBgAAH6CYJECBAgIAA+wECBAgQIBAICHCAbpIAAQIECAiwHyBAgAABAoGAAAfoJgkQIECAgAD7AQIECBAgEAgIcIBukgABAgQICLAfIECAAAECgYAAB+gmCRAgQICAAPsBAgQIECAQCAhwgG6SAAECBAgIsB8gQIAAAQKBgAAH6CYJECBAgIAA+wECBAgQIBAICHCAbpIAAQIECAiwHyBAgAABAoGAAAfoJgkQIECAgAD7AQIECBAgEAgIcIBukgABAgQICLAfIECAAAECgYAAB+gmCRAgQICAAPsBAgQIECAQCAhwgG6SAAECBAgIsB8gQIAAAQKBgAAH6CYJECBAgIAA+wECBAgQIBAICHCAbpIAAQIECAiwHyBAgAABAoGAAAfoJgkQIECAgAD7AQIECBAgEAgIcIBukgABAgQICLAfIECAAAECgYAAB+gmCRAgQICAAPsBAgQIECAQCAhwgG6SAAECBAgIsB8gQIAAAQKBgAAH6CYJECBAgIAA+wECBAgQIBAICHCAbpIAAQIECAiwHyBAgAABAoGAAAfoJgkQIECAgAD7AQIECBAgEAgIcIBukgABAgQICLAfIECAAAECgYAAB+gmCRAgQICAAPsBAgQIECAQCAhwgG6SAAECBAgIsB8gQIAAAQKBgAAH6CYJECBAgIAA+wECBAgQIBAICHCAbpIAAQIECAiwHyBAgAABAoGAAAfoJgkQIECAgAD7AQIECBAgEAgIcIBukgABAgQICLAfIECAAAECgYAAB+gmCRAgQICAAPsBAgQIECAQCAhwgG6SAAECBAgIsB8gQIAAAQKBgAAH6CYJECBAgIAA+wECBAgQIBAICHCAbpIAAQIECAiwHyBAgAABAoGAAAfoJgkQIECAgAD7AQIECBAgEAgIcIBukgABAgQICLAfIECAAAECgYAAB+gmCRAgQICAAPsBAgQIECAQCAhwgG6SAAECBAgIsB8gQIAAAQKBgAAH6CYJECBAgIAA+wECBAgQIBAICHCAbpIAAQIECAiwHyBAgAABAoGAAAfoJgkQIECAgAD7AQIECBAgEAgIcIBukgABAgQICLAfIECAAAECgYAAB+gmCRAgQICAAPsBAgQIECAQCAhwgG6SAAECBAgIsB8gQIAAAQKBgAAH6CYJECBAgIAA+wECBAgQIBAICHCAbpIAAQIECAiwHyBAgAABAoGAAAfoJgkQIECAgAD7AQIECBAgEAgIcIBukgABAgQICLAfIECAAAECgYAAB+gmCRAgQICAAPsBAgQIECAQCAhwgG6SAAECBAgIsB8gQIAAAQKBgAAH6CYJECBAgIAA+wECBAgQIBAICHCAbpIAAQIECAiwHyBAgAABAoGAAAfoJgkQIECAgAD7AQIECBAgEAgIcIBukgABAgQICLAfIECAAAECgYAAB+gmCRAgQICAAPsBAgQIECAQCAhwgG6SAAECBAgIsB8gQIAAAQKBgAAH6CYJECBAgIAA+wECBAgQIBAICHCAbpIAAQIECAiwHyBAgAABAoGAAAfoJgkQIECAgAD7AQIECBAgEAgIcIBukgABAgQICLAfIECAAAECgYAAB+gmCRAgQICAAPsBAgQIECAQCAhwgG6SAAECBAgIsB8gQIAAAQKBgAAH6CYJECBAgIAA+wECBAgQIBAICHCAbpIAAQIECAiwHyBAgAABAoGAAAfoJgkQIECAgAD7AQIECBAgEAgIcIBukgABAgQICLAfIECAAAECgYAAB+gmCRAgQICAAPsBAgQIECAQCAhwgG6SAAECBAgIsB8gQIAAAQKBgAAH6CYJECBAgIAA+wECBAgQIBAICHCAbpIAAQIECAiwHyBAgAABAoGAAAfoJgkQIECAgAD7AQIECBAgEAgIcIBukgABAgQICLAfIECAAAECgYAAB+gmCRAgQICAAPsBAgQIECAQCAhwgG6SAAECBAgIsB8gQIAAAQKBgAAH6CYJECBAgIAA+wECBAgQIBAICHCAbpIAAQIECAiwHyBAgAABAoGAAAfoJgkQIECAgAD7AQIECBAgEAgIcIBukgABAgQICLAfIECAAAECgYAAB+gmCRAgQICAAPsBAgQIECAQCAhwgG6SAAECBAgIsB8gQIAAAQKBgAAH6CYJECBAgIAA+wECBAgQIBAICHCAbpIAAQIECAiwHyBAgAABAoGAAAfoJgkQIECAgAD7AQIECBAgEAgIcIBukgABAgQICLAfIECAAAECgYAAB+gmCRAgQICAAPsBAgQIECAQCAhwgG6SAAECBAgIsB8gQIAAAQKBgAAH6CYJECBAgIAA+wECBAgQIBAICHCAbpIAAQIECAiwHyBAgAABAoGAAAfoJgkQIECAgAD7AQIECBAgEAgIcIBukgABAgQICLAfIECAAAECgYAAB+gmCRAgQICAAPsBAgQIECAQCAhwgG6SAAECBAgIsB8gQIAAAQKBgAAH6CYJECBAgIAA+wECBAgQIBAICHCAbpIAAQIECAiwHyBAgAABAoGAAAfoJgkQIECAgAD7AQIECBAgEAgIcIBukgABAgQICLAfIECAAAECgYAAB+gmCRAgQICAAPsBAgQIECAQCAhwgG6SAAECBAgIsB8gQIAAAQKBgAAH6CYJECBAgIAA+wECBAgQIBAICHCAbpIAAQIECAiwHyBAgAABAoGAAAfoJgkQIECAgAD7AQIECBAgEAgIcIBukgABAgQICLAfIECAAAECgYAAB+gmCRAgQICAAPsBAgQIECAQCAhwgG6SAAECBAgIsB8gQIAAAQKBgAAH6CYJECBAgIAA+wECBAgQIBAICHCAbpIAAQIECAiwHyBAgAABAoGAAAfoJgkQIECAgAD7AQIECBAgEAgIcIBukgABAgQICLAfIECAAAECgYAAB+gmCRAgQICAAPsBAgQIECAQCAhwgG6SAAECBAgIsB8gQIAAAQKBgAAH6CYJECBAgIAA+wECBAgQIBAICHCAbpIAAQIECAiwHyBAgAABAoGAAAfoJgkQIECAgAD7AQIECBAgEAgIcIBukgABAgQICLAfIECAAAECgYAAB+gmCRAgQICAAPsBAgQIECAQCAhwgG6SAAECBAgIsB8gQIAAAQKBgAAH6CYJECBAgIAA+wECBAgQIBAICHCAbpIAAQIECAiwHyBAgAABAoGAAAfoJgkQIECAgAD7AQIECBAgEAgIcIBukgABAgQICLAfIECAAAECgYAAB+gmCRAgQICAAPsBAgQIECAQCAhwgG6SAAECBAgIsB8gQIAAAQKBgAAH6CYJECBAgIAA+wECBAgQIBAICHCAbpIAAQIECAiwHyBAgAABAoGAAAfoJgkQIECAgAD7AQIECBAgEAgIcIBukgABAgQICLAfIECAAAECgYAAB+gmCRAgQICAAPsBAgQIECAQCAhwgG6SAAECBAgIsB8gQIAAAQKBgAAH6CYJECBAgIAA+wECBAgQIBAICHCAbpIAAQIECAiwHyBAgAABAoGAAAfoJgkQIECAgAD7AQIECBAgEAgIcIBukgABAgQICLAfIECAAAECgYAAB+gmCRAgQICAAPsBAgQIECAQCAhwgG6SAAECBAgIsB8gQIAAAQKBgAAH6CYJECBAgIAA+wECBAgQIBAICHCAbpIAAQIECAiwHyBAgAABAoGAAAfoJgkQIECAgAD7AQIECBAgEAgIcIBukgABAgQIHLFxAWmhEwHPAAAAAElFTkSuQmCC</pentrails>
+		<costumes>
+			<list id="2"/>
+		</costumes>
+		<sounds>
+			<list id="3"/>
+		</sounds>
+		<variables/>
+		<blocks/>
+		<scripts/>
+		<sprites>
+			<sprite name="Square" idx="1" x="60" y="60" heading="90" scale="1" rotation="1" draggable="false" hidden="true" costume="1" color="80,80,80" pen="tip" id="8">
+				<costumes>
+					<list id="9">
+						<item>
+							<costume name="Empty" center-x="29" center-y="28" image="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADkAAAA5CAYAAACMGIOFAAABKElEQVRoQ+2bMQ6CQBBFPzfwBlrRakJDQzTZZo/hDSgpgZKS22yziQkNDYk1Fd6AI5g1hERR69nN5wTz5v+XaZYIQAXgCOCEML97tECeAVzCZMTtE3LSWiNN04PPwH3fT8YYh+A43iG11lPbtojj2GvIcRynPM9hjNlCVlWFsix9DnGdva5rOJ5NkoT0LF8mSSc9qizryrqyrrI2QCfppKxG/p2GdWVdWVdZG6CTdFJWI3lC6CSdpJOyNkAn6aSsRvJO0kk6SSdlbYBO0klZjeSdpJN0kk7K2gCdpJOyGsk7SSfpZAhOKqXmpmmQJMnOI57NqMMwzEVRwFrrODbPs2elFLIs8xqy67rZWuvgv0L6HOCv2V9JXpcH6fsQCQE8HGSov0qsmT0BuKOoAhlROR4AAAAASUVORK5CYII=" id="10"/>
+						</item>
+						<item>
+							<costume name="X" center-x="29" center-y="29" image="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADkAAAA6CAYAAAAKjPErAAADxElEQVRoQ93bvU/bQBgG8IdWQkipFIYO2WDolCXJXkhQFzoBfwFhY0Ei6sIGbIwwsMAAbGwwdqlgYKwqIhATA2wMVQUDUoRUqXpcznIO+2zfhx3nJJbYwf7d+9575s6MYDjbOIBHQRsBsAGgBqA+JN53ACoAXgD8AfBLIJsAWkOClBnnMvKlVCphZWVldGxsrFDmXq+Hw8NDPDw8xCK9E+r1Os7OzjA+ztQuRltYWMDp6al/s9Vq9ffNzc1HAG8i6Z9UJOjS0pIXRdEODg5wf3+PjQ2WGwk5Pz/f1xtFgMrA9fV1D7e5uRmO5MGJiQnwi6INMlQGLi4u+hFVItkTDP2gQ1VABigWyZPCoMx1RjbvFgdMjAyDstqy6uYJTQJMhfRK0/k5WJCenp68AOYJlbMrOAbl7EqUrsEvXV5eotVq5QpNA0wdSYHNEyoDm82ml2GqljqSeUJlYK1W84BxT2PaSGKzjKguUDtdsx6jJkArSNcRNQVaQ7qCcjjMzMzg8fH/H/ZJx6DxFKKqYjbHqC2g1UjarLoysFwue0VucnJS6ynSqLpGXdEkomFAThMmj49OkFFjlA/1fCxUdU5wDDKCpkAn6aqaXniM0Ha7/cbpIoLiIs4iKS5wd3fnRa/b7fowGcpzGo2GX0VtRTAzJC/EKYAP9WFQHmOKMpJstoHO0zWYk2HQ3d1d7O/vOwVmioyKaLAjTk5OlIVJa/5Iuvyh+8vDvseITk1N4fr6uu9wVEGycW3nhUe+SSKnp6dxdXU1nEi5yMgd4CqamUaS04SoogSy8Ozt7Smnl0Kla9jyPR8KVNOLDWBm1TUKKBCuoc7TNenaqEuoU2RSoCqi3JPhdoVJc4ZMC1RBOXZZeXWbE6QuMAhdXV3F0dGR7zKBWkeK/UBxd6rl+7jIEGYDahWZdvk+DsnjNqDWkC6AohNMoVaQNtZG46JqAjVGZgE0jagRMkugCVQbmQdQF6qF5DIh12VE012+jxuHquNpxmhqpM3lexNkmuklFVIG8j0ffha3CWqKMY1oYqTLxV/TTpBTl+u8fNYVnZ8IOcjAqGIUfHssFlkEoIBub2+j0+n4iSGgOzs70e/Wzc3N9W2CuljdNk1V+fthb4/Nzs5ia2uLp/a/Crq2tobj42Nwn4KtCEABlqGVSkW84NuPLJVKf5+fn98XDRgFff38Qrye/QXA52AaLC8vg71RtMZ6EnyDmXtPAvkNwIeigRLe708iuTvKreCvAEYBXAC4TfgLBvm0T68394NI8a8S/JA/3wf5znXu7R+8ATdw1q5E8AAAAABJRU5ErkJggg==" id="11"/>
+						</item>
+						<item>
+							<costume name="O" center-x="28" center-y="28" image="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADkAAAA5CAYAAACMGIOFAAAEX0lEQVRoQ+2aizUsQRCGeyJABGwEiAARsBEgAkSwuxEgAjYCRGA3AkSACBDB3PPNubWnts2juuexa6lznPsw091//VV/V1dP4pwbOuf23OraNPkPcrC6GN3oV4IcpWn641lNkmTknBMc80ymaboyUZskBGlm3YF8e3tz7+/v2aybm5tua2urVYe2DnI6nbr7+3s3mUzc8/NzKZidnR23v7/vjo6O3N5ecyLfCkiYGo1GGbjPz88oltbX1zOwg8GgNtONggTQ9fW1Gw7ZbotNh6gO3aI3GO/s7MwBPMYaA3l7e+suLi6+MQcgGJEwLFukhDV/Ss7K8wC8vLx0JycnwTgbAQm4q6urucnJKRgAXIyRw7xPTms7Pz/PwIZYLZCE5+npaZZ7YjAHYNhrwhgbYJpZxr65uTGHbzRIAB4cHMwp5vHxcQYwNneKnMJcAB2Px7NHUOLHx0fTXNEgYZA8FEMFqwSnLrOMj2qLkZ8wWmVRIP3JmChGEKoWl/d7HIuDQ5wbDJIc6ff7s0mQdl90YhYf8g6hy1Yldnd3V6oBwSB7vZ5jb8MODw/nRCdkoXWfRXweHh6yYSgLX19fC4cMAgljbBfY2tpaBrZpkbGCR4wA9/X1lb3CtgLDeWYGyaCwKGVa2aDWhdZ9TjsdZ8NmntPNIPWA7IUSsnUXWvd92JQ9tMjxZpC7u7uzPbFLNa1yglZbqiwqJd9MIAnRjY2N2bsfHx8Ly0UfgGVtJpAWb1V5vM3fU/28vLxkU+RFmQkkG72UVMsgOL7DtF5QWupKjGdNIDlJyGmAejH2ZNEWm+QhdTSWl5d/IMXziI7sj8skOrI+LT7sk6xRm4lJ9ZBb1lZl2Rr/QArlWqKfnp4c/14mo9VJsYJtb29/a32amFwhdR3OXfjo3NMgq85ui2BYn3GjtxDdCcjbbBcBTM+pi5W8NowK12ImdcxXHVAXAVhvcXmaYcpJFs7+IwfUZRIfTUDREdAMUofEMoWsZV1mkLo+hFlO4W1fuVWFPgd3uhViRXW1GSQDaZXl7wy6SKMol0Ny0YHZfAoRIL7nFrmd+P3XssgKYhKwOgcQI9jsugJCbGBRDg1VGhEMkoEJVTmJk5eobVetSb9rSBlHyJbNHwwSNvEkQGVLCbl8qZPDpAvde7mWp/cLwKpIigLJQn21bTt0/RBlDdYuRTRIJvGTH6By9V2HMf9d7j387nhIW7QWyLzQ5f8IHxpedXtBRAvXEvqrEWuIBncGqlghV7iAETGS5wGJGrOHWQsHxqJpRpT4jWJEhhOHdSxZR20mZSBUj9YgPyJI2jmwK1fsLFIWCii5cgBA3rc+sEe48hOj4o2B1GD9q++qSCj7fRNX9I2D1NWRfLIi94hWsNx7yicxoaGZN0drIPVkhLL+7EyHqA5d+ewsJiTLHNgJSCuDbT1n6gy0NXlX4/42Jr99nj1J0zTum7GuKDLMkyQJt7KC43d+g27w0497JGtJ/vjwrHL7P5XNSaMYdLI4AAAAAElFTkSuQmCC" id="12"/>
+						</item>
+					</list>
+				</costumes>
+				<sounds>
+					<list id="13"/>
+				</sounds>
+				<variables/>
+				<blocks/>
+				<scripts>
+					<script x="24.73333333333332" y="361.66666666666663">
+						<block id="909" s="receiveGo">
+							<comment w="156.66666666666666" collapsed="true">Connect this to the script below it in For You To Do 4.</comment>
+						</block>
+						<block id="910" s="doSwitchToCostume">
+							<l>Empty</l>
+						</block>
+						<block id="911" s="doWait">
+							<l>.1</l>
+							<comment w="181.33333333333334" collapsed="true">Wait for old clones to be deleted.</comment>
+						</block>
+						<custom-block id="912" s="makeBoard"/>
+						<block id="913" s="doSetVar">
+							<l>X&apos;s turn?</l>
+							<block id="914" s="reportBoolean">
+								<l>
+									<bool>true</bool>
+								</l>
+								<comment w="90" collapsed="true">X plays first.</comment>
+							</block>
+						</block>
+					</script>
+					<script x="181" y="73.99999999999997">
+						<block id="915" s="createClone">
+							<l>
+								<option>myself</option>
+							</l>
+						</block>
+						<block id="916" s="bubble">
+							<l>You clicked me!</l>
+						</block>
+						<block id="917" s="doGlide">
+							<l>1</l>
+							<block id="918" s="reportRandom">
+								<l>-200</l><l>200</l>
+							</block>
+							<block id="919" s="reportRandom">
+								<l>-150</l><l>150</l>
+							</block>
+						</block>
+						<block id="920" s="bubble">
+							<l/>
+						</block>
+					</script>
+					<script x="31" y="141">
+						<block id="921" s="receiveInteraction">
+							<l>
+								<option>clicked</option>
+							</l>
+						</block>
+						<block id="922" s="doIfElse">
+							<block id="923" var="X&apos;s turn?"/>
+							<script>
+								<block id="924" s="doSwitchToCostume">
+									<l>X</l>
+								</block>
+							</script>
+							<script>
+								<block id="925" s="doSwitchToCostume">
+									<l>O</l>
+								</block>
+							</script>
+						</block>
+						<block id="926" s="doSetVar">
+							<l>X&apos;s turn?</l>
+							<block id="927" s="reportNot">
+								<block id="928" var="X&apos;s turn?"/>
+							</block>
+						</block>
+					</script>
+					<script x="371" y="239">
+						<block id="929" s="receiveGo"/>
+						<block id="930" s="removeClone"/>
+					</script>
+				</scripts>
+			</sprite>
+			<watcher var="X&apos;s turn?" style="normal" x="10" y="10" color="243,118,29" hidden="true"/>
+			<watcher scope="Square" s="xPosition" style="normal" x="10" y="31.000001999999995" color="74,108,212"/>
+			<watcher scope="Square" s="yPosition" style="normal" x="10" y="52.00000399999999" color="74,108,212"/>
+		</sprites>
+	</stage>
+	<hidden/>
+	<headers/>
+	<code/>
+	<blocks>
+		<block-definition s="makeBoard" type="command" category="other" guid="0c35365c-825e-4f25-9638-2c7fd2edf8c7" isImported="false">
+			<header/>
+			<code/>
+			<inputs/>
+			<script>
+				<block id="613" s="show"/>
+				<custom-block id="614" s="for %upvar = %n to %n %cs">
+					<l>i</l><l>1</l><l>3</l>
+					<script>
+						<custom-block id="616" s="for %upvar = %n to %n %cs">
+							<l>j</l><l>1</l><l>3</l>
+							<script>
+								<block id="618" s="gotoXY">
+									<block id="619" s="reportSum">
+										<l>-120</l>
+										<block id="620" s="reportProduct">
+											<l>60</l>
+											<block id="621" var="i"/>
+										</block>
+									</block>
+									<block id="622" s="reportSum">
+										<l>-120</l>
+										<block id="623" s="reportProduct">
+											<l>60</l>
+											<block id="624" var="j"/>
+										</block>
+									</block>
+								</block>
+								<block id="625" s="createClone">
+									<l>
+										<option>myself</option>
+									</l>
+								</block>
+							</script>
+						</custom-block>
+					</script>
+				</custom-block>
+				<block id="626" s="hide"/>
+			</script>
+		</block-definition>
+		<block-definition s="label %&apos;text&apos; of size %&apos;size&apos;" type="command" category="pen" guid="bae8ff09-b9c6-4ee3-924d-541860677217" isImported="true">
+			<comment x="0" y="0" w="90" collapsed="false">LABEL will stamp text on the stage at the given font size. The direction of the text is the direction the sprite is facing, and color will match the pen color.</comment>
+			<header/>
+			<code/>
+			<inputs>
+				<input type="%txt">Hello!</input>
+				<input type="%n">12</input>
+			</inputs>
+			<script>
+				<block id="627" s="doRun">
+					<block id="629" s="reportJSFunction">
+						<list>
+							<l>text</l><l>size</l>
+						</list><l>var stage = this.parentThatIsA(StageMorph),&#xD;    context = stage.penTrails().getContext(&apos;2d&apos;),&#xD;    rotation = radians(this.direction() - 90),&#xD;    trans = new Point(&#xD;      this.center().x - stage.left(),&#xD;      this.center().y - stage.top()&#xD;    ),&#xD;    isWarped = this.Warped,&#xD;    len,&#xD;    pos;&#xD;&#xD;if (isWarped) {endWarp(); }&#xD;context.save();&#xD;context.font = size + &apos;px monospace&apos;;&#xD;context.textAlign = &apos;left&apos;;&#xD;context.textBaseline = &apos;alphabetic&apos;;&#xD;context.fillStyle = this.color.toString();&#xD;len = context.measureText(text).width;&#xD;trans = trans.multiplyBy(1 / stage.scale);&#xD;context.translate(trans.x, trans.y);&#xD;context.rotate(rotation);&#xD;context.fillText(text, 0, 0);&#xD;context.translate(-trans.x, -trans.y);&#xD;context.restore();&#xD;pos = new Point(&#xD;  len * Math.sin(radians(this.direction())),&#xD;  len * Math.cos(radians(this.direction())));&#xD;pos = pos.add(new Point(this.xPosition(), this.yPosition()));&#xD;this.gotoXY(pos.x, pos.y, false);&#xD;this.changed();&#xD;if (isWarped) {this.startWarp(); }&#xD;stage.changed();</l>
+					</block>
+					<list>
+						<block id="630" var="text"/>
+						<block id="631" var="size"/>
+					</list>
+				</block>
+			</script>
+		</block-definition>
+		<block-definition s="map %&apos;function&apos; over %&apos;lists&apos;" type="reporter" category="lists" guid="44cb2d6b-0316-4043-9947-d210a2c95de0" isImported="true">
+			<header/>
+			<code/>
+			<inputs>
+				<input type="%repRing"/>
+				<input type="%mult%l"/>
+			</inputs>
+			<script>
+				<block id="632" s="doWarp">
+					<script>
+						<block id="633" s="doDeclareVariables">
+							<list>
+								<l>mapone</l><l>mapmany</l>
+							</list>
+						</block>
+						<block id="637" s="doSetVar">
+							<l>mapone</l>
+							<block id="638" s="reifyScript">
+								<script>
+									<block id="639" s="doIf">
+										<custom-block id="640" s="empty? %l">
+											<block id="641" var="data"/>
+										</custom-block>
+										<script>
+											<block id="642" s="doReport">
+												<block id="643" s="reportNewList">
+													<list/>
+												</block>
+											</block>
+										</script>
+									</block>
+									<block id="644" s="doReport">
+										<block id="645" s="reportCONS">
+											<block id="646" s="evaluate">
+												<block id="648" var="function"/>
+												<list>
+													<block id="649" s="reportListItem">
+														<l>1</l>
+														<block id="650" var="data"/>
+													</block>
+												</list>
+											</block>
+											<block id="651" s="evaluate">
+												<block id="653" var="mapone"/>
+												<list>
+													<block id="654" s="reportCDR">
+														<block id="655" var="data"/>
+													</block>
+												</list>
+											</block>
+										</block>
+									</block>
+								</script>
+								<list>
+									<l>data</l>
+								</list>
+							</block>
+						</block>
+						<block id="657" s="doSetVar">
+							<l>mapmany</l>
+							<block id="658" s="reifyScript">
+								<script>
+									<block id="659" s="doIf">
+										<custom-block id="660" s="empty? %l">
+											<block id="661" s="reportListItem">
+												<l>1</l>
+												<block id="662" var="data lists"/>
+											</block>
+										</custom-block>
+										<script>
+											<block id="663" s="doReport">
+												<block id="664" s="reportNewList">
+													<list/>
+												</block>
+											</block>
+										</script>
+									</block>
+									<block id="665" s="doReport">
+										<block id="666" s="reportCONS">
+											<block id="667" s="evaluate">
+												<block id="669" var="function"/>
+												<custom-block id="670" s="map %repRing over %mult%l">
+													<block id="672" s="reifyReporter">
+														<autolambda>
+															<block id="673" s="reportListItem">
+																<l>1</l><l/>
+															</block>
+														</autolambda>
+														<list/>
+													</block>
+													<list>
+														<block id="674" var="data lists"/>
+													</list>
+												</custom-block>
+											</block>
+											<block id="675" s="evaluate">
+												<block id="677" var="mapmany"/>
+												<list>
+													<custom-block id="678" s="map %repRing over %mult%l">
+														<block id="680" s="reifyReporter">
+															<autolambda>
+																<block id="681" s="reportCDR">
+																	<l/>
+																</block>
+															</autolambda>
+															<list/>
+														</block>
+														<list>
+															<block id="682" var="data lists"/>
+														</list>
+													</custom-block>
+												</list>
+											</block>
+										</block>
+									</block>
+								</script>
+								<list>
+									<l>data lists</l>
+								</list>
+							</block>
+						</block>
+						<block id="684" s="doIfElse">
+							<custom-block id="685" s="empty? %l">
+								<block id="686" s="reportCDR">
+									<block id="687" var="lists"/>
+								</block>
+							</custom-block>
+							<script>
+								<block id="688" s="doReport">
+									<block id="689" s="evaluate">
+										<block id="691" var="mapone"/>
+										<list>
+											<block id="692" s="reportListItem">
+												<l>1</l>
+												<block id="693" var="lists"/>
+											</block>
+										</list>
+									</block>
+								</block>
+							</script>
+							<script>
+								<block id="694" s="doReport">
+									<block id="695" s="evaluate">
+										<block id="697" var="mapmany"/>
+										<list>
+											<block id="698" var="lists"/>
+										</list>
+									</block>
+								</block>
+							</script>
+						</block>
+					</script>
+				</block>
+			</script>
+		</block-definition>
+		<block-definition s="empty? %&apos;data&apos;" type="predicate" category="lists" guid="6aaceae5-a0dd-4449-b240-53f535cc319c" isImported="true">
+			<header/>
+			<code/>
+			<inputs>
+				<input type="%l"/>
+			</inputs>
+			<script>
+				<block id="699" s="doReport">
+					<block id="700" s="reportEquals">
+						<block id="701" var="data"/>
+						<block id="702" s="reportNewList">
+							<list/>
+						</block>
+					</block>
+				</block>
+			</script>
+		</block-definition>
+		<block-definition s="keep items such that %&apos;pred&apos; from %&apos;data&apos;" type="reporter" category="lists" guid="3ba32ba2-6293-4577-b2f8-3653eebde3fb" isImported="true">
+			<header/>
+			<code/>
+			<inputs>
+				<input type="%predRing"/>
+				<input type="%l"/>
+			</inputs>
+			<script>
+				<block id="703" s="doWarp">
+					<script>
+						<block id="704" s="doIf">
+							<custom-block id="705" s="empty? %l">
+								<block id="706" var="data"/>
+							</custom-block>
+							<script>
+								<block id="707" s="doReport">
+									<block id="708" s="reportNewList">
+										<list/>
+									</block>
+								</block>
+							</script>
+						</block>
+						<block id="709" s="doIfElse">
+							<block id="710" s="evaluate">
+								<block id="712" var="pred"/>
+								<list>
+									<block id="713" s="reportListItem">
+										<l>1</l>
+										<block id="714" var="data"/>
+									</block>
+								</list>
+							</block>
+							<script>
+								<block id="715" s="doReport">
+									<block id="716" s="reportCONS">
+										<block id="717" s="reportListItem">
+											<l>1</l>
+											<block id="718" var="data"/>
+										</block>
+										<custom-block id="719" s="keep items such that %predRing from %l">
+											<block id="721" var="pred"/>
+											<block id="722" s="reportCDR">
+												<block id="723" var="data"/>
+											</block>
+										</custom-block>
+									</block>
+								</block>
+							</script>
+							<script>
+								<block id="724" s="doReport">
+									<custom-block id="725" s="keep items such that %predRing from %l">
+										<block id="727" var="pred"/>
+										<block id="728" s="reportCDR">
+											<block id="729" var="data"/>
+										</block>
+									</custom-block>
+								</block>
+							</script>
+						</block>
+					</script>
+				</block>
+			</script>
+		</block-definition>
+		<block-definition s="combine with %&apos;function&apos; items of %&apos;data&apos;" type="reporter" category="lists" guid="46b99b3f-8f9b-44ca-8f6e-6bc923259198" isImported="true">
+			<header/>
+			<code/>
+			<inputs>
+				<input type="%repRing"/>
+				<input type="%l"/>
+			</inputs>
+			<script>
+				<block id="730" s="doWarp">
+					<script>
+						<block id="731" s="doIf">
+							<custom-block id="732" s="empty? %l">
+								<block id="733" s="reportCDR">
+									<block id="734" var="data"/>
+								</block>
+							</custom-block>
+							<script>
+								<block id="735" s="doReport">
+									<block id="736" s="reportListItem">
+										<l>1</l>
+										<block id="737" var="data"/>
+									</block>
+								</block>
+							</script>
+						</block>
+						<block id="738" s="doReport">
+							<block id="739" s="evaluate">
+								<block id="741" var="function"/>
+								<list>
+									<block id="742" s="reportListItem">
+										<l>1</l>
+										<block id="743" var="data"/>
+									</block>
+									<custom-block id="744" s="combine with %repRing items of %l">
+										<block id="746" var="function"/>
+										<block id="747" s="reportCDR">
+											<block id="748" var="data"/>
+										</block>
+									</custom-block>
+								</list>
+							</block>
+						</block>
+					</script>
+				</block>
+			</script>
+		</block-definition>
+		<block-definition s="if %&apos;test&apos; then %&apos;true&apos; else %&apos;false&apos;" type="reporter" category="control" guid="bdda4803-c6fc-4f16-96e2-89f66023d6cd" isImported="true">
+			<header/>
+			<code/>
+			<inputs>
+				<input type="%b"/>
+				<input type="%anyUE"/>
+				<input type="%anyUE"/>
+			</inputs>
+			<script>
+				<block id="749" s="doIfElse">
+					<block id="750" var="test"/>
+					<script>
+						<block id="751" s="doReport">
+							<block id="752" s="evaluate">
+								<block id="754" var="true"/>
+								<list/>
+							</block>
+						</block>
+					</script>
+					<script>
+						<block id="755" s="doReport">
+							<block id="756" s="evaluate">
+								<block id="758" var="false"/>
+								<list/>
+							</block>
+						</block>
+					</script>
+				</block>
+			</script>
+		</block-definition>
+		<block-definition s="for %&apos;i&apos; = %&apos;start&apos; to %&apos;end&apos; %&apos;action&apos;" type="command" category="control" guid="037b16ad-94fa-455b-892a-820f0eda3f5b" isImported="true">
+			<header/>
+			<code/>
+			<inputs>
+				<input type="%upvar"/>
+				<input type="%n">1</input>
+				<input type="%n">10</input>
+				<input type="%cs"/>
+			</inputs>
+			<script>
+				<block id="759" s="doDeclareVariables">
+					<list>
+						<l>step</l><l>tester</l>
+					</list>
+				</block>
+				<block id="763" s="doIfElse">
+					<block id="764" s="reportGreaterThan">
+						<block id="765" var="start"/>
+						<block id="766" var="end"/>
+					</block>
+					<script>
+						<block id="767" s="doSetVar">
+							<l>step</l><l>-1</l>
+						</block>
+						<block id="768" s="doSetVar">
+							<l>tester</l>
+							<block id="769" s="reifyReporter">
+								<autolambda>
+									<block id="770" s="reportLessThan">
+										<block id="771" var="i"/>
+										<block id="772" var="end"/>
+									</block>
+								</autolambda>
+								<list/>
+							</block>
+						</block>
+					</script>
+					<script>
+						<block id="773" s="doSetVar">
+							<l>step</l><l>1</l>
+						</block>
+						<block id="774" s="doSetVar">
+							<l>tester</l>
+							<block id="775" s="reifyReporter">
+								<autolambda>
+									<block id="776" s="reportGreaterThan">
+										<block id="777" var="i"/>
+										<block id="778" var="end"/>
+									</block>
+								</autolambda>
+								<list/>
+							</block>
+						</block>
+					</script>
+				</block>
+				<block id="779" s="doSetVar">
+					<l>i</l>
+					<block id="780" var="start"/>
+				</block>
+				<block id="781" s="doUntil">
+					<block id="782" s="evaluate">
+						<block id="784" var="tester"/>
+						<list/>
+					</block>
+					<script>
+						<block id="785" s="doRun">
+							<block id="787" var="action"/>
+							<list/>
+						</block>
+						<block id="788" s="doChangeVar">
+							<l>i</l>
+							<block id="789" var="step"/>
+						</block>
+					</script>
+				</block>
+			</script>
+		</block-definition>
+		<block-definition s="join words %&apos;words&apos;" type="reporter" category="operators" guid="e407c77b-a823-4b89-9509-a0a268faa751" isImported="true">
+			<header/>
+			<code/>
+			<inputs>
+				<input type="%mult%txt"/>
+			</inputs>
+			<script>
+				<block id="790" s="doWarp">
+					<script>
+						<block id="791" s="doIf">
+							<custom-block id="792" s="empty? %l">
+								<block id="793" s="reportCDR">
+									<block id="794" var="words"/>
+								</block>
+							</custom-block>
+							<script>
+								<block id="795" s="doReport">
+									<block id="796" s="reportListItem">
+										<l>1</l>
+										<block id="797" var="words"/>
+									</block>
+								</block>
+							</script>
+						</block>
+						<block id="798" s="doIf">
+							<block id="799" s="reportEquals">
+								<l/>
+								<block id="800" s="reportListItem">
+									<l>1</l>
+									<block id="801" var="words"/>
+								</block>
+							</block>
+							<script>
+								<block id="802" s="doReport">
+									<custom-block id="803" s="join words %mult%txt">
+										<block id="804" s="reportCDR">
+											<block id="805" var="words"/>
+										</block>
+									</custom-block>
+								</block>
+							</script>
+						</block>
+						<block id="806" s="doIf">
+							<block id="807" s="reportEquals">
+								<l/>
+								<block id="808" s="reportListItem">
+									<l>2</l>
+									<block id="809" var="words"/>
+								</block>
+							</block>
+							<script>
+								<block id="810" s="doReport">
+									<custom-block id="811" s="join words %mult%txt">
+										<block id="812" s="reportCONS">
+											<block id="813" s="reportListItem">
+												<l>1</l>
+												<block id="814" var="words"/>
+											</block>
+											<block id="815" s="reportCDR">
+												<block id="816" s="reportCDR">
+													<block id="817" var="words"/>
+												</block>
+											</block>
+										</block>
+									</custom-block>
+								</block>
+							</script>
+						</block>
+						<block id="818" s="doReport">
+							<block id="819" s="reportJoinWords">
+								<list>
+									<block id="820" s="reportListItem">
+										<l>1</l>
+										<block id="821" var="words"/>
+									</block><l> </l>
+									<custom-block id="822" s="join words %mult%txt">
+										<block id="823" s="reportCDR">
+											<block id="824" var="words"/>
+										</block>
+									</custom-block>
+								</list>
+							</block>
+						</block>
+					</script>
+				</block>
+			</script>
+			<scripts>
+				<script x="229.000003" y="196.77778077777774">
+					<block id="825" s="reportJoinWords">
+						<list>
+							<l/>
+							<l/>
+						</list>
+					</block>
+				</script>
+			</scripts>
+		</block-definition>
+		<block-definition s="list $arrowRight sentence %&apos;data&apos;" type="reporter" category="operators" guid="4108d6d1-dc0e-4c77-832a-0aff4b15dc9a" isImported="true">
+			<header/>
+			<code/>
+			<inputs>
+				<input type="%l"/>
+			</inputs>
+			<script>
+				<block id="826" s="doWarp">
+					<script>
+						<block id="827" s="doReport">
+							<custom-block id="828" s="join words %mult%txt">
+								<block id="829" var="data"/>
+							</custom-block>
+						</block>
+					</script>
+				</block>
+			</script>
+		</block-definition>
+		<block-definition s="sentence $arrowRight list %&apos;text&apos;" type="reporter" category="operators" guid="d52a2e98-4b61-4fe1-b724-379ae1cd4073" isImported="true">
+			<header/>
+			<code/>
+			<inputs>
+				<input type="%txt"/>
+			</inputs>
+			<script>
+				<block id="830" s="doWarp">
+					<script>
+						<block id="831" s="doReport">
+							<block id="832" s="reportTextSplit">
+								<block id="833" var="text"/>
+								<l>
+									<option>whitespace</option>
+								</l>
+							</block>
+						</block>
+					</script>
+				</block>
+			</script>
+		</block-definition>
+		<block-definition s="catch %&apos;tag&apos; %&apos;action&apos;" type="command" category="control" guid="ff722298-5490-4a60-b03a-37dd5945bb85" isImported="true">
+			<header/>
+			<code/>
+			<inputs>
+				<input type="%upvar"/>
+				<input type="%cs"/>
+			</inputs>
+			<script>
+				<block id="834" s="doCallCC">
+					<block id="836" s="reifyScript">
+						<script>
+							<block id="837" s="doSetVar">
+								<l>tag</l>
+								<block id="838" var="cont"/>
+							</block>
+							<block id="839" s="doRun">
+								<block id="841" var="action"/>
+								<list/>
+							</block>
+						</script>
+						<list>
+							<l>cont</l>
+						</list>
+					</block>
+				</block>
+				<custom-block id="843" s="ignore %s">
+					<l>3</l>
+				</custom-block>
+			</script>
+		</block-definition>
+		<block-definition s="throw %&apos;cont&apos;" type="command" category="control" guid="c52faf3e-b68c-467f-82be-2c73fc1c8ccd" isImported="true">
+			<header/>
+			<code/>
+			<inputs>
+				<input type="%s">catchtag</input>
+			</inputs>
+			<script>
+				<block id="844" s="doRun">
+					<block id="846" var="cont"/>
+					<list/>
+				</block>
+			</script>
+		</block-definition>
+		<block-definition s="catch %&apos;tag&apos; %&apos;value&apos;" type="reporter" category="control" guid="6b49b26a-20ed-4035-903a-44b59d51eb70" isImported="true">
+			<header/>
+			<code/>
+			<inputs>
+				<input type="%upvar"/>
+				<input type="%anyUE"/>
+			</inputs>
+			<script>
+				<block id="847" s="doCallCC">
+					<block id="849" s="reifyScript">
+						<script>
+							<block id="850" s="doSetVar">
+								<l>tag</l>
+								<block id="851" var="cont"/>
+							</block>
+							<block id="852" s="doReport">
+								<block id="853" s="evaluate">
+									<block id="855" var="value"/>
+									<list/>
+								</block>
+							</block>
+						</script>
+						<list>
+							<l>cont</l>
+						</list>
+					</block>
+				</block>
+			</script>
+		</block-definition>
+		<block-definition s="throw %&apos;tag&apos; %&apos;value&apos;" type="command" category="control" guid="3cfa595b-ab82-4a2d-b2cf-523494587d9c" isImported="true">
+			<header/>
+			<code/>
+			<inputs>
+				<input type="%s">catchtag</input>
+				<input type="%s"/>
+			</inputs>
+			<script>
+				<block id="857" s="doRun">
+					<block id="859" var="tag"/>
+					<list>
+						<block id="860" var="value"/>
+					</list>
+				</block>
+			</script>
+		</block-definition>
+		<block-definition s="for each %&apos;item&apos; of %&apos;data&apos; %&apos;action&apos;" type="command" category="lists" guid="af3ea78e-4151-4b99-ba33-e15a1b41dac5" isImported="true">
+			<header/>
+			<code/>
+			<inputs>
+				<input type="%upvar"/>
+				<input type="%l"/>
+				<input type="%cs"/>
+			</inputs>
+			<script>
+				<block id="861" s="doUntil">
+					<custom-block id="862" s="empty? %l">
+						<block id="863" var="data"/>
+					</custom-block>
+					<script>
+						<block id="864" s="doSetVar">
+							<l>item</l>
+							<block id="865" s="reportListItem">
+								<l>1</l>
+								<block id="866" var="data"/>
+							</block>
+						</block>
+						<block id="867" s="doRun">
+							<block id="869" var="action"/>
+							<list>
+								<block id="870" s="reportListItem">
+									<l>1</l>
+									<block id="871" var="data"/>
+								</block>
+							</list>
+						</block>
+						<block id="872" s="doSetVar">
+							<l>data</l>
+							<block id="873" s="reportCDR">
+								<block id="874" var="data"/>
+							</block>
+						</block>
+					</script>
+				</block>
+			</script>
+		</block-definition>
+		<block-definition s="if %&apos;test&apos; do %&apos;action&apos; and pause all $pause-1-255-220-0" type="command" category="control" guid="fe411896-3e3b-48e5-924d-5c4458cfd272" isImported="true">
+			<header/>
+			<code/>
+			<inputs>
+				<input type="%boolUE"/>
+				<input type="%cs"/>
+			</inputs>
+			<script>
+				<block id="875" s="doDeclareVariables">
+					<list>
+						<l>breakpoint</l>
+					</list>
+				</block>
+				<block id="878" s="doIf">
+					<block id="879" s="evaluate">
+						<block id="881" var="test"/>
+						<list/>
+					</block>
+					<script>
+						<block id="882" s="doSetVar">
+							<l>breakpoint</l>
+							<block id="883" var="test"/>
+						</block>
+						<block id="884" s="doShowVar">
+							<l>breakpoint</l>
+						</block>
+						<block id="885" s="doRun">
+							<block id="887" var="action"/>
+							<list/>
+						</block>
+						<block id="888" s="doPauseAll"/>
+						<block id="889" s="doHideVar">
+							<l/>
+						</block>
+					</script>
+				</block>
+			</script>
+		</block-definition>
+		<block-definition s="word $arrowRight list %&apos;word&apos;" type="reporter" category="operators" guid="721cd718-0b17-407f-958c-b11de49b8401" isImported="true">
+			<header/>
+			<code/>
+			<inputs>
+				<input type="%txt"/>
+			</inputs>
+			<script>
+				<block id="890" s="doWarp">
+					<script>
+						<block id="891" s="doReport">
+							<block id="892" s="reportTextSplit">
+								<block id="893" var="word"/>
+								<l>
+									<option>letter</option>
+								</l>
+							</block>
+						</block>
+					</script>
+				</block>
+			</script>
+		</block-definition>
+		<block-definition s="ignore %&apos;x&apos;" type="command" category="control" guid="6c452d4b-42a5-49b8-b06a-c0af8c79431d" isImported="true">
+			<header/>
+			<code/>
+			<inputs>
+				<input type="%s"/>
+			</inputs>
+		</block-definition>
+		<block-definition s="tell %&apos;sprite&apos; to %&apos;action&apos;" type="command" category="control" guid="696b031d-db2c-4a99-90da-0cc97690dc48" isImported="true">
+			<header/>
+			<code/>
+			<inputs>
+				<input type="%s">Sprite</input>
+				<input type="%cs"/>
+			</inputs>
+			<script>
+				<block id="894" s="doRun">
+					<block id="896" s="reportAttributeOf">
+						<block id="897" var="action"/>
+						<block id="898" var="sprite"/>
+					</block>
+					<list/>
+				</block>
+			</script>
+		</block-definition>
+		<block-definition s="ask %&apos;sprite&apos; for %&apos;expression&apos;" type="reporter" category="control" guid="89375081-53f2-4097-855b-1f7a8d91e0f6" isImported="true">
+			<header/>
+			<code/>
+			<inputs>
+				<input type="%s">Sprite</input>
+				<input type="%repRing"/>
+			</inputs>
+			<script>
+				<block id="899" s="doReport">
+					<block id="900" s="evaluate">
+						<block id="902" s="reportAttributeOf">
+							<block id="903" var="expression"/>
+							<block id="904" var="sprite"/>
+						</block>
+						<list/>
+					</block>
+				</block>
+			</script>
+		</block-definition>
+		<block-definition s="list $arrowRight word %&apos;list&apos;" type="reporter" category="operators" guid="8f5bb0e7-ee2e-4a0a-b6b6-3052d2a416d1" isImported="true">
+			<header/>
+			<code/>
+			<inputs>
+				<input type="%l"/>
+			</inputs>
+			<script>
+				<block id="905" s="doWarp">
+					<script>
+						<block id="906" s="doReport">
+							<block id="907" s="reportJoinWords">
+								<block id="908" var="list"/>
+							</block>
+						</block>
+					</script>
+				</block>
+			</script>
+		</block-definition>
+	</blocks>
+	<variables>
+		<variable name="X&apos;s turn?">
+			<bool>false</bool>
+		</variable>
+	</variables>
+	<editing/>
+</project>
