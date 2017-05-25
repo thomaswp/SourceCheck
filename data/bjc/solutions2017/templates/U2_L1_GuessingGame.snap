@@ -52,8 +52,8 @@ snapshot {
                     doAsk
                 }
                 doUntil(reportEquals(
-                    var
                     @block ANSWER
+                    var
                 ), script {
                     @if(CHECK, ASK) {
                         @optional {

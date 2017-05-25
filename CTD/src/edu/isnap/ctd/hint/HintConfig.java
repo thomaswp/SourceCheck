@@ -39,7 +39,7 @@ public class HintConfig {
 	 * solution are given negative weight multiplied by this factor compared to nodes that are
 	 * out of order
 	 */
-	public double progressMissingFactor;
+	public double progressMissingFactor = 0.1;
 
 	/**
 	 * Code elements that have exactly one script child or unordered children and therefore should

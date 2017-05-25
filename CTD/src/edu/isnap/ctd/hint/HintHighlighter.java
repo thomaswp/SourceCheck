@@ -756,6 +756,7 @@ public class HintHighlighter {
 		void apply();
 	}
 
+	// TODO: Undo canonicalizations! (how have we not yet)
 	public static class Insertion extends EditHint {
 		public final String type;
 		public final int index;
