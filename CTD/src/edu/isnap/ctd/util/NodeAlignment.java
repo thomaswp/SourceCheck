@@ -283,9 +283,11 @@ public class NodeAlignment {
 
 			// Get any reordering of the to states that needs to be done and see if anything is
 			// out of order
+			// TODO: This doesn't catch reorders that will be needed for child nodes
 			int[] reorders = Alignment.reorderIndices(fromStates[i], toStates[j], toOrderGroups[j]);
 			boolean needsReorder = needsReorder(reorders);
 			if (needsReorder) {
+
 				// If so, re-add the children of to in the correct order
 				List<Node> reordered = new LinkedList<>();
 				for (int k = 0; k < reorders.length; k++) {
