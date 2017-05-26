@@ -871,7 +871,7 @@ public class HintHighlighter {
 
 		@Override
 		protected double priority() {
-			return 3 + (candidate == null ? 0  : 1) + (replaced == null ? 0 : 1);
+			return 3 + (candidate == null ? 0  : 0.1) + (replaced == null ? 0 : 0.1);
 		}
 
 		@Override
