@@ -7,6 +7,6 @@ import edu.isnap.template.parse.Parser;
 
 public class RunTemplater {
 	public static void main(String[] args) throws IOException {
-		Parser.parseTemplate(BJCSolutions2017.U2_P4_TicTacToe);
+		Parser.parseTemplate(BJCSolutions2017.U2_L1_P3_Alonzo);
 	}
 }

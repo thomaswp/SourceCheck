@@ -1,0 +1,41 @@
+snapshot {
+    stage {
+        sprite {
+            script {
+                receiveInteraction
+                doChangeVar
+                doIf(reportLessThan(literal, var), script {
+                    @optional { doStopOthers(literal) }
+                    @anyOrder {
+                        setEffect(literal, literal)
+                        doSayFor(literal, literal)
+                    }
+                    @optional { doStopThis(literal) }
+                })
+                @anyOrder {
+                    bubble
+                    changeEffect
+                }
+                doForever(script {
+                    doWearNextCostume
+                    gotoXY(reportRandom, reportRandom)
+                    doWait
+                    changeEffect
+                })
+            }
+            script {
+                receiveGo
+                @anyOrder {
+                    doSetVar
+                    gotoXY
+                    bubble
+                    setEffect
+                    @optional {
+                        doSwitchToCostume
+                    }
+                }
+            }
+        }
+    }
+    var
+}
