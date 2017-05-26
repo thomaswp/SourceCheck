@@ -313,7 +313,9 @@ public class NodeAlignment {
 			// but don't worry about score, since that's accounted for in the progress score
 			// These mappings may be overwritten later if the nodes themselves are matched as
 			// parents, but this is not a wholly consistent alignment algorithm
-			List<int[]> childPairs = Alignment.alignPairs(fromStates[i], toStates[j], 1, 1, 100);
+			// We use 2/2/3 here to use replacements only if necessary (these are not returned as
+			// pairs if they do not match)
+			List<int[]> childPairs = Alignment.alignPairs(fromStates[i], toStates[j], 2, 2, 3);
 			for (int[] pair : childPairs) {
 				if (pair[0] >= 0 && pair[1] >= 0) {
 					mapping.put(from.children.get(pair[0]), to.children.get(pair[1]));

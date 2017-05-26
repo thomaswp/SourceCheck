@@ -64,7 +64,11 @@ public class Alignment {
 			}
 
 			i++; j++;
-			if (i < sequenceA.length && j < sequenceB.length) pairs.add(new int[] {i, j});
+
+			// Don't see why this should ever need to happen. It means none of the above worked
+			// which can only happen in a) an invalid configuration or b) skipping a replacement
+			// and in neither case should we another pair
+//			if (i < sequenceA.length && j < sequenceB.length) pairs.add(new int[] {i, j});
 		}
 
 		while (i < sequenceA.length) {
@@ -480,10 +484,10 @@ public class Alignment {
 
 	public static void main(String[] args) {
 		List<int[]> pairs = alignPairs(new String[] {
-				"b", "a"
+				"a", "b", "c"
 		}, new String[] {
-				"a", "a"
-		}, 1, 1, 100);
+				"a", "c", "b"
+		}, 2, 2, 3);
 
 		System.out.println();
 		for (int[] pair : pairs) {

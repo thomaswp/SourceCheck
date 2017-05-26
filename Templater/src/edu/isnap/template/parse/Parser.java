@@ -55,6 +55,7 @@ public class Parser {
 		printVariants(sample, variants);
 	}
 
+	// TODO: rather erroring, replace and add the needed canonicalizations
 	private static void verifyNode(Node node) {
 		node.recurse(new Action() {
 			@Override
