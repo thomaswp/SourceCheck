@@ -16,6 +16,8 @@ import util.LblTree;
 
 public class Node extends StringHashable {
 
+	public static int PrettyPrintSpacing = 2;
+
 	private String type;
 	// Annotations used to specify that nodes have a non-concrete meaning, such as having a partial
 	// order or wildcard children
@@ -393,7 +395,8 @@ public class Node extends StringHashable {
 				out += ")";
 			} else {
 				out += " {\n";
-				String indentMore = indent + "  ";
+				String indentMore = indent;
+				for (int i = 0; i < PrettyPrintSpacing; i++) indentMore += " ";
 				for (int i = 0; i < children.size(); i++) {
 					if (children.get(i) == null) {
 						out += indentMore + "null\n";

@@ -14,8 +14,8 @@ import edu.isnap.parser.elements.util.XML;
 public class CallBlock extends Block {
 	private static final long serialVersionUID = 1L;
 
-	private final static HashSet<String> SYMMETRIC = new HashSet<>();
-	private final static HashMap<String, String> OPPOSITES = new HashMap<>();
+	public final static HashSet<String> SYMMETRIC = new HashSet<>();
+	public final static HashMap<String, String> OPPOSITES = new HashMap<>();
 	static {
 		String[] symmetric = new String[] {
 			"reportSum", "reportProduct", "reportRandom", "reportEquals",

@@ -18,8 +18,8 @@ public class DefVarNode extends DefaultNode {
 		List<String> values = new LinkedList<>(args);
 		values.remove(0);
 		if (values.size() == 0) {
-			values.add("true");
 			values.add("false");
+			values.add("true");
 		}
 
 		List<BNode> variants = new LinkedList<>();

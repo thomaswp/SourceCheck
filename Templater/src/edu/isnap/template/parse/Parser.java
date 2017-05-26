@@ -5,18 +5,21 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
 
 import edu.isnap.ctd.graph.Node;
+import edu.isnap.ctd.graph.Node.Action;
 import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.hint.HintMapBuilder;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.util.SimpleNodeBuilder;
+import edu.isnap.parser.elements.CallBlock;
 import edu.isnap.parser.elements.Snapshot;
 import edu.isnap.template.data.BNode;
 import edu.isnap.template.data.Context;
@@ -36,7 +39,9 @@ public class Parser {
 
 		HintMap hintMap = new HintMap(new HintConfig());
 		for (BNode variant : variants) {
-			hintMap.solutions.add(variant.toNode());
+			Node n = variant.toNode();
+			verifyNode(n);
+			hintMap.solutions.add(n);
 		}
 		HintMapBuilder hmb = new HintMapBuilder(hintMap, 1);
 
@@ -48,6 +53,26 @@ public class Parser {
 		output.close();
 
 		printVariants(sample, variants);
+	}
+
+	private static void verifyNode(Node node) {
+		node.recurse(new Action() {
+			@Override
+			public void run(Node node) {
+				if (CallBlock.SYMMETRIC.contains(node.type())) {
+					String t0 = node.children.get(0).type();
+					String t1 = node.children.get(1).type();
+					if (t0.compareTo(t1) > 1) {
+						throw new RuntimeException(String.format(
+								"Children of %s out of order: %s, %s",
+								node.type(), t0, t1));
+					}
+				} else if (CallBlock.OPPOSITES.containsKey(node.type())) {
+					throw new RuntimeException(String.format("Cannot use %s; use %s instead!",
+							node.type(), CallBlock.OPPOSITES.get(node.type())));
+				}
+			}
+		});
 	}
 
 	private static void printVariants(Node sample, List<BNode> variants) {
@@ -76,7 +101,15 @@ public class Parser {
 
 	public DefaultNode parse() {
 		index = 0;
-		return parseNode();
+		DefaultNode node = parseNode();
+		if (index < parts.length) {
+			System.err.println("Unused parts: " + rest());
+		}
+		return node;
+	}
+
+	private String rest() {
+		return Arrays.toString(Arrays.copyOfRange(parts, index, parts.length));
 	}
 
 	private String read() {
@@ -104,6 +137,7 @@ public class Parser {
 	}
 
 	private DefaultNode parseNode() {
+		if (isEnd() || isStart()) throw new RuntimeException("Extra start or end: " + rest());
 		DefaultNode node = DefaultNode.create(read());
 		if (node.type.startsWith("@")) {
 			if (!"{".equals(peek()) && !isEnd()) {

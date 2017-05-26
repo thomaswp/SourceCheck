@@ -1,0 +1,66 @@
+snapshot {
+    @defVar (BETWEEN) {
+        stage {
+            sprite {
+                script {
+                    receiveGo
+                    @anyOrder {
+                        setSize(literal)
+                        clear
+                    }
+                    doForever(script {
+                        @defBlock TWO_COLORS {
+                            doIfElse(reportLessThan(literal, yPosition), script {
+                                setColor(literal)
+                            }, script {
+                                setColor(literal)
+                            })
+                        }
+                        @anyOrder {
+                            @unless (BETWEEN) {
+                                @block TWO_COLORS
+                            }
+                            @if (BETWEEN) {
+                                doIfElse(evaluateCustomBlock(yPosition, literal, literal), script {
+                                    setColor(literal)
+                                }, script {
+                                    @block TWO_COLORS
+                                })
+                            }
+                            doIfElse(reportMouseDown, script {
+                                down
+                            }, script {
+                                up
+                            })
+                        }
+                        doGotoObject(literal)
+                    })
+                }
+                @repeat (0, 3) {
+                    script {
+                        evaluateCustomBlock(@anything)
+                    }
+                }
+            }
+        }
+        @if (BETWEEN) {
+            customBlock {
+                script {
+                    doReport(reportAnd(reportLessThan(var, var), reportLessThan(var, var)))
+                }
+                var
+                var
+                var
+            }
+            @optional {
+                customBlock {
+                    script {
+                        doReport(reportEquals(literal, reportModulus(var, var)))
+                    }
+                    var
+                    var
+                }
+            }
+        }
+    }
+}
