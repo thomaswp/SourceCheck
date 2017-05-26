@@ -17,19 +17,22 @@ public class Alignment {
 		return alignCost(sequenceA, sequenceB, 1, 1, 1);
 	}
 
-	public static double normAlignCost(String[] sequenceA, String[] sequenceB, int insCost, int delCost, int subCost) {
+	public static double normAlignCost(String[] sequenceA, String[] sequenceB, int insCost,
+			int delCost, int subCost) {
 		int cost = alignCost(sequenceA, sequenceB, insCost, delCost, subCost);
 		int length = Math.max(sequenceA.length, sequenceB.length);
 		return length == 0 ? 0 : ((double) cost / length);
 	}
 
 	// Credit: http://introcs.cs.princeton.edu/java/96optimization/Diff.java.html
-	public static int alignCost(String[] sequenceA, String[] sequenceB, int insCost, int delCost, int subCost) {
+	public static int alignCost(String[] sequenceA, String[] sequenceB, int insCost, int delCost,
+			int subCost) {
 		int[][] opt = createAlignmentMatrix(sequenceA, sequenceB, insCost, delCost, subCost, false);
 		return opt[sequenceA.length][sequenceB.length];
 	}
 
-	public static List<int[]> alignPairs(String[] sequenceA, String[] sequenceB, int insCost, int delCost, int subCost) {
+	public static List<int[]> alignPairs(String[] sequenceA, String[] sequenceB, int insCost,
+			int delCost, int subCost) {
 		int[][] opt = createAlignmentMatrix(sequenceA, sequenceB, insCost, delCost, subCost, true);
 		ArrayList<int[]> pairs = new ArrayList<>();
 
@@ -139,21 +142,24 @@ public class Alignment {
 
 	public static Editor MoveEditor = new Editor() {
 		@Override
-		public Edit getEdit(String[] sequenceA, String[] sequenceB, List<int[]> pairs, List<String> sequence) {
+		public Edit getEdit(String[] sequenceA, String[] sequenceB, List<int[]> pairs,
+				List<String> sequence) {
 			return moveEdit(sequenceA, sequenceB, pairs, sequence);
 		}
 	};
 
 	public static Editor AddEditor = new Editor() {
 		@Override
-		public Edit getEdit(String[] sequenceA, String[] sequenceB, List<int[]> pairs, List<String> sequence) {
+		public Edit getEdit(String[] sequenceA, String[] sequenceB, List<int[]> pairs,
+				List<String> sequence) {
 			return addEdit(sequenceA, sequenceB, pairs, sequence);
 		}
 	};
 
 	public static Editor DeleteEditor = new Editor() {
 		@Override
-		public Edit getEdit(String[] sequenceA, String[] sequenceB, List<int[]> pairs, List<String> sequence) {
+		public Edit getEdit(String[] sequenceA, String[] sequenceB, List<int[]> pairs,
+				List<String> sequence) {
 			return deleteEdit(sequenceA, sequenceB, pairs, sequence);
 		}
 	};
@@ -286,7 +292,8 @@ public class Alignment {
 		return closestA;
 	}
 
-	private static int[][] createAlignmentMatrix(String[] sequenceA, String[] sequenceB, int insCost, int delCost, int subCost, boolean flipInvalid) {
+	private static int[][] createAlignmentMatrix(String[] sequenceA, String[] sequenceB,
+			int insCost, int delCost, int subCost, boolean flipInvalid) {
 		// The penalties to apply
 		int matchCost = 0;
 		int aLength = sequenceA.length, bLength = sequenceB.length;
@@ -472,24 +479,24 @@ public class Alignment {
 	}
 
 	public static void main(String[] args) {
-//		List<int[]> pairs = alignPairs(new String[] {
-//				"a", "b", "c", "b", "e", "c", "f", "b"
-//		}, new String[] {
-//				"a", "b", "c", "b"
-//		}, 1, 1, 100);
-//
-//		System.out.println();
-//		for (int[] pair : pairs) {
-//			System.out.println(Arrays.toString(pair));
-//		}
-
-		System.out.println(getProgress(new String[] {
-				"a", "b", "c"
+		List<int[]> pairs = alignPairs(new String[] {
+				"b", "a"
 		}, new String[] {
-				"a", "b", "x", "c"
-		}, new int[] {
-				0, 1, 1, 0
-		}, 2, 1, 0.25));
+				"a", "a"
+		}, 1, 1, 100);
+
+		System.out.println();
+		for (int[] pair : pairs) {
+			System.out.println(Arrays.toString(pair));
+		}
+
+//		System.out.println(getProgress(new String[] {
+//				"a", "b", "c"
+//		}, new String[] {
+//				"a", "b", "x", "c"
+//		}, new int[] {
+//				0, 1, 1, 0
+//		}, 2, 1, 0.25));
 
 //		System.out.println(Arrays.toString(reorderIndices(new String[] {
 //				"c", "d", "e", "f"
