@@ -43,6 +43,8 @@ public class Parser {
 			verifyNode(n);
 			hintMap.solutions.add(n);
 		}
+		printVariants(sample, hintMap.solutions);
+
 		HintMapBuilder hmb = new HintMapBuilder(hintMap, 1);
 
 		Kryo kryo = SnapHintBuilder.getKryo();
@@ -52,7 +54,6 @@ public class Parser {
 		kryo.writeObject(output, hmb);
 		output.close();
 
-		printVariants(sample, variants);
 	}
 
 	// TODO: rather erroring, replace and add the needed canonicalizations
@@ -68,6 +69,12 @@ public class Parser {
 								"Children of %s out of order: %s, %s",
 								node.type(), t0, t1));
 					}
+					// Just like the SimpleNodeBuilder, set the children of a symmetric function
+					// to be orderless
+					// Order groups not yet supported for arguments
+//					for (Node child : node.children) {
+//						child.setOrderGroup(1);
+//					}
 				} else if (CallBlock.OPPOSITES.containsKey(node.type())) {
 					throw new RuntimeException(String.format("Cannot use %s; use %s instead!",
 							node.type(), CallBlock.OPPOSITES.get(node.type())));
@@ -76,11 +83,10 @@ public class Parser {
 		});
 	}
 
-	private static void printVariants(Node sample, List<BNode> variants) {
-		for (BNode variant : variants) {
+	private static void printVariants(Node sample, List<Node> variants) {
+		for (Node variant : variants) {
 			System.out.println("--------------------");
-			System.out.println(variant);
-			System.out.println(variant.toNode().prettyPrint());
+			System.out.println(variant.prettyPrint());
 		}
 		System.out.println("--------------------");
 		System.out.println(variants.size());

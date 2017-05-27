@@ -2,7 +2,7 @@ package edu.isnap.ctd.hint;
 
 public abstract class Canonicalization {
 
-	public static class SwapArgs extends Canonicalization {
+	public static class SwapSymmetricArgs extends Canonicalization {
 
 	}
 

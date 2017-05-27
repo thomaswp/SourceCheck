@@ -60,13 +60,22 @@ public class SimpleNodeBuilder {
 				} else if (canon instanceof Canonicalization.Rename) {
 					node.canonicalizations.add(new edu.isnap.ctd.hint.Canonicalization.Rename(
 							((Canonicalization.Rename) canon).name));
-				} else if (canon instanceof Canonicalization.SwapArgs) {
-					node.canonicalizations.add(new edu.isnap.ctd.hint.Canonicalization.SwapArgs());
+				} else if (canon instanceof Canonicalization.SwapSymmetricArgs) {
+					node.canonicalizations.add(
+							new edu.isnap.ctd.hint.Canonicalization.SwapSymmetricArgs());
 				} else {
 					throw new RuntimeException("Unknown canonicalization");
 				}
 			}
 		});
+
+		// If this is a symmetric node, its arguments have no order
+		// Order groups not yet supported for arguments
+//		if (CallBlock.SYMMETRIC.contains(node.type())) {
+//			for (Node child : node.children) {
+//				child.setOrderGroup(1);
+//			}
+//		}
 
 		return node;
 	}

@@ -85,7 +85,9 @@ public class CallBlock extends Block {
 	private List<Block> params(boolean canon) {
 		if (!canon || parameters.size() != 2) return parameters;
 		if (SYMMETRIC.contains(name)) {
-			if (parameters.get(0).name(canon).compareTo(parameters.get(1).name(canon)) < 1) return parameters;
+			if (parameters.get(0).name(canon).compareTo(parameters.get(1).name(canon)) < 1) {
+				return parameters;
+			}
 		} else if (!OPPOSITES.containsKey(name)) {
 			return parameters;
 		}
@@ -109,7 +111,7 @@ public class CallBlock extends Block {
 	public void addChildren(boolean canon, Accumulator ac) {
 		List<Block> params = params(canon);
 		if (params != parameters) {
-			ac.add(new Canonicalization.SwapArgs());
+			ac.add(new Canonicalization.SwapSymmetricArgs());
 		}
 		ac.add(params);
 		ac.add(bodies);

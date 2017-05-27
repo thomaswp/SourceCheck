@@ -285,6 +285,8 @@ public class NodeAlignment {
 			// out of order
 			// TODO: This doesn't catch reorders that will be needed for child nodes
 			// We do have a failsafe in HintHighlighter, but this would be better fixed
+			// TODO: This does not work well for arguments, which cannot be deleted.
+			// So [A, B] and [B, C] won't reorder, since a is assumed to be deleted.
 			int[] reorders = Alignment.reorderIndices(fromStates[i], toStates[j], toOrderGroups[j]);
 			boolean needsReorder = needsReorder(reorders);
 			if (needsReorder) {

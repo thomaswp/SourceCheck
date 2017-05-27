@@ -18,7 +18,7 @@ import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
 import edu.isnap.ctd.graph.Node.Predicate;
 import edu.isnap.ctd.hint.Canonicalization.InvertOp;
-import edu.isnap.ctd.hint.Canonicalization.SwapArgs;
+import edu.isnap.ctd.hint.Canonicalization.SwapSymmetricArgs;
 import edu.isnap.ctd.util.Alignment;
 import edu.isnap.ctd.util.Cast;
 import edu.isnap.ctd.util.NodeAlignment;
@@ -653,7 +653,7 @@ public class HintHighlighter {
 
 			boolean swap = false;
 			for (Canonicalization c : parent.canonicalizations) {
-				if (c instanceof InvertOp || c instanceof SwapArgs) {
+				if (c instanceof InvertOp || c instanceof SwapSymmetricArgs) {
 					swap = true;
 					break;
 				}
@@ -1037,8 +1037,9 @@ public class HintHighlighter {
 			// some nodes of the same type
 			if (index >= 0 && index < parent.children.size()) {
 				Node displacedNode = node.parent.children.get(index);
-				if (displacedNode.readOnlyAnnotations().orderGroup ==
-						node.readOnlyAnnotations().orderGroup) {
+				int groupA = displacedNode.readOnlyAnnotations().orderGroup;
+				int groupB = node.readOnlyAnnotations().orderGroup;
+				if (groupA == groupB && groupA != 0) {
 					return true;
 				}
 			}

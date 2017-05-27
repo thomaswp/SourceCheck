@@ -10,7 +10,7 @@ import org.json.JSONObject;
 
 import edu.isnap.ctd.hint.Canonicalization;
 import edu.isnap.ctd.hint.Canonicalization.InvertOp;
-import edu.isnap.ctd.hint.Canonicalization.SwapArgs;
+import edu.isnap.ctd.hint.Canonicalization.SwapSymmetricArgs;
 import edu.isnap.ctd.util.StringHashable;
 import util.LblTree;
 
@@ -453,7 +453,8 @@ public class Node extends StringHashable {
 		int index = node.index();
 		if (node.parent != null) {
 			for (Canonicalization c : node.parent.canonicalizations) {
-				if (c instanceof SwapArgs) {
+				// TODO: Shouldn't this also occur for an InvertOp?
+				if (c instanceof SwapSymmetricArgs) {
 //					System.out.println("Swapping children of: " + node.parent);
 					index = node.parent.children.size() - 1 - index;
 					break;

@@ -9,7 +9,7 @@ import org.json.JSONObject;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.vector.VectorState;
 import edu.isnap.ctd.hint.Canonicalization.InvertOp;
-import edu.isnap.ctd.hint.Canonicalization.SwapArgs;
+import edu.isnap.ctd.hint.Canonicalization.SwapSymmetricArgs;
 import edu.isnap.ctd.util.StringHashable;
 
 public class VectorHint extends StringHashable implements Hint {
@@ -32,7 +32,7 @@ public class VectorHint extends StringHashable implements Hint {
 
 			boolean swap = false;
 			for (Canonicalization c : root.canonicalizations) {
-				if (c instanceof InvertOp || c instanceof SwapArgs) {
+				if (c instanceof InvertOp || c instanceof SwapSymmetricArgs) {
 					swap = true;
 					break;
 				}
