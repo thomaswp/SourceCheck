@@ -284,6 +284,7 @@ public class NodeAlignment {
 			// Get any reordering of the to states that needs to be done and see if anything is
 			// out of order
 			// TODO: This doesn't catch reorders that will be needed for child nodes
+			// We do have a failsafe in HintHighlighter, but this would be better fixed
 			int[] reorders = Alignment.reorderIndices(fromStates[i], toStates[j], toOrderGroups[j]);
 			boolean needsReorder = needsReorder(reorders);
 			if (needsReorder) {

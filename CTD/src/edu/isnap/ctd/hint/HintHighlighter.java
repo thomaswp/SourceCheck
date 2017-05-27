@@ -143,9 +143,16 @@ public class HintHighlighter {
 							isCodeElement(node.parent) &&
 							// Make sure the two code elements have the same number of children
 							node.parent.children.size() == pair.parent.children.size()) {
-						if (node.index() != pair.index()) {
+
+						int pairIndex = pair.index();
+						if (node.index() != pairIndex) {
+							// I think this should happen even if we suppress the reorder, but I'm
+							// not 100% sure...
 							colors.put(node, Highlight.Order);
-							edits.add(new Reorder(node, pair.index()));
+
+							Reorder reorder = new Reorder(node, pairIndex);
+							if (!reorder.shouldSuppress()) edits.add(reorder);
+
 						}
 						// We don't return here, since these nodes could have children that need to
 						// be reordered, as addressed below
@@ -213,7 +220,8 @@ public class HintHighlighter {
 								}
 							}
 
-							edits.add(new Reorder(toReorder, index));
+							Reorder reorder = new Reorder(toReorder, index);
+							if (!reorder.shouldSuppress()) edits.add(reorder);
 						}
 					}
 				}
@@ -569,7 +577,8 @@ public class HintHighlighter {
 				// just a reorder
 				if (sameType && matchParent && insertion.parent.hasType(config.script)) {
 					colors.put(deleted, Highlight.Move);
-					toAdd.add(new Reorder(deleted, insertion.index));
+					Reorder reorder = new Reorder(deleted, insertion.index);
+					if (!reorder.shouldSuppress()) toAdd.add(reorder);
 					toRemove.add(deletion);
 					toRemove.add(insertion);
 					// Set the insertion candidate, so it's not somehow used later in the loop
@@ -1020,6 +1029,20 @@ public class HintHighlighter {
 			if (index == node.index()) {
 				storeException("Empty reorder");
 			}
+		}
+
+		public boolean shouldSuppress() {
+			// If these have the same orderGroup, there's no need to reorder. Ideally this
+			// would be all handled by NodeAlignment, but it's possible for it to mismatch
+			// some nodes of the same type
+			if (index >= 0 && index < parent.children.size()) {
+				Node displacedNode = node.parent.children.get(index);
+				if (displacedNode.readOnlyAnnotations().orderGroup ==
+						node.readOnlyAnnotations().orderGroup) {
+					return true;
+				}
+			}
+			return false;
 		}
 
 		@Override
