@@ -45,7 +45,10 @@ public class BJCSolutions2017 extends Dataset {
 
 	public final static Assignment U2_L1_P3_Alonzo = new BJCAssignment("U2_L1_P3_Alonzo");
 
-	public final static Assignment U2_L2_Predicates = new BJCAssignment("U2_L2_Predicates");
+	public final static Assignment U2_L3_Predicates = new BJCAssignment("U2_L3_Predicates");
+
+	public final static Assignment U2_L3_P3_WordPuzzleSolver =
+			new BJCAssignment("U2_L3_P3_WordPuzzleSolver");
 
 	public final static Assignment U2_P4_TicTacToe = new BJCAssignment("U2_P4_TicTacToe");
 
@@ -58,7 +61,8 @@ public class BJCSolutions2017 extends Dataset {
 			U1_P3_Pong,
 			U2_L1_GuessingGame,
 			U2_L1_P3_Alonzo,
-			U2_L2_Predicates,
+			U2_L3_Predicates,
+			U2_L3_P3_WordPuzzleSolver,
 			U2_P4_TicTacToe,
 	};
 
