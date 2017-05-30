@@ -57,15 +57,23 @@ snapshot {
                             forward(literal)
                         })
                     }
-                    script {
-                        receiveCondition(reportTouchingObject(literal))
-                        setHeading(reportDifference(literal, direction))
-                        @unless (STAGE, START) { doChangeVar(literal, literal) }
-                    }
-                    @if (STAGE, PADDLES) {
+                    @defVar DIFF {
                         script {
                             receiveCondition(reportTouchingObject(literal))
-                            setHeading(reportDifference(literal, direction))
+                            setHeading(
+                                @if (DIFF) { reportProduct(direction, literal) }
+                                @unless (DIFF) { reportDifference(literal, direction) }
+                            )
+                            @unless (STAGE, START) { doChangeVar(literal, literal) }
+                        }
+                        @if (STAGE, PADDLES) {
+                            script {
+                                receiveCondition(reportTouchingObject(literal))
+                                setHeading(
+                                    @if (DIFF) { reportProduct(direction, literal) }
+                                    @unless (DIFF) { reportDifference(literal, direction) }
+                                )
+                            }
                         }
                     }
                 }
