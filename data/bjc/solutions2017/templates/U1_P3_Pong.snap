@@ -61,8 +61,8 @@ snapshot {
                         script {
                             receiveCondition(reportTouchingObject(literal))
                             setHeading(
-                                @if (DIFF) { reportProduct(direction, literal) }
-                                @unless (DIFF) { reportDifference(literal, direction) }
+                                @unless (DIFF) { reportProduct(direction, literal) }
+                                @if (DIFF) { reportDifference(literal, direction) }
                             )
                             @unless (STAGE, START) { doChangeVar(literal, literal) }
                         }
@@ -70,8 +70,8 @@ snapshot {
                             script {
                                 receiveCondition(reportTouchingObject(literal))
                                 setHeading(
-                                    @if (DIFF) { reportProduct(direction, literal) }
-                                    @unless (DIFF) { reportDifference(literal, direction) }
+                                    @unless (DIFF) { reportProduct(direction, literal) }
+                                    @if (DIFF) { reportDifference(literal, direction) }
                                 )
                             }
                         }
