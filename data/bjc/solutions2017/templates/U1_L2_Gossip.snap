@@ -60,7 +60,8 @@ snapshot {
                     @if (RESP) {
                         evaluateCustomBlock
                     }
-                    literal, evaluateCustomBlock, literal, evaluateCustomBlock, literal, evaluateCustomBlock
+                    @optional { literal }
+                    evaluateCustomBlock, literal, evaluateCustomBlock, literal, evaluateCustomBlock
                 )))
 
             }
