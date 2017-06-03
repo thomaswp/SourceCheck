@@ -250,13 +250,16 @@ public class HintHighlighter {
 							if (isCodeElement(node)) {
 								// The insert index algorithm could have gone out of bounds for
 								// a code element's children (args)
-								insertIndex = Math.min(insertIndex, node.children.size() - 1);
+								insertIndex = Math.max(0, Math.min(
+										insertIndex, node.children.size() - 1));
 							}
 							Insertion insertion = new Insertion(node, child, insertIndex);
 							edits.add(insertion);
 							// If the node is being inserted in a code element then it replaces
 							// whatever already exists at this index in the parent
-							if (isCodeElement(node)) {
+							// It's possible that a list/custom block will have 0 args, in which
+							// case there will be no replacement.
+							if (isCodeElement(node) && node.children.size() > 0) {
 								insertion.replaced = node.children.get(insertIndex);
 							}
 							// If this is a non-script, we treat this new insertion as a "match"

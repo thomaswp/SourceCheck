@@ -50,6 +50,8 @@ public class BJCSolutions2017 extends Dataset {
 	public final static Assignment U2_L3_P3_WordPuzzleSolver =
 			new BJCAssignment("U2_L3_P3_WordPuzzleSolver");
 
+	public final static Assignment U2_L4_BrickWall = new BJCAssignment("U2_L4_BrickWall");
+
 	public final static Assignment U2_P4_TicTacToe = new BJCAssignment("U2_P4_TicTacToe");
 
 	public final static Assignment[] All = {
