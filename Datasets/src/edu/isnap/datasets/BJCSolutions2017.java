@@ -65,6 +65,7 @@ public class BJCSolutions2017 extends Dataset {
 			U2_L1_P3_Alonzo,
 			U2_L3_Predicates,
 			U2_L3_P3_WordPuzzleSolver,
+			U2_L4_BrickWall,
 			U2_P4_TicTacToe,
 	};
 
