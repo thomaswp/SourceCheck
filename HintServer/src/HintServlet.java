@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
@@ -96,7 +97,10 @@ public class HintServlet extends HttpServlet {
 			String hintTypes) {
 		HintMap hintMap = loadHintMap(assignment, dataset, minGrade);
 		if (hintMap == null) {
-			return "[]";
+			if ("view".equals(assignment)) return "[]";
+			String message = "No hint map for assignment: " + assignment;
+			JSONObject error = HintJSON.errorToJSON(new RuntimeException(message), false);
+			return "[" + error + "]";
 		}
 
 		JSONArray array = new JSONArray();
