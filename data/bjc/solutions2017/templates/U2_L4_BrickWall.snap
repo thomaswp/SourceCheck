@@ -88,17 +88,15 @@ snapshot {
                                 changeYPosition(literal)
                             }
                             @if (MULT) {
-                                gotoXY(literal, {
-                                    @or {
-                                        reportProduct(literal, var)
-                                        reportSum(literal, reportProduct(literal, var))
-                                    }
+                                gotoXY(literal, @or {
+                                    reportProduct(literal, var)
+                                    reportSum(literal, reportProduct(literal, var))
                                 })
                             }
                             doIfElse(
                                 @if (IMPORT) { evaluateCustomBlock(var) }
                                 @unless (IMPORT)  {
-                                    reportEquals(literal, reportModulus(literal, var))
+                                    reportEquals(literal, reportModulus(var, literal))
                                 }
                                 script {
                                     evaluateCustomBlock
