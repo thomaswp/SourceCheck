@@ -50,16 +50,7 @@ public class NodeAlignment {
 			List<Node> toNodes = toMap.get(key);
 
 			if (toNodes == null) {
-				// TODO: We used to set these to null - was there a good reason?
-				// I don't think the mapping can actually have a value for any of these nodes yet
-				// except when a node has children in from and not to, in which case it shouldn't
-				// be unmatched
-				for (Node node : fromNodes) {
-					Node last = mapping.getFrom(node);
-					if (last != null) {
-						System.err.println("NodeAlignment.calculateCost() - unexpected result");
-					}
-				}
+				// Continue if we have to toNodes to match
 				continue;
 			}
 
