@@ -25,12 +25,12 @@ import edu.isnap.template.data.BNode;
 import edu.isnap.template.data.Context;
 import edu.isnap.template.data.DefaultNode;
 
-public class Parser {
+public class TemplateParser {
 
 	public static void parseTemplate(Assignment assignment) throws IOException {
 		byte[] encoded = Files.readAllBytes(Paths.get(assignment.templateFileBase() + ".snap"));
 		String template = new String(encoded);
-		DefaultNode node = new Parser(template).parse();
+		DefaultNode node = new TemplateParser(template).parse();
 
 
 		Node sample = SimpleNodeBuilder.toTree(
@@ -97,7 +97,7 @@ public class Parser {
 	private String[] parts;
 	private int index;
 
-	public Parser(String template) {
+	public TemplateParser(String template) {
 //		this.template = template;
 		this.parts = template.replaceAll("(\\{|\\}|\\(|\\))", " $1 ")
 				.replace(",", "").split("\\s+");
