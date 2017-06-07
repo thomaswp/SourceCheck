@@ -88,4 +88,15 @@ public class ASTNode {
 		}
 		return object;
 	}
+
+	public Node toNode() {
+		return toNode(null);
+	}
+
+	public Node toNode(Node parent) {
+		Node node = new Node(parent, type);
+		node.tag = this;
+		for (ASTNode child : childMap.values()) node.children.add(child.toNode(node));
+		return node;
+	}
 }
