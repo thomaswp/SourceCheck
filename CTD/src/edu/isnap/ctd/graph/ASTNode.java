@@ -2,29 +2,25 @@ package edu.isnap.ctd.graph;
 
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 public class ASTNode {
-	public String type, value;
+	public String type, value, relationshipToParent;
 
 	private ASTNode parent;
-	private final Map<String, ASTNode> childMap = new LinkedHashMap<>();
+	private final List<ASTNode> children = new LinkedList<>();
 
 	public ASTNode parent() {
 		return parent;
 	}
 
 	public List<ASTNode> children() {
-		return (List<ASTNode>) childMap.values();
-	}
-
-	public Map<String, ASTNode> childMap() {
-		return Collections.unmodifiableMap(childMap);
+		return Collections.unmodifiableList(children);
 	}
 
 	public ASTNode(String type) {
@@ -38,16 +34,13 @@ public class ASTNode {
 	}
 
 	public void addChild(ASTNode child) {
-		int i = childMap.size();
-		while (childMap.containsKey(String.valueOf(i))) i++;
-		addChild(String.valueOf(i), child);
+		addChild(null, child);
 	}
 
-	public boolean addChild(String relation, ASTNode child) {
-		if (childMap.containsKey(relation)) return false;
-		childMap.put(relation, child);
+	public void addChild(String relationship, ASTNode child) {
+		children.add(child);
 		child.parent = this;
-		return true;
+		child.relationshipToParent = relationship;
 	}
 
 	public static ASTNode parse(String jsonSource) throws JSONException {
@@ -79,10 +72,11 @@ public class ASTNode {
 		JSONObject object = new JSONObject();
 		object.put("type", type);
 		if (value != null) object.put("value", value);
-		if (childMap.size() > 0) {
-			JSONObject children = new JSONObject();
-			for (String relation : childMap.keySet()) {
-				children.put(relation, childMap.get(relation).toJSON());
+		if (relationshipToParent != null) object.put("relationshipToParent", relationshipToParent);
+		if (children.size() > 0) {
+			JSONArray children = new JSONArray();
+			for (ASTNode child : this.children) {
+				children.put(child.toJSON());
 			}
 			object.put("children", children);
 		}
