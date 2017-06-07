@@ -4,11 +4,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.LinkedList;
 import java.util.List;
 
 import org.json.JSONObject;
 
+import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.datasets.BJCSolutions2017;
@@ -53,8 +53,10 @@ public class JsonAST {
 	}
 
 	public static JSONObject toJSON(Code code) {
-		JSONObject object = new JSONObject();
-		List<JSONObject> children = new LinkedList<>();
+		return toAST(code).toJSON();
+	}
+
+	public static ASTNode toAST(Code code) {
 
 
 		String type = code.type();
@@ -69,17 +71,17 @@ public class JsonAST {
 			} else {
 				type = callBlock.name;
 			}
-			object.put("type", type);
 		}
 
-		object.put("type", type);
-		if (!type.equals(value)) object.put("value", value);
+
+		ASTNode node = new ASTNode(type);
+		if (!type.equals(value)) node.value = value;
 
 		code.addChildren(false, new Accumulator() {
 			@Override
 			public void addVariables(List<String> vars) {
 				for (String var : vars) {
-					children.add(variableToJSON(var));
+					node.addChild(variableToAST(var));
 				}
 			}
 
@@ -93,26 +95,15 @@ public class JsonAST {
 
 			@Override
 			public void add(Code code) {
-				children.add(toJSON(code));
+				node.addChild(toAST(code));
 			}
 		});
 
-		if (children.size() > 0) {
-			JSONObject childMap = new JSONObject();
-			for (int i = 0; i < children.size(); i++) {
-				childMap.put(String.valueOf(i), children.get(i));
-			}
-			object.put("children", childMap);
-		}
-
-		return object;
+		return node;
 	}
 
-	public static JSONObject variableToJSON(String value) {
-		JSONObject object = new JSONObject();
-		object.put("type", "var");
-		object.put("value", value);
-		return object;
+	public static ASTNode variableToAST(String value) {
+		return new ASTNode("var", value);
 	}
 
 	// TODO: What about actual canonicalizations..? These won't match
