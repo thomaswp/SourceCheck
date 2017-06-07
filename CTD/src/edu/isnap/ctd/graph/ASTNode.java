@@ -2,25 +2,29 @@ package edu.isnap.ctd.graph;
 
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 public class ASTNode {
-	public String type, value, relationshipToParent;
+	public String type, value;
 
 	private ASTNode parent;
-	private final List<ASTNode> children = new LinkedList<>();
+	private final Map<String, ASTNode> childMap = new LinkedHashMap<>();
 
 	public ASTNode parent() {
 		return parent;
 	}
 
 	public List<ASTNode> children() {
-		return Collections.unmodifiableList(children);
+		return (List<ASTNode>) childMap.values();
+	}
+
+	public Map<String, ASTNode> childMap() {
+		return Collections.unmodifiableMap(childMap);
 	}
 
 	public ASTNode(String type) {
@@ -34,13 +38,16 @@ public class ASTNode {
 	}
 
 	public void addChild(ASTNode child) {
-		addChild(null, child);
+		int i = childMap.size();
+		while (childMap.containsKey(String.valueOf(i))) i++;
+		addChild(String.valueOf(i), child);
 	}
 
-	public void addChild(String relationship, ASTNode child) {
-		children.add(child);
+	public boolean addChild(String relation, ASTNode child) {
+		if (childMap.containsKey(relation)) return false;
+		childMap.put(relation, child);
 		child.parent = this;
-		child.relationshipToParent = relationship;
+		return true;
 	}
 
 	public static ASTNode parse(String jsonSource) throws JSONException {
@@ -72,11 +79,10 @@ public class ASTNode {
 		JSONObject object = new JSONObject();
 		object.put("type", type);
 		if (value != null) object.put("value", value);
-		if (relationshipToParent != null) object.put("relationshipToParent", relationshipToParent);
-		if (children.size() > 0) {
-			JSONArray children = new JSONArray();
-			for (ASTNode child : this.children) {
-				children.put(child.toJSON());
+		if (childMap.size() > 0) {
+			JSONObject children = new JSONObject();
+			for (String relation : childMap.keySet()) {
+				children.put(relation, childMap.get(relation).toJSON());
 			}
 			object.put("children", children);
 		}
