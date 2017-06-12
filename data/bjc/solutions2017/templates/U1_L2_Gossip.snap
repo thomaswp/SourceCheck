@@ -1,7 +1,7 @@
 snapshot {
     stage {
         sprite {
-            @repeat (3, 3) {
+            @repeat (2, 5) {
                 script {
                     evaluateCustomBlock
                 }
@@ -17,7 +17,7 @@ snapshot {
             }
         }
         sprite {
-            @repeat (2, 2) {
+            @repeat (2, 5) {
                 script {
                     evaluateCustomBlock
                 }
