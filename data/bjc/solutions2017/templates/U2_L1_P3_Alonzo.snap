@@ -3,7 +3,10 @@ snapshot {
         sprite {
             script {
                 receiveInteraction
-                doChangeVar
+                @or {
+                    doChangeVar
+                    doSetVar(literal, reportSum(literal, var))
+                }
                 doIf(reportLessThan(literal, var), script {
                     @optional { doStopOthers(literal) }
                     @anyOrder {
