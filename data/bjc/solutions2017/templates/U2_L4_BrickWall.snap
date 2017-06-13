@@ -45,11 +45,22 @@ snapshot {
         customBlock {
             script {
                 evaluateCustomBlock(literal, literal)
-                forward(literal)
-                doRepeat(literal, script {
-                    evaluateCustomBlock(literal, literal)
-                    forward(literal)
-                })
+                @or {
+                    @inline {
+                        forward(literal)
+                        doRepeat(literal, script {
+                            evaluateCustomBlock(literal, literal)
+                            forward(literal)
+                        })
+                    }
+                    @inline {
+                        doRepeat(literal, script {
+                            forward(literal)
+                            evaluateCustomBlock(literal, literal)
+                        })
+                        forward(literal)
+                    }
+                }
                 evaluateCustomBlock(literal, literal)
             }
         }
