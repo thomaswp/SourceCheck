@@ -94,7 +94,6 @@ public class Snapshot extends Code implements IHasID {
 			if (guid.length() == 0) {
 				guid = stage.getAttribute("guid");
 			}
-			System.out.println(guid);
 
 			List<BlockDefinition> editingBlocks = new ArrayList<>();
 			Element editing = XML.getFirstChildByTagName(project, "editing");

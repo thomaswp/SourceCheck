@@ -10,11 +10,23 @@ snapshot {
                     }
                     doForever(script {
                         @defBlock TWO_COLORS {
-                            doIfElse(reportLessThan(literal, yPosition), script {
-                                setColor(literal)
-                            }, script {
-                                setColor(literal)
-                            })
+                            @or {
+                                doIfElse(reportLessThan(literal, @or { yPosition, reportMouseY }), script {
+                                    setColor(literal)
+                                }, script {
+                                    setColor(literal)
+                                })
+                                @inline {
+                                    @anyOrder {
+                                        doIf(reportLessThan(literal, @or { yPosition, reportMouseY }), script {
+                                            setColor(literal)
+                                        })
+                                        doIf(reportLessThan(@or { yPosition, reportMouseY }, literal), script {
+                                            setColor(literal)
+                                        })
+                                    }
+                                }
+                            }
                         }
                         @anyOrder {
                             @unless (BETWEEN) {
@@ -33,7 +45,10 @@ snapshot {
                                 up
                             })
                         }
-                        doGotoObject(literal)
+                        @or {
+                            doGotoObject(literal)
+                            gotoXY(reportMouseX, reportMouseY)
+                        }
                     })
                 }
                 @repeat (0, 3) {
