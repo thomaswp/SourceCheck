@@ -88,7 +88,13 @@ public class Snapshot extends Code implements IHasID {
 			XML.buildRefMap(project, "sprite");
 
 			Element stage = XML.getFirstChildByTagName(project, "stage");
-			String guid = stage.getAttribute("guid");
+
+			// The guid may be in the project or the stage, depending on the iSnap version
+			String guid = project.getAttribute("guid");
+			if (guid.length() == 0) {
+				guid = stage.getAttribute("guid");
+			}
+			System.out.println(guid);
 
 			List<BlockDefinition> editingBlocks = new ArrayList<>();
 			Element editing = XML.getFirstChildByTagName(project, "editing");
