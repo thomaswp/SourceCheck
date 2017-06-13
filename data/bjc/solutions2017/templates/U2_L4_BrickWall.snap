@@ -96,7 +96,6 @@ snapshot {
                         doRepeat(var, script {
                             @unless (MULT) {
                                 setXPosition(literal)
-                                changeYPosition(literal)
                             }
                             @if (MULT) {
                                 gotoXY(literal, @or {
@@ -115,7 +114,12 @@ snapshot {
                                     evaluateCustomBlock
                                 }
                             )
-                            doChangeVar(literal, literal)
+                            @anyOrder {
+                                @unless (MULT) {
+                                    changeYPosition(literal)
+                                }
+                                doChangeVar(literal, literal)
+                            }
                         })
                     }
                 }
