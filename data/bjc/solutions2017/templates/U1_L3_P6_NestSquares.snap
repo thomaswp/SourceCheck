@@ -1,0 +1,42 @@
+snapshot {
+    stage {
+        sprite {
+            script {
+                receiveGo
+                gotoXY(literal, literal)
+                down
+                clear
+                setHeading(literal)
+                evaluateCustomBlock(literal, literal)
+            }
+        }
+    }
+    customBlock {
+        script {
+            doRepeat(var, script {
+                forward(var)
+                doWait(literal)
+                forward(reportDifference(literal, var))
+                doWait(literal)
+                turn(reportQuotient(literal, var))
+            })
+        }
+        var
+        var
+        var
+    }
+    customBlock {
+        script {
+            evaluateCustomBlock(var, var, var)
+        }
+        var
+        var
+    }
+    customBlock {
+        script {
+            evaluateCustomBlock(var, var, literal)
+        }
+        var
+        var
+    }
+}
