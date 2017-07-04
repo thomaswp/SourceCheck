@@ -1,0 +1,59 @@
+snapshot {
+    stage {
+        sprite {
+            script {
+                @optional {
+                    receiveGo
+                    @anyOrder {
+                        gotoXY(literal, literal)
+                        clear
+                        setHeading(literal)
+                        down
+                    }
+                    evaluateCustomBlock(literal, literal)
+                }
+            }
+        }
+    }
+    customBlock {
+        script {
+            doRepeat(var, script {
+                forward(var)
+                @optional {
+                    doWait(literal)
+                }
+                forward(reportDifference(literal, var))
+                @optional {
+                    doWait(literal)
+                }
+                turn(reportQuotient(literal, var))
+            })
+        }
+        var
+        var
+        var
+    }
+    customBlock {
+        script {
+            evaluateCustomBlock(var, var, var)
+        }
+        var
+        var
+    }
+    customBlock {
+        script {
+            evaluateCustomBlock(var, var, literal)
+        }
+        var
+        var
+    }
+    customBlock {
+        script {
+            for_*_to__(literal, literal, var, script {
+                evaluateCustomBlock(literal, reportProduct(var, var))
+            })
+        }
+        var
+        var
+    }
+}
