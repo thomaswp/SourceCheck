@@ -19,13 +19,9 @@ snapshot {
         script {
             doRepeat(var, script {
                 forward(var)
-                @optional {
-                    doWait(literal)
-                }
+                doWait(literal)
                 forward(reportDifference(literal, var))
-                @optional {
-                    doWait(literal)
-                }
+                doWait(literal)
                 turn(reportQuotient(literal, var))
             })
         }
