@@ -1,0 +1,108 @@
+snapshot {
+    stage {
+        sprite {
+            script {
+                receiveMessage(literal)
+                doSetVar(literal, var)
+                doSetVar(literal, evaluateCustomBlock(var, var))
+                bubble(reportJoinWords(list(literal, var, literal)))
+            }
+            script {
+                receiveMessage(literal)
+                doSayFor(literal, literal)
+            }
+            script {
+                receiveMessage(literal)
+                doSetVar(literal, var)
+                doSetVar(literal, evaluateCustomBlock(var, var))
+                bubble(reportJoinWords(list(literal, var, literal)))
+            }
+            script {
+                receiveGo
+                evaluateCustomBlock(literal, literal)
+            }
+        }
+        sprite {
+            script {
+                receiveInteraction(literal)
+                doBroadcastAndWait(literal)
+            }
+        }
+        sprite {
+            script {
+                receiveInteraction(literal)
+                doBroadcastAndWait(literal)
+            }
+        }
+        sprite {
+            script {
+                receiveInteraction(literal)
+                doBroadcastAndWait(literal)
+            }
+        }
+        sprite
+    }
+    customBlock {
+        script {
+            tell_to_(literal, script {
+                bubble(literal)
+            })
+            doDeclareVariables(list(literal, literal, literal))
+            doSetVar(literal, reportRandom(literal, literal))
+            doSetVar(literal, literal)
+            doSetVar(literal, reportNewList(list))
+            doUntil(reportEquals(getLastAnswer, var), script {
+                doAsk(literal)
+                doAddToList(getLastAnswer, var)
+                doSetVar(literal, reportSum(literal, var))
+                tell_to_(literal, script {
+                    bubble(var)
+                })
+                doSayFor(evaluateCustomBlock(getLastAnswer, var), literal)
+            })
+            doSayFor(reportJoinWords(list(literal, var, literal)), literal)
+        }
+    }
+    customBlock {
+        script {
+            doIf(reportEquals(var, var), script {
+                doReport(literal)
+            })
+            doIfElse(reportLessThan(var, var), script {
+                doReport(literal)
+            }, script {
+                doReport(literal)
+            })
+        }
+        var
+        var
+    }
+    customBlock {
+        script {
+            doRun(reportAttributeOf(var, var), list)
+        }
+        var
+        var
+    }
+    customBlock {
+        script {
+            doSetVar(literal, var)
+            doSetVar(literal, var)
+            doSetVar(literal, evaluateCustomBlock(var, var))
+            doSayFor(reportJoinWords(list(literal, var, literal, var)), literal)
+            bubble(reportJoinWords(list(literal, var, literal)))
+        }
+        var
+        var
+    }
+    customBlock {
+        script {
+            doReport(reportRound(reportQuotient(reportSum(var, var), literal)))
+        }
+        var
+        var
+    }
+    var
+    var
+    var
+}

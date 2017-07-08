@@ -56,9 +56,11 @@ public class BJCSolutions2017 extends Dataset {
 
 	public final static Assignment U1_L3_P6_NestSquares =
 			new BJCAssignment("U1_L3_P6_NestSquares");
-	
+
 	public final static Assignment U3_L1_ContactList =
 			new BJCAssignment("U3_L1_ContactList");
+
+	public final static Assignment U5_L1_Search = new BJCAssignment("U5_L1_Search");
 
 	public final static Assignment[] All = {
 			U1_L1_Alonzo,
@@ -75,6 +77,7 @@ public class BJCSolutions2017 extends Dataset {
 			U2_P4_TicTacToe,
 			U1_L3_P6_NestSquares,
 			U3_L1_ContactList,
+			U5_L1_Search,
 	};
 
 	private BJCSolutions2017() {
