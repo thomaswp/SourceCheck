@@ -45,7 +45,8 @@ public class HintHighlighter {
 	}
 
 	public HintHighlighter(List<Node> solutions, HintConfig config) {
-		this.solutions = preprocessSolutions(solutions, config);
+		this.solutions = config.preprocessSolutions ?
+				preprocessSolutions(solutions, config) : solutions;
 		this.config = config;
 	}
 
@@ -473,6 +474,8 @@ public class HintHighlighter {
 	 */
 	private static List<Node> preprocessSolutions(List<Node> allSolutions,
 			final HintConfig config) {
+
+		// TODO: This doesn't work well with multi-script and multi-sprite solutions
 
 		// First figure out how many scripts each solution has at each node
 		final ListMap<Node, Integer> scriptCounts = new ListMap<>();

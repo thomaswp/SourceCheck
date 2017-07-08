@@ -17,6 +17,7 @@ import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.hint.HintMapBuilder;
 import edu.isnap.dataset.Assignment;
+import edu.isnap.hint.ConfigurableAssignment;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.elements.CallBlock;
@@ -37,7 +38,9 @@ public class TemplateParser {
 				Snapshot.parse(new File(assignment.templateFileBase() + ".xml")), true);
 		List<BNode> variants = node.getVariants(Context.fromSample(sample));
 
-		HintMap hintMap = new HintMap(new HintConfig());
+		HintConfig config = assignment instanceof ConfigurableAssignment ?
+				((ConfigurableAssignment) assignment).getConfig() : new HintConfig();
+		HintMap hintMap = new HintMap(config);
 		for (BNode variant : variants) {
 			Node n = variant.toNode();
 			verifyNode(n);

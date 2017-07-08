@@ -24,6 +24,7 @@ public class BJCSolutions2017 extends Dataset {
 		public HintConfig getConfig() {
 			HintConfig config = new HintConfig();
 			config.progressMissingFactor = 0.1f;
+			config.preprocessSolutions = false;
 			return config;
 		}
 

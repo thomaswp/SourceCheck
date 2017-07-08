@@ -4,6 +4,10 @@ import java.util.HashSet;
 
 public class HintConfig {
 	/**
+	 * If true, these solutions came from students and should be preprocessed to remove side-scripts
+	 */
+	public boolean preprocessSolutions = true;
+	/**
 	 * When at least this proportion of visitors to a state finished there,
 	 * we flag hints to leave it with caution
 	 */
