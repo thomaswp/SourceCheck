@@ -251,8 +251,14 @@ public class HintHighlighter {
 							if (isCodeElement(node)) {
 								// The insert index algorithm could have gone out of bounds for
 								// a code element's children (args)
-								insertIndex = Math.max(0, Math.min(
-										insertIndex, node.children.size() - 1));
+
+								// For code elements, we cannot insert past the parent's size
+								// (e.g. add an element to a list)
+								// TODO: This should be supported eventually
+								if (insertIndex >= node.children.size()) {
+									break;
+								}
+								insertIndex = Math.max(0, insertIndex);
 							}
 							Insertion insertion = new Insertion(node, child, insertIndex);
 							edits.add(insertion);
