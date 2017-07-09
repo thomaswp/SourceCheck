@@ -1,0 +1,109 @@
+snapshot {
+    stage {
+        sprite {
+            script {
+                @anything
+            }
+        }
+    }
+    customBlock {
+        script {
+            @defVar (LOOP, REPEAT, FOR, EACH) {
+                @if (LOOP, FOR) {
+                    for_*_to__(literal, literal, reportListLength(var), script {
+                        doIf(reportEquals(reportListItem(var, var), var), script {
+                            doReport(var)
+                        })
+                    })
+                }
+                @unless (LOOP, FOR) {
+                    doDeclareVariables(list(literal))
+                    doSetVar(literal, literal)
+                }
+                @if (LOOP, REPEAT) {
+                    doRepeat(reportListLength(var), script {
+                        @anyOrder {
+                            doIf(reportEquals(reportListItem(var, var), var), script {
+                                doReport(var)
+                            })
+                            doChangeVar(literal, literal)
+                        }
+                    })
+                }
+                @if (LOOP, EACH) {
+                    foreach_of__(literal, var, script {
+                        @anyOrder {
+                            doIf(reportEquals(var, var), script {
+                                doReport(var)
+                            })
+                            doChangeVar(literal, literal)
+                        }
+                    })
+                }
+                doReport(literal)
+            }
+        }
+        var
+        var
+    }
+    @defVar (AVERAGE_BLOCK) {
+        @defBlock AVERAGE {
+            @unless (AVERAGE_BLOCK) { 
+                reportRound(reportQuotient(reportSum(var, var), literal))
+            }
+            @if (AVERAGE_BLOCK) {
+                evaluateCustomBlock(var, var)
+            }
+        }
+        @if (AVERAGE_BLOCK) {
+            customBlock {
+                script {
+                    doReport(reportRound(reportQuotient(reportSum(var, var), literal)))
+                }
+                var
+                var
+            }
+        }
+        @defBlock UPDATE {
+            doIfElse(reportLessThan(reportListItem(var, var), var), script {
+                doSetVar(literal, reportSum(literal, var))
+            }, script {
+                doSetVar(literal, reportDifference(var, literal))
+            })
+            doSetVar(literal, @block AVERAGE)
+        }
+        customBlock {
+            script {
+                doDeclareVariables(list(literal, literal, literal))
+                @anyOrder {
+                    doSetVar(literal, literal)
+                    doSetVar(literal, reportListLength(var))
+                }
+                doSetVar(literal, @block AVERAGE)
+                @or {
+                    @inline {
+                        doUntil(reportEquals(reportListItem(var, var), var), script {
+                            doIf(reportNot(reportLessThan(var, var)), script {
+                                doReport(literal)
+                            })
+                            @block UPDATE
+                        })
+                        doReport(var)
+                    }
+                    @inline {
+                        doUntil(reportOr(reportEquals(reportListItem(var, var), var), reportNot(reportLessThan(var, var))), script {
+                            @block UPDATE
+                        })
+                        doIfElse(reportEquals(reportListItem(var, var), var), script {
+                            doReport(var)
+                        }, script {
+                            doReport(literal)
+                        })
+                    }
+                }
+            }
+            var
+            var
+        }
+    }
+}
