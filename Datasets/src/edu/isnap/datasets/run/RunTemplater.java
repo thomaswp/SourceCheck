@@ -9,7 +9,7 @@ import edu.isnap.template.parse.TemplateParser;
 public class RunTemplater {
 	public static void main(String[] args) throws IOException {
 		Node.PrettyPrintSpacing = 4;
-		TemplateParser.parseTemplate(BJCSolutions2017.U1_L3_P6_NestSquares);
+		TemplateParser.parseTemplate(BJCSolutions2017.U3_L1_ContactList);
 //		for (Assignment assignment : BJCSolutions2017.All) {
 //			TemplateParser.parseTemplate(assignment);
 //		}

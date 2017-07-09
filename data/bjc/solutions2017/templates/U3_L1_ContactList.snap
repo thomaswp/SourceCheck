@@ -1,315 +1,57 @@
 snapshot {
     stage {
-        script {
-            @anything
-        }
-        sprite {
+        @anything
+    }
+    @defVar (STAGE, CONSTRUCTOR, ACCESSORS, NAME) {
+        customBlock {
             script {
-                receiveGo
-                gotoXY(literal, literal)
+                doReport(reportNewList(list(var, var, var)))
             }
+            var
+            var
+            var
         }
-        sprite {
-            script {
-                receiveGo
-                gotoXY(literal, literal)
-            }
-        }
-        sprite {
-            script {
-                receiveGo
-                gotoXY(literal, literal)
-            }
-        }
-        sprite {
-            script {
-                receiveGo
-                gotoXY(literal, literal)
-            }
-        }
-    }
-    customBlock {
-        script {
-            doRun(reportJSFunction(list(literal, literal), literal), list(var, var))
-        }
-        var
-        var
-    }
-    customBlock {
-        script {
-            doWarp(script {
-                doDeclareVariables(list(literal, literal))
-                doSetVar(literal, reifyScript(list(literal), script {
-                    doIf(empty*_(var), script {
-                        doReport(reportNewList(list))
-                    })
-                    doReport(reportCONS(evaluate(var, list(reportListItem(literal, var))), evaluate(var, list(reportCDR(var)))))
-                }))
-                doSetVar(literal, reifyScript(list(literal), script {
-                    doIf(empty*_(reportListItem(literal, var)), script {
-                        doReport(reportNewList(list))
-                    })
-                    doReport(reportCONS(evaluate(var, map_over_(reifyReporter(list), list(var))), evaluate(var, list(map_over_(reifyReporter(list), list(var))))))
-                }))
-                doIfElse(empty*_(reportCDR(var)), script {
-                    doReport(evaluate(var, list(reportListItem(literal, var))))
-                }, script {
-                    doReport(evaluate(var, list(var)))
-                })
-            })
-        }
-        var
-        var
-    }
-    customBlock {
-        script {
-            doReport(reportEquals(reportNewList(list), var))
-        }
-        var
-    }
-    customBlock {
-        script {
-            doWarp(script {
-                doIf(empty*_(var), script {
-                    doReport(reportNewList(list))
-                })
-                doIfElse(evaluate(var, list(reportListItem(literal, var))), script {
-                    doReport(reportCONS(reportListItem(literal, var), keepitemssuchthat_from_(var, reportCDR(var))))
-                }, script {
-                    doReport(keepitemssuchthat_from_(var, reportCDR(var)))
-                })
-            })
-        }
-        var
-        var
-    }
-    customBlock {
-        script {
-            doWarp(script {
-                doIf(empty*_(reportCDR(var)), script {
+        @unless (STAGE, CONSTRUCTOR) {
+            customBlock {
+                script {
                     doReport(reportListItem(literal, var))
-                })
-                doReport(evaluate(var, list(reportListItem(literal, var), combinewith_itemsof_(var, reportCDR(var)))))
-            })
-        }
-        var
-        var
-    }
-    customBlock {
-        script {
-            doIfElse(var, script {
-                doReport(evaluate(var, list))
-            }, script {
-                doReport(evaluate(var, list))
-            })
-        }
-        var
-        var
-        var
-    }
-    customBlock {
-        script {
-            doDeclareVariables(list(literal, literal))
-            doIfElse(reportLessThan(var, var), script {
-                doSetVar(literal, literal)
-                doSetVar(literal, reifyReporter(list))
-            }, script {
-                doSetVar(literal, literal)
-                doSetVar(literal, reifyReporter(list))
-            })
-            doSetVar(literal, var)
-            doUntil(evaluate(var, list), script {
-                doRun(var, list)
-                doChangeVar(literal, var)
-            })
-        }
-        var
-        var
-        var
-        var
-    }
-    customBlock {
-        script {
-            doWarp(script {
-                doIf(empty*_(reportCDR(var)), script {
+                }
+                var
+            }
+            customBlock {
+                script {
                     doReport(reportListItem(literal, var))
-                })
-                doIf(reportEquals(literal, reportListItem(literal, var)), script {
-                    doReport(joinwords_(reportCDR(var)))
-                })
-                doIf(reportEquals(literal, reportListItem(literal, var)), script {
-                    doReport(joinwords_(reportCONS(reportListItem(literal, var), reportCDR(reportCDR(var)))))
-                })
-                doReport(reportJoinWords(list(reportListItem(literal, var), literal, joinwords_(reportCDR(var)))))
-            })
+                }
+                var
+            }
+            customBlock {
+                script {
+                    doReport(reportListItem(literal, var))
+                }
+                var
+            }
         }
-        var
-    }
-    customBlock {
-        script {
-            doWarp(script {
-                doReport(joinwords_(var))
-            })
+        @if (STAGE, NAME) {
+            customBlock {
+                script {
+                    doReport(reportNewList(list(var, var)))
+                }
+                var
+                var
+            }
+            customBlock {
+                script {
+                    doReport(reportJoinWords(list(reportListItem(literal, var), reportListItem(literal, var))))
+                }
+                var
+            }
+            customBlock {
+                script {
+                    doReport(reportJoinWords(list(reportListItem(literal, var), reportListItem(literal, var))))
+                }
+                var
+            }
         }
-        var
-    }
-    customBlock {
-        script {
-            doWarp(script {
-                doReport(reportTextSplit(var, literal))
-            })
-        }
-        var
-    }
-    customBlock {
-        script {
-            doCallCC(reifyScript(list(literal), script {
-                doSetVar(literal, var)
-                doRun(var, list)
-            }))
-            ignore_(literal)
-        }
-        var
-        var
-    }
-    customBlock {
-        script {
-            doRun(var, list)
-        }
-        var
-    }
-    customBlock {
-        script {
-            doCallCC(reifyScript(list(literal), script {
-                doSetVar(literal, var)
-                doReport(evaluate(var, list))
-            }))
-        }
-        var
-        var
-    }
-    customBlock {
-        script {
-            doRun(var, list(var))
-        }
-        var
-        var
-    }
-    customBlock {
-        script {
-            doUntil(empty*_(var), script {
-                doSetVar(literal, reportListItem(literal, var))
-                doRun(var, list(reportListItem(literal, var)))
-                doSetVar(literal, reportCDR(var))
-            })
-        }
-        var
-        var
-        var
-    }
-    customBlock {
-        script {
-            doDeclareVariables(list(literal))
-            doIf(evaluate(var, list), script {
-                doSetVar(literal, var)
-                doShowVar(literal)
-                doRun(var, list)
-                doPauseAll
-                doHideVar(literal)
-            })
-        }
-        var
-        var
-    }
-    customBlock {
-        script {
-            doWarp(script {
-                doReport(reportTextSplit(var, literal))
-            })
-        }
-        var
-    }
-    customBlock {
-        script
-        var
-    }
-    customBlock {
-        script {
-            doRun(reportAttributeOf(var, var), list)
-        }
-        var
-        var
-    }
-    customBlock {
-        script {
-            doReport(evaluate(reportAttributeOf(var, var), list))
-        }
-        var
-        var
-    }
-    customBlock {
-        script {
-            doWarp(script {
-                doReport(reportJoinWords(var))
-            })
-        }
-        var
-    }
-    customBlock {
-        script {
-            doIfElse(reportLessThan(evaluate(reportJSFunction(list(literal, literal), literal), list(var, var)), literal), script {
-                doReport(reportBoolean(literal))
-            }, script {
-                doReport(reportBoolean(literal))
-            })
-        }
-        var
-        var
-    }
-    customBlock {
-        script {
-            doReport(reportNewList(list(var, var, var)))
-        }
-        var
-        var
-        var
-    }
-    customBlock {
-        script {
-            doReport(reportListItem(literal, var))
-        }
-        var
-    }
-    customBlock {
-        script {
-            doReport(reportListItem(literal, var))
-        }
-        var
-    }
-    customBlock {
-        script {
-            doReport(reportListItem(literal, var))
-        }
-        var
-    }
-    customBlock {
-        script {
-            doReport(reportNewList(list(var, var)))
-        }
-        var
-        var
-    }
-    customBlock {
-        script {
-            doReport(reportJoinWords(list(reportListItem(literal, var), reportListItem(literal, var))))
-        }
-        var
-    }
-    customBlock {
-        script {
-            doReport(reportJoinWords(list(reportListItem(literal, var), reportListItem(literal, var))))
-        }
-        var
     }
     var
 }
