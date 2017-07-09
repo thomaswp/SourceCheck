@@ -1,18 +1,7 @@
 snapshot {
     stage {
         sprite {
-            script {
-                @optional {
-                    receiveGo
-                    @anyOrder {
-                        gotoXY(literal, literal)
-                        clear
-                        setHeading(literal)
-                        down
-                    }
-                    evaluateCustomBlock(literal, literal)
-                }
-            }
+            @anything
         }
     }
     customBlock {
@@ -44,12 +33,24 @@ snapshot {
         var
     }
     customBlock {
-        script {
-            for_*_to__(literal, literal, var, script {
-                evaluateCustomBlock(literal, reportProduct(var, var))
-            })
+        @defVar SIZE {
+            @if (SIZE) {
+                script {
+                    for_*_to__(literal, literal, var, script {
+                        evaluateCustomBlock(literal, reportProduct(var, var))
+                    })
+                }
+                var
+                var
+            }
+            @unless (SIZE) {
+                script {
+                    for_*_to__(literal, literal, var, script {
+                        evaluateCustomBlock(literal, reportProduct(literal, var))
+                    })
+                }
+                var
+            }
         }
-        var
-        var
     }
 }
