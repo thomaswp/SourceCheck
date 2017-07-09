@@ -1,5 +1,8 @@
 snapshot {
     stage {
+        script {
+            @anything
+        }
         sprite {
             script {
                 receiveGo
@@ -263,4 +266,50 @@ snapshot {
         var
         var
     }
+    customBlock {
+        script {
+            doReport(reportNewList(list(var, var, var)))
+        }
+        var
+        var
+        var
+    }
+    customBlock {
+        script {
+            doReport(reportListItem(literal, var))
+        }
+        var
+    }
+    customBlock {
+        script {
+            doReport(reportListItem(literal, var))
+        }
+        var
+    }
+    customBlock {
+        script {
+            doReport(reportListItem(literal, var))
+        }
+        var
+    }
+    customBlock {
+        script {
+            doReport(reportNewList(list(var, var)))
+        }
+        var
+        var
+    }
+    customBlock {
+        script {
+            doReport(reportJoinWords(list(reportListItem(literal, var), reportListItem(literal, var))))
+        }
+        var
+    }
+    customBlock {
+        script {
+            doReport(reportJoinWords(list(reportListItem(literal, var), reportListItem(literal, var))))
+        }
+        var
+    }
+    var
 }
