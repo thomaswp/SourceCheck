@@ -73,6 +73,12 @@ public class Shell {
 							assignment.load(Mode.Overwrite, true);
 						}
 						break;
+					case "build":
+						for (Assignment assignment : dataset.all()) {
+							RunHintBuilder.buildHints(assignment, 1);
+							RunCopyData.copyGraphs(dataset.dataDir);
+						}
+						break;
 					default:
 						System.out.println("Unknown command: " + command);
 					}
