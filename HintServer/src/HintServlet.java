@@ -95,20 +95,26 @@ public class HintServlet extends HttpServlet {
 
 	private String getHintJSON(Snapshot snapshot, String assignment, String dataset, int minGrade,
 			String hintTypes) {
-		HintMap hintMap = loadHintMap(assignment, dataset, minGrade);
-		if (hintMap == null) {
-			if ("view".equals(assignment)) return "[]";
-			String message = "No hint map for assignment: " + assignment;
-			JSONObject error = HintJSON.errorToJSON(new RuntimeException(message), false);
-			return "[" + error + "]";
+		JSONArray array = new JSONArray();
+		List<Hint> hints = new LinkedList<>();
+		HintMap hintMap;
+		Node node;
+
+		try {
+			hintMap = loadHintMap(assignment, dataset, minGrade);
+			if (hintMap == null) {
+				if ("view".equals(assignment)) return "[]";
+				String message = "No hint map for assignment: " + assignment;
+				JSONObject error = HintJSON.errorToJSON(new RuntimeException(message), false);
+				return "[" + error + "]";
+			}
+
+			node = SimpleNodeBuilder.toTree(snapshot, true);
+		} catch (Exception e) {
+			array.put(HintJSON.errorToJSON(e, true));
+			return array.toString();
 		}
 
-		JSONArray array = new JSONArray();
-
-//		System.out.println(snapshot.toCode(true));
-		Node node = SimpleNodeBuilder.toTree(snapshot, true);
-
-		List<Hint> hints = new LinkedList<>();
 		// Return the hints for each type requested, or bubble hints if none is provided
 		if (hintTypes != null) hintTypes = hintTypes.toLowerCase();
 		if (hintTypes == null || hintTypes.contains("bubble")) {
