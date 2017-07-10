@@ -121,7 +121,8 @@ public class HintServlet extends HttpServlet {
 		if (hintTypes != null && hintTypes.contains("highlight")){
 			try {
 				HintHighlighter highlighter = new HintHighlighter(hintMap);
-				highlighter.consoleOutput = true;
+				// TODO: More comprehensive logging that doesn't clog the log file
+				highlighter.consoleOutput = false;
 				hints.addAll(highlighter.highlight(node));
 			} catch (Exception e) {
 				array.put(HintJSON.errorToJSON(e, true));
