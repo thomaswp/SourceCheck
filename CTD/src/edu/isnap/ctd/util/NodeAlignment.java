@@ -312,11 +312,30 @@ public class NodeAlignment {
 			// We use 2/2/3 here to use replacements only if necessary (these are not returned as
 			// pairs if they do not match)
 			List<int[]> childPairs = Alignment.alignPairs(fromStates[i], toStates[j], 2, 2, 3);
+			List<Node> unpairedFrom = new LinkedList<>(), unpairedTo = new LinkedList<>();
 			for (int[] pair : childPairs) {
 				if (pair[0] >= 0 && pair[1] >= 0) {
 					mapping.put(from.children.get(pair[0]), to.children.get(pair[1]));
+				} else if (pair[1] >= 0) {
+					// We also keep track of unpaired nodes to match up out-of-order nodes
+					unpairedTo.add(to.children.get(pair[1]));
+				} else if (pair[0] >= 0) {
+					unpairedFrom.add(from.children.get(pair[0]));
 				}
 			}
+			// Look back through all the unpaired from and to nodes and try to find matches
+			// (i.e. out-of-order nodes)
+			for (Node uf : unpairedFrom) {
+				for (int k = 0; k < unpairedTo.size(); k++) {
+					Node ut = unpairedTo.get(k);
+					if (uf.type().equals(ut.type())) {
+						mapping.put(uf, ut);
+						unpairedTo.remove(k);
+						break;
+					}
+				}
+			}
+
 		}
 
 		// For each unmatched toState (in the proposed solution), add its cost as well
