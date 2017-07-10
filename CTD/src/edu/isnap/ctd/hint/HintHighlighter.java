@@ -152,7 +152,7 @@ public class HintHighlighter {
 							colors.put(node, Highlight.Order);
 
 							Reorder reorder = new Reorder(node, pairIndex);
-							if (!reorder.shouldSuppress()) edits.add(reorder);
+							if (!reorder.shouldSuppress(mapping)) edits.add(reorder);
 
 						}
 						// We don't return here, since these nodes could have children that need to
@@ -222,7 +222,7 @@ public class HintHighlighter {
 							}
 
 							Reorder reorder = new Reorder(toReorder, index);
-							if (!reorder.shouldSuppress()) edits.add(reorder);
+							if (!reorder.shouldSuppress(mapping)) edits.add(reorder);
 						}
 					}
 				}
@@ -590,7 +590,7 @@ public class HintHighlighter {
 				if (sameType && matchParent && insertion.parent.hasType(config.script)) {
 					colors.put(deleted, Highlight.Move);
 					Reorder reorder = new Reorder(deleted, insertion.index);
-					if (!reorder.shouldSuppress()) toAdd.add(reorder);
+					if (!reorder.shouldSuppress(mapping)) toAdd.add(reorder);
 					toRemove.add(deletion);
 					toRemove.add(insertion);
 					// Set the insertion candidate, so it's not somehow used later in the loop
@@ -1043,14 +1043,24 @@ public class HintHighlighter {
 			}
 		}
 
-		public boolean shouldSuppress() {
+		public boolean shouldSuppress(BiMap<Node, Node> mapping) {
 			// If these have the same orderGroup, there's no need to reorder. Ideally this
 			// would be all handled by NodeAlignment, but it's possible for it to mismatch
 			// some nodes of the same type
-			if (index >= 0 && index < parent.children.size()) {
-				Node displacedNode = node.parent.children.get(index);
-				int groupA = displacedNode.readOnlyAnnotations().orderGroup;
-				int groupB = node.readOnlyAnnotations().orderGroup;
+
+			int rIndex = node.index();
+			int aIndex = index;
+			// Adjust the add index if the remove index is less than it
+			if (rIndex < aIndex) aIndex--;
+			if (aIndex >= 0 && aIndex < parent.children.size()) {
+				Node displacedNode = node.parent.children.get(aIndex);
+				// We need to get the node pairs from the mapping because only to-nodes have
+				// order groups
+				Node nodePair = mapping.getFrom(node);
+				Node displacedNodePair = mapping.getFrom(displacedNode);
+				if (nodePair == null || displacedNode == null) return false;
+				int groupA = nodePair.readOnlyAnnotations().orderGroup;
+				int groupB = displacedNodePair.readOnlyAnnotations().orderGroup;
 				if (groupA == groupB && groupA != 0) {
 					return true;
 				}
