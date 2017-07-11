@@ -1058,7 +1058,7 @@ public class HintHighlighter {
 				// order groups
 				Node nodePair = mapping.getFrom(node);
 				Node displacedNodePair = mapping.getFrom(displacedNode);
-				if (nodePair == null || displacedNode == null) return false;
+				if (nodePair == null || displacedNodePair == null) return false;
 				int groupA = nodePair.readOnlyAnnotations().orderGroup;
 				int groupB = displacedNodePair.readOnlyAnnotations().orderGroup;
 				if (groupA == groupB && groupA != 0) {
