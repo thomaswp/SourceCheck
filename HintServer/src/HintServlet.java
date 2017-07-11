@@ -64,7 +64,6 @@ public class HintServlet extends HttpServlet {
 		sc.close();
 
 		String xml = sb.toString();
-		Snapshot snapshot = Snapshot.parse(null, xml);
 
 		PrintStream out = new PrintStream(resp.getOutputStream());
 
@@ -87,13 +86,13 @@ public class HintServlet extends HttpServlet {
 		if (hint != null) {
 			out.println(UnitTest.saveUnitTest(assignment, xml, hint));
 		} else {
-			String hintJSON = getHintJSON(snapshot, assignment, dataset, minGrade, hintTypes);
+			String hintJSON = getHintJSON(xml, assignment, dataset, minGrade, hintTypes);
 			resp.setContentType("text/json");
 			out.println(hintJSON);
 		}
 	}
 
-	private String getHintJSON(Snapshot snapshot, String assignment, String dataset, int minGrade,
+	private String getHintJSON(String snapshotXML, String assignment, String dataset, int minGrade,
 			String hintTypes) {
 		JSONArray array = new JSONArray();
 		List<Hint> hints = new LinkedList<>();
@@ -101,6 +100,7 @@ public class HintServlet extends HttpServlet {
 		Node node;
 
 		try {
+			Snapshot snapshot = Snapshot.parse(null, snapshotXML);
 			hintMap = loadHintMap(assignment, dataset, minGrade);
 			if (hintMap == null) {
 				if ("view".equals(assignment)) return "[]";
@@ -128,7 +128,7 @@ public class HintServlet extends HttpServlet {
 			try {
 				HintHighlighter highlighter = new HintHighlighter(hintMap);
 				// TODO: More comprehensive logging that doesn't clog the log file
-				highlighter.consoleOutput = false;
+//				highlighter.consoleOutput = true;
 				hints.addAll(highlighter.highlight(node));
 			} catch (Exception e) {
 				array.put(HintJSON.errorToJSON(e, true));
