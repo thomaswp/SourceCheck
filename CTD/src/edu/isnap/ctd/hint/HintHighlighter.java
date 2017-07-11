@@ -587,7 +587,8 @@ public class HintHighlighter {
 
 				// If it's an insertion/deletion of the same type in the same script parent, it's
 				// just a reorder
-				if (sameType && matchParent && insertion.parent.hasType(config.script)) {
+				if (sameType && matchParent && insertion.parent.hasType(config.script) &&
+						insertion.index != deleted.index()) {
 					colors.put(deleted, Highlight.Move);
 					Reorder reorder = new Reorder(deleted, insertion.index);
 					if (!reorder.shouldSuppress(mapping)) toAdd.add(reorder);
