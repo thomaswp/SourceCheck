@@ -4,23 +4,33 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.ASTNode;
-import edu.isnap.ctd.graph.Node;
 import edu.isnap.dataset.Assignment;
-import edu.isnap.datasets.BJCSolutions2017;
+import edu.isnap.dataset.AssignmentAttempt;
+import edu.isnap.dataset.Dataset;
+import edu.isnap.datasets.Fall2016;
 import edu.isnap.hint.util.SimpleNodeBuilder;
+import edu.isnap.parser.SnapParser;
+import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.BlockDefinition;
 import edu.isnap.parser.elements.CallBlock;
 import edu.isnap.parser.elements.Code;
 import edu.isnap.parser.elements.Code.Accumulator;
+import edu.isnap.parser.elements.LiteralBlock;
+import edu.isnap.parser.elements.LiteralBlock.Type;
 import edu.isnap.parser.elements.Snapshot;
 import edu.isnap.parser.elements.util.Canonicalization;
 
 public class JsonAST {
+
+	private static Set<String> values = new TreeSet<>();
 
 	public static void main(String[] args) throws IOException {
 //		Collection<AssignmentAttempt> attempts =
@@ -33,15 +43,36 @@ public class JsonAST {
 //			break;
 //		}
 
-		for (Assignment assignment : BJCSolutions2017.All) {
-			Snapshot snapshot = Snapshot.parse(new File(assignment.templateFileBase() + ".xml"));
-			JSONObject json = toJSON(snapshot);
-			String jsonString = json.toString(2);
-			System.out.println(jsonString);
-			write(assignment.analysisDir() + ".json", jsonString);
-			write(assignment.analysisDir() + ".txt",
-					SimpleNodeBuilder.toTree(snapshot, true).prettyPrint());
+		exportDataset(Fall2016.instance, Fall2016.LightsCameraAction);
+//		exportAssignment(Fall2016.PolygonMaker);
+	}
+
+	protected static void exportDataset(Dataset dataset, Assignment... exclude)
+			throws FileNotFoundException {
+		values.clear();
+		for (Assignment assignment : dataset.all()) {
+			if (!Arrays.asList(exclude).contains(assignment)) {
+				exportAssignment(assignment);
+			}
 		}
+		write(dataset.dataDir + "/analysis/jsonAST/values.txt", String.join("\n", values));
+	}
+
+	protected static void exportAssignment(Assignment assignment) throws FileNotFoundException {
+		for (AssignmentAttempt attempt : assignment.load(
+				Mode.Use, true, true, new SnapParser.LikelySubmittedOnly()).values()) {
+			exportSnapshot(assignment, attempt.submittedSnapshot);
+		}
+	}
+
+	protected static void exportSnapshot(Assignment assignment, Snapshot snapshot)
+			throws FileNotFoundException {
+		JSONObject json = toJSON(snapshot);
+		String jsonString = json.toString(2);
+//		System.out.println(jsonString);
+		String basePath = assignment.dir("analysis/jsonAST") + "/" + snapshot.guid;
+		write(basePath + ".json", jsonString);
+		write(basePath + ".txt", SimpleNodeBuilder.toTree(snapshot, true).prettyPrint());
 	}
 
 	private static void write(String path, String text) throws FileNotFoundException {
@@ -73,9 +104,20 @@ public class JsonAST {
 			}
 		}
 
-
 		ASTNode node = new ASTNode(type);
-		if (!type.equals(value)) node.value = value;
+
+		if (code instanceof LiteralBlock && ((LiteralBlock) code).type == Type.Text) {
+			// Only keep numeric text literal values
+			try {
+				Double.parseDouble(value);
+			} catch (NumberFormatException e) {
+				value = null;
+			}
+		}
+		if (value != null && !type.equals(value)) {
+			values.add(value.trim());
+			node.value = value;
+		}
 
 		code.addChildren(false, new Accumulator() {
 			@Override
@@ -95,6 +137,10 @@ public class JsonAST {
 
 			@Override
 			public void add(Code code) {
+				if (code instanceof BlockDefinition) {
+					// Skip imported block definitions
+					if (((BlockDefinition) code).isImported) return;
+				}
 				node.addChild(toAST(code));
 			}
 		});
@@ -105,35 +151,4 @@ public class JsonAST {
 	public static ASTNode variableToAST(String value) {
 		return new ASTNode("var", value);
 	}
-
-	// TODO: What about actual canonicalizations..? These won't match
-	@Deprecated
-	public static JSONObject toJSON(Node node, Node nodeCanon) {
-		JSONObject obj = new JSONObject();
-		String type = nodeCanon.type();
-		if (type.equals("snapshot")) type = "Snap!shot";
-		obj.put("type", type);
-
-		String value = node.type();
-		if (!value.equals(type)) {
-			obj.put("value", node.type());
-		}
-
-		if (node.children.size() > 0) {
-			if (node.children.size() != nodeCanon.children.size()) {
-				System.out.println(node.parent.prettyPrint());
-				System.out.println(nodeCanon.parent.prettyPrint());
-			}
-			JSONObject children = new JSONObject();
-			for (int i = 0; i < node.children.size(); i++) {
-				JSONObject child = toJSON(node.children.get(i), nodeCanon.children.get(i));
-				children.put(String.valueOf(i), child);
-			}
-			obj.put("children", children);
-		}
-
-		return obj;
-
-	}
-
 }
