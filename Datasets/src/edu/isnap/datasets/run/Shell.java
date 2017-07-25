@@ -8,6 +8,7 @@ import edu.isnap.dataset.Dataset;
 import edu.isnap.datasets.Demo;
 import edu.isnap.datasets.Fall2015;
 import edu.isnap.datasets.Fall2016;
+import edu.isnap.datasets.HelpSeeking;
 import edu.isnap.datasets.HelpSeekingExperts;
 import edu.isnap.datasets.Samples;
 import edu.isnap.datasets.Spring2016;
@@ -27,6 +28,7 @@ public class Shell {
 			Spring2017.instance,
 			Demo.instance,
 			HelpSeekingExperts.instance,
+			HelpSeeking.instance,
 			Samples.instance,
 	};
 
