@@ -7,7 +7,7 @@ import java.sql.SQLException;
 import edu.isnap.ctd.hint.HintMapBuilder;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.datasets.Fall2016;
-import edu.isnap.datasets.HelpSeeking;
+import edu.isnap.datasets.HelpSeekingExperts;
 import edu.isnap.datasets.Spring2016;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.parser.Store.Mode;
@@ -30,8 +30,8 @@ public class RunHintBuilder {
 		// Then copies the cache to the HintServer
 		RunCopyData.copyGraphs(Fall2016.dataDir);
 
-		buildHints(HelpSeeking.BrickWall, 1);
-		RunCopyData.copyGraphs(HelpSeeking.BrickWall.dataDir);
+		buildHints(HelpSeekingExperts.BrickWall, 1);
+		RunCopyData.copyGraphs(HelpSeekingExperts.BrickWall.dataDir);
 		buildHints(Spring2016.GuessingGame1, 1);
 		RunCopyData.copyGraphs(Spring2016.GuessingGame1.dataDir, "spring2016");
 	}

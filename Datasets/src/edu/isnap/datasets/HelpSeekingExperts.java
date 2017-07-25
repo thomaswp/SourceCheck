@@ -7,12 +7,12 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.hint.ConfigurableAssignment;
 
-	public class HelpSeeking extends Dataset {
+	public class HelpSeekingExperts extends Dataset {
 
 		public final static Date start = Assignment.date(2016, 8, 10);
 		public final static String dataDir = "../data/help-seeking/experts2016";
 		public final static String dataFile = dataDir + ".csv";
-		public final static HelpSeeking instance = new HelpSeeking();
+		public final static HelpSeekingExperts instance = new HelpSeekingExperts();
 
 		private final static HintConfig config = new HintConfig();
 		static {
@@ -38,7 +38,7 @@ import edu.isnap.hint.ConfigurableAssignment;
 			BrickWall, GuessingGame1
 		};
 
-		private HelpSeeking() {
+		private HelpSeekingExperts() {
 			super(start, dataDir);
 		}
 
