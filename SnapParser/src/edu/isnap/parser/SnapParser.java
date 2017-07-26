@@ -145,7 +145,7 @@ public class SnapParser {
 						// is a 99% accurate work-around that stores the index of a the custom
 						// block when editing starts and then sets the editing block's index to that
 						// index until the editor is closed. Note that we store the index at the
-						// start because the spec/type/category may change when editing. Not also
+						// start because the spec/type/category may change when editing. Note also
 						// that before GUIDs only one block could be edited at a time, so there
 						// should only ever be one editing index at a time. If GUIDs are present
 						// this does nothing.

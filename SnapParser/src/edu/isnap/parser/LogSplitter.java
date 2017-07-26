@@ -59,6 +59,7 @@ public class LogSplitter {
 		for (Entry<String, Integer> entry : headerMap.entrySet()) {
 			headers[entry.getValue()] = entry.getKey();
 		}
+		boolean hasUserID = headerMap.containsKey("userID");
 		int i = 0;
 
 		// Write each record to the appropriate split-out CSV file
@@ -70,7 +71,8 @@ public class LogSplitter {
 			if(projectID.equals("")) continue;
 
 			String assignmentID = record.get("assignmentID");
-			writeRecord(i, assignmentID, projectID, outputFolder, record);
+			String userID = hasUserID ? record.get("userID") : null;
+			writeRecord(i, assignmentID, projectID, userID, outputFolder, record);
 
 			// Flush the oldest writer if its stale or we have too many open
 			int oldest = projectQueue.firstKey();
@@ -94,18 +96,21 @@ public class LogSplitter {
 	 * @param userId
 	 * @throws IOException
 	 */
-	private void writeRecord(int line, String assignmentID, String projectID, String outputFolder,
-			CSVRecord record) throws IOException{
+	private void writeRecord(int line, String assignmentID, String projectID, String userID,
+			String outputFolder, CSVRecord record) throws IOException {
 		// Create the appropriate folder if it does not exist
 		File newAssignmentFolder = new File(outputFolder, assignmentID);
 		newAssignmentFolder.mkdir();
 		String currentFolderPath = newAssignmentFolder.getAbsolutePath();
 
 		// Get the project from the Map or create it if it does not exist
-		String keyword = assignmentID + projectID;
+		String keyword = assignmentID + projectID + userID;
 		Project project = projectMap.get(keyword);
 		if(project == null){
-			project = new Project(currentFolderPath + "/" + projectID + ".csv",
+			String filename = projectID;
+			if (userID != null) filename += "_" + userID.substring(0, Math.min(8, userID.length()));
+			filename = filename.replaceAll("[^a-zA-Z0-9\\._-]+", "_");
+			project = new Project(currentFolderPath + "/" + filename + ".csv",
 					CSVFormat.EXCEL.withHeader(headers));
 			projectMap.put(keyword, project);
 		}
