@@ -89,7 +89,9 @@ public class CSVVerifier {
 //		int columns = parser.getHeaderMap().size();
 		int i = 0;
 		for (CSVRecord record : parser) {
-			if (i % 1000 == 0) System.out.println(i);
+			if (i % 1000 == 0) {
+				System.out.println(i + ": " + record.toString());
+			}
 			if (!record.isConsistent()) {
 				System.out.println("Inconsistent record at row " + i);
 				break;
@@ -112,7 +114,6 @@ public class CSVVerifier {
 	}
 
 	public static void main(String[] args) throws IOException {
-//		verify("../data/bjc/bjc2017.csv");
-		verifyApache("../data/bjc/bjc2017.csv", CSVFormat.DEFAULT.withEscape('"').withHeader());
+		verifyApache("../data/bjc/bjc2017.csv", CSVFormat.DEFAULT.withEscape('\\').withHeader());
 	}
 }

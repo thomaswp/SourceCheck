@@ -65,7 +65,7 @@ public class Shell {
 						SnapParser.clean(dataset.dataDir);
 						break;
 					case "split":
-						LogSplitter.splitStudentRecords(dataset.dataFile);
+						new LogSplitter().splitStudentRecords(dataset);
 						break;
 					case "test":
 						TestRunner.run(dataset.all());

@@ -2,6 +2,8 @@ package edu.isnap.datasets;
 
 import java.util.Date;
 
+import org.apache.commons.csv.CSVFormat;
+
 import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
@@ -26,6 +28,11 @@ public class BJC2017 extends Dataset {
 			return config;
 		}
 
+	}
+
+	@Override
+	public CSVFormat dataFileCSVFormat() {
+		return super.dataFileCSVFormat().withEscape('\\');
 	}
 
 	public final static Assignment U1_L1_Alonzo = new BJCAssignment("U1_L1_Alonzo");

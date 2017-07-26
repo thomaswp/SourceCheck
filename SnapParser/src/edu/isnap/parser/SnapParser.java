@@ -50,6 +50,7 @@ public class SnapParser {
 	 * @param path
 	 */
 	public static void clean(String path) {
+		if (!new File(path).exists()) return;
 		for (String file : new File(path).list()) {
 			File f = new File(path, file);
 			if (f.isDirectory()) clean(f.getAbsolutePath());
