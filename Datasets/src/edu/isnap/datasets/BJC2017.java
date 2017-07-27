@@ -40,15 +40,15 @@ public class BJC2017 extends Dataset {
 
 	public final static Assignment U1_L1_Alonzo = new BJCAssignment("U1_L1_Alonzo");
 
-	public static final Assignment U1_L2_Gossip = new BJCAssignment("U1_L2_Gossip");
+	public final static Assignment U1_L2_Gossip = new BJCAssignment("U1_L2_Gossip");
 
-	public static final Assignment U1_L2_P4_GreetPlayer = new BJCAssignment("U1_L2_P4_GreetPlayer");
+	public final static Assignment U1_L2_P4_GreetPlayer = new BJCAssignment("U1_L2_P4_GreetPlayer");
 
-	public static final Assignment U1_L3_P1_Experiments = new BJCAssignment("U1_L3_P1_Experiments");
+	public final static Assignment U1_L3_P1_Experiments = new BJCAssignment("U1_L3_P1_Experiments");
 
-	public static final Assignment U1_L3_Pinwheel = new BJCAssignment("U1_L3_Pinwheel");
+	public final static Assignment U1_L3_Pinwheel = new BJCAssignment("U1_L3_Pinwheel");
 
-	public static final Assignment U1_L3_P6_Looping = new BJCAssignment("U1_L3_P6_Looping");
+	public final static Assignment U1_L3_P6_Looping = new BJCAssignment("U1_L3_P6_Looping");
 
 	public final static Assignment U1_L3_P7_Graphics = new BJCAssignment("U1_L3_P7_Graphics");
 
