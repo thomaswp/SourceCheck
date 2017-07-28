@@ -16,9 +16,11 @@ import edu.isnap.dataset.Dataset;
 				"brickWall", null, true);
 		public final static Assignment GuessingGame1 = new Assignment(instance,
 				"guess1Lab", null, true);
+		public final static Assignment Tutorial = new Assignment(instance,
+				"tutorial", null, true);
 
 		public final static Assignment[] All = {
-			BrickWall, GuessingGame1
+			BrickWall, GuessingGame1, Tutorial,
 		};
 
 		private HelpSeeking() {
