@@ -2,6 +2,8 @@ package edu.isnap.dataset;
 
 import java.util.Date;
 
+import org.apache.commons.csv.CSVFormat;
+
 public abstract class Dataset {
 	public final Date start;
 	public final String dataDir, dataFile;
@@ -24,6 +26,10 @@ public abstract class Dataset {
 
 	public String startsFile() {
 		return dataDir + "/starts.csv";
+	}
+
+	public CSVFormat dataFileCSVFormat() {
+		return CSVFormat.DEFAULT.withHeader();
 	}
 
 }
