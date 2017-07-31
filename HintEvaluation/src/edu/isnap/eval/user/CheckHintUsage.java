@@ -247,6 +247,7 @@ public class CheckHintUsage {
 					String hintCode = String.join("_", parent.id, message, Arrays.toString(from),
 							Arrays.toString(to));
 					boolean duplicate = !uniqueHints.add(hintCode);
+					if (duplicate) nDuplicateHints++;
 					boolean repeat = lastHintCode.equals(hintCode);
 					lastHintCode = hintCode;
 
