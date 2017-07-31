@@ -123,6 +123,13 @@ public class SnapParser {
 							id = Integer.parseInt(idS);
 						} catch (NumberFormatException e) { }
 
+						// For the help-seeking study the userID was stored in the Logger.started
+						// row, rather than as a separate column
+						if (action.equals(AttemptAction.IDE_OPENED) && data.length() > 0) {
+							JSONObject dataObject = new JSONObject(data);
+							if (dataObject.has("userID")) userID = dataObject.getString("userID");
+						}
+
 						if (userID != null && !userID.equals("none")) {
 							if (solution.userID == null) {
 								solution.userID = userID;

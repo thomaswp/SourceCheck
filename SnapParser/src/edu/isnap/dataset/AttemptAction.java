@@ -22,6 +22,7 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	public static final String IDE_CHANGE_CATEGORY = "IDE.changeCategory";
 	public final static String IDE_GREEN_FLAG_RUN = "IDE.greenFlag";
 	public final static String IDE_EXPORT_PROJECT = "IDE.exportProject";
+	public final static String IDE_OPENED = "IDE.opened";
 	public static final String IDE_REMOVE_SPRITE = "IDE.removeSprite";
 	public static final String IDE_SELECT_SPRITE = "IDE.selectSprite";
 	public static final String IDE_SET_SPRITE_TAB = "IDE.setSpriteTab";
@@ -32,6 +33,7 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	public final static String HINT_DIALOG_DONE = "HintDialogBox.done";
 	public final static String HINT_DIALOG_LOG_FEEDBACK = "HintDialogBox.logFeedback";
 	public final static String HINT_PROCESS_HINTS = "HintProvider.processHints";
+	public final static String LOGGER_STARTED = "Logger.started";
 	public final static String SHOW_SCRIPT_HINT = "SnapDisplay.showScriptHint";
 	public final static String SHOW_BLOCK_HINT = "SnapDisplay.showBlockHint";
 	public final static String SHOW_STRUCTURE_HINT = "SnapDisplay.showStructureHint";
@@ -47,6 +49,7 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	}));
 
 	private final static DateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
+
 
 
 	public final int id;
