@@ -243,9 +243,8 @@ public class CheckHintUsage {
 
 					// We get a simple representation for the hint, that omits some of the hint's
 					// data fields
-					String root = data.has("root") ? data.getString("root") : null;
 					String message = data.has("message") ? data.getString("message") : null;
-					String hintCode = String.join("_", root, message, Arrays.toString(from),
+					String hintCode = String.join("_", parent.id, message, Arrays.toString(from),
 							Arrays.toString(to));
 					boolean duplicate = !uniqueHints.add(hintCode);
 					boolean repeat = lastHintCode.equals(hintCode);
@@ -255,9 +254,11 @@ public class CheckHintUsage {
 					hintsSheet.put("dataset", assignment.dataset.getName());
 					hintsSheet.put("assignment", assignment.name);
 					hintsSheet.put("attemptID", attemptID);
+					hintsSheet.put("userID", attempt.userID());
 					hintsSheet.put("rowID", row.id);
 					hintsSheet.put("time", time);
-					hintsSheet.put("type", action.replace("SnapDisplay.show", "").replace("Hint", ""));
+					hintsSheet.put("type", action.replace("SnapDisplay.show", "")
+							.replace("Hint", ""));
 					hintsSheet.put("editPerc", (double)edit / edits);
 					hintsSheet.put("timePerc", timePerc);
 					hintsSheet.put("followed", followed);
@@ -318,6 +319,7 @@ public class CheckHintUsage {
 			attemptsSheet.put("dataset", assignment.dataset.getName());
 			attemptsSheet.put("assignment", assignment.name);
 			attemptsSheet.put("id", attemptID);
+			attemptsSheet.put("userID", attempt.userID());
 			attemptsSheet.put("logs", hasLogs);
 			// Hint stats
 			attemptsSheet.put("hints", nHints);
