@@ -75,5 +75,8 @@ hunting <- function() {
   
   table(sAttempts$assignment, sAttempts$highHR)
   fisher.test(table(sAttempts$assignment, sAttempts$highHR))
+  
+  cor.test(sAttempts$highHR, sAttempts$mApp) #, method="spearman")
+  
 }
 
