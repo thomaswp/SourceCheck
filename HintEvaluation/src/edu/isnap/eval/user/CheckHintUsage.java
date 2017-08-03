@@ -30,7 +30,7 @@ import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.dataset.Grade;
 import edu.isnap.datasets.Fall2015;
-import edu.isnap.datasets.HelpSeeking;
+import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.AutoGrader;
 import edu.isnap.eval.AutoGrader.Grader;
 import edu.isnap.eval.util.Prune;
@@ -45,7 +45,7 @@ public class CheckHintUsage {
 	private static final long MIN_DURATON = 5 * 60 * 1000;
 
 	public static void main(String[] args) throws IOException {
-		writeHints(HelpSeeking.instance);
+		writeHints(Spring2017.instance);
 	}
 
 	private static boolean isValidSubmission(AssignmentAttempt attempt) {
@@ -149,8 +149,8 @@ public class CheckHintUsage {
 
 					// It shouldn't be null (and isn't for this dataset)
 					if (parent == null) {
-						System.out.println(node.prettyPrint());
-						System.out.println(data);
+						System.out.println(node.prettyPrintWithIDs());
+						System.out.println(row.id + ": " + data);
 						findParent(node, data);
 						throw new RuntimeException("Parent shouldn't be null :/");
 					}

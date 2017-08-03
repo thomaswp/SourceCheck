@@ -125,7 +125,7 @@ public class SnapParser {
 
 						// For the help-seeking study the userID was stored in the Logger.started
 						// row, rather than as a separate column
-						if (action.equals(AttemptAction.IDE_OPENED) && data.length() > 0) {
+						if (action.equals(AttemptAction.IDE_OPENED) && data.length() > 2) {
 							JSONObject dataObject = new JSONObject(data);
 							if (dataObject.has("userID")) userID = dataObject.getString("userID");
 						}

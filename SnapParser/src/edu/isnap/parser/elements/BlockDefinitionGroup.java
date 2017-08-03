@@ -48,12 +48,12 @@ public class BlockDefinitionGroup {
 			BlockDefinition definition = blocks.get(i);
 			// Look through editing blocks for a match
 			for (BlockDefinition editingBlock : editing) {
-				boolean match;
+				boolean match = false;
 				if (editingBlock.guid == null && editingBlock.blockIndex != null) {
 					// If the block has no GUID and we've set a blockIndex match on that
 					match = editingBlock.blockIndex.equals(definition.blockIndex);
-				} else {
-					// Otherwise use the GUID
+				} else if (editingBlock.guid != null) {
+					// Otherwise use the GUID if it exists
 					match = editingBlock.guid.equals(definition.guid);
 				}
 				if (match) {
