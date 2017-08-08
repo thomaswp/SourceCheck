@@ -94,6 +94,11 @@ public class CheckHintUsage {
 			AssignmentAttempt attempt = attempts.get(attemptID);
 			Grade grade = attempt.grade;
 			if (grade != null && grade.outlier) continue;
+			String userIDShort = attempt.userID();
+			if (userIDShort != null && userIDShort.length() > 8) {
+				userIDShort = userIDShort.substring(
+						userIDShort.length() - 8, userIDShort.length());
+			}
 
 			int nHints = 0, nDuplicateHints = 0, nThumbsUp = 0,
 					nThumbsDown = 0, nHintsFollowed = 0, nHintsCloser = 0;
@@ -266,7 +271,7 @@ public class CheckHintUsage {
 					hintsSheet.put("dataset", assignment.dataset.getName());
 					hintsSheet.put("assignment", assignment.name);
 					hintsSheet.put("attemptID", attemptID);
-					hintsSheet.put("userID", attempt.userID());
+					hintsSheet.put("userID", userIDShort);
 					hintsSheet.put("rowID", row.id);
 					hintsSheet.put("time", time);
 					hintsSheet.put("type", action.replace("SnapDisplay.show", "")
@@ -339,7 +344,7 @@ public class CheckHintUsage {
 			attemptsSheet.put("dataset", assignment.dataset.getName());
 			attemptsSheet.put("assignment", assignment.name);
 			attemptsSheet.put("id", attemptID);
-			attemptsSheet.put("userID", attempt.userID());
+			attemptsSheet.put("userID", userIDShort);
 			attemptsSheet.put("logs", hasLogs);
 			// Hint stats
 			attemptsSheet.put("hints", nHints);
