@@ -139,31 +139,14 @@ public class CheckHintUsage {
 				// Check if this action was showing a hint
 				String action = row.message;
 				if (SHOW_HINT_MESSAGES.contains(action)) {
-					nHints++;
 
 					// Get the data from this event
 					JSONObject data = new JSONObject(row.data);
 
-					// Find the parent node that this hint affects
-					Node parent = findParent(row.message, code, node, data);
-
-					// It shouldn't be null (and isn't for this dataset)
-					if (parent == null) {
-						System.out.println(node.prettyPrintWithIDs());
-						System.out.println(row.id + ": " + data);
-						findParent(node, data);
-						throw new RuntimeException("Parent shouldn't be null :/");
-					}
-
 					// Read the list of nodes that the hint is telling to use for the parent's new
 					// children
 					JSONArray toArray = data.getJSONArray("to");
-					String[] to = new String[toArray.length()];
-					for (int j = 0; j < to.length; j++) {
-						to[j] = toArray.getString(j)
-								// We changed the name, so make the hint match the parser
-								.replace("doCustomBlock", "evaluateCustomBlock");
-					}
+					String[] to = toChildArray(toArray);
 
 					JSONArray fromArray;
 					if (data.has("from")) {
@@ -171,13 +154,46 @@ public class CheckHintUsage {
 					} else {
 						fromArray = data.getJSONArray("fromList").getJSONArray(0);
 					}
-					String[] from = new String[fromArray.length()];
-					for (int j = 0; j < from.length; j++) {
-						from[j] = fromArray.getString(j)
-								// We changed the name, so make the hint match the parser
-								.replace("doCustomBlock", "evaluateCustomBlock");
+					String[] from = toChildArray(fromArray);
+
+					// Find the parent node that this hint affects
+					Node parent = findParent(row.message, code, node, data);
+
+					// Zombie hints are those that stuck around longer than they should have due to
+					// a client-side bug, fixed in b34fdab
+					boolean zombieHint = false;
+
+					// The parent shouldn't be null
+					if (parent == null) {
+						// Due to the zombie hint bug, if the parent is null, we can look back
+						// through previous snapshots for a version of the code compatible with
+						// this hint and use that node are the parent. Note that this zombie hint
+						// doesn't make sense for traditional analysis, since it may not match
+						// the student's current code
+						zombieHint = true;
+						for (int j = 1; j <= i; j++) {
+							Snapshot previous = attempt.rows.get(i - j).snapshot;
+							if (previous == null) continue;
+							Node potentialParent =
+									findParent(SimpleNodeBuilder.toTree(previous, true), data);
+							if (potentialParent != null) {
+								if (Arrays.equals(potentialParent.getChildArray(), from)) {
+									parent = potentialParent;
+									break;
+								}
+							}
+						}
 					}
-					// And apply this to get a new parent node
+
+					if (parent == null) {
+						System.out.println(node.prettyPrintWithIDs());
+						findParent(node, data);
+						System.out.println(attempt.id + "/" + row.id + ": " + data);
+						throw new RuntimeException("Parent shouldn't be null :/");
+					}
+
+
+					// And apply the hint to the parent to get an outcome parent node
 					Node hintOutcome = VectorHint.applyHint(parent, to);
 
 					boolean delete = false;
@@ -236,10 +252,6 @@ public class CheckHintUsage {
 							followed = true;
 						}
 					}
-					if (gotCloser) nHintsCloser++;
-					if (followed) {
-						nHintsFollowed++;
-					}
 
 					// We get a simple representation for the hint, that omits some of the hint's
 					// data fields
@@ -247,7 +259,6 @@ public class CheckHintUsage {
 					String hintCode = String.join("_", parent.id, message, Arrays.toString(from),
 							Arrays.toString(to));
 					boolean duplicate = !uniqueHints.add(hintCode);
-					if (duplicate) nDuplicateHints++;
 					boolean repeat = lastHintCode.equals(hintCode);
 					lastHintCode = hintCode;
 
@@ -267,6 +278,7 @@ public class CheckHintUsage {
 					hintsSheet.put("change", nodeChange);
 					hintsSheet.put("duplicate", duplicate);
 					hintsSheet.put("repeat", repeat);
+					hintsSheet.put("zombie", zombieHint);
 
 					// Determine how long the hint was kept up before being closed
 					long dismissTime = 0;
@@ -298,8 +310,15 @@ public class CheckHintUsage {
 
 					hintsSheet.put("codeHash", code.toCode(false).hashCode());
 					hintsSheet.put("diff", HintPrinter.hintToString(node, hintOutcome));
-				}
 
+					// Don't increase cumulative stats for zombie hints
+					if (zombieHint) continue;
+
+					nHints++;
+					if (duplicate) nDuplicateHints++;
+					if (followed) nHintsFollowed++;
+					if (gotCloser) nHintsCloser++;
+				}
 
 				// Check if this action was dismissing a hint
 				if (HINT_DIALOG_LOG_FEEDBACK.equals(action)) {
@@ -348,6 +367,21 @@ public class CheckHintUsage {
 				attemptsSheet.put("gradePC", score / 2.0 / i);
 			}
 		}
+	}
+
+	protected static String[] toChildArray(JSONArray jsonArray) {
+		// Remove the prototypeHatBlock blocks from the array so they match Nodes
+		if (jsonArray.length() > 0 &&
+				jsonArray.getString(0).equals("prototypeHatBlock")) {
+			jsonArray.remove(0);
+		}
+		String[] to = new String[jsonArray.length()];
+		for (int j = 0; j < to.length; j++) {
+			to[j] = jsonArray.getString(j)
+					// We changed the name, so make the hint match the parser
+					.replace("doCustomBlock", "evaluateCustomBlock");
+		}
+		return to;
 	}
 
 	@SuppressWarnings("unused")
