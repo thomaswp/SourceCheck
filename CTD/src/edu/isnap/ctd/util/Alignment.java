@@ -63,6 +63,10 @@ public class Alignment {
 				continue;
 			}
 
+			// We count a replacement as no match, since this is the expected behavior for
+			// the current uses of this funciton, though it may be a bit unusual
+			pairs.add(new int[] {-1, j});
+			pairs.add(new int[] {i, -1});
 			i++; j++;
 
 			// Don't see why this should ever need to happen. It means none of the above worked

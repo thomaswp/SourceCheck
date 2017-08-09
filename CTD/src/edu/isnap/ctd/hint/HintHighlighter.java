@@ -139,25 +139,31 @@ public class HintHighlighter {
 				// Start by finding parent nodes that have a pair
 				Node pair = mapping.getFrom(node);
 				if (pair != null) {
+
+					// For clarity, this routine handles reorders for nodes that _are_ children
+					// of a paired code element node (first), then it handles reorders for the
+					// _children of_ non-code-element nodes (second)
+
 					// Argument nodes are easy, since their order should be the same as their pair
 					if (node.parent != null && node.parent == mapping.getTo(pair.parent) &&
-							isCodeElement(node.parent) &&
-							// Make sure the two code elements have the same number of children
-							node.parent.children.size() == pair.parent.children.size()) {
+							isCodeElement(node.parent)) {
 
 						int pairIndex = pair.index();
-						if (node.index() != pairIndex) {
+						// If the indices don't match and the pair's index fits within the parent's
+						// arguments, reorder the node
+						if (node.index() != pairIndex && pairIndex < node.parent.children.size()) {
 							// I think this should happen even if we suppress the reorder, but I'm
 							// not 100% sure...
 							colors.put(node, Highlight.Order);
 
-							Reorder reorder = new Reorder(node, pairIndex);
+							Reorder reorder = new Reorder(node, pairIndex, true);
 							if (!reorder.shouldSuppress(mapping)) edits.add(reorder);
 
 						}
-						// We don't return here, since these nodes could have children that need to
-						// be reordered, as addressed below
 					}
+
+					// The below is for non-code-elements (scripts), since it involves insertion
+					if (isCodeElement(node)) return;
 
 					// Instead of aligning the node types, which might repeat, we align the original
 					// node indices (1, 2, 3...) with the order those node-indices appear in the
@@ -220,8 +226,7 @@ public class HintHighlighter {
 									break;
 								}
 							}
-
-							Reorder reorder = new Reorder(toReorder, index);
+							Reorder reorder = new Reorder(toReorder, index, false);
 							if (!reorder.shouldSuppress(mapping)) edits.add(reorder);
 						}
 					}
@@ -431,7 +436,7 @@ public class HintHighlighter {
 	// which is a script. This precludes snapshots, sprites, custom blocks, variables, etc,
 	// while including blocks and lists
 	private final boolean isCodeElement(Node node) {
-		return !node.hasType(config.script) &&
+		return node != null && !node.hasType(config.script) &&
 				node.hasAncestor(new Node.TypePredicate(config.script));
 	}
 
@@ -590,7 +595,8 @@ public class HintHighlighter {
 				if (sameType && matchParent && insertion.parent.hasType(config.script) &&
 						insertion.index != deleted.index()) {
 					colors.put(deleted, Highlight.Move);
-					Reorder reorder = new Reorder(deleted, insertion.index);
+					Reorder reorder = new Reorder(deleted, insertion.index,
+							isCodeElement(deleted.parent));
 					if (!reorder.shouldSuppress(mapping)) toAdd.add(reorder);
 					toRemove.add(deletion);
 					toRemove.add(insertion);
@@ -1025,21 +1031,27 @@ public class HintHighlighter {
 	public static class Reorder extends EditHint {
 		public final Node node;
 		public final int index;
+		// If a reorder is in-place, it means it is for a code-element, and the children do not
+		// "shift" when a node is removed.
+		public final boolean inPlace;
 
 		@Override
 		protected String action() {
 			return "reorder";
 		}
 
-		public Reorder(Node node, int index) {
+		public Reorder(Node node, int index, boolean inPlace) {
 			super(node.parent);
 			this.node = node;
 			this.index = index;
+			this.inPlace = inPlace;
 			if (index < 0 || index > node.parent.children.size()) {
 				storeException("Reorder index out of bounds: " + index + " for size " +
 						node.parent.children.size());
 			}
-			if (index == node.index()) {
+			// A reorder is empty if it keeps its index _or_ it it is set to insert "after itself"
+			// in a script, which happens if inPlace is false and the index is the node's plus 1
+			if (index == node.index() || (!inPlace && index == node.index() + 1)) {
 				storeException("Empty reorder");
 			}
 		}
@@ -1052,7 +1064,7 @@ public class HintHighlighter {
 			int rIndex = node.index();
 			int aIndex = index;
 			// Adjust the add index if the remove index is less than it
-			if (rIndex < aIndex) aIndex--;
+			if (rIndex < aIndex && !inPlace) aIndex--;
 			if (aIndex >= 0 && aIndex < parent.children.size()) {
 				Node displacedNode = node.parent.children.get(aIndex);
 				// We need to get the node pairs from the mapping because only to-nodes have
@@ -1081,7 +1093,7 @@ public class HintHighlighter {
 		protected void editChildren(List<String> children) {
 			int rIndex = node.index();
 			int aIndex = index;
-			if (rIndex < aIndex) aIndex--;
+			if (rIndex < aIndex && !inPlace) aIndex--;
 			children.add(aIndex, children.remove(rIndex));
 		}
 
