@@ -181,7 +181,6 @@ public class Agreement {
 			HashMap<String, EditDifference> comps = new LinkedHashMap<>();
 
 			ListMap<String, Integer> totalCompEdits = new ListMap<>();
-			int snapshotCount = 0;
 
 			for (String row : expertMap.keySet()) {
 				if (!assignmentMap.get(row).equals(assignment.name)) continue;
@@ -208,7 +207,6 @@ public class Agreement {
 				for (String keyB : comparisonRowMap.keySet()) {
 					totalCompEdits.add(keyB, comparisonRowMap.get(keyB).size());
 				}
-				snapshotCount++;
 			}
 
 			for (String key : totalCompEdits.keySet()) {
@@ -366,6 +364,7 @@ public class Agreement {
 		return node;
 	}
 
+	@SuppressWarnings("unused")
 	private static List<EditHint> findEdits(Snapshot from, Snapshot to) {
 		Node fromNode = SimpleNodeBuilder.toTree(from, true, ider);
 		Node toNode = SimpleNodeBuilder.toTree(to, true, ider);

@@ -53,11 +53,11 @@ public class ProgressAttributes implements AttributeGenerator {
 
 			Node currentCode = attemptMap.get(attempt);
 			Node goodMatch = NodeAlignment.findBestMatch(
-					currentCode, otherGoodSubmitted, distanceMeasure);
+					currentCode, otherGoodSubmitted, distanceMeasure).to;
 			matches.put(attempt.id, goodMatch);
 
 			Node closestMatch = NodeAlignment.findBestMatch(
-					currentCode, otherSubmitted, distanceMeasure);
+					currentCode, otherSubmitted, distanceMeasure).to;
 			grades.put(attempt.id, submittedGrades.get(closestMatch));
 		}
 	}
@@ -65,10 +65,10 @@ public class ProgressAttributes implements AttributeGenerator {
 	@Override
 	public void addAttributes(Spreadsheet spreadsheet, AssignmentAttempt attempt, Node node) {
 		Node match = matches.get(attempt.id);
-		double progress = -new NodeAlignment(node, match).calculateCost(
-				distanceMeasure);
-		double maxProgress = -new NodeAlignment(node, node).calculateCost(
-				distanceMeasure);
+		double progress = -new NodeAlignment(node, match).calculateMapping(
+				distanceMeasure).cost();
+		double maxProgress = -new NodeAlignment(node, node).calculateMapping(
+				distanceMeasure).cost();
 		spreadsheet.put("closestGrade", grades.get(attempt.id));
 		spreadsheet.put("progress", progress);
 		spreadsheet.put("pProgress", progress / maxProgress);

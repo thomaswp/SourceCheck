@@ -23,6 +23,7 @@ import edu.isnap.ctd.util.Alignment;
 import edu.isnap.ctd.util.Cast;
 import edu.isnap.ctd.util.NodeAlignment;
 import edu.isnap.ctd.util.NodeAlignment.DistanceMeasure;
+import edu.isnap.ctd.util.NodeAlignment.Mapping;
 import edu.isnap.ctd.util.NodeAlignment.ProgressDistanceMeasure;
 import edu.isnap.ctd.util.map.BiMap;
 import edu.isnap.ctd.util.map.CountMap;
@@ -432,6 +433,23 @@ public class HintHighlighter {
 		}
 	}
 
+	public List<EditHint> highlightConsensus(Node node, double stdevsFromMin,
+			double consensusThreshold) {
+
+		List<Mapping> matches = NodeAlignment.findBestMatches(
+				node, solutions, getDistanceMeasure(config), stdevsFromMin);
+
+		List<List<EditHint>> hintSets = new ArrayList<>();
+		for (Mapping mapping : matches) {
+			hintSets.add(highlight(node, mapping));
+		}
+
+		// TODO: finish
+
+		List<EditHint> hints = new LinkedList<>();
+		return hints;
+	}
+
 	// Code elements (blocks) are nodes which are not themselves scripts but have an ancestor
 	// which is a script. This precludes snapshots, sprites, custom blocks, variables, etc,
 	// while including blocks and lists
@@ -444,38 +462,21 @@ public class HintHighlighter {
 		return new ProgressDistanceMeasure(config);
 	}
 
-	private BiMap<Node, Node> findSolutionMapping(Node node) {
+	private Mapping findSolutionMapping(Node node) {
 		DistanceMeasure dm = getDistanceMeasure(config);
 		long startTime = System.currentTimeMillis();
-		Node bestMatch = NodeAlignment.findBestMatch(node, solutions, dm);
+		Mapping bestMatch = NodeAlignment.findBestMatch(node, solutions, dm);
 		if (bestMatch == null) throw new RuntimeException("No matches!");
-
-		NodeAlignment alignment = new NodeAlignment(node, bestMatch);
-		alignment.calculateCost(dm);
 
 		if (consoleOutput) {
 			System.out.println("------------------------------");
 //			System.out.println(node.prettyPrint());
 //			System.out.println("++++++++++");
 			System.out.println("Time to match: " + (System.currentTimeMillis() - startTime));
-			System.out.println(prettyPrintMatching(bestMatch, alignment.mapping));
+			System.out.println(bestMatch.prettyPrint());
 		}
 
-		return alignment.mapping;
-	}
-
-	public static String prettyPrintMatching(Node to, final BiMap<Node, Node> mapping) {
-		final IdentityHashMap<Node, String> labels = new IdentityHashMap<>();
-		to.recurse(new Action() {
-			@Override
-			public void run(Node node) {
-				Node pair = mapping.getTo(node);
-				if (pair != null) {
-					labels.put(node, pair.id);
-				}
-			}
-		});
-		return to.prettyPrint(labels);
+		return bestMatch;
 	}
 
 
