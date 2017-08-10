@@ -10,8 +10,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import edu.isnap.ctd.hint.HintHighlighter;
-import edu.isnap.ctd.hint.HintHighlighter.EditHint;
 import edu.isnap.ctd.hint.HintJSON;
+import edu.isnap.ctd.hint.edit.EditHint;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;

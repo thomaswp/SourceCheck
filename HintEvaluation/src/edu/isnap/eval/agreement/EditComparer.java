@@ -10,10 +10,10 @@ import org.apache.commons.csv.CSVPrinter;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
-import edu.isnap.ctd.hint.HintHighlighter.Deletion;
-import edu.isnap.ctd.hint.HintHighlighter.EditHint;
-import edu.isnap.ctd.hint.HintHighlighter.Insertion;
-import edu.isnap.ctd.hint.HintHighlighter.Reorder;
+import edu.isnap.ctd.hint.edit.Deletion;
+import edu.isnap.ctd.hint.edit.EditHint;
+import edu.isnap.ctd.hint.edit.Insertion;
+import edu.isnap.ctd.hint.edit.Reorder;
 import edu.isnap.ctd.util.Cast;
 
 public class EditComparer {
