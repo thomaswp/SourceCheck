@@ -14,6 +14,7 @@ import edu.isnap.datasets.HelpSeekingExperts;
 import edu.isnap.datasets.Samples;
 import edu.isnap.datasets.Spring2016;
 import edu.isnap.datasets.Spring2017;
+import edu.isnap.datasets.aggregate.CSC200;
 import edu.isnap.parser.LogSplitter;
 import edu.isnap.parser.ParseSubmitted;
 import edu.isnap.parser.SnapParser;
@@ -23,6 +24,7 @@ import edu.isnap.unittest.TestRunner;
 public class Shell {
 
 	public final static Dataset[] DATASETS = {
+			CSC200.instance,
 			Fall2015.instance,
 			Spring2016.instance,
 			Fall2016.instance,

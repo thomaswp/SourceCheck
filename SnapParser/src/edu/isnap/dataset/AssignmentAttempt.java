@@ -28,6 +28,8 @@ public class AssignmentAttempt implements Iterable<AttemptAction> {
 	public int totalIdleTime;
 	/** The number of work segments, divided by {@link SnapParser#SKIP_DURATION} */
 	public int timeSegments;
+	/** Whether the snapshots in this assignment have node IDs. Set by Assignment.load() */
+	public boolean hasIDs;
 
 	/** Returns true if this attempt is known not to have been submitted for grading. */
 	public boolean isUnsubmitted() {

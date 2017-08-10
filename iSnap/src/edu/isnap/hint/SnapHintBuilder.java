@@ -42,6 +42,7 @@ public class SnapHintBuilder {
 
 	private Map<String, List<Node>> nodeMapCache;
 	private Map<String, Grade> gradeMapCache;
+	private Map<String, Boolean> hasIDsMap;
 
 	/**
 	 * Gets a map of attemptIDs to Node lists, where each list of Nodes represents
@@ -142,7 +143,7 @@ public class SnapHintBuilder {
 			if (student.equals(testAttempt)) continue;
 
 			Grade grade = gradeMapCache.get(student);
-			if (grade != null && grade.average() < minGrade) continue;
+			if (grade == null || grade.average() < minGrade) continue;
 
 			final List<Node> nodes = nodeMap().get(student);
 			if (nodes.size() == 0) continue;
@@ -159,7 +160,7 @@ public class SnapHintBuilder {
 					}
 					if (studentMap == null) {
 //						System.out.println(fStudent);
-						studentMap = builder.addAttempt(nodes, assignment.hasIDs);
+						studentMap = builder.addAttempt(nodes, hasIDsMap.get(fStudent));
 						synchronized (studentSubtreeCache) {
 							studentSubtreeCache.put(fStudent, studentMap);
 						}
@@ -187,6 +188,7 @@ public class SnapHintBuilder {
 				new SnapParser.LikelySubmittedOnly());
 		nodeMapCache = new TreeMap<>();
 		gradeMapCache = new TreeMap<>();
+		hasIDsMap = new TreeMap<>();
 
 		for (String attemptID : students.keySet()) {
 			AssignmentAttempt attempt = students.get(attemptID);
@@ -204,6 +206,7 @@ public class SnapHintBuilder {
 
 			nodeMapCache.put(attemptID, nodes);
 			gradeMapCache.put(attemptID, attempt.grade);
+			hasIDsMap.put(attemptID, attempt.hasIDs);
 		}
 	}
 
