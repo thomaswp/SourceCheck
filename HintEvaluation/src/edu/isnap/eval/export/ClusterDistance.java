@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +19,8 @@ import org.apache.commons.csv.CSVPrinter;
 
 import distance.RTED_InfoTree_Opt;
 import edu.isnap.ctd.graph.Node;
+import edu.isnap.ctd.hint.HintConfig;
+import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.util.Alignment;
 import edu.isnap.ctd.util.KMedoids.DistanceMeasure;
 import edu.isnap.ctd.util.map.DoubleMap;
@@ -69,6 +72,19 @@ public class ClusterDistance {
 			String[] bDF = b.depthFirstIteration();
 			Arrays.sort(bDF);
 			return Alignment.alignCost(aDF, bDF, 1, 1, 100);
+		}
+	};
+
+	public final static DistanceMeasure<Node> EditCountMeasure = new DistanceMeasure<Node>() {
+		@Override
+		public double measure(Node a, Node b) {
+			List<Node> la = Collections.singletonList(a);
+			List<Node> lb = Collections.singletonList(b);
+			HintConfig config = new HintConfig();
+			config.preprocessSolutions = false;
+			int editsA = new HintHighlighter(la, config).highlight(b).size();
+			int editsB = new HintHighlighter(lb, config).highlight(a).size();
+			return (editsA + editsB) / 2.0;
 		}
 	};
 
