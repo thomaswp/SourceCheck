@@ -85,11 +85,14 @@ public class HierarchicalCluster {
 			int in = sc.nextInt();
 			if (in == 0) {
 				cluster = cluster.getParent();
+			} else if (in < 0) {
+				break;
 			} else {
 				cluster = cluster.getChildren().get(in-1);
 			}
 			System.out.println("\n====================================\n");
 		}
+		sc.close();
 	}
 
 	private List<Node> getLeaves(Cluster cluster, ListMap<Cluster, Node> leafMap) {
