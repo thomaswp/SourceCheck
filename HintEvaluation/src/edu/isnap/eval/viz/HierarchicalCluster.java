@@ -75,10 +75,10 @@ public class HierarchicalCluster {
 		while (true) {
 			String parent = medoids.get(cluster).prettyPrint();
 			System.out.println(parent);
-			System.out.println("Children: ");
+			System.out.printf("Children (%d): \n", cluster.countLeafs());
 			for (int i = 1; i <= cluster.getChildren().size(); i++) {
-				System.out.println(i + ": ");
 				Cluster child = cluster.getChildren().get(i-1);
+				System.out.printf("#%d (%d): ", i, child.countLeafs());
 				String diff = Diff.diff(parent, medoids.get(child).prettyPrint());
 				System.out.println(diff);
 			}
