@@ -26,7 +26,7 @@ import edu.isnap.parser.Store.Mode;
 public class FindRules {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
-		Assignment assignment = CSC200.GuessingGame2;
+		Assignment assignment = CSC200.Squiral;
 		double threshold = 0.05;
 
 		Map<String, Node> submissions = assignment.load(Mode.Use, true, true,
@@ -38,6 +38,7 @@ public class FindRules {
 						a -> SimpleNodeBuilder.toTree(a.submittedSnapshot, true)));
 
 		int n = submissions.size();
+		System.out.println(assignment.name);
 		System.out.println("N = " + n);
 		int minThresh = (int) Math.ceil(n * threshold);
 
