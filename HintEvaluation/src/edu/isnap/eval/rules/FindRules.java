@@ -68,7 +68,7 @@ public class FindRules {
 			for (int count = 1; ; count++) {
 				int fCount = count;
 				int passing = (int) counts.stream().filter(c -> c >= fCount).count();
-				if (passing >= minThresh) rules.add(new BaseRule(key, count, (double) passing / n));
+				if (passing >= minThresh) rules.add(new BaseRule(key, count));
 				else break;
 			}
 		}
@@ -168,13 +168,17 @@ public class FindRules {
 		return list.toString();
 	}
 
+	public static List<Rule> getRules(Node node) {
+		// TODO
+		return null;
+	}
+
 	static abstract class Rule implements Comparable<Rule> {
 
 		public final Set<String> followers = new HashSet<>();
 		public final Set<String> ignorers = new HashSet<>();
 
 		public abstract String name();
-		public abstract double support();
 
 		public int followCount() {
 			return followers.size();
@@ -182,6 +186,10 @@ public class FindRules {
 
 		public int ignoreCount() {
 			return ignorers.size();
+		}
+
+		public double support() {
+			return (double) followCount() / (followCount() + ignoreCount());
 		}
 
 		public int countIntersect(BaseRule rule) {
@@ -211,16 +219,14 @@ public class FindRules {
 
 	static class BaseRule extends Rule {
 		public final String rootPath;
-		public final int depth;
 		public final int count;
-		public final double support;
+		public final int depth;
 
-		public BaseRule(String rootPath, int count, double support) {
+		public BaseRule(String rootPath, int count) {
 			this.rootPath = rootPath;
 			// Count commas for depth
 			this.depth = rootPath.length() - rootPath.replace(",", "").length();
 			this.count = count;
-			this.support = support;
 		}
 
 		@Override
@@ -229,15 +235,15 @@ public class FindRules {
 		}
 
 		@Override
-		public double support() {
-			return support;
-		}
-
-		@Override
 		public int compareTo(Rule o) {
 			int sc = super.compareTo(o);
 			if (sc != 0 || !(o instanceof BaseRule)) return sc;
 			return -Integer.compare(depth, ((BaseRule) o).depth);
+		}
+
+		public boolean follows(BaseRule rule) {
+			// Depth is calculated from RP, so shouldn't be needed
+			return rule.rootPath.equals(rootPath) && rule.count >= count;
 		}
 	}
 
@@ -260,11 +266,6 @@ public class FindRules {
 		public String name() {
 			return "\t" + String.join(" OR \n\t\t",
 					rules.stream().map(r -> (CharSequence) r.toString())::iterator);
-		}
-
-		@Override
-		public double support() {
-			return (double) followCount() / (followCount() + ignoreCount());
 		}
 
 	}
