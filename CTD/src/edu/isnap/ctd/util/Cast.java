@@ -7,7 +7,7 @@ import java.io.InputStream;
 public class Cast {
 
 	public static <T> T cast(Object o, Class<T> clazz) {
-		if (o != null && clazz.isAssignableFrom(o.getClass())) return clazz.cast(o);
+		if (clazz.isInstance(o)) return clazz.cast(o);
 		return null;
 	}
 
