@@ -5,9 +5,9 @@ This repository contains projects for parsing Snap logs, generating data-driven 
 * SnapParser
 * CTD
   * iSnap
-    * Hint Evaluation
     * Hint Server
     * Datasets
+      * Hint Evaluation
 
 ## Setup
 
