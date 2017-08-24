@@ -44,6 +44,19 @@ public class HintConfig {
 	 * out of order
 	 */
 	public double progressMissingFactor = 0.1;
+	/**
+	 * If true, infers decision rules about correct solutions and uses these to filter solutions
+	 * based on the decisions that the hint-requesting student has made.
+	 */
+	public boolean useRulesToFilter = true;
+	/**
+	 * The minimum number of solutions to return when filtering using decision rules.
+	 */
+	public int minRuleFilterSolutions = 5;
+	/**
+	 * The minimum support for extracted decision rules.
+	 */
+	public double ruleSupportThreshold = 0.05;
 
 	/**
 	 * Code elements that have exactly one script child or unordered children and therefore should

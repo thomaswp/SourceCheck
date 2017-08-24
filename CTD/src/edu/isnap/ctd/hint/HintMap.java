@@ -22,10 +22,15 @@ public class HintMap {
 
 	public final List<Node> solutions = new ArrayList<>();
 
+	RuleSet ruleSet;
 	final HintConfig config;
 
 	public HintConfig getHintConfig() {
 		return config;
+	}
+
+	public RuleSet getRuleSet() {
+		return ruleSet;
 	}
 
 	@SuppressWarnings("unused")
@@ -166,6 +171,7 @@ public class HintMap {
 			graph.generateAndRemoveEdges(config.maxEdgeAddDistance, config.maxEdgeDistance);
 			graph.bellmanBackup(config.pruneGoals);
 		}
+		ruleSet = new RuleSet(solutions, config);
 	}
 
 	public void addMap(HintMap hintMap) {

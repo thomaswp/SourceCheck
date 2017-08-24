@@ -37,14 +37,20 @@ public class HintHighlighter {
 
 	private final List<Node> solutions;
 	private final HintConfig config;
+	private final RuleSet ruleSet;
 
 	public HintHighlighter(HintMap hintMap) {
-		this(hintMap.solutions, hintMap.config);
+		this(hintMap.solutions, hintMap.ruleSet, hintMap.config);
 	}
 
 	public HintHighlighter(List<Node> solutions, HintConfig config) {
+		this(solutions, null, config);
+	}
+
+	public HintHighlighter(List<Node> solutions, RuleSet ruleSet, HintConfig config) {
 		this.solutions = config.preprocessSolutions ?
 				preprocessSolutions(solutions, config) : solutions;
+		this.ruleSet = ruleSet;
 		this.config = config;
 	}
 
@@ -462,7 +468,9 @@ public class HintHighlighter {
 	private Mapping findSolutionMapping(Node node) {
 		DistanceMeasure dm = getDistanceMeasure(config);
 		long startTime = System.currentTimeMillis();
-		Mapping bestMatch = NodeAlignment.findBestMatch(node, solutions, dm);
+		List<Node> filteredSolutions = ruleSet == null ? solutions :
+			ruleSet.filterSolutions(solutions, node);
+		Mapping bestMatch = NodeAlignment.findBestMatch(node, filteredSolutions, dm);
 		if (bestMatch == null) throw new RuntimeException("No matches!");
 
 		if (consoleOutput) {
