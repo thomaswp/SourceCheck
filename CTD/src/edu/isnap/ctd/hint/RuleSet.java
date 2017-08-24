@@ -88,26 +88,39 @@ public class RuleSet implements Serializable {
 
 		}
 
-		List<BaseRule> rules = new ArrayList<>();
+		List<Rule> rules = new ArrayList<>();
 		for (String key : countMap.keySet()) {
 			List<Integer> counts = countMap.get(key);
 			for (int count = 1; ; count++) {
 				int fCount = count;
 				int passing = (int) counts.stream().filter(c -> c >= fCount).count();
-				if (passing >= minThresh) rules.add(new BaseRule(key, count));
+				// A rule isn't interesting if it applies to very little or everything
+				if (passing >= minThresh && passing < n) rules.add(new BaseRule(key, count));
 				else break;
 			}
 		}
 
 		for (String id : supportMap.keySet()) {
 			CountMap<String> counts = supportMap.get(id);
-			for (BaseRule rule : rules) {
-				if (counts.getCount(rule.rootPath) >= rule.count) rule.followers.add(id);
+			for (Rule rule : rules) {
+				if (rule.followedBy(counts)) rule.followers.add(id);
 				else rule.ignorers.add(id);
 			}
 		}
 
-		removeDuplicateRules(rules);
+		removeDuplicateRulesAndSort(rules);
+
+		int nRules = rules.size();
+		for (int i = 0; i < nRules; i++) {
+			for (int j = i + 1; j < nRules; j++) {
+				Rule ruleA = rules.get(i), ruleB = rules.get(j);
+				Conjunction conj = new Conjunction();
+				conj.addRule(ruleA); conj.addRule(ruleB);
+				if (conj.support() >= config.ruleSupportThreshold) rules.add(conj);
+			}
+		}
+
+		removeDuplicateRulesAndSort(rules);
 
 		System.out.println(); System.out.println();
 		rules.stream().forEach(System.out::println);
@@ -126,22 +139,10 @@ public class RuleSet implements Serializable {
 		//		}
 		//		out.write(assignment.analysisDir() + "/rules.csv");
 
-		//		for (int i = 0; i < nRules; i++) {
-		//			for (int j = i + 1; j < nRules; j++) {
-		//				Rule ruleA = rules.get(i), ruleB = rules.get(j);
-		//				int smaller = Math.min(ruleA.followCount(), ruleB.followCount());
-		//				int intersect = ruleA.countIntersect(ruleB);
-		//				int union = ruleA.countUnion(ruleB);
-		//
-		//				if (intersect < smaller * 0.25 && union >= n * 0.75) {
-		//					System.out.printf("%d%% (%02d): %s\n          %s\n",
-		//							(union * 100 / n), intersect, ruleA, ruleB);
-		//				}
-		//			}
-		//		}
+
 	}
 
-	private void removeDuplicateRules(List<BaseRule> rules) {
+	private void removeDuplicateRulesAndSort(List<Rule> rules) {
 		Collections.sort(rules);
 		int nRules = rules.size();
 		double[][] jaccardMatrix = new double[nRules][nRules];
@@ -151,7 +152,7 @@ public class RuleSet implements Serializable {
 						rules.get(i).jaccardDistance(rules.get(j));
 			}
 		}
-		List<BaseRule> toRemove = new ArrayList<>();
+		List<Rule> toRemove = new ArrayList<>();
 		for (int i = 0; i < nRules; i++) {
 			for (int j = nRules - 1; j > i; j--) {
 				if (rules.get(i).jaccardDistance(rules.get(j)) >= 0.975) {
@@ -165,18 +166,18 @@ public class RuleSet implements Serializable {
 		rules.removeAll(toRemove);
 	}
 
-	private List<Disjunction> extractDecisions(List<BaseRule> rules) {
+	private List<Disjunction> extractDecisions(List<Rule> sortedRules) {
 		List<Disjunction> decisions = new ArrayList<>();
-		for (int i = rules.size() - 1; i >= 0; i--) {
+		for (int i = sortedRules.size() - 1; i >= 0; i--) {
 			Disjunction disjunction = new Disjunction();
-			disjunction.addRule(rules.get(i));
+			disjunction.addRule(sortedRules.get(i));
 
 			while (disjunction.support() < 1) {
 				// TODO: config
 				double bestRatio = 0.4;
-				BaseRule bestRule = null;
+				Rule bestRule = null;
 				for (int j = i - 1; j >= 0; j--) {
-					BaseRule candidate = rules.get(j);
+					Rule candidate = sortedRules.get(j);
 					int intersect = disjunction.countIntersect(candidate);
 					double ratio = (double) intersect / candidate.followCount();
 					if (ratio < bestRatio) {
@@ -250,16 +251,16 @@ public class RuleSet implements Serializable {
 			return (double) followCount() / (followCount() + ignoreCount());
 		}
 
-		public int countIntersect(BaseRule rule) {
+		public int countIntersect(Rule rule) {
 			return (int) followers.stream().filter(rule.followers::contains).count();
 		}
 
-		public int countUnion(BaseRule rule) {
+		public int countUnion(Rule rule) {
 			return (int) Stream.concat(followers.stream(), rule.followers.stream())
 					.distinct().count();
 		}
 
-		public double jaccardDistance(BaseRule rule) {
+		public double jaccardDistance(Rule rule) {
 			int intersect = countIntersect(rule);
 			return (double)intersect / (followCount() + rule.followCount() - intersect);
 		}
@@ -315,6 +316,35 @@ public class RuleSet implements Serializable {
 		}
 	}
 
+	static class Conjunction extends Rule {
+		private static final long serialVersionUID = 1L;
+
+		private List<Rule> rules = new ArrayList<>();
+
+		public void addRule(Rule rule) {
+			rules.add(rule);
+			if (rules.size() == 1) {
+				// If this is the first rule, set the followers equal to that rules'
+				followers.addAll(rule.followers);
+			} else {
+				followers.retainAll(rule.followers);
+			}
+			ignorers.addAll(rule.ignorers);
+		}
+
+		@Override
+		public String name() {
+			return "(" + String.join(" AND ",
+					rules.stream().map(r -> (CharSequence) r.name())::iterator) + ")";
+		}
+
+		@Override
+		protected boolean followedBy(CountMap<String> countMap) {
+			return rules.stream().allMatch(r -> r.followedBy(countMap));
+		}
+
+	}
+
 	static class Disjunction extends Rule {
 		private static final long serialVersionUID = 1L;
 
@@ -333,7 +363,7 @@ public class RuleSet implements Serializable {
 
 		@Override
 		public String name() {
-			return "\t" + String.join(" OR \n\t\t",
+			return "\t" + String.join(" OR\n\t\t",
 					rules.stream().map(r -> (CharSequence) r.toString())::iterator);
 		}
 
