@@ -46,15 +46,7 @@ public class FindRules {
 		ListMap<String, Integer> countMap = new ListMap<>();
 		for (String submittedID : submissions.keySet()) {
 			Node submission = submissions.get(submittedID);
-			CountMap<String> counts = new CountMap<>();
-			submission.recurse(new Action() {
-				@Override
-				public void run(Node node) {
-					Node rootPath = HintMap.toRootPath(node).root();
-					String key = makeKey(rootPath);
-					counts.change(key, 1);
-				}
-			});
+			CountMap<String> counts = getCountMap(submission);
 			for (String key : counts.keySet()) {
 				countMap.add(key, counts.get(key));
 			}
@@ -158,6 +150,56 @@ public class FindRules {
 		//		}
 	}
 
+	private static CountMap<String> getCountMap(Node submission) {
+		CountMap<String> counts = new CountMap<>();
+		submission.recurse(new Action() {
+			@Override
+			public void run(Node node) {
+				Node rootPath = HintMap.toRootPath(node).root();
+				String key = makeKey(rootPath);
+				counts.change(key, 1);
+			}
+		});
+		return counts;
+	}
+
+	public static Map<String, BaseRule> getRules(Node node) {
+		CountMap<String> countMap = getCountMap(node);
+		return countMap.keySet().stream().collect(Collectors.toMap(
+				k -> k,
+				k -> new BaseRule(k, countMap.get(k))));
+	}
+
+	public static Set<String> getCompatibleIDs(Node node, Set<String> ids,
+			List<Disjunction> choiceSets, int minCount) {
+		CountMap<String> countMap = getCountMap(node);
+
+		List<Set<String>> idSets = choiceSets.stream().map(d -> d.getAgreeingIDs(countMap))
+				.collect(Collectors.toList());
+		CountMap<String> matches = new CountMap<>();
+		int max = 0;
+		for (String id : ids) {
+			int count = (int) idSets.stream().filter(set -> set.contains(id)).count();
+			matches.put(id, count);
+			max = Math.max(max, count);
+		}
+		List<String> sortedIDs = new ArrayList<>(ids);
+		sortedIDs.sort((o1, o2) -> -Integer.compare(matches.get(o1), matches.get(o2)));
+
+		Set<String> bestIDs = new HashSet<>();
+		int matchThreshhold = Integer.MAX_VALUE;
+		for (String id : sortedIDs) {
+			int nMatches = matches.get(id);
+			if (bestIDs.size() < minCount || nMatches >= matchThreshhold) {
+				bestIDs.add(id);
+				matchThreshhold = nMatches;
+			}
+		}
+
+		return bestIDs;
+
+	}
+
 	private static String makeKey(Node rootPath) {
 		List<String> list = new ArrayList<>();
 		while (rootPath.children.size() == 1) {
@@ -168,17 +210,13 @@ public class FindRules {
 		return list.toString();
 	}
 
-	public static List<Rule> getRules(Node node) {
-		// TODO
-		return null;
-	}
-
 	static abstract class Rule implements Comparable<Rule> {
 
 		public final Set<String> followers = new HashSet<>();
 		public final Set<String> ignorers = new HashSet<>();
 
 		public abstract String name();
+		protected abstract boolean follows(CountMap<String> countMap);
 
 		public int followCount() {
 			return followers.size();
@@ -242,8 +280,13 @@ public class FindRules {
 		}
 
 		public boolean follows(BaseRule rule) {
-			// Depth is calculated from RP, so shouldn't be needed
 			return rule.rootPath.equals(rootPath) && rule.count >= count;
+		}
+
+		@Override
+		public boolean follows(CountMap<String> countMap) {
+			Integer count = countMap.get(rootPath);
+			return count != null && count >= count;
 		}
 	}
 
@@ -266,6 +309,18 @@ public class FindRules {
 		public String name() {
 			return "\t" + String.join(" OR \n\t\t",
 					rules.stream().map(r -> (CharSequence) r.toString())::iterator);
+		}
+
+		public Set<String> getAgreeingIDs(CountMap<String> countMap) {
+			Set<String> ids = new HashSet<>();
+			rules.stream().filter(r -> r.follows(countMap)).forEach(r -> ids.addAll(r.followers));
+			return ids;
+
+		}
+
+		@Override
+		protected boolean follows(CountMap<String> countMap) {
+			return rules.stream().anyMatch(r -> r.follows(countMap));
 		}
 
 	}
