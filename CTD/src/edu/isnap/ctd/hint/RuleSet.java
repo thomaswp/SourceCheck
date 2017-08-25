@@ -95,8 +95,12 @@ public class RuleSet implements Serializable {
 				int fCount = count;
 				int passing = (int) counts.stream().filter(c -> c >= fCount).count();
 				// A rule isn't interesting if it applies to very little or everything
-				if (passing >= minThresh && passing < n) rules.add(new BaseRule(key, count));
-				else break;
+				if (passing >= minThresh) {
+					if (passing < n) rules.add(new BaseRule(key, count));
+				} else {
+					// If we don't have the threshold at count, we won't at count + 1 either
+					break;
+				}
 			}
 		}
 
@@ -116,7 +120,12 @@ public class RuleSet implements Serializable {
 				Rule ruleA = rules.get(i), ruleB = rules.get(j);
 				Conjunction conj = new Conjunction();
 				conj.addRule(ruleA); conj.addRule(ruleB);
-				if (conj.support() >= config.ruleSupportThreshold) rules.add(conj);
+				if (conj.support() >= config.ruleSupportThreshold &&
+						// Ensure the rule contains a distinct subset of followers from its parent
+						conj.followCount() <=
+							Math.min(ruleA.followCount(), ruleB.followCount()) * 0.6) {
+					rules.add(conj);
+				}
 			}
 		}
 
@@ -169,8 +178,11 @@ public class RuleSet implements Serializable {
 	private List<Disjunction> extractDecisions(List<Rule> sortedRules) {
 		List<Disjunction> decisions = new ArrayList<>();
 		for (int i = sortedRules.size() - 1; i >= 0; i--) {
+			Rule startRule = sortedRules.get(i);
+			// Don't start with a conjunction, just to reduce clutter
+			if (!(startRule instanceof BaseRule)) continue;
 			Disjunction disjunction = new Disjunction();
-			disjunction.addRule(sortedRules.get(i));
+			disjunction.addRule(startRule);
 
 			while (disjunction.support() < 1) {
 				// TODO: config
@@ -239,6 +251,10 @@ public class RuleSet implements Serializable {
 		public abstract String name();
 		protected abstract boolean followedBy(CountMap<String> countMap);
 
+		protected int priority() {
+			return 0;
+		}
+
 		public int followCount() {
 			return followers.size();
 		}
@@ -267,7 +283,9 @@ public class RuleSet implements Serializable {
 
 		@Override
 		public int compareTo(Rule o) {
-			return Double.compare(this.support(), o.support());
+			int comp = Double.compare(this.support(), o.support());
+			if (comp != 0) return comp;
+			return Integer.compare(priority(), o.priority());
 		}
 
 		@Override
@@ -294,6 +312,12 @@ public class RuleSet implements Serializable {
 		}
 
 		@Override
+		protected int priority() {
+			// Base rules should take priority over others
+			return 1;
+		}
+
+		@Override
 		public String name() {
 			return String.format("%d x %s", count, rootPath);
 		}
@@ -305,14 +329,9 @@ public class RuleSet implements Serializable {
 			return -Integer.compare(depth, ((BaseRule) o).depth);
 		}
 
-		public boolean follows(BaseRule rule) {
-			return rule.rootPath.equals(rootPath) && rule.count >= count;
-		}
-
 		@Override
 		public boolean followedBy(CountMap<String> countMap) {
-			Integer count = countMap.get(rootPath);
-			return count != null && count >= count;
+			return countMap.getCount(rootPath) >= count;
 		}
 	}
 
