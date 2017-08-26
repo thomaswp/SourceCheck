@@ -113,23 +113,7 @@ public class RuleSet implements Serializable {
 		}
 
 		removeDuplicateRulesAndSort(rules);
-
-		int nRules = rules.size();
-		for (int i = 0; i < nRules; i++) {
-			for (int j = i + 1; j < nRules; j++) {
-				Rule ruleA = rules.get(i), ruleB = rules.get(j);
-				Conjunction conj = new Conjunction();
-				conj.addRule(ruleA); conj.addRule(ruleB);
-				if (conj.support() >= config.ruleSupportThreshold &&
-						// Ensure the rule contains a distinct subset of followers from its parent
-						conj.followCount() <=
-							Math.min(ruleA.followCount(), ruleB.followCount()) * 0.6) {
-					rules.add(conj);
-				}
-			}
-		}
-
-		removeDuplicateRulesAndSort(rules);
+//		addConjunctions(rules);
 
 		System.out.println(); System.out.println();
 		rules.stream().forEach(System.out::println);
@@ -149,6 +133,26 @@ public class RuleSet implements Serializable {
 		//		out.write(assignment.analysisDir() + "/rules.csv");
 
 
+	}
+
+	@SuppressWarnings("unused")
+	private void addConjunctions(List<Rule> rules) {
+		int nRules = rules.size();
+		for (int i = 0; i < nRules; i++) {
+			for (int j = i + 1; j < nRules; j++) {
+				Rule ruleA = rules.get(i), ruleB = rules.get(j);
+				Conjunction conj = new Conjunction();
+				conj.addRule(ruleA); conj.addRule(ruleB);
+				if (conj.support() >= config.ruleSupportThreshold &&
+						// Ensure the rule contains a distinct subset of followers from its parent
+						conj.followCount() <=
+							Math.min(ruleA.followCount(), ruleB.followCount()) * 0.6) {
+					rules.add(conj);
+				}
+			}
+		}
+
+		removeDuplicateRulesAndSort(rules);
 	}
 
 	private void removeDuplicateRulesAndSort(List<Rule> rules) {

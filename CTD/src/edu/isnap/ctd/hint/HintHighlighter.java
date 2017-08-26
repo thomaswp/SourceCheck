@@ -472,6 +472,7 @@ public class HintHighlighter {
 			ruleSet.filterSolutions(solutions, node);
 		Mapping bestMatch = NodeAlignment.findBestMatch(node, filteredSolutions, dm);
 		if (bestMatch == null) throw new RuntimeException("No matches!");
+		new NodeAlignment(node, bestMatch.to).calculateMapping(dm);
 
 		if (consoleOutput) {
 			System.out.println("------------------------------");

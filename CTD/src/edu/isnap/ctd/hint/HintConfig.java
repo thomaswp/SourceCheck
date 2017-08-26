@@ -43,7 +43,7 @@ public class HintConfig {
 	 * solution are given negative weight multiplied by this factor compared to nodes that are
 	 * out of order
 	 */
-	public double progressMissingFactor = 0.1;
+	public double progressMissingFactor = 0.25;
 	/**
 	 * If true, infers decision rules about correct solutions and uses these to filter solutions
 	 * based on the decisions that the hint-requesting student has made.
