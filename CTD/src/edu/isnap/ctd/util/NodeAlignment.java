@@ -32,7 +32,7 @@ public class NodeAlignment {
 		private StringBuilder itemizedCost = new StringBuilder();
 
 		public String itemizedCost() {
-			return String.format("Total cost: %d\n%s", cost, itemizedCost.toString());
+			return String.format("Total cost: %.02f\n%s", cost, itemizedCost.toString());
 		}
 
 		public Mapping(Node from, Node to) {
@@ -161,7 +161,13 @@ public class NodeAlignment {
 		@Override
 		public double measure(Node from, String[] a, String[] b, int[] bOrderGroups) {
 			if (!config.isCodeElement(from)) {
-				return Alignment.getMissingNodeCount(a, b) * missingCost -
+				int missingCount = Alignment.getMissingNodeCount(a, b);
+				double missingPenalty = missingCount == 0 ? 0 :
+					// The missing penalty is mostly just for the _presense_ of missing children,
+					// and then a small additional penalty for number of missing children to break
+					// ties
+					(1 + missingCount * 0.1) * missingCost;
+				return missingPenalty -
 						Alignment.getProgress(a, b, bOrderGroups,
 								// TODO: skip cost should maybe be another value?
 								inOrderReward, outOfOrderReward, missingCost);

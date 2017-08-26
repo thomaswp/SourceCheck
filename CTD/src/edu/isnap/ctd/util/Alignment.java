@@ -482,8 +482,8 @@ public class Alignment {
 		return reward;
 	}
 
-	public static double getMissingNodeCount(String[] from, String[] to) {
-		return to.length - getProgress(to, from, 1, 1);
+	public static int getMissingNodeCount(String[] from, String[] to) {
+		return to.length - Math.round(getProgress(to, from, 1, 1));
 	}
 
 	public static void main(String[] args) {
