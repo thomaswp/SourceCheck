@@ -491,9 +491,9 @@ public class NodeAlignment {
 			mappings[i] = mapping;
 			totalCost += mapping.cost;
 			minCost = Math.min(minCost, mapping.cost);
-			if (mapping.cost == minCost) {
-				System.out.println(mapping.itemizedCost());
-			}
+//			if (mapping.cost == minCost) {
+//				System.out.println(mapping.itemizedCost());
+//			}
 		}
 
 		// Calculate stdev for the mapping costs

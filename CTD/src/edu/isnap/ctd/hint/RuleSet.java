@@ -27,7 +27,7 @@ public class RuleSet implements Serializable {
 
 	public RuleSet(List<Node> solutions, HintConfig config) {
 		this.config = config;
-		this.decisions = findRules(solutions);
+		this.decisions = findDecisions(solutions);
 	}
 
 	public List<Node> filterSolutions(List<Node> solutions, Node node) {
@@ -65,10 +65,28 @@ public class RuleSet implements Serializable {
 			}
 		}
 
+		// Determine a percentage of the best rules that must follow a choice for the choice to be
+		// considered plausible. Solution candidates that follow implausible choices are removed.
+		for (Disjunction decision : decisions) {
+			// For each decision, find any implausible choices
+			for (Rule rule : decision.rules) {
+				// A choice is never implausible if the student has chosen it
+				if (rule.followedBy(countMap)) continue;
+				int intersect = (int) rule.followers.stream().filter(bestIDs::contains).count();
+				// TODO: config
+				if (intersect > 0 && intersect < bestIDs.size() * 0.15) {
+					bestIDs.removeAll(rule.followers);
+					System.out.printf("Implausible (%02d%%): %s\n",
+							intersect * 100 / bestIDs.size(), rule);
+				}
+			}
+		}
+		System.out.println("Filtered solutions: " + bestIDs.size() + "/" + solutions.size());
+
 		return bestIDs.stream().map(id -> idMap.get(id)).collect(Collectors.toList());
 	}
 
-	private List<Disjunction> findRules(List<Node> solutions) {
+	private List<Disjunction> findDecisions(List<Node> solutions) {
 		if (solutions == null) return null;
 
 		int n = solutions.size();
@@ -195,11 +213,15 @@ public class RuleSet implements Serializable {
 				for (int j = i - 1; j >= 0; j--) {
 					Rule candidate = sortedRules.get(j);
 					int intersect = disjunction.countIntersect(candidate);
+					// TODO: config
+					// Ignore tiny overlap - there can always be a fluke
+					if (intersect <= candidate.followCount() * 0.15) intersect = 0;
 					double ratio = (double) intersect / candidate.followCount();
 					if (ratio < bestRatio) {
 						bestRatio = ratio;
 						bestRule = candidate;
 					}
+					if (ratio == 0) break;
 				}
 
 				if (bestRule == null) break;
