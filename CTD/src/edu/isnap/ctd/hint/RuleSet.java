@@ -186,10 +186,14 @@ public class RuleSet implements Serializable {
 		List<Rule> toRemove = new ArrayList<>();
 		for (int i = 0; i < nRules; i++) {
 			for (int j = nRules - 1; j > i; j--) {
-				if (rules.get(i).jaccardDistance(rules.get(j)) >= 0.975) {
-					System.out.println("> " + rules.get(i) + "\n< " + rules.get(j));
+				Rule deleteCandidate = rules.get(i);
+				Rule supercedeCandidate = rules.get(j);
+				if (deleteCandidate.jaccardDistance(supercedeCandidate) >= 0.975) {
+					System.out.println("> " + deleteCandidate + "\n< " + supercedeCandidate);
 					System.out.println();
-					toRemove.add(rules.get(i));
+					supercedeCandidate.duplicateRules.add(deleteCandidate);
+					supercedeCandidate.duplicateRules.addAll(deleteCandidate.duplicateRules);
+					toRemove.add(deleteCandidate);
 					break;
 				}
 			}
@@ -269,8 +273,10 @@ public class RuleSet implements Serializable {
 
 
 	static abstract class Rule implements Serializable, Comparable<Rule> {
+
 		private static final long serialVersionUID = 1L;
 
+		public final List<Rule> duplicateRules = new ArrayList<>();
 		public final Set<String> followers = new HashSet<>();
 		public final Set<String> ignorers = new HashSet<>();
 
@@ -357,7 +363,8 @@ public class RuleSet implements Serializable {
 
 		@Override
 		public boolean followedBy(CountMap<String> countMap) {
-			return countMap.getCount(rootPath) >= count;
+			return countMap.getCount(rootPath) >= count ||
+					duplicateRules.stream().anyMatch(r -> r.followedBy(countMap));
 		}
 	}
 
