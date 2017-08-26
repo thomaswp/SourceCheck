@@ -2,6 +2,8 @@ package edu.isnap.ctd.hint;
 
 import java.util.HashSet;
 
+import edu.isnap.ctd.graph.Node;
+
 public class HintConfig {
 	/**
 	 * If true, these solutions came from students and should be preprocessed to remove side-scripts
@@ -131,5 +133,10 @@ public class HintConfig {
 		// TODO: See if you can find a way to may this discrete instead
 		return Math.pow(distanceWeightBase, distanceWeightPower) /
 				Math.pow(distanceWeightBase + distance, distanceWeightPower); // max 1
+	}
+
+	public boolean isCodeElement(Node node) {
+		return node != null && !node.hasType(script) &&
+				node.hasAncestor(new Node.TypePredicate(script));
 	}
 }
