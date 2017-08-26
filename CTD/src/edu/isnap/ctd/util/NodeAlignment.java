@@ -1,8 +1,6 @@
 package edu.isnap.ctd.util;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
@@ -31,10 +29,10 @@ public class NodeAlignment {
 		public final Node from, to;
 
 		private double cost;
-		private List<String> itemizedCost = new ArrayList<>();
+		private StringBuilder itemizedCost = new StringBuilder();
 
-		public List<String> itemizedCost() {
-			return Collections.unmodifiableList(itemizedCost);
+		public String itemizedCost() {
+			return itemizedCost.toString();
 		}
 
 		public Mapping(Node from, Node to) {
@@ -49,7 +47,10 @@ public class NodeAlignment {
 
 		private void incrementCost(double by, String key) {
 			cost += by;
-			itemizedCost.add(by + ": " + key);
+			itemizedCost.append(by);
+			itemizedCost.append(": ");
+			itemizedCost.append(key);
+			itemizedCost.append("\n");
 		}
 
 		public String prettyPrint() {
@@ -139,7 +140,7 @@ public class NodeAlignment {
 	}
 
 	public interface DistanceMeasure {
-		public double measure(String type, String[] a, String[] b, int[] bOrderGroups);
+		public double measure(Node from, String[] a, String[] b, int[] bOrderGroups);
 		public boolean isContainer(String type);
 		public double matchedOrphanReward(String type);
 	}
@@ -158,8 +159,8 @@ public class NodeAlignment {
 		}
 
 		@Override
-		public double measure(String type, String[] a, String[] b, int[] bOrderGroups) {
-			if (type == null || config.script.equals(type)) {
+		public double measure(Node from, String[] a, String[] b, int[] bOrderGroups) {
+			if (!config.isCodeElement(from)) {
 				return Alignment.getMissingNodeCount(a, b) * missingCost -
 						Alignment.getProgress(a, b, bOrderGroups,
 								// TODO: skip cost should maybe be another value?
@@ -203,7 +204,7 @@ public class NodeAlignment {
 		CountMap<Double> costCounts = new CountMap<>();
 		for (int i = 0; i < fromStates.length; i++) {
 			for (int j = 0; j < toStates.length; j++) {
-				double cost = distanceMeasure.measure(type, fromStates[i], toStates[j],
+				double cost = distanceMeasure.measure(fromNodes.get(i), fromStates[i], toStates[j],
 						toOrderGroups[j]);
 				// If the to node can match anything, matching has 0 cost
 				if (toNodes.get(j).readOnlyAnnotations().matchAnyChildren) cost = 0;
@@ -311,9 +312,10 @@ public class NodeAlignment {
 			}
 
 			// Recalculate the distance to remove tie-breaking costs
-			double matchCost = distanceMeasure.measure(type, fromStates[i],
+			double matchCost = distanceMeasure.measure(from, fromStates[i],
 					toStates[j], toOrderGroups[j]);
-			mapping.incrementCost(matchCost, costKey + " [m]");
+			mapping.incrementCost(matchCost, String.format("%s: %s vs %s",
+					costKey, Arrays.toString(fromStates[i]), Arrays.toString(toStates[j])));
 
 			// If we are pairing nodes that have not been paired from their parents, there should
 			// be some reward for this, determined by the distance measure
@@ -394,7 +396,7 @@ public class NodeAlignment {
 		for (int i = 0; i < toStates.length; i++) {
 			if (matchedTo.contains(i)) continue;
 			mapping.incrementCost(distanceMeasure.measure(
-					toNodes.get(i).type(), new String[0], toStates[i], null), costKey + " [p]");
+					toNodes.get(i), new String[0], toStates[i], null), costKey + " [p]");
 		}
 	}
 

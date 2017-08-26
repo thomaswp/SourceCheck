@@ -456,9 +456,8 @@ public class HintHighlighter {
 	// Code elements (blocks) are nodes which are not themselves scripts but have an ancestor
 	// which is a script. This precludes snapshots, sprites, custom blocks, variables, etc,
 	// while including blocks and lists
-	private final boolean isCodeElement(Node node) {
-		return node != null && !node.hasType(config.script) &&
-				node.hasAncestor(new Node.TypePredicate(config.script));
+	private boolean isCodeElement(Node node) {
+		return config.isCodeElement(node);
 	}
 
 	public static DistanceMeasure getDistanceMeasure(HintConfig config) {
@@ -480,6 +479,7 @@ public class HintHighlighter {
 //			System.out.println("++++++++++");
 			System.out.println("Time to match: " + (System.currentTimeMillis() - startTime));
 			System.out.println(bestMatch.prettyPrint());
+			System.out.println(bestMatch.itemizedCost());
 		}
 
 		return bestMatch;
