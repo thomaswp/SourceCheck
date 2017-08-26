@@ -1,6 +1,8 @@
 package edu.isnap.ctd.util;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
@@ -29,6 +31,11 @@ public class NodeAlignment {
 		public final Node from, to;
 
 		private double cost;
+		private List<String> itemizedCost = new ArrayList<>();
+
+		public List<String> itemizedCost() {
+			return Collections.unmodifiableList(itemizedCost);
+		}
 
 		public Mapping(Node from, Node to) {
 			super(MapFactory.IdentityHashMapFactory);
@@ -40,8 +47,9 @@ public class NodeAlignment {
 			return cost;
 		}
 
-		private void incrementCost(double by) {
+		private void incrementCost(double by, String key) {
 			cost += by;
+			itemizedCost.add(by + ": " + key);
 		}
 
 		public String prettyPrint() {
@@ -188,6 +196,7 @@ public class NodeAlignment {
 		int[][] toOrderGroups = orderGroups(toNodes);
 
 		String type = fromNodes.get(0).type();
+		String costKey = fromNodes.get(0).rootPath();
 
 		double minCost = Integer.MAX_VALUE;
 		double[][] costMatrix = new double[fromStates.length][toStates.length];
@@ -304,12 +313,12 @@ public class NodeAlignment {
 			// Recalculate the distance to remove tie-breaking costs
 			double matchCost = distanceMeasure.measure(type, fromStates[i],
 					toStates[j], toOrderGroups[j]);
-			mapping.incrementCost(matchCost);
+			mapping.incrementCost(matchCost, costKey + " [m]");
 
 			// If we are pairing nodes that have not been paired from their parents, there should
 			// be some reward for this, determined by the distance measure
 			if (!mappedFrom[i] && !mappedTo[j]) {
-				mapping.incrementCost(-distanceMeasure.matchedOrphanReward(type));
+				mapping.incrementCost(-distanceMeasure.matchedOrphanReward(type), costKey + " [r]");
 			}
 			mapping.put(from, to);
 
@@ -385,7 +394,7 @@ public class NodeAlignment {
 		for (int i = 0; i < toStates.length; i++) {
 			if (matchedTo.contains(i)) continue;
 			mapping.incrementCost(distanceMeasure.measure(
-					toNodes.get(i).type(), new String[0], toStates[i], null));
+					toNodes.get(i).type(), new String[0], toStates[i], null), costKey + " [p]");
 		}
 	}
 
@@ -454,21 +463,23 @@ public class NodeAlignment {
 
 		Mapping[] mappings = new Mapping[matches.size()];
 		double totalCost = 0;
+		double minCost = Double.MAX_VALUE;
 		for (int i = 0; i < mappings.length; i++) {
 			NodeAlignment align = new NodeAlignment(from, matches.get(i));
 			Mapping mapping = align.calculateMapping(distanceMeasure);
 			mappings[i] = mapping;
 			totalCost += mapping.cost;
+			minCost = Math.min(minCost, mapping.cost);
 		}
 
 		// Calculate stdev for the mapping costs
 		double meanCost = totalCost / mappings.length;
-		double variance = 0;
-		for (Mapping mapping : mappings) variance += Math.pow(mapping.cost - meanCost, 2);
-		double stdev = mappings.length == 1 ? 0 : Math.sqrt(variance / (mappings.length - 1));
+		double deviation = 0;
+		for (Mapping mapping : mappings) deviation += Math.pow(mapping.cost - meanCost, 2);
+		double stdev = mappings.length == 1 ? 0 : Math.sqrt(deviation / (mappings.length - 1));
 
 		// The cutoff is the minimum cost, plus some (likely fractional) number of stdevs
-		double costCutoff = mappings[0].cost + stdev * stdevsFromMin;
+		double costCutoff = minCost + stdev * stdevsFromMin;
 
 		for (int i = 0; i < mappings.length; i++) {
 			if (mappings[i].cost <= costCutoff) best.add(mappings[i]);

@@ -509,4 +509,14 @@ public class Node extends StringHashable {
 			}
 		});
 	}
+
+	public String rootPath() {
+		List<String> path = new LinkedList<>();
+		Node n = this;
+		while (n != null) {
+			path.add(0, n.type);
+			n = n.parent;
+		}
+		return path.toString();
+	}
 }
