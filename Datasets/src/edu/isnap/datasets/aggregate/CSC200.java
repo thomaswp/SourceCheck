@@ -1,5 +1,6 @@
 package edu.isnap.datasets.aggregate;
 
+import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.datasets.Fall2015;
 import edu.isnap.datasets.Fall2016;
@@ -13,6 +14,13 @@ public class CSC200 extends AggregateDataset {
 	public CSC200() {
 		super("../data/csc200/all", Fall2015.instance, Spring2016.instance, Fall2016.instance,
 				Spring2017.instance);
+	}
+
+	@Override
+	protected HintConfig getDefaultHintConfig() {
+		HintConfig config = super.getDefaultHintConfig();
+		config.requireGrade = true;
+		return config;
 	}
 
 	public final static Assignment LightsCameraAction =

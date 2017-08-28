@@ -136,6 +136,7 @@ public class SnapHintBuilder {
 	 * @return
 	 */
 	public HintMapBuilder buildGenerator(String testAttempt, double minGrade) {
+		HintConfig config = hintMap.getHintConfig();
 		final HintMapBuilder builder = new HintMapBuilder(hintMap.instance(), minGrade);
 		builder.startBuilding();
 		final AtomicInteger count = new AtomicInteger();
@@ -143,7 +144,8 @@ public class SnapHintBuilder {
 			if (student.equals(testAttempt)) continue;
 
 			Grade grade = gradeMapCache.get(student);
-			if (grade == null || grade.average() < minGrade) continue;
+			if (config.requireGrade && grade == null) continue;
+			if (grade != null && grade.average() < minGrade) continue;
 
 			final List<Node> nodes = nodeMap().get(student);
 			if (nodes.size() == 0) continue;

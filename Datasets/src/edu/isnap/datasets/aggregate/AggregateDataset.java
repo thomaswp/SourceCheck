@@ -6,12 +6,17 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
 
 public abstract class AggregateDataset extends Dataset {
 
 	public final Dataset[] datasets;
+
+	protected HintConfig getDefaultHintConfig() {
+		return new HintConfig();
+	}
 
 	public AggregateDataset(String dataDir, Dataset... datasets) {
 		super(new Date(Arrays.stream(datasets).map(
