@@ -436,23 +436,6 @@ public class HintHighlighter {
 		}
 	}
 
-	public List<EditHint> highlightConsensus(Node node, double stdevsFromMin,
-			double consensusThreshold) {
-
-		List<Mapping> matches = NodeAlignment.findBestMatches(
-				node, solutions, getDistanceMeasure(config), stdevsFromMin);
-
-		List<List<EditHint>> hintSets = new ArrayList<>();
-		for (Mapping mapping : matches) {
-			hintSets.add(highlight(node, mapping));
-		}
-
-		// TODO: finish
-
-		List<EditHint> hints = new LinkedList<>();
-		return hints;
-	}
-
 	// Code elements (blocks) are nodes which are not themselves scripts but have an ancestor
 	// which is a script. This precludes snapshots, sprites, custom blocks, variables, etc,
 	// while including blocks and lists
@@ -479,6 +462,7 @@ public class HintHighlighter {
 			System.out.println("Time to match: " + (System.currentTimeMillis() - startTime));
 			System.out.println(bestMatch.prettyPrint());
 			System.out.println(bestMatch.itemizedCost());
+			new NodeAlignment(bestMatch.from, bestMatch.to).calculateMapping(dm);
 		}
 
 		return bestMatch;
