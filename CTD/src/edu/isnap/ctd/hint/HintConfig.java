@@ -6,6 +6,10 @@ import edu.isnap.ctd.graph.Node;
 
 public class HintConfig {
 	/**
+	 * If true, a HintMap build from this assignment will only include graded submissions.
+	 */
+	public boolean requireGrade = false;
+	/**
 	 * If true, these solutions came from students and should be preprocessed to remove side-scripts
 	 */
 	public boolean preprocessSolutions = true;

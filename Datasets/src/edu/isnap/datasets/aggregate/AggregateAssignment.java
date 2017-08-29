@@ -6,17 +6,19 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
-import edu.isnap.dataset.Dataset;
+import edu.isnap.hint.ConfigurableAssignment;
 import edu.isnap.parser.SnapParser.Filter;
 import edu.isnap.parser.Store.Mode;
 
-public class AggregateAssignment extends Assignment {
+public class AggregateAssignment extends ConfigurableAssignment {
 
 	public final List<Assignment> assignments;
 
-	public AggregateAssignment(Dataset dataset, String name, List<Assignment> assignments) {
+	public AggregateAssignment(AggregateDataset dataset, String name,
+			List<Assignment> assignments) {
 		super(dataset, name,
 				Collections.min(assignments.stream().map(assignment -> assignment.start)
 						.collect(Collectors.toList())), false);
@@ -31,6 +33,11 @@ public class AggregateAssignment extends Assignment {
 		assignments.stream().map(assignment -> assignment.load(mode, snapshotsOnly, addMetadata))
 			.forEach((a) -> attempts.putAll(a));
 		return attempts;
+	}
+
+	@Override
+	public HintConfig getConfig() {
+		return ((AggregateDataset) dataset).getDefaultHintConfig();
 	}
 
 }
