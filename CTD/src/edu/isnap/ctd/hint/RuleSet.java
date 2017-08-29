@@ -1,5 +1,6 @@
 package edu.isnap.ctd.hint;
 
+import java.io.PrintStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,6 +22,8 @@ public class RuleSet implements Serializable {
 
 	public final HintConfig config;
 	private final List<Disjunction> decisions;
+
+	protected static PrintStream trace = System.out;
 
 	@SuppressWarnings("unused")
 	private RuleSet() { this(null, null); }
@@ -59,9 +62,9 @@ public class RuleSet implements Serializable {
 			if (bestIDs.size() < config.minRuleFilterSolutions || nMatches >= matchThreshhold) {
 				bestIDs.add(id);
 				matchThreshhold = nMatches;
-//				System.out.println(nMatches);
-//				System.out.println(id);
-//				System.out.println(idMap.get(id).prettyPrint());
+//				trace.println(nMatches);
+//				trace.println(id);
+//				trace.println(idMap.get(id).prettyPrint());
 			}
 		}
 
@@ -76,12 +79,12 @@ public class RuleSet implements Serializable {
 				// TODO: config
 				if (intersect > 0 && intersect < bestIDs.size() * 0.15) {
 					bestIDs.removeAll(rule.followers);
-					System.out.printf("Implausible (%02d%%): %s\n",
+					trace.printf("Implausible (%02d%%): %s\n",
 							intersect * 100 / bestIDs.size(), rule);
 				}
 			}
 		}
-		System.out.println("Filtered solutions: " + bestIDs.size() + "/" + solutions.size());
+		trace.println("Filtered solutions: " + bestIDs.size() + "/" + solutions.size());
 
 		return bestIDs.stream().map(id -> idMap.get(id)).collect(Collectors.toList());
 	}
@@ -90,7 +93,7 @@ public class RuleSet implements Serializable {
 		if (solutions == null) return null;
 
 		int n = solutions.size();
-		System.out.println("N = " + n);
+		trace.println("N = " + n);
 		int minThresh = (int) Math.ceil(n * config.ruleSupportThreshold);
 
 		Map<String, CountMap<String>> supportMap = new TreeMap<>();
@@ -133,9 +136,9 @@ public class RuleSet implements Serializable {
 		removeDuplicateRulesAndSort(rules);
 //		addConjunctions(rules);
 
-		System.out.println(); System.out.println();
-		rules.stream().forEach(System.out::println);
-		System.out.println(); System.out.println();
+		trace.println(); trace.println();
+		rules.stream().forEach(trace::println);
+		trace.println(); trace.println();
 
 		return extractDecisions(rules);
 
@@ -189,8 +192,8 @@ public class RuleSet implements Serializable {
 				Rule deleteCandidate = rules.get(i);
 				Rule supercedeCandidate = rules.get(j);
 				if (deleteCandidate.jaccardDistance(supercedeCandidate) >= 0.975) {
-					System.out.println("> " + deleteCandidate + "\n< " + supercedeCandidate);
-					System.out.println();
+					trace.println("> " + deleteCandidate + "\n< " + supercedeCandidate);
+					trace.println();
 					supercedeCandidate.duplicateRules.add(deleteCandidate);
 					supercedeCandidate.duplicateRules.addAll(deleteCandidate.duplicateRules);
 					toRemove.add(deleteCandidate);
@@ -235,7 +238,7 @@ public class RuleSet implements Serializable {
 			// We only want high-support decisions that have multiple choices
 			if (disjunction.support() >= 0.9 && disjunction.rules.size() > 1) {
 				decisions.add(disjunction);
-				System.out.println(disjunction);
+				trace.println(disjunction);
 			}
 		}
 		return decisions;
@@ -421,9 +424,9 @@ public class RuleSet implements Serializable {
 
 		public void printChoices(CountMap<String> countMap) {
 			if (getAgreeingIDs(countMap).size() == 0) return;
-			System.out.println("Choices:");
+			trace.println("Choices:");
 			rules.stream().map(r -> (r.followedBy(countMap) ? "-> " : "   ") + r)
-			.forEach(System.out::println);
+			.forEach(trace::println);
 		}
 
 		public Set<String> getAgreeingIDs(CountMap<String> countMap) {

@@ -21,18 +21,18 @@ public class RunHintBuilder {
 //		SnapParser.clean(Spring2016.dataDir);
 
 		// Builds and caches a HintGenerator for each of these assignments
-//		buildHints(CSC200.PolygonMaker, 1);
-//		buildHints(CSC200.Squiral, 1);
+		buildHints(CSC200.PolygonMaker, 1);
+		buildHints(CSC200.Squiral, 1);
 		buildHints(CSC200.GuessingGame1, 1);
-//		buildHints(CSC200.GuessingGame2, 1);
-//		buildHints(CSC200.GuessingGame3, 1);
+		buildHints(CSC200.GuessingGame2, 1);
+		buildHints(CSC200.GuessingGame3, 1);
 		// Then copies the cache to the HintServer
-		RunCopyData.copyGraphs(CSC200.dataDir);
+		RunCopyData.copyHintDatabaseToServer(CSC200.dataDir);
 
 //		buildHints(HelpSeekingExperts.BrickWall, 1);
-//		RunCopyData.copyGraphs(HelpSeekingExperts.BrickWall.dataDir);
+//		RunCopyData.copyHintDatabaseToServer(HelpSeekingExperts.BrickWall.dataDir);
 //		buildHints(Spring2016.GuessingGame1, 1);
-//		RunCopyData.copyGraphs(Spring2016.GuessingGame1.dataDir, "spring2016");
+//		RunCopyData.copyHintDatabaseToServer(Spring2016.GuessingGame1.dataDir, "spring2016");
 	}
 
 

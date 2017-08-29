@@ -82,7 +82,7 @@ public class Shell {
 					case "build":
 						for (Assignment assignment : dataset.all()) {
 							RunHintBuilder.buildHints(assignment, 1);
-							RunCopyData.copyGraphs(dataset.dataDir);
+							RunCopyData.copyHintDatabaseToServer(dataset.dataDir);
 						}
 						break;
 					default:
@@ -106,7 +106,7 @@ public class Shell {
 					switch(command) {
 					case "build":
 						RunHintBuilder.buildHints(assignment, 1);
-						RunCopyData.copyGraphs(dataset.dataDir);
+						RunCopyData.copyHintDatabaseToServer(dataset.dataDir);
 						break;
 					case "clean":
 						SnapParser.clean(assignment.parsedDir());

@@ -10,14 +10,15 @@ import edu.isnap.datasets.Spring2016;
 
 public class RunCopyData {
 	public static void main(String[] args) throws IOException {
-		copyGraphs(Spring2016.dataDir);
+		copyHintDatabaseToServer(Spring2016.dataDir);
 	}
 
-	protected static void copyGraphs(String fromDir) throws IOException {
-		copyGraphs(fromDir, "");
+	protected static void copyHintDatabaseToServer(String fromDir) throws IOException {
+		copyHintDatabaseToServer(fromDir, "");
 	}
 
-	protected static void copyGraphs(String fromDir, String datasetSuffix) throws IOException {
+	protected static void copyHintDatabaseToServer(String fromDir, String datasetSuffix)
+			throws IOException {
 		if (datasetSuffix.length() > 0) datasetSuffix = "-" + datasetSuffix;
 		String toDir = "../HintServer/WebContent/WEB-INF/data";
 		String ext = ".cached";
