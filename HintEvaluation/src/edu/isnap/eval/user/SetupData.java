@@ -12,7 +12,7 @@ public class SetupData {
 	// Run this once to parse through the data (and then don't run it again!)
 	public static void main(String[] args) throws IOException {
 		// DON'T interrupt this line while running - it may freeze
-		LogSplitter.splitStudentRecords(Spring2016.dataFile);
+		new LogSplitter().splitStudentRecords(Spring2016.instance);
 		// Go ahead and pre-load (cache) the assignments we'll be working with
 		for (Assignment assignment : Spring2016.All) {
 			System.out.println("Loading: " + assignment.name);

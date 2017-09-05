@@ -81,4 +81,13 @@ public class Grade {
 		}
 		return (double) passed / tests.size();
 	}
+
+	public double partialAverage() {
+		if (tests.size() == 0) return 0;
+		int points = 0;
+		for (Integer test : tests.values()) {
+			points += test;
+		}
+		return (double) points / (tests.size() * PASS);
+	}
 }

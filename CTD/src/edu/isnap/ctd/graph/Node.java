@@ -1,6 +1,7 @@
 package edu.isnap.ctd.graph;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -9,19 +10,26 @@ import org.json.JSONObject;
 
 import edu.isnap.ctd.hint.Canonicalization;
 import edu.isnap.ctd.hint.Canonicalization.InvertOp;
-import edu.isnap.ctd.hint.Canonicalization.SwapArgs;
+import edu.isnap.ctd.hint.Canonicalization.SwapSymmetricArgs;
 import edu.isnap.ctd.util.StringHashable;
 import util.LblTree;
 
 public class Node extends StringHashable {
 
+	public static int PrettyPrintSpacing = 2;
+
 	private String type;
+	// Annotations used to specify that nodes have a non-concrete meaning, such as having a partial
+	// order or wildcard children
+	private Annotations annotations;
+
 	public final String id;
 	public final Node parent;
 	public final List<Node> children = new ArrayList<>();
 
 	public transient Object tag;
 	public final transient List<Canonicalization> canonicalizations = new ArrayList<>();
+
 	public String type() {
 		return type;
 	}
@@ -34,6 +42,17 @@ public class Node extends StringHashable {
 	private void recache() {
 		clearCache();
 		if (parent != null) parent.recache();
+	}
+
+	public Annotations writableAnnotations() {
+		if (annotations == null) {
+			annotations = new Annotations();
+		}
+		return annotations;
+	}
+
+	public Annotations readOnlyAnnotations() {
+		return annotations == null ? Annotations.EMPTY : annotations;
 	}
 
 	@SuppressWarnings("unused")
@@ -49,6 +68,11 @@ public class Node extends StringHashable {
 		this.parent = parent;
 		this.type = type;
 		this.id = id;
+	}
+
+	public Node setOrderGroup(int group) {
+		writableAnnotations().orderGroup = group;
+		return this;
 	}
 
 	public Node root() {
@@ -111,6 +135,18 @@ public class Node extends StringHashable {
 			if (found != null) return found;
 		}
 		return null;
+	}
+
+	public List<Node> allChildren() {
+		return allChildren(new LinkedList<Node>());
+	}
+
+	public List<Node> allChildren(List<Node> list) {
+		for (Node child : children) {
+			list.add(child);
+			child.allChildren(list);
+		}
+		return list;
 	}
 
 	public List<Node> searchAll(Predicate predicate) {
@@ -263,24 +299,30 @@ public class Node extends StringHashable {
 		return index < children.size() && children.get(index).hasType(type);
 	}
 
-	public Node copy(boolean setParent) {
-		Node rootCopy = root().childrenCopy(setParent ? parent : null);
+	public Node copy() {
+		Node rootCopy = root().copyWithNewParent(null);
 		return findParallelNode(rootCopy, this);
+	}
+
+	public Node copyWithNewParent(Node parent) {
+		Node copy = shallowCopy(parent);
+		for (Node child : children) {
+			copy.children.add(child.copyWithNewParent(copy));
+		}
+		return copy;
+	}
+
+	public Node shallowCopy(Node parent) {
+		Node copy = new Node(parent, type, id);
+		copy.tag = tag;
+		copy.annotations = annotations == null ? null : annotations.copy();
+		return copy;
 	}
 
 	public Node addChild(String type) {
 		Node child = new Node(this, type);
 		children.add(child);
 		return child;
-	}
-
-	private Node childrenCopy(Node parent) {
-		Node copy = new Node(parent, type, id);
-		copy.tag = tag;
-		for (Node child : children) {
-			copy.children.add(child.childrenCopy(copy));
-		}
-		return copy;
 	}
 
 	private static Node findParallelNode(Node root, Node child) {
@@ -290,9 +332,9 @@ public class Node extends StringHashable {
 		return parent.children.get(child.index());
 	}
 
-	public int size() {
+	public int treeSize() {
 		int size = 1;
-		for (Node child : children) size += child.size();
+		for (Node child : children) size += child.treeSize();
 		return size;
 	}
 
@@ -317,6 +359,10 @@ public class Node extends StringHashable {
 		return prettyPrint("", prefixMap);
 	}
 
+	public String prettyPrintWithIDs() {
+		return prettyPrint(new HashMap<Node, String>());
+	}
+
 	private String prettyPrint(String indent, Map<Node, String> prefixMap) {
 		boolean inline = true;
 		for (String hasBody : HAS_BODY) {
@@ -326,24 +372,36 @@ public class Node extends StringHashable {
 			}
 		}
 		String out = type;
-		if (prefixMap != null && prefixMap.containsKey(this)) {
-			out = prefixMap.get(this) + ":" + out;
+		if (prefixMap != null) {
+			if (prefixMap.containsKey(this)) out = prefixMap.get(this) + ":" + out;
 			if (id != null && !id.equals(type)) {
 				out += "[" + id + "]";
 			}
+		}
+		if (annotations != null) {
+			out += annotations;
 		}
 		if (children.size() > 0) {
 			if (inline) {
 				out += "(";
 				for (int i = 0; i < children.size(); i++) {
 					if (i > 0) out += ", ";
+					if (children.get(i) == null) {
+						out += "null";
+						continue;
+					}
 					out += children.get(i).prettyPrint(indent, prefixMap);
 				}
 				out += ")";
 			} else {
 				out += " {\n";
-				String indentMore = indent + "  ";
+				String indentMore = indent;
+				for (int i = 0; i < PrettyPrintSpacing; i++) indentMore += " ";
 				for (int i = 0; i < children.size(); i++) {
+					if (children.get(i) == null) {
+						out += indentMore + "null\n";
+						continue;
+					}
 					out += indentMore + children.get(i).prettyPrint(indentMore, prefixMap) + "\n";
 				}
 				out += indent + "}";
@@ -353,7 +411,7 @@ public class Node extends StringHashable {
 	}
 
 	public String[] depthFirstIteration() {
-		String[] array = new String[size()];
+		String[] array = new String[treeSize()];
 		depthFirstIteration(array, 0);
 		return array;
 	}
@@ -364,6 +422,19 @@ public class Node extends StringHashable {
 			offset = child.depthFirstIteration(array, offset);
 		}
 		return offset;
+	}
+
+	public Node nthDepthFirstNode(int index) {
+		if (index == 0) return this;
+		index--;
+		for (Node child : children) {
+			int size = child.treeSize();
+			if (size > index) {
+				return child.nthDepthFirstNode(index);
+			}
+			index -= size;
+		}
+		return null;
 	}
 
 	// TODO: This is really quite an ugly Node reference representation...
@@ -382,7 +453,8 @@ public class Node extends StringHashable {
 		int index = node.index();
 		if (node.parent != null) {
 			for (Canonicalization c : node.parent.canonicalizations) {
-				if (c instanceof SwapArgs) {
+				// TODO: Shouldn't this also occur for an InvertOp?
+				if (c instanceof SwapSymmetricArgs) {
 //					System.out.println("Swapping children of: " + node.parent);
 					index = node.parent.children.size() - 1 - index;
 					break;
@@ -398,5 +470,53 @@ public class Node extends StringHashable {
 		obj.put("parent", parent);
 
 		return obj;
+	}
+
+	public int rootPathLength() {
+		if (parent == null) return 1;
+		return 1 + parent.rootPathLength();
+	}
+
+	public static class Annotations {
+		public static final Annotations EMPTY = new Annotations();
+
+		public boolean matchAnyChildren;
+		public int orderGroup;
+
+		public Annotations copy() {
+			Annotations copy = new Annotations();
+			copy.orderGroup = orderGroup;
+			copy.matchAnyChildren = matchAnyChildren;
+			return copy;
+		}
+
+		@Override
+		public String toString() {
+			String out = "";
+			if (orderGroup != 0) out += "<" + orderGroup + ">";
+			if (matchAnyChildren) out += "<*>";
+			return out;
+		}
+	}
+
+	public void resetAnnotations() {
+		recurse(new Action() {
+			@Override
+			public void run(Node node) {
+				if (node.readOnlyAnnotations().matchAnyChildren) {
+					node.children.clear();
+				}
+			}
+		});
+	}
+
+	public String rootPath() {
+		List<String> path = new LinkedList<>();
+		Node n = this;
+		while (n != null) {
+			path.add(0, n.type);
+			n = n.parent;
+		}
+		return path.toString();
 	}
 }

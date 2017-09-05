@@ -140,7 +140,7 @@ public class HintMap {
 		for (Node key : map.keySet()) {
 			VectorGraph graph = map.get(key);
 			if (!graph.hasGoal()) continue;
-			Node parent = key.copy(false);
+			Node parent = key.copy();
 			// first go down the root path
 			while (parent.children.size() == 1) {
 				parent = parent.children.get(0);

@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 
 import org.w3c.dom.Element;
 
+import edu.isnap.parser.elements.BlockDefinitionGroup.BlockIndex;
 import edu.isnap.parser.elements.util.IHasID;
 import edu.isnap.parser.elements.util.XML;
 
@@ -49,6 +50,8 @@ public class BlockDefinition extends Code implements IHasID {
 	public final List<String> inputs = new ArrayList<>();
 	public final List<Script> scripts = new ArrayList<>();
 	public String parentID;
+
+	public transient BlockIndex blockIndex;
 
 	@Override
 	public String type() {
@@ -107,9 +110,13 @@ public class BlockDefinition extends Code implements IHasID {
 		return def;
 	}
 
-	public static BlockDefinition parseEditing(Element element) {
+	public static BlockDefinition parseFromScripts(Element element, String defaultGUID) {
 		String guid = element.getAttribute("guid");
-		List<Element> scripts = toList(XML.getGrandchildrenByTagName(element, "scripts", "script"));
+		// GUID used to be stored in the <editing> tag, so we allow the parent to pass it in for
+		// backwards compatibility
+		if (guid.isEmpty()) guid = defaultGUID;
+
+		List<Element> scripts = toList(XML.getChildrenByTagName(element, "script"));
 		Element mainScript = scripts.get(0);
 		List<Element> blocks = toList(XML.getChildrenByTagName(mainScript,
 				"block", "custom-block"));
@@ -152,14 +159,18 @@ public class BlockDefinition extends Code implements IHasID {
 		return new CodeBuilder(canon)
 		.add(name, "customBlock")
 		.addSParameters(canonicalizeVariables(inputs, canon))
-		.add(" ")
+		.indent()
+		.add("script: ")
 		.add(script)
+		// TODO: These should be included in canon, just filtered out for solutions as side scripts.
+		// We can reuse side-scripts in custom blocks just like in main scripts
 		.ifNotCanon()
 		.add("scripts:")
 		.indent()
 		.add(scripts)
 		.close()
 		.endIf()
+		.close()
 		.end();
 	}
 
@@ -176,5 +187,17 @@ public class BlockDefinition extends Code implements IHasID {
 	public String getID() {
 		if (guid != null && guid.length() > 0) return guid;
 		return String.format("%s[%s,%s,%s](%s)", parentID, name, type, category, inputs.toString());
+	}
+
+	private static String getCustomBlockSelector(String name) {
+		return name.replace("%s", "_").replaceAll("\\s", "").replaceAll("[^A-Za-z_]", "*");
+	}
+
+	public static String getCustomBlockCall(String name) {
+		name = name.replaceAll("%[^\\s]*", "%s");
+		if (TOOLS_BLOCKS_SET.contains(name)) {
+			return getCustomBlockSelector(name);
+		}
+		return "evaluateCustomBlock";
 	}
 }

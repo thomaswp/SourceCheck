@@ -12,10 +12,10 @@ import edu.isnap.parser.Store.Mode;
 
 public class Fall2015 extends Dataset {
 
-		public final static Fall2015 instance = new Fall2015();
 		public final static Date start = Assignment.date(2015, 8, 10);
-		public final static String dataDir = Assignment.BASE_DIR + "/fall2015";
+		public final static String dataDir = Assignment.CSC200_BASE_DIR + "/fall2015";
 		public final static String dataFile = dataDir + ".csv";
+		public final static Fall2015 instance = new Fall2015();
 
 		// Used this submission for testing, so not using it in evaluation
 		// For the comparison 2015/2016 study we should keep it, though

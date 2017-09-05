@@ -1,7 +1,9 @@
 package edu.isnap.dataset;
 
+import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.List;
 
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.elements.Snapshot;
@@ -26,6 +28,8 @@ public class AssignmentAttempt implements Iterable<AttemptAction> {
 	public int totalIdleTime;
 	/** The number of work segments, divided by {@link SnapParser#SKIP_DURATION} */
 	public int timeSegments;
+	/** Whether the snapshots in this assignment have node IDs. Set by Assignment.load() */
+	public boolean hasIDs;
 
 	/** Returns true if this attempt is known not to have been submitted for grading. */
 	public boolean isUnsubmitted() {
@@ -66,15 +70,21 @@ public class AssignmentAttempt implements Iterable<AttemptAction> {
 		return rows.iterator();
 	}
 
+	public String userID() {
+		return rows.userID;
+	}
+
 	@SuppressWarnings("serial")
-	public static class ActionRows extends LinkedList<AttemptAction> implements IVersioned {
+	public static class ActionRows implements IVersioned, Serializable, Iterable<AttemptAction> {
 
 		/**
 		 * Version of the AttemptAction and its stored classes, such as Snapshot.
 		 * Change it when they should be reloaded and the cache invalidated.
 		 */
-		public final static String VERSION = "1.0.3";
+		public final static String VERSION = "1.2.0";
+		public final List<AttemptAction> rows = new ArrayList<>();
 
+		public String userID;
 		private String version = VERSION;
 
 		@Override
@@ -82,5 +92,31 @@ public class AssignmentAttempt implements Iterable<AttemptAction> {
 			return version.equals(VERSION);
 		}
 
+		// List wrapper methods
+
+		public void add(AttemptAction row) {
+			rows.add(row);
+		}
+
+		public int size() {
+			return rows.size();
+		}
+
+		@Override
+		public Iterator<AttemptAction> iterator() {
+			return rows.iterator();
+		}
+
+		public AttemptAction get(int i) {
+			return rows.get(i);
+		}
+
+		public AttemptAction getFirst() {
+			return rows.get(0);
+		}
+
+		public AttemptAction getLast() {
+			return rows.get(rows.size() - 1);
+		}
 	}
 }

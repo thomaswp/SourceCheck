@@ -42,6 +42,7 @@ public class SnapHintBuilder {
 
 	private Map<String, List<Node>> nodeMapCache;
 	private Map<String, Grade> gradeMapCache;
+	private Map<String, Boolean> hasIDsMap;
 
 	/**
 	 * Gets a map of attemptIDs to Node lists, where each list of Nodes represents
@@ -104,8 +105,7 @@ public class SnapHintBuilder {
 	 * @return
 	 */
 	public HintMapBuilder buildGenerator(Mode storeMode, final double minGrade) {
-		String storePath = new File(assignment.dataDir, String.format("%s-g%03d.cached",
-				assignment.name, Math.round(minGrade * 100))).getAbsolutePath();
+		String storePath = getStorePath(assignment, minGrade);
 		HintMapBuilder builder = Store.getCachedObject(getKryo(),
 				storePath, HintMapBuilder.class, storeMode,
 				new Store.Loader<HintMapBuilder>() {
@@ -115,6 +115,15 @@ public class SnapHintBuilder {
 			}
 		});
 		return builder;
+	}
+
+	public static String getStorePath(Assignment assignment, double minGrade) {
+		return getStorePath(assignment.dataDir, assignment.name, minGrade);
+	}
+
+	public static String getStorePath(String baseDir, String assignmentName, double minGrade) {
+		return new File(baseDir, String.format("%s-g%03d.cached",
+				assignmentName, Math.round(minGrade * 100))).getAbsolutePath();
 	}
 
 	/**
@@ -127,6 +136,7 @@ public class SnapHintBuilder {
 	 * @return
 	 */
 	public HintMapBuilder buildGenerator(String testAttempt, double minGrade) {
+		HintConfig config = hintMap.getHintConfig();
 		final HintMapBuilder builder = new HintMapBuilder(hintMap.instance(), minGrade);
 		builder.startBuilding();
 		final AtomicInteger count = new AtomicInteger();
@@ -134,6 +144,7 @@ public class SnapHintBuilder {
 			if (student.equals(testAttempt)) continue;
 
 			Grade grade = gradeMapCache.get(student);
+			if (config.requireGrade && grade == null) continue;
 			if (grade != null && grade.average() < minGrade) continue;
 
 			final List<Node> nodes = nodeMap().get(student);
@@ -151,7 +162,7 @@ public class SnapHintBuilder {
 					}
 					if (studentMap == null) {
 //						System.out.println(fStudent);
-						studentMap = builder.addAttempt(nodes, assignment.hasIDs);
+						studentMap = builder.addAttempt(nodes, hasIDsMap.get(fStudent));
 						synchronized (studentSubtreeCache) {
 							studentSubtreeCache.put(fStudent, studentMap);
 						}
@@ -179,6 +190,7 @@ public class SnapHintBuilder {
 				new SnapParser.LikelySubmittedOnly());
 		nodeMapCache = new TreeMap<>();
 		gradeMapCache = new TreeMap<>();
+		hasIDsMap = new TreeMap<>();
 
 		for (String attemptID : students.keySet()) {
 			AssignmentAttempt attempt = students.get(attemptID);
@@ -196,6 +208,7 @@ public class SnapHintBuilder {
 
 			nodeMapCache.put(attemptID, nodes);
 			gradeMapCache.put(attemptID, attempt.grade);
+			hasIDsMap.put(attemptID, attempt.hasIDs);
 		}
 	}
 
@@ -204,7 +217,6 @@ public class SnapHintBuilder {
 		kryo.register(HintMapBuilder.class);
 		kryo.register(StringHashable.class);
 		kryo.register(Node.class);
-		kryo.register(HintMap.class);
 		kryo.register(HintMap.class);
 		kryo.register(VectorState.class);
 		kryo.register(IndexedVectorState.class);

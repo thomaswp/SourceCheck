@@ -17,19 +17,22 @@ public class Alignment {
 		return alignCost(sequenceA, sequenceB, 1, 1, 1);
 	}
 
-	public static double normAlignCost(String[] sequenceA, String[] sequenceB, int insCost, int delCost, int subCost) {
+	public static double normAlignCost(String[] sequenceA, String[] sequenceB, int insCost,
+			int delCost, int subCost) {
 		int cost = alignCost(sequenceA, sequenceB, insCost, delCost, subCost);
 		int length = Math.max(sequenceA.length, sequenceB.length);
 		return length == 0 ? 0 : ((double) cost / length);
 	}
 
 	// Credit: http://introcs.cs.princeton.edu/java/96optimization/Diff.java.html
-	public static int alignCost(String[] sequenceA, String[] sequenceB, int insCost, int delCost, int subCost) {
+	public static int alignCost(String[] sequenceA, String[] sequenceB, int insCost, int delCost,
+			int subCost) {
 		int[][] opt = createAlignmentMatrix(sequenceA, sequenceB, insCost, delCost, subCost, false);
 		return opt[sequenceA.length][sequenceB.length];
 	}
 
-	public static List<int[]> alignPairs(String[] sequenceA, String[] sequenceB, int insCost, int delCost, int subCost) {
+	public static List<int[]> alignPairs(String[] sequenceA, String[] sequenceB, int insCost,
+			int delCost, int subCost) {
 		int[][] opt = createAlignmentMatrix(sequenceA, sequenceB, insCost, delCost, subCost, true);
 		ArrayList<int[]> pairs = new ArrayList<>();
 
@@ -60,8 +63,16 @@ public class Alignment {
 				continue;
 			}
 
+			// We count a replacement as no match, since this is the expected behavior for
+			// the current uses of this funciton, though it may be a bit unusual
+			pairs.add(new int[] {-1, j});
+			pairs.add(new int[] {i, -1});
 			i++; j++;
-			pairs.add(new int[] {i, j});
+
+			// Don't see why this should ever need to happen. It means none of the above worked
+			// which can only happen in a) an invalid configuration or b) skipping a replacement
+			// and in neither case should we another pair
+//			if (i < sequenceA.length && j < sequenceB.length) pairs.add(new int[] {i, j});
 		}
 
 		while (i < sequenceA.length) {
@@ -139,21 +150,24 @@ public class Alignment {
 
 	public static Editor MoveEditor = new Editor() {
 		@Override
-		public Edit getEdit(String[] sequenceA, String[] sequenceB, List<int[]> pairs, List<String> sequence) {
+		public Edit getEdit(String[] sequenceA, String[] sequenceB, List<int[]> pairs,
+				List<String> sequence) {
 			return moveEdit(sequenceA, sequenceB, pairs, sequence);
 		}
 	};
 
 	public static Editor AddEditor = new Editor() {
 		@Override
-		public Edit getEdit(String[] sequenceA, String[] sequenceB, List<int[]> pairs, List<String> sequence) {
+		public Edit getEdit(String[] sequenceA, String[] sequenceB, List<int[]> pairs,
+				List<String> sequence) {
 			return addEdit(sequenceA, sequenceB, pairs, sequence);
 		}
 	};
 
 	public static Editor DeleteEditor = new Editor() {
 		@Override
-		public Edit getEdit(String[] sequenceA, String[] sequenceB, List<int[]> pairs, List<String> sequence) {
+		public Edit getEdit(String[] sequenceA, String[] sequenceB, List<int[]> pairs,
+				List<String> sequence) {
 			return deleteEdit(sequenceA, sequenceB, pairs, sequence);
 		}
 	};
@@ -286,7 +300,8 @@ public class Alignment {
 		return closestA;
 	}
 
-	private static int[][] createAlignmentMatrix(String[] sequenceA, String[] sequenceB, int insCost, int delCost, int subCost, boolean flipInvalid) {
+	private static int[][] createAlignmentMatrix(String[] sequenceA, String[] sequenceB,
+			int insCost, int delCost, int subCost, boolean flipInvalid) {
 		// The penalties to apply
 		int matchCost = 0;
 		int aLength = sequenceA.length, bLength = sequenceB.length;
@@ -350,31 +365,118 @@ public class Alignment {
 
 	public static double getProgress(String[] from, String[] to, int orderReward, int unorderReward,
 			double skipCost) {
-		// TODO: This can and should be much more efficient
-		List<String> fromList = new LinkedList<>(Arrays.asList(from));
-		List<String> toList = new LinkedList<>(Arrays.asList(to));
+		return getProgress(from, to, null, orderReward, unorderReward, skipCost);
+	}
 
-		List<Integer> indices = new LinkedList<>();
+	public static double getProgress(String[] from, String[] to, int[] toOrderGroups,
+			int orderReward, int unorderReward, double skipCost) {
 
-		while (!fromList.isEmpty()) {
-			String item = fromList.remove(0);
-			int index = toList.indexOf(item);
-			if (index >= 0) {
-				toList.set(index, "\0");
-				indices.add(index);
+		int[] toIndices = new int[to.length];
+		return getProgress(from, to, toOrderGroups, orderReward, unorderReward, skipCost,
+				toIndices);
+	}
+
+	public static int[] reorderIndices(String[] from, String[] to, int[] toOrderGroups) {
+		int[] toIndices = new int[to.length];
+		// Get the raw to-indices (the cost doesn't matter, so we just use 1s)
+		getProgress(from, to, toOrderGroups, 1, 1, 1, toIndices);
+
+		// Find any unused indices in the toIndices array and set them sequentially
+
+		// First create an array of all the unused indices, which will be out of order
+		int[] unusedIndices = new int[toIndices.length];
+		Arrays.fill(unusedIndices, Integer.MAX_VALUE);
+		int index = 0;
+		for (int i = 0; i < unusedIndices.length; i++) {
+			boolean found = false;
+			for (int j = 0; j < toIndices.length; j++) {
+				if (toIndices[j] == i) {
+					found = true;
+					break;
+				}
+			}
+			if (!found) {
+				unusedIndices[index++] = i;
 			}
 		}
 
-		int reward = 0;
-		int lastIndex = -1;
-		for (Integer i : indices) {
-			if (to[i] != null) {
-				reward += i > lastIndex ? orderReward : unorderReward;
-				// If the index is more than 1 more than the last index, we've skipped some indices, so
-				// we add the skip penalty (if any)
-				reward -= Math.max(0, i - lastIndex - 1) * skipCost;
+		// Then sort it to be in order, will the blanks (MAX_VALUE) at the end
+		Arrays.sort(unusedIndices);
+
+		// Then fill in the unused indices in toIndices with the sequential missing values
+		index = 0;
+		for (int i = 0; i < toIndices.length; i++) {
+			if (toIndices[i] == -1) {
+				toIndices[i] = unusedIndices[index++];
 			}
-			lastIndex = i;
+		}
+
+		return toIndices;
+	}
+
+	private static double getProgress(String[] from, String[] to, int[] toOrderGroups,
+			int orderReward, int unorderReward, double skipCost, int[] toIndices) {
+		// TODO: This can and should be much more efficient
+		List<String> toList = new LinkedList<>(Arrays.asList(to));
+
+		int[] indices = new int[from.length];
+		for (int i = 0; i < from.length; i++) {
+			String item = from[i];
+			int index = toList.indexOf(item);
+			if (index >= 0) {
+				toList.set(index, "\0");
+				indices[i] = index;
+			} else {
+				indices[i] = -1;
+			}
+		}
+
+		Arrays.fill(toIndices, -1);
+
+		double reward = 0;
+		int lastIndex = -1;
+		int maxIndex = -1;
+		for (Integer index : indices) {
+			if (index < 0) continue;
+			int adjIndex = index;
+			int group;
+//			System.out.println(index);
+			if (toOrderGroups != null && (group = toOrderGroups[adjIndex]) > 0) {
+				// If the matched "to" item is in an order group (for which all items in the group
+				// are unordered), we should match i to the index of the earliest item in this group
+				// which comes after the last index, since the actual match could have been
+				// reordered to that index without loss of meaning
+
+				// First check if the index can be decreased within the order group without going
+				// <= the max seen index (to avoid duplicate adjusted indices)
+				while (adjIndex > 0 && adjIndex - 1 > maxIndex &&
+						toOrderGroups[adjIndex - 1] == group) {
+					adjIndex--;
+//					System.out.println("m-> " + adjIndex);
+				}
+				// Next check if the index is out of order and increasing it to maxIndex + 1 will
+				// make in order
+				int nextIndex = maxIndex + 1;
+				if (nextIndex < toOrderGroups.length && adjIndex <= lastIndex  &&
+						toOrderGroups[nextIndex] == group) {
+					adjIndex = nextIndex;
+//					System.out.println("p-> " + adjIndex);
+				}
+
+				// Set the actual to-index used after adjustments above
+				if (index != adjIndex) {
+					toIndices[index] = adjIndex;
+				}
+			}
+
+			if (to[adjIndex] != null) {
+				reward += adjIndex > lastIndex ? orderReward : unorderReward;
+				// If the index is more than 1 more than the last index, we've skipped some indices,
+				// so we add the skip penalty (if any)
+				reward -= Math.max(0, adjIndex - lastIndex - 1) * skipCost;
+			}
+			lastIndex = adjIndex;
+			maxIndex = Math.max(maxIndex, adjIndex);
 		}
 
 		return reward;
@@ -385,21 +487,31 @@ public class Alignment {
 	}
 
 	public static void main(String[] args) {
-//		List<int[]> pairs = alignPairs(new String[] {
-//				"a", "b", "c", "b", "e", "c", "f", "b"
-//		}, new String[] {
-//				"a", "b", "c", "b"
-//		}, 1, 1, 100);
-//
-//		System.out.println();
-//		for (int[] pair : pairs) {
-//			System.out.println(Arrays.toString(pair));
-//		}
-
-		System.out.println(getProgress(new String[] {
-				null, "a"
+		List<int[]> pairs = alignPairs(new String[] {
+				"a", "b", "c"
 		}, new String[] {
-				null, "a"
-		}, 2, 1));
+				"a", "c", "b"
+		}, 2, 2, 3);
+
+		System.out.println();
+		for (int[] pair : pairs) {
+			System.out.println(Arrays.toString(pair));
+		}
+
+//		System.out.println(getProgress(new String[] {
+//				"a", "b", "c"
+//		}, new String[] {
+//				"a", "b", "x", "c"
+//		}, new int[] {
+//				0, 1, 1, 0
+//		}, 2, 1, 0.25));
+
+//		System.out.println(Arrays.toString(reorderIndices(new String[] {
+//				"c", "d", "e", "f"
+//		}, new String[] {
+//				"c", "f", "d", "e", "g"
+//		}, new int[] {
+//				0, 1, 1, 1, 0
+//		})));
 	}
 }

@@ -1,68 +1,66 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>edu.isnap</groupId>
-  <artifactId>eval</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
-  <name>HintEvaluation</name>
-  <description>Scripts to evaluate the effectiveness of iSnap hints.</description>
-  <build>
-    <sourceDirectory>src</sourceDirectory>
-    <resources>
-      <resource>
-        <directory>src</directory>
-        <excludes>
-          <exclude>**/*.java</exclude>
-        </excludes>
-      </resource>
-    </resources>
-    <plugins>
-      <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.5.1</version>
-        <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
-  <dependencies>
-  	<dependency>
-  		<groupId>edu.isnap</groupId>
-  		<artifactId>datasets</artifactId>
-  		<version>0.0.1-SNAPSHOT</version>
-  	</dependency>
-    <dependency>
-        <groupId>de.cit-ec.tcs.alignment</groupId>
-        <artifactId>sequences</artifactId>
-        <version>2.1.2</version>
-        <scope>compile</scope>
-    </dependency>
-    <dependency>
-        <groupId>de.cit-ec.tcs.alignment</groupId>
-        <artifactId>csv</artifactId>
-        <version>2.1.2</version>
-        <scope>compile</scope>
-    </dependency>
-    <!--
-    <dependency>
-        <groupId>de.cit-ec.fit</groupId>
-        <artifactId>object-graph-api</artifactId>
-        <version>3.0.1</version>
-        <scope>compile</scope>
-    </dependency>
-    <dependency>
-        <groupId>de.cit-ec.fit</groupId>
-        <artifactId>object-graphs</artifactId>
-        <version>3.0.1</version>
-        <scope>compile</scope>
-    </dependency>
-    <dependency>
-        <groupId>de.cit-ec.fit</groupId>
-        <artifactId>validators</artifactId>
-        <version>2.0.0</version>
-        <scope>compile</scope>
-    </dependency>
-     -->
-  </dependencies>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>edu.isnap</groupId>
+	<artifactId>eval</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<name>HintEvaluation</name>
+	<description>Scripts to evaluate the effectiveness of iSnap hints.</description>
+	<build>
+		<sourceDirectory>src</sourceDirectory>
+		<resources>
+			<resource>
+				<directory>src</directory>
+				<excludes>
+					<exclude>**/*.java</exclude>
+				</excludes>
+			</resource>
+		</resources>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.5.1</version>
+				<configuration>
+					<source>1.8</source>
+					<target>1.8</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+	<dependencies>
+		<dependency>
+			<groupId>edu.isnap</groupId>
+			<artifactId>datasets</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>de.cit-ec.tcs.alignment</groupId>
+			<artifactId>sequences</artifactId>
+			<version>2.1.2</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>de.cit-ec.tcs.alignment</groupId>
+			<artifactId>csv</artifactId>
+			<version>2.1.2</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>commons-lang</groupId>
+			<artifactId>commons-lang</artifactId>
+			<version>2.6</version>
+		</dependency>
+		<dependency>
+			<groupId>com.apporiented</groupId>
+			<artifactId>hierarchical-clustering</artifactId>
+			<version>1.1.0</version>
+		</dependency>
+
+		<!-- <dependency> <groupId>de.cit-ec.fit</groupId> <artifactId>object-graph-api</artifactId> 
+			<version>3.0.1</version> <scope>compile</scope> </dependency> <dependency> 
+			<groupId>de.cit-ec.fit</groupId> <artifactId>object-graphs</artifactId> <version>3.0.1</version> 
+			<scope>compile</scope> </dependency> <dependency> <groupId>de.cit-ec.fit</groupId> 
+			<artifactId>validators</artifactId> <version>2.0.0</version> <scope>compile</scope> 
+			</dependency> -->
+	</dependencies>
 </project>

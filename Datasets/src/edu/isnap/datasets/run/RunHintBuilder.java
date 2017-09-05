@@ -28,8 +28,10 @@ public class RunHintBuilder {
 		// Then copies the cache to the HintServer
 		RunCopyData.copyGraphs(Fall2016.dataDir);
 
-//		buildHints(HelpSeeking.BrickWall, 1);
-//		RunCopyData.copyGraphs(HelpSeeking.BrickWall.dataDir);
+//		buildHints(HelpSeekingExperts.BrickWall, 1);
+//		RunCopyData.copyGraphs(HelpSeekingExperts.BrickWall.dataDir);
+//		buildHints(Spring2016.GuessingGame1, 1);
+//		RunCopyData.copyGraphs(Spring2016.GuessingGame1.dataDir, "spring2016");
 	}
 
 

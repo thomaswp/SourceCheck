@@ -4,13 +4,13 @@ import java.util.Map;
 
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
-import edu.isnap.datasets.HelpSeeking;
+import edu.isnap.datasets.HelpSeekingExperts;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.Snapshot;
 
 public class RunPrintSubmitted {
 	public static void main(String[] args) {
-		print(HelpSeeking.BrickWall);
+		print(HelpSeekingExperts.BrickWall);
 	}
 
 	public static void print(Assignment assignment) {

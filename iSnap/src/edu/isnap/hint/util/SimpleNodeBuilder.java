@@ -11,17 +11,21 @@ import edu.isnap.parser.elements.util.IHasID;
 public class SimpleNodeBuilder {
 
 	public static Node toTree(Code code, final boolean canon) {
-		return toTree(code, canon, null);
+		return toTree(code, canon, null, DefaultIDer);
 	}
 
-	private static Node toTree(Code code, final boolean canon, Node parent) {
-		String id = code instanceof IHasID ? ((IHasID) code).getID() : null;
+	public static Node toTree(Code code, final boolean canon, IDer ider) {
+		return toTree(code, canon, null, ider);
+	}
+
+	private static Node toTree(Code code, final boolean canon, Node parent, final IDer ider) {
+		String id = ider.getID(code, parent);
 		final Node node = new Node(parent, code.name(canon), id);
 		node.tag = code;
 		code.addChildren(canon, new Accumulator() {
 
 			void add(String code) {
-				node.children.add(new Node(node, code));
+				node.children.add(new Node(node, code, ider.getID(code, node)));
 			}
 
 			@Override
@@ -36,7 +40,7 @@ public class SimpleNodeBuilder {
 				if (code == null) {
 					add("null");
 				} else {
-					Node child = toTree(code, canon, node);
+					Node child = toTree(code, canon, node, ider);
 					node.children.add(child);
 				}
 			}
@@ -56,14 +60,40 @@ public class SimpleNodeBuilder {
 				} else if (canon instanceof Canonicalization.Rename) {
 					node.canonicalizations.add(new edu.isnap.ctd.hint.Canonicalization.Rename(
 							((Canonicalization.Rename) canon).name));
-				} else if (canon instanceof Canonicalization.SwapArgs) {
-					node.canonicalizations.add(new edu.isnap.ctd.hint.Canonicalization.SwapArgs());
+				} else if (canon instanceof Canonicalization.SwapSymmetricArgs) {
+					node.canonicalizations.add(
+							new edu.isnap.ctd.hint.Canonicalization.SwapSymmetricArgs());
 				} else {
 					throw new RuntimeException("Unknown canonicalization");
 				}
 			}
 		});
 
+		// If this is a symmetric node, its arguments have no order
+		// Order groups not yet supported for arguments
+//		if (CallBlock.SYMMETRIC.contains(node.type())) {
+//			for (Node child : node.children) {
+//				child.setOrderGroup(1);
+//			}
+//		}
+
 		return node;
 	}
+
+	public interface IDer {
+		String getID(Code code, Node parent);
+		String getID(String code, Node parent);
+	}
+
+	private static IDer DefaultIDer = new IDer() {
+		@Override
+		public String getID(Code code, Node parent) {
+			return code instanceof IHasID ? ((IHasID) code).getID() : null;
+		}
+
+		@Override
+		public String getID(String code, Node parent) {
+			return null;
+		}
+	};
 }

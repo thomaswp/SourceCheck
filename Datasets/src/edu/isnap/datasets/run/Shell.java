@@ -5,11 +5,16 @@ import java.util.Scanner;
 
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
+import edu.isnap.datasets.BJC2017;
 import edu.isnap.datasets.Demo;
 import edu.isnap.datasets.Fall2015;
 import edu.isnap.datasets.Fall2016;
 import edu.isnap.datasets.HelpSeeking;
+import edu.isnap.datasets.HelpSeekingExperts;
+import edu.isnap.datasets.Samples;
 import edu.isnap.datasets.Spring2016;
+import edu.isnap.datasets.Spring2017;
+import edu.isnap.datasets.aggregate.CSC200;
 import edu.isnap.parser.LogSplitter;
 import edu.isnap.parser.ParseSubmitted;
 import edu.isnap.parser.SnapParser;
@@ -19,11 +24,16 @@ import edu.isnap.unittest.TestRunner;
 public class Shell {
 
 	public final static Dataset[] DATASETS = {
+			CSC200.instance,
 			Fall2015.instance,
 			Spring2016.instance,
 			Fall2016.instance,
+			Spring2017.instance,
 			Demo.instance,
+			HelpSeekingExperts.instance,
 			HelpSeeking.instance,
+			Samples.instance,
+			BJC2017.instance,
 	};
 
 	public static void main(String[] args) {
@@ -59,10 +69,21 @@ public class Shell {
 						SnapParser.clean(dataset.dataDir);
 						break;
 					case "split":
-						LogSplitter.splitStudentRecords(dataset.dataFile);
+						new LogSplitter().splitStudentRecords(dataset);
 						break;
 					case "test":
 						TestRunner.run(dataset.all());
+						break;
+					case "parse":
+						for (Assignment assignment : dataset.all()) {
+							assignment.load(Mode.Overwrite, true);
+						}
+						break;
+					case "build":
+						for (Assignment assignment : dataset.all()) {
+							RunHintBuilder.buildHints(assignment, 1);
+							RunCopyData.copyGraphs(dataset.dataDir);
+						}
 						break;
 					default:
 						System.out.println("Unknown command: " + command);

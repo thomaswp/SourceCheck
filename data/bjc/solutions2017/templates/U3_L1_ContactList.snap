@@ -1,0 +1,57 @@
+snapshot {
+    stage {
+        @anything
+    }
+    @defVar (STAGE, CONSTRUCTOR, ACCESSORS, NAME) {
+        customBlock {
+            script {
+                doReport(reportNewList(list(var, var, var)))
+            }
+            var
+            var
+            var
+        }
+        @unless (STAGE, CONSTRUCTOR) {
+            customBlock {
+                script {
+                    doReport(reportListItem(literal, var))
+                }
+                var
+            }
+            customBlock {
+                script {
+                    doReport(reportListItem(literal, var))
+                }
+                var
+            }
+            customBlock {
+                script {
+                    doReport(reportListItem(literal, var))
+                }
+                var
+            }
+        }
+        @if (STAGE, NAME) {
+            customBlock {
+                script {
+                    doReport(reportNewList(list(var, var)))
+                }
+                var
+                var
+            }
+            customBlock {
+                script {
+                    doReport(reportJoinWords(list(reportListItem(literal, var), reportListItem(literal, var))))
+                }
+                var
+            }
+            customBlock {
+                script {
+                    doReport(reportJoinWords(list(reportListItem(literal, var), reportListItem(literal, var))))
+                }
+                var
+            }
+        }
+    }
+    var
+}

@@ -235,7 +235,7 @@ public class PredictionEval {
 			LblTree finTree = fin.toTree();
 			LblTree stepTree = step.toTree();
 			
-			int nowSize = now.size();
+			int nowSize = now.treeSize();
 			
 			double nodeStepDis = dis(opt, now, step, nowTree, stepTree);
 			double nodeStepDisN = nodeStepDis / nowSize;

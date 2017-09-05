@@ -10,7 +10,7 @@ import edu.isnap.parser.elements.util.XML;
 public class Stage extends Sprite {
 	private static final long serialVersionUID = 1L;
 
-	public final List<Sprite> sprites = new ArrayList<Sprite>();
+	public final List<Sprite> sprites = new ArrayList<>();
 
 	@Override
 	public String type() {
@@ -35,6 +35,10 @@ public class Stage extends Sprite {
 		return new CodeBuilder(canon)
 		.add("Stage")
 		.indent()
+		.add(variables.size() == 0 ? null :
+			("variables: " + canonicalizeVariables(variables, canon).toString() + "\n"))
+		.add(blocks.getWithEdits(true))
+		.add(scripts)
 		.add(sprites)
 		.end();
 	}
@@ -46,6 +50,7 @@ public class Stage extends Sprite {
 
 	@Override
 	public void addChildren(boolean canon, Accumulator ac) {
+		super.addChildren(canon, ac);
 		ac.add(sprites);
 	}
 }

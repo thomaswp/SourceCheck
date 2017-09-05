@@ -13,6 +13,7 @@ import edu.isnap.parser.elements.Snapshot;
 public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	private static final long serialVersionUID = 1L;
 
+	public static final String ASSIGNMENT_SET_ID_FROM = "Assignment.setIDFrom";
 	public final static String BLOCK_CLICK_RUN = "Block.clickRun";
 	public final static String BLOCK_EDITOR_START = "BlockEditor.start";
 	public final static String BLOCK_EDITOR_OK = "BlockEditor.ok";
@@ -21,6 +22,7 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	public static final String IDE_CHANGE_CATEGORY = "IDE.changeCategory";
 	public final static String IDE_GREEN_FLAG_RUN = "IDE.greenFlag";
 	public final static String IDE_EXPORT_PROJECT = "IDE.exportProject";
+	public final static String IDE_OPENED = "IDE.opened";
 	public static final String IDE_REMOVE_SPRITE = "IDE.removeSprite";
 	public static final String IDE_SELECT_SPRITE = "IDE.selectSprite";
 	public static final String IDE_SET_SPRITE_TAB = "IDE.setSpriteTab";
@@ -31,6 +33,7 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	public final static String HINT_DIALOG_DONE = "HintDialogBox.done";
 	public final static String HINT_DIALOG_LOG_FEEDBACK = "HintDialogBox.logFeedback";
 	public final static String HINT_PROCESS_HINTS = "HintProvider.processHints";
+	public final static String LOGGER_STARTED = "Logger.started";
 	public final static String SHOW_SCRIPT_HINT = "SnapDisplay.showScriptHint";
 	public final static String SHOW_BLOCK_HINT = "SnapDisplay.showBlockHint";
 	public final static String SHOW_STRUCTURE_HINT = "SnapDisplay.showStructureHint";
@@ -47,6 +50,8 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 
 	private final static DateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
 
+
+
 	public final int id;
 	public final Snapshot snapshot;
 	public final Date timestamp;
@@ -57,23 +62,33 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	/** The cumulative active time (in seconds) the student has spent after this action. */
 	public transient int currentActiveTime;
 
+	private static Snapshot loadSnapshot(String attemptID, Date timestamp, String snapshotXML) {
+		String name = attemptID;
+		synchronized (format) {
+			name += timestamp == null ? null : (": " + format.format(timestamp));
+		}
+		return Snapshot.parse(name, snapshotXML);
+	}
+
 	@SuppressWarnings("unused")
 	private AttemptAction() {
-		this(0, null, null, null, null, null, null);
+		this(0, null, null, null, null, null);
 	}
 
 	public AttemptAction(int id, String attemptID, Date timestamp, String sessionID, String message,
 			String data, String snapshotXML) {
+		this(id, timestamp, sessionID, message, data,
+				loadSnapshot(attemptID, timestamp, snapshotXML));
+	}
+
+	public AttemptAction(int id, Date timestamp, String sessionID, String message, String data,
+			Snapshot snapshot) {
 		this.id = id;
 		this.timestamp = timestamp;
 		this.sessionID = sessionID;
 		this.message = message;
 		this.data = data;
-		String name = attemptID;
-		synchronized (format) {
-			name += timestamp == null ? null : (": " + format.format(timestamp));
-		}
-		this.snapshot = Snapshot.parse(name, snapshotXML);
+		this.snapshot = snapshot;
 	}
 
 	@Override

@@ -1,0 +1,69 @@
+snapshot {
+    stage {
+        sprite {
+            @anything
+        }
+    }
+    @optional {
+        @defVar (ARGS, 0, 1, 2) {
+            customBlock {
+                script {
+                    doRepeat(var, script {
+                        forward(
+                            @unless (ARGS, 2) { literal }
+                            @if (ARGS, 2) { var }
+                        )
+                        doWait(literal)
+                        forward(
+                            @if (ARGS, 0) { literal }
+                            @unless (ARGS, 0) {
+                                @or {
+                                    reportProduct(literal, var)
+                                    reportDifference(literal, var)
+                                }
+                            }
+                        )
+                        doWait(literal)
+                        turn(reportQuotient(literal, var))
+                    })
+                }
+                var
+                @unless (ARGS, 0) { var }
+                @if (ARGS, 2) { var }
+            }
+            @if (ARGS, 2) {
+                @optional {
+                    customBlock {
+                        script {
+                            evaluateCustomBlock(var, var, var)
+                        }
+                        var
+                        var
+                    }
+                    @optional {
+                        customBlock {
+                            script {
+                                evaluateCustomBlock(var, var, literal)
+                            }
+                            var
+                            var
+                        }
+                        @optional {
+                              customBlock {
+                                script {
+                                    doRepeat(var, script {
+                                        forward(var)
+                                        @optional { doWait(literal) }
+                                        turn(reportQuotient(literal, var))
+                                    })
+                                }
+                                var
+                                var
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -19,10 +19,11 @@ public class Assignment {
 	public final Dataset dataset;
 	public final String dataDir, name;
 	public final Date start, end;
-	public final boolean hasIDs;
 	public final boolean graded;
 	public final Assignment prequel;
 	public final Assignment None;
+
+	private final boolean hasIDs;
 
 	public Assignment(Dataset dataset, String name, Date end, boolean hasNodeIDs) {
 		this(dataset, name, end, hasNodeIDs, false, null);
@@ -59,6 +60,14 @@ public class Assignment {
 
 	public String parsedDir() {
 		return dir("parsed");
+	}
+
+	public String hintRepairDir() {
+		return dir("hintRepair");
+	}
+
+	public String templateFileBase() {
+		return dir("templates");
 	}
 
 	public String dir(String folderName) {
@@ -115,10 +124,13 @@ public class Assignment {
 
 	public Map<String, AssignmentAttempt> load(Mode mode, boolean snapshotsOnly,
 			boolean addMetadata, Filter... filters) {
-		return new SnapParser(this, mode).parseAssignment(snapshotsOnly, addMetadata, filters);
+		Map<String, AssignmentAttempt> attempts =
+				new SnapParser(this, mode).parseAssignment(snapshotsOnly, addMetadata, filters);
+		for (AssignmentAttempt attempt : attempts.values()) attempt.hasIDs = hasIDs;
+		return attempts;
 	}
 
-	public final static String BASE_DIR = "../data/csc200";
+	public final static String CSC200_BASE_DIR = "../data/csc200";
 
 	// Note: end dates are generally 2 days past last class due date
 	public static Date date(int year, int month, int day) {

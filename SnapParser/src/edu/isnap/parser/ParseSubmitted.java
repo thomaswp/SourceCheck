@@ -23,6 +23,8 @@ public class ParseSubmitted {
 	private final static int MIN_LOG_LENGTH = 30;
 
 	public static void printToGrade(Assignment assignment) throws IOException {
+		// TODO: Need to somehow handle projects where the assignment switches: Assignment.setIDFrom
+
 		Map<String, Submission> submittedRows = getOrParseSubmissions(assignment);
 		if (submittedRows == null) throw new RuntimeException("No submitted assignments.");
 

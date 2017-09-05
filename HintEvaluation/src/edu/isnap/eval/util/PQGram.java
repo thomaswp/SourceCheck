@@ -17,20 +17,20 @@ public class PQGram {
 		Node s = new Node(null, "A");
 		s.addChild("B");
 		s.addChild("C").addChild("Q");
-		
-		
+
+
 		Node t = new Node(null, "Z");
 		t.addChild("Q");
 		t.addChild("C").addChild("Y");
-		
+
 		testEdits(s, t);
-		
+
 //		Profile ps = new Profile(s);
 //		System.out.println(s);
 //		System.out.println(ps);
 //
 //		System.out.println();
-//		
+//
 //		Profile pt = new Profile(t);
 //		System.out.println(t);
 //		System.out.println(pt);
@@ -46,12 +46,12 @@ public class PQGram {
 //		System.out.println(relabels);
 //		System.out.println(mapping);
 	}
-	
+
 	private static void testEdits(Node from, Node to) {
-		
+
 		List<Node> edits = edits(from, to);
 		if (edits.size() == 0) {
-			if (!from.equals(to)) { 
+			if (!from.equals(to)) {
 				System.err.println(from + " =!= " + to);
 			}
 			return;
@@ -61,12 +61,12 @@ public class PQGram {
 		for (Node edit : edits) {
 			System.out.println(" + " + edit);
 		}
-		
+
 		for (Node edit : edits) {
 			testEdits(edit, to);
 		}
 	}
-	
+
 	public static List<Node> edits(Node from, Node to) {
 		Profile pFrom = new Profile(from), pTo = new Profile(to);
 
@@ -75,7 +75,7 @@ public class PQGram {
 		Set<Relabel> relabels = new HashSet<>();
 		BiMap<Node, Node> mapping = new BiMap<>();
 		pFrom.addEdits(pTo, insertions, deletions, relabels, mapping);
-		
+
 		List<Node> outcomes = new LinkedList<>();
 		for (NodeEdit edit : insertions) {
 			Node outcome = edit.outcome();
@@ -89,26 +89,26 @@ public class PQGram {
 			Node outcome = edit.outcome();
 			if (outcome != null) outcomes.add(outcome);
 		}
-		
+
 		return outcomes;
 	}
-	
+
 	public interface NodeEdit {
 		Node outcome();
 	}
-	
+
 	public static class Insertion extends Tuple<Node, Node> implements NodeEdit {
 
 		private BiMap<Node, Node> mapping;
-		
+
 		public final static Constructor<Insertion> constructor = new Constructor<Insertion>() {
 			@Override
 			public Insertion construct(Node x, Node y, BiMap<Node, Node> mapping) {
 				return new Insertion(x, y, mapping);
 			}
-			
+
 		};
-		
+
 		public Insertion(Node x, Node y, BiMap<Node, Node> mapping) {
 			super(x, y);
 			this.mapping = mapping;
@@ -119,8 +119,8 @@ public class PQGram {
 			Node toParent = x;
 			Node fromParent = mapping.getTo(toParent);
 			if (fromParent == null) return null;
-			fromParent = fromParent.copy(false);
-			
+			fromParent = fromParent.copy();
+
 			// Walk through the both parents' children
 			int toIndex = 0, fromIndex = 0;
 			while (true) {
@@ -142,15 +142,15 @@ public class PQGram {
 					fromIndex++;
 				}
 			}
-			
-			
+
+
 			Node insert = new Node(fromParent, y.type());
 			fromParent.children.add(fromIndex, insert);
 			return fromParent.root();
 		}
-		
+
 	}
-	
+
 	public static class Deletion extends Tuple<Node, Node> implements NodeEdit {
 
 		public final static Constructor<Deletion> constructor = new Constructor<Deletion>() {
@@ -158,22 +158,22 @@ public class PQGram {
 			public Deletion construct(Node x, Node y, BiMap<Node, Node> mapping) {
 				return new Deletion(x, y);
 			}
-			
+
 		};
-		
+
 		public Deletion(Node x, Node y) {
 			super(x, y);
 		}
 
 		@Override
 		public Node outcome() {
-			Node copy = y.copy(false);
+			Node copy = y.copy();
 			copy.parent.children.remove(copy.index());
 			return copy.root();
 		}
-		
+
 	}
-	
+
 	public static class Relabel extends Tuple<Node, Node> implements NodeEdit {
 
 		public Relabel(Node x, Node y) {
@@ -182,18 +182,18 @@ public class PQGram {
 
 		@Override
 		public Node outcome() {
-			Node copy = x.copy(false);
+			Node copy = x.copy();
 			copy.setType(y.type());
 			return copy.root();
 		}
-		
+
 	}
-	
+
 	static class Profile {
 		public final int p, q;
-		
-		private final List<ShiftRegister> list = new LinkedList<ShiftRegister>();
-		
+
+		private final List<ShiftRegister> list = new LinkedList<>();
+
 //	    def __init__(self, root, p=2, q=3):
 //      """
 //          Builds the PQ-Gram Profile of the given tree, using the p and q parameters specified.
@@ -205,23 +205,23 @@ public class PQGram {
 //      super(Profile, self).__init__()
 //      ancestors = ShiftRegister(p)
 //      self.list = list()
-//      
+//
 //      self.profile(root, p, q, ancestors)
 //      self.sort()
 		public Profile(Node root) {
 			this(root, 2, 3);
 		}
-		
+
 		public Profile(Node root, int p, int q) {
 			this.p = p;
 			this.q = q;
-			
+
 			ShiftRegister ancestors = new ShiftRegister(p);
-			
+
 			profile(root, ancestors);
 			sort();
 		}
-		
+
 //	    def profile(self, root, p, q, ancestors):
 //      """
 //          Recursively builds the PQ-Gram profile of the given subtree. This method should not be called
@@ -229,7 +229,7 @@ public class PQGram {
 //      """
 //      ancestors.shift(root.label)
 //      siblings = ShiftRegister(q)
-//      
+//
 //      if(len(root.children) == 0):
 //          self.append(ancestors.concatenate(siblings))
 //      else:
@@ -243,7 +243,7 @@ public class PQGram {
 		private void profile(Node root, ShiftRegister ancestors) {
 			ancestors.shift(root);
 			ShiftRegister siblings = new ShiftRegister(q);
-			
+
 			if (root.children.isEmpty()) {
 				list.add(ancestors.concatenate(siblings));
 			} else {
@@ -258,7 +258,7 @@ public class PQGram {
 				}
 			}
 		}
-		
+
 //	    def edit_distance(self, other):
 //      """
 //          Computes the edit distance between two PQ-Gram Profiles. This value should always
@@ -266,12 +266,12 @@ public class PQGram {
 //      """
 //      union = len(self) + len(other)
 //      return 1.0 - 2.0*(self.intersection(other)/union)
-		
+
 		public double editDistance(Profile other) {
 			int union = list.size() + other.list.size();
 			return 1.0 - 2.0 * intersection(other) / union;
 		}
-		
+
 //	    def intersection(self, other):
 //      """
 //          Computes the set intersection of two PQ-Gram Profiles and returns the number of
@@ -289,16 +289,16 @@ public class PQGram {
 //          else:
 //              j += 1
 //      return intersect
-		
-		public void addEdits(Profile other, Set<Insertion> insertions, 
-				Set<Deletion> deletions, Set<Relabel> relabels, 
+
+		public void addEdits(Profile other, Set<Insertion> insertions,
+				Set<Deletion> deletions, Set<Relabel> relabels,
 				BiMap<Node,Node> mapping) {
-			
+
 			List<ShiftRegister> missing = new LinkedList<>(), extra = new LinkedList<>();
 
 			Set<Node> commonRoots = new HashSet<>();
 			commonRoots.add(null);
-			
+
 			// Construct list of extra and missing registers
 			int i1 = 0, i2 = 0;
 			while (i1 < list.size() && i2 < other.list.size()) {
@@ -332,15 +332,15 @@ public class PQGram {
 				missing.add(other.list.get(i2));
 				i2++;
 			}
-			
+
 			for (ShiftRegister reg : missing) {
 				extractEdits(insertions, commonRoots, reg, mapping, Insertion.constructor);
 			}
-			
+
 			for (ShiftRegister reg : extra) {
 				extractEdits(deletions, commonRoots, reg, mapping, Deletion.constructor);
 			}
-			
+
 			HashSet<Tuple<Node, Node>> toRemove = new HashSet<>();
 			for (Tuple<Node, Node> ins : insertions) {
 				for (Tuple<Node, Node> del : deletions) {
@@ -356,8 +356,8 @@ public class PQGram {
 				insertions.remove(r);
 				deletions.remove(r);
 			}
-			
-			
+
+
 //			toRemove.clear();
 //			for (Tuple<Node, Node> ins : insertions) {
 //				for (Tuple<Node, Node> del : deletions) {
@@ -373,11 +373,11 @@ public class PQGram {
 //				insertions.remove(r);
 //				deletions.remove(r);
 //			}
-			
+
 			toRemove.clear();
 			for (Tuple<Node, Node> ins : insertions) {
 				for (Tuple<Node, Node> del : deletions) {
-					if (ShiftRegister.nodesEqual(ins.y, del.y) && 
+					if (ShiftRegister.nodesEqual(ins.y, del.y) &&
 							ShiftRegister.nodesEqual(ins.x, mapping.getFrom(del.x))) {
 						toRemove.add(ins);
 						toRemove.add(del);
@@ -389,13 +389,13 @@ public class PQGram {
 				deletions.remove(r);
 			}
 		}
-		
+
 		interface Constructor<T> {
 			T construct(Node x, Node y, BiMap<Node, Node> mapping);
 		}
 
-		private <T extends Tuple<Node, Node>> void extractEdits(Set<T> registers, 
-				Set<Node> commonRoots, ShiftRegister reg, BiMap<Node, Node> mapping, 
+		private <T extends Tuple<Node, Node>> void extractEdits(Set<T> registers,
+				Set<Node> commonRoots, ShiftRegister reg, BiMap<Node, Node> mapping,
 				Constructor<T> constructor) {
 			for (int i = 1; i < p; i++) {
 				Node ai = reg.register.get(i);
@@ -410,7 +410,7 @@ public class PQGram {
 				}
 			}
 		}
-		
+
 		public double intersection(Profile other) {
 			double intersect = 0;
 			int i = 0, j = 0;
@@ -427,7 +427,7 @@ public class PQGram {
 			}
 			return intersect;
 		}
-		
+
 //	    def gram_edit_distance(self, gram1, gram2):
 //      """
 //          Computes the edit distance between two different PQ-Grams. If the two PQ-Grams are the same
@@ -438,11 +438,11 @@ public class PQGram {
 //      if gram1 == gram2:
 //          distance = 1.0
 //      return distance
-		
+
 		private double gramEditDistance(ShiftRegister gram1, ShiftRegister gram2) {
 			return gram1.equals(gram2) ? 1 : 0;
 		}
-		
+
 //	    def sort(self):
 //      """
 //          Sorts the PQ-Grams by the concatenation of their labels. This step is automatically performed
@@ -450,11 +450,11 @@ public class PQGram {
 //          efficiently.
 //      """
 //      self.list.sort(key=lambda x: ''.join)
-		
+
 		private void sort() {
 			Collections.sort(list);
 		}
-		
+
 		@Override
 		public String toString() {
 			String s = "";
@@ -471,15 +471,15 @@ public class PQGram {
 //    removed. Note that you cannot recover this value, nor do you need to for generating
 //    PQ-Gram Profiles.
 	private static class ShiftRegister implements Comparable<ShiftRegister> {
-		
-		private final List<Node> register = new LinkedList<Node>();
-		
+
+		private final List<Node> register = new LinkedList<>();
+
 		private transient String str;
-		
+
 //	    def __init__(self, size):
 //        """
 //            Creates an internal list of the specified size and fills it with the default value
-//            of "*". Once a ShiftRegister is created you cannot change the size without 
+//            of "*". Once a ShiftRegister is created you cannot change the size without
 //            concatenating another ShiftRegister.
 //        """
 //        self.register = list()
@@ -491,12 +491,12 @@ public class PQGram {
 			}
 			updateStr();
 		}
-		
+
 		private void add(ShiftRegister reg) {
 			this.register.addAll(reg.register);
 			updateStr();
 		}
-		
+
 		private void updateStr() {
 			String s = "[";
 			for (int i = 0; i < register.size(); i++) {
@@ -505,16 +505,16 @@ public class PQGram {
 			}
 			str = s + "]";
 		}
-		
+
 		public static String nodeToString(Node node) {
 			return node == null ? "*" : node.type();
 		}
-		
+
 		public static boolean nodesEqual(Node a, Node b) {
 			if (a == null) return b == null;
 			return a.shallowEquals(b);
 		}
-		 
+
 //    def concatenate(self, reg):
 //        """
 //            Concatenates two ShiftRegisters and returns the resulting ShiftRegister.
@@ -522,18 +522,18 @@ public class PQGram {
 //        temp = list(self.register)
 //        temp.extend(reg.register)
 //        return temp
-		
+
 		public ShiftRegister concatenate(ShiftRegister reg) {
 			ShiftRegister temp = new ShiftRegister(0);
 			temp.add(this);
 			temp.add(reg);
 			return temp;
 		}
-		
+
 //	    def shift(self, el):
 //        """
 //            Shift is the primary operation on a ShiftRegister. The new item given is pushed onto
-//            the end of the ShiftRegister, the first value is removed, and all items in between shift 
+//            the end of the ShiftRegister, the first value is removed, and all items in between shift
 //            to accomodate the new value.
 //        """
 //        self.register.pop(0)
@@ -543,17 +543,17 @@ public class PQGram {
 			register.add(el);
 			updateStr();
 		}
-		
+
 		public ShiftRegister copy() {
 			ShiftRegister reg = new ShiftRegister(0);
 			reg.add(this);
 			return reg;
 		}
-		
+
 		public boolean equals(ShiftRegister other) {
 			return str.equals(other.str);
 		}
-		
+
 		@Override
 		public String toString() {
 			return str;
@@ -569,7 +569,7 @@ public class PQGram {
 //    """
 //        This method will take a normal tree structure and the given values for p and q, returning
 //        a new tree which represents the so-called PQ-Extended-Tree.
-//        
+//
 //        To do this, the following algorithm is used:
 //            1) Add p-1 null ancestors to the root
 //            2) Traverse tree, add q-1 null children before the first and
@@ -577,13 +577,13 @@ public class PQGram {
 //            3) For each leaf node add q null children
 //    """
 //    original_root = root # store for later
-//    
+//
 //    # Step 1
 //    for i in range(p-1):
 //        node = tree.Node(label="*")
 //        node.addkid(root)
 //        root = node
-//        
+//
 //    # Steps 2 and 3
 //    list_of_children = original_root.children
 //    if(len(list_of_children) == 0):
@@ -603,14 +603,14 @@ public class PQGram {
 //    return root
 //
 //##### Extended Tree Functions #####
-//    
+//
 //def q_append_non_leaf(node, q):
 //    """
 //        This method will append null node children to the given node. (Step 2)
-//    
+//
 //        When adding null nodes to a non-leaf node, the null nodes should exist on both side of
 //        the real children. This is why the first of each pair of children added sets the flag
-//        'before=True', ensuring that on the left and right (or start and end) of the list of 
+//        'before=True', ensuring that on the left and right (or start and end) of the list of
 //        children a node is added.
 //    """
 //    for i in range(q-1):
@@ -622,5 +622,5 @@ public class PQGram {
 //        This method will append q null node children to the given node. (Step 3)
 //    """
 //    for i in range(q):  node.addkid(tree.Node("*"))
-	
+
 }

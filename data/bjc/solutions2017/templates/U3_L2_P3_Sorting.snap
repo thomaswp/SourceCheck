@@ -1,0 +1,39 @@
+snapshot {
+    stage {
+        sprite {
+            @anything
+        }
+    }
+    customBlock {
+        script {
+            doDeclareVariables(list(literal, literal, literal))
+            for_*_to__(literal, literal, reportDifference(reportListLength(var), literal), script {
+                @anyOrder {
+                    doSetVar(literal, reportListItem(var, var))
+                    doSetVar(literal, var)
+                    doSetVar(literal, var)
+                }
+                for_*_to__(literal, reportSum(literal, var), reportListLength(var), script {
+                    doIf(reportLessThan(reportListItem(var, var), var), script {
+                        @anyOrder {
+                            doSetVar(literal, var)
+                            doSetVar(literal, reportListItem(var, var))
+                        }
+                    })
+                })
+                @defBlock (REPLACE) {
+                    doReplaceInList(var, var, var)
+                    doReplaceInList(var, var, var)
+                }
+                @or {
+                    @block REPLACE
+                    doIf(reportLessThan(var, var), script {
+                        @block REPLACE
+                    })
+                }
+            })
+            @optional { doReport(var) }
+        }
+        var
+    }
+}

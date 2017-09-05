@@ -22,6 +22,7 @@ import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.Hint;
 import edu.isnap.ctd.hint.HintGenerator;
 import edu.isnap.ctd.hint.HintHighlighter;
+import edu.isnap.ctd.hint.HintJSON;
 import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.hint.HintMapBuilder;
 import edu.isnap.hint.SnapHintBuilder;
@@ -42,7 +43,7 @@ public class HintServlet extends HttpServlet {
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
-		loadHintMap(DEFAULT_ASSIGNMENT, DEFAULT_MIN_GRADE);
+		loadHintMap(DEFAULT_ASSIGNMENT, null, DEFAULT_MIN_GRADE);
 		resp.setContentType("text");
 		resp.getOutputStream().println("Loaded cache for " + DEFAULT_ASSIGNMENT);
 	}
@@ -63,7 +64,6 @@ public class HintServlet extends HttpServlet {
 		sc.close();
 
 		String xml = sb.toString();
-		Snapshot snapshot = Snapshot.parse(null, xml);
 
 		PrintStream out = new PrintStream(resp.getOutputStream());
 
@@ -80,75 +80,85 @@ public class HintServlet extends HttpServlet {
 		if (assignment == null){
 			assignment = DEFAULT_ASSIGNMENT;
 		}
+		String dataset = req.getParameter("dataset");
 		String hintTypes = req.getParameter("hintTypes");
 
 		if (hint != null) {
 			out.println(UnitTest.saveUnitTest(assignment, xml, hint));
 		} else {
-			String hintJSON = getHintJSON(snapshot, assignment, minGrade, hintTypes);
+			String hintJSON = getHintJSON(xml, assignment, dataset, minGrade, hintTypes);
 			resp.setContentType("text/json");
 			out.println(hintJSON);
 		}
 	}
 
-	private String getHintJSON(Snapshot snapshot, String assignment, int minGrade,
+	private String getHintJSON(String snapshotXML, String assignment, String dataset, int minGrade,
 			String hintTypes) {
-		HintMap hintMap = loadHintMap(assignment, minGrade);
-		if (hintMap == null) {
-			return "[]";
+		JSONArray array = new JSONArray();
+		List<Hint> hints = new LinkedList<>();
+		HintMap hintMap;
+		Node node;
+
+		try {
+			Snapshot snapshot = Snapshot.parse(null, snapshotXML);
+			hintMap = loadHintMap(assignment, dataset, minGrade);
+			if (hintMap == null) {
+				if ("view".equals(assignment)) return "[]";
+				String message = "No hint map for assignment: " + assignment;
+				JSONObject error = HintJSON.errorToJSON(new RuntimeException(message), false);
+				return "[" + error + "]";
+			}
+
+			node = SimpleNodeBuilder.toTree(snapshot, true);
+		} catch (Exception e) {
+			array.put(HintJSON.errorToJSON(e, true));
+			return array.toString();
 		}
 
-
-//		long time = System.currentTimeMillis();
-
-//		System.out.println(snapshot.toCode(true));
-		Node node = SimpleNodeBuilder.toTree(snapshot, true);
-
-		List<Hint> hints = new LinkedList<>();
 		// Return the hints for each type requested, or bubble hints if none is provided
 		if (hintTypes != null) hintTypes = hintTypes.toLowerCase();
 		if (hintTypes == null || hintTypes.contains("bubble")) {
-			hints.addAll(new HintGenerator(hintMap).getHints(node));
+			try {
+				hints.addAll(new HintGenerator(hintMap).getHints(node));
+			} catch (Exception e) {
+				array.put(HintJSON.errorToJSON(e, true));
+			}
 		}
 		if (hintTypes != null && hintTypes.contains("highlight")){
-			hints.addAll(new HintHighlighter(hintMap).highlight(node));
+			try {
+				HintHighlighter highlighter = new HintHighlighter(hintMap);
+				// TODO: More comprehensive logging that doesn't clog the log file
+				highlighter.consoleOutput = false;
+				hints.addAll(highlighter.highlight(node));
+			} catch (Exception e) {
+				array.put(HintJSON.errorToJSON(e, true));
+			}
 		}
 
-		JSONArray array = new JSONArray();
 		for (Hint hint : hints) {
-			array.put(hintToJSON(hint));
+			array.put(HintJSON.hintToJSON(hint));
 		}
-
-//		long elapsed = System.currentTimeMillis() - time;
-//		System.out.println(elapsed);
 
 		return array.toString();
 	}
 
-	public static JSONObject hintToJSON(Hint hint) {
-		JSONObject obj = new JSONObject();
-		obj.put("from", hint.from());
-		obj.put("to", hint.to());
-		obj.put("type", hint.type());
-		obj.put("data", hint.data());
-		return obj;
-	}
-
-	private HintMap loadHintMap(String assignment, int minGrade) {
+	private HintMap loadHintMap(String assignment, String dataset, int minGrade) {
 		if (assignment == null || "test".equals(assignment)) {
 			assignment = DEFAULT_ASSIGNMENT;
 		}
-		HintMap hintMap = hintMaps.get(assignment);
+		String key = assignment + dataset + minGrade;
+		HintMap hintMap = hintMaps.get(key);
 		if (hintMap == null) {
 			Kryo kryo = SnapHintBuilder.getKryo();
-			String path = String.format("/WEB-INF/data/%s-g%03d.cached", assignment, minGrade);
+			String path = String.format("/WEB-INF/data/%s-g%03d%s.cached", assignment, minGrade,
+					dataset == null ? "" : ("-" + dataset));
 			InputStream stream = getServletContext().getResourceAsStream(path);
 			if (stream == null) return null;
 			Input input = new Input(stream);
 			HintMapBuilder builder = kryo.readObject(input, HintMapBuilder.class);
 			input.close();
 
-			hintMaps.put(assignment, hintMap = builder.hintMap);
+			hintMaps.put(key, hintMap = builder.hintMap);
 		}
 		return hintMap;
 	}

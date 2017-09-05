@@ -2,7 +2,17 @@ package edu.isnap.ctd.hint;
 
 import java.util.HashSet;
 
+import edu.isnap.ctd.graph.Node;
+
 public class HintConfig {
+	/**
+	 * If true, a HintMap build from this assignment will only include graded submissions.
+	 */
+	public boolean requireGrade = false;
+	/**
+	 * If true, these solutions came from students and should be preprocessed to remove side-scripts
+	 */
+	public boolean preprocessSolutions = true;
 	/**
 	 * When at least this proportion of visitors to a state finished there,
 	 * we flag hints to leave it with caution
@@ -34,6 +44,12 @@ public class HintConfig {
 	 * this factor compared to nodes that are out of order
 	 */
 	public int progressOrderFactor = 2;
+	/**
+	 * When measuring progress towards a goal, nodes in the student's solution but not in the goal
+	 * solution are given negative weight multiplied by this factor compared to nodes that are
+	 * out of order
+	 */
+	public double progressMissingFactor = 0.1;
 
 	/**
 	 * Code elements that have exactly one script child or unordered children and therefore should
@@ -82,6 +98,30 @@ public class HintConfig {
 		}
 	}
 
+	/** Nodes that should be self-contained, and their children should not be inter-matched */
+	public final HashSet<String> containers = new HashSet<>();
+	{
+		for (String c : new String[] {
+				"sprite",
+		}) {
+			containers.add(c);
+		}
+	}
+
+	public final HashSet<String> harmlessCalls = new HashSet<>();
+	{
+		for (String c : new String[] {
+				"receiveGo",
+				"setColor",
+				"setHue",
+				"clear",
+				"receiveKey",
+				"receiveInteraction",
+		}) {
+			harmlessCalls.add(c);
+		}
+	}
+
 	/**
 	 * Power used in the distance weight formula. Higher values penalize higher distances faster.
 	 * Must be >= 1.
@@ -97,5 +137,10 @@ public class HintConfig {
 		// TODO: See if you can find a way to may this discrete instead
 		return Math.pow(distanceWeightBase, distanceWeightPower) /
 				Math.pow(distanceWeightBase + distance, distanceWeightPower); // max 1
+	}
+
+	public boolean isCodeElement(Node node) {
+		return node != null && !node.hasType(script) &&
+				node.hasAncestor(new Node.TypePredicate(script));
 	}
 }

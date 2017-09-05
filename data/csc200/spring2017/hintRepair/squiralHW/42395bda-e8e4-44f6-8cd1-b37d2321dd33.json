@@ -1,0 +1,473 @@
+{
+    "62185": [
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "index": -1,
+                                "label": "snapshot"
+                            },
+                            "index": 1,
+                            "label": "customBlock"
+                        },
+                        "index": 0,
+                        "label": "script"
+                    },
+                    "index": 1,
+                    "label": "doRepeat"
+                },
+                "missingParent": false,
+                "action": "insert",
+                "index": 0,
+                "from": [
+                    "var",
+                    "script"
+                ],
+                "to": [
+                    "reportProduct",
+                    "script"
+                ],
+                "type": "reportProduct",
+                "replacement": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "parent": {
+                                    "index": -1,
+                                    "label": "snapshot"
+                                },
+                                "index": 1,
+                                "label": "customBlock"
+                            },
+                            "index": 0,
+                            "label": "script"
+                        },
+                        "index": 1,
+                        "label": "doRepeat"
+                    },
+                    "index": 0,
+                    "label": "var"
+                }
+            },
+            "from": "insert: snapshot:[customBlock:[script:[doRepeat]]]: [var, script]",
+            "to": "insert: snapshot:[customBlock:[script:[doRepeat]]]: [reportProduct, script]",
+            "type": "highlight"
+        },
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "parent": {
+                                    "index": -1,
+                                    "label": "snapshot"
+                                },
+                                "index": 1,
+                                "label": "customBlock"
+                            },
+                            "index": 0,
+                            "label": "script"
+                        },
+                        "index": 1,
+                        "label": "doRepeat"
+                    },
+                    "index": 0,
+                    "label": "reportProduct"
+                },
+                "candidate": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "parent": {
+                                    "index": -1,
+                                    "label": "snapshot"
+                                },
+                                "index": 1,
+                                "label": "customBlock"
+                            },
+                            "index": 0,
+                            "label": "script"
+                        },
+                        "index": 1,
+                        "label": "doRepeat"
+                    },
+                    "index": 0,
+                    "label": "var"
+                },
+                "missingParent": true,
+                "action": "insert",
+                "index": 1,
+                "from": ["literal"],
+                "to": [
+                    "literal",
+                    "var"
+                ],
+                "type": "var"
+            },
+            "from": "insert: {snapshot:[customBlock:[script:[doRepeat:[reportProduct]]]]}: [literal] using snapshot:[customBlock:[script:[doRepeat:[var]]]]",
+            "to": "insert: {snapshot:[customBlock:[script:[doRepeat:[reportProduct]]]]}: [literal, var] using snapshot:[customBlock:[script:[doRepeat:[var]]]]",
+            "type": "highlight"
+        },
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "index": -1,
+                                "label": "snapshot"
+                            },
+                            "index": 0,
+                            "label": "stage"
+                        },
+                        "index": 0,
+                        "label": "sprite"
+                    },
+                    "index": 0,
+                    "label": "script"
+                },
+                "node": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "parent": {
+                                    "index": -1,
+                                    "label": "snapshot"
+                                },
+                                "index": 0,
+                                "label": "stage"
+                            },
+                            "index": 0,
+                            "label": "sprite"
+                        },
+                        "index": 0,
+                        "label": "script"
+                    },
+                    "index": 3,
+                    "label": "gotoXY"
+                },
+                "action": "delete"
+            },
+            "from": "delete: snapshot:[stage:[sprite:[script]]]: [receiveGo, clear, evaluateCustomBlock, gotoXY]",
+            "to": "delete: snapshot:[stage:[sprite:[script]]]: [receiveGo, clear, evaluateCustomBlock]",
+            "type": "highlight"
+        }
+    ],
+    "62206": [
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "index": -1,
+                                "label": "snapshot"
+                            },
+                            "index": 1,
+                            "label": "customBlock"
+                        },
+                        "index": 0,
+                        "label": "script"
+                    },
+                    "index": 1,
+                    "label": "doRepeat"
+                },
+                "missingParent": false,
+                "action": "insert",
+                "index": 0,
+                "from": [
+                    "var",
+                    "script"
+                ],
+                "to": [
+                    "reportProduct",
+                    "script"
+                ],
+                "type": "reportProduct",
+                "replacement": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "parent": {
+                                    "index": -1,
+                                    "label": "snapshot"
+                                },
+                                "index": 1,
+                                "label": "customBlock"
+                            },
+                            "index": 0,
+                            "label": "script"
+                        },
+                        "index": 1,
+                        "label": "doRepeat"
+                    },
+                    "index": 0,
+                    "label": "var"
+                }
+            },
+            "from": "insert: snapshot:[customBlock:[script:[doRepeat]]]: [var, script]",
+            "to": "insert: snapshot:[customBlock:[script:[doRepeat]]]: [reportProduct, script]",
+            "type": "highlight"
+        },
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "parent": {
+                                    "index": -1,
+                                    "label": "snapshot"
+                                },
+                                "index": 1,
+                                "label": "customBlock"
+                            },
+                            "index": 0,
+                            "label": "script"
+                        },
+                        "index": 1,
+                        "label": "doRepeat"
+                    },
+                    "index": 0,
+                    "label": "reportProduct"
+                },
+                "candidate": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "parent": {
+                                    "index": -1,
+                                    "label": "snapshot"
+                                },
+                                "index": 1,
+                                "label": "customBlock"
+                            },
+                            "index": 0,
+                            "label": "script"
+                        },
+                        "index": 1,
+                        "label": "doRepeat"
+                    },
+                    "index": 0,
+                    "label": "var"
+                },
+                "missingParent": true,
+                "action": "insert",
+                "index": 1,
+                "from": ["literal"],
+                "to": [
+                    "literal",
+                    "var"
+                ],
+                "type": "var"
+            },
+            "from": "insert: {snapshot:[customBlock:[script:[doRepeat:[reportProduct]]]]}: [literal] using snapshot:[customBlock:[script:[doRepeat:[var]]]]",
+            "to": "insert: {snapshot:[customBlock:[script:[doRepeat:[reportProduct]]]]}: [literal, var] using snapshot:[customBlock:[script:[doRepeat:[var]]]]",
+            "type": "highlight"
+        },
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "index": -1,
+                                "label": "snapshot"
+                            },
+                            "index": 0,
+                            "label": "stage"
+                        },
+                        "index": 0,
+                        "label": "sprite"
+                    },
+                    "index": 0,
+                    "label": "script"
+                },
+                "node": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "parent": {
+                                    "index": -1,
+                                    "label": "snapshot"
+                                },
+                                "index": 0,
+                                "label": "stage"
+                            },
+                            "index": 0,
+                            "label": "sprite"
+                        },
+                        "index": 0,
+                        "label": "script"
+                    },
+                    "index": 3,
+                    "label": "gotoXY"
+                },
+                "action": "delete"
+            },
+            "from": "delete: snapshot:[stage:[sprite:[script]]]: [receiveGo, clear, evaluateCustomBlock, gotoXY]",
+            "to": "delete: snapshot:[stage:[sprite:[script]]]: [receiveGo, clear, evaluateCustomBlock]",
+            "type": "highlight"
+        }
+    ],
+    "61768": [
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "index": -1,
+                                "label": "snapshot"
+                            },
+                            "index": 1,
+                            "label": "customBlock"
+                        },
+                        "index": 0,
+                        "label": "script"
+                    },
+                    "index": 1,
+                    "label": "doRepeat"
+                },
+                "missingParent": false,
+                "action": "insert",
+                "index": 0,
+                "from": [
+                    "var",
+                    "script"
+                ],
+                "to": [
+                    "reportProduct",
+                    "script"
+                ],
+                "type": "reportProduct",
+                "replacement": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "parent": {
+                                    "index": -1,
+                                    "label": "snapshot"
+                                },
+                                "index": 1,
+                                "label": "customBlock"
+                            },
+                            "index": 0,
+                            "label": "script"
+                        },
+                        "index": 1,
+                        "label": "doRepeat"
+                    },
+                    "index": 0,
+                    "label": "var"
+                }
+            },
+            "from": "insert: snapshot:[customBlock:[script:[doRepeat]]]: [var, script]",
+            "to": "insert: snapshot:[customBlock:[script:[doRepeat]]]: [reportProduct, script]",
+            "type": "highlight"
+        },
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "parent": {
+                                    "index": -1,
+                                    "label": "snapshot"
+                                },
+                                "index": 1,
+                                "label": "customBlock"
+                            },
+                            "index": 0,
+                            "label": "script"
+                        },
+                        "index": 1,
+                        "label": "doRepeat"
+                    },
+                    "index": 0,
+                    "label": "reportProduct"
+                },
+                "candidate": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "parent": {
+                                    "index": -1,
+                                    "label": "snapshot"
+                                },
+                                "index": 1,
+                                "label": "customBlock"
+                            },
+                            "index": 0,
+                            "label": "script"
+                        },
+                        "index": 1,
+                        "label": "doRepeat"
+                    },
+                    "index": 0,
+                    "label": "var"
+                },
+                "missingParent": true,
+                "action": "insert",
+                "index": 1,
+                "from": ["literal"],
+                "to": [
+                    "literal",
+                    "var"
+                ],
+                "type": "var"
+            },
+            "from": "insert: {snapshot:[customBlock:[script:[doRepeat:[reportProduct]]]]}: [literal] using snapshot:[customBlock:[script:[doRepeat:[var]]]]",
+            "to": "insert: {snapshot:[customBlock:[script:[doRepeat:[reportProduct]]]]}: [literal, var] using snapshot:[customBlock:[script:[doRepeat:[var]]]]",
+            "type": "highlight"
+        },
+        {
+            "data": {
+                "parent": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "index": -1,
+                                "label": "snapshot"
+                            },
+                            "index": 0,
+                            "label": "stage"
+                        },
+                        "index": 0,
+                        "label": "sprite"
+                    },
+                    "index": 0,
+                    "label": "script"
+                },
+                "node": {
+                    "parent": {
+                        "parent": {
+                            "parent": {
+                                "parent": {
+                                    "index": -1,
+                                    "label": "snapshot"
+                                },
+                                "index": 0,
+                                "label": "stage"
+                            },
+                            "index": 0,
+                            "label": "sprite"
+                        },
+                        "index": 0,
+                        "label": "script"
+                    },
+                    "index": 3,
+                    "label": "gotoXY"
+                },
+                "action": "delete"
+            },
+            "from": "delete: snapshot:[stage:[sprite:[script]]]: [receiveGo, clear, evaluateCustomBlock, gotoXY]",
+            "to": "delete: snapshot:[stage:[sprite:[script]]]: [receiveGo, clear, evaluateCustomBlock]",
+            "type": "highlight"
+        }
+    ]
+}

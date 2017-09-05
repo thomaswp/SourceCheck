@@ -7,10 +7,10 @@ import edu.isnap.dataset.Dataset;
 
 public class Spring2016 extends Dataset {
 
-	public final static Spring2016 instance = new Spring2016();
 	public final static Date start = Assignment.date(2016, 1, 1);
-	public final static String dataDir = Assignment.BASE_DIR + "/spring2016";
+	public final static String dataDir = Assignment.CSC200_BASE_DIR + "/spring2016";
 	public final static String dataFile = dataDir + ".csv";
+	public final static Spring2016 instance = new Spring2016();
 
 	public final static Assignment LightsCameraAction = new Assignment(instance,
 			"lightsCameraActionHW", Assignment.date(2016, 1, 29), true) {

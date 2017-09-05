@@ -3,6 +3,7 @@ package edu.isnap.parser;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -30,6 +31,7 @@ import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Grade;
 import edu.isnap.parser.ParseSubmitted.Submission;
 import edu.isnap.parser.Store.Mode;
+import edu.isnap.parser.elements.BlockDefinition;
 import edu.isnap.parser.elements.BlockDefinitionGroup.BlockIndex;
 import edu.isnap.parser.elements.Snapshot;
 
@@ -48,6 +50,7 @@ public class SnapParser {
 	 * @param path
 	 */
 	public static void clean(String path) {
+		if (!new File(path).exists()) return;
 		for (String file : new File(path).list()) {
 			File f = new File(path, file);
 			if (f.isDirectory()) clean(f.getAbsolutePath());
@@ -89,12 +92,18 @@ public class SnapParser {
 					CSVParser parser = new CSVParser(new FileReader(logFile),
 							CSVFormat.EXCEL.withHeader());
 
+					// Backwards compatibility from when we used to call it jsonData
+					String dataKey = "data";
+					if (!parser.getHeaderMap().containsKey(dataKey)) dataKey = "jsonData";
+
 					DateFormat format = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
 					BlockIndex editingIndex = null;
 					Snapshot lastSnaphot = null;
 
+					boolean hasUserIDs = parser.getHeaderMap().containsKey("userID");
+
 					for (CSVRecord record : parser) {
-						String timestampString = record.get(1);
+						String timestampString = record.get("time");
 						Date timestamp = null;
 						try {
 							timestamp = format.parse(timestampString);
@@ -102,15 +111,36 @@ public class SnapParser {
 							e.printStackTrace();
 						}
 
-						String action = record.get(2);
-						String data = record.get(3);
-						String session = record.get(6);
-						String xml = record.get(8);
-						String idS = record.get(0);
+
+						String action = record.get("message");
+						String data = record.get(dataKey);
+						String userID = hasUserIDs ? record.get("userID") : null;
+						String session = record.get("sessionID");
+						String xml = record.get("code");
+						String idS = record.get("id");
 						int id = -1;
 						try {
 							id = Integer.parseInt(idS);
 						} catch (NumberFormatException e) { }
+
+						// For the help-seeking study the userID was stored in the Logger.started
+						// row, rather than as a separate column
+						if (action.equals(AttemptAction.IDE_OPENED) && data.length() > 2) {
+							JSONObject dataObject = new JSONObject(data);
+							if (dataObject.has("userID")) userID = dataObject.getString("userID");
+						}
+
+						if (userID != null && !userID.equals("none")) {
+							if (solution.userID == null) {
+								solution.userID = userID;
+							} else if (AttemptAction.IDE_EXPORT_PROJECT.equals(action) &&
+									!solution.userID.equals(userID)) {
+								parser.close();
+								throw new RuntimeException(String.format(
+										"Project %s exported under multiple userIDs: %s and %s",
+										logFile.getPath(), solution.userID, userID));
+							}
+						}
 
 						AttemptAction row = new AttemptAction(id, attemptID, timestamp, session,
 								action, data, xml);
@@ -118,6 +148,14 @@ public class SnapParser {
 							lastSnaphot = row.snapshot;
 						}
 
+						// Before BlockDefinitions had GUIDs, they weren't easily identifiable. This
+						// is a 99% accurate work-around that stores the index of a the custom
+						// block when editing starts and then sets the editing block's index to that
+						// index until the editor is closed. Note that we store the index at the
+						// start because the spec/type/category may change when editing. Note also
+						// that before GUIDs only one block could be edited at a time, so there
+						// should only ever be one editing index at a time. If GUIDs are present
+						// this does nothing.
 						if (AttemptAction.BLOCK_EDITOR_START.equals(action)) {
 							JSONObject json = new JSONObject(data);
 							String name = json.getString("spec");
@@ -131,9 +169,13 @@ public class SnapParser {
 							editingIndex = null;
 						}
 						if (row.snapshot != null) {
-							if (row.snapshot.editing == null) editingIndex = null;
-							else if (row.snapshot.editing.guid == null) {
-								row.snapshot.setEditingIndex(editingIndex);
+							if (row.snapshot.editing.size() == 0) editingIndex = null;
+							else if (row.snapshot.editing.size() == 1) {
+								BlockDefinition editing = row.snapshot.editing.get(0);
+								if (editing.guid == null) {
+									// Only set the blockIndex if we're not using GUIDs
+									editing.blockIndex = editingIndex;
+								}
 							}
 						}
 
@@ -146,11 +188,23 @@ public class SnapParser {
 					e.printStackTrace();
 				}
 
-				Collections.sort(solution);
+				Collections.sort(solution.rows);
 
 				return solution;
 			}
 		});
+	}
+
+	private JSONObject loadRepairedHints(String attemptID) {
+		File file = new File(assignment.hintRepairDir() + "/" + attemptID + ".json");
+		if (!file.exists()) return null;
+		try {
+			String content = new String(Files.readAllBytes(file.toPath()));
+			return new JSONObject(content);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 	private AssignmentAttempt parseRows(File logFile, Grade grade, Integer startID,
@@ -164,6 +218,7 @@ public class SnapParser {
 		Date minDate = assignment.start, maxDate = assignment.end;
 
 		AssignmentAttempt attempt = new AssignmentAttempt(attemptID, grade);
+		attempt.rows.userID = actions.userID;
 		attempt.submittedActionID = knownSubmissions ?
 				AssignmentAttempt.NOT_SUBMITTED : AssignmentAttempt.UNKNOWN;
 		List<AttemptAction> currentWork = new ArrayList<>();
@@ -172,6 +227,9 @@ public class SnapParser {
 		boolean foundGraded = false;
 		Snapshot lastSnaphot = null;
 
+		JSONObject repairedHints = null;
+		if (addMetadata) repairedHints = loadRepairedHints(attemptID);
+
 		int activeTime = 0;
 		int idleTime = 0;
 		int workSegments = 0;
@@ -179,6 +237,18 @@ public class SnapParser {
 
 		for (int i = 0; i < actions.size(); i++) {
 			AttemptAction action = actions.get(i);
+
+			// In Spring 2017 there was a logging error that failed to log processed hints
+			// The are recreated by the HighlightDataRepairer and stored as .json files, which
+			// can be loaded and re-inserted into the data.
+			if (repairedHints != null && AttemptAction.HINT_PROCESS_HINTS.equals(action.message)) {
+				String key = String.valueOf(action.id);
+				if (repairedHints.has(key)) {
+					String data = repairedHints.getJSONArray(key).toString();
+					action = new AttemptAction(action.id, action.timestamp, action.sessionID,
+							action.message, data, action.snapshot);
+				}
+			}
 
 			// Ignore actions outside of our time range
 			if (addMetadata && action.timestamp != null && (
@@ -266,7 +336,7 @@ public class SnapParser {
 
 				if (done || saveWork) {
 					// Add the work we've seen so far to the attempt;
-					attempt.rows.addAll(currentWork);
+					attempt.rows.rows.addAll(currentWork);
 					currentWork.clear();
 				}
 				if (done) {
@@ -285,8 +355,12 @@ public class SnapParser {
 			// If the solution was exported and submitted, but the log data does not contain
 			// the submitted snapshot, check to see what's wrong manually
 			if (submittedActionID != null && attempt.submittedSnapshot == null) {
-				if (attempt.size() > 0) System.out.println(attemptID + ": " + attempt.rows.getLast().id);
-				else System.out.println(attemptID + ": 0 / " + actions.size() + " / " + prequelEndID);
+				if (attempt.size() > 0) {
+					System.out.println(attemptID + ": " + attempt.rows.getLast().id);
+				} else {
+					System.out.println(assignment.name + " " +
+							attemptID + ": 0 / " + actions.size() + " / " + prequelEndID);
+				}
 				System.err.printf("Submitted id not found for %s: %s\n",
 						attemptID, submittedActionID);
 			}
@@ -503,6 +577,19 @@ public class SnapParser {
 		@Override
 		public boolean keep(AssignmentAttempt attempt) {
 			return attempt.isLikelySubmitted();
+		}
+	}
+
+	public static class StartedAfter implements Filter {
+		private final Date after;
+
+		public StartedAfter(Date after) {
+			this.after = after;
+		}
+
+		@Override
+		public boolean keep(AssignmentAttempt attempt) {
+			return attempt.rows.size() > 0 && attempt.rows.get(0).timestamp.after(after);
 		}
 	}
 }

@@ -14,8 +14,8 @@ import edu.isnap.parser.elements.util.XML;
 public class CallBlock extends Block {
 	private static final long serialVersionUID = 1L;
 
-	private final static HashSet<String> SYMMETRIC = new HashSet<String>();
-	private final static HashMap<String, String> OPPOSITES = new HashMap<String, String>();
+	public final static HashSet<String> SYMMETRIC = new HashSet<>();
+	public final static HashMap<String, String> OPPOSITES = new HashMap<>();
 	static {
 		String[] symmetric = new String[] {
 			"reportSum", "reportProduct", "reportRandom", "reportEquals",
@@ -26,8 +26,8 @@ public class CallBlock extends Block {
 		OPPOSITES.put("reportGreaterThan", "reportLessThan");
 	}
 
-	public final List<Block> parameters = new ArrayList<Block>();
-	public final List<Script> bodies = new ArrayList<Script>();
+	public final List<Block> parameters = new ArrayList<>();
+	public final List<Script> bodies = new ArrayList<>();
 	public final boolean isCustom;
 
 	@Override
@@ -36,7 +36,9 @@ public class CallBlock extends Block {
 			if (OPPOSITES.containsKey(name)) {
 				return OPPOSITES.get(name);
 			}
-			if (isCustom) return "evaluateCustomBlock";
+			if (isCustom) {
+				return BlockDefinition.getCustomBlockCall(name);
+			}
 		}
 
 		return name;
@@ -83,11 +85,13 @@ public class CallBlock extends Block {
 	private List<Block> params(boolean canon) {
 		if (!canon || parameters.size() != 2) return parameters;
 		if (SYMMETRIC.contains(name)) {
-			if (parameters.get(0).name(canon).compareTo(parameters.get(1).name(canon)) < 1) return parameters;
+			if (parameters.get(0).name(canon).compareTo(parameters.get(1).name(canon)) < 1) {
+				return parameters;
+			}
 		} else if (!OPPOSITES.containsKey(name)) {
 			return parameters;
 		}
-		ArrayList<Block> params = new ArrayList<Block>();
+		ArrayList<Block> params = new ArrayList<>();
 		params.addAll(parameters);
 		Collections.reverse(params);
 		return params;
@@ -107,7 +111,7 @@ public class CallBlock extends Block {
 	public void addChildren(boolean canon, Accumulator ac) {
 		List<Block> params = params(canon);
 		if (params != parameters) {
-			ac.add(new Canonicalization.SwapArgs());
+			ac.add(new Canonicalization.SwapSymmetricArgs());
 		}
 		ac.add(params);
 		ac.add(bodies);
