@@ -5,13 +5,13 @@ public class VarBlock extends Block {
 	private static final long serialVersionUID = 1L;
 
 	@Override
-	public String name(boolean canon) {
-		return canon ? type() : name;
+	public String type() {
+		return "var";
 	}
 
 	@Override
-	public String type() {
-		return "var";
+	public String value() {
+		return name;
 	}
 
 	@SuppressWarnings("unused")
@@ -25,7 +25,7 @@ public class VarBlock extends Block {
 
 	@Override
 	public String toCode(boolean canon) {
-		return name(canon);
+		return value();
 	}
 
 	@Override

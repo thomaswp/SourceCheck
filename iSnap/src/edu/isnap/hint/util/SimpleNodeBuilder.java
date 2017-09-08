@@ -1,7 +1,5 @@
 package edu.isnap.hint.util;
 
-import java.util.List;
-
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.parser.elements.Code;
 import edu.isnap.parser.elements.Code.Accumulator;
@@ -20,12 +18,12 @@ public class SimpleNodeBuilder {
 
 	private static Node toTree(Code code, final boolean canon, Node parent, final IDer ider) {
 		String id = ider.getID(code, parent);
-		final Node node = new Node(parent, code.name(canon), id);
+		final Node node = new Node(parent, code.type(canon), code.value(), id);
 		node.tag = code;
 		code.addChildren(canon, new Accumulator() {
 
 			void add(String code) {
-				node.children.add(new Node(node, code, ider.getID(code, node)));
+				node.children.add(new Node(node, code, null, ider.getID(code, node)));
 			}
 
 			@Override
@@ -46,10 +44,8 @@ public class SimpleNodeBuilder {
 			}
 
 			@Override
-			public void addVariables(List<String> codes) {
-				for (String code : codes) {
-					add(code);
-				}
+			public void add(String type, String value) {
+				node.children.add(new Node(node, type, value));
 			}
 
 			@Override

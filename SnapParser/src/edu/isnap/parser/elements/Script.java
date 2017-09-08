@@ -15,13 +15,13 @@ public class Script extends Code implements IHasID {
 	public final String customBlockID;
 
 	@Override
-	public String name(boolean canon) {
-		return type();
+	public String type() {
+		return "script";
 	}
 
 	@Override
-	public String type() {
-		return "script";
+	public String value() {
+		return null;
 	}
 
 	public Script() {

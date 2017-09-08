@@ -59,8 +59,8 @@ public class BlockDefinition extends Code implements IHasID {
 	}
 
 	@Override
-	public String name(boolean canon) {
-		return canon ? type() : name;
+	public String value() {
+		return name;
 	}
 
 	@SuppressWarnings("unused")
@@ -157,8 +157,8 @@ public class BlockDefinition extends Code implements IHasID {
 	@Override
 	public String toCode(boolean canon) {
 		return new CodeBuilder(canon)
-		.add(name, "customBlock")
-		.addSParameters(canonicalizeVariables(inputs, canon))
+		.add(name)
+		.addSParameters(inputs)
 		.indent()
 		.add("script: ")
 		.add(script)
@@ -177,7 +177,7 @@ public class BlockDefinition extends Code implements IHasID {
 	@Override
 	public void addChildren(boolean canon, Accumulator ac) {
 		ac.add(script);
-		ac.addVariables(canonicalizeVariables(inputs, canon));
+		addVariables(ac, inputs);
 		// We ignore aditional scripts if canonizing because they're generally not hintable
 		// TODO: make a more generic solution for ignoring things for hints but not generally
 		if (!canon) ac.add(scripts);
@@ -189,8 +189,14 @@ public class BlockDefinition extends Code implements IHasID {
 		return String.format("%s[%s,%s,%s](%s)", parentID, name, type, category, inputs.toString());
 	}
 
+	public final static String EVALUATE_CUSTOM_BLOCK = "evaluateCustomBlock";
+
 	private static String getCustomBlockSelector(String name) {
 		return name.replace("%s", "_").replaceAll("\\s", "").replaceAll("[^A-Za-z_]", "*");
+	}
+
+	public static boolean isTool(String name) {
+		return EVALUATE_CUSTOM_BLOCK.equals(getCustomBlockCall(name));
 	}
 
 	public static String getCustomBlockCall(String name) {
@@ -198,6 +204,6 @@ public class BlockDefinition extends Code implements IHasID {
 		if (TOOLS_BLOCKS_SET.contains(name)) {
 			return getCustomBlockSelector(name);
 		}
-		return "evaluateCustomBlock";
+		return EVALUATE_CUSTOM_BLOCK;
 	}
 }

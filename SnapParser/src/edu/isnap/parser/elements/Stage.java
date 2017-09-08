@@ -36,7 +36,7 @@ public class Stage extends Sprite {
 		.add("Stage")
 		.indent()
 		.add(variables.size() == 0 ? null :
-			("variables: " + canonicalizeVariables(variables, canon).toString() + "\n"))
+			("variables: " + variables.toString() + "\n"))
 		.add(blocks.getWithEdits(true))
 		.add(scripts)
 		.add(sprites)

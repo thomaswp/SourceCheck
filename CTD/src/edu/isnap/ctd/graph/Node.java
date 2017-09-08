@@ -24,6 +24,7 @@ public class Node extends StringHashable {
 	private Annotations annotations;
 
 	public final String id;
+	public final String value;
 	public final Node parent;
 	public final List<Node> children = new ArrayList<>();
 
@@ -57,16 +58,21 @@ public class Node extends StringHashable {
 
 	@SuppressWarnings("unused")
 	private Node() {
-		this(null, null, null);
+		this(null, null, null, null);
 	}
 
 	public Node(Node parent, String type) {
-		this(parent, type, null);
+		this(parent, type, null, null);
 	}
 
-	public Node(Node parent, String type, String id) {
+	public Node(Node parent, String type, String value) {
+		this(parent, type, value, null);
+	}
+
+	public Node(Node parent, String type, String value, String id) {
 		this.parent = parent;
 		this.type = type;
+		this.value = value;
 		this.id = id;
 	}
 
@@ -264,7 +270,7 @@ public class Node extends StringHashable {
 	}
 
 	public static Node fromTree(Node parent, LblTree tree, boolean cache) {
-		Node node = new Node(parent, tree.getLabel(), null);
+		Node node = new Node(parent, tree.getLabel());
 		int count = tree.getChildCount();
 		for (int i = 0; i < count; i++) {
 			Node child = fromTree(node, (LblTree) tree.getChildAt(i), cache);
@@ -313,7 +319,7 @@ public class Node extends StringHashable {
 	}
 
 	public Node shallowCopy(Node parent) {
-		Node copy = new Node(parent, type, id);
+		Node copy = new Node(parent, type, value, id);
 		copy.tag = tag;
 		copy.annotations = annotations == null ? null : annotations.copy();
 		return copy;

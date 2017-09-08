@@ -12,21 +12,26 @@ public abstract class Code implements Serializable {
 
 	public abstract String toCode(boolean canon);
 	public abstract String type();
-	public abstract String name(boolean canon);
+	public abstract String value();
 	public abstract void addChildren(boolean canon, Accumulator ac);
 
-	public String toCode() {
+	public final String toCode() {
 		return toCode(false);
 	}
 
+	// CallBlock has to handle this differently, so allow for overriding
+	public String type(boolean canon) {
+		return type();
+	}
+
 	public List<Block> getAllBlocks(final boolean canon) {
-		final List<Block> blocks = new ArrayList<Block>();
+		final List<Block> blocks = new ArrayList<>();
 		if (this instanceof Block) {
 			blocks.add((Block) this);
 		}
 		addChildren(canon, new Accumulator() {
 			@Override
-			public void addVariables(List<String> codes) { }
+			public void add(String type, String value) { }
 
 			@Override
 			public void add(Iterable<? extends Code> codes) {
@@ -47,11 +52,11 @@ public abstract class Code implements Serializable {
 	}
 
 	public List<Code> getAllCode(final boolean canon) {
-		final List<Code> codes = new ArrayList<Code>();
+		final List<Code> codes = new ArrayList<>();
 		codes.add(this);
 		addChildren(canon, new Accumulator() {
 			@Override
-			public void addVariables(List<String> codes) { }
+			public void add(String type, String value) { }
 
 			@Override
 			public void add(Iterable<? extends Code> codes) {
@@ -75,15 +80,11 @@ public abstract class Code implements Serializable {
 		void add(Code code);
 		void add(Canonicalization canon);
 		void add(Iterable<? extends Code> codes);
-		void addVariables(List<String> vars);
-//		void addParameters(List<Code>)
+		void add(String type, String value);
 	}
 
-	protected static List<String> canonicalizeVariables(List<String> variables, boolean canon) {
-		if (!canon) return variables;
-		List<String> vars = new ArrayList<String>();
-		for (int i = 0; i < variables.size(); i++) vars.add("var");
-		return vars;
+	protected static void addVariables(Accumulator acc, List<String> variables) {
+		for (String variable : variables) acc.add("var", variable);
 	}
 
 	protected static List<Block> list(Block... blocks) { return Arrays.asList(blocks); }

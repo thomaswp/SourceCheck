@@ -442,7 +442,7 @@ public class Agreement {
 
 				Node parentPair = fromIDMap.get(toNode.parent.id);
 				if (parentPair != null) {
-					fromNode = new Node(parentPair, toNode.type(), toNode.id);
+					fromNode = toNode.copyWithNewParent(parentPair);
 					fromNode.tag = "temp";
 					parentPair.children.add(fromNode);
 				} else {

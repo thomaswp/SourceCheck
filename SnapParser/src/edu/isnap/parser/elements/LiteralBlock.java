@@ -38,13 +38,13 @@ public class LiteralBlock extends Block {
 	}));
 
 	@Override
-	public String name(boolean canon) {
-		return canon ? "literal" : value;
+	public String type() {
+		return type == Type.VarRef ? "var" : "literal";
 	}
 
 	@Override
-	public String type() {
-		return type == Type.VarRef ? "var" : "literal";
+	public String value() {
+		return value;
 	}
 
 	@SuppressWarnings("unused")
@@ -88,7 +88,7 @@ public class LiteralBlock extends Block {
 
 	@Override
 	public String toCode(boolean canon) {
-		return name(canon);
+		return value();
 	}
 
 	@Override

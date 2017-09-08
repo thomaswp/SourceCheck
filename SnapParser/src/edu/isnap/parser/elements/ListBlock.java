@@ -10,16 +10,16 @@ import edu.isnap.parser.elements.util.XML;
 public class ListBlock extends Block {
 	private static final long serialVersionUID = 1L;
 
-	public final List<Block> list = new ArrayList<Block>();
-
-	@Override
-	public String name(boolean canon) {
-		return name;
-	}
+	public final List<Block> list = new ArrayList<>();
 
 	@Override
 	public String type() {
-		return name;
+		return "list";
+	}
+
+	@Override
+	public String value() {
+		return null;
 	}
 
 	public ListBlock() {

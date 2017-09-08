@@ -5,7 +5,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -20,7 +19,6 @@ import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.BlockDefinition;
-import edu.isnap.parser.elements.CallBlock;
 import edu.isnap.parser.elements.Code;
 import edu.isnap.parser.elements.Code.Accumulator;
 import edu.isnap.parser.elements.LiteralBlock;
@@ -91,18 +89,9 @@ public class JsonAST {
 
 
 		String type = code.type();
-		String value = code.name(false);
+		String value = code.value();
 
 		if (type.equals("snapshot")) type = "Snap!shot";
-
-		if (code instanceof CallBlock) {
-			CallBlock callBlock = (CallBlock) code;
-			if (callBlock.isCustom) {
-				type = BlockDefinition.getCustomBlockCall(callBlock.name);
-			} else {
-				type = callBlock.name;
-			}
-		}
 
 		ASTNode node = new ASTNode(type);
 
@@ -121,10 +110,8 @@ public class JsonAST {
 
 		code.addChildren(false, new Accumulator() {
 			@Override
-			public void addVariables(List<String> vars) {
-				for (String var : vars) {
-					node.addChild(variableToAST(var));
-				}
+			public void add(String type, String value) {
+				node.addChild(new ASTNode(type, value));
 			}
 
 			@Override
@@ -146,9 +133,5 @@ public class JsonAST {
 		});
 
 		return node;
-	}
-
-	public static ASTNode variableToAST(String value) {
-		return new ASTNode("var", value);
 	}
 }

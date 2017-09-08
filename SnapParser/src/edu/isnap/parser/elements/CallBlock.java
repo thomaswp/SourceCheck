@@ -31,22 +31,33 @@ public class CallBlock extends Block {
 	public final boolean isCustom;
 
 	@Override
-	public String name(boolean canon) {
-		if (canon) {
-			if (OPPOSITES.containsKey(name)) {
-				return OPPOSITES.get(name);
-			}
-			if (isCustom) {
-				return BlockDefinition.getCustomBlockCall(name);
-			}
+	public String type() {
+		if (isCustom) {
+			// If this is a tool, gets its simplified name; otherwise returns evaluateCustomBlock
+			return BlockDefinition.getCustomBlockCall(name);
 		}
-
+		// We treat all non-custom-block calls as unique types
 		return name;
 	}
 
 	@Override
-	public String type() {
-		return "callBlock";
+	public String type(boolean canon) {
+		if (canon && OPPOSITES.containsKey(name)) {
+			// Since the type can actually be changed by canonicalization, we have to handle it
+			// specially for CallBlocks
+			return OPPOSITES.get(name);
+		}
+		return type();
+	}
+
+	@Override
+	public String value() {
+		if (isCustom && !BlockDefinition.isTool(name)) {
+			// Only non-tool custom block calls have a value: the name of the custom block called
+			// Other calls return their name as their type
+			return name;
+		}
+		return null;
 	}
 
 	@SuppressWarnings("unused")
@@ -85,7 +96,7 @@ public class CallBlock extends Block {
 	private List<Block> params(boolean canon) {
 		if (!canon || parameters.size() != 2) return parameters;
 		if (SYMMETRIC.contains(name)) {
-			if (parameters.get(0).name(canon).compareTo(parameters.get(1).name(canon)) < 1) {
+			if (parameters.get(0).type().compareTo(parameters.get(1).type()) < 1) {
 				return parameters;
 			}
 		} else if (!OPPOSITES.containsKey(name)) {
@@ -100,7 +111,7 @@ public class CallBlock extends Block {
 	@Override
 	public String toCode(boolean canon) {
 		return new CodeBuilder(canon)
-		.add(name(canon))
+		.add(value())
 		.addParameters(params(canon))
 		.add(bodies.size() > 0 ? " " : "")
 		.add(bodies)
@@ -116,6 +127,6 @@ public class CallBlock extends Block {
 		ac.add(params);
 		ac.add(bodies);
 		if (OPPOSITES.containsKey(name)) ac.add(new Canonicalization.InvertOp(name));
-		else if (!name.equals(name(canon))) ac.add(new Canonicalization.Rename(name));
+		else if (canon && OPPOSITES.containsKey(name)) ac.add(new Canonicalization.Rename(name));
 	}
 }

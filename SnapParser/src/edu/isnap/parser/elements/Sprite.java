@@ -17,13 +17,13 @@ public class Sprite extends Code implements IHasID {
 	public final BlockDefinitionGroup blocks;
 
 	@Override
-	public String name(boolean canon) {
-		return canon ? type() : name;
+	public String type() {
+		return "sprite";
 	}
 
 	@Override
-	public String type() {
-		return "sprite";
+	public String value() {
+		return name;
 	}
 
 	@SuppressWarnings("unused")
@@ -59,7 +59,7 @@ public class Sprite extends Code implements IHasID {
 		return new CodeBuilder(canon)
 		.add(name)
 		.indent()
-		.add(variables.size() == 0 ? null : ("variables: " + canonicalizeVariables(variables, canon).toString() + "\n"))
+		.add(variables.size() == 0 ? null : ("variables: " + variables.toString() + "\n"))
 		.add(blocks.getWithEdits(true))
 		.add(scripts)
 		.end();
@@ -67,7 +67,7 @@ public class Sprite extends Code implements IHasID {
 
 	@Override
 	public void addChildren(boolean canon, Accumulator ac) {
-		ac.addVariables(canonicalizeVariables(variables, canon));
+		addVariables(ac, variables);
 		ac.add(scripts);
 		ac.add(blocks.getWithEdits(canon));
 	}

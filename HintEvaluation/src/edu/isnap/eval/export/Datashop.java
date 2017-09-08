@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Field;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.csv.CSVFormat;
@@ -291,13 +290,14 @@ public class Datashop {
 		} else if (code instanceof CallBlock) {
 			if (((CallBlock) code).isCustom) {
 				object.put("blockType", "evaluateCustomBlock");
-				object.put("customBlockRef", anon.getID("customBlock", code.name(false)));
+				object.put("customBlockRef", anon.getID("customBlock", code.value()));
 			} else {
-				object.put("blockType", code.name(false));
+				object.put("blockType", code.value());
 			}
 		}
 
 		JSONArray children = new JSONArray();
+		JSONArray variableIDs = new JSONArray();
 
 		code.addChildren(false, new Accumulator() {
 
@@ -314,18 +314,23 @@ public class Datashop {
 			}
 
 			@Override
-			public void addVariables(List<String> variables) {
-				if (variables.size() == 0) return;
-				JSONArray array = new JSONArray();
-				for (String variable : variables) {
-					array.put(anon.getID("varRef", variable));
+			public void add(String type, String value) {
+				if (type.equals("var")) {
+					variableIDs.put(anon.getID("varRef", value));
+				} else {
+					JSONObject obj = new JSONObject();
+					obj.put("type", type);
+					children.put(obj);
 				}
-				object.put("variableIDs", array);
 			}
 
 			@Override
 			public void add(Canonicalization canon) { }
 		});
+
+		if (variableIDs.length() > 0) {
+			object.put("variableIDs", variableIDs);
+		}
 
 		if (children.length() > 0) {
 			object.put("children", children);

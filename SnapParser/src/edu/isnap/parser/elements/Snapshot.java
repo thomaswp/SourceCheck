@@ -37,8 +37,8 @@ public class Snapshot extends Code implements IHasID {
 	}
 
 	@Override
-	public String name(boolean canon) {
-		return canon ? type() : name;
+	public String value() {
+		return name;
 	}
 
 	private void setEditing() {
@@ -145,7 +145,7 @@ public class Snapshot extends Code implements IHasID {
 		.close()
 		.add(variables.size() == 0 ?
 				null :
-				("variables: " + canonicalizeVariables(variables, canon).toString() + "\n"))
+				("variables: " + variables.toString() + "\n"))
 		.ifNotCanon()
 		.add("editing:")
 		.indent()
@@ -161,7 +161,7 @@ public class Snapshot extends Code implements IHasID {
 		// TODO: Find a better way to determine whether to collapse the editing block
 		// (And when you do make the same change in Sprite)
 		ac.add(blocks.getWithEdits(true));
-		ac.addVariables(canonicalizeVariables(variables, canon));
+		addVariables(ac, variables);
 	}
 
 	@Override
