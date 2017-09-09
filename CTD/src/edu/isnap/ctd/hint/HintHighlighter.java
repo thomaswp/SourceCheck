@@ -8,7 +8,6 @@ import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import edu.isnap.ctd.graph.Node;
@@ -456,7 +455,7 @@ public class HintHighlighter {
 			RuleSet.trace = trace;
 			filteredSolutions = ruleSet.filterSolutions(solutions, node);
 		}
-		Mapping bestMatch = NodeAlignment.findBestMatch(node, filteredSolutions, dm);
+		Mapping bestMatch = NodeAlignment.findBestMatch(node, filteredSolutions, dm, config);
 		if (bestMatch == null) throw new RuntimeException("No matches!");
 
 		if (trace != null) {
@@ -464,9 +463,9 @@ public class HintHighlighter {
 //			trace.println(node.prettyPrint());
 //			trace.println("++++++++++");
 			trace.println("Time to match: " + (System.currentTimeMillis() - startTime));
-			trace.println(bestMatch.prettyPrint());
+			trace.println(bestMatch.prettyPrint(true));
 			trace.println(bestMatch.itemizedCost());
-			new NodeAlignment(bestMatch.from, bestMatch.to).calculateMapping(dm);
+			bestMatch.printValueMappings(trace);
 		}
 
 		return bestMatch;
@@ -639,15 +638,6 @@ public class HintHighlighter {
 		edits.addAll(toAdd);
 
 
-	}
-
-	@SuppressWarnings("unused")
-	private void printHighlight(Node node, final IdentityHashMap<Node, Highlight> colors) {
-		IdentityHashMap<Node, String> prefixMap = new IdentityHashMap<>();
-		for (Entry<Node, Highlight> entry : colors.entrySet()) {
-			prefixMap.put(entry.getKey(), entry.getValue().name().substring(0, 1));
-		}
-		trace.println(node.prettyPrint(prefixMap));
 	}
 
 	private static String[] toArray(List<String> items) {

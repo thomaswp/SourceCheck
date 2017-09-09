@@ -25,7 +25,7 @@ public class RunHintBuilder {
 		buildHints(CSC200.Squiral, 1);
 		buildHints(CSC200.GuessingGame1, 1);
 		buildHints(CSC200.GuessingGame2, 1);
-		buildHints(CSC200.GuessingGame3, 1);
+//		buildHints(CSC200.GuessingGame3, 1);
 		// Then copies the cache to the HintServer
 		RunCopyData.copyHintDatabaseToServer(CSC200.dataDir);
 

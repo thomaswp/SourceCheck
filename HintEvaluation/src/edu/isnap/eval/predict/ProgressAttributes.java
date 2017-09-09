@@ -53,11 +53,11 @@ public class ProgressAttributes implements AttributeGenerator {
 
 			Node currentCode = attemptMap.get(attempt);
 			Node goodMatch = NodeAlignment.findBestMatch(
-					currentCode, otherGoodSubmitted, distanceMeasure).to;
+					currentCode, otherGoodSubmitted, distanceMeasure, new HintConfig()).to;
 			matches.put(attempt.id, goodMatch);
 
 			Node closestMatch = NodeAlignment.findBestMatch(
-					currentCode, otherSubmitted, distanceMeasure).to;
+					currentCode, otherSubmitted, distanceMeasure, new HintConfig()).to;
 			grades.put(attempt.id, submittedGrades.get(closestMatch));
 		}
 	}

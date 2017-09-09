@@ -136,6 +136,14 @@ public class HintConfig {
 	}
 
 	/**
+	 * Types that should have their values mapped when matching nodes, e.g. variable nodes.
+	 * Each type in the inner array will be mapped together, (e.g. function declarations and calls)
+	 */
+	public String[][] valueMappedTypes = {
+			new String[] { "var" },
+	};
+
+	/**
 	 * Power used in the distance weight formula. Higher values penalize higher distances faster.
 	 * Must be >= 1.
 	 */

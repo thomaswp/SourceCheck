@@ -365,12 +365,12 @@ public class Node extends StringHashable {
 		return prettyPrint("", showValues, null);
 	}
 
-	public String prettyPrint(Map<Node, String> prefixMap) {
-		return prettyPrint("", false, prefixMap);
+	public String prettyPrint(boolean showValues, Map<Node, String> prefixMap) {
+		return prettyPrint("", showValues, prefixMap);
 	}
 
 	public String prettyPrintWithIDs() {
-		return prettyPrint(new HashMap<Node, String>());
+		return prettyPrint(false, new HashMap<Node, String>());
 	}
 
 	private String prettyPrint(String indent, boolean showValues, Map<Node, String> prefixMap) {

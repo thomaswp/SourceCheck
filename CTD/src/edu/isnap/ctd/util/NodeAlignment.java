@@ -1,5 +1,6 @@
 package edu.isnap.ctd.util;
 
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -23,6 +24,7 @@ import edu.isnap.ctd.util.map.MapFactory;
 public class NodeAlignment {
 
 	public final Node from, to;
+	public final HintConfig config;
 	private final boolean useSubCost;
 
 	// Temporary instance variable for use during calculateMapping
@@ -58,7 +60,7 @@ public class NodeAlignment {
 			itemizedCost.append("\n");
 		}
 
-		public String prettyPrint() {
+		public String prettyPrint(boolean showValues) {
 			final IdentityHashMap<Node, String> labels = new IdentityHashMap<>();
 			to.recurse(new Action() {
 				@Override
@@ -69,7 +71,7 @@ public class NodeAlignment {
 					}
 				}
 			});
-			return to.prettyPrint(labels);
+			return to.prettyPrint(showValues, labels);
 		}
 
 		@Override
@@ -77,16 +79,15 @@ public class NodeAlignment {
 			return Double.compare(cost, o.cost);
 		}
 
-		private void calculateValueMappings() {
-			String[][] mappedTypes = {
-					new String[] { "var" },
-			};
+		private void calculateValueMappings(HintConfig config) {
 
-			for (String[] types : mappedTypes) {
+			for (String[] types : config.valueMappedTypes) {
 				BiMap<String, String> valueMap = new BiMap<>();
 
 				List<String> valuesFrom = getValues(from, types);
 				List<String> valuesTo = getValues(to, types);
+
+				if (valuesFrom.isEmpty() || valuesTo.isEmpty()) continue;
 
 				double[][] costMatrix = new double[valuesFrom.size()][valuesTo.size()];
 
@@ -128,20 +129,29 @@ public class NodeAlignment {
 			return new ArrayList<>(values);
 		}
 
-		public void printValueMappings() {
+		public void printValueMappings(PrintStream out) {
 			for (String key : valueMappings.keySet()) {
-				// TODO
+				out.println(key);
+				BiMap<String, String> map = valueMappings.get(key);
+				for (String from : map.keysetFrom()) {
+					out.printf("%s <-> %s\n", from, map.getFrom(from));
+				}
 			}
 		}
 	}
 
 	public NodeAlignment(Node from, Node to) {
-		this(from, to, true);
+		this(from, to, new HintConfig(), true);
 	}
 
-	private NodeAlignment(Node from, Node to, boolean useSubCost) {
+	public NodeAlignment(Node from, Node to, HintConfig config) {
+		this(from, to, config, true);
+	}
+
+	private NodeAlignment(Node from, Node to, HintConfig config, boolean useSubCost) {
 		this.from = from;
 		this.to = to;
+		this.config = config;
 		this.useSubCost = useSubCost;
 	}
 
@@ -186,7 +196,7 @@ public class NodeAlignment {
 			}
 		}
 
-		mapping.calculateValueMappings();
+		mapping.calculateValueMappings(config);
 
 		// Clear mapping before returning it
 		Mapping ret = mapping;
@@ -194,10 +204,10 @@ public class NodeAlignment {
 		return ret;
 	}
 
-	private static Node getContainer(DistanceMeasure distanceMeasure, Node from) {
+	private Node getContainer(DistanceMeasure distanceMeasure, Node from) {
 		Node parent = from.parent;
 		while (parent != null && parent.parent != null &&
-				!distanceMeasure.isContainer(parent.type())) {
+				!config.containers.contains(parent.type())) {
 			parent = parent.parent;
 		}
 		return parent;
@@ -205,7 +215,6 @@ public class NodeAlignment {
 
 	public interface DistanceMeasure {
 		public double measure(Node from, String[] a, String[] b, int[] bOrderGroups);
-		public boolean isContainer(String type);
 		public double matchedOrphanReward(String type);
 	}
 
@@ -260,11 +269,6 @@ public class NodeAlignment {
 			// A matched orphan node should be equivalent to the node being out of order, and we
 			// also have to counteract the cost of the node being missing from its original parent
 			return outOfOrderReward + missingCost;
-		}
-
-		@Override
-		public boolean isContainer(String type) {
-			return config.containers.contains(type);
 		}
 	};
 
@@ -542,7 +546,7 @@ public class NodeAlignment {
 	}
 
 	public static List<Mapping> findBestMatches(Node from, List<Node> matches,
-			DistanceMeasure distanceMeasure, double stdevsFromMin) {
+			DistanceMeasure distanceMeasure, HintConfig config, double stdevsFromMin) {
 		List<Mapping> best = new LinkedList<>();
 		if (matches.size() == 0) return best;
 
@@ -550,7 +554,7 @@ public class NodeAlignment {
 		double totalCost = 0;
 		double minCost = Double.MAX_VALUE;
 		for (int i = 0; i < mappings.length; i++) {
-			NodeAlignment align = new NodeAlignment(from, matches.get(i));
+			NodeAlignment align = new NodeAlignment(from, matches.get(i), config);
 			Mapping mapping = align.calculateMapping(distanceMeasure);
 			mappings[i] = mapping;
 			totalCost += mapping.cost;
@@ -576,10 +580,10 @@ public class NodeAlignment {
 	}
 
 	public static Mapping findBestMatch(Node from, List<Node> matches,
-			DistanceMeasure distanceMeasure) {
+			DistanceMeasure distanceMeasure, HintConfig config) {
 		Mapping best = null;
 		int smallest = Integer.MAX_VALUE;
-		List<Mapping> bestMatches = findBestMatches(from, matches, distanceMeasure, 0);
+		List<Mapping> bestMatches = findBestMatches(from, matches, distanceMeasure, config, 0);
 //		System.out.println("Size: " + bestMatches.size());
 		for (Mapping mapping : bestMatches) {
 			int size = mapping.to.treeSize();
@@ -612,7 +616,7 @@ public class NodeAlignment {
 		System.out.println(n1);
 		System.out.println(n2);
 
-		NodeAlignment na = new NodeAlignment(n1, n2);
+		NodeAlignment na = new NodeAlignment(n1, n2, new HintConfig());
 		double cost = na.calculateMapping(
 				HintHighlighter.getDistanceMeasure(new HintConfig())).cost;
 

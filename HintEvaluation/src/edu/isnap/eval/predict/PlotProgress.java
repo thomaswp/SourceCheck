@@ -56,10 +56,10 @@ public class PlotProgress {
 
 					Node currentCode = SimpleNodeBuilder.toTree(action.snapshot, true);
 					Node match = NodeAlignment.findBestMatch(
-							currentCode, otherSubmissions, distanceMeasure).to;
-					double progress = -new NodeAlignment(currentCode, match)
+							currentCode, otherSubmissions, distanceMeasure, config).to;
+					double progress = -new NodeAlignment(currentCode, match, config)
 							.calculateMapping(distanceMeasure).cost();
-					double maxProgress = -new NodeAlignment(currentCode, currentCode)
+					double maxProgress = -new NodeAlignment(currentCode, currentCode, config)
 							.calculateMapping(distanceMeasure).cost();
 
 					spreadsheet.newRow();
