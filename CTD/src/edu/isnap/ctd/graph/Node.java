@@ -358,18 +358,22 @@ public class Node extends StringHashable {
 	};
 
 	public String prettyPrint() {
-		return prettyPrint(null);
+		return prettyPrint("", false, null);
+	}
+
+	public String prettyPrint(boolean showValues) {
+		return prettyPrint("", showValues, null);
 	}
 
 	public String prettyPrint(Map<Node, String> prefixMap) {
-		return prettyPrint("", prefixMap);
+		return prettyPrint("", false, prefixMap);
 	}
 
 	public String prettyPrintWithIDs() {
 		return prettyPrint(new HashMap<Node, String>());
 	}
 
-	private String prettyPrint(String indent, Map<Node, String> prefixMap) {
+	private String prettyPrint(String indent, boolean showValues, Map<Node, String> prefixMap) {
 		boolean inline = true;
 		for (String hasBody : HAS_BODY) {
 			if (type.equals(hasBody)) {
@@ -378,6 +382,9 @@ public class Node extends StringHashable {
 			}
 		}
 		String out = type;
+		if (showValues && value != null) {
+			out = "[" + out + "=" + value + "]";
+		}
 		if (prefixMap != null) {
 			if (prefixMap.containsKey(this)) out = prefixMap.get(this) + ":" + out;
 			if (id != null && !id.equals(type)) {
@@ -396,7 +403,7 @@ public class Node extends StringHashable {
 						out += "null";
 						continue;
 					}
-					out += children.get(i).prettyPrint(indent, prefixMap);
+					out += children.get(i).prettyPrint(indent, showValues, prefixMap);
 				}
 				out += ")";
 			} else {
@@ -408,7 +415,8 @@ public class Node extends StringHashable {
 						out += indentMore + "null\n";
 						continue;
 					}
-					out += indentMore + children.get(i).prettyPrint(indentMore, prefixMap) + "\n";
+					out += indentMore + children.get(i).prettyPrint(
+							indentMore, showValues, prefixMap) + "\n";
 				}
 				out += indent + "}";
 			}
