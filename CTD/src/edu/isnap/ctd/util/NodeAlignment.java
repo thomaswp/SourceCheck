@@ -1,10 +1,13 @@
 package edu.isnap.ctd.util;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import edu.isnap.ctd.graph.Node;
@@ -30,6 +33,8 @@ public class NodeAlignment {
 
 		private double cost;
 		private StringBuilder itemizedCost = new StringBuilder();
+
+		public final Map<String, BiMap<String, String>> valueMappings = new LinkedHashMap<>();
 
 		public String itemizedCost() {
 			return itemizedCost.toString();
@@ -70,6 +75,63 @@ public class NodeAlignment {
 		@Override
 		public int compareTo(Mapping o) {
 			return Double.compare(cost, o.cost);
+		}
+
+		private void calculateValueMappings() {
+			String[][] mappedTypes = {
+					new String[] { "var" },
+			};
+
+			for (String[] types : mappedTypes) {
+				BiMap<String, String> valueMap = new BiMap<>();
+
+				List<String> valuesFrom = getValues(from, types);
+				List<String> valuesTo = getValues(to, types);
+
+				double[][] costMatrix = new double[valuesFrom.size()][valuesTo.size()];
+
+				double minCost = 0;
+				for (Node from : keysetFrom()) {
+					Node to = getFrom(from);
+					if (from.hasType(types)) {
+						int i = valuesFrom.indexOf(from.value);
+						int j = valuesTo.indexOf(to.value);
+						costMatrix[i][j]--;
+						minCost = Math.min(minCost, costMatrix[i][j]);
+					}
+				}
+				for (int i = 0; i < valuesFrom.size(); i++) {
+					for (int j = 0; j < valuesTo.size(); j++) {
+						costMatrix[i][j] -= minCost;
+					}
+				}
+
+				HungarianAlgorithm alg = new HungarianAlgorithm(costMatrix);
+				int[] matching = alg.execute();
+
+				for (int i = 0; i < matching.length; i++) {
+					int j = matching[i];
+					if (j != -1) valueMap.put(valuesFrom.get(i), valuesTo.get(j));
+				}
+
+				for (String type : types) {
+					valueMappings.put(type, valueMap);
+				}
+			}
+		}
+
+		private static List<String> getValues(Node root, String[] types) {
+			Set<String> values = new HashSet<>();
+			root.recurse(node -> {
+				if (node.hasType(types)) values.add(node.value);
+			});
+			return new ArrayList<>(values);
+		}
+
+		public void printValueMappings() {
+			for (String key : valueMappings.keySet()) {
+				// TODO
+			}
 		}
 	}
 
@@ -123,6 +185,8 @@ public class NodeAlignment {
 				align(containedFrom, containedTo, distanceMeasure, fromMap);
 			}
 		}
+
+		mapping.calculateValueMappings();
 
 		// Clear mapping before returning it
 		Mapping ret = mapping;
