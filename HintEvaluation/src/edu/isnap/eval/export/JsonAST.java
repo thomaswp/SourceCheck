@@ -15,7 +15,7 @@ import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.Dataset;
-import edu.isnap.datasets.Fall2016;
+import edu.isnap.datasets.BJCSolutions2017;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
@@ -43,8 +43,13 @@ public class JsonAST {
 //			break;
 //		}
 
-		exportDataset(Fall2016.instance, Fall2016.LightsCameraAction);
+//		exportDataset(Fall2016.instance, Fall2016.LightsCameraAction);
 //		exportAssignment(Fall2016.PolygonMaker);
+
+		for (Assignment assignment : BJCSolutions2017.All) {
+			Snapshot snapshot = Snapshot.parse(new File(assignment.templateFileBase() + ".xml"));
+			exportSnapshot(assignment, snapshot);
+		}
 	}
 
 	protected static void exportDataset(Dataset dataset, Assignment... exclude)
