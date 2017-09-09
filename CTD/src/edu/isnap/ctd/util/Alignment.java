@@ -359,23 +359,6 @@ public class Alignment {
 		return opt;
 	}
 
-	public static int getProgress(String[] from, String[] to, int orderReward, int unorderReward) {
-		return (int)Math.round(getProgress(from, to, orderReward, unorderReward, 0));
-	}
-
-	public static double getProgress(String[] from, String[] to, int orderReward, int unorderReward,
-			double skipCost) {
-		return getProgress(from, to, null, orderReward, unorderReward, skipCost);
-	}
-
-	public static double getProgress(String[] from, String[] to, int[] toOrderGroups,
-			int orderReward, int unorderReward, double skipCost) {
-
-		int[] toIndices = new int[to.length];
-		return getProgress(from, to, toOrderGroups, orderReward, unorderReward, skipCost,
-				toIndices);
-	}
-
 	public static int[] reorderIndices(String[] from, String[] to, int[] toOrderGroups) {
 		int[] toIndices = new int[to.length];
 		// Get the raw to-indices (the cost doesn't matter, so we just use 1s)
@@ -412,6 +395,23 @@ public class Alignment {
 		}
 
 		return toIndices;
+	}
+
+	public static int getProgress(String[] from, String[] to, int orderReward, int unorderReward) {
+		return (int)Math.round(getProgress(from, to, orderReward, unorderReward, 0));
+	}
+
+	public static double getProgress(String[] from, String[] to, int orderReward, int unorderReward,
+			double skipCost) {
+		return getProgress(from, to, null, orderReward, unorderReward, skipCost);
+	}
+
+	public static double getProgress(String[] from, String[] to, int[] toOrderGroups,
+			int orderReward, int unorderReward, double skipCost) {
+
+		int[] toIndices = new int[to.length];
+		return getProgress(from, to, toOrderGroups, orderReward, unorderReward, skipCost,
+				toIndices);
 	}
 
 	private static double getProgress(String[] from, String[] to, int[] toOrderGroups,
@@ -482,29 +482,31 @@ public class Alignment {
 		return reward;
 	}
 
-	public static double getMissingNodeCount(String[] from, String[] to) {
-		return to.length - getProgress(to, from, 1, 1);
+	public static int getMissingNodeCount(String[] from, String[] to) {
+		return to.length - Math.round(getProgress(to, from, 1, 1));
 	}
 
 	public static void main(String[] args) {
-		List<int[]> pairs = alignPairs(new String[] {
-				"a", "b", "c"
-		}, new String[] {
-				"a", "c", "b"
-		}, 2, 2, 3);
-
-		System.out.println();
-		for (int[] pair : pairs) {
-			System.out.println(Arrays.toString(pair));
-		}
-
-//		System.out.println(getProgress(new String[] {
+//		List<int[]> pairs = alignPairs(new String[] {
 //				"a", "b", "c"
 //		}, new String[] {
-//				"a", "b", "x", "c"
-//		}, new int[] {
-//				0, 1, 1, 0
-//		}, 2, 1, 0.25));
+//				"a", "c", "b"
+//		}, 2, 2, 3);
+//
+//		System.out.println();
+//		for (int[] pair : pairs) {
+//			System.out.println(Arrays.toString(pair));
+//		}
+
+		String[] from = new String[] {
+				"a", "b",
+		}, to = new String[] {
+				"a", "c", "b", "d", "e"
+//				"a", "b", "c", "a", "d", "e"
+		};
+
+		System.out.println(getProgress(from, to, 2, 1, 0.5));
+		System.out.println(getMissingNodeCount(from, to) * 0.25);
 
 //		System.out.println(Arrays.toString(reorderIndices(new String[] {
 //				"c", "d", "e", "f"

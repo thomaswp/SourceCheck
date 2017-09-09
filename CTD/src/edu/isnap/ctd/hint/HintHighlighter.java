@@ -1,5 +1,6 @@
 package edu.isnap.ctd.hint;
 
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -33,18 +34,24 @@ public class HintHighlighter {
 		Good, Add, Delete, Order, Move, Replaced
 	}
 
-	public boolean consoleOutput = false;
+	public PrintStream trace = System.out;
 
 	private final List<Node> solutions;
 	private final HintConfig config;
+	private final RuleSet ruleSet;
 
 	public HintHighlighter(HintMap hintMap) {
-		this(hintMap.solutions, hintMap.config);
+		this(hintMap.solutions, hintMap.ruleSet, hintMap.config);
 	}
 
 	public HintHighlighter(List<Node> solutions, HintConfig config) {
+		this(solutions, null, config);
+	}
+
+	public HintHighlighter(List<Node> solutions, RuleSet ruleSet, HintConfig config) {
 		this.solutions = config.preprocessSolutions ?
 				preprocessSolutions(solutions, config) : solutions;
+		this.ruleSet = ruleSet;
 		this.config = config;
 	}
 
@@ -430,23 +437,6 @@ public class HintHighlighter {
 		}
 	}
 
-	public List<EditHint> highlightConsensus(Node node, double stdevsFromMin,
-			double consensusThreshold) {
-
-		List<Mapping> matches = NodeAlignment.findBestMatches(
-				node, solutions, getDistanceMeasure(config), stdevsFromMin);
-
-		List<List<EditHint>> hintSets = new ArrayList<>();
-		for (Mapping mapping : matches) {
-			hintSets.add(highlight(node, mapping));
-		}
-
-		// TODO: finish
-
-		List<EditHint> hints = new LinkedList<>();
-		return hints;
-	}
-
 	// Code elements (blocks) are nodes which are not themselves scripts but have an ancestor
 	// which is a script. This precludes snapshots, sprites, custom blocks, variables, etc,
 	// while including blocks and lists
@@ -461,16 +451,22 @@ public class HintHighlighter {
 	private Mapping findSolutionMapping(Node node) {
 		DistanceMeasure dm = getDistanceMeasure(config);
 		long startTime = System.currentTimeMillis();
-		Mapping bestMatch = NodeAlignment.findBestMatch(node, solutions, dm);
+		List<Node> filteredSolutions = solutions;
+		if (ruleSet != null) {
+			RuleSet.trace = trace;
+			filteredSolutions = ruleSet.filterSolutions(solutions, node);
+		}
+		Mapping bestMatch = NodeAlignment.findBestMatch(node, filteredSolutions, dm);
 		if (bestMatch == null) throw new RuntimeException("No matches!");
 
-		if (consoleOutput) {
-			System.out.println("------------------------------");
-//			System.out.println(node.prettyPrint());
-//			System.out.println("++++++++++");
-			System.out.println("Time to match: " + (System.currentTimeMillis() - startTime));
-			System.out.println(bestMatch.prettyPrint());
-			System.out.println(bestMatch.itemizedCost());
+		if (trace != null) {
+			trace.println("------------------------------");
+//			trace.println(node.prettyPrint());
+//			trace.println("++++++++++");
+			trace.println("Time to match: " + (System.currentTimeMillis() - startTime));
+			trace.println(bestMatch.prettyPrint());
+			trace.println(bestMatch.itemizedCost());
+			new NodeAlignment(bestMatch.from, bestMatch.to).calculateMapping(dm);
 		}
 
 		return bestMatch;
@@ -535,7 +531,7 @@ public class HintHighlighter {
 					for (int i = 0; i < node.children.size(); i++) {
 						Node child = node.children.get(i);
 						if (child.hasType(config.script) && child.treeSize() < minSize) {
-//							System.out.println("Preprocess removed: " + node.children.get(i));
+//							trace.println("Preprocess removed: " + node.children.get(i));
 							node.children.remove(i--);
 						}
 					}
@@ -651,7 +647,7 @@ public class HintHighlighter {
 		for (Entry<Node, Highlight> entry : colors.entrySet()) {
 			prefixMap.put(entry.getKey(), entry.getValue().name().substring(0, 1));
 		}
-		System.out.println(node.prettyPrint(prefixMap));
+		trace.println(node.prettyPrint(prefixMap));
 	}
 
 	private static String[] toArray(List<String> items) {

@@ -166,7 +166,7 @@ public class Snapshot extends Code implements IHasID {
 
 	@Override
 	public String getID() {
-		return "snapshot";
+		return guid;
 	}
 
 	public BlockIndex getEditingIndex(String name, String type, String category) {

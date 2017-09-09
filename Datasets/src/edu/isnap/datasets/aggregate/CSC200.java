@@ -10,9 +10,10 @@ import edu.isnap.datasets.Spring2017;
 public class CSC200 extends AggregateDataset {
 
 	public final static CSC200 instance = new CSC200();
+	public final static String dataDir = "../data/csc200/all";
 
 	public CSC200() {
-		super("../data/csc200/all", Fall2015.instance, Spring2016.instance, Fall2016.instance,
+		super(dataDir, Fall2015.instance, Spring2016.instance, Fall2016.instance,
 				Spring2017.instance);
 	}
 

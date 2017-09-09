@@ -37,7 +37,7 @@ public class NodeAlignment {
 		public final Map<String, BiMap<String, String>> valueMappings = new LinkedHashMap<>();
 
 		public String itemizedCost() {
-			return itemizedCost.toString();
+			return String.format("Total cost: %.02f\n%s", cost, itemizedCost.toString());
 		}
 
 		public Mapping(Node from, Node to) {
@@ -225,17 +225,31 @@ public class NodeAlignment {
 		@Override
 		public double measure(Node from, String[] a, String[] b, int[] bOrderGroups) {
 			if (!config.isCodeElement(from)) {
-				return Alignment.getMissingNodeCount(a, b) * missingCost -
+				int missingCount = Alignment.getMissingNodeCount(a, b);
+				double missingPenalty = missingCount == 0 ? 0 :
+					// The missing penalty is mostly just for the _presense_ of missing children,
+					// and then a small additional penalty for number of missing children to break
+					// ties
+					(1 + missingCount * 0.1) * missingCost;
+				return missingPenalty -
 						Alignment.getProgress(a, b, bOrderGroups,
 								// TODO: skip cost should maybe be another value?
 								inOrderReward, outOfOrderReward, missingCost);
 			} else {
 				// TODO: this is a little snap-specific, so perhaps modify later
 				// TODO: support order groups in parameters
-				int cost = 0;
-				for (int i = 0; i < a.length && i < b.length; i++) {
-					if (!a[i].equals(config.literal) && a[i].equals(b[i])) cost -= inOrderReward;
+				double cost = 0;
+				int i = 0;
+				for (; i < a.length && i < b.length; i++) {
+					if (a[i].equals(b[i])) {
+						if (!a[i].equals(config.literal)) cost -= inOrderReward;
+					} else {
+						cost += missingCost;
+					}
 				}
+				// If the target solution has extra children, we penalize with the missing cost
+				// (This mostly just happens with lists)
+				cost += missingCost * Math.max(0, b.length - i);
 				return cost;
 			}
 		}
@@ -454,14 +468,19 @@ public class NodeAlignment {
 
 		}
 
+		// The following was removed, as it seems to double-penalize solutions for both missing
+		// nodes and the immediate children of these nodes. This may have been added because of
+		// since-addressed bugs in the progress measure, which should not adequately penalize for
+		// missing nodes in the target solution.
+
 		// For each unmatched toState (in the proposed solution), add its cost as well
 		// This essentially penalizes unused nodes that have a matching root path in the student's
 		// current solution, but not their children
-		for (int i = 0; i < toStates.length; i++) {
-			if (matchedTo.contains(i)) continue;
-			mapping.incrementCost(distanceMeasure.measure(
-					toNodes.get(i), new String[0], toStates[i], null), costKey + " [p]");
-		}
+//		for (int i = 0; i < toStates.length; i++) {
+//			if (matchedTo.contains(i)) continue;
+//			mapping.incrementCost(distanceMeasure.measure(
+//					toNodes.get(i), new String[0], toStates[i], null), costKey + " [p]");
+//		}
 	}
 
 	private boolean needsReorder(int[] reorders) {
@@ -536,6 +555,9 @@ public class NodeAlignment {
 			mappings[i] = mapping;
 			totalCost += mapping.cost;
 			minCost = Math.min(minCost, mapping.cost);
+//			if (mapping.cost == minCost) {
+//				System.out.println(mapping.itemizedCost());
+//			}
 		}
 
 		// Calculate stdev for the mapping costs

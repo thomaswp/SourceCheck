@@ -28,6 +28,7 @@ public class BJC2017 extends Dataset {
 		@Override
 		public HintConfig getConfig() {
 			HintConfig config = new HintConfig();
+			config.progressMissingFactor = 0.1;
 			return config;
 		}
 
