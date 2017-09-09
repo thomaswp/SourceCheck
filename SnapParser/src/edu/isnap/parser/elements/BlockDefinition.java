@@ -196,7 +196,7 @@ public class BlockDefinition extends Code implements IHasID {
 	}
 
 	public static boolean isTool(String name) {
-		return EVALUATE_CUSTOM_BLOCK.equals(getCustomBlockCall(name));
+		return !EVALUATE_CUSTOM_BLOCK.equals(getCustomBlockCall(name));
 	}
 
 	public static String getCustomBlockCall(String name) {
