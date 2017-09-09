@@ -17,9 +17,9 @@ import edu.isnap.parser.elements.Script;
 import edu.isnap.parser.elements.Sprite;
 
 public class XML {
-	
-	private static HashMap<String, Code> refMap = new HashMap<String, Code>();
-	
+
+	private static HashMap<String, Code> refMap = new HashMap<>();
+
 	public static void buildRefMap(Element root, String... tags) {
 		for (String tag : tags) {
 			NodeList list = root.getElementsByTagName(tag);
@@ -27,29 +27,29 @@ public class XML {
 				Element item = as(list.item(i), Element.class);
 				if (item != null) {
 					String id = item.getAttribute("id");
-					if (id != null) refMap.put(id, (Code) getCodeElement(item));
+					if (id != null) refMap.put(id, getCodeElement(item));
 				}
 			}
 		}
 	}
-	
+
 	public static void clearRefMap() {
 		refMap.clear();
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	private static <T> T as(Object obj, Class<T> clazz) {
 		if (obj == null) return null;
 		if (clazz.isAssignableFrom(obj.getClass())) return (T) obj;
 		return null;
 	}
-	
+
 	public static Iterable<Element> getChildrenByTagName(Element e, String... tags) {
 		return getChildrenByTagName(e, new TagsPredicate(tags));
 	}
-	
+
 	private static Iterable<Element> getChildrenByTagName(Element e, Predicate pred) {
-		List<Element> list = new ArrayList<Element>();
+		List<Element> list = new ArrayList<>();
 		Node child = e.getFirstChild();
 		while (child != null) {
 			if (child instanceof Element && pred.is((Element) child)) {
@@ -59,11 +59,20 @@ public class XML {
 		}
 		return list;
 	}
-	
+
 	public static Element getFirstChildByTagName(Element e, String... tags) {
 		return getFirstChildByTagName(e, new TagsPredicate(tags));
 	}
-	
+
+	public static Element getFirstChild(Element e) {
+		return getFirstChildByTagName(e, new Predicate() {
+			@Override
+			public boolean is(Element e) {
+				return true;
+			}
+		});
+	}
+
 	private static Element getFirstChildByTagName(Element e, Predicate pred) {
 		Node child = e.getFirstChild();
 		while (child != null) {
@@ -74,28 +83,28 @@ public class XML {
 		}
 		return (Element) child;
 	}
-	
-	public static Iterable<Element> getGrandchildrenByTagName(Element e, 
+
+	public static Iterable<Element> getGrandchildrenByTagName(Element e,
 			String childTag, String... grandchildTags) {
-		return getGrandchildrenByTagName(e, new TagsPredicate(childTag), 
+		return getGrandchildrenByTagName(e, new TagsPredicate(childTag),
 				new TagsPredicate(grandchildTags));
 	}
-	
-	private static Iterable<Element> getGrandchildrenByTagName(Element e, 
+
+	private static Iterable<Element> getGrandchildrenByTagName(Element e,
 			Predicate childPred, Predicate grandchildPred) {
 		Element child = getFirstChildByTagName(e, childPred);
-		if (child == null) return new ArrayList<Element>();
+		if (child == null) return new ArrayList<>();
 		return getChildrenByTagName(child, grandchildPred);
 	}
-	
+
 	private interface Predicate {
 		boolean is(Element e);
 	}
-	
+
 	private static class TagsPredicate implements Predicate {
 		private final String[] tags;
 		public TagsPredicate(String... tags) { this.tags = tags; }
-		
+
 		@Override
 		public boolean is(Element e) {
 			for (String tag : tags) {
@@ -104,7 +113,7 @@ public class XML {
 			return false;
 		}
 	}
-	
+
 	public final static Predicate callBlockPredicate = new TagsPredicate("block", "custom-block");
 	public final static Predicate literalBlockPredicate = new TagsPredicate("l", "color");
 	public final static Predicate listBlockPredicate = new TagsPredicate("list");
@@ -112,17 +121,17 @@ public class XML {
 	public final static Predicate scriptPredicate = new TagsPredicate("script");
 	public final static Predicate spritePredicate = new TagsPredicate("sprite");
 	public final static Predicate refPredicate = new TagsPredicate("ref");
-	
+
 	//TODO: autolambda should have a structure
 	// Variables for some reason show up in calls to custom blocks..
 	public final static Predicate ignorePredicate = new TagsPredicate("watcher", "comment", "autolambda", "variables", "receiver");
-	
+
 	public static List<Code> getCodeInFirstChild(Element element, String childTag) {
 		return getCode(getFirstChildByTagName(element, childTag));
 	}
-	
+
 	public static List<Code> getCode(Element element) {
-		List<Code> children = new ArrayList<Code>();
+		List<Code> children = new ArrayList<>();
 		Node child = element.getFirstChild();
 		while (child != null) {
 			if (child instanceof Element) {
@@ -159,7 +168,7 @@ public class XML {
 		}
 		return null;
 	}
-	
+
 	public static void ensureEmpty(Element element, String... tags) {
 		for (String list : tags) {
 			if (XML.getFirstChildByTagName(element, list).getChildNodes().getLength() > 0) {

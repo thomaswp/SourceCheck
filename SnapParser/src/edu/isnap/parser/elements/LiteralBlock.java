@@ -4,6 +4,9 @@ import java.util.Arrays;
 import java.util.HashSet;
 
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+
+import edu.isnap.parser.elements.util.XML;
 
 public class LiteralBlock extends Block {
 	private static final long serialVersionUID = 1L;
@@ -35,6 +38,10 @@ public class LiteralBlock extends Block {
 		"doChangeVar",
 		"doShowVar",
 		"doHideVar"
+	}));
+	private final static HashSet<String> setVarInListBlocks =
+			new HashSet<>(Arrays.asList(new String[] {
+		"doDeclareVariables",
 	}));
 
 	@Override
@@ -76,8 +83,19 @@ public class LiteralBlock extends Block {
 	public static LiteralBlock parse(Element element) {
 		Element parent = (Element) element.getParentNode();
 		boolean isVarRef = false;
-		if (parent.getChildNodes().item(0) == element) {
-			isVarRef = setVarBlocks.contains(parent.getAttribute("s"));
+		if (parent != null) {
+			if (XML.getFirstChild(parent) == element) {
+				isVarRef = setVarBlocks.contains(parent.getAttribute("s"));
+			}
+			if ("list".equals(parent.getTagName())) {
+				Node grandparent = parent.getParentNode();
+				if (grandparent != null && grandparent instanceof Element) {
+					if (XML.getFirstChild((Element) grandparent) == parent) {
+						isVarRef = setVarInListBlocks.contains(
+								((Element) grandparent).getAttribute("s"));
+					}
+				}
+			}
 		}
 		return new LiteralBlock(
 				element.getTagName(),
