@@ -79,7 +79,31 @@ public class NodeAlignment {
 			return Double.compare(cost, o.cost);
 		}
 
+		public String getMappedType(Node node, boolean isFrom) {
+			String type = node.type(), value = node.value;
+			BiMap<String,String> map = valueMappings.get(type);
+			if (map != null) {
+				if (isFrom &&  map.containsFrom(value)) return value;
+				if (!isFrom && map.containsTo(value)) return map.getTo(value);
+			}
+			return type;
+		}
+
+		public String[] getMappedChildArray(Node node, boolean isFrom) {
+			String[] children = new String[node.children.size()];
+			for (int i = 0; i < children.length; i++) {
+				children[i] = getMappedType(node.children.get(i), isFrom);
+			}
+			return children;
+		}
+
 		private void calculateValueMappings(HintConfig config) {
+			calculateValueMappings(config, this);
+		}
+
+		private void calculateValueMappings(HintConfig config, BiMap<Node, Node> mapping) {
+
+			valueMappings.clear();
 
 			for (String[] types : config.valueMappedTypes) {
 				BiMap<String, String> valueMap = new BiMap<>();
@@ -92,8 +116,8 @@ public class NodeAlignment {
 				double[][] costMatrix = new double[valuesFrom.size()][valuesTo.size()];
 
 				double minCost = 0;
-				for (Node from : keysetFrom()) {
-					Node to = getFrom(from);
+				for (Node from : mapping.keysetFrom()) {
+					Node to = mapping.getFrom(from);
 					if (from.hasType(types)) {
 						int i = valuesFrom.indexOf(from.value);
 						int j = valuesTo.indexOf(to.value);
@@ -156,13 +180,17 @@ public class NodeAlignment {
 	}
 
 	public Mapping calculateMapping(DistanceMeasure distanceMeasure) {
+		return calculateMapping(distanceMeasure, null);
+	}
+
+	private Mapping calculateMapping(DistanceMeasure distanceMeasure, Mapping previousMapping) {
 		mapping = new Mapping(from, to);
+		// If we're given a previous mapping, we use it to calculate value mappings
+		if (previousMapping != null) mapping.calculateValueMappings(config, previousMapping);
 
 		to.resetAnnotations();
 		ListMap<String, Node> fromMap = getChildMap(from);
 		ListMap<String, Node> toMap = getChildMap(to);
-
-		mapping.clear();
 
 		for (String key : fromMap.keySet()) {
 			List<Node> fromNodes = fromMap.get(key);
@@ -196,11 +224,18 @@ public class NodeAlignment {
 			}
 		}
 
-		mapping.calculateValueMappings(config);
-
 		// Clear mapping before returning it
 		Mapping ret = mapping;
 		mapping = null;
+
+		if (previousMapping == null) {
+			// If we we're not given a previous mapping, this is the first round, so recalculate
+			// using this mapping to map values
+			return calculateMapping(distanceMeasure, ret);
+		}
+
+		// Recalculate the value mappings with our own data
+		ret.calculateValueMappings(config);
 		return ret;
 	}
 
@@ -274,8 +309,8 @@ public class NodeAlignment {
 
 	private void align(List<Node> fromNodes, List<Node> toNodes,
 			DistanceMeasure distanceMeasure, final ListMap<String, Node> fromMap) {
-		String[][] fromStates = stateArray(fromNodes);
-		String[][] toStates = stateArray(toNodes);
+		String[][] fromStates = stateArray(fromNodes, true);
+		String[][] toStates = stateArray(toNodes, false);
 		int[][] toOrderGroups = orderGroups(toNodes);
 
 		String type = fromNodes.get(0).type();
@@ -436,7 +471,7 @@ public class NodeAlignment {
 
 				to.children.clear();
 				to.children.addAll(reordered);
-				toStates[j] = to.getChildArray();
+				toStates[j] = mapping.getMappedChildArray(to, false);
 			}
 
 			// Try to align the children of these paired nodes and add them to the mapping,
@@ -462,7 +497,7 @@ public class NodeAlignment {
 			for (Node uf : unpairedFrom) {
 				for (int k = 0; k < unpairedTo.size(); k++) {
 					Node ut = unpairedTo.get(k);
-					if (uf.type().equals(ut.type())) {
+					if (mapping.getMappedType(uf, true).equals(mapping.getMappedType(ut, false))) {
 						mapping.put(uf, ut);
 						unpairedTo.remove(k);
 						break;
@@ -504,10 +539,10 @@ public class NodeAlignment {
 		return dm.measure(null, aDFI, bDFI, null);
 	}
 
-	private String[][] stateArray(List<Node> nodes) {
+	private String[][] stateArray(List<Node> nodes, boolean isFrom) {
 		String[][] states = new String[nodes.size()][];
 		for (int i = 0; i < states.length; i++) {
-			states[i] = nodes.get(i).getChildArray();
+			states[i] = mapping.getMappedChildArray(nodes.get(i), isFrom);
 		}
 		return states;
 	}
