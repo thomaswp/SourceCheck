@@ -29,9 +29,8 @@ import edu.isnap.ctd.hint.HintJSON;
 import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.hint.edit.EditHint;
 import edu.isnap.ctd.hint.edit.Insertion;
-import edu.isnap.ctd.util.map.BiMap;
+import edu.isnap.ctd.util.NodeAlignment.Mapping;
 import edu.isnap.ctd.util.map.ListMap;
-import edu.isnap.ctd.util.map.MapFactory;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
@@ -377,7 +376,7 @@ public class Agreement {
 		Map<String, Node> toIDMap = getIDMap(to);
 
 		List<EditHint> renames = new ArrayList<>();
-		BiMap<Node, Node> mapping = new BiMap<>(MapFactory.IdentityHashMapFactory);
+		Mapping mapping = new Mapping(from, to);
 		for (String id : fromIDMap.keySet()) {
 			Node fromNode = fromIDMap.get(id);
 			Node toNode = toIDMap.get(id);
@@ -416,7 +415,7 @@ public class Agreement {
 
 			// You can relabel a block and it keeps its ID, so we check for that here
 			if (!fromNode.hasType(toNode.type())) {
-				Insertion rename = new Insertion(fromNode.parent, toNode, fromNode.index());
+				Insertion rename = new Insertion(fromNode.parent, toNode, fromNode.index(), null);
 				rename.replaced = fromNode;
 				rename.keepChildrenInReplacement = true;
 				renames.add(rename);

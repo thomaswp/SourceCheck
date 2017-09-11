@@ -1,6 +1,5 @@
 package edu.isnap.ctd.hint.edit;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -12,6 +11,7 @@ import edu.isnap.ctd.graph.Node.Predicate;
 
 public class Insertion extends EditHint {
 	public final String type;
+	public final String value;
 	public final int index;
 	public final boolean missingParent;
 	// Used when applying insertions with replacements to determine whether the original node's
@@ -31,13 +31,14 @@ public class Insertion extends EditHint {
 		return "insert";
 	}
 
-	public Insertion(Node parent, Node pair, int index) {
-		this(parent, pair, index, false);
+	public Insertion(Node parent, Node pair, int index, String value) {
+		this(parent, pair, index, value, false);
 	}
 
-	public Insertion(Node parent, Node pair, int index, boolean missingParent) {
+	public Insertion(Node parent, Node pair, int index, String value, boolean missingParent) {
 		super(parent);
 		this.type = pair.type();
+		this.value = value;
 		this.index = index;
 		this.missingParent = missingParent;
 		this.pair = pair;
@@ -54,7 +55,7 @@ public class Insertion extends EditHint {
 		data.put("type", type);
 		data.put("replacement", Node.getNodeReference(replaced));
 		data.put("candidate", Node.getNodeReference(candidate));
-		LinkedList<String> items = new LinkedList<>(Arrays.asList(parent.getChildArray()));
+		LinkedList<String> items = getParentChildren();
 		data.put("from", toJSONArray(items, argsCanonSwapped));
 		editChildren(items);
 		data.put("to", toJSONArray(items, argsCanonSwapped));
@@ -84,7 +85,7 @@ public class Insertion extends EditHint {
 		if (replaced != null) {
 			children.remove(index);
 		}
-		children.add(index, type);
+		children.add(index, type + (value == null ? "" : (":" + value)));
 	}
 
 	@Override

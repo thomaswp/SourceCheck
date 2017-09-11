@@ -344,6 +344,22 @@ public class Node extends StringHashable {
 		return size;
 	}
 
+	public String getTypeValueString() {
+		if (type.contains(":")) {
+			throw new RuntimeException("Illegal character in type: " + type);
+		}
+		return type + (value == null ? "" : (":" + value));
+	}
+
+	public String[] getChildTypeValueArray() {
+		String[] array = new String[children.size()];
+		for (int i = 0; i < array.length; i++) {
+			Node child = children.get(i);
+			array[i] = child.getTypeValueString();
+		}
+		return array;
+	}
+
 	public String[] getChildArray() {
 		String[] array = new String[children.size()];
 		for (int i = 0; i < array.length; i++) {
@@ -482,6 +498,7 @@ public class Node extends StringHashable {
 		obj.put("label", label);
 		obj.put("index", index);
 		obj.put("parent", parent);
+		if (node.value != null) obj.put("value", node.value);
 
 		return obj;
 	}

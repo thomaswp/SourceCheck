@@ -25,7 +25,6 @@ import edu.isnap.ctd.util.NodeAlignment.ProgressDistanceMeasure;
 import edu.isnap.ctd.util.map.BiMap;
 import edu.isnap.ctd.util.map.CountMap;
 import edu.isnap.ctd.util.map.ListMap;
-import edu.isnap.ctd.util.map.MapFactory;
 
 public class HintHighlighter {
 
@@ -55,15 +54,15 @@ public class HintHighlighter {
 	}
 
 	public List<EditHint> highlight(Node node) {
-		BiMap<Node, Node> mapping = findSolutionMapping(node);
+		Mapping mapping = findSolutionMapping(node);
 		return highlight(node, mapping);
 	}
 
-	public List<EditHint> highlight(Node node, final BiMap<Node, Node> mapping) {
+	public List<EditHint> highlight(Node node, final Mapping mapping) {
 		return highlight(node, mapping, true);
 	}
 
-	public List<EditHint> highlight(Node node, final BiMap<Node, Node> mapping,
+	public List<EditHint> highlight(Node node, final Mapping mapping,
 			boolean reuseDeletedBlocks) {
 		final List<EditHint> edits = new ArrayList<>();
 		final IdentityHashMap<Node, Highlight> colors = new IdentityHashMap<>();
@@ -88,49 +87,51 @@ public class HintHighlighter {
 			@Override
 			public void run(Node node) {
 				Node pair = mapping.getFrom(node);
-				if (pair != null) {
-					Node parent = node.parent;
-					boolean parentMatches = parent == null ||
-							mapping.getFrom(parent) == pair.parent;
-					Highlight highlight = parentMatches ? Highlight.Good : Highlight.Move;
-					colors.put(node, highlight);
-					if (highlight == Highlight.Move) {
-						Node moveParent = mapping.getTo(pair.parent);
-						if (moveParent == null) {
-							// If the pair's parent has no original parent, we add a placeholder
-							// insert with a missing parent so the node is marked for movement
-							Node parentClone = pair.parent.copy();
-							parentClone.children.remove(pair.index());
-							Insertion insertion = new Insertion(
-									parentClone, pair, pair.index(), true);
-							insertion.candidate = node;
-							edits.add(insertion);
-						} else {
-							// For those with a matching parent, we need to insert them where
-							// they belong
-							int insertIndex = 0;
-							// Look back through your pair's earlier siblings...
-							for (int i = pair.index() - 1; i >= 0; i--) {
-								Node sibling = pair.parent.children.get(i);
-								// If you can find one with a pair in the moveParent
-								Node siblingPair = mapping.getTo(sibling);
-								if (siblingPair != null && siblingPair.parent == moveParent) {
-									// Set the insert index to right after it
-									insertIndex = siblingPair.index() + 1;
-									break;
-								}
-							}
+				if (pair == null) return;
 
-							Insertion insertion = new Insertion(moveParent, pair, insertIndex);
-							insertion.candidate = node;
-							// If this is a code element parent, inserting the node should replace
-							// the current node at this index
-							if (isCodeElement(moveParent) &&
-									insertIndex < moveParent.children.size()) {
-								insertion.replaced = moveParent.children.get(insertIndex);
+				Node parent = node.parent;
+				boolean parentMatches = parent == null ||
+						mapping.getFrom(parent) == pair.parent;
+				Highlight highlight = parentMatches ? Highlight.Good : Highlight.Move;
+				colors.put(node, highlight);
+
+				if (highlight == Highlight.Move) {
+					Node moveParent = mapping.getTo(pair.parent);
+					if (moveParent == null) {
+						// If the pair's parent has no original parent, we add a placeholder
+						// insert with a missing parent so the node is marked for movement
+						Node parentClone = pair.parent.copy();
+						parentClone.children.remove(pair.index());
+						Insertion insertion = new Insertion(
+								parentClone, pair, pair.index(), node.value, true);
+						insertion.candidate = node;
+						edits.add(insertion);
+					} else {
+						// For those with a matching parent, we need to insert them where
+						// they belong
+						int insertIndex = 0;
+						// Look back through your pair's earlier siblings...
+						for (int i = pair.index() - 1; i >= 0; i--) {
+							Node sibling = pair.parent.children.get(i);
+							// If you can find one with a pair in the moveParent
+							Node siblingPair = mapping.getTo(sibling);
+							if (siblingPair != null && siblingPair.parent == moveParent) {
+								// Set the insert index to right after it
+								insertIndex = siblingPair.index() + 1;
+								break;
 							}
-							edits.add(insertion);
 						}
+
+						Insertion insertion = new Insertion(moveParent, pair, insertIndex,
+								node.value);
+						insertion.candidate = node;
+						// If this is a code element parent, inserting the node should replace
+						// the current node at this index
+						if (isCodeElement(moveParent) &&
+								insertIndex < moveParent.children.size()) {
+							insertion.replaced = moveParent.children.get(insertIndex);
+						}
+						edits.add(insertion);
 					}
 				}
 			}
@@ -142,97 +143,96 @@ public class HintHighlighter {
 			public void run(Node node) {
 				// Start by finding parent nodes that have a pair
 				Node pair = mapping.getFrom(node);
-				if (pair != null) {
+				if (pair == null) return;
 
-					// For clarity, this routine handles reorders for nodes that _are_ children
-					// of a paired code element node (first), then it handles reorders for the
-					// _children of_ non-code-element nodes (second)
+				// For clarity, this routine handles reorders for nodes that _are_ children
+				// of a paired code element node (first), then it handles reorders for the
+				// _children of_ non-code-element nodes (second)
 
-					// Argument nodes are easy, since their order should be the same as their pair
-					if (node.parent != null && node.parent == mapping.getTo(pair.parent) &&
-							isCodeElement(node.parent)) {
+				// Argument nodes are easy, since their order should be the same as their pair
+				if (node.parent != null && node.parent == mapping.getTo(pair.parent) &&
+						isCodeElement(node.parent)) {
 
-						int pairIndex = pair.index();
-						// If the indices don't match and the pair's index fits within the parent's
-						// arguments, reorder the node
-						if (node.index() != pairIndex && pairIndex < node.parent.children.size()) {
-							// I think this should happen even if we suppress the reorder, but I'm
-							// not 100% sure...
-							colors.put(node, Highlight.Order);
+					int pairIndex = pair.index();
+					// If the indices don't match and the pair's index fits within the parent's
+					// arguments, reorder the node
+					if (node.index() != pairIndex && pairIndex < node.parent.children.size()) {
+						// I think this should happen even if we suppress the reorder, but I'm
+						// not 100% sure...
+						colors.put(node, Highlight.Order);
 
-							Reorder reorder = new Reorder(node, pairIndex, true);
-							if (!reorder.shouldSuppress(mapping)) edits.add(reorder);
+						Reorder reorder = new Reorder(node, pairIndex, true);
+						if (!reorder.shouldSuppress(mapping)) edits.add(reorder);
 
+					}
+				}
+
+				// The below is for non-code-elements (scripts), since it involves insertion
+				if (isCodeElement(node)) return;
+
+				// Instead of aligning the node types, which might repeat, we align the original
+				// node indices (1, 2, 3...) with the order those node-indices appear in the
+				// paired parent's children
+
+				// Maps pair children to the index of their corresponding original children
+				// We use string, since the alignment algorithm will expect them
+				IdentityHashMap<Node, String> pairOrders = new IdentityHashMap<>();
+				// Get the original good nodes in the order they appear
+				List<Node> fromChildren = new LinkedList<>();
+				// And create the lists that will hold the indices to compare
+				List<String> fromItems = new LinkedList<>(), toItems = new LinkedList<>();
+				// We use a tree map to order the pair children by their index in their parent
+				TreeMap<Integer, Node> toChildren = new TreeMap<>();
+
+				for (Node child : node.children) {
+					// We only work with children that have a pair
+					if (colors.get(child) == Highlight.Good) {
+						// The from items are the original indices (1, 2, 3..)
+						String index = String.valueOf(fromChildren.size());
+						fromItems.add(index);
+						fromChildren.add(child);
+
+						// Get the child pair and add it in order of its index
+						Node childPair = mapping.getFrom(child);
+						pairOrders.put(childPair, index);
+						Node x = toChildren.put(childPair.index(), childPair);
+						if (x != null) {
+							// Check for multiple nodes mapped to a single one
+							System.err.println("two: " + childPair);
 						}
 					}
+				}
+				// Get the original child's index corresponding to each pair
+				for (Node pairChild : toChildren.values()) {
+					toItems.add(pairOrders.get(pairChild));
+				}
 
-					// The below is for non-code-elements (scripts), since it involves insertion
-					if (isCodeElement(node)) return;
+				// Now we have two lists, e.g. (1, 2, 3) and (3, 1, 2)
+				// so we align them and see which ones don't end up with partners
+				List<int[]> alignPairs = Alignment.alignPairs(
+						toArray(fromItems), toArray(toItems), 1, 1, 100);
+				for (int[] ap : alignPairs) {
+					if (ap[0] >= 0 && ap[1] < 0) {
+						// Unpaired elements get marked for reordering
+						Node toReorder = fromChildren.get(ap[0]);
+						colors.put(toReorder, Highlight.Order);
 
-					// Instead of aligning the node types, which might repeat, we align the original
-					// node indices (1, 2, 3...) with the order those node-indices appear in the
-					// paired parent's children
-
-					// Maps pair children to the index of their corresponding original children
-					// We use string, since the alignment algorithm will expect them
-					IdentityHashMap<Node, String> pairOrders = new IdentityHashMap<>();
-					// Get the original good nodes in the order they appear
-					List<Node> fromChildren = new LinkedList<>();
-					// And create the lists that will hold the indices to compare
-					List<String> fromItems = new LinkedList<>(), toItems = new LinkedList<>();
-					// We use a tree map to order the pair children by their index in their parent
-					TreeMap<Integer, Node> toChildren = new TreeMap<>();
-
-					for (Node child : node.children) {
-						// We only work with children that have a pair
-						if (colors.get(child) == Highlight.Good) {
-							// The from items are the original indices (1, 2, 3..)
-							String index = String.valueOf(fromChildren.size());
-							fromItems.add(index);
-							fromChildren.add(child);
-
-							// Get the child pair and add it in order of its index
-							Node childPair = mapping.getFrom(child);
-							pairOrders.put(childPair, index);
-							Node x = toChildren.put(childPair.index(), childPair);
-							if (x != null) {
-								// Check for multiple nodes mapped to a single one
-								System.err.println("two: " + childPair);
+						// Find the best index for the Node
+						Node np = mapping.getFrom(toReorder);
+						// Work backwards from the reordered node's pair and find a preceding
+						// pair-node that is mapped to: it goes after that. If none is found,
+						// we insert at the beginning
+						int index = 0;
+						for (int i = np.index() - 1; i >= 0; i--) {
+							Node preceder = mapping.getTo(np.parent.children.get(i));
+							// Make sure they have the same parent so we know the index is valid
+							if (preceder != null && preceder.parent == toReorder.parent) {
+								index = preceder.index() + 1;
+								break;
 							}
 						}
-					}
-					// Get the original child's index corresponding to each pair
-					for (Node pairChild : toChildren.values()) {
-						toItems.add(pairOrders.get(pairChild));
-					}
-
-					// Now we have two lists, e.g. (1, 2, 3) and (3, 1, 2)
-					// so we align them and see which ones don't end up with partners
-					List<int[]> alignPairs = Alignment.alignPairs(
-							toArray(fromItems), toArray(toItems), 1, 1, 100);
-					for (int[] ap : alignPairs) {
-						if (ap[0] >= 0 && ap[1] < 0) {
-							// Unpaired elements get marked for reordering
-							Node toReorder = fromChildren.get(ap[0]);
-							colors.put(toReorder, Highlight.Order);
-
-							// Find the best index for the Node
-							Node np = mapping.getFrom(toReorder);
-							// Work backwards from the reordered node's pair and find a preceding
-							// pair-node that is mapped to: it goes after that. If none is found,
-							// we insert at the beginning
-							int index = 0;
-							for (int i = np.index() - 1; i >= 0; i--) {
-								Node preceder = mapping.getTo(np.parent.children.get(i));
-								// Make sure they have the same parent so we know the index is valid
-								if (preceder != null && preceder.parent == toReorder.parent) {
-									index = preceder.index() + 1;
-									break;
-								}
-							}
-							Reorder reorder = new Reorder(toReorder, index, false);
-							if (!reorder.shouldSuppress(mapping)) edits.add(reorder);
-						}
+						Reorder reorder = new Reorder(toReorder, index, false);
+						if (!reorder.shouldSuppress(mapping)) edits.add(reorder);
 					}
 				}
 			}
@@ -269,7 +269,8 @@ public class HintHighlighter {
 								}
 								insertIndex = Math.max(0, insertIndex);
 							}
-							Insertion insertion = new Insertion(node, child, insertIndex);
+							Insertion insertion = new Insertion(node, child, insertIndex,
+									mapping.getMappedValue(child, false));
 							edits.add(insertion);
 							// If the node is being inserted in a code element then it replaces
 							// whatever already exists at this index in the parent
@@ -301,7 +302,8 @@ public class HintHighlighter {
 					// descriptive
 					Node parentClone = pair.parent.copy();
 					parentClone.children.remove(pair.index());
-					Insertion insertion = new Insertion(parentClone, pair, pair.index(), true);
+					Insertion insertion = new Insertion(parentClone, pair, pair.index(),
+							mapping.getMappedValue(pair, false), true);
 					edits.add(insertion);
 				}
 			}
@@ -542,6 +544,7 @@ public class HintHighlighter {
 		return solutions;
 	}
 
+	// TODO: !! Don't pair on same tpye if values are different!
 	private void handleInsertionsAndMoves(final IdentityHashMap<Node, Highlight> colors,
 			final List<Insertion> insertions, List<EditHint> edits, BiMap<Node, Node> mapping) {
 
@@ -660,7 +663,7 @@ public class HintHighlighter {
 		String[] bestSeq = best.depthFirstIteration();
 		List<int[]> alignPairs = Alignment.alignPairs(nodeSeq, bestSeq, 1, 1, 1);
 
-		BiMap<Node, Node> mapping = new BiMap<>(MapFactory.IdentityHashMapFactory);
+		Mapping mapping = new Mapping(node, best);
 		for (int[] a : alignPairs) {
 			if (a[0] == -1 || a[1] == -1) continue;
 			Node from = node.nthDepthFirstNode(a[0]);

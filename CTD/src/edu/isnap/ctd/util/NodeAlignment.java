@@ -80,13 +80,18 @@ public class NodeAlignment {
 		}
 
 		public String getMappedType(Node node, boolean isFrom) {
+			String value = getMappedValue(node, isFrom);
+			return value == null ? node.type() : value;
+		}
+
+		public String getMappedValue(Node node, boolean isFrom) {
 			String type = node.type(), value = node.value;
 			BiMap<String,String> map = valueMappings.get(type);
 			if (map != null) {
 				if (isFrom &&  map.containsFrom(value)) return value;
 				if (!isFrom && map.containsTo(value)) return map.getTo(value);
 			}
-			return type;
+			return null;
 		}
 
 		public String[] getMappedChildArray(Node node, boolean isFrom) {

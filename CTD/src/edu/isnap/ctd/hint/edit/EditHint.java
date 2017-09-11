@@ -11,10 +11,10 @@ import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.Canonicalization;
-import edu.isnap.ctd.hint.Hint;
-import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.hint.Canonicalization.InvertOp;
 import edu.isnap.ctd.hint.Canonicalization.SwapSymmetricArgs;
+import edu.isnap.ctd.hint.Hint;
+import edu.isnap.ctd.hint.HintMap;
 
 public abstract class EditHint implements Hint, Comparable<EditHint> {
 	protected abstract void editChildren(List<String> children);
@@ -69,9 +69,9 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 		return data;
 	}
 
-	private LinkedList<String> getParentChildren() {
+	protected LinkedList<String> getParentChildren() {
 		if (parent == null) return new LinkedList<>();
-		return new LinkedList<>(Arrays.asList(parent.getChildArray()));
+		return new LinkedList<>(Arrays.asList(parent.getChildTypeValueArray()));
 	}
 
 	@Override
@@ -101,7 +101,7 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 
 	@Override
 	public String toString() {
-		LinkedList<String> items = new LinkedList<>(Arrays.asList(parent.getChildArray()));
+		LinkedList<String> items = getParentChildren();
 		String from = items.toString();
 		editChildren(items);
 		String to = items.toString();
