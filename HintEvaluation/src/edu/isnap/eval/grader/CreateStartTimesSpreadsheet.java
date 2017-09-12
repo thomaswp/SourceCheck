@@ -1,4 +1,4 @@
-package edu.isnap.eval.user;
+package edu.isnap.eval.grader;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;

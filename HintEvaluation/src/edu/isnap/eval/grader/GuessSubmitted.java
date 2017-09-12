@@ -1,4 +1,4 @@
-package edu.isnap.eval.help;
+package edu.isnap.eval.grader;
 
 import java.io.File;
 import java.io.IOException;
