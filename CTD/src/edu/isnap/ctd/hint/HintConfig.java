@@ -141,6 +141,7 @@ public class HintConfig {
 	 */
 	public String[][] valueMappedTypes = {
 			new String[] { "var" },
+			new String[] { "customBlock", "evaluateCustomBlock" },
 	};
 
 	/**
