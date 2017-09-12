@@ -258,8 +258,10 @@ public class HintHighlighter {
 						} else {
 							// Otherwise we add an insertion
 							if (isCodeElement(node)) {
-								// The insert index algorithm could have gone out of bounds for
-								// a code element's children (args)
+								// For code elements, we want to insert at the same location as
+								// in the solution code, since index matters more than relative
+								// position
+								insertIndex = child.index();
 
 								// For code elements, we cannot insert past the parent's size
 								// (e.g. add an element to a list)
@@ -295,7 +297,7 @@ public class HintHighlighter {
 					// It's useful to list these insertions anyway, since it allows us to mark nodes
 					// as Move instead of Delete when they're used in not-yet-added parents
 
-					// This really only makes sense for code element
+					// This really only makes sense for code elements
 					if (!isCodeElement(pair)) return;
 
 					// We clone the pair-parent and remove the pair, so the insert text is
