@@ -544,9 +544,8 @@ public class HintHighlighter {
 		return solutions;
 	}
 
-	// TODO: !! Don't pair on same tpye if values are different!
 	private void handleInsertionsAndMoves(final IdentityHashMap<Node, Highlight> colors,
-			final List<Insertion> insertions, List<EditHint> edits, BiMap<Node, Node> mapping) {
+			final List<Insertion> insertions, List<EditHint> edits, Mapping mapping) {
 
 		DistanceMeasure dm = getDistanceMeasure(config);
 
@@ -583,12 +582,17 @@ public class HintHighlighter {
 				// We're also only interested in working with insertions into scripts
 				if (!insertion.parent.hasAncestor(new Node.TypePredicate(config.script))) continue;
 
+				// Only match nodes with the same type and mapped value (if applicable/non-null)
+				if (!(deleted.hasType(insertion.type) &&
+						areEqual(mapping.getMappedValue(deleted, true), insertion.value))) {
+					continue;
+				}
+
 				boolean matchParent = deleted.parent == insertion.parent;
-				boolean sameType = deleted.hasType(insertion.type);
 
 				// If it's an insertion/deletion of the same type in the same script parent, it's
 				// just a reorder
-				if (sameType && matchParent && insertion.parent.hasType(config.script) &&
+				if (matchParent && insertion.parent.hasType(config.script) &&
 						insertion.index != deleted.index()) {
 					colors.put(deleted, Highlight.Move);
 					Reorder reorder = new Reorder(deleted, insertion.index,
@@ -607,8 +611,7 @@ public class HintHighlighter {
 				}
 
 				// Moves are deletions that could be instead moved to perform a needed insertion
-				if (sameType && insertion.candidate == null &&
-						!insertion.type.equals(config.literal)) {
+				if (insertion.candidate == null && !insertion.type.equals(config.literal)) {
 					double cost = NodeAlignment.getSubCostEsitmate(deleted, insertion.pair, dm);
 					// Ensure that insertions with missing parents are paired last, giving priority
 					// to actionable inserts when assigning candidates
@@ -641,6 +644,11 @@ public class HintHighlighter {
 		edits.addAll(toAdd);
 
 
+	}
+
+	private static boolean areEqual(String a, String b) {
+		if (a == null) return b == null;
+		return a.equals(b);
 	}
 
 	private static String[] toArray(List<String> items) {
