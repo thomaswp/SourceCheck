@@ -34,7 +34,7 @@ public class HintSelection {
 				Fall2016.GuessingGame1
 		};
 		for (Assignment assignment : assignments) {
-			select(assignment, new SnapParser.Filter[] {
+			select(assignment, "hints", new SnapParser.Filter[] {
 					new SnapParser.SubmittedOnly(),
 			}, "twprice", "rzhi");
 		}
@@ -46,14 +46,15 @@ public class HintSelection {
 				Spring2017.GuessingGame1
 		};
 		for (Assignment assignment : assignments) {
-			select(assignment, new SnapParser.Filter[] {
+			select(assignment, "handmade_hints", new SnapParser.Filter[] {
 					new SnapParser.LikelySubmittedOnly(),
 					new SnapParser.StartedAfter(Assignment.date(2017, 1, 29))
 			}, "twprice", "rzhi");
 		}
 	}
 
-	public static void select(Assignment assignment, SnapParser.Filter[] filters, String... users) {
+	public static void select(Assignment assignment, String table,
+			SnapParser.Filter[] filters, String... users) {
 
 		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, false, true, filters);
 
@@ -84,13 +85,13 @@ public class HintSelection {
 			}
 
 			// Sample one from early if possible, and late if not
-			if (!sample(earlyHints, users)) sample(lateHints, users);
+			if (!sample(table, earlyHints, users)) sample(table, lateHints, users);
 			// Sample one from late if possible, and early if not
-			if (!sample(lateHints, users)) sample(earlyHints, users);
+			if (!sample(table, lateHints, users)) sample(table, earlyHints, users);
 		}
 	}
 
-	private static boolean sample(List<Integer> list, String[] users) {
+	private static boolean sample(String table, List<Integer> list, String[] users) {
 		if (list.size() == 0) return false;
 
 		int index = rand.nextInt(list.size());
@@ -98,8 +99,8 @@ public class HintSelection {
 
 		for (String user : users) {
 			System.out.printf(
-					"INSERT INTO `hints` (`userID`, `rowID`) VALUES ('%s', %d);\n",
-					user, id);
+					"INSERT INTO `%s` (`userID`, `rowID`) VALUES ('%s', %d);\n",
+					table, user, id);
 		}
 
 		return true;
