@@ -21,7 +21,6 @@ import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.datasets.Spring2017;
-import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.Snapshot;
 
@@ -68,12 +67,10 @@ public class TutorEdits {
 			}
 
 			if (!hintActionMap.containsKey(rowID)) System.err.println("Missing hintID: " + rowID);
-			Snapshot fromSnapshot = hintActionMap.get(rowID).lastSnapshot;
-			Node from = SimpleNodeBuilder.toTree(fromSnapshot, true);
+			Snapshot from = hintActionMap.get(rowID).lastSnapshot;
 
 			String toXML = record.get("hintCode");
-			Snapshot toSnapshot = Snapshot.parse("TutorHint_" + hintID, toXML);
-			Node to = SimpleNodeBuilder.toTree(toSnapshot, true);
+			Snapshot to = Snapshot.parse("TutorHint_" + hintID, toXML);
 
 			TutorEdit edit = new TutorEdit(hintID, rowID, tutor, assignmentID, priority, from, to);
 			edits.add(assignmentID, edit);
@@ -103,19 +100,23 @@ public class TutorEdits {
 		public final List<EditHint> edits;
 
 		public TutorEdit(int hintID, int rowID, String tutor, String assignmentID,
-				int priority, Node from, Node to) {
+				int priority, Snapshot from, Snapshot to) {
 			this.hintID = hintID;
 			this.rowID = rowID;
 			this.tutor = tutor;
 			this.assignmentID = assignmentID;
 			this.priority = priority;
-			this.from = from;
-			this.to = to;
-			edits = Agreement.findEdits(from, to);
+			this.from = Agreement.toTree(from);
+			this.to = Agreement.toTree(to);
+			edits = Agreement.findEdits(this.from, this.to);
 		}
 
-		public void verify() {
-			Agreement.testEditConsistency(from, to, edits, true);
+		public boolean verify() {
+			boolean pass = Agreement.testEditConsistency(from, to, true);
+			if (!pass) {
+				System.out.printf("Failed: %s, row #%d, hint #%d\n", tutor, rowID, hintID);
+			}
+			return pass;
 		}
 	}
 }
