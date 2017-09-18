@@ -291,9 +291,14 @@ public class Agreement {
 	private static boolean testEditConsistency(Snapshot a, Snapshot b) {
 		Node from = SimpleNodeBuilder.toTree(a, true, ider);
 		Node to = SimpleNodeBuilder.toTree(b, true, ider);
-		Node originalFrom = from.copy(), originalTo = to.copy();
-
 		List<EditHint> edits = findEdits(from, to);
+		return testEditConsistency(from, to, edits);
+	}
+
+	public static boolean testEditConsistency(Node from, Node to, List<EditHint> edits) {
+		from = from.copy();
+		to = to.copy();
+		Node originalFrom = from.copy(), originalTo = to.copy();
 
 		// Capture edit strings before applying edits
 		List<String> editStrings = new ArrayList<>();
@@ -371,7 +376,7 @@ public class Agreement {
 		return findEdits(fromNode, toNode);
 	}
 
-	private static List<EditHint> findEdits(Node from, Node to) {
+	public static List<EditHint> findEdits(Node from, Node to) {
 
 		Map<String, Node> fromIDMap = getIDMap(from);
 		Map<String, Node> toIDMap = getIDMap(to);
