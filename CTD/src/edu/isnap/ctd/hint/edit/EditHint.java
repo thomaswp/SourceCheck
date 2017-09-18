@@ -11,10 +11,10 @@ import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.Canonicalization;
-import edu.isnap.ctd.hint.Hint;
-import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.hint.Canonicalization.InvertOp;
 import edu.isnap.ctd.hint.Canonicalization.SwapSymmetricArgs;
+import edu.isnap.ctd.hint.Hint;
+import edu.isnap.ctd.hint.HintMap;
 
 public abstract class EditHint implements Hint, Comparable<EditHint> {
 	protected abstract void editChildren(List<String> children);
@@ -156,6 +156,29 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 			this.pairIndex = pairIndex;
 			this.action = action;
 		}
+	}
+
+	protected static boolean nodesEqual(Node a, Node b) {
+		return a == b || (a != null && b != null && stringsEqual(a.id, b.id));
+	}
+
+	protected static boolean stringsEqual(String a, String b) {
+		if (a == null) return b == null;
+		return a.equals(b);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof EditHint) {
+			return nodesEqual(((EditHint) obj).parent, parent);
+		}
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		if (parent.id != null) return parent.id.hashCode();
+		return parent.hashCode();
 	}
 
 	interface EditAction {
