@@ -292,10 +292,11 @@ public class Agreement {
 		Node from = SimpleNodeBuilder.toTree(a, true, ider);
 		Node to = SimpleNodeBuilder.toTree(b, true, ider);
 		List<EditHint> edits = findEdits(from, to);
-		return testEditConsistency(from, to, edits);
+		return testEditConsistency(from, to, edits, PRINT);
 	}
 
-	public static boolean testEditConsistency(Node from, Node to, List<EditHint> edits) {
+	public static boolean testEditConsistency(Node from, Node to, List<EditHint> edits,
+			boolean print) {
 		from = from.copy();
 		to = to.copy();
 		Node originalFrom = from.copy(), originalTo = to.copy();
@@ -315,7 +316,7 @@ public class Agreement {
 
 		prune(to); prune(from);
 		boolean equal = to.equals(from);
-		if (!equal && PRINT) {
+		if (!equal && print) {
 			System.out.println(originalFrom.prettyPrintWithIDs());
 			System.out.println(originalTo.prettyPrintWithIDs());
 			for (String editString : editStrings) {

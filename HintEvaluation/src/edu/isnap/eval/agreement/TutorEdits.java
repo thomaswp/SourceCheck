@@ -3,7 +3,11 @@ package edu.isnap.eval.agreement;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -11,46 +15,107 @@ import org.apache.commons.csv.CSVRecord;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.edit.EditHint;
+import edu.isnap.ctd.util.map.ListMap;
+import edu.isnap.dataset.Assignment;
+import edu.isnap.dataset.AssignmentAttempt;
+import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.datasets.Spring2017;
+import edu.isnap.hint.util.SimpleNodeBuilder;
+import edu.isnap.parser.Store.Mode;
+import edu.isnap.parser.elements.Snapshot;
 
 public class TutorEdits {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
-		readTutorEdits(Spring2017.instance);
+		verifyHints(Spring2017.instance);
 	}
 
 	public static void verifyHints(Dataset dataset) throws FileNotFoundException, IOException {
-		readTutorEdits(dataset);
-		// TODO
+		ListMap<String, TutorEdit> edits = readTutorEdits(dataset);
+		edits.values().forEach(l -> l.forEach(e -> e.verify()));
 	}
 
-	public static void readTutorEdits(Dataset dataset) throws FileNotFoundException, IOException {
+	public static ListMap<String,TutorEdit> readTutorEdits(Dataset dataset)
+			throws FileNotFoundException, IOException {
 		CSVParser parser = new CSVParser(new FileReader(dataset.dataDir + "/handmade_hints.csv"),
 				CSVFormat.DEFAULT.withHeader());
+
+		ListMap<String, TutorEdit> edits = new ListMap<>();
+
+		Map<String, Assignment> assignments = dataset.getAssignmentMap();
+		Map<Integer, AttemptAction> hintActionMap = new HashMap<>();
+		Set<String> loadedAssignments = new HashSet<>();
+
 		for (CSVRecord record : parser) {
-			System.out.println(record);
-			// TODO
+			int hintID = Integer.parseInt(record.get("hid"));
+			String tutor = record.get("userID");
+			int rowID = Integer.parseInt(record.get("rowID"));
+			String assignmentID = record.get("assignmentID");
+			String priorityString = record.get("priority");
+			int priority;
+			try {
+				priority = Integer.parseInt(priorityString);
+			} catch (NumberFormatException e) {
+				if (!priorityString.equals("NULL")) {
+					System.err.println("Unknown priority: " + priorityString);
+				}
+				continue;
+			}
+
+			if (loadedAssignments.add(assignmentID)) {
+				loadAssignment(assignments, hintActionMap, assignmentID);
+			}
+
+			if (!hintActionMap.containsKey(rowID)) System.err.println("Missing hintID: " + rowID);
+			Snapshot fromSnapshot = hintActionMap.get(rowID).lastSnapshot;
+			Node from = SimpleNodeBuilder.toTree(fromSnapshot, true);
+
+			String toXML = record.get("hintCode");
+			Snapshot toSnapshot = Snapshot.parse("TutorHint_" + hintID, toXML);
+			Node to = SimpleNodeBuilder.toTree(toSnapshot, true);
+
+			TutorEdit edit = new TutorEdit(hintID, rowID, tutor, assignmentID, priority, from, to);
+			edits.add(assignmentID, edit);
 		}
 		parser.close();
+
+		return edits;
+	}
+
+	private static void loadAssignment(Map<String, Assignment> assignments,
+			Map<Integer, AttemptAction> hintActionMap, String assignmentID) {
+		Assignment assignment = assignments.get(assignmentID);
+		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, false);
+		for (AssignmentAttempt attempt : attempts.values()) {
+			for (AttemptAction action : attempt) {
+				if (HintSelection.isHintRow(action)) {
+					hintActionMap.put(action.id, action);
+				}
+			}
+		}
 	}
 
 	public static class TutorEdit {
-		public final int id;
-		public final String tutor;
+		public final int hintID, rowID, priority;
+		public final String tutor, assignmentID;
 		public final Node from, to;
 		public final List<EditHint> edits;
 
-		public TutorEdit(int id, String tutor, Node from, Node to) {
-			this.id = id;
+		public TutorEdit(int hintID, int rowID, String tutor, String assignmentID,
+				int priority, Node from, Node to) {
+			this.hintID = hintID;
+			this.rowID = rowID;
 			this.tutor = tutor;
+			this.assignmentID = assignmentID;
+			this.priority = priority;
 			this.from = from;
 			this.to = to;
 			edits = Agreement.findEdits(from, to);
 		}
 
 		public void verify() {
-			Agreement.testEditConsistency(from, to, edits);
+			Agreement.testEditConsistency(from, to, edits, true);
 		}
 	}
 }
