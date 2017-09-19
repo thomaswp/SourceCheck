@@ -7,6 +7,8 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.Node;
@@ -15,11 +17,14 @@ import edu.isnap.ctd.hint.Canonicalization.InvertOp;
 import edu.isnap.ctd.hint.Canonicalization.SwapSymmetricArgs;
 import edu.isnap.ctd.hint.Hint;
 import edu.isnap.ctd.hint.HintMap;
+import edu.isnap.ctd.util.Diff;
 
 public abstract class EditHint implements Hint, Comparable<EditHint> {
 	protected abstract void editChildren(List<String> children);
 	protected abstract String action();
 	protected abstract double priority();
+	protected abstract void appendHashCodeFieds(HashCodeBuilder builder);
+	protected abstract void appendEqualsFieds(EqualsBuilder builder, EditHint rhs);
 	public abstract void apply(List<Application> applications);
 
 	public final Node parent;
@@ -105,12 +110,17 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 		String from = items.toString();
 		editChildren(items);
 		String to = items.toString();
-		return action().substring(0, 1) + ": " + rootString(parent) + ": " + from + " -> " + to;
+		String diff = Diff.USE_ANSI_COLORS ?
+				Diff.ansiDiff(from, to, "[\\[|\\]|,|\\s]") : (from + " -> " + to);
+		return action().substring(0, 1) + ": " + rootString(parent) + ": " + diff;
 	}
 
 	@Override
-	public int compareTo(EditHint o) {
-		return Double.compare(o.priority(), priority());
+	public final int compareTo(EditHint o) {
+		int comp = Double.compare(o.priority(), priority());
+		if (comp != 0) return comp;
+		// Ensures a deterministic ordering of all unique edits when sorting
+		return Integer.compare(hashCode(), o.hashCode());
 	}
 
 	public static void applyEdits(Node node, List<EditHint> hints) {
@@ -156,6 +166,59 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 			this.pairIndex = pairIndex;
 			this.action = action;
 		}
+	}
+
+	protected static boolean nodesIDEqual(Node a, Node b) {
+		return a == b || (a != null && b != null && stringsEqual(a.id, b.id));
+	}
+
+	protected static int nodeIDHashCode(Node node) {
+		if (node.id != null) return node.id.hashCode();
+		return node.hashCode();
+	}
+
+	protected static boolean stringsEqual(String a, String b) {
+		if (a == null) return b == null;
+		return a.equals(b);
+	}
+
+	@Override
+	public final boolean equals(Object obj) {
+		if (obj == null) return false;
+		if (obj == this) return true;
+		if (obj.getClass() != getClass()) return false;
+		EditHint rhs = (EditHint) obj;
+		EqualsBuilder builder = new EqualsBuilder() {
+			@Override
+			public EqualsBuilder append(Object lhs, Object rhs) {
+				if (lhs instanceof Node && rhs instanceof Node) {
+					return appendSuper(nodesIDEqual((Node) lhs, (Node) rhs));
+				}
+				return super.append(lhs, rhs);
+			}
+		};
+		builder.append(parent, rhs.parent);
+		builder.append(argsCanonSwapped, rhs.argsCanonSwapped);
+		appendEqualsFieds(builder, rhs);
+		return builder.isEquals();
+	}
+
+	@Override
+	public final int hashCode() {
+		HashCodeBuilder builder = new HashCodeBuilder(5, 3) {
+			@Override
+			public HashCodeBuilder append(Object object) {
+				if (object instanceof Node) {
+					return super.append(nodeIDHashCode((Node) object));
+				}
+				return super.append(object);
+			}
+		};
+		builder.append(getClass());
+		builder.append(parent);
+		builder.append(argsCanonSwapped);
+		appendHashCodeFieds(builder);
+		return builder.toHashCode();
 	}
 
 	interface EditAction {

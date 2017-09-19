@@ -1,0 +1,28 @@
+snapshot {
+    stage {
+        sprite {
+            @anything
+        }
+    }
+    customBlock {
+        script {
+            @anyOrder {
+                down
+                setSize(var)
+            }
+            doRepeat(var, script {
+                @anyOrder {
+                    forward(var)
+                    @or {
+                        turn(reportQuotient(literal, var))
+                        turnLeft(reportQuotient(literal, var))
+                    }
+                }
+            })
+            up
+        }
+        var
+        var
+        var
+    }
+}

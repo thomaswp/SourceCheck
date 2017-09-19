@@ -3,6 +3,8 @@ package edu.isnap.ctd.hint.edit;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -192,5 +194,28 @@ public class Insertion extends EditHint {
 				parent.children.add(index, toInsert);
 			}
 		}));
+	}
+
+	@Override
+	protected void appendEqualsFieds(EqualsBuilder builder, EditHint rhs) {
+		Insertion ins = (Insertion) rhs;
+		builder.append(type, ins.type);
+		builder.append(value, ins.value);
+		builder.append(index, ins.index);
+		builder.append(missingParent, ins.missingParent);
+		builder.append(keepChildrenInReplacement, ins.keepChildrenInReplacement);
+		builder.append(replaced, ins.replaced);
+		builder.append(candidate, ins.candidate);
+	}
+
+	@Override
+	protected void appendHashCodeFieds(HashCodeBuilder builder) {
+		builder.append(type);
+		builder.append(value);
+		builder.append(index);
+		builder.append(missingParent);
+		builder.append(keepChildrenInReplacement);
+		builder.append(replaced);
+		builder.append(candidate);
 	}
 }

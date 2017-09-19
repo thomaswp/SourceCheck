@@ -11,7 +11,6 @@ public class BJCSolutions2017 extends Dataset {
 
 	public final static Date start = null;
 	public final static String dataDir = "../data/bjc/solutions2017";
-	public final static String dataFile = dataDir + ".csv";
 	public final static BJCSolutions2017 instance = new BJCSolutions2017();
 
 	private static class BJCAssignment extends ConfigurableAssignment {

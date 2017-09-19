@@ -1,6 +1,8 @@
 package edu.isnap.dataset;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.csv.CSVFormat;
 
@@ -32,4 +34,11 @@ public abstract class Dataset {
 		return CSVFormat.DEFAULT.withHeader();
 	}
 
+	public Map<String, Assignment> getAssignmentMap() {
+		Map<String, Assignment> map = new HashMap<>();
+		for (Assignment assignment : all()) {
+			map.put(assignment.name, assignment);
+		}
+		return map;
+	}
 }

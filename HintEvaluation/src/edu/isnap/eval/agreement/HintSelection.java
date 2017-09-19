@@ -53,8 +53,13 @@ public class HintSelection {
 		}
 	}
 
+	public static boolean isHintRow(AttemptAction action) {
+		return SHOW_HINT_MESSAGES.contains(action.message);
+	}
+
+
 	public static void select(Assignment assignment, String table,
-			SnapParser.Filter[] filters, String... users) {
+		SnapParser.Filter[] filters, String... users) {
 
 		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, false, true, filters);
 
@@ -65,7 +70,7 @@ public class HintSelection {
 			long lastAddedTime = -1;
 			for (AttemptAction action : attempt) {
 				double percTime = (double) action.currentActiveTime / attempt.totalActiveTime;
-				if (!SHOW_HINT_MESSAGES.contains(action.message)) continue;
+				if (!isHintRow(action)) continue;
 				if (percTime < START) continue;
 
 				// Skip hints within 30 seconds of the last one we added

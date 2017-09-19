@@ -290,8 +290,13 @@ public class Agreement {
 	private static boolean testEditConsistency(Snapshot a, Snapshot b) {
 		Node from = SimpleNodeBuilder.toTree(a, true, ider);
 		Node to = SimpleNodeBuilder.toTree(b, true, ider);
-		Node originalFrom = from.copy(), originalTo = to.copy();
+		return testEditConsistency(from, to, PRINT);
+	}
 
+	public static boolean testEditConsistency(Node from, Node to, boolean print) {
+		from = from.copy();
+		to = to.copy();
+		Node originalFrom = from.copy(), originalTo = to.copy();
 		List<EditHint> edits = findEdits(from, to);
 
 		// Capture edit strings before applying edits
@@ -309,13 +314,15 @@ public class Agreement {
 
 		prune(to); prune(from);
 		boolean equal = to.equals(from);
-		if (!equal && PRINT) {
+		if (!equal && print) {
 			System.out.println(originalFrom.prettyPrintWithIDs());
 			System.out.println(originalTo.prettyPrintWithIDs());
 			for (String editString : editStrings) {
 				System.out.println(editString);
 			}
 			System.out.println(Diff.diff(to.prettyPrint(), from.prettyPrint()));
+
+			findEdits(originalFrom, originalTo);
 		}
 
 		return equal;
@@ -333,6 +340,8 @@ public class Agreement {
 
 		@Override
 		public String getID(String type, Node parent) {
+			// The ID is as unique as we can get it: the node's type, plus its parent's type and
+			// the count of sibling nodes with the same type that come before this node.
 			int index = 0;
 			for (Node child : parent.children) if (child.hasType(type)) index++;
 			return String.format("%s{%s:%d}", type, parent.id, index);
@@ -370,7 +379,7 @@ public class Agreement {
 		return findEdits(fromNode, toNode);
 	}
 
-	private static List<EditHint> findEdits(Node from, Node to) {
+	public static List<EditHint> findEdits(Node from, Node to) {
 
 		Map<String, Node> fromIDMap = getIDMap(from);
 		Map<String, Node> toIDMap = getIDMap(to);
@@ -452,7 +461,6 @@ public class Agreement {
 			}
 		}
 
-
 		HintConfig config = new HintConfig();
 		config.harmlessCalls.clear();
 		List<EditHint> hints = new HintHighlighter(new LinkedList<Node>(), config)
@@ -463,7 +471,7 @@ public class Agreement {
 	}
 
 	private static Map<String, Node> getIDMap(Node node) {
-		Map<String, Node> idMap = new HashMap<>();
+		Map<String, Node> idMap = new LinkedHashMap<>();
 		node.recurse(new Action() {
 			@Override
 			public void run(Node node) {
@@ -476,6 +484,10 @@ public class Agreement {
 			}
 		});
 		return idMap;
+	}
+
+	public static Node toTree(Snapshot snapshot) {
+		return SimpleNodeBuilder.toTree(snapshot, true, ider);
 	}
 
 }
