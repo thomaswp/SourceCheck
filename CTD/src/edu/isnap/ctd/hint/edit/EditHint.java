@@ -7,6 +7,8 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.Node;
@@ -20,6 +22,8 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 	protected abstract void editChildren(List<String> children);
 	protected abstract String action();
 	protected abstract double priority();
+	protected abstract void appendHashCodeFieds(HashCodeBuilder builder);
+	protected abstract void appendEqualsFieds(EqualsBuilder builder, EditHint rhs);
 	public abstract void apply(List<Application> applications);
 
 	public final Node parent;
@@ -158,8 +162,13 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 		}
 	}
 
-	protected static boolean nodesEqual(Node a, Node b) {
+	protected static boolean nodesIDEqual(Node a, Node b) {
 		return a == b || (a != null && b != null && stringsEqual(a.id, b.id));
+	}
+
+	protected static int nodeIDHashCode(Node node) {
+		if (node.id != null) return node.id.hashCode();
+		return node.hashCode();
 	}
 
 	protected static boolean stringsEqual(String a, String b) {
@@ -168,17 +177,42 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (obj instanceof EditHint) {
-			return nodesEqual(((EditHint) obj).parent, parent);
-		}
-		return false;
+	public final boolean equals(Object obj) {
+		if (obj == null) return false;
+		if (obj == this) return true;
+		if (obj.getClass() != getClass()) return false;
+		EditHint rhs = (EditHint) obj;
+		EqualsBuilder builder = new EqualsBuilder() {
+			@Override
+			public EqualsBuilder append(Object lhs, Object rhs) {
+				if (lhs instanceof Node && rhs instanceof Node) {
+					return appendSuper(nodesIDEqual((Node) lhs, (Node) rhs));
+				}
+				return super.append(lhs, rhs);
+			}
+		};
+		builder.append(parent, rhs.parent);
+		builder.append(argsCanonSwapped, rhs.argsCanonSwapped);
+		appendEqualsFieds(builder, rhs);
+		return builder.isEquals();
 	}
 
 	@Override
-	public int hashCode() {
-		if (parent.id != null) return parent.id.hashCode();
-		return parent.hashCode();
+	public final int hashCode() {
+		HashCodeBuilder builder = new HashCodeBuilder(5, 3) {
+			@Override
+			public HashCodeBuilder append(Object object) {
+				if (object instanceof Node) {
+					return super.append(nodeIDHashCode((Node) object));
+				}
+				return super.append(object);
+			}
+		};
+		builder.append(getClass());
+		builder.append(parent);
+		builder.append(argsCanonSwapped);
+		appendHashCodeFieds(builder);
+		return builder.toHashCode();
 	}
 
 	interface EditAction {

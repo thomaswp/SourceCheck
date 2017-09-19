@@ -2,6 +2,8 @@ package edu.isnap.ctd.hint.edit;
 
 import java.util.List;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.Node;
@@ -97,5 +99,20 @@ public class Reorder extends EditHint {
 				node.parent.children.add(aIndex, node);
 			}
 		}));
+	}
+
+	@Override
+	protected void appendHashCodeFieds(HashCodeBuilder builder) {
+		builder.append(node);
+		builder.append(index);
+		builder.append(inPlace);
+	}
+
+	@Override
+	protected void appendEqualsFieds(EqualsBuilder builder, EditHint rhs) {
+		Reorder re = (Reorder) rhs;
+		builder.append(node, re.node);
+		builder.append(index, re.index);
+		builder.append(inPlace, re.inPlace);
 	}
 }
