@@ -113,8 +113,11 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 	}
 
 	@Override
-	public int compareTo(EditHint o) {
-		return Double.compare(o.priority(), priority());
+	public final int compareTo(EditHint o) {
+		int comp = Double.compare(o.priority(), priority());
+		if (comp != 0) return comp;
+		// Ensures a deterministic ordering of all unique edits when sorting
+		return Integer.compare(hashCode(), o.hashCode());
 	}
 
 	public static void applyEdits(Node node, List<EditHint> hints) {
