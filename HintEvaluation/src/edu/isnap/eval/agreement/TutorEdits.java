@@ -105,7 +105,7 @@ public class TutorEdits {
 			Snapshot from = hintActionMap.get(rowID).lastSnapshot;
 
 			String toXML = record.get("hintCode");
-			Snapshot to = Snapshot.parse("TutorHint_" + hintID, toXML);
+			Snapshot to = Snapshot.parse(from.name, toXML);
 
 			TutorEdit edit = new TutorEdit(hintID, rowID, tutor, assignmentID, priority, from, to);
 			edits.add(assignmentID, edit);

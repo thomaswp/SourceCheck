@@ -48,10 +48,10 @@ public class Diff {
 			}
 
 			for (String deleted : delta.getOriginal().getLines()) {
-				out += colorString("- " + deleted + "\n", 31);
+				out += colorString("- " + deleted, 31) + "\n";
 			}
 			for (String added : delta.getRevised().getLines()) {
-				out += colorString("+ " + added + "\n", 32);
+				out += colorString("+ " + added, 32) + "\n";
 			}
 
 			for (int i = chunkStart; i <= chunkEnd; i++) printed[i] = true;
