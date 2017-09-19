@@ -423,8 +423,9 @@ public class Agreement {
 //			}
 
 			// You can relabel a block and it keeps its ID, so we check for that here
-			if (!fromNode.hasType(toNode.type())) {
-				Insertion rename = new Insertion(fromNode.parent, toNode, fromNode.index(), null);
+			if (!fromNode.shallowEquals(toNode)) {
+				Insertion rename = new Insertion(fromNode.parent, toNode, fromNode.index(),
+						toNode.value);
 				rename.replaced = fromNode;
 				rename.keepChildrenInReplacement = true;
 				renames.add(rename);

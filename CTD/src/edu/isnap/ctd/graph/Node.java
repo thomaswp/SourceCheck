@@ -282,7 +282,7 @@ public class Node extends StringHashable {
 
 	public boolean shallowEquals(Node node) {
 		if (node == null) return false;
-		return eq(type, node.type);
+		return eq(type, node.type) && eq(value, node.value);
 	}
 
 	private boolean eq(String a, String b) {
