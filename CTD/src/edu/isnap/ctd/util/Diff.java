@@ -9,6 +9,7 @@ import difflib.DiffUtils;
 import difflib.Patch;
 
 public class Diff {
+	// To use ANSI colors in eclipse, get https://github.com/mihnita/ansi-econsole
 	public static boolean USE_ANSI_COLORS = true;
 
 	public static String ansiDiff(String a, String b, String splitRegex) {
