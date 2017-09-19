@@ -46,6 +46,6 @@ public class Diff {
 	}
 
 	public static void main(String[] args) {
-		System.out.println(ansiDiff("[doSayFor]", "[doSayFor, doIfElse]", "[\\[|\\]|,]"));
+		System.out.println(ansiDiff("[doSayFor]", "[doAsk, doSayFor]", "[\\[|\\]|,|\\s]"));
 	}
 }

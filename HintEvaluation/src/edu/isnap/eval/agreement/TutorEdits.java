@@ -53,6 +53,8 @@ public class TutorEdits {
 				edits.stream()
 				.filter(e -> e.rowID == rowID)
 				.forEach(e -> givers.add(e.edits, e));
+				System.out.println(
+						givers.values().stream().findFirst().get().get(0).from.prettyPrint());
 
 				for (List<EditHint> editSet : givers.keySet()) {
 					System.out.println(String.join(" AND ",
