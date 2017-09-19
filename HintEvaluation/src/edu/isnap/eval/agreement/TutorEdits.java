@@ -30,6 +30,7 @@ public class TutorEdits {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 		compareHints(Spring2017.instance);
+//		verifyHints(Spring2017.instance);
 	}
 
 	public static void verifyHints(Dataset dataset) throws FileNotFoundException, IOException {

@@ -17,6 +17,7 @@ import edu.isnap.ctd.hint.Canonicalization.InvertOp;
 import edu.isnap.ctd.hint.Canonicalization.SwapSymmetricArgs;
 import edu.isnap.ctd.hint.Hint;
 import edu.isnap.ctd.hint.HintMap;
+import edu.isnap.ctd.util.Diff;
 
 public abstract class EditHint implements Hint, Comparable<EditHint> {
 	protected abstract void editChildren(List<String> children);
@@ -109,7 +110,9 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 		String from = items.toString();
 		editChildren(items);
 		String to = items.toString();
-		return action().substring(0, 1) + ": " + rootString(parent) + ": " + from + " -> " + to;
+		String diff = Diff.USE_ANSI_COLORS ?
+				Diff.ansiDiff(from, to, "[\\[|\\]|,]") : (from + " -> " + to);
+		return action().substring(0, 1) + ": " + rootString(parent) + ": " + diff;
 	}
 
 	@Override

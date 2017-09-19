@@ -8,7 +8,10 @@ import difflib.Delta;
 import difflib.DiffUtils;
 import difflib.Patch;
 
+// TODO: Extract to a Utils project and combine with SnapParser's Diff
 public class Diff {
+	public static boolean USE_ANSI_COLORS = true;
+
 	public static String diff(String a, String b) {
 		return diff(a, b, Integer.MAX_VALUE / 2);
 	}
@@ -44,10 +47,10 @@ public class Diff {
 			}
 
 			for (String deleted : delta.getOriginal().getLines()) {
-				out += "- " + deleted + "\n";
+				out += colorString("- " + deleted + "\n", 31);
 			}
 			for (String added : delta.getRevised().getLines()) {
-				out += "+ " + added + "\n";
+				out += colorString("+ " + added + "\n", 32);
 			}
 
 			for (int i = chunkStart; i <= chunkEnd; i++) printed[i] = true;
@@ -66,5 +69,10 @@ public class Diff {
 			}
 		}
 		return out;
+	}
+
+	private static String colorString(String string, int colorCode) {
+		if (!USE_ANSI_COLORS) return string;
+		return String.format("\u001b[%dm%s\u001b[0m", colorCode, string);
 	}
 }
