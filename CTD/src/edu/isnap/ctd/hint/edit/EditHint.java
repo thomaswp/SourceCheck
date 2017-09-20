@@ -16,7 +16,6 @@ import edu.isnap.ctd.hint.Canonicalization;
 import edu.isnap.ctd.hint.Canonicalization.InvertOp;
 import edu.isnap.ctd.hint.Canonicalization.SwapSymmetricArgs;
 import edu.isnap.ctd.hint.Hint;
-import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.util.Diff;
 
 public abstract class EditHint implements Hint, Comparable<EditHint> {
@@ -101,7 +100,7 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 	}
 
 	protected String rootString(Node node) {
-		return HintMap.toRootPath(node).root().toString();
+		return node.rootPathString();
 	}
 
 	@Override

@@ -197,7 +197,7 @@ public class NodeAlignment {
 		int[][] toOrderGroups = orderGroups(toNodes);
 
 		String type = fromNodes.get(0).type();
-		String costKey = fromNodes.get(0).rootPath();
+		String costKey = fromNodes.get(0).rootPathString();
 
 		double minCost = Integer.MAX_VALUE;
 		double[][] costMatrix = new double[fromStates.length][toStates.length];
