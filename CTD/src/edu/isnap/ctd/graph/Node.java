@@ -541,13 +541,13 @@ public class Node extends StringHashable {
 		});
 	}
 
-	public String rootPath() {
+	public String rootPathString() {
 		List<String> path = new LinkedList<>();
 		Node n = this;
 		while (n != null) {
 			path.add(0, n.type);
 			n = n.parent;
 		}
-		return path.toString();
+		return String.join("->", path);
 	}
 }

@@ -329,6 +329,11 @@ public class Agreement {
 	}
 
 	private final static IDer ider = new IDer() {
+
+		// We just use a default config since this is Snap-specific code, but we may need to
+		// update this at some point
+		private HintConfig config = new HintConfig();
+
 		@Override
 		public String getID(Code code, Node parent) {
 			String id = code instanceof IHasID ? ((IHasID) code).getID() : null;
@@ -340,10 +345,20 @@ public class Agreement {
 
 		@Override
 		public String getID(String type, Node parent) {
-			// The ID is as unique as we can get it: the node's type, plus its parent's type and
-			// the count of sibling nodes with the same type that come before this node.
 			int index = 0;
-			for (Node child : parent.children) if (child.hasType(type)) index++;
+			if (config.isCodeElement(parent)) {
+				// For ID-less parameters (lists and literals), the index is most stable
+				// The parent's children are being added, so the current size will be the index
+				index = parent.children.size();
+			} else {
+				// Otherwise, for ID-less children of non-code-elements (e.g. scripts), the most
+				// stable index is the count of siblings with the same type that come before this
+				// node
+				for (Node child : parent.children) if (child.hasType(type)) index++;
+			}
+
+			// The ID is as unique as we can get it: the node's type, plus its parent's type and
+			// some stable index
 			return String.format("%s{%s:%d}", type, parent.id, index);
 		}
 	};

@@ -57,12 +57,13 @@ public class TutorEdits {
 						givers.values().stream().findFirst().get().get(0).from.prettyPrint(true));
 
 				for (List<EditHint> editSet : givers.keySet()) {
-					System.out.println(String.join(" AND ",
+					System.out.println(String.join(" AND\n",
 							editSet.stream()
 							.map(e -> e.toString())
 							.collect(Collectors.toList())));
 					for (TutorEdit tutorEdit : givers.get(editSet)) {
-						System.out.printf("  %d/%s\n", tutorEdit.priority, tutorEdit.tutor);
+						System.out.printf("  %d/%s: #%d\n",
+								tutorEdit.priority, tutorEdit.tutor, tutorEdit.hintID);
 					}
 				}
 				System.out.println();
