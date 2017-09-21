@@ -22,10 +22,6 @@ public class SimpleNodeBuilder {
 		node.tag = code;
 		code.addChildren(canon, new Accumulator() {
 
-			void add(String code) {
-				node.children.add(new Node(node, code, null, ider.getID(code, node)));
-			}
-
 			@Override
 			public void add(Iterable<? extends Code> codes) {
 				for (Code code : codes) {
@@ -36,7 +32,7 @@ public class SimpleNodeBuilder {
 			@Override
 			public void add(Code code) {
 				if (code == null) {
-					add("null");
+					add("null", null);
 				} else {
 					Node child = toTree(code, canon, node, ider);
 					node.children.add(child);
@@ -45,7 +41,7 @@ public class SimpleNodeBuilder {
 
 			@Override
 			public void add(String type, String value) {
-				node.children.add(new Node(node, type, value));
+				node.children.add(new Node(node, type, value, ider.getID(type, node)));
 			}
 
 			@Override
