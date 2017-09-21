@@ -1,0 +1,83 @@
+snapshot {
+    @defVar (VAR, GLOBAL, LOCAL) {
+        stage {
+            sprite {
+                script {
+                    receiveGo
+                    @if (VAR, LOCAL) { doDeclareVariables(list(literal)) }
+                    @defVar (SET_VAR, FIRST, LAST) {
+                        @if (SET_VAR, FIRST) { doSetVar(literal, reportRandom(literal, literal)) }
+                        doSayFor(literal, literal)
+                        doAsk(literal)
+                        doSayFor(reportJoinWords(list(literal, getLastAnswer)), literal)
+                        @if (SET_VAR, LAST) { doSetVar(literal, reportRandom(literal, literal)) }
+                    }
+                    @defVar (GUESS_VAR) {
+                        @defBlock GUESS { 
+                            @if (GUESS_VAR) { var }
+                            @unless (GUESS_VAR) { getLastAnswer }
+                        }
+                        @defBlock GET_GUESS {
+                            doAsk(literal)
+                            @if (GUESS_VAR) { doSetVar(literal, getLastAnswer) }
+                        }
+                        @defBlock NOT_EQ_FEEDBACK {
+                            @or {
+                                @inline {
+                                    doIf(reportLessThan(@block GUESS, var), script {
+                                        doSayFor(literal, literal)
+                                    })
+                                    doIf(reportLessThan(var, @block GUESS), script {
+                                        doSayFor(literal, literal)
+                                    })
+                                }
+                                doIfElse(reportLessThan(@block GUESS, var), script {
+                                    doSayFor(literal, literal)
+                                }, script {
+                                    doSayFor(literal, literal)
+                                })
+                            }
+                        }
+                    }
+                }
+                script {
+                    doUntil(reportEquals(getLastAnswer, var), script {
+                        doIfElse(reportLessThan(getLastAnswer, var), script {
+                            doSayFor(literal, literal)
+                        }, script {
+                            doSayFor(literal, literal)
+                        })
+                        doAsk(literal)
+                    })
+                    doSayFor(literal, literal)
+                }
+                script {
+                    doUntil(reportEquals(getLastAnswer, var), script {
+                        doAsk(literal)
+                        doIfElse(reportEquals(getLastAnswer, var), script {
+                            doSayFor(literal, literal)
+                        }, script {
+                            doIfElse(reportLessThan(getLastAnswer, var), script {
+                                doSayFor(literal, literal)
+                            }, script {
+                                doSayFor(literal, literal)
+                            })
+                        })
+                    })
+                }
+                script {
+                    doIf(reportEquals(getLastAnswer, var), script {
+                        doSayFor(literal, literal)
+                    })
+                    doIf(reportLessThan(getLastAnswer, var), script {
+                        doSayFor(literal, literal)
+                    })
+                    doIf(reportLessThan(var, getLastAnswer), script {
+                        doSayFor(literal, literal)
+                    })
+                }
+            }
+        }
+        @if (VAR, GLOBAL) { var }
+    }
+}

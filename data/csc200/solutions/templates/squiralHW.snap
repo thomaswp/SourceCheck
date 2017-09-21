@@ -1,0 +1,47 @@
+snapshot {
+    stage {
+        sprite {
+            @anything
+        }
+    }
+    @defVar (VAR, GLOBAL, LOCAL, ARG) {
+        customBlock {
+            script {
+                @anyOrder {
+                    @if (VAR, LOCAL) {
+                        doDeclareVariables(list(literal))
+                    }
+                    doSetVar(literal, literal)
+                    down
+                }
+                @defVar (LOOP, TIMES, NESTED) {
+                    @defBlock BODY {
+                        @anyOrder {
+                            forward(var)
+                            turn(literal)
+                            doChangeVar(literal, literal)
+                        }
+                    }
+                    @if (LOOP, TIMES) {
+                        doRepeat(reportProduct(literal, var), script {
+                            @block BODY
+                        })
+                    }
+                    @if (LOOP, NESTED) {
+                        @defVar (OUTER, VAR, LIT) {
+                            doRepeat(@if (OUTER, VAR) { var } @if (OUTER, LIT) { literal }, script {
+                                doRepeat(@if (OUTER, LIT) { var } @if (OUTER, VAR) { literal }, script {
+                                    @block BODY
+                                })
+                            })
+                        }
+                    }
+                }
+                up
+            }
+            var
+            @if (VAR, ARG) { var }
+        }
+        @if (VAR, GLOBAL) var
+    }
+}
