@@ -13,7 +13,7 @@ snapshot {
                         @if (SET_VAR, LAST) { doSetVar(literal, reportRandom(literal, literal)) }
                     }
                     @defVar (GUESS_VAR) {
-                        @defBlock GUESS { 
+                        @defBlock GUESS {
                             @if (GUESS_VAR) { var }
                             @unless (GUESS_VAR) { getLastAnswer }
                         }
@@ -21,23 +21,61 @@ snapshot {
                             doAsk(literal)
                             @if (GUESS_VAR) { doSetVar(literal, getLastAnswer) }
                         }
+                        @defBlock EQ_COMPARE {
+                            reportEquals(@block GUESS, var)
+                        }
+                        @defBlock NOT_EQ_COMPARE {
+                            reportLessThan(@or {
+                                @inline { @block GUESS, var }
+                                @inline { var, @block GUESS }
+                            })
+                        }
                         @defBlock NOT_EQ_FEEDBACK {
                             @or {
                                 @inline {
-                                    doIf(reportLessThan(@block GUESS, var), script {
-                                        doSayFor(literal, literal)
-                                    })
-                                    doIf(reportLessThan(var, @block GUESS), script {
-                                        doSayFor(literal, literal)
-                                    })
+                                    @anyOrder {
+                                        doIf(reportLessThan(@block GUESS, var), script {
+                                            doSayFor(literal, literal)
+                                        })
+                                        doIf(reportLessThan(var, @block GUESS), script {
+                                            doSayFor(literal, literal)
+                                        })
+                                    }
                                 }
-                                doIfElse(reportLessThan(@block GUESS, var), script {
+                                doIfElse(@block NOT_EQ_COMPARE, script {
                                     doSayFor(literal, literal)
                                 }, script {
                                     doSayFor(literal, literal)
                                 })
                             }
                         }
+                        @defVar (ASK_TOP) {
+                            @defVar (CORRECT_IN_LOOP) {
+                                @defBlock EQ_FEEDBACK {
+                                    @if (CORRECT_IN_LOOP) {
+                                        doIf(@block EQ_COMPARE, script {
+                                            doSayFor(literal, literal)
+                                        })
+                                    }
+                                }
+
+                                @if (ASK_TOP) { doAsk(literal) }
+                                doUntil(@block EQ_COMPARE, script {
+                                    @unless (ASK_TOP) { doAsk(literal) }
+                                    @or {
+                                        @inline {
+                                            @anyOrder {
+                                                @block EQ_FEEDBACK
+                                                @block NOT_EQ_FEEDBACK
+                                            }
+                                        }
+                                    }
+                                    @if (ASK_TOP) { doAsk(literal) }
+                                })
+                                @unless (CORRECT_IN_LOOP) { doSayFor(literal) }
+                            }
+                        }
+
                     }
                 }
                 script {
