@@ -146,7 +146,7 @@ public class Agreement {
 			Node toNode = toIDMap.get(id);
 
 			if (id == null) {
-				System.err.println("Null id for: " + fromNode);
+				System.err.println("Null id for: " + fromNode + " in " + fromNode.parent);
 			}
 
 			if (toNode == null) continue;
