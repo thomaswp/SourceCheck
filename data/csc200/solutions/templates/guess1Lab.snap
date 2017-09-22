@@ -1,14 +1,27 @@
 snapshot {
+    @defBlock SAY {
+        doSayFor(@anything)
+    }
+    @defBlock ASK {
+        doAsk(@anything)
+    }
     @defVar (VAR, GLOBAL, LOCAL) {
         stage {
             sprite {
                 script {
-                    receiveGo
+                    @optional {
+                        @or {
+                            receiveGo
+                            receiveMessage(literal)
+                        }
+                    }
                     @if (VAR, LOCAL) { doDeclareVariables(list(literal)) }
                     @defVar (SET_VAR, FIRST, LAST) {
                         @if (SET_VAR, FIRST) { doSetVar(literal, reportRandom(literal, literal)) }
-                        doSayFor(literal, literal)
-                        doAsk(literal)
+                        @repeat(1, 2) {
+                            @block SAY
+                        }
+                        @block ASK
                         doSayFor(reportJoinWords(list(literal, getLastAnswer)), literal)
                         @if (SET_VAR, LAST) { doSetVar(literal, reportRandom(literal, literal)) }
                     }
@@ -18,7 +31,7 @@ snapshot {
                             @unless (GUESS_VAR) { getLastAnswer }
                         }
                         @defBlock GET_GUESS {
-                            doAsk(literal)
+                            @block ASK
                             @if (GUESS_VAR) { doSetVar(literal, getLastAnswer) }
                         }
                         @defBlock EQ_COMPARE {
@@ -30,89 +43,64 @@ snapshot {
                                 @inline { var, @block GUESS }
                             })
                         }
-                        @defBlock NOT_EQ_FEEDBACK {
-                            @or {
-                                @inline {
-                                    @anyOrder {
-                                        doIf(reportLessThan(@block GUESS, var), script {
-                                            doSayFor(literal, literal)
-                                        })
-                                        doIf(reportLessThan(var, @block GUESS), script {
-                                            doSayFor(literal, literal)
-                                        })
-                                    }
-                                }
-                                doIfElse(@block NOT_EQ_COMPARE, script {
-                                    doSayFor(literal, literal)
-                                }, script {
-                                    doSayFor(literal, literal)
-                                })
-                            }
-                        }
+
                         @defVar (ASK_TOP) {
                             @defVar (CORRECT_IN_LOOP) {
                                 @defBlock EQ_FEEDBACK {
                                     @if (CORRECT_IN_LOOP) {
                                         doIf(@block EQ_COMPARE, script {
-                                            doSayFor(literal, literal)
+                                            @block SAY
                                         })
                                     }
                                 }
+                                @defBlock NOT_EQ_FEEDBACK_IFS {
+                                    @anyOrder {
+                                        doIf(reportLessThan(@block GUESS, var), script {
+                                            @block SAY
+                                            @if (ASK_TOP) { @block ASK }
+                                        })
+                                        doIf(reportLessThan(var, @block GUESS), script {
+                                            @block SAY
+                                            @if (ASK_TOP) { @block ASK }
+                                        })
+                                    }
+                                }
+                                @defBlock NOT_EQ_FEEDBACK_IF_ELSE {
+                                    doIfElse(@block NOT_EQ_COMPARE, script {
+                                        @block SAY
+                                    }, script {
+                                        @block SAY
+                                    })
+                                    @if (ASK_TOP) { @block ASK }
+                                }
+                                @defBlock NOT_EQ_FEEDBACK {
+                                    @or {
+                                        @block NOT_EQ_FEEDBACK_IFS
+                                        @block NOT_EQ_FEEDBACK_IF_ELSE
+                                    }
+                                }
 
-                                @if (ASK_TOP) { doAsk(literal) }
+                                @if (ASK_TOP) { @block ASK }
                                 doUntil(@block EQ_COMPARE, script {
-                                    @unless (ASK_TOP) { doAsk(literal) }
+                                    @unless (ASK_TOP) { @block ASK }
                                     @or {
                                         @inline {
-                                            @anyOrder {
-                                                @block EQ_FEEDBACK
-                                                @block NOT_EQ_FEEDBACK
-                                            }
+                                            @block EQ_FEEDBACK
+                                            @if (ASK_TOP) { @block NOT_EQ_FEEDBACK }
+                                            @unless (ASK_TOP) { @block NOT_EQ_FEEDBACK_IFS }
                                         }
+                                        doIfElse(@block EQ_COMPARE, script {
+                                            @if (CORRECT_IN_LOOP) { doSayFor(literal) }
+                                        }, script {
+                                            @block NOT_EQ_FEEDBACK
+                                        })
                                     }
-                                    @if (ASK_TOP) { doAsk(literal) }
                                 })
                                 @unless (CORRECT_IN_LOOP) { doSayFor(literal) }
                             }
                         }
 
                     }
-                }
-                script {
-                    doUntil(reportEquals(getLastAnswer, var), script {
-                        doIfElse(reportLessThan(getLastAnswer, var), script {
-                            doSayFor(literal, literal)
-                        }, script {
-                            doSayFor(literal, literal)
-                        })
-                        doAsk(literal)
-                    })
-                    doSayFor(literal, literal)
-                }
-                script {
-                    doUntil(reportEquals(getLastAnswer, var), script {
-                        doAsk(literal)
-                        doIfElse(reportEquals(getLastAnswer, var), script {
-                            doSayFor(literal, literal)
-                        }, script {
-                            doIfElse(reportLessThan(getLastAnswer, var), script {
-                                doSayFor(literal, literal)
-                            }, script {
-                                doSayFor(literal, literal)
-                            })
-                        })
-                    })
-                }
-                script {
-                    doIf(reportEquals(getLastAnswer, var), script {
-                        doSayFor(literal, literal)
-                    })
-                    doIf(reportLessThan(getLastAnswer, var), script {
-                        doSayFor(literal, literal)
-                    })
-                    doIf(reportLessThan(var, getLastAnswer), script {
-                        doSayFor(literal, literal)
-                    })
                 }
             }
         }
