@@ -9,12 +9,27 @@ public class BNode {
 	public final String type;
 	public final boolean inline;
 	public final List<BNode> children = new LinkedList<>();
+	public String contextSnapshot;
+	public BNode parent;
 	public int orderGroup;
 	public boolean anything;
 
-	public BNode(String type, boolean inline) {
+	public BNode(String type, boolean inline, Context context) {
+		this(type, inline, context.toString());
+	}
+
+	public String deepestContextSnapshot() {
+		if (children.size() == 0) return contextSnapshot;
+		return children.stream()
+				.map(c -> c.deepestContextSnapshot())
+				.max((s1, s2) -> Integer.compare(s1.length(), s2.length()))
+				.get();
+	}
+
+	public BNode(String type, boolean inline, String contextSnapshot) {
 		this.type = type;
 		this.inline = inline;
+		this.contextSnapshot = contextSnapshot;
 	}
 
 	public Node toNode() {
@@ -57,7 +72,7 @@ public class BNode {
 	}
 
 	public BNode copy() {
-		BNode copy = new BNode(type, inline);
+		BNode copy = new BNode(type, inline, contextSnapshot);
 		copy.orderGroup = orderGroup;
 		copy.anything = anything;
 		for (BNode child : children) {

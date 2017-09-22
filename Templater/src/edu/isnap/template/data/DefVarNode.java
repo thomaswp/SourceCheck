@@ -29,8 +29,11 @@ public class DefVarNode extends DefaultNode {
 			// If optional, just use the first variable value
 			if (optional) break;
 		}
-
-		context.varDefs.put(name, oldValue);
+		if (oldValue == null) {
+			context.varDefs.remove(oldValue);
+		} else {
+			context.varDefs.put(name, oldValue);
+		}
 		return variants;
 	}
 

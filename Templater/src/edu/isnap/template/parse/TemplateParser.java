@@ -49,7 +49,11 @@ public class TemplateParser {
 			verifyNode(n);
 			hintMap.solutions.add(n);
 		}
-		printVariants(sample, hintMap.solutions);
+
+		printVariants(node.getVariants(Context.fromSample(sample).withOptional(false)));
+		System.out.println("--------------------");
+		System.out.println(variants.size());
+		System.out.println(sample.prettyPrint());
 
 		HintMapBuilder hmb = new HintMapBuilder(hintMap, 1);
 
@@ -89,11 +93,12 @@ public class TemplateParser {
 		});
 	}
 
-	private static void printVariants(Node sample, List<Node> variants) {
+	private static void printVariants(List<BNode> variants) {
 		String last = "";
-		for (Node variant : variants) {
+		for (BNode variant : variants) {
 			System.out.println("--------------------");
-			String out = variant.prettyPrint();
+			System.out.println(variant.deepestContextSnapshot());
+			String out = variant.toNode().prettyPrint();
 			String diff = Diff.diff(last, out, 2);
 			if (StringUtils.countMatches(out, "\n") <= StringUtils.countMatches(diff, "\n")) {
 				System.out.println(out);
@@ -102,10 +107,6 @@ public class TemplateParser {
 			}
 			last = out;
 		}
-		System.out.println("--------------------");
-		System.out.println(variants.size());
-
-		System.out.println(sample.prettyPrint());
 	}
 
 	private String[] parts;

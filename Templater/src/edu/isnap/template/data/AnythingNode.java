@@ -16,7 +16,7 @@ public class AnythingNode extends DefaultNode {
 			throw new RuntimeException("AnythingNode cannot have children");
 		}
 
-		BNode node = new BNode("@anything", inline());
+		BNode node = new BNode("@anything", inline(), context);
 		node.anything = true;
 		return Arrays.asList(node);
 	}

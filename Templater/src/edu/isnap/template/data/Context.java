@@ -1,6 +1,7 @@
 package edu.isnap.template.data;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
@@ -8,13 +9,20 @@ import edu.isnap.ctd.graph.Node.Action;
 public class Context {
 
 	public HashMap<String, DefBlockNode> blocksDefs = new HashMap<>();
-	public HashMap<String, String> varDefs = new HashMap<>();
+	public HashMap<String, String> varDefs = new LinkedHashMap<>();
 	public HashMap<String, Integer> defaultAgs = new HashMap<>();
+
+	public boolean addOptional = true;
 
 	private int nextOrderGroup = 1;
 
 	public int nextOrderGroup() {
 		return nextOrderGroup++;
+	}
+
+	public Context withOptional(boolean addOptional) {
+		this.addOptional = addOptional;
+		return this;
 	}
 
 	public static Context fromSample(Node sample) {
@@ -37,4 +45,8 @@ public class Context {
 		return context;
 	}
 
+	@Override
+	public String toString() {
+		return varDefs.toString();
+	}
 }
