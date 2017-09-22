@@ -5,20 +5,20 @@ snapshot {
     @defBlock ASK {
         doAsk(@anything)
     }
-    @defVar (VAR, GLOBAL, LOCAL) {
+    @+defVar (VAR, GLOBAL, LOCAL) {
         stage {
             sprite {
                 script {
-                    @optional {
-                        @or {
+                    @+optional {
+                        @+or {
                             receiveGo
                             receiveMessage(literal)
                         }
                     }
                     @if (VAR, LOCAL) { doDeclareVariables(list(literal)) }
-                    @defVar (SET_VAR, FIRST, LAST) {
+                    @+defVar (SET_VAR, FIRST, LAST) {
                         @if (SET_VAR, FIRST) { doSetVar(literal, reportRandom(literal, literal)) }
-                        @repeat(1, 2) {
+                        @+repeat(1, 2) {
                             @block SAY
                         }
                         @block ASK

@@ -26,6 +26,8 @@ public class DefVarNode extends DefaultNode {
 		for (String value : values) {
 			context.varDefs.put(name, value);
 			variants.addAll(super.getVariants(context));
+			// If optional, just use the first variable value
+			if (optional) break;
 		}
 
 		context.varDefs.put(name, oldValue);

@@ -8,6 +8,8 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
 
@@ -25,6 +27,7 @@ import edu.isnap.parser.elements.Snapshot;
 import edu.isnap.template.data.BNode;
 import edu.isnap.template.data.Context;
 import edu.isnap.template.data.DefaultNode;
+import edu.isnap.util.Diff;
 
 public class TemplateParser {
 
@@ -87,9 +90,17 @@ public class TemplateParser {
 	}
 
 	private static void printVariants(Node sample, List<Node> variants) {
+		String last = "";
 		for (Node variant : variants) {
 			System.out.println("--------------------");
-			System.out.println(variant.prettyPrint());
+			String out = variant.prettyPrint();
+			String diff = Diff.diff(last, out, 2);
+			if (StringUtils.countMatches(out, "\n") <= StringUtils.countMatches(diff, "\n")) {
+				System.out.println(out);
+			} else {
+				System.out.println(diff);
+			}
+			last = out;
 		}
 		System.out.println("--------------------");
 		System.out.println(variants.size());

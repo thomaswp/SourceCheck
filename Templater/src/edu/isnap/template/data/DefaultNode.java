@@ -6,6 +6,7 @@ import java.util.List;
 
 public class DefaultNode {
 	public String type;
+	public boolean optional;
 	public List<String> args = new LinkedList<>();
 	public List<DefaultNode> children = new LinkedList<>();
 
@@ -78,6 +79,11 @@ public class DefaultNode {
 	}
 
 	public static DefaultNode create(String type) {
+		boolean optional = false;
+		if (type.startsWith("@+")) {
+			optional = true;
+			type = "@" + type.substring(2);
+		}
 		DefaultNode node;
 		switch (type) {
 			case "@or": node = new OrNode(); break;
@@ -98,6 +104,7 @@ public class DefaultNode {
 				node = new DefaultNode();
 		}
 		node.type = type;
+		node.optional = optional;
 		return node;
 
 	}

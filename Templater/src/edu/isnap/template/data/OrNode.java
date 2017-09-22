@@ -15,6 +15,8 @@ public class OrNode extends DefaultNode {
 		List<BNode> variants = new LinkedList<>();
 		for (DefaultNode child : children) {
 			variants.addAll(child.getVariants(context));
+			// If optional, only add the first possibility
+			if (optional) break;
 		}
 		return variants;
 	}

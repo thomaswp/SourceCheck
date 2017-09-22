@@ -26,6 +26,8 @@ public class RepeatNode extends DefaultNode {
 				}
 			}
 			variants.addAll(set);
+			// If optional, only include the first value
+			if (optional) break;
 		}
 		return variants;
 	}
