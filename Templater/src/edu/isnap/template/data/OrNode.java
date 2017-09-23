@@ -16,7 +16,7 @@ public class OrNode extends DefaultNode {
 		for (DefaultNode child : children) {
 			variants.addAll(child.getVariants(context));
 			// If optional, only add the first possibility
-			if (optional) break;
+			if (context.stopOptional(optional)) break;
 		}
 		return variants;
 	}

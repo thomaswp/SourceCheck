@@ -20,6 +20,10 @@ public class Context {
 		return nextOrderGroup++;
 	}
 
+	public boolean stopOptional(boolean isOptional) {
+		return !addOptional && isOptional;
+	}
+
 	public Context withOptional(boolean addOptional) {
 		this.addOptional = addOptional;
 		return this;

@@ -15,7 +15,7 @@ public class OptionalNode extends DefaultNode {
 		List<BNode> variants = new LinkedList<>();
 		variants.add(new BNode(type, inline(), context));
 		// If this node is optional, don't add the second variant
-		if (!optional) {
+		if (!context.stopOptional(optional)) {
 			variants.addAll(super.getVariants(context));
 		}
 		return variants;

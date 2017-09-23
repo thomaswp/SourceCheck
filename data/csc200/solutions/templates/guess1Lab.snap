@@ -6,26 +6,31 @@ snapshot {
         doAsk(@anything)
     }
     @+defVar (VAR, GLOBAL, LOCAL) {
-        stage {
-            sprite {
-                script {
-                    @+optional {
-                        @+or {
-                            receiveGo
-                            receiveMessage(literal)
+        @defVar (GUESS_VAR) {
+            stage {
+                sprite {
+                    script {
+                        @+optional {
+                            @+or {
+                                receiveGo
+                                receiveMessage(literal)
+                            }
                         }
-                    }
-                    @if (VAR, LOCAL) { doDeclareVariables(list(literal)) }
-                    @+defVar (SET_VAR, FIRST, LAST) {
-                        @if (SET_VAR, FIRST) { doSetVar(literal, reportRandom(literal, literal)) }
-                        @+repeat(1, 2) {
-                            @block SAY
+                        @if (VAR, LOCAL) { 
+                            doDeclareVariables(list(
+                                literal
+                                @if (GUESS_VAR) { literal }
+                            ))
                         }
-                        @block ASK
-                        doSayFor(reportJoinWords(list(literal, getLastAnswer)), literal)
-                        @if (SET_VAR, LAST) { doSetVar(literal, reportRandom(literal, literal)) }
-                    }
-                    @defVar (GUESS_VAR) {
+                        @+defVar (SET_VAR, LAST, FIRST) {
+                            @if (SET_VAR, FIRST) { doSetVar(literal, reportRandom(literal, literal)) }
+                            @+repeat(1, 2) {
+                                @block SAY
+                            }
+                            @block ASK
+                            doSayFor(reportJoinWords(list(literal, getLastAnswer)), literal)
+                            @if (SET_VAR, LAST) { doSetVar(literal, reportRandom(literal, literal)) }
+                        }
                         @defBlock GUESS {
                             @if (GUESS_VAR) { var }
                             @unless (GUESS_VAR) { getLastAnswer }
@@ -57,11 +62,11 @@ snapshot {
                                     @anyOrder {
                                         doIf(reportLessThan(@block GUESS, var), script {
                                             @block SAY
-                                            @if (ASK_TOP) { @block ASK }
+                                            @if (ASK_TOP) { @block GET_GUESS }
                                         })
                                         doIf(reportLessThan(var, @block GUESS), script {
                                             @block SAY
-                                            @if (ASK_TOP) { @block ASK }
+                                            @if (ASK_TOP) { @block GET_GUESS }
                                         })
                                     }
                                 }
@@ -71,7 +76,7 @@ snapshot {
                                     }, script {
                                         @block SAY
                                     })
-                                    @if (ASK_TOP) { @block ASK }
+                                    @if (ASK_TOP) { @block GET_GUESS }
                                 }
                                 @defBlock NOT_EQ_FEEDBACK {
                                     @or {
@@ -80,9 +85,9 @@ snapshot {
                                     }
                                 }
 
-                                @if (ASK_TOP) { @block ASK }
+                                @if (ASK_TOP) { @block GET_GUESS }
                                 doUntil(@block EQ_COMPARE, script {
-                                    @unless (ASK_TOP) { @block ASK }
+                                    @unless (ASK_TOP) { @block GET_GUESS }
                                     @or {
                                         @inline {
                                             @block EQ_FEEDBACK
@@ -103,7 +108,10 @@ snapshot {
                     }
                 }
             }
+            @if (VAR, GLOBAL) {
+                var
+                @if (GUESS_VAR) var
+            }
         }
-        @if (VAR, GLOBAL) { var }
     }
 }
