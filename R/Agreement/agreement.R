@@ -5,8 +5,8 @@ library(plyr)
 twoColors <- c("#a1d99b","#2c7fb8")
 
 loadData <- function() {
-  guess1 <- read_csv("../../data/csc200/fall2016/analysis/guess1Lab/agreement.csv")
-  squiral <- read_csv("../../data/csc200/fall2016/analysis/squiralHW/agreement.csv")
+  guess1 <- read_csv("../../data/csc200/solutions/analysis/guess1Lab/agreement.csv")
+  squiral <- read_csv("../../data/csc200/solutions/analysis/squiralHW/agreement.csv")
   
   guess1$assignment <- "GG"
   squiral$assignment <- "SQ"
