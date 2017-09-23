@@ -1,6 +1,7 @@
 package edu.isnap.template.parse;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -58,12 +59,17 @@ public class TemplateParser {
 		HintMapBuilder hmb = new HintMapBuilder(hintMap, 1);
 
 		Kryo kryo = SnapHintBuilder.getKryo();
-		String path = SnapHintBuilder.getStorePath(
-				"../HintServer/WebContent/WEB-INF/data", assignment.name, 1);
+		writeHints("../HintServer/WebContent/WEB-INF/data", assignment, hmb, kryo);
+		writeHints(assignment.dataset.dataDir, assignment, hmb, kryo);
+
+	}
+
+	private static void writeHints(String basePath, Assignment assignment, HintMapBuilder hmb, Kryo kryo)
+			throws FileNotFoundException {
+		String path = SnapHintBuilder.getStorePath(basePath, assignment.name, 1);
 		Output output = new Output(new FileOutputStream(path));
 		kryo.writeObject(output, hmb);
 		output.close();
-
 	}
 
 	// TODO: rather erroring, replace and add the needed canonicalizations
