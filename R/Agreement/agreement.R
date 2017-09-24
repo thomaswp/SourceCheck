@@ -5,13 +5,22 @@ library(plyr)
 twoColors <- c("#a1d99b","#2c7fb8")
 
 loadData <- function() {
-  guess1 <- read_csv("../../data/csc200/solutions/analysis/guess1Lab/agreement.csv")
-  squiral <- read_csv("../../data/csc200/solutions/analysis/squiralHW/agreement.csv")
-  
+  guess1 <- read_csv("../../data/csc200/fall2016/analysis/guess1Lab/agreement.csv")
+  squiral <- read_csv("../../data/csc200/fall2016/analysis/squiralHW/agreement.csv")
   guess1$assignment <- "GG"
   squiral$assignment <- "SQ"
   data <- rbind(squiral, guess1)
-  data$pred <- ordered(data$pred, c("highlight", "highlight-sed", "all"))
+  
+  guess1Temp <- read_csv("../../data/csc200/solutions/analysis/guess1Lab/agreement.csv")
+  squiralTemp <- read_csv("../../data/csc200/solutions/analysis/squiralHW/agreement.csv")
+  guess1Temp$assignment <- "GG"
+  squiralTemp$assignment <- "SQ"
+  dataTemp <- rbind(squiralTemp, guess1Temp)
+  dataTemp <- dataTemp[dataTemp$pred == "highlight",]
+  dataTemp$pred <- "highlight-temp"
+  data <- rbind(data, dataTemp)
+  
+  data$pred <- ordered(data$pred, c("highlight", "highlight-temp", "highlight-sed", "all"))
   data$edit <- ordered(data$edit, c("keep", "delete", "move", "insert"))
   data$stat <- paste0(toupper(substring(data$stat, 1,1)), substring(data$stat, 2))
   data$stat <- ordered(data$stat, c("Recall", "Precision"))
@@ -24,7 +33,7 @@ plotAll <- function(data) {
     geom_text(aes(group=pred, label=correct, vjust=ifelse(value>0.2,1.5,-1.5)), position = position_dodge(width=1), size=4.5) +
     geom_text(aes(y = 0, group=pred, label=total, vjust=-1), position = position_dodge(width=1), size=4.5) +
     facet_grid(stat ~ assignment) + 
-    scale_fill_manual(name="Predictor", labels=c("SC", "TC"), values=twoColors) +
+    #scale_fill_manual(name="Predictor", labels=c("SC", "TC"), values=twoColors) +
     scale_x_discrete(name="Edit Type", labels=c("Delete", "Move", "Insertion")) +
     scale_y_continuous(name="Value") +
     theme_bw(base_size = 16) +
