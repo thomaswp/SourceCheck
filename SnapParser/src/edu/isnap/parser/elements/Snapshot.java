@@ -38,7 +38,7 @@ public class Snapshot extends Code implements IHasID {
 
 	@Override
 	public String value() {
-		return name;
+		return null;
 	}
 
 	private void setEditing() {
