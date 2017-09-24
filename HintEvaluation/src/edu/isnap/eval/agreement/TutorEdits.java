@@ -3,7 +3,6 @@ package edu.isnap.eval.agreement;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -148,7 +147,6 @@ public class TutorEdits {
 			if (edits.size() == 0 && this.from.equals(this.to)) {
 				System.out.println("No edits for " + this);
 			}
-			Collections.sort(edits);
 		}
 
 		public boolean verify() {

@@ -13,8 +13,11 @@ public class OptionalNode extends DefaultNode {
 	@Override
 	public List<BNode> getVariants(Context context) {
 		List<BNode> variants = new LinkedList<>();
-		variants.add(new BNode(type, inline()));
-		variants.addAll(super.getVariants(context));
+		variants.add(new BNode(type, inline(), context));
+		// If this node is optional, don't add the second variant
+		if (!context.stopOptional(optional)) {
+			variants.addAll(super.getVariants(context));
+		}
 		return variants;
 	}
 }

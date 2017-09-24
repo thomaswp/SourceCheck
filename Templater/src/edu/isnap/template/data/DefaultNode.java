@@ -6,6 +6,7 @@ import java.util.List;
 
 public class DefaultNode {
 	public String type;
+	public boolean optional;
 	public List<String> args = new LinkedList<>();
 	public List<DefaultNode> children = new LinkedList<>();
 
@@ -29,11 +30,11 @@ public class DefaultNode {
 	public List<BNode> getVariants(Context context) {
 
 		if (children.size() == 0) {
-			BNode node = new BNode(type, inline());
+			BNode node = new BNode(type, inline(), context);
 			Integer litArgs = context.defaultAgs.get(type);
 			if (litArgs != null) {
 				for (int i = 0; i < litArgs; i++) {
-					node.children.add(new BNode("literal", false));
+					node.children.add(new BNode("literal", false, context));
 				}
 			}
 
@@ -51,10 +52,10 @@ public class DefaultNode {
 			}
 		}
 
-		return getVariants(childVariants);
+		return getVariants(childVariants, context);
 	}
 
-	protected List<BNode> getVariants(List<List<BNode>> childVariants) {
+	protected List<BNode> getVariants(List<List<BNode>> childVariants, Context context) {
 		int size = 1;
 		for (List<BNode> list : childVariants) {
 			size *= list.size();
@@ -63,7 +64,7 @@ public class DefaultNode {
 		List<BNode> list = new ArrayList<>(size);
 
 		for (int i = 0; i < size; i++) {
-			BNode root = new BNode(type, inline());
+			BNode root = new BNode(type, inline(), context);
 			int offset = 1;
 			for (int j = 0; j < childVariants.size(); j++) {
 				List<BNode> variants = childVariants.get(j);
@@ -78,6 +79,11 @@ public class DefaultNode {
 	}
 
 	public static DefaultNode create(String type) {
+		boolean optional = false;
+		if (type.startsWith("@+")) {
+			optional = true;
+			type = "@" + type.substring(2);
+		}
 		DefaultNode node;
 		switch (type) {
 			case "@or": node = new OrNode(); break;
@@ -98,6 +104,7 @@ public class DefaultNode {
 				node = new DefaultNode();
 		}
 		node.type = type;
+		node.optional = optional;
 		return node;
 
 	}

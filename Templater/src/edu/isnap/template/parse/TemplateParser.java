@@ -1,12 +1,15 @@
 package edu.isnap.template.parse;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+
+import org.apache.commons.lang3.StringUtils;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
@@ -25,6 +28,7 @@ import edu.isnap.parser.elements.Snapshot;
 import edu.isnap.template.data.BNode;
 import edu.isnap.template.data.Context;
 import edu.isnap.template.data.DefaultNode;
+import edu.isnap.util.Diff;
 
 public class TemplateParser {
 
@@ -46,17 +50,26 @@ public class TemplateParser {
 			verifyNode(n);
 			hintMap.solutions.add(n);
 		}
-		printVariants(sample, hintMap.solutions);
+
+		printVariants(node.getVariants(Context.fromSample(sample).withOptional(false)));
+		System.out.println("--------------------");
+		System.out.println(variants.size());
+		System.out.println(sample.prettyPrint());
 
 		HintMapBuilder hmb = new HintMapBuilder(hintMap, 1);
 
 		Kryo kryo = SnapHintBuilder.getKryo();
-		String path = SnapHintBuilder.getStorePath(
-				"../HintServer/WebContent/WEB-INF/data", assignment.name, 1);
+		writeHints("../HintServer/WebContent/WEB-INF/data", assignment, hmb, kryo);
+		writeHints(assignment.dataset.dataDir, assignment, hmb, kryo);
+
+	}
+
+	private static void writeHints(String basePath, Assignment assignment, HintMapBuilder hmb, Kryo kryo)
+			throws FileNotFoundException {
+		String path = SnapHintBuilder.getStorePath(basePath, assignment.name, 1);
 		Output output = new Output(new FileOutputStream(path));
 		kryo.writeObject(output, hmb);
 		output.close();
-
 	}
 
 	// TODO: rather erroring, replace and add the needed canonicalizations
@@ -86,15 +99,20 @@ public class TemplateParser {
 		});
 	}
 
-	private static void printVariants(Node sample, List<Node> variants) {
-		for (Node variant : variants) {
+	private static void printVariants(List<BNode> variants) {
+		String last = "";
+		for (BNode variant : variants) {
 			System.out.println("--------------------");
-			System.out.println(variant.prettyPrint());
+			System.out.println(variant.deepestContextSnapshot());
+			String out = variant.toNode().prettyPrint();
+			String diff = Diff.diff(last, out, 2);
+			if (StringUtils.countMatches(out, "\n") <= StringUtils.countMatches(diff, "\n")) {
+				System.out.println(out);
+			} else {
+				System.out.println(diff);
+			}
+			last = out;
 		}
-		System.out.println("--------------------");
-		System.out.println(variants.size());
-
-		System.out.println(sample.prettyPrint());
 	}
 
 	private String[] parts;

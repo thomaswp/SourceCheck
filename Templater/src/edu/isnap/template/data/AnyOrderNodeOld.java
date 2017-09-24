@@ -12,10 +12,10 @@ public class AnyOrderNodeOld extends DefaultNode {
 	}
 
 	@Override
-	public List<BNode> getVariants(Context context) {
+	public List<BNode> getVariants(final Context context) {
 		if (children.size() == 0) {
 			List<BNode> variants = new LinkedList<>();
-			variants.add(new BNode(type, inline()));
+			variants.add(new BNode(type, inline(), context));
 			return variants;
 		}
 
@@ -36,7 +36,7 @@ public class AnyOrderNodeOld extends DefaultNode {
 				for (int j = 0; j < indices.length; j++) {
 					childVariants.add(orderedChildVariants.get(indices[j]));
 				}
-				variants.addAll(getVariants(childVariants));
+				variants.addAll(getVariants(childVariants, context));
 			}
 		});
 		return variants;
