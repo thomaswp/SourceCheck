@@ -70,6 +70,10 @@ public class Assignment {
 		return dir("templates");
 	}
 
+	public String exportDir() {
+		return dir("export");
+	}
+
 	public String dir(String folderName) {
 		return dataDir + "/" + folderName + "/" + name;
 	}

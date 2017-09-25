@@ -2,11 +2,16 @@ package edu.isnap.eval.agreement;
 
 import static edu.isnap.dataset.AttemptAction.*;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+
+import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.dataset.Assignment;
@@ -14,6 +19,7 @@ import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.datasets.Fall2016;
 import edu.isnap.datasets.Spring2017;
+import edu.isnap.eval.export.JsonAST;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
@@ -22,9 +28,9 @@ public class HintSelection {
 
 	private final static double START = 0.2, CUTOFF = 0.6;
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 //		printFall2016();
-		printSpring2017();
+		printSpring2017EDM();
 	}
 
 	protected static void printFall2016() {
@@ -35,13 +41,29 @@ public class HintSelection {
 				Fall2016.GuessingGame2,
 		};
 		for (Assignment assignment : assignments) {
-			select(assignment, "hints", new SnapParser.Filter[] {
+			printSelect(assignment, new SnapParser.Filter[] {
 					new SnapParser.SubmittedOnly(),
 			}, "twprice", "rzhi");
 		}
 	}
 
-	protected static void printSpring2017() {
+	protected static void printSpring2017EDM() throws IOException {
+		Assignment[] assignments = {
+				Spring2017.Squiral,
+				Spring2017.GuessingGame1,
+		};
+		Random rand = new Random(1234);
+		for (Assignment assignment : assignments) {
+			List<AttemptAction> selected = select(assignment, new SnapParser.Filter[] {
+					new SnapParser.LikelySubmittedOnly(),
+					new SnapParser.StartedAfter(Assignment.date(2017, 1, 29))
+			}, rand);
+			printSQL(selected, "twprice", "rzhi");
+			exportSelected(assignment, selected);
+		}
+	}
+
+	protected static void printSpring2017() throws IOException {
 		Assignment[] assignments = {
 				Spring2017.PolygonMaker,
 				Spring2017.Squiral,
@@ -49,23 +71,25 @@ public class HintSelection {
 				Spring2017.GuessingGame2,
 		};
 		for (Assignment assignment : assignments) {
-			select(assignment, "handmade_hints", new SnapParser.Filter[] {
-					new SnapParser.SubmittedOnly(),
+			List<AttemptAction> selected = select(assignment, new SnapParser.Filter[] {
+					new SnapParser.LikelySubmittedOnly(),
 					new SnapParser.StartedAfter(Assignment.date(2017, 1, 29))
-			}, "twprice", "rzhi");
+			});
+			printSQL(selected, "twprice", "rzhi");
+			exportSelected(assignment, selected);
 		}
 	}
 
-	protected static void printFall2017() {
-		Assignment[] assignments = {
-				Spring2017.Squiral,
-				Spring2017.GuessingGame1
-		};
-		for (Assignment assignment : assignments) {
-			select(assignment, "handmade_hints", new SnapParser.Filter[] {
-					new SnapParser.LikelySubmittedOnly(),
-					new SnapParser.StartedAfter(Assignment.date(2017, 1, 29))
-			}, "twprice", "rzhi");
+	protected static void exportSelected(Assignment assignment, List<AttemptAction> selected)
+			throws IOException {
+		for (AttemptAction action : selected) {
+			JSONObject json = JsonAST.toJSON(action.lastSnapshot);
+			File file = new File(String.format("%s/hint-selection/%s/%d.json",
+					assignment.dataset.exportDir(), assignment.name, action.id));
+			file.getParentFile().mkdirs();
+			FileWriter writer = new FileWriter(file);
+			writer.write(json.toString(2));
+			writer.close();
 		}
 	}
 
@@ -77,18 +101,23 @@ public class HintSelection {
 	}
 
 
-	public static void select(Assignment assignment, String table,
-		SnapParser.Filter[] filters, String... users) {
+	public static void printSelect(Assignment assignment, SnapParser.Filter[] filters,
+			String... users) {
+		printSQL(select(assignment, filters), users);
+	}
 
+	public static List<AttemptAction> select(Assignment assignment, SnapParser.Filter[] filters) {
+		return select(assignment, filters, new Random(assignment.name.hashCode() + 1234));
+	}
 
-		Random rand = new Random(assignment.name.hashCode() + 1234);
-
+	public static List<AttemptAction> select(Assignment assignment, SnapParser.Filter[] filters,
+			Random rand) {
+		List<AttemptAction> selected = new ArrayList<>();
 		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, false, true, filters);
 
-		int studentCount = 0;
 		for (AssignmentAttempt attempt : attempts.values()) {
-			List<Integer> earlyHints = new ArrayList<>();
-			List<Integer> lateHints = new ArrayList<>();
+			List<AttemptAction> earlyHints = new ArrayList<>();
+			List<AttemptAction> lateHints = new ArrayList<>();
 			HashSet<Node> added = new HashSet<>();
 			long lastAddedTime = -1;
 			for (AttemptAction action : attempt) {
@@ -108,33 +137,34 @@ public class HintSelection {
 				}
 
 				lastAddedTime = action.timestamp.getTime();
-				if (percTime < CUTOFF) earlyHints.add(action.id);
-				else lateHints.add(action.id);
+				if (percTime < CUTOFF) earlyHints.add(action);
+				else lateHints.add(action);
 			}
 
 			if (earlyHints.size() + lateHints.size() == 0) continue;
-			studentCount++;
 
 			// Sample one from early if possible, and late if not
-			if (!sample(table, earlyHints, users, rand)) sample(table, lateHints, users, rand);
+			if (!sample(earlyHints, selected, rand)) sample(lateHints, selected, rand);
 			// Sample one from late if possible, and early if not
-			if (!sample(table, lateHints, users, rand)) sample(table, earlyHints, users, rand);
+			if (!sample(lateHints, selected, rand)) sample(earlyHints, selected, rand);
 		}
-		System.out.printf("-- Finished %s: %d students\n", assignment.name, studentCount);
+
+		return selected;
 	}
 
-	private static boolean sample(String table, List<Integer> list, String[] users, Random rand) {
+	private static boolean sample(List<AttemptAction> list, List<AttemptAction> selected, Random rand) {
 		if (list.size() == 0) return false;
-
-		int index = rand.nextInt(list.size());
-		int id = list.remove(index);
-
-		for (String user : users) {
-			System.out.printf(
-					"INSERT INTO `%s` (`userID`, `rowID`) VALUES ('%s', %d);\n",
-					table, user, id);
-		}
-
+		selected.add(list.remove(rand.nextInt(list.size())));
 		return true;
+	}
+
+	private static void printSQL(List<AttemptAction> selected, String... users) {
+		for (AttemptAction action : selected) {
+			for (String user : users) {
+				System.out.printf(
+						"INSERT INTO `hints` (`userID`, `rowID`) VALUES ('%s', %d);\n",
+						user, action.id);
+			}
+		}
 	}
 }

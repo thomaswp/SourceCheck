@@ -29,7 +29,6 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
-import edu.isnap.datasets.CSC200Solutions;
 import edu.isnap.datasets.Fall2016;
 import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.agreement.EditComparer.EditDifference;
@@ -41,8 +40,8 @@ import edu.isnap.parser.elements.Snapshot;
 public class EDM2017 {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
-//		compareEdits(Spring2017.instance, Fall2016.Squiral, Fall2016.GuessingGame1);
-		compareEdits(Spring2017.instance, CSC200Solutions.Squiral, CSC200Solutions.GuessingGame1);
+		compareEdits(Spring2017.instance, Fall2016.Squiral, Fall2016.GuessingGame1);
+//		compareEdits(Spring2017.instance, CSC200Solutions.Squiral, CSC200Solutions.GuessingGame1);
 //		compareEdits(Spring2017.instance, Spring2016.Squiral, Spring2016.GuessingGame1);
 	}
 
