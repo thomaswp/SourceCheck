@@ -1,6 +1,6 @@
 package edu.isnap.eval.agreement;
 
-import static edu.isnap.dataset.AttemptAction.SHOW_HINT_MESSAGES;
+import static edu.isnap.dataset.AttemptAction.*;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -21,7 +21,6 @@ import edu.isnap.parser.Store.Mode;
 public class HintSelection {
 
 	private final static double START = 0.2, CUTOFF = 0.6;
-	private final static Random rand = new Random(1234);
 
 	public static void main(String[] args) {
 //		printFall2016();
@@ -30,8 +29,10 @@ public class HintSelection {
 
 	protected static void printFall2016() {
 		Assignment[] assignments = {
+				Fall2016.PolygonMaker,
 				Fall2016.Squiral,
-				Fall2016.GuessingGame1
+				Fall2016.GuessingGame1,
+				Fall2016.GuessingGame2,
 		};
 		for (Assignment assignment : assignments) {
 			select(assignment, "hints", new SnapParser.Filter[] {
@@ -41,6 +42,21 @@ public class HintSelection {
 	}
 
 	protected static void printSpring2017() {
+		Assignment[] assignments = {
+				Spring2017.PolygonMaker,
+				Spring2017.Squiral,
+				Spring2017.GuessingGame1,
+				Spring2017.GuessingGame2,
+		};
+		for (Assignment assignment : assignments) {
+			select(assignment, "handmade_hints", new SnapParser.Filter[] {
+					new SnapParser.SubmittedOnly(),
+					new SnapParser.StartedAfter(Assignment.date(2017, 1, 29))
+			}, "twprice", "rzhi");
+		}
+	}
+
+	protected static void printFall2017() {
 		Assignment[] assignments = {
 				Spring2017.Squiral,
 				Spring2017.GuessingGame1
@@ -54,15 +70,22 @@ public class HintSelection {
 	}
 
 	public static boolean isHintRow(AttemptAction action) {
-		return SHOW_HINT_MESSAGES.contains(action.message);
+		return SHOW_HINT_MESSAGES.contains(action.message) ||
+				HIGHLIGHT_CHECK_WORK.equals(action.message) ||
+				(HIGHLIGHT_TOGGLE_INSERT.equals(action.message) &&
+						action.data.equals("true"));
 	}
 
 
 	public static void select(Assignment assignment, String table,
 		SnapParser.Filter[] filters, String... users) {
 
+
+		Random rand = new Random(assignment.name.hashCode() + 1234);
+
 		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, false, true, filters);
 
+		int studentCount = 0;
 		for (AssignmentAttempt attempt : attempts.values()) {
 			List<Integer> earlyHints = new ArrayList<>();
 			List<Integer> lateHints = new ArrayList<>();
@@ -89,14 +112,18 @@ public class HintSelection {
 				else lateHints.add(action.id);
 			}
 
+			if (earlyHints.size() + lateHints.size() == 0) continue;
+			studentCount++;
+
 			// Sample one from early if possible, and late if not
-			if (!sample(table, earlyHints, users)) sample(table, lateHints, users);
+			if (!sample(table, earlyHints, users, rand)) sample(table, lateHints, users, rand);
 			// Sample one from late if possible, and early if not
-			if (!sample(table, lateHints, users)) sample(table, earlyHints, users);
+			if (!sample(table, lateHints, users, rand)) sample(table, earlyHints, users, rand);
 		}
+		System.out.printf("-- Finished %s: %d students\n", assignment.name, studentCount);
 	}
 
-	private static boolean sample(String table, List<Integer> list, String[] users) {
+	private static boolean sample(String table, List<Integer> list, String[] users, Random rand) {
 		if (list.size() == 0) return false;
 
 		int index = rand.nextInt(list.size());
