@@ -83,7 +83,7 @@ public class HintSelection {
 		for (AttemptAction action : selected) {
 			JSONObject json = JsonAST.toJSON(action.lastSnapshot);
 			JsonAST.write(String.format("%s/hint-selection/%s/%d.json",
-					assignment.dataset.exportDir(), assignment.name, action.id), json.toString());
+					assignment.dataset.exportDir(), assignment.name, action.id), json.toString(2));
 		}
 		JsonAST.write(
 				String.format("%s/hint-selection/%s-values.txt",
