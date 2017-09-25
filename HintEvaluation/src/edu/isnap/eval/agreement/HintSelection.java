@@ -34,7 +34,7 @@ public class HintSelection {
 				Fall2016.GuessingGame1
 		};
 		for (Assignment assignment : assignments) {
-			select(assignment, new SnapParser.Filter[] {
+			printSelect(assignment, new SnapParser.Filter[] {
 					new SnapParser.SubmittedOnly(),
 			}, "twprice", "rzhi");
 		}
@@ -46,7 +46,7 @@ public class HintSelection {
 				Spring2017.GuessingGame1
 		};
 		for (Assignment assignment : assignments) {
-			select(assignment, new SnapParser.Filter[] {
+			printSelect(assignment, new SnapParser.Filter[] {
 					new SnapParser.LikelySubmittedOnly(),
 					new SnapParser.StartedAfter(Assignment.date(2017, 1, 29))
 			}, "twprice", "rzhi");
@@ -57,13 +57,19 @@ public class HintSelection {
 		return SHOW_HINT_MESSAGES.contains(action.message);
 	}
 
-	public static void select(Assignment assignment, SnapParser.Filter[] filters, String... users) {
+	public static void printSelect(Assignment assignment, SnapParser.Filter[] filters,
+			String... users) {
+		printSQL(select(assignment, filters), users);
+	}
 
+	public static List<AttemptAction> select(Assignment assignment, SnapParser.Filter[] filters) {
+
+		List<AttemptAction> selected = new ArrayList<>();
 		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, false, true, filters);
 
 		for (AssignmentAttempt attempt : attempts.values()) {
-			List<Integer> earlyHints = new ArrayList<>();
-			List<Integer> lateHints = new ArrayList<>();
+			List<AttemptAction> earlyHints = new ArrayList<>();
+			List<AttemptAction> lateHints = new ArrayList<>();
 			HashSet<Node> added = new HashSet<>();
 			long lastAddedTime = -1;
 			for (AttemptAction action : attempt) {
@@ -83,29 +89,32 @@ public class HintSelection {
 				}
 
 				lastAddedTime = action.timestamp.getTime();
-				if (percTime < CUTOFF) earlyHints.add(action.id);
-				else lateHints.add(action.id);
+				if (percTime < CUTOFF) earlyHints.add(action);
+				else lateHints.add(action);
 			}
 
 			// Sample one from early if possible, and late if not
-			if (!sample(earlyHints, users)) sample(lateHints, users);
+			if (!sample(earlyHints, selected)) sample(lateHints, selected);
 			// Sample one from late if possible, and early if not
-			if (!sample(lateHints, users)) sample(earlyHints, users);
+			if (!sample(lateHints, selected)) sample(earlyHints, selected);
 		}
+
+		return selected;
 	}
 
-	private static boolean sample(List<Integer> list, String[] users) {
+	private static boolean sample(List<AttemptAction> list, List<AttemptAction> selected) {
 		if (list.size() == 0) return false;
-
-		int index = rand.nextInt(list.size());
-		int id = list.remove(index);
-
-		for (String user : users) {
-			System.out.printf(
-					"INSERT INTO `hints` (`userID`, `rowID`) VALUES ('%s', %d);\n",
-					user, id);
-		}
-
+		selected.add(list.remove(rand.nextInt(list.size())));
 		return true;
+	}
+
+	private static void printSQL(List<AttemptAction> selected, String[] users) {
+		for (AttemptAction action : selected) {
+		for (String user : users) {
+				System.out.printf(
+						"INSERT INTO `hints` (`userID`, `rowID`) VALUES ('%s', %d);\n",
+						user, action.id);
+			}
+		}
 	}
 }
