@@ -57,7 +57,7 @@ public class HintSelection {
 			List<AttemptAction> selected = select(assignment, new SnapParser.Filter[] {
 					new SnapParser.LikelySubmittedOnly(),
 					new SnapParser.StartedAfter(Assignment.date(2017, 1, 29))
-			}, rand);
+			}, true, rand);
 			printSQL(selected, "twprice", "rzhi");
 			exportSelected(assignment, selected);
 		}
@@ -93,8 +93,12 @@ public class HintSelection {
 		}
 	}
 
+	public static boolean isHintDialogRow(AttemptAction action) {
+		return SHOW_HINT_MESSAGES.contains(action.message);
+	}
+
 	public static boolean isHintRow(AttemptAction action) {
-		return SHOW_HINT_MESSAGES.contains(action.message) ||
+		return isHintDialogRow(action) ||
 				HIGHLIGHT_CHECK_WORK.equals(action.message) ||
 				(HIGHLIGHT_TOGGLE_INSERT.equals(action.message) &&
 						action.data.equals("true"));
@@ -107,11 +111,11 @@ public class HintSelection {
 	}
 
 	public static List<AttemptAction> select(Assignment assignment, SnapParser.Filter[] filters) {
-		return select(assignment, filters, new Random(assignment.name.hashCode() + 1234));
+		return select(assignment, filters, false, new Random(assignment.name.hashCode() + 1234));
 	}
 
 	public static List<AttemptAction> select(Assignment assignment, SnapParser.Filter[] filters,
-			Random rand) {
+			boolean hintDialogsOnly, Random rand) {
 		List<AttemptAction> selected = new ArrayList<>();
 		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, false, true, filters);
 
@@ -122,7 +126,7 @@ public class HintSelection {
 			long lastAddedTime = -1;
 			for (AttemptAction action : attempt) {
 				double percTime = (double) action.currentActiveTime / attempt.totalActiveTime;
-				if (!isHintRow(action)) continue;
+				if (!(hintDialogsOnly ? isHintDialogRow(action) : isHintRow(action))) continue;
 				if (percTime < START) continue;
 
 				// Skip hints within 30 seconds of the last one we added
@@ -152,7 +156,8 @@ public class HintSelection {
 		return selected;
 	}
 
-	private static boolean sample(List<AttemptAction> list, List<AttemptAction> selected, Random rand) {
+	private static boolean sample(List<AttemptAction> list, List<AttemptAction> selected,
+			Random rand) {
 		if (list.size() == 0) return false;
 		selected.add(list.remove(rand.nextInt(list.size())));
 		return true;
