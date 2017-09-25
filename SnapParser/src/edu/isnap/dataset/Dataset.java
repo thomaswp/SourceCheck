@@ -26,6 +26,10 @@ public abstract class Dataset {
 		return dataDir + "/analysis";
 	}
 
+	public String exportDir() {
+		return dataDir + "/export";
+	}
+
 	public String startsFile() {
 		return dataDir + "/starts.csv";
 	}

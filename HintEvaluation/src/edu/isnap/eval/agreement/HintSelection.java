@@ -2,11 +2,16 @@ package edu.isnap.eval.agreement;
 
 import static edu.isnap.dataset.AttemptAction.SHOW_HINT_MESSAGES;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+
+import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.dataset.Assignment;
@@ -14,6 +19,7 @@ import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.datasets.Fall2016;
 import edu.isnap.datasets.Spring2017;
+import edu.isnap.eval.export.JsonAST;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
@@ -23,7 +29,7 @@ public class HintSelection {
 	private final static double START = 0.2, CUTOFF = 0.6;
 	private final static Random rand = new Random(1234);
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 //		printFall2016();
 		printSpring2017();
 	}
@@ -40,16 +46,31 @@ public class HintSelection {
 		}
 	}
 
-	protected static void printSpring2017() {
+	protected static void printSpring2017() throws IOException {
 		Assignment[] assignments = {
 				Spring2017.Squiral,
 				Spring2017.GuessingGame1
 		};
 		for (Assignment assignment : assignments) {
-			printSelect(assignment, new SnapParser.Filter[] {
+			List<AttemptAction> selected = select(assignment, new SnapParser.Filter[] {
 					new SnapParser.LikelySubmittedOnly(),
 					new SnapParser.StartedAfter(Assignment.date(2017, 1, 29))
-			}, "twprice", "rzhi");
+			});
+			printSQL(selected, "twprice", "rzhi");
+			exportSelected(assignment, selected);
+		}
+	}
+
+	protected static void exportSelected(Assignment assignment, List<AttemptAction> selected)
+			throws IOException {
+		for (AttemptAction action : selected) {
+			JSONObject json = JsonAST.toJSON(action.lastSnapshot);
+			File file = new File(String.format("%s/hint-selection/%s/%d.json",
+					assignment.dataset.exportDir(), assignment.name, action.id));
+			file.getParentFile().mkdirs();
+			FileWriter writer = new FileWriter(file);
+			writer.write(json.toString(2));
+			writer.close();
 		}
 	}
 
@@ -108,7 +129,7 @@ public class HintSelection {
 		return true;
 	}
 
-	private static void printSQL(List<AttemptAction> selected, String[] users) {
+	private static void printSQL(List<AttemptAction> selected, String... users) {
 		for (AttemptAction action : selected) {
 		for (String user : users) {
 				System.out.printf(
