@@ -15,7 +15,7 @@ import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.Dataset;
-import edu.isnap.datasets.BJCSolutions2017;
+import edu.isnap.datasets.Fall2016;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
@@ -43,13 +43,13 @@ public class JsonAST {
 //			break;
 //		}
 
-//		exportDataset(Fall2016.instance, Fall2016.LightsCameraAction);
+		exportDataset(Fall2016.instance, Fall2016.LightsCameraAction);
 //		exportAssignment(Fall2016.PolygonMaker);
 
-		for (Assignment assignment : BJCSolutions2017.All) {
-			Snapshot snapshot = Snapshot.parse(new File(assignment.templateFileBase() + ".xml"));
-			exportSnapshot(assignment, snapshot);
-		}
+//		for (Assignment assignment : BJCSolutions2017.All) {
+//			Snapshot snapshot = Snapshot.parse(new File(assignment.templateFileBase() + ".xml"));
+//			exportSnapshot(assignment, snapshot);
+//		}
 	}
 
 	protected static void exportDataset(Dataset dataset, Assignment... exclude)
@@ -60,7 +60,7 @@ public class JsonAST {
 				exportAssignment(assignment);
 			}
 		}
-		write(dataset.dataDir + "/analysis/jsonAST/values.txt", String.join("\n", values));
+		write(dataset.dataDir + "/export/json-AST/values.txt", String.join("\n", values));
 	}
 
 	protected static void exportAssignment(Assignment assignment) throws FileNotFoundException {
@@ -75,7 +75,7 @@ public class JsonAST {
 		JSONObject json = toJSON(snapshot);
 		String jsonString = json.toString(2);
 //		System.out.println(jsonString);
-		String basePath = assignment.dir("analysis/jsonAST") + "/" + snapshot.guid;
+		String basePath = assignment.dir("export/json-AST") + "/" + snapshot.guid;
 		write(basePath + ".json", jsonString);
 		write(basePath + ".txt", SimpleNodeBuilder.toTree(snapshot, true).prettyPrint());
 	}
