@@ -2,8 +2,6 @@ package edu.isnap.eval.agreement;
 
 import static edu.isnap.dataset.AttemptAction.*;
 
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -84,13 +82,13 @@ public class HintSelection {
 			throws IOException {
 		for (AttemptAction action : selected) {
 			JSONObject json = JsonAST.toJSON(action.lastSnapshot);
-			File file = new File(String.format("%s/hint-selection/%s/%d.json",
-					assignment.dataset.exportDir(), assignment.name, action.id));
-			file.getParentFile().mkdirs();
-			FileWriter writer = new FileWriter(file);
-			writer.write(json.toString(2));
-			writer.close();
+			JsonAST.write(String.format("%s/hint-selection/%s/%d.json",
+					assignment.dataset.exportDir(), assignment.name, action.id), json.toString());
 		}
+		JsonAST.write(
+				String.format("%s/hint-selection/%s-values.txt",
+						assignment.dataset.exportDir(), assignment.name),
+				String.join("\n", JsonAST.values));
 	}
 
 	public static boolean isHintDialogRow(AttemptAction action) {
