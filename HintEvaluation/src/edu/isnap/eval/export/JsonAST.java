@@ -28,7 +28,7 @@ import edu.isnap.parser.elements.util.Canonicalization;
 
 public class JsonAST {
 
-	private static Set<String> values = new TreeSet<>();
+	public static Set<String> values = new TreeSet<>();
 
 	public static void main(String[] args) throws IOException {
 //		Collection<AssignmentAttempt> attempts =
@@ -78,7 +78,7 @@ public class JsonAST {
 		write(basePath + ".txt", SimpleNodeBuilder.toTree(snapshot, true).prettyPrint());
 	}
 
-	private static void write(String path, String text) throws FileNotFoundException {
+	public static void write(String path, String text) throws FileNotFoundException {
 		File file = new File(path);
 		file.getParentFile().mkdirs();
 		PrintWriter writer = new PrintWriter(file);
