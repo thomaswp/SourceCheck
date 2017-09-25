@@ -28,6 +28,8 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	public static final String IDE_SET_SPRITE_TAB = "IDE.setSpriteTab";
 	public static final String IDE_TOGGLE_APP_MODE = "IDE.toggleAppMode";
 	public final static String HELP_BUTTON_TOGGLED = "HelpButton.toggled";
+	public final static String HIGHLIGHT_CHECK_WORK = "HighlightDisplay.checkMyWork";
+	public final static String HIGHLIGHT_TOGGLE_INSERT = "HighlightDialogBoxMorph.toggleInsert";
 	public final static String HINT_DIALOG_DESTROY = "HintDialogBox.destroy";
 	@Deprecated
 	public final static String HINT_DIALOG_DONE = "HintDialogBox.done";
