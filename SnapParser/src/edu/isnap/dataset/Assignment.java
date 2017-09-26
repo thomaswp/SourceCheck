@@ -46,6 +46,10 @@ public class Assignment {
 		return dir("analysis");
 	}
 
+	public String analysisDir(String folder) {
+		return dir("analysis/" + folder);
+	}
+
 	public String unitTestDir() {
 		return dir("unittests");
 	}
