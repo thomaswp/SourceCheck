@@ -66,7 +66,7 @@ public class HintConfig {
 	/**
 	 * Use values when matching nodes, as defined by {@link HintConfig#valueMappedTypes}
 	 */
-	public boolean useValues = false;
+	public boolean useValues = true;
 
 	/**
 	 * Code elements that have exactly one script child or unordered children and therefore should

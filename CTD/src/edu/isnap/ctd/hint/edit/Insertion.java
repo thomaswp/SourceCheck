@@ -87,7 +87,7 @@ public class Insertion extends EditHint {
 		if (replaced != null) {
 			children.remove(index);
 		}
-		children.add(index, type + (value == null ? "" : (":" + value)));
+		children.add(index, type + ((!useValues || value == null) ? "" : (":" + value)));
 	}
 
 	@Override
