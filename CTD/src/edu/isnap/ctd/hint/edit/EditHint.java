@@ -109,8 +109,7 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 		String from = items.toString();
 		editChildren(items);
 		String to = items.toString();
-		String diff = Diff.USE_ANSI_COLORS ?
-				Diff.ansiDiff(from, to, "[\\[|\\]|,|\\s]") : (from + " -> " + to);
+		String diff = Diff.inlineDiff(from, to, "[\\[|\\]|,|\\s]");
 		return action().substring(0, 1) + ": " + rootString(parent) + ": " + diff;
 	}
 

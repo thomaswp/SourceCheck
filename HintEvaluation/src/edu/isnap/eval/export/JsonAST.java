@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -13,6 +14,7 @@ import org.json.JSONObject;
 import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
+import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.datasets.Fall2016;
 import edu.isnap.hint.util.SimpleNodeBuilder;
@@ -28,7 +30,15 @@ import edu.isnap.parser.elements.util.Canonicalization;
 
 public class JsonAST {
 
-	public static Set<String> values = new TreeSet<>();
+	public final static Set<String> values = new TreeSet<>();
+
+	public final static HashMap<String, String> valueReplacements = new HashMap<>();
+	static {
+		valueReplacements.put("catherines variable", "my variable");
+		valueReplacements.put("Answer is Kimberly", "Answer is name");
+		valueReplacements.put("Bryson", "name");
+		valueReplacements.put("Ellis", "name");
+	}
 
 	public static void main(String[] args) throws IOException {
 //		Collection<AssignmentAttempt> attempts =
@@ -41,7 +51,7 @@ public class JsonAST {
 //			break;
 //		}
 
-		exportDataset(Fall2016.instance, Fall2016.LightsCameraAction);
+		exportDataset(Fall2016.instance, false, Fall2016.LightsCameraAction);
 //		exportAssignment(Fall2016.PolygonMaker);
 
 //		for (Assignment assignment : BJCSolutions2017.All) {
@@ -50,30 +60,52 @@ public class JsonAST {
 //		}
 	}
 
-	protected static void exportDataset(Dataset dataset, Assignment... exclude)
-			throws FileNotFoundException {
+	protected static void exportDataset(Dataset dataset, boolean solutionsOnly,
+			Assignment... exclude) throws FileNotFoundException {
 		values.clear();
 		for (Assignment assignment : dataset.all()) {
 			if (!Arrays.asList(exclude).contains(assignment)) {
-				exportAssignment(assignment);
+				if (solutionsOnly) {
+					exportAssignmentSolutions(assignment);
+				} else {
+					exportAssignmentTraces(assignment);
+				}
 			}
 		}
-		write(dataset.dataDir + "/export/json-AST/values.txt", String.join("\n", values));
+		String dir = solutionsOnly ? "all-solutions" : "all-traces";
+		write(dataset.dataDir + "/export/" + dir + "/values.txt", String.join("\n", values));
 	}
 
-	protected static void exportAssignment(Assignment assignment) throws FileNotFoundException {
+	protected static void exportAssignmentTraces(Assignment assignment)
+			throws FileNotFoundException {
 		for (AssignmentAttempt attempt : assignment.load(
 				Mode.Use, true, true, new SnapParser.LikelySubmittedOnly()).values()) {
-			exportSnapshot(assignment, attempt.submittedSnapshot);
+			String lastJSON = "";
+			for (AttemptAction action : attempt) {
+				if (action.snapshot == null) continue;
+				String json = toJSON(action.snapshot).toString(2);
+				if (json.equals(lastJSON)) continue;
+				lastJSON = json;
+				write(String.format("%s/%s/%s.json",
+						assignment.dir("export/all-traces"), attempt.id, action.id), json);
+			}
 		}
 	}
 
-	protected static void exportSnapshot(Assignment assignment, Snapshot snapshot)
+	protected static void exportAssignmentSolutions(Assignment assignment)
+			throws FileNotFoundException {
+		for (AssignmentAttempt attempt : assignment.load(
+				Mode.Use, true, true, new SnapParser.LikelySubmittedOnly()).values()) {
+			exportSolution(assignment, attempt.submittedSnapshot);
+		}
+	}
+
+	protected static void exportSolution(Assignment assignment, Snapshot snapshot)
 			throws FileNotFoundException {
 		JSONObject json = toJSON(snapshot);
 		String jsonString = json.toString(2);
 //		System.out.println(jsonString);
-		String basePath = assignment.dir("export/json-AST") + "/" + snapshot.guid;
+		String basePath = assignment.dir("export/all-solutions") + "/" + snapshot.guid;
 		write(basePath + ".json", jsonString);
 		write(basePath + ".txt", SimpleNodeBuilder.toTree(snapshot, true).prettyPrint());
 	}
@@ -96,7 +128,10 @@ public class JsonAST {
 		String type = code.type();
 		String value = code.value();
 
-		if (type.equals("snapshot")) type = "Snap!shot";
+		if (type.equals("snapshot")) {
+			type = "Snap!shot";
+			value = ((Snapshot) code).guid;
+		}
 
 		ASTNode node = new ASTNode(type);
 
@@ -109,7 +144,11 @@ public class JsonAST {
 			}
 		}
 		if (value != null && !type.equals(value)) {
-			values.add(value.trim());
+			String trimmed = value.trim();
+			if (valueReplacements.containsKey(trimmed)) {
+				trimmed = value = valueReplacements.get(trimmed);
+			}
+			values.add(trimmed);
 			node.value = value;
 		}
 
