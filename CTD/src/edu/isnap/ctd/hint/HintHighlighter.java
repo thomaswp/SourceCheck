@@ -458,7 +458,7 @@ public class HintHighlighter {
 		return new ProgressDistanceMeasure(config);
 	}
 
-	private Mapping findSolutionMapping(Node node) {
+	public Mapping findSolutionMapping(Node node) {
 		DistanceMeasure dm = getDistanceMeasure(config);
 		long startTime = System.currentTimeMillis();
 		Mapping bestMatch = NodeAlignment.findBestMatch(node, solutions, dm);
