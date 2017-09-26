@@ -102,8 +102,8 @@ public class HintHighlighter {
 						// insert with a missing parent so the node is marked for movement
 						Node parentClone = pair.parent.copy();
 						parentClone.children.remove(pair.index());
-						Insertion insertion = new Insertion(
-								parentClone, pair, pair.index(), node.value, true);
+						Insertion insertion = new Insertion(parentClone, pair, pair.index(),
+								mapping.getMappedValue(node, true), true);
 						insertion.candidate = node;
 						edits.add(insertion);
 					} else {
@@ -123,7 +123,7 @@ public class HintHighlighter {
 						}
 
 						Insertion insertion = new Insertion(moveParent, pair, insertIndex,
-								node.value);
+								mapping.getMappedValue(node, true));
 						insertion.candidate = node;
 						// If this is a code element parent, inserting the node should replace
 						// the current node at this index
