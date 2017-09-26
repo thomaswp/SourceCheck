@@ -26,6 +26,8 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 	protected abstract void appendEqualsFieds(EqualsBuilder builder, EditHint rhs);
 	public abstract void apply(List<Application> applications);
 
+	public static boolean useValues = true;
+
 	public final Node parent;
 
 	protected final boolean argsCanonSwapped;
@@ -75,7 +77,9 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 
 	protected LinkedList<String> getParentChildren() {
 		if (parent == null) return new LinkedList<>();
-		return new LinkedList<>(Arrays.asList(parent.getChildTypeValueArray()));
+		return new LinkedList<>(Arrays.asList(
+				useValues ? parent.getChildTypeValueArray() : parent.getChildArray()
+		));
 	}
 
 	@Override

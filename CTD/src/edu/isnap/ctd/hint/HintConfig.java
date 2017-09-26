@@ -63,6 +63,10 @@ public class HintConfig {
 	 * The minimum support for extracted decision rules.
 	 */
 	public double ruleSupportThreshold = 0.05;
+	/**
+	 * Use values when matching nodes, as defined by {@link HintConfig#valueMappedTypes}
+	 */
+	public boolean useValues = false;
 
 	/**
 	 * Code elements that have exactly one script child or unordered children and therefore should

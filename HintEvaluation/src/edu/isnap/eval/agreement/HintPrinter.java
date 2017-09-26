@@ -7,8 +7,10 @@ import java.util.stream.Collectors;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.HintHighlighter;
+import edu.isnap.ctd.hint.RuleSet;
 import edu.isnap.ctd.hint.edit.EditHint;
 import edu.isnap.ctd.util.Diff;
+import edu.isnap.ctd.util.NullSream;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.datasets.Fall2016;
@@ -23,6 +25,8 @@ public class HintPrinter {
 
 	public static void main(String[] args) throws FileNotFoundException {
 		Diff.USE_ANSI_COLORS = false;
+		RuleSet.trace = NullSream.instance;
+		EditHint.useValues = false;
 		Random rand = new Random(1234);
 		printHints(Spring2017.Squiral, Fall2016.Squiral, rand);
 		printHints(Spring2017.GuessingGame1, Fall2016.GuessingGame1, rand);
@@ -42,6 +46,7 @@ public class HintPrinter {
 
 		HintHighlighter highlighter = new SnapHintBuilder(trainingAssignment)
 				.buildGenerator(Mode.Ignore).hintHighlighter();
+		highlighter.trace = NullSream.instance;
 
 		for (AttemptAction action : selected) {
 			Node node = SimpleNodeBuilder.toTree(action.lastSnapshot, true);

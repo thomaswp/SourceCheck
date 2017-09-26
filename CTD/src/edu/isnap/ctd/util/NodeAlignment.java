@@ -109,6 +109,7 @@ public class NodeAlignment {
 		private void calculateValueMappings(HintConfig config, BiMap<Node, Node> mapping) {
 
 			valueMappings.clear();
+			if (!config.useValues) return;
 
 			for (String[] types : config.valueMappedTypes) {
 				BiMap<String, String> valueMap = new BiMap<>();
