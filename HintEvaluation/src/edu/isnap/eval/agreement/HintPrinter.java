@@ -10,6 +10,7 @@ import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.RuleSet;
 import edu.isnap.ctd.hint.edit.EditHint;
 import edu.isnap.ctd.util.Diff;
+import edu.isnap.ctd.util.NodeAlignment.Mapping;
 import edu.isnap.ctd.util.NullSream;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AttemptAction;
@@ -50,12 +51,15 @@ public class HintPrinter {
 
 		for (AttemptAction action : selected) {
 			Node node = SimpleNodeBuilder.toTree(action.lastSnapshot, true);
-			List<EditHint> hints = highlighter.highlight(node);
+			Mapping mapping = highlighter.findSolutionMapping(node);
+			List<EditHint> hints = highlighter.highlight(node, mapping);
+
 
 			String id = action.lastSnapshot.guid + " / " + action.id;
 
 			appendln(sb, "---------- " +  id + " ----------");
 			appendln(sb, node.prettyPrint());
+			appendln(sb, "Target Solution ID: " + mapping.to.id);
 
 			appendln(sb, String.join("\n",
 					hints.stream()
