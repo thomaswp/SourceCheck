@@ -130,15 +130,18 @@ public class SnapParser {
 							if (dataObject.has("userID")) userID = dataObject.getString("userID");
 						}
 
-						if (userID != null && !userID.equals("none")) {
-							if (solution.userID == null) {
-								solution.userID = userID;
-							} else if (AttemptAction.IDE_EXPORT_PROJECT.equals(action) &&
-									!solution.userID.equals(userID)) {
-								parser.close();
-								throw new RuntimeException(String.format(
-										"Project %s exported under multiple userIDs: %s and %s",
-										logFile.getPath(), solution.userID, userID));
+						if (AttemptAction.IDE_EXPORT_PROJECT.equals(action)) {
+							if (userID != null && !userID.equals("none")) {
+								if (solution.userID == null) {
+									solution.userID = userID;
+								} else if (!solution.userID.equals(userID)) {
+									parser.close();
+									// TODO: Make this impossible by implementing the TODOs here and
+									// in LogSplitter
+									throw new RuntimeException(String.format(
+											"Project %s exported under multiple userIDs: %s and %s",
+											logFile.getPath(), solution.userID, userID));
+								}
 							}
 						}
 
@@ -383,6 +386,7 @@ public class SnapParser {
 	 *
 	 * @return
 	 */
+	// TODO: This should be a different data structure, either a List or a custom class
 	public Map<String, AssignmentAttempt> parseAssignment(boolean snapshotsOnly,
 			boolean addMetadata, Filter... filters) {
 		Map<String, AssignmentAttempt> attempts = new TreeMap<>();
@@ -400,6 +404,8 @@ public class SnapParser {
 		Map<String, String> attemptFiles = new TreeMap<>();
 		for (File file : assignmentDir.listFiles()) {
 			if (!file.getName().endsWith(".csv")) continue;
+			// TODO: Parse the file name to get the projectID (before the _)
+			// Do the same throughout this class
 			String attemptID = file.getName().replace(".csv", "");
 			String path = assignment.getLocationAssignment(attemptID).parsedDir() + "/" +
 					attemptID + ".csv";
