@@ -86,12 +86,9 @@ public class JsonAST {
 			String lastJSON = "";
 			System.out.println(attempt.id);
 //			String last = "";
-			int lastID = -1;
 			int order = 0;
 			for (AttemptAction action : attempt) {
 				if (action.snapshot == null) continue;
-				if (action.id < lastID) throw new RuntimeException("PRABLEM");
-				lastID = action.id;
 				String json = toJSON(action.snapshot).toString(2);
 				if (json.equals(lastJSON)) continue;
 				lastJSON = json;
