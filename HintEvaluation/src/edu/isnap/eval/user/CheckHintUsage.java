@@ -655,7 +655,11 @@ public class CheckHintUsage {
 			Object value = getValue(data, id);
 			if (value != null) {
 				String parentID = value.toString();
-				parent = root.searchForNodeWithID(parentID);
+				if (id.equals("rootType")) {
+					parent = root.searchForNodeWithType(parentID);
+				} else {
+					parent = root.searchForNodeWithID(parentID);
+				}
 				break;
 			}
 		}

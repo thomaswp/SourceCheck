@@ -108,7 +108,10 @@ public class LogSplitter {
 		Project project = projectMap.get(keyword);
 		if(project == null){
 			String filename = projectID;
-			if (userID != null) filename += "_" + userID.substring(0, Math.min(8, userID.length()));
+			if (userID != null) {
+				filename += "_" + userID.substring(
+						Math.max(0, userID.length() - 8), userID.length());
+			}
 			filename = filename.replaceAll("[^a-zA-Z0-9\\._-]+", "_");
 			project = new Project(currentFolderPath + "/" + filename + ".csv",
 					CSVFormat.EXCEL.withHeader(headers));
