@@ -80,17 +80,28 @@ public class JsonAST {
 
 	protected static void exportAssignmentTraces(Assignment assignment)
 			throws FileNotFoundException {
+		System.out.println(assignment.name);
 		for (AssignmentAttempt attempt : assignment.load(
 				Mode.Use, true, true, new SnapParser.LikelySubmittedOnly()).values()) {
 			String lastJSON = "";
+			System.out.println(attempt.id);
+//			String last = "";
+			int lastID = -1;
+			int order = 0;
 			for (AttemptAction action : attempt) {
 				if (action.snapshot == null) continue;
+				if (action.id < lastID) throw new RuntimeException("PRABLEM");
+				lastID = action.id;
 				String json = toJSON(action.snapshot).toString(2);
 				if (json.equals(lastJSON)) continue;
 				lastJSON = json;
-				write(String.format("%s/%s/%s.json",
-						assignment.dir("export/all-traces"), attempt.id, action.id), json);
+				write(String.format("%s/%s/%05d-%05d.json",
+						assignment.dir("export/all-traces"), attempt.id, order++, action.id), json);
+//				System.out.println(action.id);
+//				System.out.println(Diff.diff(last,
+//						last = SimpleNodeBuilder.toTree(action.snapshot, true).prettyPrint(), 1));
 			}
+//			System.out.println(SimpleNodeBuilder.toTree(attempt.submittedSnapshot, true).prettyPrint());
 		}
 	}
 
