@@ -61,7 +61,8 @@ public class HintPrinter {
 			appendln(sb, mapping.to.prettyPrintWithIDs());
 			appendln(sb, "Target Solution ID: " + mapping.to.id);
 			List<Node> keys = new ArrayList<>(mapping.keysetFrom());
-			Collections.sort(keys);
+			Collections.sort(keys, (a, b) -> Integer.compare(a.depth(), b.depth()) * 2 +
+					Integer.compare(a.index(), b.index()));
 			keys.stream().filter(n -> n.id != null)
 				.forEach(k -> appendln(sb,
 						String.format("%s[%s -> %s]", k.type(), k.id, mapping.getFrom(k).id)));
