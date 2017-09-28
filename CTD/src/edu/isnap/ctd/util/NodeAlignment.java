@@ -234,7 +234,7 @@ public class NodeAlignment {
 		Mapping ret = mapping;
 		mapping = null;
 
-		if (previousMapping == null) {
+		if (config.useValues && previousMapping == null) {
 			// If we we're not given a previous mapping, this is the first round, so recalculate
 			// using this mapping to map values
 			return calculateMapping(distanceMeasure, ret);
