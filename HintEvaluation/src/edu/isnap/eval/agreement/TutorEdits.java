@@ -143,14 +143,14 @@ public class TutorEdits {
 			this.priority = priority;
 			this.from = Agreement.toTree(from);
 			this.to = Agreement.toTree(to);
-			edits = Agreement.findEdits(this.from, this.to);
+			edits = Agreement.findEdits(this.from, this.to, true);
 			if (edits.size() == 0 && this.from.equals(this.to)) {
 				System.out.println("No edits for " + this);
 			}
 		}
 
 		public boolean verify() {
-			boolean pass = Agreement.testEditConsistency(from, to, true);
+			boolean pass = Agreement.testEditConsistency(from, to, true, true);
 			if (!pass) {
 				System.out.println("Failed: " + this);
 			}

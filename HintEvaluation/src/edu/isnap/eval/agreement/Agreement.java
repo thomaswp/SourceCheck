@@ -14,6 +14,7 @@ import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.edit.EditHint;
 import edu.isnap.ctd.hint.edit.Insertion;
 import edu.isnap.ctd.util.NodeAlignment.Mapping;
+import edu.isnap.ctd.util.NullSream;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.hint.util.SimpleNodeBuilder.IDer;
 import edu.isnap.parser.elements.Code;
@@ -26,17 +27,18 @@ public class Agreement {
 
 	private static boolean PRINT = true;
 
-	public static boolean testEditConsistency(Snapshot a, Snapshot b) {
+	public static boolean testEditConsistency(Snapshot a, Snapshot b, boolean compareValues) {
 		Node from = toTree(a);
 		Node to = toTree(b);
-		return testEditConsistency(from, to, PRINT);
+		return testEditConsistency(from, to, compareValues, PRINT);
 	}
 
-	public static boolean testEditConsistency(Node from, Node to, boolean print) {
+	public static boolean testEditConsistency(Node from, Node to, boolean compareValues,
+			boolean print) {
 		from = from.copy();
 		to = to.copy();
 		Node originalFrom = from.copy(), originalTo = to.copy();
-		List<EditHint> edits = findEdits(from, to);
+		List<EditHint> edits = findEdits(from, to, compareValues);
 
 		// Capture edit strings before applying edits
 		List<String> editStrings = new ArrayList<>();
@@ -46,7 +48,7 @@ public class Agreement {
 			EditHint.applyEdits(from, edits);
 		} catch (Exception e) {
 			e.printStackTrace();
-			edits = findEdits(originalFrom, to);
+			edits = findEdits(originalFrom, to, compareValues);
 			EditHint.applyEdits(originalFrom, edits);
 			return false;
 		}
@@ -61,7 +63,7 @@ public class Agreement {
 			}
 			System.out.println(Diff.diff(to.prettyPrint(), from.prettyPrint()));
 
-			findEdits(originalFrom, originalTo);
+			findEdits(originalFrom, originalTo, compareValues);
 		}
 
 		return equal;
@@ -127,13 +129,13 @@ public class Agreement {
 	}
 
 	@SuppressWarnings("unused")
-	private static List<EditHint> findEdits(Snapshot from, Snapshot to) {
+	private static List<EditHint> findEdits(Snapshot from, Snapshot to, boolean compareValues) {
 		Node fromNode = toTree(from);
 		Node toNode = toTree(to);
-		return findEdits(fromNode, toNode);
+		return findEdits(fromNode, toNode, compareValues);
 	}
 
-	public static List<EditHint> findEdits(Node from, Node to) {
+	public static List<EditHint> findEdits(Node from, Node to, boolean compareValues) {
 
 		Map<String, Node> fromIDMap = getIDMap(from);
 		Map<String, Node> toIDMap = getIDMap(to);
@@ -181,7 +183,9 @@ public class Agreement {
 //			}
 
 			// You can relabel a block and it keeps its ID, so we check for that here
-			if (!fromNode.shallowEquals(toNode)) {
+			boolean equal = compareValues ? fromNode.shallowEquals(toNode) :
+				fromNode.hasType(toNode.type());
+			if (!equal) {
 				Insertion rename = new Insertion(fromNode.parent, toNode, fromNode.index(),
 						toNode.value);
 				rename.replaced = fromNode;
@@ -209,7 +213,7 @@ public class Agreement {
 
 				Node parentPair = fromIDMap.get(toNode.parent.id);
 				if (parentPair != null) {
-					fromNode = toNode.copyWithNewParent(parentPair);
+					fromNode = toNode.shallowCopy(parentPair);
 					fromNode.tag = "temp";
 					parentPair.children.add(fromNode);
 				} else {
@@ -222,8 +226,9 @@ public class Agreement {
 
 		HintConfig config = new HintConfig();
 		config.harmlessCalls.clear();
-		List<EditHint> hints = new HintHighlighter(new LinkedList<Node>(), config)
-				.highlight(from, mapping, false);
+		HintHighlighter highlighter = new HintHighlighter(new LinkedList<Node>(), config);
+		highlighter.trace = NullSream.instance;
+		List<EditHint> hints = highlighter.highlight(from, mapping, false);
 		hints.addAll(renames);
 
 		return hints;

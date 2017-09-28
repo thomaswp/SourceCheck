@@ -24,6 +24,7 @@ import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.HintJSON;
 import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.hint.edit.EditHint;
+import edu.isnap.ctd.util.NullSream;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
@@ -40,6 +41,7 @@ import edu.isnap.parser.elements.Snapshot;
 public class EDM2017 {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
+		EditHint.useValues = false;
 		compareEdits(Spring2017.instance, Fall2016.Squiral, Fall2016.GuessingGame1);
 //		compareEdits(Spring2017.instance, CSC200Solutions.Squiral, CSC200Solutions.GuessingGame1);
 //		compareEdits(Spring2017.instance, Spring2016.Squiral, Spring2016.GuessingGame1);
@@ -53,7 +55,7 @@ public class EDM2017 {
 			Snapshot last = null;
 			for (AttemptAction action : attempt) {
 				if (last != null) {// && action.id == 222243) {
-					if (!Agreement.testEditConsistency(last, action.snapshot)) {
+					if (!Agreement.testEditConsistency(last, action.snapshot, false)) {
 						System.out.println(action.id);
 					}
 				}
@@ -120,6 +122,7 @@ public class EDM2017 {
 			Snapshot h2Code = Snapshot.parse("h2", h2CodeXML);
 
 			HintHighlighter highlighter = highlighters.get(assignmentID);
+			highlighter.trace = NullSream.instance;
 
 //			if (!userID.equals("twprice")) continue;
 
@@ -142,8 +145,8 @@ public class EDM2017 {
 				comparisonMap.put(rowID, comparisonRowMap = new TreeMap<>());
 			}
 
-			List<EditHint> idealEdits = Agreement.findEdits(fromNode, toNodeIdeal);
-			List<EditHint> allEdits = Agreement.findEdits(fromNode, toNodeAll);
+			List<EditHint> idealEdits = Agreement.findEdits(fromNode, toNodeIdeal, false);
+			List<EditHint> allEdits = Agreement.findEdits(fromNode, toNodeAll, false);
 			expertRowMap.put(userID + "-ideal", idealEdits);
 			expertRowMap.put(userID + "-all", allEdits);
 			comparisonRowMap.put(userID + "-all", allEdits);
@@ -245,11 +248,11 @@ public class EDM2017 {
 			Snapshot h1Code = Snapshot.parse("h1", h1CodeXML);
 			Snapshot h2Code = Snapshot.parse("h2", h2CodeXML);
 
-			if (!Agreement.testEditConsistency(code, h1Code)) {
+			if (!Agreement.testEditConsistency(code, h1Code, false)) {
 				System.out.println(prefix + 1);
 			}
 
-			if (!Agreement.testEditConsistency(code, h2Code)) {
+			if (!Agreement.testEditConsistency(code, h2Code, false)) {
 				System.out.println(prefix + 2);
 			}
 
@@ -264,7 +267,7 @@ public class EDM2017 {
 			Snapshot a, Snapshot b) {
 		Node from = Agreement.toTree(a);
 		Node to = Agreement.toTree(b);
-		List<EditHint> edits = Agreement.findEdits(from, to);
+		List<EditHint> edits = Agreement.findEdits(from, to, false);
 		JSONArray hintArray = HintJSON.hintArray(edits);
 		String json = hintArray.toString();
 		json = StringEscapeUtils.escapeSql(json);
