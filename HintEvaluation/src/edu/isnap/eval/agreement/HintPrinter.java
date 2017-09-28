@@ -55,14 +55,17 @@ public class HintPrinter {
 			String id = action.lastSnapshot.guid + " / " + action.id;
 
 			appendln(sb, "---------- " +  id + " ----------");
-			appendln(sb, node.prettyPrint());
+			appendln(sb, "From:");
+			appendln(sb, mapping.from.prettyPrintWithIDs());
+			appendln(sb, "To:");
+			appendln(sb, mapping.to.prettyPrintWithIDs());
 			appendln(sb, "Target Solution ID: " + mapping.to.id);
 			List<Node> keys = new ArrayList<>(mapping.keysetFrom());
 			Collections.sort(keys);
 			keys.stream().filter(n -> n.id != null)
 				.forEach(k -> appendln(sb,
 						String.format("%s[%s -> %s]", k.type(), k.id, mapping.getFrom(k).id)));
-			appendln(sb, mapping.itemizedCost());
+//			appendln(sb, mapping.itemizedCost());
 
 			appendln(sb, String.join("\n",
 					hints.stream()
