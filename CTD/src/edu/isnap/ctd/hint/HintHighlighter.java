@@ -447,6 +447,10 @@ public class HintHighlighter {
 		return config.isCodeElement(node);
 	}
 
+	public DistanceMeasure getDistanceMeasure() {
+		return new ProgressDistanceMeasure(config);
+	}
+
 	public static DistanceMeasure getDistanceMeasure(HintConfig config) {
 		return new ProgressDistanceMeasure(config);
 	}

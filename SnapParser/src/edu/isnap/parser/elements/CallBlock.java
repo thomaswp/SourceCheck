@@ -96,7 +96,7 @@ public class CallBlock extends Block {
 	private List<Block> params(boolean canon) {
 		if (!canon || parameters.size() != 2) return parameters;
 		if (SYMMETRIC.contains(name)) {
-			if (parameters.get(0).type().compareTo(parameters.get(1).type()) < 1) {
+			if (parameters.get(0).type(canon).compareTo(parameters.get(1).type(canon)) < 1) {
 				return parameters;
 			}
 		} else if (!OPPOSITES.containsKey(name)) {
