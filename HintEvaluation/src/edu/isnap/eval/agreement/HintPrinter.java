@@ -1,6 +1,8 @@
 package edu.isnap.eval.agreement;
 
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -55,6 +57,12 @@ public class HintPrinter {
 			appendln(sb, "---------- " +  id + " ----------");
 			appendln(sb, node.prettyPrint());
 			appendln(sb, "Target Solution ID: " + mapping.to.id);
+			List<Node> keys = new ArrayList<>(mapping.keysetFrom());
+			Collections.sort(keys);
+			keys.stream().filter(n -> n.id != null)
+				.forEach(k -> appendln(sb,
+						String.format("%s[%s -> %s]", k.type(), k.id, mapping.getFrom(k).id)));
+			appendln(sb, mapping.itemizedCost());
 
 			appendln(sb, String.join("\n",
 					hints.stream()
