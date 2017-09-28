@@ -103,12 +103,17 @@ public class LogSplitter {
 		newAssignmentFolder.mkdir();
 		String currentFolderPath = newAssignmentFolder.getAbsolutePath();
 
+		// TODO: Use the userID! This must be part of a much larger refactor (See SnapParser)
 		// Get the project from the Map or create it if it does not exist
-		String keyword = assignmentID + projectID + userID;
+		String keyword = assignmentID + projectID; // + userID;
 		Project project = projectMap.get(keyword);
 		if(project == null){
 			String filename = projectID;
-			if (userID != null) filename += "_" + userID.substring(0, Math.min(8, userID.length()));
+			// TODO: Add this back when userID is added again above
+//			if (userID != null) {
+//				filename += "_" + userID.substring(
+//						Math.max(0, userID.length() - 8), userID.length());
+//			}
 			filename = filename.replaceAll("[^a-zA-Z0-9\\._-]+", "_");
 			project = new Project(currentFolderPath + "/" + filename + ".csv",
 					CSVFormat.EXCEL.withHeader(headers));

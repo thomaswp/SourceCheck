@@ -194,6 +194,16 @@ public class Node extends StringHashable {
 		});
 	}
 
+	public Node searchForNodeWithType(final String type) {
+		if (type == null) return null;
+		return search(new Predicate() {
+			@Override
+			public boolean eval(Node node) {
+				return type.equals(node.type);
+			}
+		});
+	}
+
 	public interface Action {
 		void run(Node node);
 	}
