@@ -20,12 +20,14 @@ all$active <- all$active / 60
 summary <- ddply(all, c("assignment", "dataset"), summarize, 
                  meanTime=mean(total), sdTime=sd(total), medTime=median(total),
                  meanActive=mean(active), sdActive=sd(active), medActive=median(active))
+write.csv(summary, "C:/Users/Thomas/Desktop/time.csv")
 
 ggplot(all, aes(y=total, x=assignment, color=dataset)) +
   geom_boxplot(position=position_dodge(.85)) +
   scale_y_continuous(limits = c(0,150), name="Minutes") +
   scale_x_discrete(name="Assignment", labels=c("LCA!", "Poly", "Squiral", "GG1", "GG2", "GG3")) +
-  scale_color_discrete(name="Semester")
+  scale_color_discrete(name="Semester") +
+  ggtitle("Time spent per Assignment")
 
 ggplot(all, aes(y=active, x=assignment, color=dataset)) +
   geom_boxplot(position=position_dodge(.85)) +
@@ -59,4 +61,9 @@ ggplot(gradesMelted, aes(y=value, x=variable, color=dataset)) +
   geom_boxplot(position=position_dodge(.85)) +
   scale_y_continuous(name="Grade") +
   scale_x_discrete(name="Assignment", labels=c("LCA!", "Poly", "Squiral", "GG1", "GG2", "GG3")) +
-  scale_color_discrete(name="Semester")
+  scale_color_discrete(name="Semester") +
+  ggtitle("Grade Distributions")
+
+gradesSummary <- ddply(gradesMelted, c("variable", "dataset"), summarize, 
+                 mean=mean(value), sd=sd(value), perc80=mean(value<80), perc60=mean(value<60))
+write.csv(gradesSummary, "C:/Users/Thomas/Desktop/grades.csv")
