@@ -5,35 +5,38 @@ snapshot {
         }
     }
     @defVar (VAR, GLOBAL, LOCAL, ARG) {
-        customBlock {
+        customBlock:squiral {
             script {
                 @anyOrder {
                     @if (VAR, LOCAL) {
-                        doDeclareVariables(list(literal))
+                        doDeclareVariables(list(var:length))
                     }
                     down
-                    doSetVar(literal, literal)
+                    doSetVar(var:length, literal)
                 }
                 @defVar (LOOP, TIMES, NESTED) {
                     @defBlock BODY {
                         @anyOrder {
-                            forward(var)
-                            turn(literal)
+                            forward(var:length)
                             @or {
-                                doChangeVar(literal, literal)
-                                doSetVar(literal, reportSum(literal, var))
+                                turn(literal:90)
+                                turnLeft(literal:90)
+                            }
+                            @or {
+                                doChangeVar(var:length, literal)
+                                doSetVar(var:length, reportSum(literal, var:length))
                             }
                         }
                     }
                     @if (LOOP, TIMES) {
-                        doRepeat(reportProduct(literal, var), script {
+                        doRepeat(reportProduct(literal:4, var:rotations), script {
                             @block BODY
                         })
                     }
                     @if (LOOP, NESTED) {
                         @defVar (OUTER, VAR, LIT) {
-                            doRepeat(@if (OUTER, VAR) { var } @if (OUTER, LIT) { literal }, script {
-                                doRepeat(@if (OUTER, LIT) { var } @if (OUTER, VAR) { literal }, script {
+                            doRepeat(@if (OUTER, VAR) { var:rotations } @if (OUTER, LIT) { literal:4 }, script {
+                                doRepeat(@if (OUTER, LIT) { var:rotations } @if (OUTER, VAR) { literal:4 }, script {
                                     @block BODY
                                 })
                             })
@@ -42,9 +45,9 @@ snapshot {
                 }
                 up
             }
-            var
-            @if (VAR, ARG) { var }
+            var:rotations
+            @if (VAR, ARG) { var:length }
         }
-        @if (VAR, GLOBAL) var
+        @if (VAR, GLOBAL) var:length
     }
 }
