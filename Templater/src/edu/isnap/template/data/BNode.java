@@ -32,9 +32,20 @@ public class BNode {
 		this.contextSnapshot = contextSnapshot;
 	}
 
+	private Node createNode(Node parent) {
+		String type = this.type, value = null;
+		int colonIndex = type.indexOf(":");
+		if (colonIndex >= 0) {
+			value = type.substring(colonIndex + 1, type.length());
+			type = type.substring(0, colonIndex);
+		}
+		Node node = new Node(parent, type, value);
+		return node;
+	}
+
 	public Node toNode() {
 		if (inline) throw new RuntimeException("Cannot convert inline BNode to Node");
-		Node node = new Node(null, type);
+		Node node = createNode(null);
 		node.setOrderGroup(orderGroup);
 		for (BNode child : children) {
 			child.addToParent(node);
@@ -57,7 +68,7 @@ public class BNode {
 				child.addToParent(parent);
 			}
 		} else {
-			Node node = new Node(parent, type);
+			Node node = createNode(parent);
 			node.setOrderGroup(orderGroup);
 			parent.children.add(node);
 			for (BNode child : children) {

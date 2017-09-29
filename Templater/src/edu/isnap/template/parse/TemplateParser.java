@@ -104,7 +104,7 @@ public class TemplateParser {
 		for (BNode variant : variants) {
 			System.out.println("--------------------");
 			System.out.println(variant.deepestContextSnapshot());
-			String out = variant.toNode().prettyPrint();
+			String out = variant.toNode().prettyPrint(true);
 			String diff = Diff.diff(last, out, 2);
 			if (StringUtils.countMatches(out, "\n") <= StringUtils.countMatches(diff, "\n")) {
 				System.out.println(out);
