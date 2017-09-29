@@ -275,13 +275,7 @@ public class NodeAlignment {
 		@Override
 		public double measure(Node from, String[] a, String[] b, int[] bOrderGroups) {
 			if (!config.isCodeElement(from)) {
-				int missingCount = Alignment.getMissingNodeCount(a, b);
-				double missingPenalty = missingCount == 0 ? 0 :
-					// The missing penalty is mostly just for the _presense_ of missing children,
-					// and then a small additional penalty for number of missing children to break
-					// ties
-					(1 + missingCount * 0.1) * missingCost;
-				return missingPenalty -
+				return Alignment.getMissingNodeCount(a, b) * missingCost -
 						Alignment.getProgress(a, b, bOrderGroups,
 								// TODO: skip cost should maybe be another value?
 								inOrderReward, outOfOrderReward, missingCost);
@@ -512,20 +506,6 @@ public class NodeAlignment {
 			}
 
 		}
-
-		// The following was removed, as it seems to double-penalize solutions for both missing
-		// nodes and the immediate children of these nodes. This may have been added because of
-		// since-addressed bugs in the progress measure, which should not adequately penalize for
-		// missing nodes in the target solution.
-
-		// For each unmatched toState (in the proposed solution), add its cost as well
-		// This essentially penalizes unused nodes that have a matching root path in the student's
-		// current solution, but not their children
-//		for (int i = 0; i < toStates.length; i++) {
-//			if (matchedTo.contains(i)) continue;
-//			mapping.incrementCost(distanceMeasure.measure(
-//					toNodes.get(i), new String[0], toStates[i], null), costKey + " [p]");
-//		}
 	}
 
 	private boolean needsReorder(int[] reorders) {
