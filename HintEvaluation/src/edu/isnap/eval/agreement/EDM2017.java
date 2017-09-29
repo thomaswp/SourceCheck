@@ -23,6 +23,7 @@ import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.HintJSON;
 import edu.isnap.ctd.hint.HintMap;
+import edu.isnap.ctd.hint.RuleSet;
 import edu.isnap.ctd.hint.edit.EditHint;
 import edu.isnap.ctd.util.NullSream;
 import edu.isnap.ctd.util.map.ListMap;
@@ -42,6 +43,8 @@ public class EDM2017 {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 		EditHint.useValues = false;
+		RuleSet.trace = NullSream.instance;
+
 		compareEdits(Spring2017.instance, Fall2016.Squiral, Fall2016.GuessingGame1);
 //		compareEdits(Spring2017.instance, CSC200Solutions.Squiral, CSC200Solutions.GuessingGame1);
 //		compareEdits(Spring2017.instance, Spring2016.Squiral, Spring2016.GuessingGame1);
@@ -77,7 +80,7 @@ public class EDM2017 {
 		HashMap<String, HintHighlighter> highlighters = new HashMap<>();
 		for (Assignment assignment : trainingAssignments) {
 			SnapHintBuilder builder = new SnapHintBuilder(assignment);
-			HintMap hintMap = builder.buildGenerator(Mode.Use, 1).hintMap;
+			HintMap hintMap = builder.buildGenerator(Mode.Ignore, 1).hintMap;
 			List<Node> solutions = new ArrayList<>(hintMap.solutions);
 //			Collections.shuffle(solutions, rand);
 //			for (int i = solutions.size(); i >= 0; i--) {
