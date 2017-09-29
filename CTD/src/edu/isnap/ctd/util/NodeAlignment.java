@@ -127,6 +127,7 @@ public class NodeAlignment {
 					if (from.hasType(types)) {
 						int i = valuesFrom.indexOf(from.value);
 						int j = valuesTo.indexOf(to.value);
+						if (i == -1 || j == -1) continue;
 						costMatrix[i][j]--;
 						minCost = Math.min(minCost, costMatrix[i][j]);
 					}
@@ -154,14 +155,16 @@ public class NodeAlignment {
 		private static List<String> getValues(Node root, String[] types) {
 			Set<String> values = new HashSet<>();
 			root.recurse(node -> {
-				if (node.hasType(types)) values.add(node.value);
+				if (node.hasType(types) && node.value != null && !node.value.trim().isEmpty()) {
+					values.add(node.value);
+				}
 			});
 			return new ArrayList<>(values);
 		}
 
 		public void printValueMappings(PrintStream out) {
 			for (String key : valueMappings.keySet()) {
-				out.println(key);
+				out.println("-- " + key + " --");
 				BiMap<String, String> map = valueMappings.get(key);
 				for (String from : map.keysetFrom()) {
 					out.printf("%s <-> %s\n", from, map.getFrom(from));
