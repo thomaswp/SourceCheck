@@ -18,7 +18,7 @@ all$total <- all$total / 60
 all$active <- all$active / 60
 
 summary <- ddply(all, c("assignment", "dataset"), summarize, 
-                 meanTime=mean(total), sdTime=sd(total), medTime=median(total),
+                 meanTime=mean(total), sdTime=sd(total), medTime=median(total), thirdQTime=quantile(total)[[4]],
                  meanActive=mean(active), sdActive=sd(active), medActive=median(active))
 write.csv(summary, "C:/Users/Thomas/Desktop/time.csv")
 
