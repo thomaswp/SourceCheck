@@ -677,7 +677,7 @@ public class HintHighlighter {
 		String[] bestSeq = best.depthFirstIteration();
 		List<int[]> alignPairs = Alignment.alignPairs(nodeSeq, bestSeq, 1, 1, 1);
 
-		Mapping mapping = new Mapping(node, best);
+		Mapping mapping = new Mapping(node, best, config);
 		for (int[] a : alignPairs) {
 			if (a[0] == -1 || a[1] == -1) continue;
 			Node from = node.nthDepthFirstNode(a[0]);

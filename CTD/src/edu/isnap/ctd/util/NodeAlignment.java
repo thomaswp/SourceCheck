@@ -32,6 +32,7 @@ public class NodeAlignment {
 
 	public static class Mapping extends BiMap<Node, Node> implements Comparable<Mapping> {
 		public final Node from, to;
+		public final HintConfig config;
 
 		private double cost;
 		private StringBuilder itemizedCost = new StringBuilder();
@@ -42,10 +43,11 @@ public class NodeAlignment {
 			return String.format("Total cost: %.02f\n%s", cost, itemizedCost.toString());
 		}
 
-		public Mapping(Node from, Node to) {
+		public Mapping(Node from, Node to, HintConfig config) {
 			super(MapFactory.IdentityHashMapFactory);
 			this.from = from;
 			this.to = to;
+			this.config = config;
 		}
 
 		public double cost() {
@@ -102,11 +104,11 @@ public class NodeAlignment {
 			return children;
 		}
 
-		private void calculateValueMappings(HintConfig config) {
-			calculateValueMappings(config, this);
+		private void calculateValueMappings() {
+			calculateValueMappings(this);
 		}
 
-		private void calculateValueMappings(HintConfig config, BiMap<Node, Node> mapping) {
+		private void calculateValueMappings(BiMap<Node, Node> mapping) {
 
 			valueMappings.clear();
 			if (!config.useValues) return;
@@ -163,11 +165,16 @@ public class NodeAlignment {
 		}
 
 		public void printValueMappings(PrintStream out) {
-			for (String key : valueMappings.keySet()) {
-				out.println("-- " + key + " --");
+			out.println("Value mappings:");
+			for (String[] types : config.valueMappedTypes) {
+				if (types.length == 0) continue;
+				String key = types[0];
 				BiMap<String, String> map = valueMappings.get(key);
-				for (String from : map.keysetFrom()) {
-					out.printf("%s <-> %s\n", from, map.getFrom(from));
+				if (map != null) {
+					out.println("-- " + Arrays.toString(types) + " --");
+					for (String from : map.keysetFrom()) {
+						out.printf("%s <-> %s\n", from, map.getFrom(from));
+					}
 				}
 			}
 		}
@@ -193,9 +200,9 @@ public class NodeAlignment {
 	}
 
 	private Mapping calculateMapping(DistanceMeasure distanceMeasure, Mapping previousMapping) {
-		mapping = new Mapping(from, to);
+		mapping = new Mapping(from, to, config);
 		// If we're given a previous mapping, we use it to calculate value mappings
-		if (previousMapping != null) mapping.calculateValueMappings(config, previousMapping);
+		if (previousMapping != null) mapping.calculateValueMappings(previousMapping);
 
 		to.resetAnnotations();
 		ListMap<String, Node> fromMap = getChildMap(from);
@@ -244,7 +251,7 @@ public class NodeAlignment {
 		}
 
 		// Recalculate the value mappings with our own data
-		ret.calculateValueMappings(config);
+		ret.calculateValueMappings();
 		return ret;
 	}
 
