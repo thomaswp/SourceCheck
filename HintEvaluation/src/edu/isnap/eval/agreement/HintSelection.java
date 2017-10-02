@@ -39,7 +39,7 @@ public class HintSelection {
 				Fall2016.GuessingGame2,
 		};
 		for (Assignment assignment : assignments) {
-			printSelect(assignment, new SnapParser.Filter[] {
+			printSelect("hitns", assignment, new SnapParser.Filter[] {
 					new SnapParser.SubmittedOnly(),
 			}, "twprice", "rzhi");
 		}
@@ -56,7 +56,7 @@ public class HintSelection {
 					new SnapParser.LikelySubmittedOnly(),
 					new SnapParser.StartedAfter(Assignment.date(2017, 1, 29))
 			}, true, rand);
-			printSQL(selected, "twprice", "rzhi");
+			printSQL("handmade_hints", selected, "vmcatete", "nalytle", "ydong2");
 			exportSelected(assignment, selected);
 		}
 	}
@@ -73,7 +73,7 @@ public class HintSelection {
 					new SnapParser.LikelySubmittedOnly(),
 					new SnapParser.StartedAfter(Assignment.date(2017, 1, 29))
 			});
-			printSQL(selected, "twprice", "rzhi");
+			printSQL("hints", selected, "twprice", "rzhi");
 			exportSelected(assignment, selected);
 		}
 	}
@@ -103,9 +103,9 @@ public class HintSelection {
 	}
 
 
-	public static void printSelect(Assignment assignment, SnapParser.Filter[] filters,
+	public static void printSelect(String table, Assignment assignment, SnapParser.Filter[] filters,
 			String... users) {
-		printSQL(select(assignment, filters), users);
+		printSQL(table, select(assignment, filters), users);
 	}
 
 	public static List<AttemptAction> select(Assignment assignment, SnapParser.Filter[] filters) {
@@ -161,12 +161,12 @@ public class HintSelection {
 		return true;
 	}
 
-	private static void printSQL(List<AttemptAction> selected, String... users) {
+	private static void printSQL(String table, List<AttemptAction> selected, String... users) {
 		for (AttemptAction action : selected) {
 			for (String user : users) {
 				System.out.printf(
-						"INSERT INTO `hints` (`userID`, `rowID`) VALUES ('%s', %d);\n",
-						user, action.id);
+						"INSERT INTO `%s` (`userID`, `rowID`) VALUES ('%s', %d);\n",
+						table, user, action.id);
 			}
 		}
 	}
