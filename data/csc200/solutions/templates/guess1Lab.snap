@@ -16,20 +16,20 @@ snapshot {
                                 receiveMessage(literal)
                             }
                         }
-                        @if (VAR, LOCAL) { 
+                        @if (VAR, LOCAL) {
                             doDeclareVariables(list(
                                 literal
                                 @if (GUESS_VAR) { literal }
                             ))
                         }
                         @+defVar (SET_VAR, LAST, FIRST) {
-                            @if (SET_VAR, FIRST) { doSetVar(literal, reportRandom(literal, literal)) }
+                            @if (SET_VAR, FIRST) { doSetVar(varMenu, reportRandom(literal, literal)) }
                             @+repeat(1, 2) {
                                 @block SAY
                             }
                             @block ASK
                             doSayFor(reportJoinWords(list(literal, getLastAnswer)), literal)
-                            @if (SET_VAR, LAST) { doSetVar(literal, reportRandom(literal, literal)) }
+                            @if (SET_VAR, LAST) { doSetVar(varMenu, reportRandom(literal, literal)) }
                         }
                         @defBlock GUESS {
                             @if (GUESS_VAR) { var }
@@ -37,7 +37,7 @@ snapshot {
                         }
                         @defBlock GET_GUESS {
                             @block ASK
-                            @if (GUESS_VAR) { doSetVar(literal, getLastAnswer) }
+                            @if (GUESS_VAR) { doSetVar(varMenu, getLastAnswer) }
                         }
                         @defBlock EQ_COMPARE {
                             reportEquals(@block GUESS, var)
@@ -109,8 +109,8 @@ snapshot {
                 }
             }
             @if (VAR, GLOBAL) {
-                var
-                @if (GUESS_VAR) var
+                varDec
+                @if (GUESS_VAR) varDec
             }
         }
     }

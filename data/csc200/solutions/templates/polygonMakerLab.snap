@@ -21,8 +21,8 @@ snapshot {
             })
             up
         }
-        var
-        var
-        var
+        varDec
+        varDec
+        varDec
     }
 }

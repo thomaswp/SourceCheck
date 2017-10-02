@@ -84,7 +84,7 @@ public abstract class Code implements Serializable {
 	}
 
 	protected static void addVariables(Accumulator acc, List<String> variables) {
-		for (String variable : variables) acc.add("var", variable);
+		for (String variable : variables) acc.add("varDec", variable);
 	}
 
 	protected static List<Block> list(Block... blocks) { return Arrays.asList(blocks); }

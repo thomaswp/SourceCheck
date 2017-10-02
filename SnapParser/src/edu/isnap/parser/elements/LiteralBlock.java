@@ -12,7 +12,7 @@ public class LiteralBlock extends Block {
 	private static final long serialVersionUID = 1L;
 
 	public enum Type {
-		Text(null), VarRef(null), Option("option"), Color("color");
+		Text(null), VarMenu(null), Option("option"), Color("color");
 
 		public final String tag;
 
@@ -46,7 +46,7 @@ public class LiteralBlock extends Block {
 
 	@Override
 	public String type() {
-		return type == Type.VarRef ? "var" : "literal";
+		return type == Type.VarMenu ? "varMenu" : "literal";
 	}
 
 	@Override
@@ -66,7 +66,7 @@ public class LiteralBlock extends Block {
 		String _value = value;
 
 		if (isVarRef) {
-			_type = Type.VarRef;
+			_type = Type.VarMenu;
 		} else {
 			for (Type type : Type.values()) {
 				if (type.isOfType(value)) {

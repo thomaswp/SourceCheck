@@ -275,7 +275,7 @@ public class Datashop {
 			object.put("varRef", anon.getID("varRef", ((VarBlock) code).name));
 		} else if (code instanceof LiteralBlock) {
 			LiteralBlock literal = (LiteralBlock) code;
-			if (literal.type == Type.VarRef) {
+			if (literal.type == Type.VarMenu) {
 				object.put("varRef", anon.getID("varRef", literal.value));
 			} else {
 				if (literal.type != Type.Text) {
@@ -315,7 +315,7 @@ public class Datashop {
 
 			@Override
 			public void add(String type, String value) {
-				if (type.equals("var")) {
+				if (type.equals("var") || type.equals("varDec") || type.equals("varMenu")) {
 					variableIDs.put(anon.getID("varRef", value));
 				} else {
 					JSONObject obj = new JSONObject();

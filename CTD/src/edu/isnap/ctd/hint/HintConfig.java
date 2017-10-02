@@ -144,7 +144,7 @@ public class HintConfig {
 	 * Each type in the inner array will be mapped together, (e.g. function declarations and calls)
 	 */
 	public String[][] valueMappedTypes = {
-			new String[] { "var" },
+			new String[] { "var", "varDec", "varMenu" },
 			new String[] { "customBlock", "evaluateCustomBlock" },
 	};
 

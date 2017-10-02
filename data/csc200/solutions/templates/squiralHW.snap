@@ -9,10 +9,10 @@ snapshot {
             script {
                 @anyOrder {
                     @if (VAR, LOCAL) {
-                        doDeclareVariables(list(var:length))
+                        doDeclareVariables(list(varMenu:length))
                     }
                     down
-                    doSetVar(var:length, literal)
+                    doSetVar(varMenu:length, literal)
                 }
                 @defVar (LOOP, TIMES, NESTED) {
                     @defBlock BODY {
@@ -23,8 +23,8 @@ snapshot {
                                 turnLeft(literal:90)
                             }
                             @or {
-                                doChangeVar(var:length, literal)
-                                doSetVar(var:length, reportSum(literal, var:length))
+                                doChangeVar(varMenu:length, literal)
+                                doSetVar(varMenu:length, reportSum(literal, var:length))
                             }
                         }
                     }
@@ -45,9 +45,9 @@ snapshot {
                 }
                 up
             }
-            var:rotations
-            @if (VAR, ARG) { var:length }
+            varDec:rotations
+            @if (VAR, ARG) { varDec:length }
         }
-        @if (VAR, GLOBAL) var:length
+        @if (VAR, GLOBAL) varDec:length
     }
 }
