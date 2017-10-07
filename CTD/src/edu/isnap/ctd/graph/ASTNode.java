@@ -14,7 +14,7 @@ public class ASTNode {
 	// TODO: This really belongs in snap-specific code
 	public final static String SNAPSHOT_TYPE = "Snap!shot";
 
-	public String type, value;
+	public String type, value, id;
 
 	private ASTNode parent;
 	private final Map<String, ASTNode> childMap = new LinkedHashMap<>();
@@ -31,14 +31,11 @@ public class ASTNode {
 		return Collections.unmodifiableMap(childMap);
 	}
 
-	public ASTNode(String type) {
-		this(type, null);
-	}
-
-	public ASTNode(String type, String value) {
+	public ASTNode(String type, String value, String id) {
 		if (type == null) throw new IllegalArgumentException("'type' cannot be null");
 		this.type = type;
 		this.value = value;
+		this.id = id;
 	}
 
 	public void addChild(ASTNode child) {
@@ -62,8 +59,9 @@ public class ASTNode {
 	public static ASTNode parse(JSONObject object) {
 		String type = object.getString("type");
 		String value = object.has("value") ? object.getString("value") : null;
+		String id = object.has("id") ? object.getString("id") : null;
 
-		ASTNode node = new ASTNode(type, value);
+		ASTNode node = new ASTNode(type, value, id);
 
 		JSONObject children = object.optJSONObject("children");
 		if (children != null) {
@@ -83,6 +81,7 @@ public class ASTNode {
 		JSONObject object = new JSONObject();
 		object.put("type", type);
 		if (value != null) object.put("value", value);
+		if (id != null) object.put("id", id);
 		if (childMap.size() > 0) {
 			JSONObject children = new JSONObject();
 			for (String relation : childMap.keySet()) {
@@ -100,7 +99,7 @@ public class ASTNode {
 	public Node toNode(Node parent) {
 		String type = this.type;
 		if (SNAPSHOT_TYPE.equals(type)) type = "snapshot";
-		Node node = new Node(parent, type, value);
+		Node node = new Node(parent, type, value, id);
 		node.tag = this;
 		for (ASTNode child : childMap.values()) node.children.add(child.toNode(node));
 		return node;

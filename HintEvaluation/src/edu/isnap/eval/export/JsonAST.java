@@ -27,6 +27,7 @@ import edu.isnap.parser.elements.LiteralBlock;
 import edu.isnap.parser.elements.LiteralBlock.Type;
 import edu.isnap.parser.elements.Snapshot;
 import edu.isnap.parser.elements.util.Canonicalization;
+import edu.isnap.parser.elements.util.IHasID;
 
 public class JsonAST {
 
@@ -136,13 +137,11 @@ public class JsonAST {
 
 		String type = code.type();
 		String value = code.value();
+		String id = code instanceof IHasID ? ((IHasID) code).getID() : null;
 
 		if (type.equals("snapshot")) {
 			type = ASTNode.SNAPSHOT_TYPE;
-			value = ((Snapshot) code).guid;
 		}
-
-		ASTNode node = new ASTNode(type);
 
 		if (code instanceof LiteralBlock && ((LiteralBlock) code).type == Type.Text) {
 			// Only keep numeric text literal values
@@ -152,19 +151,20 @@ public class JsonAST {
 				value = null;
 			}
 		}
-		if (value != null && !type.equals(value)) {
+		if (value != null) {
 			String trimmed = value.trim();
 			if (valueReplacements.containsKey(trimmed)) {
 				trimmed = value = valueReplacements.get(trimmed);
 			}
 			values.add(trimmed);
-			node.value = value;
 		}
+
+		ASTNode node = new ASTNode(type, value, id);
 
 		code.addChildren(false, new Accumulator() {
 			@Override
 			public void add(String type, String value) {
-				node.addChild(new ASTNode(type, value));
+				node.addChild(new ASTNode(type, value, null));
 			}
 
 			@Override
