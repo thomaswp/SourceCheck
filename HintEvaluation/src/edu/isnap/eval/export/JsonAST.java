@@ -30,6 +30,7 @@ import edu.isnap.parser.elements.util.Canonicalization;
 
 public class JsonAST {
 
+
 	public final static Set<String> values = new TreeSet<>();
 
 	public final static HashMap<String, String> valueReplacements = new HashMap<>();
@@ -137,7 +138,7 @@ public class JsonAST {
 		String value = code.value();
 
 		if (type.equals("snapshot")) {
-			type = "Snap!shot";
+			type = ASTNode.SNAPSHOT_TYPE;
 			value = ((Snapshot) code).guid;
 		}
 

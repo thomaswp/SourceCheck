@@ -10,6 +10,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class ASTNode {
+
+	// TODO: This really belongs in snap-specific code
+	public final static String SNAPSHOT_TYPE = "Snap!shot";
+
 	public String type, value;
 
 	private ASTNode parent;
@@ -94,7 +98,9 @@ public class ASTNode {
 	}
 
 	public Node toNode(Node parent) {
-		Node node = new Node(parent, type);
+		String type = this.type;
+		if (SNAPSHOT_TYPE.equals(type)) type = "snapshot";
+		Node node = new Node(parent, type, value);
 		node.tag = this;
 		for (ASTNode child : childMap.values()) node.children.add(child.toNode(node));
 		return node;
