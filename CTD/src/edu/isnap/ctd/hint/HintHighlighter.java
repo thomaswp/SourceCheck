@@ -12,6 +12,7 @@ import java.util.TreeMap;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
+import edu.isnap.ctd.hint.debug.HintDebugInfo;
 import edu.isnap.ctd.hint.edit.Deletion;
 import edu.isnap.ctd.hint.edit.EditHint;
 import edu.isnap.ctd.hint.edit.Insertion;
@@ -51,6 +52,12 @@ public class HintHighlighter {
 				preprocessSolutions(solutions, config) : solutions;
 		this.ruleSet = ruleSet;
 		this.config = config;
+	}
+
+	public HintDebugInfo debugHighlight(Node node) {
+		Mapping mapping = findSolutionMapping(node);
+		List<EditHint> edits = highlight(node, mapping);
+		return new HintDebugInfo(mapping, edits);
 	}
 
 	public List<EditHint> highlight(Node node) {

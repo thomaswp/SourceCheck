@@ -25,6 +25,7 @@ import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.HintJSON;
 import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.hint.HintMapBuilder;
+import edu.isnap.ctd.hint.debug.HintDebugInfo;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.elements.Snapshot;
@@ -129,7 +130,14 @@ public class HintServlet extends HttpServlet {
 				HintHighlighter highlighter = new HintHighlighter(hintMap);
 				// TODO: Use an actual logging framework
 //				highlighter.trace = NullSream.instance;
-				hints.addAll(highlighter.highlight(node));
+
+				if (hintTypes.contains("debug")) {
+					HintDebugInfo info = highlighter.debugHighlight(node);
+					hints.addAll(info.edits);
+					array.put(info.toJSON());
+				} else {
+					hints.addAll(highlighter.highlight(node));
+				}
 			} catch (Exception e) {
 				array.put(HintJSON.errorToJSON(e, true));
 			}

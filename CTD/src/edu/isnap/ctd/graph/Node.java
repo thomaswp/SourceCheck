@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import edu.isnap.ctd.hint.Canonicalization;
@@ -559,5 +560,20 @@ public class Node extends StringHashable {
 			n = n.parent;
 		}
 		return String.join("->", path);
+	}
+
+	public JSONObject toJSON() {
+		JSONObject object = new JSONObject();
+		object.put("type", type);
+		if (value != null) object.put("value", value);
+		if (id != null) object.put("id", id);
+		if (children.size() > 0) {
+			JSONArray childArray = new JSONArray();
+			for (Node child : children) {
+				childArray.put(child.toJSON());
+			}
+			object.put("children", childArray);
+		}
+		return object;
 	}
 }
