@@ -46,6 +46,7 @@ public class HintDebugInfo {
 			if (types.length == 0) continue;
 			String type = types[0];
 			BiMap<String, String> map = mapping.valueMappings.get(type);
+			if (map == null) continue;
 			JSONObject mapping = new JSONObject();
 			for (String key : map.keysetFrom()) {
 				mapping.put(key, map.getFrom(key));
