@@ -2,6 +2,7 @@ package edu.isnap.ctd.hint.debug;
 
 import java.util.List;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.Node;
@@ -25,8 +26,17 @@ public class HintDebugInfo {
 		info.put("from", mapping.from.toJSON());
 		info.put("to", mapping.to.toJSON());
 		info.put("mapping", getMappingJSON());
+		info.put("edits", getEdits());
 
 		return info;
+	}
+
+	private JSONArray getEdits() {
+		JSONArray array = new JSONArray();
+		for (EditHint edit : edits) {
+			array.put(edit.data(true));
+		}
+		return array;
 	}
 
 	private JSONObject getMappingJSON() {

@@ -9,6 +9,7 @@ import java.util.List;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.Node;
@@ -67,12 +68,40 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 	}
 
 	@Override
-	public JSONObject data() {
+	public final JSONObject data() {
+		return data(false);
+	}
+
+	public JSONObject data(boolean refNodeIDs) {
 		if (e != null) throw e;
 		JSONObject data = new JSONObject();
-		data.put("parent", Node.getNodeReference(parent));
+		putNodeReference(data, "parent", parent, refNodeIDs);
 		data.put("action", action());
+		LinkedList<String> items = getParentChildren();
+		data.put("from", toJSONArray(items, argsCanonSwapped));
+		editChildren(items);
+		data.put("to", toJSONArray(items, argsCanonSwapped));
 		return data;
+	}
+
+	protected void putNodeReference(JSONObject data, String key, Node node, boolean refNodeIDs) {
+		if (node == null) {
+			data.put(key, (String) null);
+			return;
+		}
+		if (refNodeIDs) {
+			data.put(key, node.id);
+		} else {
+			data.put(key, Node.getNodeReference(node));
+		}
+	}
+
+	private JSONArray toJSONArray(LinkedList<String> items, boolean swapArgs) {
+		JSONArray array = new JSONArray();
+		for (int i = 0; i < items.size(); i++) {
+			array.put(items.get(swapArgs ? items.size() - 1 - i : i));
+		}
+		return array;
 	}
 
 	protected LinkedList<String> getParentChildren() {

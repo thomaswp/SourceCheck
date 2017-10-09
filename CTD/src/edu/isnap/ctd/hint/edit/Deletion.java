@@ -22,9 +22,9 @@ public class Deletion extends EditHint {
 	}
 
 	@Override
-	public JSONObject data() {
-		JSONObject data = super.data();
-		data.put("node", Node.getNodeReference(node));
+	public JSONObject data(boolean refNodeIDs) {
+		JSONObject data = super.data(refNodeIDs);
+		putNodeReference(data, "node", node, refNodeIDs);
 		return data;
 	}
 

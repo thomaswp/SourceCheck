@@ -1,11 +1,9 @@
 package edu.isnap.ctd.hint.edit;
 
-import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.Node;
@@ -50,17 +48,13 @@ public class Insertion extends EditHint {
 	}
 
 	@Override
-	public JSONObject data() {
-		JSONObject data = super.data();
+	public JSONObject data(boolean refNodeIDs) {
+		JSONObject data = super.data(refNodeIDs);
 		data.put("missingParent", missingParent);
 		data.put("index", getDataIndex(index));
 		data.put("type", type);
-		data.put("replacement", Node.getNodeReference(replaced));
-		data.put("candidate", Node.getNodeReference(candidate));
-		LinkedList<String> items = getParentChildren();
-		data.put("from", toJSONArray(items, argsCanonSwapped));
-		editChildren(items);
-		data.put("to", toJSONArray(items, argsCanonSwapped));
+		putNodeReference(data, "replacement", replaced, refNodeIDs);
+		putNodeReference(data, "candidate", candidate, refNodeIDs);
 		return data;
 	}
 
@@ -72,14 +66,6 @@ public class Insertion extends EditHint {
 			rootString = "{" + rootString + "}";
 		}
 		return rootString;
-	}
-
-	private JSONArray toJSONArray(LinkedList<String> items, boolean swapArgs) {
-		JSONArray array = new JSONArray();
-		for (int i = 0; i < items.size(); i++) {
-			array.put(items.get(swapArgs ? items.size() - 1 - i : i));
-		}
-		return array;
 	}
 
 	@Override
