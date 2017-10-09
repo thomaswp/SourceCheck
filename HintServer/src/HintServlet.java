@@ -110,7 +110,11 @@ public class HintServlet extends HttpServlet {
 				return "[" + error + "]";
 			}
 
-			node = SimpleNodeBuilder.toTree(snapshot, true);
+			// Since the node is not being stored/logged, it doesn't matter if its IDs are
+			// consistent across snapshots, so we use the CompleteDynamicIDer to make sure
+			// every node has an ID for debugging purposes
+			node = SimpleNodeBuilder.toTree(snapshot, true,
+					new SimpleNodeBuilder.CompleteDynamicIDer());
 		} catch (Exception e) {
 			array.put(HintJSON.errorToJSON(e, true));
 			return array.toString();

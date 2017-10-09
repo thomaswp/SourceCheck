@@ -77,7 +77,7 @@ public class SimpleNodeBuilder {
 		String getID(String code, Node parent);
 	}
 
-	private static IDer DefaultIDer = new IDer() {
+	public final static IDer DefaultIDer = new IDer() {
 		@Override
 		public String getID(Code code, Node parent) {
 			return code instanceof IHasID ? ((IHasID) code).getID() : null;
@@ -86,6 +86,28 @@ public class SimpleNodeBuilder {
 		@Override
 		public String getID(String code, Node parent) {
 			return null;
+		}
+	};
+
+	/**
+	 * Ensures that every node will have a unique ID, defaulting to the getID() value, but using an
+	 * incremented value if not. This is not appropriate for comparing snapshots across time, as the
+	 * dynamic IDs of nodes will change from snapshot to snapshot
+	 */
+	public static class CompleteDynamicIDer implements IDer {
+
+		int next = 0;
+
+		@Override
+		public String getID(Code code, Node parent) {
+			String id = code instanceof IHasID ? ((IHasID) code).getID() : null;
+			if (id == null) id = getID(code.type(), parent);
+			return id;
+		}
+
+		@Override
+		public String getID(String code, Node parent) {
+			return "ID" + next++;
 		}
 	};
 }

@@ -3,6 +3,8 @@ package edu.isnap.template.data;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.commons.lang3.mutable.MutableInt;
+
 import edu.isnap.ctd.graph.Node;
 
 public class BNode {
@@ -32,28 +34,29 @@ public class BNode {
 		this.contextSnapshot = contextSnapshot;
 	}
 
-	private Node createNode(Node parent) {
+	private Node createNode(Node parent, MutableInt id) {
 		String type = this.type, value = null;
 		int colonIndex = type.indexOf(":");
 		if (colonIndex >= 0) {
 			value = type.substring(colonIndex + 1, type.length());
 			type = type.substring(0, colonIndex);
 		}
-		Node node = new Node(parent, type, value);
+		Node node = new Node(parent, type, value, String.valueOf(id.getAndAdd(1)));
 		return node;
 	}
 
 	public Node toNode() {
 		if (inline) throw new RuntimeException("Cannot convert inline BNode to Node");
-		Node node = createNode(null);
+		MutableInt id = new MutableInt();
+		Node node = createNode(null, id);
 		node.setOrderGroup(orderGroup);
 		for (BNode child : children) {
-			child.addToParent(node);
+			child.addToParent(node, id);
 		}
 		return node;
 	}
 
-	private void addToParent(Node parent) {
+	private void addToParent(Node parent, MutableInt id) {
 		if (anything) {
 			parent.writableAnnotations().matchAnyChildren = true;
 		}
@@ -65,14 +68,14 @@ public class BNode {
 					}
 					child.orderGroup = orderGroup;
 				}
-				child.addToParent(parent);
+				child.addToParent(parent, id);
 			}
 		} else {
-			Node node = createNode(parent);
+			Node node = createNode(parent, id);
 			node.setOrderGroup(orderGroup);
 			parent.children.add(node);
 			for (BNode child : children) {
-				child.addToParent(node);
+				child.addToParent(node, id);
 			}
 		}
 	}

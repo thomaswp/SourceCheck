@@ -10,6 +10,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
@@ -35,12 +39,21 @@ public class NodeAlignment {
 		public final HintConfig config;
 
 		private double cost;
-		private StringBuilder itemizedCost = new StringBuilder();
+		private List<MappingCost> itemizedCost = new ArrayList<>();
 
 		public final Map<String, BiMap<String, String>> valueMappings = new LinkedHashMap<>();
 
-		public String itemizedCost() {
-			return String.format("Total cost: %.02f\n%s", cost, itemizedCost.toString());
+		public String itemizedCostString() {
+			return String.format("Total cost: %.02f\n%s", cost,
+					itemizedCost.stream()
+					.map(Object::toString)
+					.collect(Collectors.joining("\n")));
+		}
+
+		public JSONArray itemizedCostJSON() {
+			JSONArray array = new JSONArray();
+			itemizedCost.forEach(c -> array.put(c.toJSON()));
+			return array;
 		}
 
 		public Mapping(Node from, Node to, HintConfig config) {
@@ -54,12 +67,9 @@ public class NodeAlignment {
 			return cost;
 		}
 
-		private void incrementCost(double by, String key) {
-			cost += by;
-			itemizedCost.append(by);
-			itemizedCost.append(": ");
-			itemizedCost.append(key);
-			itemizedCost.append("\n");
+		private void incrementCost(Node fromNode, Node toNode, double cost, String type) {
+			this.cost += cost;
+			itemizedCost.add(new MappingCost(fromNode, toNode, cost, type));
 		}
 
 		public String prettyPrint(boolean showValues) {
@@ -176,6 +186,37 @@ public class NodeAlignment {
 						out.printf("%s <-> %s\n", from, map.getFrom(from));
 					}
 				}
+			}
+		}
+
+		public static class MappingCost {
+			public final Node fromNode, toNode;
+			public final double cost;
+			public final String type;
+
+			public MappingCost(Node fromNode, Node toNode, double cost, String type) {
+				super();
+				this.fromNode = fromNode;
+				this.toNode = toNode;
+				this.cost = cost;
+				this.type = type;
+			}
+
+			@Override
+			public String toString() {
+				return String.format("[%.02f] %s / %s: %s vs %s",
+						cost, type, fromNode.rootPathString(),
+						Arrays.toString(fromNode.getChildArray()),
+						Arrays.toString(toNode.getChildArray()));
+			}
+
+			public JSONObject toJSON() {
+				JSONObject json = new JSONObject();
+				json.put("type", type);
+				json.put("cost", cost);
+				json.put("fromID", fromNode.id);
+				json.put("toID", toNode.id);
+				return json;
 			}
 		}
 	}
@@ -324,7 +365,6 @@ public class NodeAlignment {
 		int[][] toOrderGroups = orderGroups(toNodes);
 
 		String type = fromNodes.get(0).type();
-		String costKey = fromNodes.get(0).rootPathString();
 
 		double minCost = Integer.MAX_VALUE;
 		double[][] costMatrix = new double[fromStates.length][toStates.length];
@@ -441,13 +481,13 @@ public class NodeAlignment {
 			// Recalculate the distance to remove tie-breaking costs
 			double matchCost = distanceMeasure.measure(from, fromStates[i],
 					toStates[j], toOrderGroups[j]);
-			mapping.incrementCost(matchCost, String.format("%s: %s vs %s",
-					costKey, Arrays.toString(fromStates[i]), Arrays.toString(toStates[j])));
+			mapping.incrementCost(from, to, matchCost, "Match Children");
 
 			// If we are pairing nodes that have not been paired from their parents, there should
 			// be some reward for this, determined by the distance measure
 			if (!mappedFrom[i] && !mappedTo[j]) {
-				mapping.incrementCost(-distanceMeasure.matchedOrphanReward(type), costKey + " [r]");
+				mapping.incrementCost(from, to,
+						-distanceMeasure.matchedOrphanReward(type), "Match Parents");
 			}
 			mapping.put(from, to);
 

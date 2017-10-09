@@ -479,7 +479,7 @@ public class HintHighlighter {
 //			trace.println("++++++++++");
 			trace.println("Time to match: " + (System.currentTimeMillis() - startTime));
 			trace.println(bestMatch.prettyPrint(true));
-			trace.println(bestMatch.itemizedCost());
+			trace.println(bestMatch.itemizedCostString());
 			bestMatch.printValueMappings(trace);
 		}
 
