@@ -23,29 +23,29 @@ snapshot {
                             ))
                         }
                         @+defVar (SET_VAR, LAST, FIRST) {
-                            @if (SET_VAR, FIRST) { doSetVar(varMenu, reportRandom(literal, literal)) }
+                            @if (SET_VAR, FIRST) { doSetVar(varMenu:secret, reportRandom(literal, literal)) }
                             @+repeat(1, 2) {
                                 @block SAY
                             }
                             @block ASK
                             doSayFor(reportJoinWords(list(literal, getLastAnswer)), literal)
-                            @if (SET_VAR, LAST) { doSetVar(varMenu, reportRandom(literal, literal)) }
+                            @if (SET_VAR, LAST) { doSetVar(varMenu:secret, reportRandom(literal, literal)) }
                         }
                         @defBlock GUESS {
-                            @if (GUESS_VAR) { var }
+                            @if (GUESS_VAR) { var:guess }
                             @unless (GUESS_VAR) { getLastAnswer }
                         }
                         @defBlock GET_GUESS {
                             @block ASK
-                            @if (GUESS_VAR) { doSetVar(varMenu, getLastAnswer) }
+                            @if (GUESS_VAR) { doSetVar(varMenu:guess, getLastAnswer) }
                         }
                         @defBlock EQ_COMPARE {
-                            reportEquals(@block GUESS, var)
+                            reportEquals(@block GUESS, var:secret)
                         }
                         @defBlock NOT_EQ_COMPARE {
                             reportLessThan(@or {
-                                @inline { @block GUESS, var }
-                                @inline { var, @block GUESS }
+                                @inline { @block GUESS, var:secret }
+                                @inline { var:secret, @block GUESS }
                             })
                         }
 
@@ -60,11 +60,11 @@ snapshot {
                                 }
                                 @defBlock NOT_EQ_FEEDBACK_IFS {
                                     @anyOrder {
-                                        doIf(reportLessThan(@block GUESS, var), script {
+                                        doIf(reportLessThan(@block GUESS, var:secret), script {
                                             @block SAY
                                             @if (ASK_TOP) { @block GET_GUESS }
                                         })
-                                        doIf(reportLessThan(var, @block GUESS), script {
+                                        doIf(reportLessThan(var:secret, @block GUESS), script {
                                             @block SAY
                                             @if (ASK_TOP) { @block GET_GUESS }
                                         })
@@ -109,8 +109,8 @@ snapshot {
                 }
             }
             @if (VAR, GLOBAL) {
-                varDec
-                @if (GUESS_VAR) varDec
+                varDec:secret
+                @if (GUESS_VAR) { varDec:guess }
             }
         }
     }
