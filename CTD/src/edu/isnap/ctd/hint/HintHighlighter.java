@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.commons.lang3.StringUtils;
+
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
 import edu.isnap.ctd.hint.debug.HintDebugInfo;
@@ -597,7 +599,9 @@ public class HintHighlighter {
 
 				// Only match nodes with the same type and mapped value (if applicable/non-null)
 				if (!(deleted.hasType(insertion.type) &&
-						areEqual(mapping.getMappedValue(deleted, true), insertion.value))) {
+						StringUtils.equals(
+								mapping.getMappedValue(deleted, true),
+								insertion.value))) {
 					continue;
 				}
 
@@ -657,11 +661,6 @@ public class HintHighlighter {
 		edits.addAll(toAdd);
 
 
-	}
-
-	private static boolean areEqual(String a, String b) {
-		if (a == null) return b == null;
-		return a.equals(b);
 	}
 
 	private static String[] toArray(List<String> items) {
