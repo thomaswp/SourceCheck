@@ -370,7 +370,7 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 		int nearestDistance = maxDis;
 		for (Vertex<VectorState> vertex : vertexMap.values()) {
 			// Ignore exact matches (they're not neighbors)
-			if (vertex.data == null || vertex.equals(state)) continue;
+			if (vertex.data == null || vertex.data.equals(state)) continue;
 			if (connectToGoalOnly && !connectedToGoal(vertex.data)) continue;
 			// Favor deletions over insertions, but forbid subs
 			int distance = VectorState.distance(state, vertex.data, scale, 1, 10000);

@@ -51,7 +51,7 @@ public class BlockDefinitionGroup {
 				boolean match = false;
 				if (editingBlock.guid == null && editingBlock.blockIndex != null) {
 					// If the block has no GUID and we've set a blockIndex match on that
-					match = editingBlock.blockIndex.equals(definition.blockIndex);
+					match = editingBlock.blockIndex.equalsBlockIndex(definition.blockIndex);
 				} else if (editingBlock.guid != null) {
 					// Otherwise use the GUID if it exists
 					match = editingBlock.guid.equals(definition.guid);
@@ -99,7 +99,7 @@ public class BlockDefinitionGroup {
 			this.blockDefIndex = blockDefIndex;
 		}
 
-		public boolean equals(BlockIndex index) {
+		public boolean equalsBlockIndex(BlockIndex index) {
 			return index != null &&
 					index.spriteIndex == spriteIndex &&
 					index.blockDefIndex == blockDefIndex;

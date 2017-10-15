@@ -1,10 +1,13 @@
 package edu.isnap.ctd.hint;
 
+import java.io.Serializable;
 import java.util.HashSet;
 
 import edu.isnap.ctd.graph.Node;
 
-public class HintConfig {
+public class HintConfig implements Serializable {
+	private static final long serialVersionUID = 1L;
+
 	/**
 	 * If true, a HintMap build from this assignment will only include graded submissions.
 	 */

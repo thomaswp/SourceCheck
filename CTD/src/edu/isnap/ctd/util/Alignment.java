@@ -398,7 +398,7 @@ public class Alignment {
 	}
 
 	public static int getProgress(String[] from, String[] to, int orderReward, int unorderReward) {
-		return (int)Math.round(getProgress(from, to, orderReward, unorderReward, 0));
+		return (int) Math.round(getProgress(from, to, orderReward, unorderReward, 0));
 	}
 
 	public static double getProgress(String[] from, String[] to, int orderReward, int unorderReward,
@@ -483,7 +483,7 @@ public class Alignment {
 	}
 
 	public static int getMissingNodeCount(String[] from, String[] to) {
-		return to.length - Math.round(getProgress(to, from, 1, 1));
+		return to.length - getProgress(to, from, 1, 1);
 	}
 
 	public static void main(String[] args) {

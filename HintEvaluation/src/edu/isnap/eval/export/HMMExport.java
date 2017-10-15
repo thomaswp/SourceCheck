@@ -51,6 +51,7 @@ public class HMMExport {
 			}
 
 			parser.close();
+			categories = map;
 			return map;
 		} catch (IOException e) {
 			e.printStackTrace();
