@@ -39,9 +39,10 @@ public class Deletion extends EditHint {
 	}
 
 	@Override
-	public void apply(List<Application> applications) {
+	protected void addApplications(Node root, Node editParent, List<Application> applications) {
+		Node node = this.node.findMatchingNodeInCopy(root);
 		final int index = node.index();
-		applications.add(new Application(parent, index, new EditAction() {
+		applications.add(new Application(editParent, index, new EditAction() {
 			@Override
 			public void apply() {
 				node.parent.children.remove(index);

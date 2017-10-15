@@ -108,7 +108,9 @@ public class Insertion extends EditHint {
 	}
 
 	@Override
-	public void apply(List<Application> applications) {
+	protected void addApplications(Node root, Node editParent, List<Application> applications) {
+		Node candidate = this.candidate.findMatchingNodeInCopy(root);
+		Node replaced = this.replaced.findMatchingNodeInCopy(root);
 		final Node toInsert;
 		if (candidate != null) {
 			// Need to use the actual candidate in case other applications edit its children
@@ -129,17 +131,17 @@ public class Insertion extends EditHint {
 				}
 			}));
 		} else {
-			toInsert = new Node(parent, type);
+			toInsert = new Node(editParent, type);
 		}
 
 		// If the parent is missing, we stop after removing the candidate
 		if (missingParent) return;
 
-		applications.add(new Application(parent, index, pair.index(), new EditAction() {
+		applications.add(new Application(editParent, index, pair.index(), new EditAction() {
 			@Override
 			public void apply() {
 				int index = Insertion.this.index;
-				Node parent = Insertion.this.parent;
+				Node parent = editParent;
 				if (replaced != null) {
 					int rIndex = replaced.index();
 					if (rIndex >= 0) {

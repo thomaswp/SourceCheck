@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -342,11 +343,42 @@ public class Node extends StringHashable {
 		return child;
 	}
 
+	/**
+	 * Searches copyRoot and its children for a Node that matches node's ID, or if no unique ID
+	 * can be matched, searches for a node with the same position in copyRoot as node has in its
+	 * root. If either parameter is null or no match can be found, returns null.
+	 */
+	public static Node findMatchingNodeInCopy(Node node, Node copyRoot) {
+		if (node == null || copyRoot == null) return null;
+
+		// Fist try to find the single match with the same ID
+		if (node.id != null) {
+			List<Node> matches = copyRoot.searchAll(n -> StringUtils.equals(n.id, node.id));
+			if (matches.size() == 1) return matches.get(0);
+		}
+
+		// If there isn't a single match, find our parent's match...
+		Node parent = findMatchingNodeInCopy(node.parent, copyRoot);
+		int index = node.index();
+		if (parent == null || index >= parent.children.size()) return null;
+		// ... and try to find the child that correspond to this index
+		return parent.children.get(index);
+	}
+
+	/**
+	 * See {@link Node#findMatchingNodeInCopy(Node, Node)}
+	 */
+	public Node findMatchingNodeInCopy(Node copyRoot) {
+		return findMatchingNodeInCopy(this, copyRoot);
+	}
+
 	private static Node findParallelNode(Node root, Node child) {
 		if (child.parent == null) return root;
 
 		Node parent = findParallelNode(root, child.parent);
-		return parent.children.get(child.index());
+		int index = child.index();
+		if (parent == null || index >= parent.children.size()) return null;
+		return parent.children.get(index);
 	}
 
 	public int treeSize() {

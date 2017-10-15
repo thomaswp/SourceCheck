@@ -84,16 +84,17 @@ public class Reorder extends EditHint {
 	}
 
 	@Override
-	public void apply(List<Application> applications) {
+	protected void addApplications(Node root, Node editParent, List<Application> applications) {
+		Node node = this.node.findMatchingNodeInCopy(root);
 		final int rIndex = node.index();
-		applications.add(new Application(parent, rIndex, new EditAction() {
+		applications.add(new Application(editParent, rIndex, new EditAction() {
 			@Override
 			public void apply() {
 				node.parent.children.remove(rIndex);
 			}
 		}));
 		final int aIndex = index;
-		applications.add(new Application(parent, aIndex, new EditAction() {
+		applications.add(new Application(editParent, aIndex, new EditAction() {
 			@Override
 			public void apply() {
 				node.parent.children.add(aIndex, node);

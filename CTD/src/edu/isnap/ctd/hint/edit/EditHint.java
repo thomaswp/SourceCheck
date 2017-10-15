@@ -26,7 +26,8 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 	protected abstract double priority();
 	protected abstract void appendHashCodeFieds(HashCodeBuilder builder);
 	protected abstract void appendEqualsFieds(EqualsBuilder builder, EditHint rhs);
-	public abstract void apply(List<Application> applications);
+	protected abstract void addApplications(Node root, Node editParent,
+			List<Application> applications);
 
 	public static boolean useValues = true;
 
@@ -152,12 +153,15 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 		return Double.compare(o.priority(), priority());
 	}
 
-	public static void applyEdits(Node node, List<EditHint> hints) {
+	public static void applyEdits(Node root, List<EditHint> hints) {
 		List<Application> applications = new ArrayList<>();
-		for (EditHint hint : hints) hint.apply(applications);
+		for (EditHint hint : hints) {
+			Node editParent = Node.findMatchingNodeInCopy(hint.parent, root);
+			hint.addApplications(root, editParent, applications);
+		}
 
 		// Start with hints in reverse order, since multiple inserts at the same index should
-		// be applies in reverse to create the correct final order
+		// be applied in reverse to create the correct final order
 		Collections.sort(applications, new Comparator<Application>() {
 			@Override
 			public int compare(Application o1, Application o2) {
