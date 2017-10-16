@@ -1,18 +1,21 @@
 package edu.isnap.ctd.graph;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import edu.isnap.ctd.hint.Canonicalization;
-import edu.isnap.ctd.hint.Canonicalization.InvertOp;
-import edu.isnap.ctd.hint.Canonicalization.SwapSymmetricArgs;
+import edu.isnap.ctd.hint.Canonicalization.Rename;
+import edu.isnap.ctd.hint.Canonicalization.Reorder;
+import edu.isnap.ctd.hint.Canonicalization.SwapBinaryArgs;
 import edu.isnap.ctd.util.StringHashable;
 import util.LblTree;
 
@@ -516,9 +519,9 @@ public class Node extends StringHashable {
 
 		String label = node.type();
 		for (Canonicalization c : node.canonicalizations) {
-			if (c instanceof InvertOp) {
+			if (c instanceof Rename) {
 //				System.out.println("Invert: " + node);
-				label = ((InvertOp) c).name;
+				label = ((Rename) c).name;
 				break;
 			}
 		}
@@ -526,11 +529,18 @@ public class Node extends StringHashable {
 		int index = node.index();
 		if (node.parent != null) {
 			for (Canonicalization c : node.parent.canonicalizations) {
-				// TODO: Shouldn't this also occur for an InvertOp?
-				if (c instanceof SwapSymmetricArgs) {
+				if (c instanceof SwapBinaryArgs) {
 //					System.out.println("Swapping children of: " + node.parent);
 					index = node.parent.children.size() - 1 - index;
 					break;
+				}
+				if (c instanceof Reorder) {
+					int[] reorderings = ((Reorder) c).reordering;
+					index = ArrayUtils.indexOf(reorderings, index);
+					if (index == -1) {
+						throw new RuntimeException("Invalid reorder index: " +
+								index + ", " + Arrays.toString(reorderings));
+					}
 				}
 			}
 		}

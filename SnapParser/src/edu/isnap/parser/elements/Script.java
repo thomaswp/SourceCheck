@@ -8,7 +8,7 @@ import org.w3c.dom.Element;
 import edu.isnap.parser.elements.util.IHasID;
 import edu.isnap.parser.elements.util.XML;
 
-public class Script extends Code implements IHasID {
+public class Script extends Code implements IHasID, Comparable<Script> {
 	private static final long serialVersionUID = 1L;
 
 	public final List<Block> blocks = new ArrayList<>();
@@ -67,5 +67,15 @@ public class Script extends Code implements IHasID {
 			id += block.getID();
 		}
 		return id;
+	}
+
+	@Override
+	public int compareTo(Script other) {
+		// For readability, put longer scripts first
+		int lengthCompare = -Integer.compare(blocks.size(), other.blocks.size());
+		if (lengthCompare != 0) return lengthCompare;
+		// Break ties with IDs
+		return getID().compareTo(other.getID());
+
 	}
 }

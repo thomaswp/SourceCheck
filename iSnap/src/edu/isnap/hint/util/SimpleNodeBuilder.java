@@ -46,15 +46,16 @@ public class SimpleNodeBuilder {
 
 			@Override
 			public void add(Canonicalization canon) {
-				if (canon instanceof Canonicalization.InvertOp) {
-					node.canonicalizations.add(new edu.isnap.ctd.hint.Canonicalization.InvertOp(
-							((Canonicalization.InvertOp) canon).name));
-				} else if (canon instanceof Canonicalization.Rename) {
+				if (canon instanceof Canonicalization.Rename) {
 					node.canonicalizations.add(new edu.isnap.ctd.hint.Canonicalization.Rename(
 							((Canonicalization.Rename) canon).name));
-				} else if (canon instanceof Canonicalization.SwapSymmetricArgs) {
+				} else if (canon instanceof Canonicalization.SwapBinaryArgs) {
 					node.canonicalizations.add(
-							new edu.isnap.ctd.hint.Canonicalization.SwapSymmetricArgs());
+							new edu.isnap.ctd.hint.Canonicalization.SwapBinaryArgs());
+				} else if (canon instanceof Canonicalization.Reorder) {
+					node.canonicalizations.add(
+							new edu.isnap.ctd.hint.Canonicalization.Reorder(
+									((Canonicalization.Reorder) canon).reordering));
 				} else {
 					throw new RuntimeException("Unknown canonicalization");
 				}

@@ -122,11 +122,10 @@ public class CallBlock extends Block {
 	public void addChildren(boolean canon, Accumulator ac) {
 		List<Block> params = params(canon);
 		if (params != parameters) {
-			ac.add(new Canonicalization.SwapSymmetricArgs());
+			ac.add(new Canonicalization.SwapBinaryArgs());
 		}
 		ac.add(params);
 		ac.add(bodies);
-		if (OPPOSITES.containsKey(name)) ac.add(new Canonicalization.InvertOp(name));
-		else if (canon && OPPOSITES.containsKey(name)) ac.add(new Canonicalization.Rename(name));
+		if (OPPOSITES.containsKey(name)) ac.add(new Canonicalization.Rename(name));
 	}
 }

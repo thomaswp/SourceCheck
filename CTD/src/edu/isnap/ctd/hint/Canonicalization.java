@@ -2,7 +2,7 @@ package edu.isnap.ctd.hint;
 
 public abstract class Canonicalization {
 
-	public static class SwapSymmetricArgs extends Canonicalization {
+	public static class SwapBinaryArgs extends Canonicalization {
 
 	}
 
@@ -14,9 +14,11 @@ public abstract class Canonicalization {
 		}
 	}
 
-	public static class InvertOp extends Rename {
-		public InvertOp(String name) {
-			super(name);
+	public static class Reorder extends Canonicalization {
+		public final int[] reordering;
+
+		public Reorder(int[] reordering) {
+			this.reordering = reordering;
 		}
 	}
 }

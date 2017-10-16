@@ -1,10 +1,12 @@
 package edu.isnap.parser.elements;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.w3c.dom.Element;
 
+import edu.isnap.parser.elements.util.Canonicalization.Reorder;
 import edu.isnap.parser.elements.util.IHasID;
 import edu.isnap.parser.elements.util.XML;
 
@@ -54,6 +56,13 @@ public class Sprite extends Code implements IHasID {
 		}
 	}
 
+	private List<Script> getScripts(boolean canon) {
+		if (!canon || scripts.size() == 0) return scripts;
+		List<Script> list = new ArrayList<>(scripts);
+		Collections.sort(list);
+		return list;
+	}
+
 	@Override
 	public String toCode(boolean canon) {
 		return new CodeBuilder(canon)
@@ -61,14 +70,16 @@ public class Sprite extends Code implements IHasID {
 		.indent()
 		.add(variables.size() == 0 ? null : ("variables: " + variables.toString() + "\n"))
 		.add(blocks.getWithEdits(true))
-		.add(scripts)
+		.add(getScripts(true))
 		.end();
 	}
 
 	@Override
 	public void addChildren(boolean canon, Accumulator ac) {
+		List<Script> scripts = getScripts(canon);
 		addVariables(ac, variables);
 		ac.add(scripts);
+		if (scripts != this.scripts) ac.add(new Reorder(this.scripts, scripts));
 		ac.add(blocks.getWithEdits(canon));
 	}
 

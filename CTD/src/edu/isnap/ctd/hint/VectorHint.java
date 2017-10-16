@@ -8,8 +8,7 @@ import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.vector.VectorState;
-import edu.isnap.ctd.hint.Canonicalization.InvertOp;
-import edu.isnap.ctd.hint.Canonicalization.SwapSymmetricArgs;
+import edu.isnap.ctd.hint.Canonicalization.SwapBinaryArgs;
 import edu.isnap.ctd.util.StringHashable;
 
 public class VectorHint extends StringHashable implements Hint {
@@ -32,10 +31,12 @@ public class VectorHint extends StringHashable implements Hint {
 
 			boolean swap = false;
 			for (Canonicalization c : root.canonicalizations) {
-				if (c instanceof InvertOp || c instanceof SwapSymmetricArgs) {
+				if (c instanceof SwapBinaryArgs) {
 					swap = true;
 					break;
 				}
+				// We don't have to worry about Reorder canonicalizations because then the order of
+				// children should be irrelevant
 			}
 			this.swapArgs = swap;
 		}

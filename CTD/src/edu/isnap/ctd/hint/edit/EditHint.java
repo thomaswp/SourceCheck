@@ -15,8 +15,7 @@ import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.Canonicalization;
-import edu.isnap.ctd.hint.Canonicalization.InvertOp;
-import edu.isnap.ctd.hint.Canonicalization.SwapSymmetricArgs;
+import edu.isnap.ctd.hint.Canonicalization.SwapBinaryArgs;
 import edu.isnap.ctd.hint.Hint;
 import edu.isnap.ctd.util.Diff;
 
@@ -33,18 +32,20 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 
 	public final Node parent;
 
-	protected final boolean argsCanonSwapped;
 	protected transient RuntimeException e;
+	private final boolean argsCanonSwapped;
 
 	public EditHint(Node parent) {
 		this.parent = parent;
 
 		boolean swap = false;
 		for (Canonicalization c : parent.canonicalizations) {
-			if (c instanceof InvertOp || c instanceof SwapSymmetricArgs) {
+			if (c instanceof SwapBinaryArgs) {
 				swap = true;
 				break;
 			}
+			// We don't have to worry about Reorder canonicalizations because then the order of
+			// children should be irrelevant
 		}
 		argsCanonSwapped = swap;
 	}
