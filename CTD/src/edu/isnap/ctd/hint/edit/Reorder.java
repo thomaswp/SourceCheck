@@ -85,7 +85,7 @@ public class Reorder extends EditHint {
 
 	@Override
 	protected void addApplications(Node root, Node editParent, List<Application> applications) {
-		Node node = this.node.findMatchingNodeInCopy(root);
+		Node node = Node.findMatchingNodeInCopy(this.node, root);
 		final int rIndex = node.index();
 		applications.add(new Application(editParent, rIndex, new EditAction() {
 			@Override

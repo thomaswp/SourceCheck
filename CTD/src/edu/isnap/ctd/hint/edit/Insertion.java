@@ -109,8 +109,8 @@ public class Insertion extends EditHint {
 
 	@Override
 	protected void addApplications(Node root, Node editParent, List<Application> applications) {
-		Node candidate = this.candidate.findMatchingNodeInCopy(root);
-		Node replaced = this.replaced.findMatchingNodeInCopy(root);
+		Node candidate = Node.findMatchingNodeInCopy(this.candidate, root);
+		Node replaced = Node.findMatchingNodeInCopy(this.replaced, root);
 		final Node toInsert;
 		if (candidate != null) {
 			// Need to use the actual candidate in case other applications edit its children

@@ -40,6 +40,10 @@ public class Agreement {
 		Node originalFrom = from.copy(), originalTo = to.copy();
 		List<EditHint> edits = findEdits(from, to, compareValues);
 
+		// Ensure we can apply the edits to a copy of from, not the one the edits were derived from
+		Node appliedFrom = from;
+		from = from.copy();
+
 		// Capture edit strings before applying edits
 		List<String> editStrings = new ArrayList<>();
 		for (EditHint edit : edits) editStrings.add(edit.toString());
@@ -64,6 +68,15 @@ public class Agreement {
 			System.out.println(Diff.diff(to.prettyPrint(), from.prettyPrint()));
 
 			findEdits(originalFrom, originalTo, compareValues);
+		}
+
+		// We have to prune here because the findEdits method can add some scripts to appliedFrom
+		// Hopefully this will be changed one day, and then this pruning should be removed
+		prune(appliedFrom); prune(originalFrom);
+		if (!appliedFrom.equals(originalFrom)) {
+			System.out.println("Edit altered original node without application");
+			System.out.println(Diff.diff(originalFrom.prettyPrint(), appliedFrom.prettyPrint()));
+			return false;
 		}
 
 		return equal;
@@ -112,6 +125,7 @@ public class Agreement {
 				"literal",
 				"script",
 				"list",
+				"varMenu",
 		}) {
 			prunable.add(c);
 		}
@@ -176,12 +190,6 @@ public class Agreement {
 			}
 
 			mapping.put(fromNode, toNode);
-//			if (fromNode.hasType("script")) {
-//				System.out.println("---> " + fromNode + " -> " + toNode);
-//				for (Node key : mapping.keysetFrom()) {
-//					if (key.hasType("script")) System.out.println(key.id + " -> " + mapping.getFrom(key).id);
-//				}
-//			}
 
 			// You can relabel a block and it keeps its ID, so we check for that here
 			boolean equal = compareValues ? fromNode.shallowEquals(toNode) :
@@ -195,10 +203,6 @@ public class Agreement {
 			}
 		}
 
-//		for (Node key : mapping.keysetFrom()) {
-//			if (key.hasType("script")) System.out.println(key.id + " -> " + mapping.getFrom(key).id);
-//		}
-
 		// Look for added scripts/lists and add them automatically to the from node, since the
 		// highlighter cannot do this itself, and they don't constitute an edit
 		for (String id : toIDMap.keySet()) {
@@ -211,9 +215,12 @@ public class Agreement {
 				if (mapping.getTo(toNode) != null) {
 					continue;
 				}
-
 				Node parentPair = fromIDMap.get(toNode.parent.id);
 				if (parentPair != null) {
+					// TODO: This should be represented as an insertion in order to:
+					// a) avoid modifying the from node that is passed to this method and
+					// b) allow the edits to be applied to nodes that were not passed to this method
+					// This will involve some reworking of Insertions to allow chaining
 					fromNode = toNode.shallowCopy(parentPair);
 					fromNode.tag = "temp";
 					parentPair.children.add(fromNode);
