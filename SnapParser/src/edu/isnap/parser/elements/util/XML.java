@@ -159,8 +159,13 @@ public class XML {
 			return Sprite.parse(childElement);
 		} else if (refPredicate.is(childElement)) {
 			String id = childElement.getAttribute("id");
-			if (!refMap.containsKey(id)) {
-				throw new RuntimeException("No ref for: " + id);
+			String parentNodeType = childElement.getParentNode() != null ?
+				childElement.getParentNode().getNodeName() : null;
+			if (!refMap.containsKey(id) &&
+					// For some reason, there's a bug where ref get into block parameters, and they
+					// don't appear to be referencing anything meaningful
+					!"block".equals(parentNodeType)) {
+				throw new RuntimeException("No ref for: " + id + " in " + parentNodeType);
 			}
 			return refMap.get(id);
 		} else if (!ignorePredicate.is(childElement)) {

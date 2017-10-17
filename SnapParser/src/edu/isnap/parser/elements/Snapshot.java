@@ -129,6 +129,8 @@ public class Snapshot extends Code implements IHasID {
 			System.out.println("Error parsing: " + name);
 			System.out.println(xmlSource);
 			e.printStackTrace();
+		} finally {
+			XML.clearRefMap();
 		}
 		return null;
 	}
@@ -181,7 +183,9 @@ public class Snapshot extends Code implements IHasID {
 			BlockIndex i = blocks.getEditingIndex(spriteIndex, name, type, category);
 			if (i != null) {
 				if (index != null) {
-					System.err.println("Multiple matching indices!");
+					// This can happen, but new data has GUIDs and should not worry about it
+					// and old data has been investigated
+//					System.err.println("Multiple matching indices!");
 				}
 				index = i;
 			}
