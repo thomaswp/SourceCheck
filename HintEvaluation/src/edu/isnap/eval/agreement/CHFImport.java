@@ -26,7 +26,7 @@ public class CHFImport {
 	}
 
 	public static void load(Assignment assignment, String folder) throws IOException {
-		File directory = new File(assignment.dataset.dataDir + "/chf/" + folder);
+		File directory = new File(assignment.dir("chf/" + folder));
 		if (!directory.exists()) {
 			System.out.println("No directory: " + directory.getAbsolutePath());
 			return;
@@ -41,12 +41,12 @@ public class CHFImport {
 
 				Node from = SimpleNodeBuilder.toTree(action.lastSnapshot, true);
 				from = convertVars(from);
-				String fromString = from.prettyPrint();
+				String fromString = from.prettyPrint(true);
 				System.out.println("--------- " + action.id + " ---------");
 				System.out.println(fromString);
 				for (CHFEdit edit : edits) {
 					System.out.println(edit.priority + ": " + edit.error);
-					System.out.println(Diff.diff(fromString, edit.outcome.prettyPrint(), 2));
+					System.out.println(Diff.diff(fromString, edit.outcome.prettyPrint(true), 2));
 					System.out.println();
 				}
 
@@ -57,7 +57,7 @@ public class CHFImport {
 
 	private static Node convertVars(Node from) {
 		String type = from.type();
-		if (type.startsWith("var")) type = "var";
+//		if (type.startsWith("var")) type = "var";
 		Node newFrom = new Node(from.parent, type, from.value, from.id);
 		newFrom.children.addAll(from.children);
 		from = newFrom;
