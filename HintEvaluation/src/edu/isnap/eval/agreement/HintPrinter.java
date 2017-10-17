@@ -16,6 +16,7 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.datasets.Fall2016;
 import edu.isnap.datasets.Spring2017;
+import edu.isnap.eval.agreement.HintSelection.HintRequest;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.util.SimpleNodeBuilder;
@@ -40,7 +41,7 @@ public class HintPrinter {
 		appendln(sb, "--------->> " + hintRequestAssignment.name + " <<---------");
 		appendln(sb, "");
 
-		List<AttemptAction> selected = HintSelection.select(
+		List<HintRequest> selected = HintSelection.select(
 				hintRequestAssignment, new SnapParser.Filter[] {
 					new SnapParser.SubmittedOnly()
 				}, true, rand);
@@ -49,7 +50,8 @@ public class HintPrinter {
 				.buildGenerator(Mode.Ignore).hintHighlighter();
 		highlighter.trace = NullSream.instance;
 
-		for (AttemptAction action : selected) {
+		for (HintRequest request : selected) {
+			AttemptAction action = request.action;
 			Node node = SimpleNodeBuilder.toTree(action.lastSnapshot, true);
 			Mapping mapping = highlighter.findSolutionMapping(node);
 			List<EditHint> hints = highlighter.highlight(node, mapping);
