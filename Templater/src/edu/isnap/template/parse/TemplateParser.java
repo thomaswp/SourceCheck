@@ -19,6 +19,7 @@ import edu.isnap.ctd.graph.Node.Action;
 import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.hint.HintMapBuilder;
+import edu.isnap.ctd.util.Diff;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.hint.ConfigurableAssignment;
 import edu.isnap.hint.SnapHintBuilder;
@@ -28,7 +29,6 @@ import edu.isnap.parser.elements.Snapshot;
 import edu.isnap.template.data.BNode;
 import edu.isnap.template.data.Context;
 import edu.isnap.template.data.DefaultNode;
-import edu.isnap.util.Diff;
 
 public class TemplateParser {
 

@@ -15,6 +15,7 @@ import com.apporiented.algorithm.clustering.ClusteringAlgorithm;
 import com.apporiented.algorithm.clustering.DefaultClusteringAlgorithm;
 
 import edu.isnap.ctd.graph.Node;
+import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.datasets.aggregate.CSC200;
@@ -23,7 +24,6 @@ import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.Snapshot;
-import edu.isnap.util.Diff;
 
 public class HierarchicalCluster {
 

@@ -13,10 +13,102 @@ public class Diff {
 	// Otherwise, for unicode, set the run configuration output for UTF-8
 	public static boolean USE_ANSI_COLORS = true;
 
-	public static String inlineDiff(String a, String b, String splitRegex) {
-		List<String> original;
+	public static String diff(String a, String b) {
+		return diff(a, b, Integer.MAX_VALUE / 2);
+	}
+
+	public static String diff(String a, String b, int margin) {
+		String[] original = a.split("\n");
 		Patch<String> diff = DiffUtils.diff(
-				original = split(a, splitRegex), split(b, splitRegex));
+				Arrays.asList(original), Arrays.asList(b.split("\n")));
+		List<Delta<String>> deltas = diff.getDeltas();
+		String out = "";
+		int lastChunkEnd = -1;
+		boolean[] printed = new boolean[original.length];
+		for (Delta<String> delta : deltas) {
+			Chunk<String> chunk = delta.getOriginal();
+			int chunkStart = chunk.getPosition();
+			int chunkEnd = chunkStart + chunk.getLines().size() - 1;
+			if (lastChunkEnd >= 0) {
+				int printStop = Math.min(lastChunkEnd + margin + 1, chunkStart - 1);
+				for (int i = lastChunkEnd + 1; i <= printStop; i++) {
+					out += "  " + original[i] + "\n";
+					printed[i] = true;
+				}
+				if (printStop < chunkStart - 1) {
+					out += "...\n";
+				}
+			}
+
+			for (int i = Math.max(chunkStart - margin, 0); i < chunkStart; i++) {
+				if (!printed[i]) {
+					out += "  " + original[i] + "\n";
+					printed[i] = true;
+				}
+			}
+
+			List<String> originalLines = delta.getOriginal().getLines();
+			List<String> revisedLines = delta.getRevised().getLines();
+			if (USE_ANSI_COLORS &&  originalLines.size() == revisedLines.size()) {
+				String splitRegex = "[^A-Za-z]";
+				for (int i = 0; i < originalLines.size(); i++) {
+					String deleted = originalLines.get(i);
+					String added = revisedLines.get(i);
+					String[] s1 = split(deleted.trim(), splitRegex);
+					String[] s2 = split(added.trim(), splitRegex);
+					if (Alignment.alignCost(s1, s2) < deleted.trim().length() * 0.5) {
+						out += "~ ";
+						for (int j = 0; j < added.length(); j++) {
+							char c = added.charAt(j);
+							if (Character.isWhitespace(c)) out += c;
+							else break;
+						}
+						out += inlineDiff(s1, s2) + "\n";
+					} else {
+						out += colorString("- " + deleted, 31) + "\n";
+						out += colorString("+ " + added, 32) + "\n";
+					}
+				}
+			} else {
+				for (String deleted : originalLines) {
+					out += colorString("- " + deleted, 31) + "\n";
+				}
+				for (String added : revisedLines) {
+					out += colorString("+ " + added, 32) + "\n";
+				}
+			}
+
+			for (int i = chunkStart; i <= chunkEnd; i++) printed[i] = true;
+
+			lastChunkEnd = chunkEnd;
+		}
+
+		if (lastChunkEnd >= 0) {
+			int printStop = Math.min(lastChunkEnd + margin + 1, original.length - 1);
+			for (int i = lastChunkEnd + 1; i <= printStop; i++) {
+				out += "  " + original[i] + "\n";
+				printed[i] = true;
+			}
+			if (printStop < original.length - 1) {
+				out += "...\n";
+			}
+		}
+		return out;
+	}
+
+	private static String colorString(String string, int colorCode) {
+		if (!USE_ANSI_COLORS) return string;
+		return String.format("\u001b[%dm%s\u001b[0m", colorCode, string);
+	}
+
+	public static String inlineDiff(String a, String b, String splitRegex) {
+		String[] aList = split(a, splitRegex), bList = split(b, splitRegex);
+		return inlineDiff(aList, bList);
+	}
+
+	private static String inlineDiff(String[] aList, String[] bList) {
+		List<String> original;
+		Patch<String> diff = DiffUtils.diff(original = Arrays.asList(aList), Arrays.asList(bList));
 		List<Delta<String>> deltas = diff.getDeltas();
 		StringBuilder sb = new StringBuilder();
 		StringBuilder last = new StringBuilder();
@@ -45,7 +137,7 @@ public class Diff {
 
 	private static void flushColored(StringBuilder out, StringBuilder last, boolean lastAdd) {
 		if (last.length() == 0) return;
-		out.append(colorString(last.toString(), lastAdd));
+		out.append(colorStringInline(last.toString(), lastAdd));
 		last.setLength(0);
 	}
 
@@ -58,11 +150,11 @@ public class Diff {
 		return add;
 	}
 
-	private static List<String> split(String string, String splitRegex) {
-		return Arrays.asList(string.split(String.format("((?<=%1$s)|(?=%1$s))", splitRegex)));
+	private static String[] split(String string, String splitRegex) {
+		return string.split(String.format("((?<=%1$s)|(?=%1$s))", splitRegex));
 	}
 
-	private static String colorString(String string, boolean add) {
+	private static String colorStringInline(String string, boolean add) {
 		if (USE_ANSI_COLORS) {
 			int colorCode = add ? 32 : 31;
 			return String.format("\u001b[%dm%s\u001b[0m", colorCode, string);
@@ -70,9 +162,5 @@ public class Diff {
 			return String.format("%s%s%s", add ? "\u3008" : "\u300A", string,
 					add ? "\u3009" : "\u300B");
 		}
-	}
-
-	public static void main(String[] args) {
-		System.out.println(inlineDiff("[doSayFor, abc]", "[doAsk, doSayFor]", "[\\[|\\]|,|\\s]"));
 	}
 }
