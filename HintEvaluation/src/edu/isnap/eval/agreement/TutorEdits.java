@@ -3,6 +3,7 @@ package edu.isnap.eval.agreement;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -48,19 +49,26 @@ public class TutorEdits {
 			for (Integer rowID : rowIDs) {
 				System.out.println("-------- " + rowID + " --------");
 
-				ListMap<List<EditHint>, TutorEdit> givers = new ListMap<>();
+				ListMap<Node, TutorEdit> givers = new ListMap<>();
 				edits.stream()
 				.filter(e -> e.rowID == rowID)
-				.forEach(e -> givers.add(e.edits, e));
-				System.out.println(
-						givers.values().stream().findFirst().get().get(0).from.prettyPrint(true));
+				.forEach(e -> givers.add(e.to, e));
 
-				for (List<EditHint> editSet : givers.keySet()) {
+				Node from = givers.values().stream().findFirst().get().get(0).from;
+				String fromPP = from.prettyPrint(true);
+				System.out.println(fromPP);
+
+				List<Node> keys = new ArrayList<>(givers.keySet());
+				// Sort by how many raters gave the hint
+				keys.sort((n1, n2) -> -Integer.compare(
+						givers.get(n1).size(), givers.get(n2).size()));
+				for (Node to : keys) {
+//					System.out.println(Diff.diff(fromPP, to.prettyPrint(true), 1));
 					System.out.println(String.join(" AND\n",
-							editSet.stream()
+							givers.get(to).get(0).edits.stream()
 							.map(e -> e.toString())
 							.collect(Collectors.toList())));
-					for (TutorEdit tutorEdit : givers.get(editSet)) {
+					for (TutorEdit tutorEdit : givers.get(to)) {
 						System.out.printf("  %d/%s: #%d\n",
 								tutorEdit.priority, tutorEdit.tutor, tutorEdit.hintID);
 					}
@@ -85,7 +93,7 @@ public class TutorEdits {
 			int hintID = Integer.parseInt(record.get("hid"));
 			String tutor = record.get("userID");
 			int rowID = Integer.parseInt(record.get("rowID"));
-			String assignmentID = record.get("assignmentID");
+			String assignmentID = record.get("trueAssignmentID");
 			String priorityString = record.get("priority");
 			int priority;
 			try {
@@ -143,7 +151,7 @@ public class TutorEdits {
 			this.priority = priority;
 			this.from = Agreement.toTree(from);
 			this.to = Agreement.toTree(to);
-			edits = Agreement.findEdits(this.from, this.to, true);
+			edits = Agreement.findEdits(this.from.copy(), this.to.copy(), true);
 			if (edits.size() == 0 && this.from.equals(this.to)) {
 				System.out.println("No edits for " + this);
 			}
