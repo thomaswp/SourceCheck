@@ -16,7 +16,7 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.datasets.Spring2017;
-import edu.isnap.hint.util.SimpleNodeBuilder;
+import edu.isnap.eval.export.JsonAST;
 import edu.isnap.parser.Store.Mode;
 
 public class CHFImport {
@@ -39,8 +39,7 @@ public class CHFImport {
 				List<CHFEdit> edits = allHints.get(action.id);
 				if (edits == null) continue;
 
-				Node from = SimpleNodeBuilder.toTree(action.lastSnapshot, true);
-				from = convertVars(from);
+				Node from = JsonAST.toAST(action.lastSnapshot).toNode();
 				String fromString = from.prettyPrint(true);
 				System.out.println("--------- " + action.id + " ---------");
 				System.out.println(fromString);
@@ -53,18 +52,6 @@ public class CHFImport {
 			}
 		}
 
-	}
-
-	private static Node convertVars(Node from) {
-		String type = from.type();
-//		if (type.startsWith("var")) type = "var";
-		Node newFrom = new Node(from.parent, type, from.value, from.id);
-		newFrom.children.addAll(from.children);
-		from = newFrom;
-		for (int i = 0; i < from.children.size(); i++) {
-			from.children.set(i, convertVars(from.children.get(i)));
-		}
-		return from;
 	}
 
 	private static ListMap<Integer, CHFEdit> loadAllHints(File directory) throws IOException {
