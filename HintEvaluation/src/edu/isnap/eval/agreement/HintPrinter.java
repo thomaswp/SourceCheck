@@ -41,7 +41,7 @@ public class HintPrinter {
 		appendln(sb, "--------->> " + hintRequestAssignment.name + " <<---------");
 		appendln(sb, "");
 
-		List<HintRequest> selected = HintSelection.select(
+		List<HintRequest> selected = HintSelection.selectEarlyLate(
 				hintRequestAssignment, new SnapParser.Filter[] {
 					new SnapParser.SubmittedOnly()
 				}, true, rand);

@@ -5,6 +5,7 @@ import static edu.isnap.dataset.AttemptAction.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -37,7 +38,8 @@ public class HintSelection {
 
 	public static void main(String[] args) throws IOException {
 //		printFall2016();
-		printSpring2017EDM();
+//		printSpring2017EDM();
+		printHintRating2017();
 	}
 
 	protected static void printFall2016() {
@@ -59,7 +61,7 @@ public class HintSelection {
 		};
 		Random rand = new Random(1234);
 		for (Assignment assignment : assignments) {
-			List<HintRequest> selected = select(assignment, new SnapParser.Filter[] {
+			List<HintRequest> selected = selectEarlyLate(assignment, new SnapParser.Filter[] {
 					new SnapParser.LikelySubmittedOnly(),
 					new SnapParser.StartedAfter(Assignment.date(2017, 1, 29))
 			}, true, rand);
@@ -76,7 +78,7 @@ public class HintSelection {
 				Spring2017.GuessingGame2,
 		};
 		for (Assignment assignment : assignments) {
-			List<HintRequest> selected = select(assignment, new SnapParser.Filter[] {
+			List<HintRequest> selected = selectEarlyLate(assignment, new SnapParser.Filter[] {
 					new SnapParser.LikelySubmittedOnly(),
 					new SnapParser.StartedAfter(Assignment.date(2017, 1, 29))
 			});
@@ -102,14 +104,29 @@ public class HintSelection {
 				}
 		};
 
-		// TODO: finish
+		int maxReuqestsPerAssignment = 30;
+
 		for (Assignment[] assignmentSet : assignments) {
-			List<List<HintRequest>> selected = Arrays.stream(assignmentSet)
-					.map(assignment -> select(assignment, DEFAULT_FILTERS))
-					.collect(Collectors.toList());
+			Map<AssignmentAttempt,List<HintRequest>> requestMap = new HashMap<>();
+			Arrays.stream(assignmentSet)
+			.forEach(a -> requestMap.putAll(getAllHintRequests(a, DEFAULT_FILTERS, false)));
 
-			Random rand = new Random(1234);
-
+			System.out.println(assignmentSet[0].name + ": " + requestMap.size());
+			Random rand = new Random(DEFAULT_SEED);
+			List<HintRequest> selected;
+			if (requestMap.size() >= maxReuqestsPerAssignment) {
+				selected = requestMap.values().stream()
+						.map(list -> list.get(rand.nextInt(list.size())))
+						.collect(Collectors.toList());
+				while (selected.size() > maxReuqestsPerAssignment) {
+					selected.remove(rand.nextInt(selected.size()));
+				}
+			} else {
+				// TODO: Actually handle this situation by randomly selecting some user with 2+
+				// hints to give early/late hints
+				throw new RuntimeException(
+						"Less than max requests in assignment: " + assignmentSet[0].name);
+			}
 		}
 	}
 
@@ -141,30 +158,34 @@ public class HintSelection {
 
 	public static void printSelect(String table, Assignment assignment, SnapParser.Filter[] filters,
 			String... users) {
-		printSQL(table, select(assignment, filters), users);
+		printSQL(table, selectEarlyLate(assignment, filters), users);
 	}
 
-	public static List<HintRequest> select(Assignment assignment, SnapParser.Filter[] filters) {
-		return select(assignment, filters, false,
+	public static List<HintRequest> selectEarlyLate(Assignment assignment,
+			SnapParser.Filter[] filters) {
+		return selectEarlyLate(assignment, filters, false,
 				new Random(assignment.name.hashCode() + DEFAULT_SEED));
 	}
 
-	public static List<HintRequest> select(Assignment assignment, SnapParser.Filter[] filters,
-			boolean hintDialogsOnly, Random rand) {
+	public static List<HintRequest> selectEarlyLate(Assignment assignment,
+			SnapParser.Filter[] filters, boolean hintDialogsOnly, Random rand) {
+
+		Map<AssignmentAttempt, List<HintRequest>> requestMap = getAllHintRequests(assignment,
+				filters, hintDialogsOnly);
+
+		return selectEarlyLate(requestMap, rand);
+	}
+
+	private static List<HintRequest> selectEarlyLate(
+			Map<AssignmentAttempt, List<HintRequest>> requestMap, Random rand) {
 		List<HintRequest> selected = new ArrayList<>();
-		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, false, true, filters);
-
-		Map<AssignmentAttempt, List<HintRequest>> requestMap = getHintRequests(assignment,
-				hintDialogsOnly, attempts);
-
-		for (AssignmentAttempt attempt : attempts.values()) {
-			List<HintRequest> requests = requestMap.get(attempt);
+		for (List<HintRequest> requests : requestMap.values()) {
 			if (requests == null) continue;
 
 			List<HintRequest> earlyRequests = requests.stream()
-					.filter(r -> r.isEarly).collect(Collectors.toList());
+					.filter(r -> r.isEarly()).collect(Collectors.toList());
 			List<HintRequest> lateRequests = requests.stream()
-					.filter(r -> !r.isEarly).collect(Collectors.toList());
+					.filter(r -> !r.isEarly()).collect(Collectors.toList());
 
 			// Sample one from early if possible, and late if not
 			if (!sample(earlyRequests, selected, rand)) sample(lateRequests, selected, rand);
@@ -175,8 +196,9 @@ public class HintSelection {
 		return selected;
 	}
 
-	private static Map<AssignmentAttempt, List<HintRequest>> getHintRequests(Assignment assignment,
-			boolean hintDialogsOnly, Map<String, AssignmentAttempt> attempts) {
+	private static Map<AssignmentAttempt, List<HintRequest>> getAllHintRequests(
+			Assignment assignment, SnapParser.Filter[] filters, boolean hintDialogsOnly) {
+		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, false, true, filters);
 		Map<AssignmentAttempt, List<HintRequest>> requestMap = new LinkedHashMap<>();
 		for (AssignmentAttempt attempt : attempts.values()) {
 			List<HintRequest> requests = new ArrayList<>();
@@ -199,8 +221,7 @@ public class HintSelection {
 				}
 
 				lastAddedTime = action.timestamp.getTime();
-				HintRequest request = new HintRequest(assignment, attempt, action,
-						percTime < CUTOFF);
+				HintRequest request = new HintRequest(assignment, attempt, action, percTime);
 				requests.add(request);
 			}
 			if (requests.size() > 0) requestMap.put(attempt, requests);
@@ -217,9 +238,7 @@ public class HintSelection {
 	private static void printSQL(String table, List<HintRequest> selected, String... users) {
 		for (HintRequest request : selected) {
 			for (String user : users) {
-				System.out.printf(
-						"INSERT INTO `%s` (`userID`, `rowID`) VALUES ('%s', %d);\n",
-						table, user, request.action.id);
+				System.out.println(request.getSQLInsert(table, user));
 			}
 		}
 	}
@@ -228,14 +247,23 @@ public class HintSelection {
 		public final Assignment assignment;
 		public final AssignmentAttempt attempt;
 		public final AttemptAction action;
-		public boolean isEarly;
+		public final double percTime;
 
 		public HintRequest(Assignment assignment, AssignmentAttempt attempt, AttemptAction action,
-				boolean isEarly) {
+				double percTime) {
 			this.assignment = assignment;
 			this.attempt = attempt;
 			this.action = action;
-			this.isEarly = isEarly;
+			this.percTime = percTime;
+		}
+
+		public String getSQLInsert(String table, String user) {
+			return String.format("INSERT INTO `%s` (`userID`, `rowID`) VALUES ('%s', %d);",
+					table, user, action.id);
+		}
+
+		public boolean isEarly() {
+			 return percTime < CUTOFF;
 		}
 	}
 }
