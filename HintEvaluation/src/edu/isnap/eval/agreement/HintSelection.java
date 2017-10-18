@@ -66,7 +66,7 @@ public class HintSelection {
 					new SnapParser.StartedAfter(Assignment.date(2017, 1, 29))
 			}, true, rand);
 			printSQL("handmade_hints", selected, "vmcatete", "nalytle", "ydong2");
-			exportSelected(assignment, selected);
+			exportSelected(assignment, "edm2017", selected);
 		}
 	}
 
@@ -83,7 +83,7 @@ public class HintSelection {
 					new SnapParser.StartedAfter(Assignment.date(2017, 1, 29))
 			});
 			printSQL("hints", selected, "twprice", "rzhi");
-			exportSelected(assignment, selected);
+			exportSelected(assignment, "earlyLate", selected);
 		}
 	}
 
@@ -104,14 +104,35 @@ public class HintSelection {
 				}
 		};
 
+		// Projects used in training
+		String[] excludeProjectIDs = {
+				// squiralHW
+				"283643ab", "ffb7babe", "ab6da9de", "1b61f46a",
+				// guess1Lab
+				"3cbff372", "478fd3c4", "e3024ff8"
+		};
+
+		String[] users = {
+				"twprice", "rzhi", "vmcatete", "nalytle", "ydong2"
+		};
+
 		int maxReuqestsPerAssignment = 30;
+
+		boolean dialogOnly = true;
 
 		for (Assignment[] assignmentSet : assignments) {
 			Map<AssignmentAttempt,List<HintRequest>> requestMap = new HashMap<>();
 			Arrays.stream(assignmentSet)
-			.forEach(a -> requestMap.putAll(getAllHintRequests(a, DEFAULT_FILTERS, false)));
+			.forEach(a -> requestMap.putAll(getAllHintRequests(a, DEFAULT_FILTERS, dialogOnly)));
 
-			System.out.println(assignmentSet[0].name + ": " + requestMap.size());
+			int originalSize = requestMap.size();
+			// Remove any attempts that we used in trainings
+			for (AssignmentAttempt attempt : new ArrayList<>(requestMap.keySet())) {
+				if (Arrays.stream(excludeProjectIDs).anyMatch(id -> attempt.id.startsWith(id))) {
+					requestMap.remove(attempt);
+				}
+			}
+
 			Random rand = new Random(DEFAULT_SEED);
 			List<HintRequest> selected;
 			if (requestMap.size() >= maxReuqestsPerAssignment) {
@@ -122,25 +143,65 @@ public class HintSelection {
 					selected.remove(rand.nextInt(selected.size()));
 				}
 			} else {
-				// TODO: Actually handle this situation by randomly selecting some user with 2+
-				// hints to give early/late hints
-				throw new RuntimeException(
-						"Less than max requests in assignment: " + assignmentSet[0].name);
+				List<List<HintRequest>>
+					singletons = new ArrayList<>(),
+					multiples = new ArrayList<>();
+				selected = new ArrayList<>();
+
+				// Split the projects into those with 1 hint request and those with multiple
+				requestMap.values().forEach(v -> (v.size() == 1 ? singletons : multiples).add(v));
+
+				// For the singletons, add their one hint, then clear the list
+				singletons.forEach(list -> selected.addAll(list));
+				singletons.clear();
+
+				// For those the have multiple hints, some of them will give 2, some will give 1
+				int twoCount = Math.min(
+						maxReuqestsPerAssignment - requestMap.size(),
+						multiples.size());
+				int oneCount = multiples.size() - twoCount;
+
+				// Randomly select some one-count projects and add a random hint request from them
+				for (int i = 0; i < oneCount; i++) {
+					singletons.add(multiples.remove(rand.nextInt(multiples.size())));
+				}
+				singletons.forEach(list -> selected.add(list.get(rand.nextInt(list.size()))));
+
+				// For those that remain, select an early and a late one
+				multiples.forEach(list -> selectEarlyLate(list, selected, rand));
 			}
+
+			System.out.printf("-- Selected %d hints from %d(%d) projects for %s\n",
+					selected.size(), originalSize, requestMap.size(),
+					assignmentSet[0].name);
+
+//			exportSelected(assignmentSet[0], "ratings2017-" + maxReuqestsPerAssignment, selected);
+
+			List<HintRequest> spring2017 = new ArrayList<>(), fall2017 = new ArrayList<>();
+			for (HintRequest req : selected) {
+				(req.assignment.dataset instanceof Spring2017 ? spring2017 : fall2017).add(req);
+			}
+			// Be careful with this output, since it uses the USE directive
+			System.out.println("USE snap_spring2017;");
+			printSQL("handmade_hints", selected, users);
+			System.out.println("USE snap;");
+			printSQL("handmade_hints", selected, users);
 		}
 	}
 
-	protected static void exportSelected(Assignment assignment, List<HintRequest> selected)
+	protected static void exportSelected(Assignment assignment, String folder,
+			List<HintRequest> selected)
 			throws IOException {
 		for (HintRequest request : selected) {
 			AttemptAction action = request.action;
 			JSONObject json = JsonAST.toJSON(action.lastSnapshot);
-			JsonAST.write(String.format("%s/hint-selection/%s/%d.json",
-					assignment.dataset.exportDir(), assignment.name, action.id), json.toString(2));
+			JsonAST.write(String.format("%s/hint-selection/%s/%s/%d.json",
+					assignment.dataset.exportDir(), folder, assignment.name, action.id),
+					json.toString(2));
 		}
 		JsonAST.write(
-				String.format("%s/hint-selection/%s-values.txt",
-						assignment.dataset.exportDir(), assignment.name),
+				String.format("%s/hint-selection/%s/%s-values.txt",
+						assignment.dataset.exportDir(), folder, assignment.name),
 				String.join("\n", JsonAST.values));
 	}
 
@@ -173,27 +234,26 @@ public class HintSelection {
 		Map<AssignmentAttempt, List<HintRequest>> requestMap = getAllHintRequests(assignment,
 				filters, hintDialogsOnly);
 
-		return selectEarlyLate(requestMap, rand);
-	}
-
-	private static List<HintRequest> selectEarlyLate(
-			Map<AssignmentAttempt, List<HintRequest>> requestMap, Random rand) {
 		List<HintRequest> selected = new ArrayList<>();
 		for (List<HintRequest> requests : requestMap.values()) {
 			if (requests == null) continue;
-
-			List<HintRequest> earlyRequests = requests.stream()
-					.filter(r -> r.isEarly()).collect(Collectors.toList());
-			List<HintRequest> lateRequests = requests.stream()
-					.filter(r -> !r.isEarly()).collect(Collectors.toList());
-
-			// Sample one from early if possible, and late if not
-			if (!sample(earlyRequests, selected, rand)) sample(lateRequests, selected, rand);
-			// Sample one from late if possible, and early if not
-			if (!sample(lateRequests, selected, rand)) sample(earlyRequests, selected, rand);
+			selectEarlyLate(requests, selected, rand);
 		}
 
 		return selected;
+	}
+
+	private static void selectEarlyLate(List<HintRequest> requests, List<HintRequest> selected,
+			Random rand) {
+		List<HintRequest> earlyRequests = requests.stream()
+				.filter(r -> r.isEarly()).collect(Collectors.toList());
+		List<HintRequest> lateRequests = requests.stream()
+				.filter(r -> !r.isEarly()).collect(Collectors.toList());
+
+		// Sample one from early if possible, and late if not
+		if (!sample(earlyRequests, selected, rand)) sample(lateRequests, selected, rand);
+		// Sample one from late if possible, and early if not
+		if (!sample(lateRequests, selected, rand)) sample(earlyRequests, selected, rand);
 	}
 
 	private static Map<AssignmentAttempt, List<HintRequest>> getAllHintRequests(
@@ -258,8 +318,10 @@ public class HintSelection {
 		}
 
 		public String getSQLInsert(String table, String user) {
-			return String.format("INSERT INTO `%s` (`userID`, `rowID`) VALUES ('%s', %d);",
-					table, user, action.id);
+			return String.format(
+					"INSERT INTO `%s` (`userID`, `rowID`, `trueAssignmentID`) "
+					+ "VALUES ('%s', %d, '%s');",
+					table, user, action.id, assignment.name);
 		}
 
 		public boolean isEarly() {

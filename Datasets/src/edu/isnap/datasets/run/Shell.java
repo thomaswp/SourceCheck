@@ -71,6 +71,8 @@ public class Shell {
 						SnapParser.clean(dataset.dataDir);
 						break;
 					case "split":
+						System.out.println("Please turn off Windows Defender's real time "
+								+ "protection for faster splitting");
 						new LogSplitter().splitStudentRecords(dataset);
 						break;
 					case "test":
