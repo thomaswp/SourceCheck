@@ -118,7 +118,7 @@ public class HintSelection {
 
 		int maxReuqestsPerAssignment = 30;
 
-		boolean dialogOnly = true;
+		boolean dialogOnly = false;
 
 		for (Assignment[] assignmentSet : assignments) {
 			Map<AssignmentAttempt,List<HintRequest>> requestMap = new HashMap<>();
@@ -174,6 +174,15 @@ public class HintSelection {
 			System.out.printf("-- Selected %d hints from %d(%d) projects for %s\n",
 					selected.size(), originalSize, requestMap.size(),
 					assignmentSet[0].name);
+
+//			CountMap<String> actions = new CountMap<>();
+//			selected.forEach(req -> actions.increment(req.action.message));
+//			System.out.println(actions);
+//
+//			CountMap<Integer> sections = new CountMap<>();
+//			selected.forEach(req -> sections.increment(
+//					req.action.currentActiveTime * 5 / req.attempt.totalActiveTime));
+//			System.out.println(sections);
 
 //			exportSelected(assignmentSet[0], "ratings2017-" + maxReuqestsPerAssignment, selected);
 

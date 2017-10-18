@@ -24,6 +24,14 @@ public class CountMap<K> extends ExtensionMap<K, Integer>{
 		put(key, getCount(key) + by);
 	}
 
+	public void increment(K key) {
+		change(key, 1);
+	}
+
+	public void decrement(K key) {
+		change(key, -1);
+	}
+
 	public void add(CountMap<K> map) {
 		for (K key : map.keySet()) {
 			change(key, map.getCount(key));
