@@ -7,9 +7,11 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import org.apache.commons.csv.CSVFormat;
@@ -48,7 +50,9 @@ public class EDM2017 {
 
 //		compareEdits(Spring2017.instance, Fall2016.Squiral, Fall2016.GuessingGame1);
 //		compareEdits(Spring2017.instance, CSC200Solutions.Squiral, CSC200Solutions.GuessingGame1);
-		compareEdits(Spring2017.instance, Spring2016.Squiral, Spring2016.GuessingGame1);
+//		compareEdits(Spring2017.instance, Spring2016.Squiral, Spring2016.GuessingGame1);
+
+		analyzeEdits(Spring2017.instance, Spring2016.Squiral, Spring2016.GuessingGame1);
 
 //		testExtractEdits(Spring2017.instance);
 	}
@@ -71,27 +75,23 @@ public class EDM2017 {
 		}
 	}
 
-	private static void compareEdits(Dataset testDataset, Assignment... trainingAssignments)
-			throws FileNotFoundException, IOException {
-
+	private static void readEdits(Map<String, Map<String, List<EditHint>>> expertMap,
+			Map<String, Map<String, List<EditHint>>> comparisonMap, Map<String, Node> nodeMap,
+			Map<String, String> assignmentMap, Dataset testDataset,
+			Assignment... trainingAssignments) throws IOException, FileNotFoundException {
 
 		CSVParser parser = new CSVParser(new FileReader(new File(testDataset.dataDir, "hints.csv")),
 				CSVFormat.DEFAULT.withHeader());
-
-//		Random rand = new Random(1234);
 
 		HashMap<String, HintHighlighter> highlighters = new HashMap<>();
 		for (Assignment assignment : trainingAssignments) {
 			SnapHintBuilder builder = new SnapHintBuilder(assignment);
 			HintMap hintMap = builder.buildGenerator(Mode.Ignore, 1).hintMap;
 			List<Node> solutions = new ArrayList<>(hintMap.solutions);
-//			Collections.shuffle(solutions, rand);
-//			for (int i = solutions.size(); i >= 0; i--) {
-//				if (i % 2 == 0) solutions.remove(i);
-//			}
 			highlighters.put(assignment.name, new HintHighlighter(
 					solutions, hintMap.getHintConfig()));
 		}
+
 		// Since sometimes assignments are incorrect in the logs, we have to redirect prequel
 		// assignments
 		// TODO: This is neither robust nor complete. The only real solution is search through
@@ -107,11 +107,6 @@ public class EDM2017 {
 				}
 			}
 		}
-
-		Map<String, Map<String, List<EditHint>>> expertMap = new LinkedHashMap<>();
-		Map<String, Map<String, List<EditHint>>> comparisonMap = new LinkedHashMap<>();
-		Map<String, Node> nodeMap = new HashMap<>();
-		Map<String, String> assignmentMap = new HashMap<>();
 
 		for (CSVRecord record : parser) {
 
@@ -129,8 +124,6 @@ public class EDM2017 {
 
 			HintHighlighter highlighter = highlighters.get(assignmentID);
 			highlighter.trace = NullSream.instance;
-
-//			if (!userID.equals("twprice")) continue;
 
 			Node fromNode = nodeMap.get(rowID);
 			if (fromNode == null) {
@@ -163,11 +156,21 @@ public class EDM2017 {
 //				comparisonRowMap.put("highlight-rted", highlighter.highlightRTED(fromNode));
 //				comparisonRowMap.put("highlight-sed", highlighter.highlightStringEdit(fromNode));
 			}
-//			if (!assignmentID.equals("squiralHW")) {
-//				System.out.println(rowID + " / " + userID);
-//				EditComparer.compare(fromNode, allEdits, comparisonRowMap.get("highlight"));
-//			}
 		}
+
+		parser.close();
+	}
+
+	protected static void compareEdits(Dataset testDataset, Assignment... trainingAssignments)
+			throws FileNotFoundException, IOException {
+
+		Map<String, Map<String, List<EditHint>>> expertMap = new LinkedHashMap<>();
+		Map<String, Map<String, List<EditHint>>> comparisonMap = new LinkedHashMap<>();
+		Map<String, Node> nodeMap = new HashMap<>();
+		Map<String, String> assignmentMap = new HashMap<>();
+
+		readEdits(expertMap, comparisonMap, nodeMap, assignmentMap, testDataset,
+				trainingAssignments);
 
 		for (Assignment assignment : trainingAssignments) {
 			System.out.println(assignment);
@@ -221,8 +224,63 @@ public class EDM2017 {
 			}
 			printer.close();
 		}
+	}
 
-		parser.close();
+	protected static void analyzeEdits(Dataset testDataset, Assignment... trainingAssignments)
+			throws FileNotFoundException, IOException {
+
+		Map<String, Map<String, List<EditHint>>> expertMap = new LinkedHashMap<>();
+		Map<String, Map<String, List<EditHint>>> comparisonMap = new LinkedHashMap<>();
+		Map<String, Node> nodeMap = new HashMap<>();
+		Map<String, String> assignmentMap = new HashMap<>();
+
+		readEdits(expertMap, comparisonMap, nodeMap, assignmentMap, testDataset,
+				trainingAssignments);
+
+		for (Assignment assignment : trainingAssignments) {
+			System.out.println(assignment);
+
+			for (String row : expertMap.keySet()) {
+				if (!assignmentMap.get(row).equals(assignment.name)) continue;
+
+	//			System.out.println(row);
+				Map<String, List<EditHint>> expertRowMap = expertMap.get(row);
+
+				Set<EditHint> highlightEdits =
+						new HashSet<>(comparisonMap.get(row).get("highlight"));
+				Set<EditHint> allEdits = new HashSet<>(), idealEdits = new HashSet<>();
+				for (String key : expertRowMap.keySet()) {
+					List<EditHint> edits = expertRowMap.get(key);
+					(key.contains("all") ? allEdits : idealEdits).addAll(edits);
+				}
+
+				// Get the ideal hints that the highlight failed to generate
+				Set<EditHint> missedIdeal = new HashSet<>(idealEdits);
+				missedIdeal.removeAll(highlightEdits);
+
+				// Get the ideal/all hints that highlight also generated
+				allEdits.retainAll(highlightEdits);
+				idealEdits.retainAll(highlightEdits);
+
+				// Get the highlight hints that humans didn't generate
+				highlightEdits.removeAll(allEdits);
+				// Remove the ideal hints from all hints to remove redundancy
+				allEdits.removeAll(idealEdits);
+
+				System.out.println("-------+ " + assignment.name + " / " + row + " +-------");
+				Node node = nodeMap.get(row);
+				System.out.println(node.prettyPrint(true));
+				System.out.println("Ideal:");
+				idealEdits.forEach(System.out::println);
+				System.out.println("Ok:");
+				allEdits.forEach(System.out::println);
+				System.out.println("Bad:");
+				highlightEdits.forEach(System.out::println);
+				System.out.println("Missed Ideal:");
+				missedIdeal.forEach(System.out::println);
+				System.out.println();
+			}
+		}
 	}
 
 	private static String getType(String key) {
