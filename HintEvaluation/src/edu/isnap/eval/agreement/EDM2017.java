@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -152,7 +153,9 @@ public class EDM2017 {
 
 
 			if (!expertRowMap.containsKey("highlight")) {
-				comparisonRowMap.put("highlight", highlighter.highlight(fromNode));
+				List<EditHint> edits = highlighter.highlight(fromNode);
+				highlighter.assignPriorities(fromNode, edits);
+				comparisonRowMap.put("highlight", edits);
 //				comparisonRowMap.put("highlight-rted", highlighter.highlightRTED(fromNode));
 //				comparisonRowMap.put("highlight-sed", highlighter.highlightStringEdit(fromNode));
 			}
@@ -259,27 +262,37 @@ public class EDM2017 {
 				missedIdeal.removeAll(highlightEdits);
 
 				// Get the ideal/all hints that highlight also generated
-				allEdits.retainAll(highlightEdits);
-				idealEdits.retainAll(highlightEdits);
+				Set<EditHint> agreedAll = new HashSet<>(highlightEdits),
+						agreedIdeal = new HashSet<>(highlightEdits),
+						extraHints = new HashSet<>(highlightEdits);
+				agreedAll.retainAll(allEdits);
+				agreedIdeal.retainAll(idealEdits);
 
 				// Get the highlight hints that humans didn't generate
-				highlightEdits.removeAll(allEdits);
+				extraHints.removeAll(allEdits);
 				// Remove the ideal hints from all hints to remove redundancy
-				allEdits.removeAll(idealEdits);
+				agreedAll.removeAll(agreedIdeal);
 
 				System.out.println("-------+ " + assignment.name + " / " + row + " +-------");
 				Node node = nodeMap.get(row);
 				System.out.println(node.prettyPrint(true));
 				System.out.println("Ideal:");
-				idealEdits.forEach(System.out::println);
+				printEditsWithPriorities(agreedIdeal);
 				System.out.println("Ok:");
-				allEdits.forEach(System.out::println);
+				printEditsWithPriorities(agreedAll);
 				System.out.println("Bad:");
-				highlightEdits.forEach(System.out::println);
+				printEditsWithPriorities(extraHints);
 				System.out.println("Missed Ideal:");
-				missedIdeal.forEach(System.out::println);
+				printEditsWithPriorities(missedIdeal);
 				System.out.println();
 			}
+		}
+	}
+
+	private static void printEditsWithPriorities(Collection<EditHint> edits) {
+		for (EditHint edit : edits) {
+			System.out.println(edit);
+			if (edit.priority != null) System.out.println(edit.priority);
 		}
 	}
 

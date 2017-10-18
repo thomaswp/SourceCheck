@@ -4,6 +4,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -18,6 +19,7 @@ import edu.isnap.ctd.hint.debug.HintDebugInfo;
 import edu.isnap.ctd.hint.edit.Deletion;
 import edu.isnap.ctd.hint.edit.EditHint;
 import edu.isnap.ctd.hint.edit.Insertion;
+import edu.isnap.ctd.hint.edit.Priority;
 import edu.isnap.ctd.hint.edit.Reorder;
 import edu.isnap.ctd.util.Alignment;
 import edu.isnap.ctd.util.Cast;
@@ -661,6 +663,25 @@ public class HintHighlighter {
 		edits.addAll(toAdd);
 
 
+	}
+
+	public void assignPriorities(Node node, List<EditHint> hints) {
+		List<Mapping> bestMatches = NodeAlignment.findBestMatches(
+				node, solutions, getDistanceMeasure(), config, 0.2);
+
+		// Get counts of how many times each edit appears in the top matches
+		CountMap<EditHint> hintCounts = new CountMap<>();
+		bestMatches.stream()
+		// Use a set so duplicated from a single target solution don't get double-counted
+		.map(m -> new HashSet<>(highlight(node, m)))
+		.forEach(set -> hintCounts.incrementAll(set));
+
+		for (EditHint hint : hints) {
+			Priority priority = new Priority();
+			priority.consensusNumerator = hintCounts.get(hint);
+			priority.consensusDemonimator = bestMatches.size();
+			hint.priority = priority;
+		}
 	}
 
 	private static String[] toArray(List<String> items) {

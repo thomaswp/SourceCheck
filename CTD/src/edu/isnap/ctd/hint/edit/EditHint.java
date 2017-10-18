@@ -32,7 +32,9 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 
 	public final Node parent;
 
+	public transient Priority priority;
 	protected transient RuntimeException e;
+
 	private final boolean argsCanonSwapped;
 
 	public EditHint(Node parent) {

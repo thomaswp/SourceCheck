@@ -1,6 +1,7 @@
 package edu.isnap.ctd.util.map;
 
 import java.io.PrintStream;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -26,6 +27,10 @@ public class CountMap<K> extends ExtensionMap<K, Integer>{
 
 	public void increment(K key) {
 		change(key, 1);
+	}
+
+	public void incrementAll(Collection<K> items) {
+		for (K item : items) increment(item);
 	}
 
 	public void decrement(K key) {
