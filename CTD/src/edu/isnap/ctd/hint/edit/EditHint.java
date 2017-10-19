@@ -18,6 +18,7 @@ import edu.isnap.ctd.hint.Canonicalization;
 import edu.isnap.ctd.hint.Canonicalization.SwapBinaryArgs;
 import edu.isnap.ctd.hint.Hint;
 import edu.isnap.ctd.util.Diff;
+import edu.isnap.ctd.util.NodeAlignment.Mapping;
 
 public abstract class EditHint implements Hint, Comparable<EditHint> {
 	protected abstract void editChildren(List<String> children);
@@ -27,6 +28,7 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 	protected abstract void appendEqualsFieds(EqualsBuilder builder, EditHint rhs);
 	protected abstract void addApplications(Node root, Node editParent,
 			List<Application> applications);
+	public abstract Node getPriorityToNode(Mapping mapping);
 
 	public static boolean useValues = true;
 

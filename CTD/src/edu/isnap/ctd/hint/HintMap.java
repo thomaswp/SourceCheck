@@ -6,7 +6,10 @@ import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import edu.isnap.ctd.graph.Node;
@@ -21,9 +24,12 @@ import edu.isnap.ctd.graph.vector.VectorState;
 public class HintMap {
 
 	public final List<Node> solutions = new ArrayList<>();
+	public final Map<Node, Map<String, Double>> nodeCreationPercs = new IdentityHashMap<>();
 
 	RuleSet ruleSet;
 	final HintConfig config;
+
+	private transient Map<String, Double> currentNodeCreationPercs = new HashMap<>();
 
 	public HintConfig getHintConfig() {
 		return config;
@@ -74,6 +80,15 @@ public class HintMap {
 		getGraph(to, true).addEdge(fromState, toState);
 	}
 
+	public void addVertex(Node node, double perc) {
+		node.recurse(child -> {
+			if (child != null && child.id != null &&
+					!currentNodeCreationPercs.containsKey(child.id)) {
+				currentNodeCreationPercs.put(child.id, perc);
+			}
+		});
+	}
+
 	public VectorGraph getGraph(Node node) {
 		return getGraph(node, false);
 	}
@@ -109,6 +124,7 @@ public class HintMap {
 
 	public void setSolution(Node solution) {
 		solutions.add(solution);
+		Set<String> ids = new HashSet<>();
 		solution.recurse(new Action() {
 			@Override
 			public void run(Node item) {
@@ -119,8 +135,18 @@ public class HintMap {
 					graph.addVertex(children);
 				}
 				graph.setGoal(children, getContext(item));
+				if (item.id != null) ids.add(item.id);
 			}
 		});
+
+		// First, remove any id not found in the final solution to save space
+		HashSet<String> toRemove = new HashSet<>(currentNodeCreationPercs.keySet());
+		toRemove.removeAll(ids);
+		toRemove.forEach(id -> currentNodeCreationPercs.remove(id));
+
+		// Then save the current node creation percs, using the final solution as a key
+		nodeCreationPercs.put(solution, currentNodeCreationPercs);
+		currentNodeCreationPercs = new IdentityHashMap<>();
 	}
 
 	public IndexedVectorState getContext(Node item) {
@@ -186,6 +212,7 @@ public class HintMap {
 			myGraph.addGraph(graph, true);
 		}
 		solutions.addAll(hintMap.solutions);
+		nodeCreationPercs.putAll(hintMap.nodeCreationPercs);
 	}
 
 	/**

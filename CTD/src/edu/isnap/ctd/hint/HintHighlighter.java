@@ -42,19 +42,22 @@ public class HintHighlighter {
 	private final List<Node> solutions;
 	private final HintConfig config;
 	private final RuleSet ruleSet;
+	private final Map<Node, Map<String, Double>> nodeCreationPercs;
 
 	public HintHighlighter(HintMap hintMap) {
-		this(hintMap.solutions, hintMap.ruleSet, hintMap.config);
+		this(hintMap.solutions, hintMap.ruleSet, hintMap.nodeCreationPercs, hintMap.config);
 	}
 
 	public HintHighlighter(List<Node> solutions, HintConfig config) {
-		this(solutions, null, config);
+		this(solutions, null, null, config);
 	}
 
-	public HintHighlighter(List<Node> solutions, RuleSet ruleSet, HintConfig config) {
+	public HintHighlighter(List<Node> solutions, RuleSet ruleSet,
+			Map<Node, Map<String, Double>> nodeCreationPercs, HintConfig config) {
 		this.solutions = config.preprocessSolutions ?
-				preprocessSolutions(solutions, config) : solutions;
+				preprocessSolutions(solutions, nodeCreationPercs, config) : solutions;
 		this.ruleSet = ruleSet;
+		this.nodeCreationPercs = nodeCreationPercs;
 		this.config = config;
 	}
 
@@ -496,7 +499,7 @@ public class HintHighlighter {
 	 * from have too much influence in the matching process.
 	 */
 	private static List<Node> preprocessSolutions(List<Node> allSolutions,
-			final HintConfig config) {
+			Map<Node, Map<String, Double>> nodeCreationPercs, final HintConfig config) {
 
 		// TODO: This doesn't work well with multi-script and multi-sprite solutions
 
@@ -555,6 +558,10 @@ public class HintHighlighter {
 					}
 				}
 			});
+			if (nodeCreationPercs != null) {
+				// Update references to this node in the nodeCreationPercs map
+				nodeCreationPercs.put(copy, nodeCreationPercs.remove(node));
+			}
 			solutions.add(copy);
 		}
 
@@ -669,6 +676,8 @@ public class HintHighlighter {
 		List<Mapping> bestMatches = NodeAlignment.findBestMatches(
 				node, solutions, getDistanceMeasure(), config, 0.2);
 
+		Mapping bestMatch = bestMatches.get(0);
+
 		// Get counts of how many times each edit appears in the top matches
 		CountMap<EditHint> hintCounts = new CountMap<>();
 		bestMatches.stream()
@@ -680,6 +689,16 @@ public class HintHighlighter {
 			Priority priority = new Priority();
 			priority.consensusNumerator = hintCounts.get(hint);
 			priority.consensusDemonimator = bestMatches.size();
+
+			if (nodeCreationPercs != null && nodeCreationPercs.containsKey(bestMatch.to)) {
+				// TODO: do this for the set of best matches
+				Map<String, Double> creationPercs = nodeCreationPercs.get(bestMatch.to);
+				Node priorityToNode = hint.getPriorityToNode(bestMatch);
+				if (priorityToNode != null) {
+					priority.creationPerc = creationPercs.get(priorityToNode.id);
+				}
+			}
+
 			hint.priority = priority;
 		}
 	}

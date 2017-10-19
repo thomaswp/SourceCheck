@@ -7,6 +7,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.Node;
+import edu.isnap.ctd.util.NodeAlignment.Mapping;
 
 public class Deletion extends EditHint {
 	public final Node node;
@@ -59,5 +60,10 @@ public class Deletion extends EditHint {
 	@Override
 	protected void appendHashCodeFieds(HashCodeBuilder builder) {
 		builder.append(nodeIDHashCode(node));
+	}
+
+	@Override
+	public Node getPriorityToNode(Mapping mapping) {
+		return null;
 	}
 }

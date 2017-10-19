@@ -82,8 +82,11 @@ public class HintMapBuilder {
 		if (useIDs) {
 			Map<String, Node> lastIDMap = null, cumulativeIDMap =
 					new HashMap<>();
+			int index = 0;
 			for (Node current : solutionPath) {
 				current.cache();
+				double perc = (double)index / solutionPath.size();
+				hintMap.addVertex(current, perc);
 
 				// The general goal of this loop is to identify all matching nodes between
 				// the current and last AST, and add an edge between them.  We also search
@@ -162,6 +165,8 @@ public class HintMapBuilder {
 				}
 				lastIDMap = idMap;
 				cumulativeIDMap.putAll(idMap);
+
+				index++;
 			}
 		} else {
 			addEdgesTED(solutionPath, hintMap);
@@ -221,13 +226,18 @@ public class HintMapBuilder {
 		RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(0.01, 0.01, 10000);
 
 
+		int index = 0;
 		for (Node current : path) {
 			current.cache();
 
 			LblTree tree = current.toTree();
 			List<LblTree> list = Collections.list(tree.depthFirstEnumeration());
 
+			double perc = (double) index / path.size();
+			hintMap.addVertex(current, perc);
+
 			if (lastTree != null) {
+
 				opt.nonNormalizedTreeDist(lastTree, tree);
 				LinkedList<int[]> editMap = opt.computeEditMapping();
 
@@ -273,7 +283,7 @@ public class HintMapBuilder {
 
 			lastList = list;
 			lastTree = tree;
-//			i++;
+			index++;
 		}
 	}
 }

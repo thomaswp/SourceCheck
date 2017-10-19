@@ -8,6 +8,7 @@ import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Predicate;
+import edu.isnap.ctd.util.NodeAlignment.Mapping;
 
 public class Insertion extends EditHint {
 	public final String type;
@@ -205,5 +206,12 @@ public class Insertion extends EditHint {
 		builder.append(keepChildrenInReplacement);
 		builder.append(replaced);
 		builder.append(candidate);
+	}
+
+	@Override
+	public Node getPriorityToNode(Mapping mapping) {
+		if (pair != null) return pair;
+		if (candidate != null) return mapping.getTo(candidate);
+		return null;
 	}
 }

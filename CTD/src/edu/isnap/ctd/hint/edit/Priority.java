@@ -2,6 +2,7 @@ package edu.isnap.ctd.hint.edit;
 
 public class Priority {
 	public int consensusNumerator, consensusDemonimator;
+	public Double creationPerc;
 
 	public double consensus() {
 		return (double) consensusNumerator / consensusDemonimator;
@@ -9,7 +10,12 @@ public class Priority {
 
 	@Override
 	public String toString() {
-		return String.format("{Consensus: %d/%d=%.02f}",
+		String out = String.format("{Consensus: %d/%d=%.02f",
 				consensusNumerator, consensusDemonimator, consensus());
+		if (creationPerc != null) {
+			out += String.format(", Creation: %.02f}", creationPerc);
+		}
+		out += "}";
+		return out;
 	}
 }

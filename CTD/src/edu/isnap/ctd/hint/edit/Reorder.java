@@ -7,6 +7,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.Node;
+import edu.isnap.ctd.util.NodeAlignment.Mapping;
 import edu.isnap.ctd.util.map.BiMap;
 
 public class Reorder extends EditHint {
@@ -115,5 +116,10 @@ public class Reorder extends EditHint {
 		builder.append(node, re.node);
 		builder.append(index, re.index);
 		builder.append(inPlace, re.inPlace);
+	}
+
+	@Override
+	public Node getPriorityToNode(Mapping mapping) {
+		return mapping.getFrom(node);
 	}
 }
