@@ -676,12 +676,13 @@ public class HintHighlighter {
 		List<Mapping> bestMatches = NodeAlignment.findBestMatches(
 				node, solutions, getDistanceMeasure(), config, 0.2);
 
+		if (bestMatches.size() == 0) return;
 		Mapping bestMatch = bestMatches.get(0);
 
 		// Get counts of how many times each edit appears in the top matches
 		CountMap<EditHint> hintCounts = new CountMap<>();
 		bestMatches.stream()
-		// Use a set so duplicated from a single target solution don't get double-counted
+		// Use a set so duplicates from a single target solution don't get double-counted
 		.map(m -> new HashSet<>(highlight(node, m)))
 		.forEach(set -> hintCounts.incrementAll(set));
 
@@ -695,7 +696,23 @@ public class HintHighlighter {
 				Map<String, Double> creationPercs = nodeCreationPercs.get(bestMatch.to);
 				Node priorityToNode = hint.getPriorityToNode(bestMatch);
 				if (priorityToNode != null) {
-					priority.creationPerc = creationPercs.get(priorityToNode.id);
+					List<Double> percs = new ArrayList<>();
+					percs.add(creationPercs.get(priorityToNode.id));
+
+					for (int i = 1; i < bestMatches.size(); i++) {
+						Mapping match = bestMatches.get(i);
+						creationPercs = nodeCreationPercs.get(match.to);
+						if (creationPercs == null) continue;
+						Mapping mapping = new NodeAlignment(bestMatch.to, match.to)
+								.calculateMapping(getDistanceMeasure());
+						Node from = mapping.getFrom(priorityToNode);
+						if (from == null) continue;
+						percs.add(creationPercs.get(from.id));
+					}
+
+					priority.creationPerc = percs.stream()
+							.filter(d -> d != null).mapToDouble(d -> d)
+							.average();
 				}
 			}
 
