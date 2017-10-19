@@ -4,7 +4,7 @@ import java.util.OptionalDouble;
 
 public class Priority {
 	public int consensusNumerator, consensusDemonimator;
-	public OptionalDouble creationPerc = OptionalDouble.empty();
+	public OptionalDouble creationTime = OptionalDouble.empty();
 
 	public double consensus() {
 		return (double) consensusNumerator / consensusDemonimator;
@@ -14,8 +14,8 @@ public class Priority {
 	public String toString() {
 		String out = String.format("{Consensus: %d/%d=%.02f",
 				consensusNumerator, consensusDemonimator, consensus());
-		if (creationPerc.isPresent()) {
-			out += String.format(", Creation: %.02f}", creationPerc.getAsDouble());
+		if (creationTime.isPresent()) {
+			out += String.format(", Creation: %.02f}", creationTime.getAsDouble());
 		}
 		out += "}";
 		return out;

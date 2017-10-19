@@ -6,7 +6,6 @@ import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,12 +23,12 @@ import edu.isnap.ctd.graph.vector.VectorState;
 public class HintMap {
 
 	public final List<Node> solutions = new ArrayList<>();
-	public final Map<Node, Map<String, Double>> nodeCreationPercs = new IdentityHashMap<>();
+	public final Map<Node, Map<String, Double>> nodePlacementTimes = new IdentityHashMap<>();
 
 	RuleSet ruleSet;
 	final HintConfig config;
 
-	private transient Map<String, Double> currentNodeCreationPercs = new HashMap<>();
+	private transient List<Node> currentHistory = new ArrayList<>();
 
 	public HintConfig getHintConfig() {
 		return config;
@@ -81,12 +80,7 @@ public class HintMap {
 	}
 
 	public void addVertex(Node node, double perc) {
-		node.recurse(child -> {
-			if (child != null && child.id != null &&
-					!currentNodeCreationPercs.containsKey(child.id)) {
-				currentNodeCreationPercs.put(child.id, perc);
-			}
-		});
+		currentHistory.add(node);
 	}
 
 	public VectorGraph getGraph(Node node) {
@@ -124,7 +118,9 @@ public class HintMap {
 
 	public void setSolution(Node solution) {
 		solutions.add(solution);
-		Set<String> ids = new HashSet<>();
+
+		Map<String, Double> currentNodeCreationPercs = new HashMap<>();
+
 		solution.recurse(new Action() {
 			@Override
 			public void run(Node item) {
@@ -135,18 +131,30 @@ public class HintMap {
 					graph.addVertex(children);
 				}
 				graph.setGoal(children, getContext(item));
-				if (item.id != null) ids.add(item.id);
+
+				if (item.id != null) {
+					// If this node has an ID, look for the first time a node with same ID has the
+					// same root path in the history, and declare that as its placement time perc
+					String rootPath = item.rootPathString();
+					for (int i = 0; i < currentHistory.size(); i++) {
+						Node node = currentHistory.get(i);
+						Node match = node.searchForNodeWithID(item.id);
+						if (match == null) continue;
+						if (rootPath.equals(match.rootPathString())) {
+							currentNodeCreationPercs.put(item.id,
+									(double) i / currentHistory.size());
+							break;
+						}
+					}
+					if (!currentNodeCreationPercs.containsKey(item.id)) {
+						System.out.println("!!!!");
+					}
+				}
 			}
 		});
 
-		// First, remove any id not found in the final solution to save space
-		HashSet<String> toRemove = new HashSet<>(currentNodeCreationPercs.keySet());
-		toRemove.removeAll(ids);
-		toRemove.forEach(id -> currentNodeCreationPercs.remove(id));
-
 		// Then save the current node creation percs, using the final solution as a key
-		nodeCreationPercs.put(solution, currentNodeCreationPercs);
-		currentNodeCreationPercs = new IdentityHashMap<>();
+		nodePlacementTimes.put(solution, currentNodeCreationPercs);
 	}
 
 	public IndexedVectorState getContext(Node item) {
@@ -212,7 +220,7 @@ public class HintMap {
 			myGraph.addGraph(graph, true);
 		}
 		solutions.addAll(hintMap.solutions);
-		nodeCreationPercs.putAll(hintMap.nodeCreationPercs);
+		nodePlacementTimes.putAll(hintMap.nodePlacementTimes);
 	}
 
 	/**

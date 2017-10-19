@@ -4,6 +4,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
@@ -42,10 +43,10 @@ public class HintHighlighter {
 	private final List<Node> solutions;
 	private final HintConfig config;
 	private final RuleSet ruleSet;
-	private final Map<Node, Map<String, Double>> nodeCreationPercs;
+	private final Map<Node, Map<String, Double>> nodePlacementTimes;
 
 	public HintHighlighter(HintMap hintMap) {
-		this(hintMap.solutions, hintMap.ruleSet, hintMap.nodeCreationPercs, hintMap.config);
+		this(hintMap.solutions, hintMap.ruleSet, hintMap.nodePlacementTimes, hintMap.config);
 	}
 
 	public HintHighlighter(List<Node> solutions, HintConfig config) {
@@ -57,7 +58,7 @@ public class HintHighlighter {
 		this.solutions = config.preprocessSolutions ?
 				preprocessSolutions(solutions, nodeCreationPercs, config) : solutions;
 		this.ruleSet = ruleSet;
-		this.nodeCreationPercs = nodeCreationPercs;
+		this.nodePlacementTimes = nodeCreationPercs;
 		this.config = config;
 	}
 
@@ -686,31 +687,43 @@ public class HintHighlighter {
 		.map(m -> new HashSet<>(highlight(node, m)))
 		.forEach(set -> hintCounts.incrementAll(set));
 
+		Map<Mapping, Mapping> bestToGoodMappings = new HashMap<>();
+		if (nodePlacementTimes != null && nodePlacementTimes.containsKey(bestMatch.to)) {
+			for (int i = 1; i < bestMatches.size(); i++) {
+				Mapping match = bestMatches.get(i);
+				Map<String, Double> creationPercs = nodePlacementTimes.get(match.to);
+				if (creationPercs == null) continue;
+				Mapping mapping = new NodeAlignment(bestMatch.to, match.to)
+						.calculateMapping(getDistanceMeasure());
+				bestToGoodMappings.put(match, mapping);
+			}
+		}
+
 		for (EditHint hint : hints) {
 			Priority priority = new Priority();
 			priority.consensusNumerator = hintCounts.get(hint);
 			priority.consensusDemonimator = bestMatches.size();
 
-			if (nodeCreationPercs != null && nodeCreationPercs.containsKey(bestMatch.to)) {
-				// TODO: do this for the set of best matches
-				Map<String, Double> creationPercs = nodeCreationPercs.get(bestMatch.to);
+			if (nodePlacementTimes != null && nodePlacementTimes.containsKey(bestMatch.to)) {
+				Map<String, Double> creationPercs = nodePlacementTimes.get(bestMatch.to);
 				Node priorityToNode = hint.getPriorityToNode(bestMatch);
-				if (priorityToNode != null) {
+				if (creationPercs != null && priorityToNode != null) {
 					List<Double> percs = new ArrayList<>();
 					percs.add(creationPercs.get(priorityToNode.id));
 
-					for (int i = 1; i < bestMatches.size(); i++) {
-						Mapping match = bestMatches.get(i);
-						creationPercs = nodeCreationPercs.get(match.to);
-						if (creationPercs == null) continue;
-						Mapping mapping = new NodeAlignment(bestMatch.to, match.to)
-								.calculateMapping(getDistanceMeasure());
-						Node from = mapping.getFrom(priorityToNode);
+					// TODO: Somehow priorityToNode is not from bestMatch
+					if (priorityToNode.id != null && percs.get(0) == null) {
+						System.out.println(priorityToNode.root() == bestMatch.to);
+					}
+
+					for (Mapping match : bestToGoodMappings.keySet()) {
+						Node from = bestToGoodMappings.get(match).getFrom(priorityToNode);
 						if (from == null) continue;
+						creationPercs = nodePlacementTimes.get(match.to);
 						percs.add(creationPercs.get(from.id));
 					}
 
-					priority.creationPerc = percs.stream()
+					priority.creationTime = percs.stream()
 							.filter(d -> d != null).mapToDouble(d -> d)
 							.average();
 				}

@@ -90,7 +90,7 @@ public class EDM2017 {
 			HintMap hintMap = builder.buildGenerator(Mode.Ignore, 1).hintMap;
 			List<Node> solutions = new ArrayList<>(hintMap.solutions);
 			highlighters.put(assignment.name, new HintHighlighter(
-					solutions, null, hintMap.nodeCreationPercs, hintMap.getHintConfig()));
+					solutions, null, hintMap.nodePlacementTimes, hintMap.getHintConfig()));
 		}
 
 		// Since sometimes assignments are incorrect in the logs, we have to redirect prequel
