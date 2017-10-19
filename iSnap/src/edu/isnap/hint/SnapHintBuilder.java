@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -40,38 +39,22 @@ public class SnapHintBuilder {
 	private final HashMap<String, HintMap> studentSubtreeCache =
 			new HashMap<>();
 
-	private Map<String, List<Node>> nodeMapCache;
-	private Map<String, Grade> gradeMapCache;
-	private Map<String, Boolean> hasIDsMap;
+	private Map<String, LoadedAttempt> nodeMapCache;
 
 	/**
 	 * Gets a map of attemptIDs to Node lists, where each list of Nodes represents
 	 * the ASTs for the Snapshots created during a given attempt, with the last one being the
 	 * submitted AST.
 	 */
-	public Map<String, List<Node>> nodeMap() {
+	public Map<String, LoadedAttempt> nodeMap() {
 		if (nodeMapCache == null) {
 			try {
-				parseAttempts();
+				nodeMapCache = parseAttempts();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
 		return nodeMapCache;
-	}
-
-	/**
-	 * Gets a map of attemptIDs to grades for the submitted Snapshot of that attempt.
-	 */
-	public Map<String, Grade> gradeMap() {
-		if (gradeMapCache == null) {
-			try {
-				parseAttempts();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-		return gradeMapCache;
 	}
 
 	/**
@@ -143,12 +126,10 @@ public class SnapHintBuilder {
 		for (String student : nodeMap().keySet()) {
 			if (student.equals(testAttempt)) continue;
 
-			Grade grade = gradeMapCache.get(student);
-			if (config.requireGrade && grade == null) continue;
-			if (grade != null && grade.average() < minGrade) continue;
+			final LoadedAttempt nodes = nodeMap().get(student);
 
-			final List<Node> nodes = nodeMap().get(student);
-			if (nodes.size() == 0) continue;
+			if (config.requireGrade && nodes.grade == null) continue;
+			if (nodes.grade != null && nodes.grade.average() < minGrade) continue;
 
 			final String fStudent = student;
 
@@ -162,7 +143,7 @@ public class SnapHintBuilder {
 					}
 					if (studentMap == null) {
 //						System.out.println(fStudent);
-						studentMap = builder.addAttempt(nodes, hasIDsMap.get(fStudent));
+						studentMap = builder.addAttempt(nodes, nodes.hasIDs);
 						synchronized (studentSubtreeCache) {
 							studentSubtreeCache.put(fStudent, studentMap);
 						}
@@ -185,30 +166,40 @@ public class SnapHintBuilder {
 	}
 
 	// Parses all attempts for this assignment
-	private void parseAttempts() throws IOException {
+	private Map<String, LoadedAttempt> parseAttempts() throws IOException {
 		Map<String, AssignmentAttempt> students = assignment.load(Mode.Use, true, true,
 				new SnapParser.LikelySubmittedOnly());
-		nodeMapCache = new TreeMap<>();
-		gradeMapCache = new TreeMap<>();
-		hasIDsMap = new TreeMap<>();
+		Map<String, LoadedAttempt> nodeMapCache = new TreeMap<>();
 
 		for (String attemptID : students.keySet()) {
 			AssignmentAttempt attempt = students.get(attemptID);
-			List<Node> nodes = new ArrayList<>();
 
+			if (attempt.size() == 0) continue;
+			if (assignment.graded && attempt.grade == null) {
+				System.err.println("No grade for: " + attemptID);
+			}
+
+			LoadedAttempt nodes = new LoadedAttempt(attempt.hasIDs, attempt.grade);
 			for (AttemptAction row : attempt) {
 				Node node = SimpleNodeBuilder.toTree(row.snapshot, true);
 				nodes.add(node);
 			}
 
-			if (nodes.size() == 0) continue;
-			if (assignment.graded && attempt.grade == null) {
-				System.err.println("No grade for: " + attemptID);
-			}
-
 			nodeMapCache.put(attemptID, nodes);
-			gradeMapCache.put(attemptID, attempt.grade);
-			hasIDsMap.put(attemptID, attempt.hasIDs);
+		}
+
+		return nodeMapCache;
+	}
+
+	public static class LoadedAttempt extends ArrayList<Node> {
+		private static final long serialVersionUID = 1L;
+
+		public final boolean hasIDs;
+		public final Grade grade;
+
+		public LoadedAttempt(boolean hasIDs, Grade grade) {
+			this.hasIDs = hasIDs;
+			this.grade = grade;
 		}
 	}
 

@@ -24,20 +24,21 @@ import edu.isnap.eval.policy.HintPolicy;
 import edu.isnap.eval.util.PrintUpdater;
 import edu.isnap.eval.util.Prune;
 import edu.isnap.hint.SnapHintBuilder;
+import edu.isnap.hint.SnapHintBuilder.LoadedAttempt;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.elements.Snapshot;
 
 public class CompleteEval {
-	
+
 	private final static int MAX = 1000, MAX_STEPS = 250, SLICES = 50;
 	private final static boolean PRUNE = true;
-	
+
 	public static void main(String[] args) throws IOException {
 		Assignment assignment = Fall2015.GuessingGame1;
 		eval(assignment);
 //		test(assignment);
 	}
-	
+
 	private static void eval(Assignment assignment) throws IOException {
 
 		SnapHintBuilder subtree = new SnapHintBuilder(assignment);
@@ -45,7 +46,7 @@ public class CompleteEval {
 		Snapshot solution = assignment.loadSolution();
 		Node solutionNode = SimpleNodeBuilder.toTree(solution, true);
 		DirectEditPolicy solutionPolicy = new DirectEditPolicy(solutionNode);
-		
+
 		File outFile = new File(assignment.analysisDir() + "/complete" + (PRUNE ? "-p" : "") + ".csv");
 		outFile.getParentFile().mkdirs();
 		List<String> headers = new LinkedList<>();
@@ -54,10 +55,10 @@ public class CompleteEval {
 		CSVPrinter printer = new CSVPrinter(new PrintStream(outFile), CSVFormat.DEFAULT.withHeader(headers.toArray(new String[headers.size()])));
 
 		int max = MAX;
-		
+
 		String[] names = new String[] { "Hint All", "Hint Exemplar", "Direct Ideal", "Direct Student" };
-		
-		Map<String,List<Node>> nodeMap = subtree.nodeMap();
+
+		Map<String, LoadedAttempt> nodeMap = subtree.nodeMap();
 		for (String student : nodeMap.keySet()) {
 			if (assignment.ignore(student)) continue;
 
@@ -77,7 +78,7 @@ public class CompleteEval {
 					solutionPolicy,
 					new DirectEditPolicy(nodes.get(nodes.size() - 1)),
 			};
-			
+
 			List<Completion> completions = new ArrayList<>();
 			for (int i = 0; i < policies.length; i++) {
 
@@ -110,7 +111,7 @@ public class CompleteEval {
 
 		printer.close();
 	}
-	
+
 	@SuppressWarnings("unused")
 	private static void test(Assignment assignment) throws IOException {
 
@@ -119,13 +120,13 @@ public class CompleteEval {
 		Snapshot solution = assignment.loadSolution();
 		Node solutionNode = SimpleNodeBuilder.toTree(solution, true);
 		DirectEditPolicy solutionPolicy = new DirectEditPolicy(solutionNode);
-		
+
 		String[] names = new String[] { "Hint All", "Hint Exemplar", "Direct Ideal", "Direct Student" };
-		
-		Map<String,List<Node>> nodeMap = subtree.nodeMap();
-		
+
+		Map<String, LoadedAttempt> nodeMap = subtree.nodeMap();
+
 		int max = 2;
-		
+
 		for (String student : nodeMap.keySet()) {
 			if (assignment.ignore(student)) continue;
 
@@ -141,7 +142,7 @@ public class CompleteEval {
 					solutionPolicy,
 					new DirectEditPolicy(nodes.get(nodes.size() - 1)),
 			};
-			
+
 			int slice = (int) (Math.random() * SLICES);
 			int index = nodes.size() * slice / SLICES;
 			System.out.println("Slice: " + slice + " (" + index + ")");
@@ -151,8 +152,8 @@ public class CompleteEval {
 			node = Prune.removeSmallerScripts(node);
 			System.out.println("Norm:\n" + node.prettyPrint());
 			System.out.println("-------------");
-			
-			
+
+
 			for (int i = 0; i < policies.length; i++) {
 				System.out.println(names[i] + ":");
 				Tuple<Node,Integer> s = policies[i].solution(node, MAX_STEPS);
@@ -163,24 +164,24 @@ public class CompleteEval {
 				System.out.println();
 				System.out.println(s.x.prettyPrint());
 				System.out.println("-------------");
-				
+
 			}
 		}
 	}
-	
+
 	private static class Completion {
 
 		private final Node startState;
 		private final int slice, studentSteps;
-		private final HintPolicy policy; 
+		private final HintPolicy policy;
 		private final String name;
-		
+
 		private Node endState;
 		private HashMap<String, Boolean> grade;
 		private int steps;
 		private int deletions;
 		private int firstHints;
-		
+
 		public Completion(Node startState, int slice, int studentSteps, HintPolicy policy, String name) {
 			this.startState = startState;
 			this.slice = slice;
@@ -188,7 +189,7 @@ public class CompleteEval {
 			this.policy = policy;
 			this.name = name;
 		}
-		
+
 		public void calculateAsync(AtomicInteger count) {
 			count.incrementAndGet();
 			new Thread(new Runnable() {
@@ -199,32 +200,32 @@ public class CompleteEval {
 				}
 			}).start();
 		}
-	
+
 		public void calculate() {
 			Tuple<Node,Integer> solution = policy.solution(startState, MAX_STEPS);
-			
+
 			steps = solution.y;
 			endState = solution.x;
 			grade = AutoGrader.grade(endState);
-			
+
 			RTED_InfoTree_Opt opt = new RTED_InfoTree_Opt(1, 0, 1);
 			deletions = (int)Math.round(opt.nonNormalizedTreeDist(startState.toTree(), endState.toTree()));
-			
+
 			firstHints = policy.nextSteps(startState).size();
 		}
-		
+
 		public void writeCSV(CSVPrinter printer, String student) throws IOException {
 			int extraCols = 8;
 			Object[] row = new Object[AutoGrader.graders.length + extraCols];
 			row[0] = name; row[1] = student; row[2] = slice; row[3] = studentSteps;
 			row[4] = "H" + endState.hashCode(); row[5] = steps; row[6] = deletions; row[7] = firstHints;
-			
+
 			for (int i = 0; i < AutoGrader.graders.length; i++) {
 				row[i + extraCols] = String.valueOf(grade.get(AutoGrader.graders[i].name())).toUpperCase();
 			}
 			printer.printRecord(row);
 			printer.flush();
 		}
-		
+
 	}
 }

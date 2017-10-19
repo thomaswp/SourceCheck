@@ -27,6 +27,7 @@ import edu.isnap.eval.policy.StudentPolicy;
 import edu.isnap.eval.util.PrintUpdater;
 import edu.isnap.eval.util.Prune;
 import edu.isnap.hint.SnapHintBuilder;
+import edu.isnap.hint.SnapHintBuilder.LoadedAttempt;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.elements.Snapshot;
 
@@ -72,7 +73,7 @@ public class GradeEval {
 
 		int max = 1;
 
-		Map<String,List<Node>> nodeMap = subtree.nodeMap();
+		Map<String, LoadedAttempt> nodeMap = subtree.nodeMap();
 		for (String student : nodeMap.keySet()) {
 			if (assignment.ignore(student)) continue;
 
@@ -137,7 +138,7 @@ public class GradeEval {
 
 		int max = MAX;
 
-		Map<String,List<Node>> nodeMap = subtree.nodeMap();
+		Map<String, LoadedAttempt> nodeMap = subtree.nodeMap();
 		for (String student : nodeMap.keySet()) {
 			if (assignment.ignore(student)) continue;
 

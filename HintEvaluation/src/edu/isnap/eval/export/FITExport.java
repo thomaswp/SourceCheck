@@ -22,25 +22,26 @@ import edu.isnap.ctd.graph.Node.Action;
 import edu.isnap.dataset.Grade;
 import edu.isnap.datasets.Fall2015;
 import edu.isnap.hint.SnapHintBuilder;
+import edu.isnap.hint.SnapHintBuilder.LoadedAttempt;
 import edu.isnap.parser.elements.Snapshot;
 
 public class FITExport {
-	
+
 	public static void main(String[] args) {
 		SnapHintBuilder subtree = new SnapHintBuilder(Fall2015.GuessingGame1);
 		outputStudentsFOG(subtree);
 	}
-	
+
 	private static void outputStudentsFOG(SnapHintBuilder subtree) {
 		int totalNodes = 0;
 		String baseDir = subtree.assignment.dataDir + "/" + subtree.assignment + "/chf-fog/";
 		new File(baseDir).mkdirs();
 
-		Map<String,List<Node>> nodeMap = subtree.nodeMap();
+		Map<String, LoadedAttempt> nodeMap = subtree.nodeMap();
 		for (String student : nodeMap.keySet()) {
-			Grade grade = subtree.gradeMap().get(student);
 			totalNodes++;
-			List<Node> nodes = nodeMap.get(student);
+			LoadedAttempt nodes = nodeMap.get(student);
+			Grade grade = nodes.grade;
 			String dir  = baseDir + student + "/";
 			new File(dir).mkdirs();
 			for (Node node : nodes) {
@@ -65,7 +66,7 @@ public class FITExport {
 				}
 			}
 		}
-		
+
 		System.out.println("Total students: " + nodeMap.size());
 		System.out.println("Total nodes: " + totalNodes);
 	}
@@ -86,8 +87,8 @@ public class FITExport {
 	@SuppressWarnings("unused")
 	private static void outputStudents(SnapHintBuilder subtree) {
 
-		Map<String,List<Node>> nodeMap = subtree.nodeMap();
-		final HashSet<String> labels = new HashSet<String>();
+		Map<String, LoadedAttempt> nodeMap = subtree.nodeMap();
+		final HashSet<String> labels = new HashSet<>();
 		for (List<Node> nodes : nodeMap.values()) {
 			for (Node node : nodes) {
 				node.recurse(new Action() {
@@ -143,7 +144,7 @@ public class FITExport {
 					throw new RuntimeException(ex);
 				}
 			}
-		}		
+		}
 	}
 
 	private static void appendNode(Sequence seq, Alphabet alpha, Node node) {
