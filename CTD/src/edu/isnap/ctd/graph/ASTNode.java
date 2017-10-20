@@ -1,5 +1,6 @@
 package edu.isnap.ctd.graph;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -9,7 +10,7 @@ import java.util.Map;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class ASTNode {
+public class ASTNode implements INode {
 
 	// TODO: This really belongs in snap-specific code
 	public final static String SNAPSHOT_TYPE = "Snap!shot";
@@ -19,12 +20,29 @@ public class ASTNode {
 	private ASTNode parent;
 	private final Map<String, ASTNode> childMap = new LinkedHashMap<>();
 
+	@Override
 	public ASTNode parent() {
 		return parent;
 	}
 
+	@Override
+	public String type() {
+		return type;
+	}
+
+	@Override
+	public String value() {
+		return value;
+	}
+
+	@Override
+	public String id() {
+		return id;
+	}
+
+	@Override
 	public List<ASTNode> children() {
-		return (List<ASTNode>) childMap.values();
+		return new ArrayList<>(childMap.values());
 	}
 
 	public Map<String, ASTNode> childMap() {

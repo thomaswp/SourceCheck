@@ -19,7 +19,7 @@ import edu.isnap.ctd.hint.Canonicalization.SwapBinaryArgs;
 import edu.isnap.ctd.util.StringHashable;
 import util.LblTree;
 
-public class Node extends StringHashable {
+public class Node extends StringHashable implements INode {
 
 	public static int PrettyPrintSpacing = 2;
 
@@ -36,6 +36,7 @@ public class Node extends StringHashable {
 	public transient Object tag;
 	public final transient List<Canonicalization> canonicalizations = new ArrayList<>();
 
+	@Override
 	public String type() {
 		return type;
 	}
@@ -43,6 +44,26 @@ public class Node extends StringHashable {
 	public void setType(String type) {
 		this.type = type;
 		recache();
+	}
+
+	@Override
+	public String value() {
+		return value;
+	}
+
+	@Override
+	public String id() {
+		return id;
+	}
+
+	@Override
+	public Node parent() {
+		return parent;
+	}
+
+	@Override
+	public List<Node> children() {
+		return children;
 	}
 
 	private void recache() {

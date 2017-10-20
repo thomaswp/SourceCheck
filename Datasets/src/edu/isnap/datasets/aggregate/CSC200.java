@@ -4,6 +4,7 @@ import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.datasets.Fall2015;
 import edu.isnap.datasets.Fall2016;
+import edu.isnap.datasets.Fall2017;
 import edu.isnap.datasets.Spring2016;
 import edu.isnap.datasets.Spring2017;
 
@@ -14,7 +15,7 @@ public class CSC200 extends AggregateDataset {
 
 	public CSC200() {
 		super(dataDir, Fall2015.instance, Spring2016.instance, Fall2016.instance,
-				Spring2017.instance);
+				Spring2017.instance, Fall2017.instance);
 	}
 
 	@Override
