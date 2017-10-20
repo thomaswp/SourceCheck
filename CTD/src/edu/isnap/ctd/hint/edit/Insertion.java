@@ -210,8 +210,6 @@ public class Insertion extends EditHint {
 
 	@Override
 	public Node getPriorityToNode(Mapping mapping) {
-		if (pair != null) return pair;
-		if (candidate != null) return mapping.getTo(candidate);
-		return null;
+		return pair;
 	}
 }

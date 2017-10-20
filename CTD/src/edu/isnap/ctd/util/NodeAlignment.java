@@ -88,7 +88,9 @@ public class NodeAlignment {
 
 		@Override
 		public int compareTo(Mapping o) {
-			return Double.compare(cost, o.cost);
+			int costCompare = Double.compare(cost, o.cost);
+			if (costCompare != 0) return costCompare;
+			return Integer.compare(to.treeSize(), o.to.treeSize());
 		}
 
 		public String getMappedType(Node node, boolean isFrom) {

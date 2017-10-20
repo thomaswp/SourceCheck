@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -39,6 +40,7 @@ import edu.isnap.datasets.Spring2016;
 import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.agreement.EditComparer.EditDifference;
 import edu.isnap.hint.SnapHintBuilder;
+import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.Snapshot;
@@ -153,8 +155,7 @@ public class EDM2017 {
 
 
 			if (!expertRowMap.containsKey("highlight")) {
-				List<EditHint> edits = highlighter.highlight(fromNode);
-				highlighter.assignPriorities(fromNode, edits);
+				List<EditHint> edits = highlighter.highlightWithPriorities(fromNode);
 				comparisonRowMap.put("highlight", edits);
 //				comparisonRowMap.put("highlight-rted", highlighter.highlightRTED(fromNode));
 //				comparisonRowMap.put("highlight-sed", highlighter.highlightStringEdit(fromNode));
@@ -237,6 +238,8 @@ public class EDM2017 {
 		Map<String, Node> nodeMap = new HashMap<>();
 		Map<String, String> assignmentMap = new HashMap<>();
 
+		Spreadsheet spreadsheet = new Spreadsheet();
+
 		readEdits(expertMap, comparisonMap, nodeMap, assignmentMap, testDataset,
 				trainingAssignments);
 
@@ -277,22 +280,34 @@ public class EDM2017 {
 				Node node = nodeMap.get(row);
 				System.out.println(node.prettyPrint(true));
 				System.out.println("Ideal:");
-				printEditsWithPriorities(agreedIdeal);
+				printEditsWithPriorities("ideal", agreedIdeal, spreadsheet, assignment, row);
 				System.out.println("Ok:");
-				printEditsWithPriorities(agreedAll);
+				printEditsWithPriorities("ok", agreedAll, spreadsheet, assignment, row);
 				System.out.println("Bad:");
-				printEditsWithPriorities(extraHints);
+				printEditsWithPriorities("bad", extraHints, spreadsheet, assignment, row);
 				System.out.println("Missed Ideal:");
-				printEditsWithPriorities(missedIdeal);
+				printEditsWithPriorities("missed", missedIdeal, null, null, null);
 				System.out.println();
 			}
 		}
+
+		spreadsheet.write(testDataset.analysisDir() + "/edm2017-analyze.csv");
 	}
 
-	private static void printEditsWithPriorities(Collection<EditHint> edits) {
+	private static void printEditsWithPriorities(String category, Collection<EditHint> edits,
+			Spreadsheet spreadsheet, Assignment assignment, String row) {
 		for (EditHint edit : edits) {
 			System.out.println(edit);
 			if (edit.priority != null) System.out.println(edit.priority);
+
+			if (spreadsheet == null || edit.priority == null) continue;
+			spreadsheet.newRow();
+			spreadsheet.put("assignment", assignment.name);
+			spreadsheet.put("row", row);
+			spreadsheet.put("consensus", edit.priority.consensus());
+			OptionalDouble creationTime = edit.priority.creationTime;
+			spreadsheet.put("creation", creationTime.isPresent() ? creationTime.getAsDouble() : null);
+			spreadsheet.put("category", category);
 		}
 	}
 

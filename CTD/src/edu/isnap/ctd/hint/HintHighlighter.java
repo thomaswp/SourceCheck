@@ -73,6 +73,13 @@ public class HintHighlighter {
 		return highlight(node, mapping);
 	}
 
+	public List<EditHint> highlightWithPriorities(Node node) {
+		Mapping mapping = findSolutionMapping(node);
+		List<EditHint> hints = highlight(node, mapping);
+		assignPriorities(mapping, hints);
+		return hints;
+	}
+
 	public List<EditHint> highlight(Node node, final Mapping mapping) {
 		return highlight(node, mapping, true);
 	}
@@ -673,12 +680,10 @@ public class HintHighlighter {
 
 	}
 
-	public void assignPriorities(Node node, List<EditHint> hints) {
+	public void assignPriorities(Mapping bestMatch, List<EditHint> hints) {
+		Node node = bestMatch.from;
 		List<Mapping> bestMatches = NodeAlignment.findBestMatches(
 				node, solutions, getDistanceMeasure(), config, 0.2);
-
-		if (bestMatches.size() == 0) return;
-		Mapping bestMatch = bestMatches.get(0);
 
 		// Get counts of how many times each edit appears in the top matches
 		CountMap<EditHint> hintCounts = new CountMap<>();
@@ -689,8 +694,8 @@ public class HintHighlighter {
 
 		Map<Mapping, Mapping> bestToGoodMappings = new HashMap<>();
 		if (nodePlacementTimes != null && nodePlacementTimes.containsKey(bestMatch.to)) {
-			for (int i = 1; i < bestMatches.size(); i++) {
-				Mapping match = bestMatches.get(i);
+			for (Mapping match : bestMatches) {
+				if (bestMatch.to == match.to) continue;
 				Map<String, Double> creationPercs = nodePlacementTimes.get(match.to);
 				if (creationPercs == null) continue;
 				Mapping mapping = new NodeAlignment(bestMatch.to, match.to)
@@ -710,11 +715,6 @@ public class HintHighlighter {
 				if (creationPercs != null && priorityToNode != null) {
 					List<Double> percs = new ArrayList<>();
 					percs.add(creationPercs.get(priorityToNode.id));
-
-					// TODO: Somehow priorityToNode is not from bestMatch
-					if (priorityToNode.id != null && percs.get(0) == null) {
-						System.out.println(priorityToNode.root() == bestMatch.to);
-					}
 
 					for (Mapping match : bestToGoodMappings.keySet()) {
 						Node from = bestToGoodMappings.get(match).getFrom(priorityToNode);
