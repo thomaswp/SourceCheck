@@ -1,8 +1,12 @@
 package edu.isnap.eval.export;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -16,6 +20,7 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.datasets.aggregate.CSC200;
 import edu.isnap.parser.Store.Mode;
+import edu.isnap.parser.elements.BlockDefinition;
 
 public class GrammarBuilder {
 
@@ -26,11 +31,15 @@ public class GrammarBuilder {
 
 	public final String domain;
 
-	private Set<String> rootTypes = new HashSet<>();
-	private Map<String, Type> types = new HashMap<>();
+	private final Set<String> rootTypes = new HashSet<>();
+	private final Map<String, Type> types = new HashMap<>();
+	private final Map<String, Set<String>> categories;
 
-	public GrammarBuilder(String domain) {
+	private Set<String> allChildren = new HashSet<>();
+
+	public GrammarBuilder(String domain, Map<String, Set<String>> categories) {
 		this.domain = domain;
+		this.categories = categories;
 	}
 
 	public void add(INode root) {
@@ -55,6 +64,12 @@ public class GrammarBuilder {
 		grammar.put("grammar_domain", domain);
 		grammar.put("root", new JSONArray(rootTypes));
 
+		JSONObject cats = new JSONObject();
+		categories.keySet().forEach(cat -> cats.put(cat, new JSONArray(categories.get(cat))));
+		grammar.put("categories", cats);
+
+		grammar.put("special_types", new JSONArray(allChildren));
+
 		List<Type> types = new ArrayList<>(this.types.values());
 		types.sort((t1, t2) -> -Integer.compare(t1.count, t2.count));
 
@@ -70,7 +85,7 @@ public class GrammarBuilder {
 	}
 
 	public static GrammarBuilder fromAssignments(String domain, Assignment... assignments) {
-		GrammarBuilder builder = new GrammarBuilder(domain);
+		GrammarBuilder builder = new GrammarBuilder(domain, readSnapCategories());
 		for (Assignment assignment : assignments) {
 			assignment.load(Mode.Use, true).values().stream()
 			.flatMap(attempt -> attempt.rows.rows.stream())
@@ -78,6 +93,51 @@ public class GrammarBuilder {
 			.forEach(node -> builder.add(node));
 		}
 		return builder;
+	}
+
+	private static Map<String, Set<String>> readSnapCategories() {
+		Map<String, Set<String>> categories = new HashMap<>();
+		try {
+			String source = new String(Files.readAllBytes(new File("blocks.json").toPath()));
+			JSONObject blocks = new JSONObject(source);
+
+			Iterator<?> keys = blocks.keys();
+			while (keys.hasNext()) {
+				String type = (String) keys.next();
+				JSONObject def = blocks.getJSONObject(type);
+				String category = def.getString("type");
+				if ("predicate".equals(category)) category = "reporter";
+				category = category.toUpperCase();
+
+				Set<String> set = categories.get(category);
+				if (set == null) {
+					categories.put(category, set = new HashSet<>());
+				}
+				if (BlockDefinition.isTool(type)) {
+					type = BlockDefinition.getCustomBlockCall(type);
+				}
+				set.add(type);
+			}
+
+			Set<String> reporters = categories.get("REPORTER");
+			reporters.add("literal");
+			reporters.add("var");
+			reporters.add("reportTrue");
+			reporters.add("reportFalse");
+			reporters.add("evaluateCustomBlock");
+
+			Set<String> commands = categories.get("COMMAND");
+			commands.add("evaluateCustomBlock");
+
+//			for (String category : categories.keySet()) {
+//				System.out.println("-----+ " + category + " +------");
+//				categories.get(category).forEach(System.out::println);
+//			}
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return categories;
 	}
 
 	private class Type {
@@ -124,12 +184,21 @@ public class GrammarBuilder {
 		}
 	}
 
-	private static class Input {
+	private class Input {
 		public final Set<String> types = new HashSet<>();
 		public int count = 0;
 
 		public void addType(String type) {
-			types.add(type);
+			List<String> cats = categories.keySet().stream()
+				.filter(cat -> categories.get(cat).contains(type))
+				.collect(Collectors.toList());
+
+			if (cats.size() == 1) {
+				types.add(cats.get(0));
+			} else {
+				types.add(type);
+				allChildren.add(type);
+			}
 			count++;
 		}
 	}

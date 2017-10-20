@@ -1,0 +1,1145 @@
+{
+  "forward": {
+    "type": "command",
+    "category": "motion",
+    "spec": "move %n steps",
+    "defaults": [
+      10
+    ]
+  },
+  "turn": {
+    "type": "command",
+    "category": "motion",
+    "spec": "turn %clockwise %n degrees",
+    "defaults": [
+      15
+    ]
+  },
+  "turnLeft": {
+    "type": "command",
+    "category": "motion",
+    "spec": "turn %counterclockwise %n degrees",
+    "defaults": [
+      15
+    ]
+  },
+  "setHeading": {
+    "type": "command",
+    "category": "motion",
+    "spec": "point in direction %dir"
+  },
+  "doFaceTowards": {
+    "type": "command",
+    "category": "motion",
+    "spec": "point towards %dst"
+  },
+  "gotoXY": {
+    "type": "command",
+    "category": "motion",
+    "spec": "go to x: %n y: %n",
+    "defaults": [
+      0,
+      0
+    ]
+  },
+  "doGotoObject": {
+    "type": "command",
+    "category": "motion",
+    "spec": "go to %dst"
+  },
+  "doGlide": {
+    "type": "command",
+    "category": "motion",
+    "spec": "glide %n secs to x: %n y: %n",
+    "defaults": [
+      1,
+      0,
+      0
+    ]
+  },
+  "changeXPosition": {
+    "type": "command",
+    "category": "motion",
+    "spec": "change x by %n",
+    "defaults": [
+      10
+    ]
+  },
+  "setXPosition": {
+    "type": "command",
+    "category": "motion",
+    "spec": "set x to %n",
+    "defaults": [
+      0
+    ]
+  },
+  "changeYPosition": {
+    "type": "command",
+    "category": "motion",
+    "spec": "change y by %n",
+    "defaults": [
+      10
+    ]
+  },
+  "setYPosition": {
+    "type": "command",
+    "category": "motion",
+    "spec": "set y to %n",
+    "defaults": [
+      0
+    ]
+  },
+  "bounceOffEdge": {
+    "type": "command",
+    "category": "motion",
+    "spec": "if on edge, bounce"
+  },
+  "xPosition": {
+    "type": "reporter",
+    "category": "motion",
+    "spec": "x position"
+  },
+  "yPosition": {
+    "type": "reporter",
+    "category": "motion",
+    "spec": "y position"
+  },
+  "direction": {
+    "type": "reporter",
+    "category": "motion",
+    "spec": "direction"
+  },
+  "doSwitchToCostume": {
+    "type": "command",
+    "category": "looks",
+    "spec": "switch to costume %cst"
+  },
+  "doWearNextCostume": {
+    "type": "command",
+    "category": "looks",
+    "spec": "next costume"
+  },
+  "getCostumeIdx": {
+    "type": "reporter",
+    "category": "looks",
+    "spec": "costume #"
+  },
+  "doSayFor": {
+    "type": "command",
+    "category": "looks",
+    "spec": "say %s for %n secs",
+    "defaults": [
+      "Hello!",
+      2
+    ]
+  },
+  "bubble": {
+    "type": "command",
+    "category": "looks",
+    "spec": "say %s",
+    "defaults": [
+      "Hello!"
+    ]
+  },
+  "doThinkFor": {
+    "type": "command",
+    "category": "looks",
+    "spec": "think %s for %n secs",
+    "defaults": [
+      "Hmm...",
+      2
+    ]
+  },
+  "doThink": {
+    "type": "command",
+    "category": "looks",
+    "spec": "think %s",
+    "defaults": [
+      "Hmm..."
+    ]
+  },
+  "changeEffect": {
+    "type": "command",
+    "category": "looks",
+    "spec": "change %eff effect by %n",
+    "defaults": [
+      null,
+      25
+    ]
+  },
+  "setEffect": {
+    "type": "command",
+    "category": "looks",
+    "spec": "set %eff effect to %n",
+    "defaults": [
+      null,
+      0
+    ]
+  },
+  "clearEffects": {
+    "type": "command",
+    "category": "looks",
+    "spec": "clear graphic effects"
+  },
+  "changeScale": {
+    "type": "command",
+    "category": "looks",
+    "spec": "change size by %n",
+    "defaults": [
+      10
+    ]
+  },
+  "setScale": {
+    "type": "command",
+    "category": "looks",
+    "spec": "set size to %n %",
+    "defaults": [
+      100
+    ]
+  },
+  "getScale": {
+    "type": "reporter",
+    "category": "looks",
+    "spec": "size"
+  },
+  "show": {
+    "type": "command",
+    "category": "looks",
+    "spec": "show"
+  },
+  "hide": {
+    "type": "command",
+    "category": "looks",
+    "spec": "hide"
+  },
+  "comeToFront": {
+    "type": "command",
+    "category": "looks",
+    "spec": "go to front"
+  },
+  "goBack": {
+    "type": "command",
+    "category": "looks",
+    "spec": "go back %n layers",
+    "defaults": [
+      1
+    ]
+  },
+  "doScreenshot": {
+    "type": "command",
+    "category": "looks",
+    "spec": "save %imgsource as costume named %s",
+    "defaults": [
+      [
+        "pen trails"
+      ],
+      "screenshot"
+    ]
+  },
+  "reportCostumes": {
+    "dev": true,
+    "type": "reporter",
+    "category": "looks",
+    "spec": "wardrobe"
+  },
+  "alert": {
+    "dev": true,
+    "type": "command",
+    "category": "looks",
+    "spec": "alert %mult%s"
+  },
+  "log": {
+    "dev": true,
+    "type": "command",
+    "category": "looks",
+    "spec": "console log %mult%s"
+  },
+  "playSound": {
+    "type": "command",
+    "category": "sound",
+    "spec": "play sound %snd"
+  },
+  "doPlaySoundUntilDone": {
+    "type": "command",
+    "category": "sound",
+    "spec": "play sound %snd until done"
+  },
+  "doStopAllSounds": {
+    "type": "command",
+    "category": "sound",
+    "spec": "stop all sounds"
+  },
+  "doRest": {
+    "type": "command",
+    "category": "sound",
+    "spec": "rest for %n beats",
+    "defaults": [
+      0.2
+    ]
+  },
+  "doPlayNote": {
+    "type": "command",
+    "category": "sound",
+    "spec": "play note %n for %n beats",
+    "defaults": [
+      60,
+      0.5
+    ]
+  },
+  "doChangeTempo": {
+    "type": "command",
+    "category": "sound",
+    "spec": "change tempo by %n",
+    "defaults": [
+      20
+    ]
+  },
+  "doSetTempo": {
+    "type": "command",
+    "category": "sound",
+    "spec": "set tempo to %n bpm",
+    "defaults": [
+      60
+    ]
+  },
+  "getTempo": {
+    "type": "reporter",
+    "category": "sound",
+    "spec": "tempo"
+  },
+  "reportSounds": {
+    "dev": true,
+    "type": "reporter",
+    "category": "sound",
+    "spec": "jukebox"
+  },
+  "clear": {
+    "type": "command",
+    "category": "pen",
+    "spec": "clear"
+  },
+  "down": {
+    "type": "command",
+    "category": "pen",
+    "spec": "pen down"
+  },
+  "up": {
+    "type": "command",
+    "category": "pen",
+    "spec": "pen up"
+  },
+  "setColor": {
+    "type": "command",
+    "category": "pen",
+    "spec": "set pen color to %clr"
+  },
+  "changeHue": {
+    "type": "command",
+    "category": "pen",
+    "spec": "change pen color by %n",
+    "defaults": [
+      10
+    ]
+  },
+  "setHue": {
+    "type": "command",
+    "category": "pen",
+    "spec": "set pen color to %n",
+    "defaults": [
+      0
+    ]
+  },
+  "changeBrightness": {
+    "type": "command",
+    "category": "pen",
+    "spec": "change pen shade by %n",
+    "defaults": [
+      10
+    ]
+  },
+  "setBrightness": {
+    "type": "command",
+    "category": "pen",
+    "spec": "set pen shade to %n",
+    "defaults": [
+      100
+    ]
+  },
+  "changeSize": {
+    "type": "command",
+    "category": "pen",
+    "spec": "change pen size by %n",
+    "defaults": [
+      1
+    ]
+  },
+  "setSize": {
+    "type": "command",
+    "category": "pen",
+    "spec": "set pen size to %n",
+    "defaults": [
+      1
+    ]
+  },
+  "doStamp": {
+    "type": "command",
+    "category": "pen",
+    "spec": "stamp"
+  },
+  "floodFill": {
+    "type": "command",
+    "category": "pen",
+    "spec": "fill"
+  },
+  "receiveGo": {
+    "type": "hat",
+    "category": "control",
+    "spec": "when %greenflag clicked"
+  },
+  "receiveKey": {
+    "type": "hat",
+    "category": "control",
+    "spec": "when %keyHat key pressed"
+  },
+  "receiveInteraction": {
+    "type": "hat",
+    "category": "control",
+    "spec": "when I am %interaction",
+    "defaults": [
+      "clicked"
+    ]
+  },
+  "receiveMessage": {
+    "type": "hat",
+    "category": "control",
+    "spec": "when I receive %msgHat"
+  },
+  "receiveCondition": {
+    "type": "hat",
+    "category": "control",
+    "spec": "when %b"
+  },
+  "doBroadcast": {
+    "type": "command",
+    "category": "control",
+    "spec": "broadcast %msg"
+  },
+  "doBroadcastAndWait": {
+    "type": "command",
+    "category": "control",
+    "spec": "broadcast %msg and wait"
+  },
+  "getLastMessage": {
+    "type": "reporter",
+    "category": "control",
+    "spec": "message"
+  },
+  "doWait": {
+    "type": "command",
+    "category": "control",
+    "spec": "wait %n secs",
+    "defaults": [
+      1
+    ]
+  },
+  "doWaitUntil": {
+    "type": "command",
+    "category": "control",
+    "spec": "wait until %b"
+  },
+  "doForever": {
+    "type": "command",
+    "category": "control",
+    "spec": "forever %c"
+  },
+  "doRepeat": {
+    "type": "command",
+    "category": "control",
+    "spec": "repeat %n %c",
+    "defaults": [
+      10
+    ]
+  },
+  "doUntil": {
+    "type": "command",
+    "category": "control",
+    "spec": "repeat until %b %c"
+  },
+  "doIf": {
+    "type": "command",
+    "category": "control",
+    "spec": "if %b %c"
+  },
+  "doIfElse": {
+    "type": "command",
+    "category": "control",
+    "spec": "if %b %c else %c"
+  },
+  "doStopThis": {
+    "type": "command",
+    "category": "control",
+    "spec": "stop %stopChoices"
+  },
+  "doStopOthers": {
+    "type": "command",
+    "category": "control",
+    "spec": "stop %stopOthersChoices"
+  },
+  "doRun": {
+    "type": "command",
+    "category": "control",
+    "spec": "run %cmdRing %inputs"
+  },
+  "fork": {
+    "type": "command",
+    "category": "control",
+    "spec": "launch %cmdRing %inputs"
+  },
+  "evaluate": {
+    "type": "reporter",
+    "category": "control",
+    "spec": "call %repRing %inputs"
+  },
+  "doReport": {
+    "type": "command",
+    "category": "control",
+    "spec": "report %s"
+  },
+  "doCallCC": {
+    "type": "command",
+    "category": "control",
+    "spec": "run %cmdRing w/continuation"
+  },
+  "reportCallCC": {
+    "type": "reporter",
+    "category": "control",
+    "spec": "call %cmdRing w/continuation"
+  },
+  "doWarp": {
+    "type": "command",
+    "category": "other",
+    "spec": "warp %c"
+  },
+  "receiveOnClone": {
+    "type": "hat",
+    "category": "control",
+    "spec": "when I start as a clone"
+  },
+  "createClone": {
+    "type": "command",
+    "category": "control",
+    "spec": "create a clone of %cln"
+  },
+  "removeClone": {
+    "type": "command",
+    "category": "control",
+    "spec": "delete this clone"
+  },
+  "doPauseAll": {
+    "type": "command",
+    "category": "control",
+    "spec": "pause all %pause"
+  },
+  "reportTouchingObject": {
+    "type": "predicate",
+    "category": "sensing",
+    "spec": "touching %col ?"
+  },
+  "reportTouchingColor": {
+    "type": "predicate",
+    "category": "sensing",
+    "spec": "touching %clr ?"
+  },
+  "reportColorIsTouchingColor": {
+    "type": "predicate",
+    "category": "sensing",
+    "spec": "color %clr is touching %clr ?"
+  },
+  "colorFiltered": {
+    "dev": true,
+    "type": "reporter",
+    "category": "sensing",
+    "spec": "filtered for %clr"
+  },
+  "reportStackSize": {
+    "dev": true,
+    "type": "reporter",
+    "category": "sensing",
+    "spec": "stack size"
+  },
+  "reportFrameCount": {
+    "dev": true,
+    "type": "reporter",
+    "category": "sensing",
+    "spec": "frames"
+  },
+  "reportThreadCount": {
+    "dev": true,
+    "type": "reporter",
+    "category": "sensing",
+    "spec": "processes"
+  },
+  "doAsk": {
+    "type": "command",
+    "category": "sensing",
+    "spec": "ask %s and wait",
+    "defaults": [
+      "what's your name?"
+    ]
+  },
+  "reportLastAnswer": {
+    "dev": true,
+    "type": "reporter",
+    "category": "sensing",
+    "spec": "answer"
+  },
+  "getLastAnswer": {
+    "type": "reporter",
+    "category": "sensing",
+    "spec": "answer"
+  },
+  "reportMouseX": {
+    "type": "reporter",
+    "category": "sensing",
+    "spec": "mouse x"
+  },
+  "reportMouseY": {
+    "type": "reporter",
+    "category": "sensing",
+    "spec": "mouse y"
+  },
+  "reportMouseDown": {
+    "type": "predicate",
+    "category": "sensing",
+    "spec": "mouse down?"
+  },
+  "reportKeyPressed": {
+    "type": "predicate",
+    "category": "sensing",
+    "spec": "key %key pressed?"
+  },
+  "reportDistanceTo": {
+    "type": "reporter",
+    "category": "sensing",
+    "spec": "distance to %dst"
+  },
+  "doResetTimer": {
+    "type": "command",
+    "category": "sensing",
+    "spec": "reset timer"
+  },
+  "reportTimer": {
+    "dev": true,
+    "type": "reporter",
+    "category": "sensing",
+    "spec": "timer"
+  },
+  "getTimer": {
+    "type": "reporter",
+    "category": "sensing",
+    "spec": "timer"
+  },
+  "reportAttributeOf": {
+    "type": "reporter",
+    "category": "sensing",
+    "spec": "%att of %spr",
+    "defaults": [
+      [
+        "costume #"
+      ]
+    ]
+  },
+  "reportURL": {
+    "type": "reporter",
+    "category": "sensing",
+    "spec": "http:// %s",
+    "defaults": [
+      "snap.berkeley.edu"
+    ]
+  },
+  "reportIsFastTracking": {
+    "type": "predicate",
+    "category": "sensing",
+    "spec": "turbo mode?"
+  },
+  "doSetFastTracking": {
+    "type": "command",
+    "category": "sensing",
+    "spec": "set turbo mode to %b"
+  },
+  "reportDate": {
+    "type": "reporter",
+    "category": "sensing",
+    "spec": "current %dates"
+  },
+  "reportGet": {
+    "type": "reporter",
+    "category": "sensing",
+    "spec": "my %get",
+    "defaults": [
+      [
+        "neighbors"
+      ]
+    ]
+  },
+  "reifyScript": {
+    "type": "ring",
+    "category": "other",
+    "spec": "%rc %ringparms",
+    "alias": "command ring lambda"
+  },
+  "reifyReporter": {
+    "type": "ring",
+    "category": "other",
+    "spec": "%rr %ringparms",
+    "alias": "reporter ring lambda"
+  },
+  "reifyPredicate": {
+    "type": "ring",
+    "category": "other",
+    "spec": "%rp %ringparms",
+    "alias": "predicate ring lambda"
+  },
+  "reportSum": {
+    "type": "reporter",
+    "category": "operators",
+    "spec": "%n + %n"
+  },
+  "reportDifference": {
+    "type": "reporter",
+    "category": "operators",
+    "spec": "%n − %n",
+    "alias": "-"
+  },
+  "reportProduct": {
+    "type": "reporter",
+    "category": "operators",
+    "spec": "%n × %n",
+    "alias": "*"
+  },
+  "reportQuotient": {
+    "type": "reporter",
+    "category": "operators",
+    "spec": "%n / %n"
+  },
+  "reportRound": {
+    "type": "reporter",
+    "category": "operators",
+    "spec": "round %n"
+  },
+  "reportMonadic": {
+    "type": "reporter",
+    "category": "operators",
+    "spec": "%fun of %n",
+    "defaults": [
+      null,
+      10
+    ]
+  },
+  "reportModulus": {
+    "type": "reporter",
+    "category": "operators",
+    "spec": "%n mod %n"
+  },
+  "reportRandom": {
+    "type": "reporter",
+    "category": "operators",
+    "spec": "pick random %n to %n",
+    "defaults": [
+      1,
+      10
+    ]
+  },
+  "reportLessThan": {
+    "type": "predicate",
+    "category": "operators",
+    "spec": "%s < %s"
+  },
+  "reportEquals": {
+    "type": "predicate",
+    "category": "operators",
+    "spec": "%s = %s"
+  },
+  "reportGreaterThan": {
+    "type": "predicate",
+    "category": "operators",
+    "spec": "%s > %s"
+  },
+  "reportAnd": {
+    "type": "predicate",
+    "category": "operators",
+    "spec": "%b and %b"
+  },
+  "reportOr": {
+    "type": "predicate",
+    "category": "operators",
+    "spec": "%b or %b"
+  },
+  "reportNot": {
+    "type": "predicate",
+    "category": "operators",
+    "spec": "not %b"
+  },
+  "reportBoolean": {
+    "type": "predicate",
+    "category": "operators",
+    "spec": "%bool",
+    "alias": "true boolean"
+  },
+  "reportFalse": {
+    "type": "predicate",
+    "category": "operators",
+    "spec": "%bool",
+    "defaults": [
+      false
+    ],
+    "alias": "false boolean"
+  },
+  "reportJoinWords": {
+    "type": "reporter",
+    "category": "operators",
+    "spec": "join %words",
+    "defaults": [
+      "hello ",
+      "world"
+    ]
+  },
+  "reportLetter": {
+    "type": "reporter",
+    "category": "operators",
+    "spec": "letter %n of %s",
+    "defaults": [
+      1,
+      "world"
+    ]
+  },
+  "reportStringSize": {
+    "type": "reporter",
+    "category": "operators",
+    "spec": "length of %s",
+    "defaults": [
+      "world"
+    ]
+  },
+  "reportUnicode": {
+    "type": "reporter",
+    "category": "operators",
+    "spec": "unicode of %s",
+    "defaults": [
+      "a"
+    ]
+  },
+  "reportUnicodeAsLetter": {
+    "type": "reporter",
+    "category": "operators",
+    "spec": "unicode %n as letter",
+    "defaults": [
+      65
+    ]
+  },
+  "reportIsA": {
+    "type": "predicate",
+    "category": "operators",
+    "spec": "is %s a %typ ?",
+    "defaults": [
+      5
+    ]
+  },
+  "reportIsIdentical": {
+    "type": "predicate",
+    "category": "operators",
+    "spec": "is %s identical to %s ?"
+  },
+  "reportTextSplit": {
+    "type": "reporter",
+    "category": "operators",
+    "spec": "split %s by %delim",
+    "defaults": [
+      "hello world",
+      " "
+    ]
+  },
+  "reportJSFunction": {
+    "type": "reporter",
+    "category": "operators",
+    "spec": "JavaScript function ( %mult%s ) { %code }"
+  },
+  "reportTypeOf": {
+    "dev": true,
+    "type": "reporter",
+    "category": "operators",
+    "spec": "type of %s",
+    "defaults": [
+      5
+    ]
+  },
+  "reportTextFunction": {
+    "dev": true,
+    "type": "reporter",
+    "category": "operators",
+    "spec": "%txtfun of %s",
+    "defaults": [
+      null,
+      "Abelson & Sussman"
+    ]
+  },
+  "doSetVar": {
+    "type": "command",
+    "category": "variables",
+    "spec": "set %var to %s",
+    "defaults": [
+      null,
+      0
+    ]
+  },
+  "doChangeVar": {
+    "type": "command",
+    "category": "variables",
+    "spec": "change %var by %n",
+    "defaults": [
+      null,
+      1
+    ]
+  },
+  "doShowVar": {
+    "type": "command",
+    "category": "variables",
+    "spec": "show variable %var"
+  },
+  "doHideVar": {
+    "type": "command",
+    "category": "variables",
+    "spec": "hide variable %var"
+  },
+  "doDeclareVariables": {
+    "type": "command",
+    "category": "other",
+    "spec": "script variables %scriptVars"
+  },
+  "doDeleteAttr": {
+    "type": "command",
+    "category": "variables",
+    "spec": "delete %shd"
+  },
+  "reportNewList": {
+    "type": "reporter",
+    "category": "lists",
+    "spec": "list %exp"
+  },
+  "reportCONS": {
+    "type": "reporter",
+    "category": "lists",
+    "spec": "%s in front of %l"
+  },
+  "reportListItem": {
+    "type": "reporter",
+    "category": "lists",
+    "spec": "item %idx of %l",
+    "defaults": [
+      1
+    ]
+  },
+  "reportCDR": {
+    "type": "reporter",
+    "category": "lists",
+    "spec": "all but first of %l"
+  },
+  "reportListLength": {
+    "type": "reporter",
+    "category": "lists",
+    "spec": "length of %l"
+  },
+  "reportListContainsItem": {
+    "type": "predicate",
+    "category": "lists",
+    "spec": "%l contains %s",
+    "defaults": [
+      null,
+      "thing"
+    ]
+  },
+  "doAddToList": {
+    "type": "command",
+    "category": "lists",
+    "spec": "add %s to %l",
+    "defaults": [
+      "thing"
+    ]
+  },
+  "doDeleteFromList": {
+    "type": "command",
+    "category": "lists",
+    "spec": "delete %ida of %l",
+    "defaults": [
+      1
+    ]
+  },
+  "doInsertInList": {
+    "type": "command",
+    "category": "lists",
+    "spec": "insert %s at %idx of %l",
+    "defaults": [
+      "thing",
+      1
+    ]
+  },
+  "doReplaceInList": {
+    "type": "command",
+    "category": "lists",
+    "spec": "replace item %idx of %l with %s",
+    "defaults": [
+      1,
+      null,
+      "thing"
+    ]
+  },
+  "reportMap": {
+    "dev": true,
+    "type": "reporter",
+    "category": "lists",
+    "spec": "map %repRing over %l"
+  },
+  "doForEach": {
+    "dev": true,
+    "type": "command",
+    "category": "lists",
+    "spec": "for %upvar in %l %cl",
+    "defaults": [
+      "each item"
+    ]
+  },
+  "doShowTable": {
+    "dev": true,
+    "type": "command",
+    "category": "lists",
+    "spec": "show table %l"
+  },
+  "doMapCodeOrHeader": {
+    "type": "command",
+    "category": "other",
+    "spec": "map %cmdRing to %codeKind %code"
+  },
+  "doMapStringCode": {
+    "type": "command",
+    "category": "other",
+    "spec": "map String to code %code",
+    "defaults": [
+      "<#1>"
+    ]
+  },
+  "doMapListCode": {
+    "type": "command",
+    "category": "other",
+    "spec": "map %codeListPart of %codeListKind to code %code"
+  },
+  "reportMappedCode": {
+    "type": "reporter",
+    "category": "other",
+    "spec": "code of %cmdRing"
+  },
+  "label %'text' of size %'size'": {
+    "type": "command",
+    "category": "pen",
+    "spec": "label %'text' of size %'size'"
+  },
+  "map %'function' over %'lists'": {
+    "type": "reporter",
+    "category": "lists",
+    "spec": "map %'function' over %'lists'"
+  },
+  "empty? %'data'": {
+    "type": "predicate",
+    "category": "lists",
+    "spec": "empty? %'data'"
+  },
+  "keep items such that %'pred' from %'data'": {
+    "type": "reporter",
+    "category": "lists",
+    "spec": "keep items such that %'pred' from %'data'"
+  },
+  "combine with %'function' items of %'data'": {
+    "type": "reporter",
+    "category": "lists",
+    "spec": "combine with %'function' items of %'data'"
+  },
+  "if %'test' then %'true' else %'false'": {
+    "type": "reporter",
+    "category": "control",
+    "spec": "if %'test' then %'true' else %'false'"
+  },
+  "for %'i' = %'start' to %'end' %'action'": {
+    "type": "command",
+    "category": "control",
+    "spec": "for %'i' = %'start' to %'end' %'action'"
+  },
+  "join words %'words'": {
+    "type": "reporter",
+    "category": "operators",
+    "spec": "join words %'words'"
+  },
+  "list $arrowRight sentence %'data'": {
+    "type": "reporter",
+    "category": "operators",
+    "spec": "list $arrowRight sentence %'data'"
+  },
+  "sentence $arrowRight list %'text'": {
+    "type": "reporter",
+    "category": "operators",
+    "spec": "sentence $arrowRight list %'text'"
+  },
+  "catch %'tag' %'action'": {
+    "type": "command",
+    "category": "control",
+    "spec": "catch %'tag' %'action'"
+  },
+  "throw %'cont'": {
+    "type": "command",
+    "category": "control",
+    "spec": "throw %'cont'"
+  },
+  "catch %'tag' %'value'": {
+    "type": "reporter",
+    "category": "control",
+    "spec": "catch %'tag' %'value'"
+  },
+  "throw %'tag' %'value'": {
+    "type": "command",
+    "category": "control",
+    "spec": "throw %'tag' %'value'"
+  },
+  "for each %'item' of %'data' %'action'": {
+    "type": "command",
+    "category": "lists",
+    "spec": "for each %'item' of %'data' %'action'"
+  },
+  "if %'test' do %'action' and pause all $pause-1-255-220-0": {
+    "type": "command",
+    "category": "control",
+    "spec": "if %'test' do %'action' and pause all $pause-1-255-220-0"
+  },
+  "word $arrowRight list %'word'": {
+    "type": "reporter",
+    "category": "operators",
+    "spec": "word $arrowRight list %'word'"
+  },
+  "ignore %'x'": {
+    "type": "command",
+    "category": "control",
+    "spec": "ignore %'x'"
+  },
+  "tell %'sprite' to %'action'": {
+    "type": "command",
+    "category": "control",
+    "spec": "tell %'sprite' to %'action'"
+  },
+  "ask %'sprite' for %'expression'": {
+    "type": "reporter",
+    "category": "control",
+    "spec": "ask %'sprite' for %'expression'"
+  },
+  "list $arrowRight word %'list'": {
+    "type": "reporter",
+    "category": "operators",
+    "spec": "list $arrowRight word %'list'"
+  }
+}
