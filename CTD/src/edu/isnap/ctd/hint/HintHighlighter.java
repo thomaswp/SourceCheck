@@ -683,7 +683,7 @@ public class HintHighlighter {
 	public void assignPriorities(Mapping bestMatch, List<EditHint> hints) {
 		Node node = bestMatch.from;
 		List<Mapping> bestMatches = NodeAlignment.findBestMatches(
-				node, solutions, getDistanceMeasure(), config, 0.2);
+				node, solutions, getDistanceMeasure(), config, 0.5);
 
 		// Get counts of how many times each edit appears in the top matches
 		CountMap<EditHint> hintCounts = new CountMap<>();

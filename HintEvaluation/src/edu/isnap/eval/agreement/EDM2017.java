@@ -29,6 +29,7 @@ import edu.isnap.ctd.hint.HintJSON;
 import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.hint.RuleSet;
 import edu.isnap.ctd.hint.edit.EditHint;
+import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.NullSream;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.dataset.Assignment;
@@ -291,11 +292,12 @@ public class EDM2017 {
 			}
 		}
 
-		spreadsheet.write(testDataset.analysisDir() + "/edm2017-analyze.csv");
+		spreadsheet.write(testDataset.analysisDir() + "/edm2017-prioritize.csv");
 	}
 
 	private static void printEditsWithPriorities(String category, Collection<EditHint> edits,
 			Spreadsheet spreadsheet, Assignment assignment, String row) {
+		Diff.USE_ANSI_COLORS = false;
 		for (EditHint edit : edits) {
 			System.out.println(edit);
 			if (edit.priority != null) System.out.println(edit.priority);
@@ -305,10 +307,15 @@ public class EDM2017 {
 			spreadsheet.put("assignment", assignment.name);
 			spreadsheet.put("row", row);
 			spreadsheet.put("consensus", edit.priority.consensus());
+			spreadsheet.put("consensusNum", edit.priority.consensusNumerator);
+			spreadsheet.put("consensusDen", edit.priority.consensusDemonimator);
 			OptionalDouble creationTime = edit.priority.creationTime;
-			spreadsheet.put("creation", creationTime.isPresent() ? creationTime.getAsDouble() : null);
+			spreadsheet.put("creation",
+					creationTime.isPresent() ? creationTime.getAsDouble() : null);
+			spreadsheet.put("edit", edit.toString());
 			spreadsheet.put("category", category);
 		}
+		Diff.USE_ANSI_COLORS = true;
 	}
 
 	private static String getType(String key) {
