@@ -20,7 +20,6 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.datasets.Fall2016;
-import edu.isnap.datasets.Fall2017;
 import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.hint.util.SimpleNodeBuilder;
@@ -89,19 +88,22 @@ public class HintSelection {
 
 	protected static void printHintRating2017() throws IOException {
 		Assignment[][] assignments = {
+//				new Assignment[] {
+//						Spring2017.PolygonMaker,
+//						Fall2017.PolygonMaker,
+//				},
 				new Assignment[] {
-						Spring2017.PolygonMaker,
-						Fall2017.PolygonMaker,
-				}, new Assignment[] {
 						Spring2017.Squiral,
-						Fall2017.Squiral,
-				}, new Assignment[] {
+//						Fall2017.Squiral,
+				},
+				new Assignment[] {
 						Spring2017.GuessingGame1,
-						Fall2017.GuessingGame1,
-				}, new Assignment[] {
-						Spring2017.GuessingGame2,
-						Fall2017.GuessingGame2,
-				}
+//						Fall2017.GuessingGame1,
+				},
+//				new Assignment[] {
+//						Spring2017.GuessingGame2,
+//						Fall2017.GuessingGame2,
+//				},
 		};
 
 		// Projects used in training
@@ -113,12 +115,14 @@ public class HintSelection {
 		};
 
 		String[] users = {
-				"twprice", "rzhi", "vmcatete", "nalytle", "ydong2"
+//				"twprice", "rzhi", "vmcatete", "nalytle", "ydong2"
+				"twprice", "rzhi", "ydong2"
 		};
 
-		int maxReuqestsPerAssignment = 30;
+		int maxReuqestsPerAssignment = 15;
 
-		boolean dialogOnly = false;
+		boolean dialogOnly = true;
+		boolean multiSample = false;
 
 		for (Assignment[] assignmentSet : assignments) {
 			Map<AssignmentAttempt,List<HintRequest>> requestMap = new HashMap<>();
@@ -135,8 +139,17 @@ public class HintSelection {
 
 			Random rand = new Random(DEFAULT_SEED);
 			List<HintRequest> selected;
-			if (requestMap.size() >= maxReuqestsPerAssignment) {
+			if (requestMap.size() >= maxReuqestsPerAssignment || !multiSample) {
 				selected = requestMap.values().stream()
+//						.map(list -> {
+//							if (!dialogOnly) {
+//								List<HintRequest> dialogRequests = list.stream()
+//									.filter(r -> isHintDialogRow(r.action))
+//									.collect(Collectors.toList());
+//								if (dialogRequests.size() > 0) list = dialogRequests;
+//							}
+//							return list.get(rand.nextInt(list.size()));
+//						})
 						.map(list -> list.get(rand.nextInt(list.size())))
 						.collect(Collectors.toList());
 				while (selected.size() > maxReuqestsPerAssignment) {
@@ -192,9 +205,9 @@ public class HintSelection {
 			}
 			// Be careful with this output, since it uses the USE directive
 			System.out.println("USE snap_spring2017;");
-			printSQL("handmade_hints", selected, users);
+			printSQL("handmade_hints", spring2017, users);
 			System.out.println("USE snap;");
-			printSQL("handmade_hints", selected, users);
+			printSQL("handmade_hints", fall2017, users);
 		}
 	}
 
