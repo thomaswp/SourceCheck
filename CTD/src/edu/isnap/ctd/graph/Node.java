@@ -119,8 +119,9 @@ public class Node extends StringHashable implements INode {
 
 	@Override
 	protected String toCanonicalStringInternal() {
-		return String.format("%s%s",
-				type,
+		return String.format("%s=%s%s",
+				// TODO: Make sure adding value here doesn't break everything
+				type, value,
 				children.size() == 0 ? "" : (":" + toCannonicalString(children)));
 	}
 

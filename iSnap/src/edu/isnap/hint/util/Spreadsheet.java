@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,5 +43,9 @@ public class Spreadsheet {
 		}
 
 		printer.close();
+	}
+
+	public void sort(Comparator<Map<String, Object>> comparator) {
+		rows.sort(comparator);
 	}
 }
