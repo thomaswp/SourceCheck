@@ -20,6 +20,7 @@ import org.apache.commons.lang.StringEscapeUtils;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.HintJSON;
 import edu.isnap.ctd.hint.edit.EditHint;
+import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
@@ -82,10 +83,8 @@ public class TutorEdits {
 //					System.out.println(Diff.diff(fromPP, to.prettyPrint(true), 1));
 					List<TutorEdit> tutorEdits = givers.get(to);
 					TutorEdit firstEdit = tutorEdits.get(0);
-					System.out.println(String.join(" AND\n",
-							firstEdit.edits.stream()
-							.map(e -> e.toString())
-							.collect(Collectors.toList())));
+					String editsString = firstEdit.editsString(true);
+					System.out.println(editsString);
 					for (TutorEdit tutorEdit : tutorEdits) {
 						System.out.printf("  %d/%s: #%d\n",
 								tutorEdit.priority, tutorEdit.tutor, tutorEdit.hintID);
@@ -97,6 +96,7 @@ public class TutorEdits {
 
 					Map<String, TutorEdit> givingTutors = tutorEdits.stream()
 							.collect(Collectors.toMap(e -> e.tutor, e -> e));
+					String editsStringNoANSI = firstEdit.editsString(false);
 					for (String tutor : tutorSpreadsheets.keySet()) {
 						TutorEdit edit = givingTutors.get(tutor);
 
@@ -108,6 +108,8 @@ public class TutorEdits {
 
 						spreadsheet.put("Valid (0-1)", edit == null ? null : 1);
 						spreadsheet.put("Priority (1-3)", edit == null ? null : edit.priority);
+
+						spreadsheet.put("Hint", editsStringNoANSI);
 					}
 				}
 				System.out.println();
@@ -216,6 +218,17 @@ public class TutorEdits {
 		@Override
 		public String toString() {
 			return String.format("%s, row #%d, hint #%d", tutor, rowID, hintID);
+		}
+
+		private String editsString(boolean useANSI) {
+			boolean oldANSI = Diff.USE_ANSI_COLORS;
+			Diff.USE_ANSI_COLORS = useANSI;
+			String editsString = String.join(" AND\n",
+					edits.stream()
+					.map(e -> e.toString())
+					.collect(Collectors.toList()));
+			Diff.USE_ANSI_COLORS = oldANSI;
+			return editsString;
 		}
 
 		public String toSQLInsert(String table, String user, int hintIDOffset) {
