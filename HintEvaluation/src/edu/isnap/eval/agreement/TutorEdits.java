@@ -85,13 +85,16 @@ public class TutorEdits {
 					TutorEdit firstEdit = tutorEdits.get(0);
 					String editsString = firstEdit.editsString(true);
 					System.out.println(editsString);
+					int priorityMatches = 0;
 					for (TutorEdit tutorEdit : tutorEdits) {
+						if (tutorEdit.priority == firstEdit.priority) priorityMatches++;
 						System.out.printf("  %d/%s: #%d\n",
 								tutorEdit.priority, tutorEdit.tutor, tutorEdit.hintID);
 					}
 
 					sql.append(firstEdit.toSQLInsert(
-							"handmade_hints", "consensus", hintOffset));
+							"handmade_hints", "consensus", hintOffset,
+							priorityMatches == tutors.size()));
 					sql.append("\n");
 
 					Map<String, TutorEdit> givingTutors = tutorEdits.stream()
@@ -231,11 +234,13 @@ public class TutorEdits {
 			return editsString;
 		}
 
-		public String toSQLInsert(String table, String user, int hintIDOffset) {
+		public String toSQLInsert(String table, String user, int hintIDOffset,
+				boolean addPriority) {
 			return String.format("INSERT INTO `%s` (`hid`, `userID`, `rowID`, `trueAssignmentID`, "
-					+ "`hintCode`, `hintEdits`) "
-					+ "VALUES (%d, '%s', %d, '%s', '%s', '%s');",
+					+ "`priority`, `hintCode`, `hintEdits`) "
+					+ "VALUES (%d, '%s', %d, '%s', %s, '%s', '%s');",
 					table, hintID + hintIDOffset, user, rowID, assignmentID,
+					addPriority ? String.valueOf(priority) : "NULL",
 					StringEscapeUtils.escapeSql(toXML),
 					StringEscapeUtils.escapeSql(HintJSON.hintArray(edits).toString()));
 		}
