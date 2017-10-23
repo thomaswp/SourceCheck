@@ -22,12 +22,12 @@ import edu.isnap.ctd.util.NodeAlignment.Mapping;
 
 public abstract class EditHint implements Hint, Comparable<EditHint> {
 	protected abstract void editChildren(List<String> children);
-	protected abstract String action();
 	protected abstract double priority();
 	protected abstract void appendHashCodeFieds(HashCodeBuilder builder);
 	protected abstract void appendEqualsFieds(EqualsBuilder builder, EditHint rhs);
 	protected abstract void addApplications(Node root, Node editParent,
 			List<Application> applications);
+	public abstract String action();
 	public abstract Node getPriorityToNode(Mapping mapping);
 
 	public static boolean useValues = true;

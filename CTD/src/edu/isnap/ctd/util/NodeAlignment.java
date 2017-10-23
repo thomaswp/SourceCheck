@@ -619,53 +619,29 @@ public class NodeAlignment {
 	}
 
 	public static List<Mapping> findBestMatches(Node from, List<Node> matches,
-			DistanceMeasure distanceMeasure, HintConfig config, double stdevsFromMin) {
+			DistanceMeasure distanceMeasure, HintConfig config, int maxReturned) {
 		List<Mapping> best = new LinkedList<>();
 		if (matches.size() == 0) return best;
 
 		Mapping[] mappings = new Mapping[matches.size()];
-		double totalCost = 0;
-		double minCost = Double.MAX_VALUE;
 		for (int i = 0; i < mappings.length; i++) {
 			NodeAlignment align = new NodeAlignment(from, matches.get(i), config);
 			Mapping mapping = align.calculateMapping(distanceMeasure);
 			mappings[i] = mapping;
-			totalCost += mapping.cost;
-			minCost = Math.min(minCost, mapping.cost);
-//			if (mapping.cost == minCost) {
-//				System.out.println(mapping.itemizedCost());
-//			}
 		}
 
-		// Calculate stdev for the mapping costs
-		double meanCost = totalCost / mappings.length;
-		double deviation = 0;
-		for (Mapping mapping : mappings) deviation += Math.pow(mapping.cost - meanCost, 2);
-		double stdev = mappings.length == 1 ? 0 : Math.sqrt(deviation / (mappings.length - 1));
+		Arrays.sort(mappings);
 
-		// The cutoff is the minimum cost, plus some (likely fractional) number of stdevs
-		double costCutoff = minCost + stdev * stdevsFromMin;
-
-		for (int i = 0; i < mappings.length; i++) {
-			if (mappings[i].cost <= costCutoff) best.add(mappings[i]);
+		for (int i = 0; i < maxReturned; i++) {
+			best.add(mappings[i]);
 		}
 		return best;
 	}
 
 	public static Mapping findBestMatch(Node from, List<Node> matches,
 			DistanceMeasure distanceMeasure, HintConfig config) {
-		Mapping best = null;
-		int smallest = Integer.MAX_VALUE;
-		List<Mapping> bestMatches = findBestMatches(from, matches, distanceMeasure, config, 0);
-//		System.out.println("Size: " + bestMatches.size());
-		for (Mapping mapping : bestMatches) {
-			int size = mapping.to.treeSize();
-			if (size < smallest) {
-				best = mapping;
-				smallest = size;
-			}
-		}
-		return best;
+		List<Mapping> bestMatches = findBestMatches(from, matches, distanceMeasure, config, 1);
+		return bestMatches.size() > 0 ? bestMatches.get(0) : null;
 	}
 
 	public static void main1(String[] args) {

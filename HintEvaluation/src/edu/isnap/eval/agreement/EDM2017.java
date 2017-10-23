@@ -297,15 +297,16 @@ public class EDM2017 {
 
 	private static void printEditsWithPriorities(String category, Collection<EditHint> edits,
 			Spreadsheet spreadsheet, Assignment assignment, String row) {
-		Diff.USE_ANSI_COLORS = false;
 		for (EditHint edit : edits) {
 			System.out.println(edit);
 			if (edit.priority != null) System.out.println(edit.priority);
 
 			if (spreadsheet == null || edit.priority == null) continue;
+			Diff.USE_ANSI_COLORS = false;
 			spreadsheet.newRow();
 			spreadsheet.put("assignment", assignment.name);
 			spreadsheet.put("row", row);
+			spreadsheet.put("type", edit.action());
 			spreadsheet.put("consensus", edit.priority.consensus());
 			spreadsheet.put("consensusNum", edit.priority.consensusNumerator);
 			spreadsheet.put("consensusDen", edit.priority.consensusDemonimator);
@@ -314,8 +315,8 @@ public class EDM2017 {
 					creationTime.isPresent() ? creationTime.getAsDouble() : null);
 			spreadsheet.put("edit", edit.toString());
 			spreadsheet.put("category", category);
+			Diff.USE_ANSI_COLORS = true;
 		}
-		Diff.USE_ANSI_COLORS = true;
 	}
 
 	private static String getType(String key) {

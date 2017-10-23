@@ -18,7 +18,7 @@ public class Reorder extends EditHint {
 	public final boolean inPlace;
 
 	@Override
-	protected String action() {
+	public String action() {
 		return "reorder";
 	}
 

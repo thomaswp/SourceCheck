@@ -13,7 +13,7 @@ public class Deletion extends EditHint {
 	public final Node node;
 
 	@Override
-	protected String action() {
+	public String action() {
 		return "delete";
 	}
 
