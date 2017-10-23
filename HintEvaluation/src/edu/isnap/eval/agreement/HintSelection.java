@@ -20,6 +20,7 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.datasets.Fall2016;
+import edu.isnap.datasets.Fall2017;
 import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.hint.util.SimpleNodeBuilder;
@@ -88,22 +89,22 @@ public class HintSelection {
 
 	protected static void printHintRating2017() throws IOException {
 		Assignment[][] assignments = {
-//				new Assignment[] {
+				new Assignment[] {
+						Fall2016.PolygonMaker,
 //						Spring2017.PolygonMaker,
-//						Fall2017.PolygonMaker,
-//				},
-				new Assignment[] {
-						Spring2017.Squiral,
-//						Fall2017.Squiral,
 				},
 				new Assignment[] {
-						Spring2017.GuessingGame1,
-//						Fall2017.GuessingGame1,
+						Fall2016.Squiral,
+//						Spring2017.Squiral,
 				},
-//				new Assignment[] {
+				new Assignment[] {
+						Fall2016.GuessingGame1,
+//						Spring2017.GuessingGame1,
+				},
+				new Assignment[] {
+						Fall2016.GuessingGame2,
 //						Spring2017.GuessingGame2,
-//						Fall2017.GuessingGame2,
-//				},
+				},
 		};
 
 		// Projects used in training
@@ -119,7 +120,7 @@ public class HintSelection {
 				"twprice", "rzhi", "ydong2"
 		};
 
-		int maxReuqestsPerAssignment = 15;
+		int maxReuqestsPerAssignment = 30;
 
 		boolean dialogOnly = true;
 		boolean multiSample = false;
@@ -199,15 +200,19 @@ public class HintSelection {
 
 //			exportSelected(assignmentSet[0], "ratings2017-" + maxReuqestsPerAssignment, selected);
 
-			List<HintRequest> spring2017 = new ArrayList<>(), fall2017 = new ArrayList<>();
+			List<HintRequest> fall2016 = new ArrayList<>(), spring2017 = new ArrayList<>(),
+					fall2017 = new ArrayList<>();
 			for (HintRequest req : selected) {
-				(req.assignment.dataset instanceof Spring2017 ? spring2017 : fall2017).add(req);
+				(req.assignment.dataset instanceof Spring2017 ? spring2017 :
+					(req.assignment.dataset instanceof Fall2017 ? fall2017 : fall2016)).add(req);
 			}
 			// Be careful with this output, since it uses the USE directive
-			System.out.println("USE snap_spring2017;");
-			printSQL("handmade_hints", spring2017, users);
-			System.out.println("USE snap;");
-			printSQL("handmade_hints", fall2017, users);
+			System.out.println("USE snap_fall2016;");
+			printSQL("handmade_hints", fall2016, users);
+//			System.out.println("USE snap_spring2017;");
+//			printSQL("handmade_hints", spring2017, users);
+//			System.out.println("USE snap;");
+//			printSQL("handmade_hints", fall2017, users);
 		}
 	}
 
