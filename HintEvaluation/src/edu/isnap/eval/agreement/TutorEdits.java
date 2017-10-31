@@ -60,6 +60,10 @@ public class TutorEdits {
 
 		public final int value;
 
+		public int points() {
+			return 4 - value;
+		}
+
 		Priority(int value) {
 			this.value = value;
 		}
@@ -206,7 +210,6 @@ public class TutorEdits {
 				// TODO: decide what to do with TooSoon hints
 				if (ratings.x != Validity.Valid) continue;
 				hint.priority = ratings.y;
-				System.out.println(hint);
 				keeps.add(hint);
 			}
 			consensusEdits.put(assignmentID, keeps);
@@ -332,6 +335,10 @@ public class TutorEdits {
 		}
 
 		private String editsString(boolean useANSI) {
+			return editsToString(edits, useANSI);
+		}
+
+		public static String editsToString(List<EditHint> edits, boolean useANSI) {
 			boolean oldANSI = Diff.USE_ANSI_COLORS;
 			Diff.USE_ANSI_COLORS = useANSI;
 			String editsString = String.join(" AND\n",
@@ -354,7 +361,7 @@ public class TutorEdits {
 		}
 
 		public HintOutcome toOutcome() {
-			return new HintOutcome(to, priority == null ? 0 : 1 / priority.value, edits);
+			return new HintOutcome(to, rowID, priority == null ? 0 : (1.0 / priority.value), edits);
 		}
 	}
 }
