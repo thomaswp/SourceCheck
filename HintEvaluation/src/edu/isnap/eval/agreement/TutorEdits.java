@@ -21,12 +21,16 @@ import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.HintJSON;
 import edu.isnap.ctd.hint.edit.EditHint;
 import edu.isnap.ctd.util.Diff;
+import edu.isnap.ctd.util.Tuple;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.datasets.Spring2017;
+import edu.isnap.eval.agreement.RateHints.GoldStandard;
+import edu.isnap.eval.agreement.RateHints.HintOutcome;
+import edu.isnap.eval.agreement.RateHints.HintSet;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.parser.Store.Mode;
@@ -34,9 +38,49 @@ import edu.isnap.parser.elements.Snapshot;
 
 public class TutorEdits {
 
+	public enum Validity {
+		Valid(1), TooEarly(0.5), Invalid(0);
+
+		public final double value;
+
+		Validity(double value) {
+			this.value = value;
+		}
+
+		public static Validity fromDouble(double value) {
+			for (Validity validity : Validity.values()) {
+				if (validity.value == value) return validity;
+			}
+			return null;
+		}
+	}
+
+	public enum Priority {
+		Highest(1), High(2), Normal(3);
+
+		public final int value;
+
+		Priority(int value) {
+			this.value = value;
+		}
+
+		public static Priority fromInt(int value) {
+			for (Priority priority : Priority.values()) {
+				if (priority.value == value) return priority;
+			}
+			return null;
+		}
+	}
+
 	public static void main(String[] args) throws FileNotFoundException, IOException {
-		compareHints(Spring2017.instance);
+//		compareHints(Spring2017.instance);
 //		verifyHints(Spring2017.instance);
+		GoldStandard standard = readConsensus(Spring2017.instance, "consensus-gg-sq.csv");
+		Map<String, HintSet> hintSets = readTutorHintSets(Spring2017.instance);
+		for (HintSet hintSet : hintSets.values()) {
+			System.out.println("------------ " + hintSet.name + " --------------");
+			RateHints.rate(standard, hintSet);
+		}
 	}
 
 	public static void verifyHints(Dataset dataset) throws FileNotFoundException, IOException {
@@ -127,6 +171,66 @@ public class TutorEdits {
 		JsonAST.write(dir + "consensus.sql", sql.toString());
 	}
 
+	public static Map<String, HintSet> readTutorHintSets(Dataset dataset)
+			throws FileNotFoundException, IOException {
+		Map<String, HintSet> hintSets = new HashMap<>();
+		ListMap<String, TutorEdit> allEdits = readTutorEdits(dataset);
+		for (List<TutorEdit> list : allEdits.values()) {
+			for (TutorEdit edit : list) {
+				if (edit.tutor.equals("consensus")) continue;
+				HintSet set = hintSets.get(edit.tutor);
+				if (set == null) {
+					hintSets.put(edit.tutor, set = new HintSet(edit.tutor));
+				}
+				set.add(edit.rowID, edit.toOutcome());
+			}
+		}
+		return hintSets;
+	}
+
+	public static GoldStandard readConsensus(Dataset dataset, String... consensusPaths)
+			throws FileNotFoundException, IOException {
+		Map<Integer, Tuple<Validity, Priority>> consensus =
+				readConsensusSpreadsheet(dataset, consensusPaths);
+		ListMap<String, TutorEdit> allEdits = readTutorEdits(dataset);
+		ListMap<String, TutorEdit> consensusEdits = new ListMap<>();
+		for (String assignmentID : allEdits.keySet()) {
+			List<TutorEdit> list = allEdits.get(assignmentID);
+			List<TutorEdit> keeps = new ArrayList<>();
+			for (TutorEdit hint : list) {
+				if (!hint.tutor.equals("consensus")) continue;
+				Tuple<Validity, Priority> ratings = consensus.get(hint.hintID);
+				if (ratings == null) {
+					throw new RuntimeException("No consensus rating for: " + hint.hintID);
+				}
+				// TODO: decide what to do with TooSoon hints
+				if (ratings.x != Validity.Valid) continue;
+				hint.priority = ratings.y;
+				System.out.println(hint);
+				keeps.add(hint);
+			}
+			consensusEdits.put(assignmentID, keeps);
+		}
+		return new GoldStandard(consensusEdits);
+	}
+
+	private static Map<Integer, Tuple<Validity, Priority>> readConsensusSpreadsheet(Dataset dataset,
+			String[] paths) throws FileNotFoundException, IOException {
+		Map<Integer, Tuple<Validity, Priority>> map = new HashMap<>();
+		for (String path : paths) {
+			CSVParser parser = new CSVParser(new FileReader(dataset.dataDir + "/" + path),
+					CSVFormat.DEFAULT.withHeader());
+			for (CSVRecord row : parser) {
+				int id = Integer.parseInt(row.get("Hint ID"));
+				double validity = Double.parseDouble(row.get("Consensus (Validity)"));
+				int priority = validity > 0 ? Integer.parseInt(row.get("Consensus (Priority)")) : 0;
+				map.put(id, new Tuple<>(Validity.fromDouble(validity), Priority.fromInt(priority)));
+			}
+			parser.close();
+		}
+		return map;
+	}
+
 	public static ListMap<String,TutorEdit> readTutorEdits(Dataset dataset)
 			throws FileNotFoundException, IOException {
 		CSVParser parser = new CSVParser(new FileReader(dataset.dataDir + "/handmade_hints.csv"),
@@ -144,14 +248,14 @@ public class TutorEdits {
 			int rowID = Integer.parseInt(record.get("rowID"));
 			String assignmentID = record.get("trueAssignmentID");
 			String priorityString = record.get("priority");
-			int priority;
+			Priority priority = null;
 			try {
-				priority = Integer.parseInt(priorityString);
+				int priorityValue = Integer.parseInt(priorityString);
+				priority = Priority.fromInt(priorityValue);
 			} catch (NumberFormatException e) {
 				if (!priorityString.equals("NULL")) {
 					System.err.println("Unknown priority: " + priorityString);
 				}
-				continue;
 			}
 
 			if (loadedAssignments.add(assignmentID)) {
@@ -162,10 +266,13 @@ public class TutorEdits {
 			Snapshot from = hintActionMap.get(rowID).lastSnapshot;
 
 			String toXML = record.get("hintCode");
+			// Skip empty hints (they may exist if no hint is appropriate for a snapshot)
+			if (toXML.equals("NULL")) continue;
+
 			Snapshot to = Snapshot.parse(from.name, toXML);
 
-			TutorEdit edit = new TutorEdit(hintID, rowID, tutor, assignmentID, priority, from, to,
-					toXML);
+			TutorEdit edit = new TutorEdit(hintID, rowID, tutor, assignmentID, from, to, toXML);
+			edit.priority = priority;
 			edits.add(assignmentID, edit);
 		}
 		parser.close();
@@ -187,19 +294,20 @@ public class TutorEdits {
 	}
 
 	public static class TutorEdit {
-		public final int hintID, rowID, priority;
+		public final int hintID, rowID;
 		public final String tutor, assignmentID;
 		public final Node from, to;
 		public final String toXML;
 		public final List<EditHint> edits;
 
-		public TutorEdit(int hintID, int rowID, String tutor, String assignmentID,
-				int priority, Snapshot from, Snapshot to, String toXML) {
+		public Priority priority;
+
+		public TutorEdit(int hintID, int rowID, String tutor, String assignmentID, Snapshot from,
+				Snapshot to, String toXML) {
 			this.hintID = hintID;
 			this.rowID = rowID;
 			this.tutor = tutor;
 			this.assignmentID = assignmentID;
-			this.priority = priority;
 			this.from = Agreement.toTree(from);
 			// TODO: Need to somehow standardize the creation of new values (e.g. variables)
 			this.to = Agreement.toTree(to);
@@ -243,6 +351,10 @@ public class TutorEdits {
 					addPriority ? String.valueOf(priority) : "NULL",
 					StringEscapeUtils.escapeSql(toXML),
 					StringEscapeUtils.escapeSql(HintJSON.hintArray(edits).toString()));
+		}
+
+		public HintOutcome toOutcome() {
+			return new HintOutcome(to, priority == null ? 0 : 1 / priority.value, edits);
 		}
 	}
 }
