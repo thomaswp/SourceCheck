@@ -93,7 +93,8 @@ public class EDM2017 {
 			HintMap hintMap = builder.buildGenerator(Mode.Ignore, 1).hintMap;
 			List<Node> solutions = new ArrayList<>(hintMap.solutions);
 			highlighters.put(assignment.name, new HintHighlighter(
-					solutions, null, hintMap.nodePlacementTimes, hintMap.getHintConfig()));
+					solutions, null, hintMap.nodePlacementTimes, hintMap.nodeOrderings,
+					hintMap.getHintConfig()));
 		}
 
 		// Since sometimes assignments are incorrect in the logs, we have to redirect prequel
@@ -310,9 +311,12 @@ public class EDM2017 {
 			spreadsheet.put("consensus", edit.priority.consensus());
 			spreadsheet.put("consensusNum", edit.priority.consensusNumerator);
 			spreadsheet.put("consensusDen", edit.priority.consensusDemonimator);
-			OptionalDouble creationTime = edit.priority.creationTime;
+			OptionalDouble creationTime = edit.priority.creationTime,
+					ordering = edit.priority.meanOrderingRank;
 			spreadsheet.put("creation",
 					creationTime.isPresent() ? creationTime.getAsDouble() : null);
+			spreadsheet.put("ordering",
+					ordering.isPresent() ? ordering.getAsDouble() : null);
 			spreadsheet.put("edit", edit.toString());
 			spreadsheet.put("category", category);
 			Diff.USE_ANSI_COLORS = true;

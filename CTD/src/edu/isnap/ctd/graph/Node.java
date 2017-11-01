@@ -119,9 +119,9 @@ public class Node extends StringHashable implements INode {
 
 	@Override
 	protected String toCanonicalStringInternal() {
-		return String.format("%s=%s%s",
+		return String.format("%s%s%s",
 				// TODO: Make sure adding value here doesn't break everything
-				type, value,
+				type, value == null ? "" : ("=" + value),
 				children.size() == 0 ? "" : (":" + toCannonicalString(children)));
 	}
 
@@ -617,9 +617,14 @@ public class Node extends StringHashable implements INode {
 	}
 
 	public String rootPathString() {
+		return rootPathString(Integer.MAX_VALUE);
+	}
+
+	public String rootPathString(int maxLength) {
 		List<String> path = new LinkedList<>();
 		Node n = this;
-		while (n != null) {
+		int length = 0;
+		while (n != null && length++ < maxLength) {
 			path.add(0, n.type);
 			n = n.parent;
 		}

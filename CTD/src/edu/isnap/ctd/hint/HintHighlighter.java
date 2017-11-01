@@ -2,6 +2,7 @@ package edu.isnap.ctd.hint;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import edu.isnap.ctd.graph.Node;
@@ -28,6 +30,7 @@ import edu.isnap.ctd.util.NodeAlignment;
 import edu.isnap.ctd.util.NodeAlignment.DistanceMeasure;
 import edu.isnap.ctd.util.NodeAlignment.Mapping;
 import edu.isnap.ctd.util.NodeAlignment.ProgressDistanceMeasure;
+import edu.isnap.ctd.util.Tuple;
 import edu.isnap.ctd.util.map.BiMap;
 import edu.isnap.ctd.util.map.CountMap;
 import edu.isnap.ctd.util.map.ListMap;
@@ -44,21 +47,26 @@ public class HintHighlighter {
 	private final HintConfig config;
 	private final RuleSet ruleSet;
 	private final Map<Node, Map<String, Double>> nodePlacementTimes;
+	private final Map<Node, Ordering> nodeOrderings;
 
 	public HintHighlighter(HintMap hintMap) {
-		this(hintMap.solutions, hintMap.ruleSet, hintMap.nodePlacementTimes, hintMap.config);
+		this(hintMap.solutions, hintMap.ruleSet, hintMap.nodePlacementTimes, hintMap.nodeOrderings,
+				hintMap.config);
 	}
 
 	public HintHighlighter(List<Node> solutions, HintConfig config) {
-		this(solutions, null, null, config);
+		this(solutions, null, null, null, config);
 	}
 
 	public HintHighlighter(List<Node> solutions, RuleSet ruleSet,
-			Map<Node, Map<String, Double>> nodeCreationPercs, HintConfig config) {
+			Map<Node, Map<String, Double>> nodeCreationPercs, Map<Node, Ordering> nodeOrderings,
+			HintConfig config) {
 		this.solutions = config.preprocessSolutions ?
-				preprocessSolutions(solutions, nodeCreationPercs, config) : solutions;
+				preprocessSolutions(solutions, nodeCreationPercs, nodeOrderings, config) :
+					solutions;
 		this.ruleSet = ruleSet;
 		this.nodePlacementTimes = nodeCreationPercs;
+		this.nodeOrderings = nodeOrderings;
 		this.config = config;
 	}
 
@@ -507,7 +515,9 @@ public class HintHighlighter {
 	 * from have too much influence in the matching process.
 	 */
 	private static List<Node> preprocessSolutions(List<Node> allSolutions,
-			Map<Node, Map<String, Double>> nodeCreationPercs, final HintConfig config) {
+			Map<Node, Map<String, Double>> nodeCreationPercs,
+			Map<Node, Ordering> nodeOrderings,
+			final HintConfig config) {
 
 		// TODO: This doesn't work well with multi-script and multi-sprite solutions
 
@@ -569,6 +579,7 @@ public class HintHighlighter {
 			if (nodeCreationPercs != null) {
 				// Update references to this node in the nodeCreationPercs map
 				nodeCreationPercs.put(copy, nodeCreationPercs.remove(node));
+				nodeOrderings.put(copy, nodeOrderings.remove(node));
 			}
 			solutions.add(copy);
 		}
@@ -732,6 +743,80 @@ public class HintHighlighter {
 			}
 
 			hint.priority = priority;
+		}
+
+
+		findOrderingPriority(hints, node, bestMatch, bestMatches);
+
+	}
+
+	private void findOrderingPriority(List<EditHint> hints, Node node,
+			Mapping bestMatch, List<Mapping> bestMatches) {
+		if (nodeOrderings == null) return;
+
+		CountMap<String> nodeLabelCounts = Ordering.countLabels(node);
+		CountMap<String> matchLabelCounts = Ordering.countLabels(bestMatch.to);
+		Map<Insertion, Tuple<String, Integer>> insertionLabels = new HashMap<>();
+		for (EditHint hint : hints) {
+			if (hint instanceof Insertion) {
+				Insertion insertion = (Insertion) hint;
+				if (insertion.pair == null) {
+					System.out.println("Insertion w/o pair: " + insertion);
+					continue;
+				}
+				String label = Ordering.getLabel(insertion.pair);
+
+				// Get the number of times this item appears in the student's code
+				int count = nodeLabelCounts.getCount(label);
+				// If we are inserting without a candidate, this node will increase that count by 1
+				if (insertion.candidate == null) count++;
+				// But do not increase the count beyond the number present in the target solution
+				// This ensures at least one ordering should always be found in the below code
+				count = Math.min(count, matchLabelCounts.get(label));
+
+				Tuple<String, Integer> tuple = new Tuple<>(label, count);
+				insertionLabels.put(insertion, tuple);
+			}
+		}
+
+		List<Insertion> insertions = new ArrayList<>(insertionLabels.keySet());
+		int n = insertionLabels.size(), m = bestMatches.size();
+		int[][] orderings = new int[n][m];
+		double[][] rankings = new double[n][m];
+
+		for (int i = 0; i < n; i++) {
+			Insertion insertion = insertions.get(i);
+			Tuple<String, Integer> tuple = insertionLabels.get(insertion);
+
+			for (int j = 0; j < m; j++) {
+				Mapping mapping = bestMatches.get(j);
+				Ordering ordering = nodeOrderings.get(mapping.to);
+				orderings[i][j] = ordering == null ? -1 : ordering.getOrder(tuple);
+				// TODO: ??
+//				if (orderings[i][j] == -1) orderings[i][j] = Integer.MAX_VALUE;
+			}
+		}
+		for (int j = 0; j < m; j++) {
+			int[] orders = new int[n];
+			for (int i = 0; i < n; i++) {
+				orders[i] = orderings[i][j] == -1 ? Integer.MAX_VALUE : orderings[i][j];
+			}
+			Arrays.sort(orders);
+
+			// Count how many of the inserts were found for this match
+			int valid = ArrayUtils.indexOf(orders, Integer.MAX_VALUE);
+			if (valid == -1) valid = orders.length;
+
+			for (int i = 0; i < n; i++) {
+				int ordering = orderings[i][j];
+				rankings[i][j] = ordering == -1 ? -1 :
+					((double) ArrayUtils.indexOf(orders, ordering) / valid);
+			}
+		}
+		for (int i = 0; i < n; i++) {
+			insertions.get(i).priority.meanOrderingRank = Arrays.stream(rankings[i])
+					.filter(x -> x != -1)
+					.average();
 		}
 	}
 
