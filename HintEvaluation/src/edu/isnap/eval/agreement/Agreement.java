@@ -156,7 +156,10 @@ public class Agreement {
 
 		List<EditHint> renames = new ArrayList<>();
 		HintConfig config = new HintConfig();
-		Mapping mapping = new Mapping(from, to, config);
+		config.harmlessCalls.clear();
+		config.useValues = compareValues;
+		Mapping mapping = new Mapping(from, to, config, compareValues);
+
 		for (String id : fromIDMap.keySet()) {
 			Node fromNode = fromIDMap.get(id);
 			Node toNode = toIDMap.get(id);
@@ -232,7 +235,6 @@ public class Agreement {
 			}
 		}
 
-		config.harmlessCalls.clear();
 		HintHighlighter highlighter = new HintHighlighter(new LinkedList<Node>(), config);
 		highlighter.trace = NullSream.instance;
 		List<EditHint> hints = highlighter.highlight(from, mapping, false);

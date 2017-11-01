@@ -37,6 +37,7 @@ public class NodeAlignment {
 	public static class Mapping extends BiMap<Node, Node> implements Comparable<Mapping> {
 		public final Node from, to;
 		public final HintConfig config;
+		private final boolean useUnmappedValues;
 
 		private double cost;
 		private List<MappingCost> itemizedCost = new ArrayList<>();
@@ -57,10 +58,15 @@ public class NodeAlignment {
 		}
 
 		public Mapping(Node from, Node to, HintConfig config) {
+			this(from, to, config, false);
+		}
+
+		public Mapping(Node from, Node to, HintConfig config, boolean useUnmappedValues) {
 			super(MapFactory.IdentityHashMapFactory);
 			this.from = from;
 			this.to = to;
 			this.config = config;
+			this.useUnmappedValues = useUnmappedValues;
 		}
 
 		public double cost() {
@@ -93,12 +99,22 @@ public class NodeAlignment {
 			return Integer.compare(to.treeSize(), o.to.treeSize());
 		}
 
+		/**
+		 * Returns a type or value to match on for this node. If the node has a value which matches
+		 * a known value in the student's code, the value (or its match) will be returned. Otherwise
+		 * the type will be returned.
+		 */
 		public String getMappedType(Node node, boolean isFrom) {
 			String value = getMappedValue(node, isFrom);
 			return value == null ? node.type() : value;
 		}
 
+		/**
+		 * If this node has a value which matches a known value in the students' code, the value
+		 * (or its match) will be returned. Otherwise, it will return null.
+		 */
 		public String getMappedValue(Node node, boolean isFrom) {
+			if (useUnmappedValues) return node.value;
 			String type = node.type(), value = node.value;
 			BiMap<String,String> map = valueMappings.get(type);
 			if (map != null) {

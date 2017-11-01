@@ -2,12 +2,11 @@ package edu.isnap.eval.agreement;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.edit.EditHint;
+import edu.isnap.ctd.hint.edit.Insertion;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.eval.agreement.TutorEdits.Priority;
 import edu.isnap.eval.agreement.TutorEdits.TutorEdit;
@@ -26,21 +25,22 @@ public class RateHints {
 				List<HintOutcome> hints = hintSet.get(snapshotID);
 
 				// TODO: do both this and not this
-				double maxWeight = hints.stream().mapToDouble(h -> h.weight).max().orElse(0);
-				hints = hints.stream().
-						filter(h -> h.weight == maxWeight).
-						collect(Collectors.toList());
+//				double maxWeight = hints.stream().mapToDouble(h -> h.weight).max().orElse(0);
+//				hints = hints.stream().
+//						filter(h -> h.weight == maxWeight).
+//						collect(Collectors.toList());
 
 				if (hints == null || hints.size() == 0) continue;
 
 				for (HintOutcome hint : hints) {
 					HintRating rating = new HintRating(hint);
-					Optional<TutorEdit> exactMatch = validEdits.stream()
-							.filter(edit -> edit.to.equals(hint.outcome))
-							.findFirst();
-					rating.validity = exactMatch.isPresent() ? Validity.Valid : Validity.Invalid;
-					// TODO: value-less matches, supersets, subsets of edits
-					if (exactMatch.isPresent()) rating.priority = exactMatch.get().priority;
+					TutorEdit exactMatch = findMatchingEdit(validEdits, hint);
+
+					rating.validity = Validity.Invalid;
+					if (exactMatch != null) {
+						rating.validity = Validity.Valid;
+						rating.priority = exactMatch.priority;
+					}
 //					System.out.println(rating);
 					ratings.add(snapshotID, rating);
 				}
@@ -65,6 +65,48 @@ public class RateHints {
 			System.out.printf("TOTAL: %.03fv / %.03fp\n",
 					totalWeightedValidity / nSnapshots, totalWeightedPriority / nSnapshots);
 		}
+	}
+
+	public static Node normalizeModifiedValues(Node outcome, List<EditHint> edits) {
+//		if (1 == 1) return outcome;
+		Node to = outcome.copy();
+		boolean changed = false;
+		for (EditHint edit : edits) {
+			if (edit instanceof Insertion) {
+				Insertion insertion = (Insertion) edit;
+				if (insertion.pair != null && insertion.value != null &&
+						(insertion.candidate == null ||
+						!insertion.value.equals(insertion.candidate.value))) {
+					Node inserted = to.searchForNodeWithID(insertion.pair.id);
+					if (inserted == null) {
+						System.err.println("Unknown inserted node with ID: " +
+								insertion.pair.id);
+						continue;
+					}
+					Node parent = inserted.parent;
+					Node replacement = new Node(parent, inserted.type(), "[MODIFIED]",
+							inserted.id);
+					System.out.println(insertion);
+					int index = inserted.index();
+					parent.children.remove(index);
+					parent.children.add(index, replacement);
+					replacement.children.addAll(inserted.children);
+					changed = true;
+				}
+			}
+		}
+		if (changed) System.out.println(to.prettyPrint(true));
+		return to;
+	}
+
+	public static TutorEdit findMatchingEdit(List<TutorEdit> validEdits, HintOutcome outcome) {
+		// TODO: supersets, subsets of edits
+		Node outcomeNode = normalizeModifiedValues(outcome.outcome, outcome.edits);
+		for (TutorEdit tutorEdit : validEdits) {
+			Node tutorOutcomeNode = normalizeModifiedValues(tutorEdit.to, tutorEdit.edits);
+			if (outcomeNode.equals(tutorOutcomeNode)) return tutorEdit;
+		}
+		return null;
 	}
 
 	public static class HintSet extends ListMap<Integer, HintOutcome> {
