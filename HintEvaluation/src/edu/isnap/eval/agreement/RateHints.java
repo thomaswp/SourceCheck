@@ -86,7 +86,6 @@ public class RateHints {
 			if (node.id != null && !node.id.startsWith(Agreement.GEN_ID_PREFIX)) {
 				Node fromMatch = from.searchForNodeWithID(node.id);
 				if (fromMatch == null || !fromMatch.hasType(node.type())) {
-					System.out.println(node.type());
 					Agreement.pruneImmediateChildren(node);
 				}
 			}

@@ -24,6 +24,7 @@ public class HintMap {
 
 	public final List<Node> solutions = new ArrayList<>();
 	public final Map<Node, Map<String, Double>> nodePlacementTimes = new IdentityHashMap<>();
+	public final List<Ordering> orderings = new ArrayList<>();
 
 	RuleSet ruleSet;
 	final HintConfig config;
@@ -155,6 +156,7 @@ public class HintMap {
 
 		// Then save the current node creation percs, using the final solution as a key
 		nodePlacementTimes.put(solution, currentNodeCreationPercs);
+		orderings.add(new Ordering(currentHistory));
 	}
 
 	public IndexedVectorState getContext(Node item) {
@@ -221,6 +223,7 @@ public class HintMap {
 		}
 		solutions.addAll(hintMap.solutions);
 		nodePlacementTimes.putAll(hintMap.nodePlacementTimes);
+		orderings.addAll(hintMap.orderings);
 	}
 
 	/**
