@@ -1,12 +1,14 @@
 package edu.isnap.eval.agreement;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.edit.EditHint;
-import edu.isnap.ctd.hint.edit.Insertion;
+import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.eval.agreement.TutorEdits.Priority;
 import edu.isnap.eval.agreement.TutorEdits.TutorEdit;
@@ -67,44 +69,54 @@ public class RateHints {
 		}
 	}
 
-	public static Node normalizeModifiedValues(Node outcome, List<EditHint> edits) {
-//		if (1 == 1) return outcome;
-		Node to = outcome.copy();
-		boolean changed = false;
-		for (EditHint edit : edits) {
-			if (edit instanceof Insertion) {
-				Insertion insertion = (Insertion) edit;
-				if (insertion.pair != null && insertion.value != null &&
-						(insertion.candidate == null ||
-						!insertion.value.equals(insertion.candidate.value))) {
-					Node inserted = to.searchForNodeWithID(insertion.pair.id);
-					if (inserted == null) {
-						System.err.println("Unknown inserted node with ID: " +
-								insertion.pair.id);
-						continue;
-					}
-					Node parent = inserted.parent;
-					Node replacement = new Node(parent, inserted.type(), "[MODIFIED]",
-							inserted.id);
-					System.out.println(insertion);
-					int index = inserted.index();
-					parent.children.remove(index);
-					parent.children.add(index, replacement);
-					replacement.children.addAll(inserted.children);
-					changed = true;
+	public static Node normalizeNewValues(Node from, Node to) {
+		// We don't differentiate values by type, since multiple types can share values (e.g.
+		// varDecs and vars)
+		Set<String> usedValues = new HashSet<>();
+		from.recurse(node -> usedValues.add(node.value));
+
+		to = to.copy();
+		// Create a list of nodes before iteration, since we'll be modifying children
+		List<Node> toNodes = new ArrayList<>();
+		to.recurse(node -> toNodes.add(node));
+		for (Node node : toNodes) {
+			if (node.index() == -1) continue;
+			// If this node has a non-generated ID but has no match in from (or it's been
+			// relabeled and has a new type), it's a new node, so prune its children
+			if (node.id != null && !node.id.startsWith(Agreement.GEN_ID_PREFIX)) {
+				Node fromMatch = from.searchForNodeWithID(node.id);
+				if (fromMatch == null || !fromMatch.hasType(node.type())) {
+					System.out.println(node.type());
+					Agreement.pruneImmediateChildren(node);
 				}
 			}
+			if (node.value != null && !usedValues.contains(node.value)) {
+				Node parent = node.parent;
+				Node replacement = new Node(parent, node.type(), "[NEW_VALUE]", node.id);
+				int index = node.index();
+				parent.children.remove(index);
+				parent.children.add(index, replacement);
+				replacement.children.addAll(node.children);
+				node.children.clear();
+			}
 		}
-		if (changed) System.out.println(to.prettyPrint(true));
 		return to;
 	}
 
 	public static TutorEdit findMatchingEdit(List<TutorEdit> validEdits, HintOutcome outcome) {
+		if (validEdits.isEmpty()) return null;
 		// TODO: supersets, subsets of edits
-		Node outcomeNode = normalizeModifiedValues(outcome.outcome, outcome.edits);
+		Node outcomeNode = normalizeNewValues(validEdits.get(0).from, outcome.outcome);
 		for (TutorEdit tutorEdit : validEdits) {
-			Node tutorOutcomeNode = normalizeModifiedValues(tutorEdit.to, tutorEdit.edits);
+			Node tutorOutcomeNode = normalizeNewValues(tutorEdit.from, tutorEdit.to);
 			if (outcomeNode.equals(tutorOutcomeNode)) return tutorEdit;
+			else if (outcome.outcome.equals(tutorEdit.to)) {
+				System.out.println(Diff.diff(tutorEdit.from.prettyPrint(true),
+						tutorEdit.to.prettyPrint(true)));
+				System.out.println(Diff.diff(tutorOutcomeNode.prettyPrint(true),
+						outcomeNode.prettyPrint(true), 2));
+				throw new RuntimeException("Normalized nodes should be equal if nodes are equal!");
+			}
 		}
 		return null;
 	}

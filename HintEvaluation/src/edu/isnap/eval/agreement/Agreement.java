@@ -82,6 +82,8 @@ public class Agreement {
 		return equal;
 	}
 
+	public final static String GEN_ID_PREFIX = "GEN_";
+
 	private final static IDer ider = new IDer() {
 
 		// We just use a default config since this is Snap-specific code, but we may need to
@@ -113,7 +115,7 @@ public class Agreement {
 
 			// The ID is as unique as we can get it: the node's type, plus its parent's type and
 			// some stable index
-			return String.format("%s{%s:%d}", type, parent.id, index);
+			return String.format("%s%s{%s:%d}", GEN_ID_PREFIX, type, parent.id, index);
 		}
 	};
 
@@ -137,6 +139,19 @@ public class Agreement {
 			prune(child);
 			if (prunable.contains(child.type()) && child.children.isEmpty()) {
 				node.children.remove(i--);
+			}
+		}
+		return node;
+	}
+
+	public static Node pruneImmediateChildren(Node node) {
+		for (int i = 0; i < node.children.size(); i++) {
+			Node child = node.children.get(i);
+			if (prunable.contains(child.type())) {
+				pruneImmediateChildren(child);
+				if (child.children.isEmpty()) {
+					node.children.remove(i--);
+				}
 			}
 		}
 		return node;
