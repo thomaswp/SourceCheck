@@ -34,7 +34,19 @@ public class Fall2017 extends Dataset {
 
 
 	public final static Assignment GuessingGame3 = new Assignment(instance,
-			"guess3Lab", Assignment.date(2017, 9, 15), true, false, null) {
+			"guess3Lab", Assignment.date(2017, 9, 15), true, false, GuessingGame1) {
+
+		@Override
+		public Assignment getLocationAssignment(String attemptID) {
+			if ("5e0613cb-162d-4e6e-b779-e8c221a8e3dd".equals(attemptID)) return GuessingGame2;
+			return super.getLocationAssignment(attemptID);
+		};
+
+		@Override
+		public Integer getSubmittedRow(String attemptID) {
+			if ("5e0613cb-162d-4e6e-b779-e8c221a8e3dd".equals(attemptID)) return 197202;
+			return super.getSubmittedRow(attemptID);
+		};
 	};
 
 	public final static Assignment Project = new Assignment(instance,
