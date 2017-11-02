@@ -7,6 +7,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.util.map.CountMap;
 import edu.isnap.ctd.util.map.MapFactory;
@@ -74,7 +77,9 @@ public class Ordering {
 	}
 
 	public void addSolution(Node node) {
-		// TODO: This more correct solution leads to worse results... why?
+		// TODO: This more less correct solution leads to better results... why?
+//		additions.retainAll(extractAdditions(node));
+
 		// Get all the labels of the final solution and keep only additions with those labels
 		Set<String> labels = extractAdditions(node).stream()
 				.map(t -> t.label).collect(Collectors.toSet());
@@ -99,6 +104,29 @@ public class Ordering {
 		public Addition(String label, int count) {
 			this.label = label;
 			this.count = count;
+		}
+
+		@Override
+		public int hashCode() {
+			return new HashCodeBuilder(11, 3)
+					.append(label)
+					.append(count)
+					.toHashCode();
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			Addition other = (Addition) obj;
+			return new EqualsBuilder()
+					.append(label, other.label)
+					.append(count, other.count)
+					.isEquals();
 		}
 	}
 }
