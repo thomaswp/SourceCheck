@@ -77,9 +77,6 @@ public class Ordering {
 	}
 
 	public void addSolution(Node node) {
-		// TODO: This more less correct solution leads to better results... why?
-//		additions.retainAll(extractAdditions(node));
-
 		// Get all the labels of the final solution and keep only additions with those labels
 		Set<String> labels = extractAdditions(node).stream()
 				.map(t -> t.label).collect(Collectors.toSet());

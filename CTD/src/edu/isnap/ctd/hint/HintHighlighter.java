@@ -12,6 +12,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -720,7 +721,7 @@ public class HintHighlighter {
 		for (EditHint hint : hints) {
 			Priority priority = new Priority();
 			priority.consensusNumerator = hintCounts.get(hint);
-			priority.consensusDemonimator = bestMatches.size();
+			priority.consensusDenominator = bestMatches.size();
 
 			if (nodePlacementTimes != null && nodePlacementTimes.containsKey(bestMatch.to)) {
 				Map<String, Double> creationPercs = nodePlacementTimes.get(bestMatch.to);
@@ -785,12 +786,32 @@ public class HintHighlighter {
 		List<Insertion> insertions = new ArrayList<>(insertionLabels.keySet());
 
 		for (Insertion insertion : insertions) {
-			CountMap<Addition> addition;
+			CountMap<Addition> prereqs = new CountMap<>();
+			int total = 0;
 			for (Mapping match : bestMatches) {
 				Ordering ordering = nodeOrderings.get(match.to);
 				List<Addition> precedingAdditions =
 						ordering.getPrecedingAdditions(insertionLabels.get(insertion));
+				prereqs.incrementAll(precedingAdditions);
+				total += precedingAdditions.size();
 			}
+
+			int satisfied = prereqs.keySet().stream()
+					.mapToInt(a -> nodeLabelCounts.getCount(a.label) >= a.count ?
+							prereqs.getCount(a) : 0)
+					.sum();
+
+			double thresh = bestMatches.size() * 0.6;
+			List<Addition> important = prereqs.keySet().stream()
+					.filter(a -> prereqs.getCount(a) >= thresh)
+					.collect(Collectors.toList());
+			total = important.size() + 1;
+			satisfied = important.stream()
+					.mapToInt(a -> nodeLabelCounts.getCount(a.label) >= a.count ? 1 : 0)
+					.sum() + 1;
+
+			insertion.priority.prereqsNumerator = satisfied;
+			insertion.priority.prereqsDenominator = total;
 		}
 
 		calculateOrderingRanks(insertions, bestMatches, insertionLabels);
@@ -810,8 +831,6 @@ public class HintHighlighter {
 				Mapping mapping = bestMatches.get(j);
 				Ordering ordering = nodeOrderings.get(mapping.to);
 				orderings[i][j] = ordering == null ? -1 : ordering.getOrder(addition);
-				// TODO: ??
-//				if (orderings[i][j] == -1) orderings[i][j] = Integer.MAX_VALUE;
 			}
 		}
 		for (int j = 0; j < m; j++) {

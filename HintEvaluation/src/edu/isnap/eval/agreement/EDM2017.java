@@ -310,7 +310,10 @@ public class EDM2017 {
 			spreadsheet.put("type", edit.action());
 			spreadsheet.put("consensus", edit.priority.consensus());
 			spreadsheet.put("consensusNum", edit.priority.consensusNumerator);
-			spreadsheet.put("consensusDen", edit.priority.consensusDemonimator);
+			spreadsheet.put("consensusDen", edit.priority.consensusDenominator);
+			spreadsheet.put("prereqs", edit.priority.prereqs());
+			spreadsheet.put("prereqsNum", edit.priority.prereqsNumerator);
+			spreadsheet.put("prereqsDen", edit.priority.prereqsDenominator);
 			OptionalDouble creationTime = edit.priority.creationTime,
 					ordering = edit.priority.meanOrderingRank;
 			spreadsheet.put("creation",
