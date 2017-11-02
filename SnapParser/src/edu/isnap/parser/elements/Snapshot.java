@@ -75,9 +75,11 @@ public class Snapshot extends Code implements IHasID {
 	public static Snapshot parse(String name, String xmlSource) {
 		if (xmlSource == null || xmlSource.length() == 0) return null;
 		try {
+			// Sometimes snap files have newlines in their string literals and this can get messy
+			xmlSource = xmlSource.replace("\r", "").replace("\n", "");
 			xmlSource = xmlSource.replace(META, "");
+
 			StringReader reader = new StringReader(xmlSource);
-//			System.out.println(xmlSource);
 
 			Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(
 					new InputSource(reader));

@@ -111,7 +111,7 @@ public class CallBlock extends Block {
 	@Override
 	public String toCode(boolean canon) {
 		return new CodeBuilder(canon)
-		.add(value())
+		.add(type(canon))
 		.addParameters(params(canon))
 		.add(bodies.size() > 0 ? " " : "")
 		.add(bodies)
