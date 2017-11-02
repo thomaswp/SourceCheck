@@ -125,5 +125,10 @@ public class Ordering {
 					.append(count, other.count)
 					.isEquals();
 		}
+
+		@Override
+		public String toString() {
+			return String.format("{%s, %d}", label, count);
+		}
 	}
 }

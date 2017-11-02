@@ -810,6 +810,9 @@ public class HintHighlighter {
 					.mapToInt(a -> nodeLabelCounts.getCount(a.label) >= a.count ? 1 : 0)
 					.sum() + 1;
 
+			System.out.println(insertion);
+			important.forEach(System.out::println);
+			System.out.println();
 			insertion.priority.prereqsNumerator = satisfied;
 			insertion.priority.prereqsDenominator = total;
 		}
