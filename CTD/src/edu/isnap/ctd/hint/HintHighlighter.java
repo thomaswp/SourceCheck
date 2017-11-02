@@ -18,6 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
+import edu.isnap.ctd.hint.Ordering.Addition;
 import edu.isnap.ctd.hint.debug.HintDebugInfo;
 import edu.isnap.ctd.hint.edit.Deletion;
 import edu.isnap.ctd.hint.edit.EditHint;
@@ -30,7 +31,6 @@ import edu.isnap.ctd.util.NodeAlignment;
 import edu.isnap.ctd.util.NodeAlignment.DistanceMeasure;
 import edu.isnap.ctd.util.NodeAlignment.Mapping;
 import edu.isnap.ctd.util.NodeAlignment.ProgressDistanceMeasure;
-import edu.isnap.ctd.util.Tuple;
 import edu.isnap.ctd.util.map.BiMap;
 import edu.isnap.ctd.util.map.CountMap;
 import edu.isnap.ctd.util.map.ListMap;
@@ -756,7 +756,7 @@ public class HintHighlighter {
 
 		CountMap<String> nodeLabelCounts = Ordering.countLabels(node);
 		CountMap<String> matchLabelCounts = Ordering.countLabels(bestMatch.to);
-		Map<Insertion, Tuple<String, Integer>> insertionLabels = new HashMap<>();
+		Map<Insertion, Addition> insertionLabels = new HashMap<>();
 		for (EditHint hint : hints) {
 			if (hint instanceof Insertion) {
 				Insertion insertion = (Insertion) hint;
@@ -777,24 +777,39 @@ public class HintHighlighter {
 				// This ensures at least one ordering should always be found in the below code
 				count = Math.min(count, matchLabelCounts.get(label));
 
-				Tuple<String, Integer> tuple = new Tuple<>(label, count);
-				insertionLabels.put(insertion, tuple);
+				Addition addition = new Addition(label, count);
+				insertionLabels.put(insertion, addition);
 			}
 		}
 
 		List<Insertion> insertions = new ArrayList<>(insertionLabels.keySet());
-		int n = insertionLabels.size(), m = bestMatches.size();
+
+		for (Insertion insertion : insertions) {
+			CountMap<Addition> addition;
+			for (Mapping match : bestMatches) {
+				Ordering ordering = nodeOrderings.get(match.to);
+				List<Addition> precedingAdditions =
+						ordering.getPrecedingAdditions(insertionLabels.get(insertion));
+			}
+		}
+
+		calculateOrderingRanks(insertions, bestMatches, insertionLabels);
+	}
+
+	private void calculateOrderingRanks(List<Insertion> insertions, List<Mapping> bestMatches,
+			Map<Insertion, Addition> insertionMap) {
+		int n = insertionMap.size(), m = bestMatches.size();
 		int[][] orderings = new int[n][m];
 		double[][] rankings = new double[n][m];
 
 		for (int i = 0; i < n; i++) {
 			Insertion insertion = insertions.get(i);
-			Tuple<String, Integer> tuple = insertionLabels.get(insertion);
+			Addition addition = insertionMap.get(insertion);
 
 			for (int j = 0; j < m; j++) {
 				Mapping mapping = bestMatches.get(j);
 				Ordering ordering = nodeOrderings.get(mapping.to);
-				orderings[i][j] = ordering == null ? -1 : ordering.getOrder(tuple);
+				orderings[i][j] = ordering == null ? -1 : ordering.getOrder(addition);
 				// TODO: ??
 //				if (orderings[i][j] == -1) orderings[i][j] = Integer.MAX_VALUE;
 			}
