@@ -5,6 +5,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.util.Tuple;
@@ -49,7 +50,10 @@ public class Ordering {
 	private List<Tuple<String,Integer>> extractAdditions(Node node) {
 		CountMap<String> labelCounts = countLabels(node);
 		return labelCounts.keySet().stream()
-				.map(k -> new Tuple<>(k, labelCounts.get(k)))
+				// For each label/count, add <label,c> for c in {1..count},
+				// since have 2 of something means you also have 1 of it
+				.flatMap(k -> IntStream.range(1, labelCounts.get(k) + 1)
+						.mapToObj(i -> new Tuple<>(k, i)))
 				.collect(Collectors.toList());
 	}
 

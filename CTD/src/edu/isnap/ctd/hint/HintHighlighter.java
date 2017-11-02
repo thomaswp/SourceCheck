@@ -769,7 +769,10 @@ public class HintHighlighter {
 				// Get the number of times this item appears in the student's code
 				int count = nodeLabelCounts.getCount(label);
 				// If we are inserting without a candidate, this node will increase that count by 1
-				if (insertion.candidate == null) count++;
+				if (insertion.candidate == null ||
+						!Ordering.getLabel(insertion.candidate).equals(label)) {
+					count++;
+				}
 				// But do not increase the count beyond the number present in the target solution
 				// This ensures at least one ordering should always be found in the below code
 				count = Math.min(count, matchLabelCounts.get(label));

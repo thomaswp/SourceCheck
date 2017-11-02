@@ -312,7 +312,6 @@ public class TutorEdits {
 			this.tutor = tutor;
 			this.assignmentID = assignmentID;
 			this.from = Agreement.toTree(from);
-			// TODO: Need to somehow standardize the creation of new values (e.g. variables)
 			this.to = Agreement.toTree(to);
 			this.toXML = toXML;
 			edits = Agreement.findEdits(this.from.copy(), this.to.copy(), true);
