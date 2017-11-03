@@ -65,7 +65,8 @@ public class Agreement {
 			for (String editString : editStrings) {
 				System.out.println(editString);
 			}
-			System.out.println(Diff.diff(to.prettyPrint(), from.prettyPrint()));
+			System.out.println(Diff.diff(to.prettyPrint(compareValues),
+					from.prettyPrint(compareValues)));
 
 			findEdits(originalFrom, originalTo, compareValues);
 		}

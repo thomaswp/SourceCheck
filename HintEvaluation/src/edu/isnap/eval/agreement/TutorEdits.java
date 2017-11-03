@@ -27,7 +27,7 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
-import edu.isnap.datasets.Spring2017;
+import edu.isnap.datasets.Fall2016;
 import edu.isnap.eval.agreement.RateHints.GoldStandard;
 import edu.isnap.eval.agreement.RateHints.HintOutcome;
 import edu.isnap.eval.agreement.RateHints.HintSet;
@@ -77,14 +77,14 @@ public class TutorEdits {
 	}
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
-//		compareHints(Spring2017.instance);
-//		verifyHints(Spring2017.instance);
-		GoldStandard standard = readConsensus(Spring2017.instance, "consensus-gg-sq.csv");
-		Map<String, HintSet> hintSets = readTutorHintSets(Spring2017.instance);
-		for (HintSet hintSet : hintSets.values()) {
-			System.out.println("------------ " + hintSet.name + " --------------");
-			RateHints.rate(standard, hintSet);
-		}
+		compareHints(Fall2016.instance);
+//		verifyHints(Fall2016.instance);
+//		GoldStandard standard = readConsensus(Spring2017.instance, "consensus-gg-sq.csv");
+//		Map<String, HintSet> hintSets = readTutorHintSets(Spring2017.instance);
+//		for (HintSet hintSet : hintSets.values()) {
+//			System.out.println("------------ " + hintSet.name + " --------------");
+//			RateHints.rate(standard, hintSet);
+//		}
 	}
 
 	public static void verifyHints(Dataset dataset) throws FileNotFoundException, IOException {
@@ -117,7 +117,7 @@ public class TutorEdits {
 				ListMap<Node, TutorEdit> givers = new ListMap<>();
 				edits.stream()
 				.filter(e -> e.rowID == rowID)
-				.forEach(e -> givers.add(e.to, e));
+				.forEach(e -> givers.add(RateHints.normalizeNewValues(e.from, e.to), e));
 
 				Node from = givers.values().stream().findFirst().get().get(0).from;
 				String fromPP = from.prettyPrint(true);
@@ -137,12 +137,12 @@ public class TutorEdits {
 					for (TutorEdit tutorEdit : tutorEdits) {
 						if (tutorEdit.priority == firstEdit.priority) priorityMatches++;
 						System.out.printf("  %d/%s: #%d\n",
-								tutorEdit.priority, tutorEdit.tutor, tutorEdit.hintID);
+								tutorEdit.priority.value, tutorEdit.tutor, tutorEdit.hintID);
 					}
 
 					sql.append(firstEdit.toSQLInsert(
 							"handmade_hints", "consensus", hintOffset,
-							priorityMatches == tutors.size()));
+							priorityMatches == tutors.size(), true));
 					sql.append("\n");
 
 					Map<String, TutorEdit> givingTutors = tutorEdits.stream()
@@ -349,14 +349,15 @@ public class TutorEdits {
 		}
 
 		public String toSQLInsert(String table, String user, int hintIDOffset,
-				boolean addPriority) {
+				boolean addPriority, boolean addDate) {
 			return String.format("INSERT INTO `%s` (`hid`, `userID`, `rowID`, `trueAssignmentID`, "
-					+ "`priority`, `hintCode`, `hintEdits`) "
-					+ "VALUES (%d, '%s', %d, '%s', %s, '%s', '%s');",
+					+ "`priority`, `hintCode`, `hintEdits`, `updatedTime`) "
+					+ "VALUES (%d, '%s', %d, '%s', %s, '%s', '%s', %s);",
 					table, hintID + hintIDOffset, user, rowID, assignmentID,
-					addPriority ? String.valueOf(priority) : "NULL",
+					addPriority ? String.valueOf(priority.value) : "NULL",
 					StringEscapeUtils.escapeSql(toXML),
-					StringEscapeUtils.escapeSql(HintJSON.hintArray(edits).toString()));
+					StringEscapeUtils.escapeSql(HintJSON.hintArray(edits).toString()),
+					addDate ? "NOW()" : "NULL");
 		}
 
 		public HintOutcome toOutcome() {
