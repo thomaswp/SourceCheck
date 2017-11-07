@@ -82,9 +82,18 @@ public class TutorEdits {
 //		compareHints(Fall2016.instance);
 //		verifyHints(Fall2016.instance);
 		GoldStandard standard = readConsensus(Spring2017.instance, "consensus-gg-sq.csv");
-		HighlightHintSet hintSet = new HighlightHintSet("H-Fall2016", Fall2016.instance,
-				standard.getHintRequests(), new HintConfig());
-		RateHints.rate(standard, hintSet);
+		HintConfig[] configs = new HintConfig[] {
+				new HintConfig(), new HintConfig(), new HintConfig()
+		};
+		configs[0].useRulesToFilter = configs[0].useValues = false;
+		configs[1].useRulesToFilter = true; configs[1].useValues = false;
+		configs[2].useRulesToFilter = true; configs[2].useValues = true;
+
+		for (int i = 0; i < configs.length; i++) {
+			HighlightHintSet hintSet = new HighlightHintSet("H-Fall2016 " + i, Fall2016.instance,
+					standard.getHintRequests(), configs[i]);
+			RateHints.rate(standard, hintSet);
+		}
 //		Map<String, HintSet> hintSets = readTutorHintSets(Spring2017.instance);
 //		for (HintSet hintSet : hintSets.values()) {
 //			System.out.println("------------ " + hintSet.name + " --------------");

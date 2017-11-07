@@ -10,6 +10,7 @@ import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.hint.edit.EditHint;
+import edu.isnap.ctd.util.NullSream;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.eval.agreement.RateHints.HintOutcome;
@@ -43,6 +44,7 @@ public class HighlightHintSet extends HintSet {
 			if (highlighter == null) {
 				SnapHintBuilder builder = new SnapHintBuilder(assignment, baseMap);
 				highlighter = builder.buildGenerator(Mode.Ignore, 1).hintHighlighter();
+				highlighter.trace = NullSream.instance;
 				highlighters.put(request.assignmentID, highlighter);
 			}
 
