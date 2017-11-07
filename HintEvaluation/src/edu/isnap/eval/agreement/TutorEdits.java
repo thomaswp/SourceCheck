@@ -18,6 +18,7 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang.StringEscapeUtils;
 
 import edu.isnap.ctd.graph.Node;
+import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.HintJSON;
 import edu.isnap.ctd.hint.edit.EditHint;
 import edu.isnap.ctd.util.Diff;
@@ -28,6 +29,7 @@ import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.datasets.Fall2016;
+import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.agreement.RateHints.GoldStandard;
 import edu.isnap.eval.agreement.RateHints.HintOutcome;
 import edu.isnap.eval.agreement.RateHints.HintSet;
@@ -77,9 +79,12 @@ public class TutorEdits {
 	}
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
-		compareHints(Fall2016.instance);
+//		compareHints(Fall2016.instance);
 //		verifyHints(Fall2016.instance);
-//		GoldStandard standard = readConsensus(Spring2017.instance, "consensus-gg-sq.csv");
+		GoldStandard standard = readConsensus(Spring2017.instance, "consensus-gg-sq.csv");
+		HighlightHintSet hintSet = new HighlightHintSet("H-Fall2016", Fall2016.instance,
+				standard.getHintRequests(), new HintConfig());
+		RateHints.rate(standard, hintSet);
 //		Map<String, HintSet> hintSets = readTutorHintSets(Spring2017.instance);
 //		for (HintSet hintSet : hintSets.values()) {
 //			System.out.println("------------ " + hintSet.name + " --------------");

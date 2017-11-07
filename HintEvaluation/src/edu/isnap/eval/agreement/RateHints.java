@@ -1,6 +1,7 @@
 package edu.isnap.eval.agreement;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -169,9 +170,14 @@ public class RateHints {
 	public static class GoldStandard {
 
 		private final HashMap<String, ListMap<Integer, TutorEdit>> map = new HashMap<>();
+		private final List<HintRequest> hintRequests = new ArrayList<>();
 
 		public Set<String> getAssignments() {
 			return map.keySet();
+		}
+
+		public List<HintRequest> getHintRequests() {
+			return Collections.unmodifiableList(hintRequests);
 		}
 
 		public Set<Integer> getSnapshotIDs(String assignment) {
@@ -188,8 +194,27 @@ public class RateHints {
 				ListMap<Integer, TutorEdit> snapshotMap = new ListMap<>();
 				list.forEach(edit -> snapshotMap.add(edit.rowID, edit));
 				map.put(assignment, snapshotMap);
+
+				Set<Integer> addedIDs = new HashSet<>();
+				list.forEach(edit -> {
+					if (addedIDs.add(edit.rowID)) {
+						hintRequests.add(new HintRequest(edit.rowID, assignment, edit.from));
+					}
+				});
 			}
 		}
+	}
 
+	// TODO: Merge with or differentiate from other HintRequest class
+	public static class HintRequest {
+		public final int id;
+		public final String assignmentID;
+		public final Node code;
+
+		public HintRequest(int id, String assignmentID, Node code) {
+			this.id = id;
+			this.assignmentID = assignmentID;
+			this.code = code;
+		}
 	}
 }
