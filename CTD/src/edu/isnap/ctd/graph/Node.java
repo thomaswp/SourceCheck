@@ -438,7 +438,7 @@ public class Node extends StringHashable implements INode {
 
 	// TODO: Move to snap-specific project
 	private final static String[] HAS_BODY = new String[] {
-			"snapshot", "stage", "sprite", "script", "customBlock",
+			"snapshot", "stage", "sprite", "script", "customBlock", //"list"
 	};
 
 	public String prettyPrint() {

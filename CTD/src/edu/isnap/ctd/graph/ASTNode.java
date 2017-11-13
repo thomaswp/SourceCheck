@@ -87,6 +87,11 @@ public class ASTNode implements INode {
 			Iterator<String> keys = children.keys();
 			while (keys.hasNext()) {
 				String relation = keys.next();
+				if (children.isNull(relation)) {
+					node.addChild(relation, new ASTNode("null", null, null));
+					continue;
+				}
+
 				ASTNode child = parse(children.getJSONObject(relation));
 				node.addChild(relation, child);
 			}
