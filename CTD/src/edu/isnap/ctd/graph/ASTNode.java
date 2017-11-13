@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -83,10 +84,20 @@ public class ASTNode implements INode {
 
 		JSONObject children = object.optJSONObject("children");
 		if (children != null) {
-			@SuppressWarnings("unchecked")
-			Iterator<String> keys = children.keys();
-			while (keys.hasNext()) {
-				String relation = keys.next();
+			JSONArray childrenOrder = object.optJSONArray("childrenOrder");
+
+			if (childrenOrder == null) {
+				// If we are not explicitly provided an order, just use the internal hash map's keys
+				@SuppressWarnings("unchecked")
+				Iterator<String> keys = children.keys();
+				childrenOrder = new JSONArray();
+				while (keys.hasNext()) {
+					childrenOrder.put(keys.next());
+				}
+			}
+
+			for (int i = 0; i < childrenOrder.length(); i++) {
+				String relation = childrenOrder.getString(i);
 				if (children.isNull(relation)) {
 					node.addChild(relation, new ASTNode("null", null, null));
 					continue;
