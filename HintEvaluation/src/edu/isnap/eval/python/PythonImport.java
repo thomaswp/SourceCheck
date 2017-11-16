@@ -4,23 +4,23 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import org.json.JSONException;
 
 import edu.isnap.ctd.graph.ASTNode;
+import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.util.map.ListMap;
-import edu.isnap.eval.export.GrammarBuilder;
 
 public class PythonImport {
 
 	public static void main(String[] args) throws IOException {
-		GrammarBuilder builder = new GrammarBuilder("python", new HashMap<>());
-//		List<ASTNode> nodes = loadAssignment("../../PythonAST/data", "canDrinkAlcohol");
-		ListMap<String, ASTNode> nodes = loadAllAssignments("../../PythonAST/data");
-		nodes.values().forEach(list -> list.forEach(n -> builder.add(n)));
-		System.out.println(builder.toJSON());
+		List<ASTNode> nodes = loadAssignment("../../PythonAST/data", "canDrinkAlcohol");
+		nodes.forEach(n -> System.out.println(n.toNode(PythonNode::new).prettyPrint(true)));
+//		GrammarBuilder builder = new GrammarBuilder("python", new HashMap<>());
+//		ListMap<String, ASTNode> nodes = loadAllAssignments("../../PythonAST/data");
+//		nodes.values().forEach(list -> list.forEach(n -> builder.add(n)));
+//		System.out.println(builder.toJSON());
 	}
 
 	static ListMap<String, ASTNode> loadAllAssignments(String dataDir) throws IOException {
@@ -46,9 +46,27 @@ public class PythonImport {
 				break;
 			}
 //			System.out.println(file.getName());
-//			System.out.println(node.toNode().prettyPrint(true));
+//			System.out.println(node.toNode(PythonNode::new).prettyPrint(true));
 			nodes.add(node);
 		}
 		return nodes;
+	}
+
+	static class PythonNode extends Node {
+
+		protected PythonNode(Node parent, String type, String value, String id) {
+			super(parent, type, value, id);
+		}
+
+		@Override
+		public Node constructNode(Node parent, String type, String value, String id) {
+			return new PythonNode(parent, type, value, id);
+		}
+
+		@Override
+		protected boolean nodeTypeHasBody(String type) {
+			return "list".equals(type);
+		}
+
 	}
 }

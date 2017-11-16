@@ -17,6 +17,7 @@ import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.export.JsonAST;
+import edu.isnap.hint.util.SnapNode;
 import edu.isnap.parser.Store.Mode;
 
 public class CHFImport {
@@ -39,7 +40,7 @@ public class CHFImport {
 				List<CHFEdit> edits = allHints.get(action.id);
 				if (edits == null) continue;
 
-				Node from = JsonAST.toAST(action.lastSnapshot).toNode();
+				Node from = JsonAST.toAST(action.lastSnapshot).toNode(SnapNode::new);
 				String fromString = from.prettyPrint(true);
 				System.out.println("--------- " + action.id + " ---------");
 				System.out.println(fromString);
@@ -86,7 +87,7 @@ public class CHFImport {
 			int underscoreIndex = name.indexOf("_");
 			int id = Integer.parseInt(name.substring(0, underscoreIndex));
 			int priority = Integer.parseInt(name.substring(underscoreIndex + 1));
-			CHFEdit edit = new CHFEdit(id, root.toNode(), error, priority);
+			CHFEdit edit = new CHFEdit(id, root.toNode(SnapNode::new), error, priority);
 			return edit;
 		}
 	}

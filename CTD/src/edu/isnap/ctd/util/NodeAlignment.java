@@ -17,6 +17,7 @@ import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
+import edu.isnap.ctd.graph.SimpleNode;
 import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.HintMap;
@@ -661,22 +662,22 @@ public class NodeAlignment {
 	}
 
 	public static void main1(String[] args) {
-		Node n1 = new Node(null, "script");
-		n1.children.add(new Node (n1, "a"));
-		n1.children.add(new Node (n1, "b"));
-		n1.children.add(new Node (n1, "c"));
-		n1.children.add(new Node (n1, "d"));
-		n1.children.add(new Node (n1, "e"));
-		n1.children.add(new Node (n1, "f"));
+		Node n1 = new SimpleNode(null, "script", null, null);
+		n1.addChild("a");
+		n1.addChild("b");
+		n1.addChild("c");
+		n1.addChild("d");
+		n1.addChild("e");
+		n1.addChild("f");
 
-		Node n2 = new Node(null, "script");
-		n2.children.add(new Node (n2, "b").setOrderGroup(1));
-		n2.children.add(new Node (n2, "a").setOrderGroup(1));
-		n2.children.add(new Node (n2, "c"));
-		n2.children.add(new Node (n2, "f").setOrderGroup(2));
-		n2.children.add(new Node (n2, "d").setOrderGroup(2));
-		n2.children.add(new Node (n2, "e").setOrderGroup(2));
-		n2.children.add(new Node (n2, "g"));
+		Node n2 = new SimpleNode(null, "script", null, null);
+		n2.addChild("b").setOrderGroup(1);
+		n2.addChild("a").setOrderGroup(1);
+		n2.addChild("c");
+		n2.addChild("f").setOrderGroup(2);
+		n2.addChild("d").setOrderGroup(2);
+		n2.addChild("e").setOrderGroup(2);
+		n2.addChild("g");
 
 		System.out.println(n1);
 		System.out.println(n2);

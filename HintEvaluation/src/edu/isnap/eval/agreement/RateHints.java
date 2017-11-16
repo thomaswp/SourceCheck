@@ -92,7 +92,7 @@ public class RateHints {
 			}
 			if (node.value != null && !usedValues.contains(node.value)) {
 				Node parent = node.parent;
-				Node replacement = new Node(parent, node.type(), "[NEW_VALUE]", node.id);
+				Node replacement = node.constructNode(parent, node.type(), "[NEW_VALUE]", node.id);
 				int index = node.index();
 				parent.children.remove(index);
 				parent.children.add(index, replacement);

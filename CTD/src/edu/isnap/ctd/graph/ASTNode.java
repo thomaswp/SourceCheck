@@ -11,6 +11,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import edu.isnap.ctd.graph.Node.NodeConstructor;
+
 public class ASTNode implements INode {
 
 	// TODO: This really belongs in snap-specific code
@@ -126,16 +128,16 @@ public class ASTNode implements INode {
 		return object;
 	}
 
-	public Node toNode() {
-		return toNode(null);
+	public Node toNode(NodeConstructor constructor) {
+		return toNode(null, constructor);
 	}
 
-	public Node toNode(Node parent) {
+	public Node toNode(Node parent, NodeConstructor constructor) {
 		String type = this.type;
 		if (SNAPSHOT_TYPE.equals(type)) type = "snapshot";
-		Node node = new Node(parent, type, value, id);
+		Node node = constructor.constructNode(parent, type, value, id);
 		node.tag = this;
-		for (ASTNode child : childMap.values()) node.children.add(child.toNode(node));
+		for (ASTNode child : childMap.values()) node.children.add(child.toNode(node, constructor));
 		return node;
 	}
 }

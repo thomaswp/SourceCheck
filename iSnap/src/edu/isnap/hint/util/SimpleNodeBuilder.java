@@ -18,7 +18,7 @@ public class SimpleNodeBuilder {
 
 	private static Node toTree(Code code, final boolean canon, Node parent, final IDer ider) {
 		String id = ider.getID(code, parent);
-		final Node node = new Node(parent, code.type(canon), code.value(), id);
+		final Node node = new SnapNode(parent, code.type(canon), code.value(), id);
 		node.tag = code;
 		code.addChildren(canon, new Accumulator() {
 
@@ -41,7 +41,7 @@ public class SimpleNodeBuilder {
 
 			@Override
 			public void add(String type, String value) {
-				node.children.add(new Node(node, type, value, ider.getID(type, node)));
+				node.children.add(new SnapNode(node, type, value, ider.getID(type, node)));
 			}
 
 			@Override

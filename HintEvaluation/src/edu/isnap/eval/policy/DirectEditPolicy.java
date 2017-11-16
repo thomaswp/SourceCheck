@@ -103,20 +103,6 @@ public class DirectEditPolicy implements HintPolicy {
 		testStudents();
 	}
 
-	@SuppressWarnings("unused")
-	private static void testPath() {
-		Node s = new Node(null, "A");
-		s.addChild("B");
-		s.addChild("C").addChild("Q").addChild("Y");
-
-
-		Node t = new Node(null, "Z");
-		t.addChild("Q");
-		t.addChild("C").addChild("Y");
-
-		testEdits(s, t);
-	}
-
 	private static void testStudents() {
 		SnapHintBuilder subtree = new SnapHintBuilder(Fall2015.GuessingGame1);
 
@@ -223,26 +209,6 @@ public class DirectEditPolicy implements HintPolicy {
 		}
 		s += "]";
 		return s;
-	}
-
-	private static void testEdits(Node from, Node to) {
-
-		Set<Node> edits = nextSteps(from, to);
-		if (edits.size() == 0) {
-			if (!from.equals(to)) {
-				System.err.println(from + " =!= " + to);
-			}
-			return;
-		}
-
-		System.out.println(from + " --> " + to);
-		for (Node edit : edits) {
-			System.out.println(" + " + edit);
-		}
-
-		for (Node edit : edits) {
-			testEdits(edit, to);
-		}
 	}
 
 	@Override

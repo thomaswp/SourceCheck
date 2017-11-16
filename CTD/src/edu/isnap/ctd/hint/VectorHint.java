@@ -100,7 +100,7 @@ public class VectorHint extends StringHashable implements Hint {
 					}
 				}
 				if (!added) {
-					nRoot.children.add(new Node(nRoot, type));
+					nRoot.addChild(type);
 				}
 			}
 

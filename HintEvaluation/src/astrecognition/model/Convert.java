@@ -1,6 +1,7 @@
 package astrecognition.model;
 
 import edu.isnap.ctd.graph.Node;
+import edu.isnap.hint.util.SnapNode;
 
 public class Convert {
 	public static Tree nodeToTree(Node node) {
@@ -13,13 +14,13 @@ public class Convert {
 		}
 		return root;
 	}
-	
+
 	public static Node treeToNode(Tree tree) {
 		return treeToNode(tree, null);
 	}
-	
+
 	private static Node treeToNode(Tree tree, Node parent) {
-		Node root = new Node(parent, tree.getOriginalLabel());
+		Node root = new SnapNode(parent, tree.getOriginalLabel(), null, null);
 		for (Tree child : tree.children) {
 			root.children.add(treeToNode(child, root));
 		}

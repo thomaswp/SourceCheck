@@ -19,7 +19,7 @@ import edu.isnap.ctd.hint.Canonicalization.SwapBinaryArgs;
 import edu.isnap.ctd.util.StringHashable;
 import util.LblTree;
 
-public class Node extends StringHashable implements INode {
+public abstract class Node extends StringHashable implements INode {
 
 	public static int PrettyPrintSpacing = 2;
 
@@ -35,6 +35,14 @@ public class Node extends StringHashable implements INode {
 
 	public transient Object tag;
 	public final transient List<Canonicalization> canonicalizations = new ArrayList<>();
+
+	/**
+	 * Constructs a new node with the given parameters. Subtypes of Node should override to return
+	 * a new instance of that type.
+	 */
+	public abstract Node constructNode(Node parent, String type, String value, String id);
+
+	protected abstract boolean nodeTypeHasBody(String type);
 
 	@Override
 	public String type() {
@@ -85,14 +93,6 @@ public class Node extends StringHashable implements INode {
 	@SuppressWarnings("unused")
 	private Node() {
 		this(null, null, null, null);
-	}
-
-	public Node(Node parent, String type) {
-		this(parent, type, null, null);
-	}
-
-	public Node(Node parent, String type, String value) {
-		this(parent, type, value, null);
 	}
 
 	public Node(Node parent, String type, String value, String id) {
@@ -306,17 +306,6 @@ public class Node extends StringHashable implements INode {
 		}
 	}
 
-	public static Node fromTree(Node parent, LblTree tree, boolean cache) {
-		Node node = new Node(parent, tree.getLabel());
-		int count = tree.getChildCount();
-		for (int i = 0; i < count; i++) {
-			Node child = fromTree(node, (LblTree) tree.getChildAt(i), cache);
-			node.children.add(child);
-		}
-		if (cache) node.cache();
-		return node;
-	}
-
 	public boolean shallowEquals(Node node) {
 		if (node == null) return false;
 		return eq(type, node.type) && eq(value, node.value);
@@ -355,15 +344,19 @@ public class Node extends StringHashable implements INode {
 		return copy;
 	}
 
+	public final Node constructNode(Node parent, String type) {
+		return constructNode(parent, type, null, null);
+	}
+
 	public Node shallowCopy(Node parent) {
-		Node copy = new Node(parent, type, value, id);
+		Node copy = constructNode(parent, type, value, id);
 		copy.tag = tag;
 		copy.annotations = annotations == null ? null : annotations.copy();
 		return copy;
 	}
 
 	public Node addChild(String type) {
-		Node child = new Node(this, type);
+		Node child = constructNode(this, type);
 		children.add(child);
 		return child;
 	}
@@ -436,11 +429,6 @@ public class Node extends StringHashable implements INode {
 		return array;
 	}
 
-	// TODO: Move to snap-specific project
-	private final static String[] HAS_BODY = new String[] {
-			"snapshot", "stage", "sprite", "script", "customBlock", //"list"
-	};
-
 	public String prettyPrint() {
 		return prettyPrint("", false, null);
 	}
@@ -458,13 +446,7 @@ public class Node extends StringHashable implements INode {
 	}
 
 	private String prettyPrint(String indent, boolean showValues, Map<Node, String> prefixMap) {
-		boolean inline = true;
-		for (String hasBody : HAS_BODY) {
-			if (type.equals(hasBody)) {
-				inline = false;
-				break;
-			}
-		}
+		boolean inline = !nodeTypeHasBody(type);
 		String out = type;
 		if (showValues && value != null) {
 			out = "[" + out + "=" + value + "]";
@@ -644,5 +626,9 @@ public class Node extends StringHashable implements INode {
 			object.put("children", childArray);
 		}
 		return object;
+	}
+
+	public interface NodeConstructor {
+		Node constructNode(Node parent, String type, String value, String id);
 	}
 }

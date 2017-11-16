@@ -6,6 +6,7 @@ import java.util.List;
 import org.apache.commons.lang3.mutable.MutableInt;
 
 import edu.isnap.ctd.graph.Node;
+import edu.isnap.hint.util.SnapNode;
 
 public class BNode {
 	public final String type;
@@ -41,7 +42,7 @@ public class BNode {
 			value = type.substring(colonIndex + 1, type.length());
 			type = type.substring(0, colonIndex);
 		}
-		Node node = new Node(parent, type, value, String.valueOf(id.getAndAdd(1)));
+		Node node = new SnapNode(parent, type, value, String.valueOf(id.getAndAdd(1)));
 		return node;
 	}
 

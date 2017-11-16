@@ -74,7 +74,7 @@ public class Insertion extends PositionalEdit {
 		}
 
 
-		Node insert = new Node(fromParent, to.type());
+		Node insert = fromParent.constructNode(fromParent, to.type());
 		fromParent.children.add(fromIndex, insert);
 		return fromParent.root();
 	}

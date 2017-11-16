@@ -61,7 +61,7 @@ public class HintMap {
 
 		Node parent = toRootPath(node.parent);
 		String type = node.type();
-		Node child = new Node(parent, type);
+		Node child = node.constructNode(parent, type, null, null);
 		if (parent != null) parent.children.add(child);
 
 		return child;

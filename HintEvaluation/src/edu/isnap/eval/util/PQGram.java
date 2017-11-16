@@ -10,16 +10,17 @@ import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.util.Tuple;
 import edu.isnap.ctd.util.map.BiMap;
 import edu.isnap.eval.util.PQGram.Profile.Constructor;
+import edu.isnap.hint.util.SnapNode;
 
 public class PQGram {
 
 	public static void main(String[] args) {
-		Node s = new Node(null, "A");
+		Node s = new SnapNode(null, "A", null, null);
 		s.addChild("B");
 		s.addChild("C").addChild("Q");
 
 
-		Node t = new Node(null, "Z");
+		Node t = new SnapNode(null, "Z", null, null);
 		t.addChild("Q");
 		t.addChild("C").addChild("Y");
 
@@ -144,7 +145,7 @@ public class PQGram {
 			}
 
 
-			Node insert = new Node(fromParent, y.type());
+			Node insert = y.constructNode(fromParent, y.type());
 			fromParent.children.add(fromIndex, insert);
 			return fromParent.root();
 		}
