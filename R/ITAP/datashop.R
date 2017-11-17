@@ -1,6 +1,7 @@
 
 library(plyr)
 library(reshape2)
+library(readr)
 
 itap <- read_delim("~/GitHub/SnapHints/R/ITAP/data/itap_pslc.tsv", "\t", escape_double = FALSE, trim_ws = TRUE)
 hintRows <- itap[itap$`Student Response Type` == "HINT_REQUEST",]
