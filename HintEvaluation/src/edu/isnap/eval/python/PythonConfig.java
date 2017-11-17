@@ -8,9 +8,8 @@ public class PythonConfig extends HintConfig {
 
 	public PythonConfig() {
 		script = "list";
-
-		// TODO: make set
-		literal = "Num,String";
+		literal = "";
+		preprocessSolutions = false;
 
 		valueMappedTypes = new String[][] {
 				new String[] { "Name", "arg" },

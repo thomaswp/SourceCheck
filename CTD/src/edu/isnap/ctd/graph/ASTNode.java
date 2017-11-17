@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -139,5 +140,16 @@ public class ASTNode implements INode {
 		node.tag = this;
 		for (ASTNode child : childMap.values()) node.children.add(child.toNode(node, constructor));
 		return node;
+	}
+
+	public void autoID(String prefix) {
+		autoID(prefix, new AtomicInteger(0));
+	}
+
+	private void autoID(String prefix, AtomicInteger id) {
+		if (this.id == null) this.id = prefix + id.getAndIncrement();
+		for (ASTNode child : childMap.values()) {
+			child.autoID(prefix, id);
+		}
 	}
 }
