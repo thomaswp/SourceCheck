@@ -5,8 +5,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.graph.Node;
@@ -15,16 +18,26 @@ import edu.isnap.ctd.util.map.ListMap;
 public class PythonImport {
 
 	public static void main(String[] args) throws IOException {
-		List<ASTNode> nodes = loadAssignment("../../PythonAST/data", "canDrinkAlcohol");
-		nodes.forEach(n -> System.out.println(n.toNode(PythonNode::new).prettyPrint(true)));
+//		List<PythonNode> nodes = loadAssignment("../../PythonAST/data", "convertToDegrees");
+//		nodes.stream()
+//		.filter(n -> n.correct.orElse(false))
+//		.forEach(n -> System.out.println(n.prettyPrint(true)));
 //		GrammarBuilder builder = new GrammarBuilder("python", new HashMap<>());
-//		ListMap<String, ASTNode> nodes = loadAllAssignments("../../PythonAST/data");
+		ListMap<String,PythonNode> nodes = loadAllAssignments("../../PythonAST/data");
+		for (String assignment : nodes.keySet()) {
+			List<PythonNode> correct = nodes.get(assignment).stream()
+					.filter(n -> n.correct.orElse(false))
+					.collect(Collectors.toList());
+			if (correct.size() > 0) {
+				System.out.println(assignment + ": " + correct.size() + "/" + nodes.get(assignment).size());
+			}
+		}
 //		nodes.values().forEach(list -> list.forEach(n -> builder.add(n)));
 //		System.out.println(builder.toJSON());
 	}
 
-	static ListMap<String, ASTNode> loadAllAssignments(String dataDir) throws IOException {
-		ListMap<String, ASTNode> map = new ListMap<>();
+	static ListMap<String, PythonNode> loadAllAssignments(String dataDir) throws IOException {
+		ListMap<String, PythonNode> map = new ListMap<>();
 		for (File dir : new File(dataDir).listFiles(f -> f.isDirectory())) {
 			String assignment = dir.getName();
 			map.put(assignment, loadAssignment(dataDir, assignment));
@@ -32,14 +45,19 @@ public class PythonImport {
 		return map;
 	}
 
-	static List<ASTNode> loadAssignment(String dataDir, String assignment) throws IOException {
-		List<ASTNode> nodes = new ArrayList<>();
+	static List<PythonNode> loadAssignment(String dataDir, String assignment) throws IOException {
+		List<PythonNode> nodes = new ArrayList<>();
 		for (File file : new File(dataDir, assignment).listFiles()) {
 			if (!file.getName().endsWith(".json")) continue;
-			ASTNode node;
+			PythonNode node;
 			try {
 				String source = new String(Files.readAllBytes(file.toPath()));
-				node = ASTNode.parse(source);
+				JSONObject obj = new JSONObject(source);
+				node = (PythonNode) ASTNode.parse(obj).toNode(PythonNode::new);
+				if (obj.has("correct")) {
+					boolean correct = obj.getBoolean("correct");
+					node.correct = Optional.of(correct);
+				}
 			} catch (JSONException e) {
 				System.out.println("Error parsing: " + file.getAbsolutePath());
 				e.printStackTrace();
@@ -53,6 +71,8 @@ public class PythonImport {
 	}
 
 	static class PythonNode extends Node {
+
+		public Optional<Boolean> correct = Optional.empty();
 
 		protected PythonNode(Node parent, String type, String value, String id) {
 			super(parent, type, value, id);
