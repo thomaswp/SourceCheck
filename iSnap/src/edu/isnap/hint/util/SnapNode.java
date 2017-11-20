@@ -15,6 +15,11 @@ public class SnapNode extends Node {
 		}
 	));
 
+	@SuppressWarnings("unused")
+	private SnapNode() {
+		this(null, null, null, null);
+	}
+
 	public SnapNode(Node parent, String type, String value, String id) {
 		super(parent, type, value, id);
 	}

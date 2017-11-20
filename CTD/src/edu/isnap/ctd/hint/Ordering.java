@@ -98,6 +98,11 @@ public class Ordering {
 		public final String label;
 		public final int count;
 
+		@SuppressWarnings("unused")
+		private Addition() {
+			this(null, 0);
+		}
+
 		public Addition(String label, int count) {
 			this.label = label;
 			this.count = count;
