@@ -29,6 +29,7 @@ import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AssignmentAttempt.ActionRows;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.datasets.Fall2016;
+import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.Store.Mode;
 
@@ -80,7 +81,7 @@ public class ClusterDistance {
 		public double measure(Node a, Node b) {
 			List<Node> la = Collections.singletonList(a);
 			List<Node> lb = Collections.singletonList(b);
-			HintConfig config = new HintConfig();
+			HintConfig config = new SnapHintConfig();
 			config.preprocessSolutions = false;
 			int editsA = new HintHighlighter(la, config).highlight(b).size();
 			int editsB = new HintHighlighter(lb, config).highlight(a).size();

@@ -1,47 +1,62 @@
 package edu.isnap.ctd.hint;
 
 import java.io.Serializable;
-import java.util.HashSet;
 
 import edu.isnap.ctd.graph.Node;
 
-public class HintConfig implements Serializable {
+public abstract class HintConfig implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	/**
-	 * If true, a HintMap build from this assignment will only include graded submissions.
+	 * Should return true if children of this type have no meaningful order
 	 */
-	public boolean requireGrade = false;
+	public abstract boolean isOrderInvariant(String type);
+
 	/**
-	 * If true, these solutions came from students and should be preprocessed to remove side-scripts
+	 * Should return true if this node has a fixed number of children, so insertions should replace
+	 * existing elements.
 	 */
-	public boolean preprocessSolutions = true;
+	public abstract boolean hasFixedChildren(Node node);
+
 	/**
-	 * When at least this proportion of visitors to a state finished there,
-	 * we flag hints to leave it with caution
+	 * Should return true if this node can be moved and reordered.
 	 */
-	public double stayProportion = 0.67;
-	/** We prune out states with weight less than this */
-	public int pruneNodes = 2;
-	/** We prune out goals with fewer students than this finishing there */
-	public int pruneGoals = 2;
+	public abstract boolean canMove(Node node);
+
 	/**
-	 * To hint towards a nearby neighbor, it must be less than this distance from the student's
-	 * current state
+	 * Should return true if this node is self-contained, and its children should not be
+	 * inter-matched
 	 */
-	public int maxNN = 3;
-	/** We add synthetic edges between nodes with distance no more than this */
-	public int maxEdgeAddDistance = 1;
-	/** We prune edges between states with distance greater than this */
-	public int maxEdgeDistance = 2;
-	/** The maximum number of siblings to look at at either end when considering context */
-	public int maxContextSiblings = 3;
-	/** Ratio of unused to used blocks in a side-script for it to used in  a LinkHint */
-	public int linkUsefulRatio = 2;
-	/** Type of script nodes, which should use code hinting */
-	public String script = "script";
-	/** Type of literals which are automatically inserted in parameter slots*/
-	public String literal = "literal";
+	public abstract boolean isContainer(String type);
+
+	/**
+	 * Types that should have their values mapped when matching nodes, e.g. variable nodes.
+	 * Each type in the inner array will be mapped together, (e.g. function declarations and calls)
+	 */
+	public abstract String[][] getValueMappedTypes();
+
+	/**
+	 * Should return true if matching nodes of this type should not be valued when comparing ASTs.
+	 */
+	public boolean isValueless(String type) {
+		return false;
+	}
+
+	/**
+	 * Should return true if this node can have children that are "side scripts," which can be
+	 * pruned if {@link HintConfig#preprocessSolutions} is true.
+	 */
+	public boolean hasSideScripts(String type) {
+		return false;
+	}
+
+	/**
+	 * Should return true if nodes of this type are "harmless" and should not be deleted.
+	 */
+	public boolean isHarmlessType(String type) {
+		return false;
+	}
+
 	/**
 	 * When measuring progress towards a goal, nodes in order are given weight multiplied by
 	 * this factor compared to nodes that are out of order
@@ -72,104 +87,125 @@ public class HintConfig implements Serializable {
 	public boolean useValues = true;
 
 	/**
-	 * Code elements that have exactly one script child or unordered children and therefore should
-	 * not have their children used as context
+	 * If true, a HintMap build from this assignment will only include graded submissions.
 	 */
-	public final HashSet<String> badContext = new HashSet<>();
-	{
-		for (String c : new String[] {
-				// These control structures hold exactly one script
-				"doIf",
-				"doUntil",
-				// Sprites' children are unordered
-				"sprite",
-				// Custom block inputs aren't usually added up front, so they're more distracting
-				// than helpful, and block creation order has more bearing on target goal
-				"customBlock",
-		}) {
-			badContext.add(c);
-		}
+	public boolean requireGrade = false;
+	/**
+	 * If true, these solutions came from students and should be preprocessed to remove side-scripts
+	 */
+	public boolean preprocessSolutions = true;
+
+	// BEGIN old CDT config attributes
+	// TODO: Remove these elements and clean up old CTD algorithm
+
+	/**
+	 *  Should return true if this node has code statements as children
+	 */
+	@Deprecated
+	public boolean isScript(String type) {
+		return false;
 	}
 
 	/**
-	 * When we have hints for these parent blocks, we should go straight to the goal, since there's
-	 * no point in, e.g., leading them through adding one variable, then another. These are the
-	 * "structure hints" on the client side
+	 * Should return true if the children of this node do not provide context for where or whether
+	 * it should be used.
 	 */
-	public final HashSet<String> straightToGoal = new HashSet<>();
-	{
-		for (String c : new String[] {
-				"snapshot",
-				"stage",
-				"sprite",
-				"customBlock",
-		}) {
-			straightToGoal.add(c);
-		}
-	}
-
-	public final HashSet<String> haveSideScripts = new HashSet<>();
-	{
-		for (String c : new String[] {
-				"stage",
-				"sprite",
-		}) {
-			haveSideScripts.add(c);
-		}
-	}
-
-	/** Nodes that should be self-contained, and their children should not be inter-matched */
-	public final HashSet<String> containers = new HashSet<>();
-	{
-		for (String c : new String[] {
-				"sprite",
-		}) {
-			containers.add(c);
-		}
-	}
-
-	public final HashSet<String> harmlessCalls = new HashSet<>();
-	{
-		for (String c : new String[] {
-				"receiveGo",
-				"setColor",
-				"setHue",
-				"clear",
-				"receiveKey",
-				"receiveInteraction",
-		}) {
-			harmlessCalls.add(c);
-		}
+	@Deprecated
+	public boolean isBadContext(String type) {
+		return false;
 	}
 
 	/**
-	 * Types that should have their values mapped when matching nodes, e.g. variable nodes.
-	 * Each type in the inner array will be mapped together, (e.g. function declarations and calls)
+	 * Should return true if this
 	 */
-	public String[][] valueMappedTypes = {
-			new String[] { "var", "varDec", "varMenu" },
-			new String[] { "customBlock", "evaluateCustomBlock" },
-	};
+	@Deprecated
+	public boolean shouldGoStraightToGoal(String type) {
+		return false;
+	}
+	/**
+	 * When at least this proportion of visitors to a state finished there,
+	 * we flag hints to leave it with caution
+	 */
+	@Deprecated
+	public double stayProportion = 0.67;
+	/** We prune out states with weight less than this */
+	@Deprecated
+	public int pruneNodes = 2;
+	/** We prune out goals with fewer students than this finishing there */
+	@Deprecated
+	public int pruneGoals = 2;
+	/**
+	 * To hint towards a nearby neighbor, it must be less than this distance from the student's
+	 * current state
+	 */
+	@Deprecated
+	public int maxNN = 3;
+	/** We add synthetic edges between nodes with distance no more than this */
+	@Deprecated
+	public int maxEdgeAddDistance = 1;
+	/** We prune edges between states with distance greater than this */
+	@Deprecated
+	public int maxEdgeDistance = 2;
+	/** The maximum number of siblings to look at at either end when considering context */
+	@Deprecated
+	public int maxContextSiblings = 3;
+	/** Ratio of unused to used blocks in a side-script for it to used in  a LinkHint */
+	@Deprecated
+	public int linkUsefulRatio = 2;
 
 	/**
 	 * Power used in the distance weight formula. Higher values penalize higher distances faster.
 	 * Must be >= 1.
 	 */
+	@Deprecated
 	public int distanceWeightPower = 2;
+
 	/**
 	 * Base used in the distance weight formula. Higher values penalize higher distances slower.
 	 * Must be > 0.
 	 */
+	@Deprecated
 	public double distanceWeightBase = 0.5;
 
+	@Deprecated
 	public double getDistanceWeight(double distance) {
 		// TODO: See if you can find a way to may this discrete instead
 		return Math.pow(distanceWeightBase, distanceWeightPower) /
 				Math.pow(distanceWeightBase + distance, distanceWeightPower); // max 1
 	}
 
-	public boolean isCodeElement(Node node) {
-		return node != null && !node.hasType(script) &&
-				node.hasAncestor(new Node.TypePredicate(script));
+	public static class SimpleHintConfig extends HintConfig {
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		public boolean isScript(String type) {
+			return false;
+		}
+
+		@Override
+		public boolean isContainer(String type) {
+			return false;
+		}
+
+		@Override
+		public String[][] getValueMappedTypes() {
+			return new String[][] {};
+		}
+
+		@Override
+		public boolean isOrderInvariant(String type) {
+			return false;
+		}
+
+		@Override
+		public boolean hasFixedChildren(Node node) {
+			return false;
+		}
+
+		@Override
+		public boolean canMove(Node node) {
+			return false;
+		}
+
 	}
 }

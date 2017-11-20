@@ -12,6 +12,7 @@ import edu.isnap.dataset.AttemptAction;
 import edu.isnap.datasets.Fall2015;
 import edu.isnap.datasets.Fall2016;
 import edu.isnap.hint.Configurable;
+import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.parser.SnapParser;
@@ -60,7 +61,7 @@ public class SnapGradePrediction {
 			}
 
 		}
-		HintConfig config = new HintConfig();
+		HintConfig config = new SnapHintConfig();
 		for (Assignment assignment : assignments) {
 			if (assignment instanceof Configurable) {
 				config = ((Configurable) assignment).getConfig();

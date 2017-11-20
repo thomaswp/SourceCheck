@@ -158,7 +158,7 @@ public class HintHighlighter {
 						insertion.candidate = node;
 						// If this is a code element parent, inserting the node should replace
 						// the current node at this index
-						if (isCodeElement(moveParent) &&
+						if (config.hasFixedChildren(moveParent) &&
 								insertIndex < moveParent.children.size()) {
 							insertion.replaced = moveParent.children.get(insertIndex);
 						}
@@ -182,7 +182,7 @@ public class HintHighlighter {
 
 				// Argument nodes are easy, since their order should be the same as their pair
 				if (node.parent != null && node.parent == mapping.getTo(pair.parent) &&
-						isCodeElement(node.parent)) {
+						config.hasFixedChildren(node.parent)) {
 
 					int pairIndex = pair.index();
 					// If the indices don't match and the pair's index fits within the parent's
@@ -199,7 +199,7 @@ public class HintHighlighter {
 				}
 
 				// The below is for non-code-elements (scripts), since it involves insertion
-				if (isCodeElement(node)) return;
+				if (config.hasFixedChildren(node)) return;
 
 				// Instead of aligning the node types, which might repeat, we align the original
 				// node indices (1, 2, 3...) with the order those node-indices appear in the
@@ -269,7 +269,7 @@ public class HintHighlighter {
 			}
 		});
 
-		// Insertions: This time, iterate over the nodes in the pair
+		// Insertions: This time, iterate over the children of the target solution
 		Node nodeMatch = mapping.getFrom(node);
 		nodeMatch.recurse(new Action() {
 			@Override
@@ -277,59 +277,61 @@ public class HintHighlighter {
 				// See if the pair has a corresponding node in the student's tree
 				Node node = mapping.getTo(pair);
 				if (node != null) {
-					// If so, we iterate through its children and add them
+					// If so, we iterate through its children and add them if they're not there
 					int insertIndex = 0;
 					for (Node child : pair.children) {
 						Node originalChild = mapping.getTo(child);
 						if (originalChild != null) {
-							// For paired children, we update the insertion index
+							// For paired children, we just update the insertion index and continue
 							if (originalChild.parent == node) {
 								insertIndex = originalChild.index() + 1;
 							}
-						} else {
-							// Otherwise we add an insertion
-							if (isCodeElement(node)) {
-								// For code elements, we want to insert at the same location as
-								// in the solution code, since index matters more than relative
-								// position
-								insertIndex = child.index();
+							continue;
+						}
 
-								// For code elements, we cannot insert past the parent's size
-								// (e.g. add an element to a list)
-								// TODO: This should be supported eventually
-								if (insertIndex >= node.children.size()) {
-									break;
-								}
-								insertIndex = Math.max(0, insertIndex);
+						// Otherwise we add an insertion
+						if (config.hasFixedChildren(node)) {
+							// For code elements, we want to insert at the same location as
+							// in the solution code, since index matters more than relative
+							// position
+							insertIndex = child.index();
+
+							// For code elements, we cannot insert past the parent's size
+							// (e.g. add an element to a list)
+							// TODO: This should be supported eventually
+							if (insertIndex >= node.children.size()) {
+								break;
 							}
-							Insertion insertion = new Insertion(node, child, insertIndex,
-									mapping.getMappedValue(child, false));
-							edits.add(insertion);
-							// If the node is being inserted in a code element then it replaces
-							// whatever already exists at this index in the parent
-							// It's possible that a list/custom block will have 0 args, in which
-							// case there will be no replacement.
-							if (isCodeElement(node) && node.children.size() > 0) {
-								insertion.replaced = node.children.get(insertIndex);
-							}
-							// If this is a non-script, we treat this new insertion as a "match"
-							// and increment the insert index if possible
-							if (!node.hasType(config.script)) {
-								// We do have to make sure not to go out of bounds, though
-								insertIndex = Math.min(node.children.size(), insertIndex + 1);
-							}
+							insertIndex = Math.max(0, insertIndex);
+						}
+
+						Insertion insertion = new Insertion(node, child, insertIndex,
+								mapping.getMappedValue(child, false));
+						edits.add(insertion);
+						// If the node is being inserted in a code element then it replaces
+						// whatever already exists at this index in the parent
+						// It's possible that a list/custom block will have 0 args, in which
+						// case there will be no replacement.
+						if (config.hasFixedChildren(node) && node.children.size() > 0) {
+							insertion.replaced = node.children.get(insertIndex);
+						}
+						// If this is a non-script, we treat this new insertion as a "match"
+						// and increment the insert index if possible
+						if (!config.isOrderInvariant(node.type())) {
+							// We do have to make sure not to go out of bounds, though
+							insertIndex = Math.min(node.children.size(), insertIndex + 1);
 						}
 					}
 				} else if (mapping.getTo(pair.parent) == null) {
 					// If not, and the pair's parent has no corresponding node either, it won't
 					// be added by the above code, so we need to add it. Unfortunately, there's
-					// no where to add it to the student's code, since it's parent has no
+					// nowhere to add it to the student's code, since it's parent has no
 					// corresponding node, so we use the pair-parent and mark it as a special case.
 					// It's useful to list these insertions anyway, since it allows us to mark nodes
 					// as Move instead of Delete when they're used in not-yet-added parents
 
 					// This really only makes sense for code elements
-					if (!isCodeElement(pair)) return;
+					if (!config.canMove(pair)) return;
 
 					// We clone the pair-parent and remove the pair, so the insert text is
 					// descriptive
@@ -378,7 +380,7 @@ public class HintHighlighter {
 			if (deletion != null) {
 				// Don't bother deleting certain function calls, which students may add as
 				// personalization but don't harm the final product. May be assignment specific.
-				if (config.harmlessCalls.contains(deletion.node.type())) {
+				if (config.isHarmlessType(deletion.node.type())) {
 					edits.remove(i--);
 					continue;
 				}
@@ -410,12 +412,14 @@ public class HintHighlighter {
 		return edits;
 	}
 
+	@SuppressWarnings("deprecation")
+	// TODO: Make not snap-specific
 	private void addScriptReplacement(Insertion insertion, BiMap<Node, Node> mapping,
 			List<EditHint> edits, Map<Node, Highlight> colors) {
 
 		// To be eligible for a script replacement, an insertion must have no replacement and have a
 		// script parent with a child at the insertion index
-		if (insertion.replaced != null || !insertion.parent.hasType(config.script) ||
+		if (insertion.replaced != null || !config.isScript(insertion.parent.type()) ||
 				insertion.parent.children.size() <= insertion.index) return;
 
 		// Additionally the at the index of insert must be marked for deletion and be of a different
@@ -437,12 +441,12 @@ public class HintHighlighter {
 		for (Node n1 : nodeChildren) {
 			// Don't match literals
 			// TODO: This produces empty hints when working with lists or literals
-			if (n1.hasType(config.literal)) continue;
+			if (config.isValueless(n1.type())) continue;
 			for (Node n2 : pairChildren) {
 				if (mapping.getFrom(n1) == n2) {
 					matches++;
 					if (n2.parent == insertion.pair ||
-							(n2.parentHasType(config.script) && n2.parent == insertion.pair)) {
+							(n2.parent != null && config.isScript(n2.parent.type()))) {
 						// If the match comes from a direct child of the pair (or a script that is)
 						// we want to keep the children.
 						keepChildren = true;
@@ -469,13 +473,6 @@ public class HintHighlighter {
 				break;
 			}
 		}
-	}
-
-	// Code elements (blocks) are nodes which are not themselves scripts but have an ancestor
-	// which is a script. This precludes snapshots, sprites, custom blocks, variables, etc,
-	// while including blocks and lists
-	private boolean isCodeElement(Node node) {
-		return config.isCodeElement(node);
 	}
 
 	public DistanceMeasure getDistanceMeasure() {
@@ -515,6 +512,8 @@ public class HintHighlighter {
 	 * Remove side scripts from the submitted solutions. We do this to prevent side-script matches
 	 * from have too much influence in the matching process.
 	 */
+	@SuppressWarnings("deprecation")
+	// TODO: Rework to be not snap-specific
 	private static List<Node> preprocessSolutions(List<Node> allSolutions,
 			Map<Node, Map<String, Double>> nodeCreationPercs,
 			Map<Node, Ordering> nodeOrderings,
@@ -528,10 +527,10 @@ public class HintHighlighter {
 			node.recurse(new Action() {
 				@Override
 				public void run(Node node) {
-					if (!config.haveSideScripts.contains(node.type())) return;
+					if (!config.hasSideScripts(node.type())) return;
 					int scripts = 0;
 					for (Node child : node.children) {
-						if (child.hasType(config.script)) {
+						if (config.isScript(child.type())) {
 							scripts++;
 						}
 					}
@@ -556,11 +555,11 @@ public class HintHighlighter {
 			copy.recurse(new Action() {
 				@Override
 				public void run(Node node) {
-					if (!config.haveSideScripts.contains(node.type())) return;
+					if (!config.hasSideScripts(node.type())) return;
 					int median = scriptMedians.getCount(HintMap.toRootPath(node).root());
 					List<Integer> sizes = new LinkedList<>();
 					for (Node child : node.children) {
-						if (child.hasType(config.script)) {
+						if (config.isScript(child.type())) {
 							sizes.add(child.treeSize());
 						}
 					}
@@ -570,7 +569,7 @@ public class HintHighlighter {
 						sizes.get(sizes.size() - median);
 					for (int i = 0; i < node.children.size(); i++) {
 						Node child = node.children.get(i);
-						if (child.hasType(config.script) && child.treeSize() < minSize) {
+						if (config.isScript(child.type()) && child.treeSize() < minSize) {
 //							trace.println("Preprocess removed: " + node.children.get(i));
 							node.children.remove(i--);
 						}
@@ -612,9 +611,8 @@ public class HintHighlighter {
 		for (Deletion deletion : deletions) {
 			Node deleted = deletion.node;
 
-			// We're only interested in candidate nodes that are in scripts. This ignores things
-			// like variables, sprites and custom block definitions
-			if (!deleted.hasAncestor(new Node.TypePredicate(config.script))) continue;
+			// We're only interested in candidate nodes that can be moved around in the solution
+			if (!config.canMove(deleted)) continue;
 
 			// If a deletion has been changed in the loop (e.g. to a move), ignore it
 			if (colors.get(deleted) != Highlight.Delete) continue;
@@ -623,9 +621,6 @@ public class HintHighlighter {
 			double bestMoveCost = Double.MAX_VALUE;
 
 			for (Insertion insertion : insertions) {
-				// We're also only interested in working with insertions into scripts
-				if (!insertion.parent.hasAncestor(new Node.TypePredicate(config.script))) continue;
-
 				// Only match nodes with the same type and mapped value (if applicable/non-null)
 				if (!(deleted.hasType(insertion.type) &&
 						StringUtils.equals(
@@ -636,13 +631,14 @@ public class HintHighlighter {
 
 				boolean matchParent = deleted.parent == insertion.parent;
 
-				// If it's an insertion/deletion of the same type in the same script parent, it's
+				// If it's an insertion/deletion of the same type in the same parent, it's
 				// just a reorder
-				if (matchParent && insertion.parent.hasType(config.script) &&
+				// TODO: why do we restrict this to flexible-order nodes (e.g. scripts)?
+				if (matchParent && !config.hasFixedChildren(insertion.parent) &&
 						insertion.index != deleted.index()) {
 					colors.put(deleted, Highlight.Move);
 					Reorder reorder = new Reorder(deleted, insertion.index,
-							isCodeElement(deleted.parent));
+							config.hasFixedChildren(deleted.parent));
 					if (!reorder.shouldSuppress(mapping)) toAdd.add(reorder);
 					toRemove.add(deletion);
 					toRemove.add(insertion);
@@ -657,7 +653,7 @@ public class HintHighlighter {
 				}
 
 				// Moves are deletions that could be instead moved to perform a needed insertion
-				if (insertion.candidate == null && !insertion.type.equals(config.literal)) {
+				if (insertion.candidate == null) {
 					double cost = NodeAlignment.getSubCostEsitmate(deleted, insertion.pair, dm);
 					// Ensure that insertions with missing parents are paired last, giving priority
 					// to actionable inserts when assigning candidates
@@ -712,7 +708,7 @@ public class HintHighlighter {
 				if (bestMatch.to == match.to) continue;
 				Map<String, Double> creationPercs = nodePlacementTimes.get(match.to);
 				if (creationPercs == null) continue;
-				Mapping mapping = new NodeAlignment(bestMatch.to, match.to)
+				Mapping mapping = new NodeAlignment(bestMatch.to, match.to, config)
 						.calculateMapping(getDistanceMeasure());
 				bestToGoodMappings.put(match, mapping);
 			}

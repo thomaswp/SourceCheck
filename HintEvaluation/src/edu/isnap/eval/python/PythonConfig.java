@@ -7,19 +7,37 @@ public class PythonConfig extends HintConfig {
 	private static final long serialVersionUID = 1L;
 
 	public PythonConfig() {
-		script = "list";
-		literal = "";
 		preprocessSolutions = false;
-
-		valueMappedTypes = new String[][] {
-				new String[] { "Name", "arg" },
-				new String[] { "FunctionDef" },
-		};
 	}
 
 	@Override
-	public boolean isCodeElement(Node node) {
-		return node != null && !node.hasType(script) &&
-				node.hasAncestor(new Node.TypePredicate(script));
+	public boolean isOrderInvariant(String type) {
+		return false;
+	}
+
+	@Override
+	public boolean hasFixedChildren(Node node) {
+		return node != null && !"list".equals(node.type());
+	}
+
+	@Override
+	public boolean canMove(Node node) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean isContainer(String type) {
+		return false;
+	}
+
+	private final static String[][] valueMappedTypes = new String[][] {
+			new String[] { "Name", "arg" },
+			new String[] { "FunctionDef" },
+	};
+
+	@Override
+	public String[][] getValueMappedTypes() {
+		return valueMappedTypes;
 	}
 }

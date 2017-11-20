@@ -20,6 +20,7 @@ import edu.isnap.ctd.graph.vector.VectorState;
 /**
  * Class for handling the core logic of the CTD algorithm.
  */
+@SuppressWarnings("deprecation")
 public class HintMap {
 
 	// TODO: should probably extract to a datastructure, rather than a list and some maps...
@@ -167,7 +168,7 @@ public class HintMap {
 	private IndexedVectorState getContext(Node item, int maxLength) {
 		Node contextChild = item;
 		while (contextChild.parent != null &&
-				config.badContext.contains(contextChild.parent.type())) {
+				config.isBadContext(contextChild.parent.type())) {
 			contextChild = contextChild.parent;
 		}
 		int index = contextChild.index();
@@ -192,7 +193,7 @@ public class HintMap {
 			String type = parent.type();
 			parent = parent.parent;
 			// then go back up at least one, possible more if there's a bad context
-			while (parent != null && config.badContext.contains(parent.type())) {
+			while (parent != null && config.isBadContext(parent.type())) {
 				type = parent.type();
 				parent = parent.parent;
 			}

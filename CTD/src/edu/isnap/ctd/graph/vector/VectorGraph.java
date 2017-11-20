@@ -15,6 +15,7 @@ import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.util.Alignment;
 
+@SuppressWarnings("deprecation")
 public class VectorGraph extends InteractionGraph<VectorState> {
 
 	public final Node rootPathEnd;
@@ -35,7 +36,7 @@ public class VectorGraph extends InteractionGraph<VectorState> {
 	}
 
 	public boolean isScriptGraph(HintConfig config) {
-		return rootPathEnd.hasType(config.script);
+		return config.isScript(rootPathEnd.type());
 	}
 
 	@SuppressWarnings("unused")

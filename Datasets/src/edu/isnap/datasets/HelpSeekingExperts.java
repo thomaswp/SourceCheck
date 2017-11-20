@@ -6,7 +6,9 @@ import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.hint.ConfigurableAssignment;
+import edu.isnap.hint.SnapHintConfig;
 
+	@SuppressWarnings("deprecation")
 	public class HelpSeekingExperts extends Dataset {
 
 		public final static Date start = Assignment.date(2016, 8, 10);
@@ -14,7 +16,7 @@ import edu.isnap.hint.ConfigurableAssignment;
 		public final static String dataFile = dataDir + ".csv";
 		public final static HelpSeekingExperts instance = new HelpSeekingExperts();
 
-		private final static HintConfig config = new HintConfig();
+		private final static SnapHintConfig config = new SnapHintConfig();
 		static {
 			config.pruneGoals = 1;
 			config.pruneNodes = 0;

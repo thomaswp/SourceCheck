@@ -34,6 +34,7 @@ import edu.isnap.eval.agreement.RateHints.GoldStandard;
 import edu.isnap.eval.agreement.RateHints.HintOutcome;
 import edu.isnap.eval.agreement.RateHints.HintSet;
 import edu.isnap.eval.export.JsonAST;
+import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.Snapshot;
@@ -83,7 +84,7 @@ public class TutorEdits {
 //		verifyHints(Fall2016.instance);
 		GoldStandard standard = readConsensus(Spring2017.instance, "consensus-gg-sq.csv");
 		HintConfig[] configs = new HintConfig[] {
-				new HintConfig(), new HintConfig(), new HintConfig()
+				new SnapHintConfig(), new SnapHintConfig(), new SnapHintConfig()
 		};
 		configs[0].useRulesToFilter = configs[0].useValues = false;
 		configs[1].useRulesToFilter = true; configs[1].useValues = false;

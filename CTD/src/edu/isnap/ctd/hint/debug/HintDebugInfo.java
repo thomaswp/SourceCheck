@@ -52,7 +52,7 @@ public class HintDebugInfo {
 		json.put("nodeMapping", nodeMapping);
 
 		JSONObject valueMappings = new JSONObject();
-		for (String[] types : mapping.config.valueMappedTypes) {
+		for (String[] types : mapping.config.getValueMappedTypes()) {
 			if (types.length == 0) continue;
 			String type = types[0];
 			BiMap<String, String> map = mapping.valueMappings.get(type);

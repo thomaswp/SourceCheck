@@ -6,6 +6,7 @@ import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.hint.ConfigurableAssignment;
+import edu.isnap.hint.SnapHintConfig;
 
 public class CSC200Solutions extends Dataset {
 
@@ -21,7 +22,7 @@ public class CSC200Solutions extends Dataset {
 
 		@Override
 		public HintConfig getConfig() {
-			HintConfig config = new HintConfig();
+			HintConfig config = new SnapHintConfig();
 			config.preprocessSolutions = false;
 			return config;
 		}

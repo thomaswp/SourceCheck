@@ -6,10 +6,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.RuleSet;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.datasets.aggregate.CSC200;
+import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
@@ -25,7 +25,7 @@ public class FindRules {
 				.map(a -> SimpleNodeBuilder.toTree(a.submittedSnapshot, true))
 				.collect(Collectors.toList());
 		System.out.println(assignment.name);
-		new RuleSet(solutions, new HintConfig());
+		new RuleSet(solutions, new SnapHintConfig());
 
 	}
 

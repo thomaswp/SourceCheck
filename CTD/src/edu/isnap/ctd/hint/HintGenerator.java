@@ -77,6 +77,7 @@ public class HintGenerator {
 		return graph.getGoalState(children, context, config);
 	}
 
+	@SuppressWarnings("deprecation")
 	private VectorHint getHint(Node node) {
 		HintConfig config = hintMap.getHintConfig();
 
@@ -89,7 +90,7 @@ public class HintGenerator {
 
 		VectorState goal = graph.getGoalState(next, context, config);
 
-		if (goal != null && config.straightToGoal.contains(node.type())) {
+		if (goal != null && config.shouldGoStraightToGoal(node.type())) {
 			next = goal;
 		} else {
 			// Get the best successor state from our current state
@@ -111,6 +112,16 @@ public class HintGenerator {
 		return hint;
 	}
 
+	@Deprecated
+	private int countScripts(VectorState state, HintConfig config) {
+		int count = 0;
+		for (String type : state.items) {
+			if (config.isScript(type)) count++;
+		}
+		return count;
+	}
+
+	@SuppressWarnings("deprecation")
 	private void postProcess(List<VectorHint> hints) {
 		HintConfig config = hintMap.getHintConfig();
 
@@ -120,12 +131,12 @@ public class HintGenerator {
 
 		// Find scripts that should be removed and don't give hints to their children
 		for (VectorHint hint : hints) {
-			int extraChildren = hint.from.countOf(config.script) -
-					hint.goal.countOf(config.script);
+			int extraChildren = countScripts(hint.from, config) -
+					countScripts(hint.goal, config);
 			if (extraChildren > 0) {
 				List<Integer> sizes = new LinkedList<>();
 				for (Node child : hint.root.children) {
-					if (child.hasType(config.script)) sizes.add(child.children.size());
+					if (config.isScript(child.type())) sizes.add(child.children.size());
 				}
 				Collections.sort(sizes);
 
@@ -138,7 +149,7 @@ public class HintGenerator {
 
 				// TODO: find a more comprehensive way of deciding on the primary script(s)
 				for (Node child : hint.root.children) {
-					if (child.hasType(config.script) && child.children.size() < cutoff) {
+					if (config.isScript(child.type()) && child.children.size() < cutoff) {
 						extraScripts.put(child, null);
 					}
 				}
@@ -162,7 +173,7 @@ public class HintGenerator {
 				// children but it shouldn't be missing all of them (completely replaced)
 				// unless it's empty to begin with, or a block hint
 				if (missingChildren.length() > 0 && (
-						!hint.root.hasType(config.script) ||
+						!config.isScript(hint.root.type()) ||
 						hint.from.length() == 0 ||
 						missingChildren.length() < hint.goal.length())) {
 					missingMap.put(missingChildren, hint);

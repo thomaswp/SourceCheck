@@ -11,6 +11,7 @@ import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.util.NodeAlignment;
 import edu.isnap.ctd.util.NodeAlignment.DistanceMeasure;
 import edu.isnap.dataset.AssignmentAttempt;
+import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.hint.util.Spreadsheet;
 
 public class ProgressAttributes implements AttributeGenerator {
@@ -53,11 +54,11 @@ public class ProgressAttributes implements AttributeGenerator {
 
 			Node currentCode = attemptMap.get(attempt);
 			Node goodMatch = NodeAlignment.findBestMatch(
-					currentCode, otherGoodSubmitted, distanceMeasure, new HintConfig()).to;
+					currentCode, otherGoodSubmitted, distanceMeasure, new SnapHintConfig()).to;
 			matches.put(attempt.id, goodMatch);
 
 			Node closestMatch = NodeAlignment.findBestMatch(
-					currentCode, otherSubmitted, distanceMeasure, new HintConfig()).to;
+					currentCode, otherSubmitted, distanceMeasure, new SnapHintConfig()).to;
 			grades.put(attempt.id, submittedGrades.get(closestMatch));
 		}
 	}
@@ -65,9 +66,9 @@ public class ProgressAttributes implements AttributeGenerator {
 	@Override
 	public void addAttributes(Spreadsheet spreadsheet, AssignmentAttempt attempt, Node node) {
 		Node match = matches.get(attempt.id);
-		double progress = -new NodeAlignment(node, match).calculateMapping(
+		double progress = -new NodeAlignment(node, match, new SnapHintConfig()).calculateMapping(
 				distanceMeasure).cost();
-		double maxProgress = -new NodeAlignment(node, node).calculateMapping(
+		double maxProgress = -new NodeAlignment(node, node, new SnapHintConfig()).calculateMapping(
 				distanceMeasure).cost();
 		spreadsheet.put("closestGrade", grades.get(attempt.id));
 		spreadsheet.put("progress", progress);

@@ -63,7 +63,7 @@ public class SnapHintBuilder {
 	 */
 	public SnapHintBuilder(Assignment assignment) {
 		this(assignment, new HintMap(assignment instanceof Configurable ?
-				((Configurable) assignment).getConfig() : new HintConfig()));
+				((Configurable) assignment).getConfig() : new SnapHintConfig()));
 	}
 
 	public SnapHintBuilder(Assignment assignment, HintMap hintMap) {

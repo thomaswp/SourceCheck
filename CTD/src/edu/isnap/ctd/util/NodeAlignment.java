@@ -19,6 +19,7 @@ import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
 import edu.isnap.ctd.graph.SimpleNode;
 import edu.isnap.ctd.hint.HintConfig;
+import edu.isnap.ctd.hint.HintConfig.SimpleHintConfig;
 import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.util.map.BiMap;
@@ -142,7 +143,7 @@ public class NodeAlignment {
 			valueMappings.clear();
 			if (!config.useValues) return;
 
-			for (String[] types : config.valueMappedTypes) {
+			for (String[] types : config.getValueMappedTypes()) {
 				BiMap<String, String> valueMap = new BiMap<>();
 
 				List<String> valuesFrom = getValues(from, types);
@@ -195,7 +196,7 @@ public class NodeAlignment {
 
 		public void printValueMappings(PrintStream out) {
 			out.println("Value mappings:");
-			for (String[] types : config.valueMappedTypes) {
+			for (String[] types : config.getValueMappedTypes()) {
 				if (types.length == 0) continue;
 				String key = types[0];
 				BiMap<String, String> map = valueMappings.get(key);
@@ -238,10 +239,6 @@ public class NodeAlignment {
 				return json;
 			}
 		}
-	}
-
-	public NodeAlignment(Node from, Node to) {
-		this(from, to, new HintConfig(), true);
 	}
 
 	public NodeAlignment(Node from, Node to, HintConfig config) {
@@ -318,7 +315,7 @@ public class NodeAlignment {
 	private Node getContainer(DistanceMeasure distanceMeasure, Node from) {
 		Node parent = from.parent;
 		while (parent != null && parent.parent != null &&
-				!config.containers.contains(parent.type())) {
+				!config.isContainer(parent.type())) {
 			parent = parent.parent;
 		}
 		return parent;
@@ -344,7 +341,7 @@ public class NodeAlignment {
 
 		@Override
 		public double measure(Node from, String[] a, String[] b, int[] bOrderGroups) {
-			if (!config.isCodeElement(from)) {
+			if (!config.hasFixedChildren(from)) {
 				return Alignment.getMissingNodeCount(a, b) * missingCost -
 						Alignment.getProgress(a, b, bOrderGroups,
 								// TODO: skip cost should maybe be another value?
@@ -356,7 +353,7 @@ public class NodeAlignment {
 				int i = 0;
 				for (; i < a.length && i < b.length; i++) {
 					if (a[i].equals(b[i])) {
-						if (!a[i].equals(config.literal)) cost -= inOrderReward;
+						if (!config.isValueless(a[i])) cost -= inOrderReward;
 					} else {
 						cost += missingCost;
 					}
@@ -370,7 +367,7 @@ public class NodeAlignment {
 
 		@Override
 		public double matchedOrphanReward(String type) {
-			if (config.literal.equals(type)) return 0;
+			if (config.isValueless(type)) return 0;
 			// A matched orphan node should be equivalent to the node being out of order, and we
 			// also have to counteract the cost of the node being missing from its original parent
 			return outOfOrderReward + missingCost;
@@ -682,9 +679,9 @@ public class NodeAlignment {
 		System.out.println(n1);
 		System.out.println(n2);
 
-		NodeAlignment na = new NodeAlignment(n1, n2, new HintConfig());
+		NodeAlignment na = new NodeAlignment(n1, n2, new SimpleHintConfig());
 		double cost = na.calculateMapping(
-				HintHighlighter.getDistanceMeasure(new HintConfig())).cost;
+				HintHighlighter.getDistanceMeasure(new SimpleHintConfig())).cost;
 
 		System.out.println(n2);
 

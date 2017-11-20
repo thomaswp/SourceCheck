@@ -11,6 +11,7 @@ import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.hint.ConfigurableAssignment;
+import edu.isnap.hint.SnapHintConfig;
 
 public class BJC2017 extends Dataset {
 
@@ -27,7 +28,7 @@ public class BJC2017 extends Dataset {
 
 		@Override
 		public HintConfig getConfig() {
-			HintConfig config = new HintConfig();
+			HintConfig config = new SnapHintConfig();
 			config.progressMissingFactor = 0.1;
 			return config;
 		}

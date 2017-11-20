@@ -19,6 +19,6 @@ public abstract class ConfigurableAssignment extends Assignment implements Confi
 
 	public static HintConfig getConfig(Assignment assignment) {
 		if (assignment instanceof Configurable) return ((Configurable) assignment).getConfig();
-		return new HintConfig();
+		return new SnapHintConfig();
 	}
 }

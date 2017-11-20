@@ -16,6 +16,7 @@ import edu.isnap.ctd.hint.edit.Insertion;
 import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.NodeAlignment.Mapping;
 import edu.isnap.ctd.util.NullSream;
+import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.hint.util.SimpleNodeBuilder.IDer;
 import edu.isnap.parser.elements.Code;
@@ -89,7 +90,7 @@ public class Agreement {
 
 		// We just use a default config since this is Snap-specific code, but we may need to
 		// update this at some point
-		private HintConfig config = new HintConfig();
+		private HintConfig config = new SnapHintConfig();
 
 		@Override
 		public String getID(Code code, Node parent) {
@@ -103,7 +104,7 @@ public class Agreement {
 		@Override
 		public String getID(String type, Node parent) {
 			int index = 0;
-			if (config.isCodeElement(parent)) {
+			if (config.hasFixedChildren(parent)) {
 				// For ID-less parameters (lists and literals), the index is most stable
 				// The parent's children are being added, so the current size will be the index
 				index = parent.children.size();
@@ -171,8 +172,8 @@ public class Agreement {
 		Map<String, Node> toIDMap = getIDMap(to);
 
 		List<EditHint> renames = new ArrayList<>();
-		HintConfig config = new HintConfig();
-		config.harmlessCalls.clear();
+		SnapHintConfig config = new SnapHintConfig();
+		config.harmlessTypes.clear();
 		config.useValues = compareValues;
 		Mapping mapping = new Mapping(from, to, config, compareValues);
 
