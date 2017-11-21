@@ -12,6 +12,11 @@ public class SnapHintConfig extends HintConfig {
 	private final static String Script = "script";
 	private final static String Literal = "literal";
 
+	public SnapHintConfig() {
+		// In snap, we currently ignore literal values that aren't mapped
+		this.valuesPolicy = ValuesPolicy.MappedOnly;
+	}
+
 	@Override
 	public boolean canMove(Node node) {
 		// TODO: There are more nodes here that can't move, e.g. varMenu

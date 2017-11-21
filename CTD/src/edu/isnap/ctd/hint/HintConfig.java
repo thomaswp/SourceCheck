@@ -81,10 +81,26 @@ public abstract class HintConfig implements Serializable {
 	 * The minimum support for extracted decision rules.
 	 */
 	public double ruleSupportThreshold = 0.05;
+
 	/**
-	 * Use values when matching nodes, as defined by {@link HintConfig#valueMappedTypes}
+	 * Determines how Node values will be used when matching and hinting nodes
 	 */
-	public boolean useValues = true;
+	public ValuesPolicy valuesPolicy = ValuesPolicy.MatchAllWithMapping;
+	public enum ValuesPolicy {
+		/** All values are ignored, and only types are used for matching */
+		IgnoreAll,
+		/** Only values in the {@link HintConfig#getValueMappedTypes()} list are used in matching */
+		MappedOnly,
+		/** All values are used when matching nodes, and mapping is used */
+		MatchAllWithMapping,
+		/** All values are used exactly when matching nodes, and no mapping is used */
+		MatchAllExactly,
+	}
+
+	public final boolean shouldCalculateValueMapping() {
+		return valuesPolicy == ValuesPolicy.MappedOnly ||
+				valuesPolicy == ValuesPolicy.MatchAllWithMapping;
+	}
 
 	/**
 	 * If true, a HintMap build from this assignment will only include graded submissions.

@@ -61,8 +61,11 @@ public class PythonImport {
 			EditHint.applyEdits(copy, edits);
 			String to = copy.prettyPrint(true);
 
+			PythonNode target = (PythonNode) highlighter.findSolutionMapping(firstAttempt).to;
+
 			System.out.println(student);
 			System.out.println(firstAttempt.source);
+			System.out.println(target.source);
 			System.out.println(Diff.diff(from, to));
 			System.out.println(String.join("\n",
 					edits.stream().map(e -> e.toString()).collect(Collectors.toList())));

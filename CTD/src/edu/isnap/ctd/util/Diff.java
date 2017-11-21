@@ -19,6 +19,7 @@ public class Diff {
 
 	public static String diff(String a, String b, int margin) {
 		String[] original = a.split("\n");
+		if (a.equals(b) && margin >= original.length) return a;
 		Patch<String> diff = DiffUtils.diff(
 				Arrays.asList(original), Arrays.asList(b.split("\n")));
 		List<Delta<String>> deltas = diff.getDeltas();

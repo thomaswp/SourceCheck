@@ -19,6 +19,7 @@ import org.apache.commons.lang.StringEscapeUtils;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.HintConfig;
+import edu.isnap.ctd.hint.HintConfig.ValuesPolicy;
 import edu.isnap.ctd.hint.HintJSON;
 import edu.isnap.ctd.hint.edit.EditHint;
 import edu.isnap.ctd.util.Diff;
@@ -86,9 +87,9 @@ public class TutorEdits {
 		HintConfig[] configs = new HintConfig[] {
 				new SnapHintConfig(), new SnapHintConfig(), new SnapHintConfig()
 		};
-		configs[0].useRulesToFilter = configs[0].useValues = false;
-		configs[1].useRulesToFilter = true; configs[1].useValues = false;
-		configs[2].useRulesToFilter = true; configs[2].useValues = true;
+		configs[0].useRulesToFilter = false; configs[0].valuesPolicy = ValuesPolicy.IgnoreAll;
+		configs[1].useRulesToFilter = true; configs[1].valuesPolicy = ValuesPolicy.IgnoreAll;
+		configs[2].useRulesToFilter = true; configs[2].valuesPolicy = ValuesPolicy.MappedOnly;
 
 		for (int i = 0; i < configs.length; i++) {
 			HighlightHintSet hintSet = new HighlightHintSet("H-Fall2016 " + i, Fall2016.instance,

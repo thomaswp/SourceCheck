@@ -22,8 +22,7 @@ public class PythonConfig extends HintConfig {
 
 	@Override
 	public boolean canMove(Node node) {
-		// TODO Auto-generated method stub
-		return false;
+		return node != null && !"list".equals(node.type());
 	}
 
 	@Override
@@ -32,7 +31,7 @@ public class PythonConfig extends HintConfig {
 	}
 
 	private final static String[][] valueMappedTypes = new String[][] {
-			new String[] { "Name", "arg" },
+//			new String[] { "Name", "arg" },
 			new String[] { "FunctionDef" },
 	};
 

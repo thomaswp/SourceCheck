@@ -20,8 +20,8 @@ import edu.isnap.ctd.graph.Node.Action;
 import edu.isnap.ctd.graph.SimpleNode;
 import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.HintConfig.SimpleHintConfig;
+import edu.isnap.ctd.hint.HintConfig.ValuesPolicy;
 import edu.isnap.ctd.hint.HintHighlighter;
-import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.util.map.BiMap;
 import edu.isnap.ctd.util.map.CountMap;
 import edu.isnap.ctd.util.map.ListMap;
@@ -39,7 +39,6 @@ public class NodeAlignment {
 	public static class Mapping extends BiMap<Node, Node> implements Comparable<Mapping> {
 		public final Node from, to;
 		public final HintConfig config;
-		private final boolean useUnmappedValues;
 
 		private double cost;
 		private List<MappingCost> itemizedCost = new ArrayList<>();
@@ -60,15 +59,10 @@ public class NodeAlignment {
 		}
 
 		public Mapping(Node from, Node to, HintConfig config) {
-			this(from, to, config, false);
-		}
-
-		public Mapping(Node from, Node to, HintConfig config, boolean useUnmappedValues) {
 			super(MapFactory.IdentityHashMapFactory);
 			this.from = from;
 			this.to = to;
 			this.config = config;
-			this.useUnmappedValues = useUnmappedValues;
 		}
 
 		public double cost() {
@@ -107,6 +101,8 @@ public class NodeAlignment {
 		 * the type will be returned.
 		 */
 		public String getMappedType(Node node, boolean isFrom) {
+			// TODO: This is a bit problematic, since if a node (e.g. a string) has the same value
+			// as an existing type, they'll be treated as interchangeable
 			String value = getMappedValue(node, isFrom);
 			return value == null ? node.type() : value;
 		}
@@ -116,13 +112,14 @@ public class NodeAlignment {
 		 * (or its match) will be returned. Otherwise, it will return null.
 		 */
 		public String getMappedValue(Node node, boolean isFrom) {
-			if (useUnmappedValues) return node.value;
+			if (config.valuesPolicy == ValuesPolicy.MatchAllExactly) return node.value;
 			String type = node.type(), value = node.value;
 			BiMap<String,String> map = valueMappings.get(type);
 			if (map != null) {
 				if (isFrom &&  map.containsFrom(value)) return value;
 				if (!isFrom && map.containsTo(value)) return map.getTo(value);
 			}
+			if (config.valuesPolicy == ValuesPolicy.MatchAllWithMapping) return value;
 			return null;
 		}
 
@@ -141,7 +138,7 @@ public class NodeAlignment {
 		private void calculateValueMappings(BiMap<Node, Node> mapping) {
 
 			valueMappings.clear();
-			if (!config.useValues) return;
+			if (!config.shouldCalculateValueMapping()) return;
 
 			for (String[] types : config.getValueMappedTypes()) {
 				BiMap<String, String> valueMap = new BiMap<>();
@@ -262,8 +259,8 @@ public class NodeAlignment {
 		if (previousMapping != null) mapping.calculateValueMappings(previousMapping);
 
 		to.resetAnnotations();
-		ListMap<String, Node> fromMap = getChildMap(from);
-		ListMap<String, Node> toMap = getChildMap(to);
+		ListMap<String, Node> fromMap = getChildMap(from, true);
+		ListMap<String, Node> toMap = getChildMap(to, false);
 
 		for (String key : fromMap.keySet()) {
 			List<Node> fromNodes = fromMap.get(key);
@@ -301,7 +298,7 @@ public class NodeAlignment {
 		Mapping ret = mapping;
 		mapping = null;
 
-		if (config.useValues && previousMapping == null) {
+		if (config.shouldCalculateValueMapping() && previousMapping == null) {
 			// If we we're not given a previous mapping, this is the first round, so recalculate
 			// using this mapping to map values
 			return calculateMapping(distanceMeasure, ret);
@@ -478,7 +475,7 @@ public class NodeAlignment {
 
 						// Remove the from-child from the fromMap, so it doesn't get matched to
 						// other things later on
-						List<Node> list = fromMap.get(parentNodeKey(node));
+						List<Node> list = fromMap.get(parentNodeKey(node, true));
 						if (list != null) {
 							for (int i = 0; i < list.size(); i++) {
 								if (list.get(i) == node) {
@@ -612,7 +609,7 @@ public class NodeAlignment {
 		return orderGroups;
 	}
 
-	private ListMap<String, Node> getChildMap(Node node) {
+	private ListMap<String, Node> getChildMap(Node node, boolean isFrom) {
 		final ListMap<String, Node> map = new ListMap<>(MapFactory.LinkedHashMapFactory);
 		node.recurse(new Action() {
 			@Override
@@ -621,15 +618,21 @@ public class NodeAlignment {
 						!node.readOnlyAnnotations().matchAnyChildren) {
 					return;
 				}
-				String key = parentNodeKey(node);
+				String key = parentNodeKey(node, isFrom);
 				map.add(key, node);
 			}
 		});
 		return map;
 	}
 
-	private String parentNodeKey(Node node) {
-		return HintMap.toRootPath(node).root().toCanonicalString();
+	private String parentNodeKey(Node node, boolean isFrom) {
+		String[] list = new String[node.depth() + 1];
+		int i = list.length - 1;
+		while (node != null) {
+			list[i--] = mapping.getMappedType(node, isFrom);
+			node = node.parent;
+		}
+		return Arrays.toString(list);
 	}
 
 	public static List<Mapping> findBestMatches(Node from, List<Node> matches,

@@ -290,13 +290,12 @@ public class HintHighlighter {
 						}
 
 						// Otherwise we add an insertion
+
 						if (config.hasFixedChildren(node)) {
-							// For code elements, we want to insert at the same location as
-							// in the solution code, since index matters more than relative
-							// position
+							// For elements with fixed children, we use the pair-child's index
 							insertIndex = child.index();
 
-							// For code elements, we cannot insert past the parent's size
+							// For these nodes, we cannot insert past the parent's size
 							// (e.g. add an element to a list)
 							// TODO: This should be supported eventually
 							if (insertIndex >= node.children.size()) {

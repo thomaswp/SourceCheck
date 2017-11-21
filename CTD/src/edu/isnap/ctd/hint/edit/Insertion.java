@@ -132,7 +132,7 @@ public class Insertion extends EditHint {
 				}
 			}));
 		} else {
-			toInsert = root.constructNode(editParent, type);
+			toInsert = root.constructNode(editParent, type, value, null);
 		}
 
 		// If the parent is missing, we stop after removing the candidate

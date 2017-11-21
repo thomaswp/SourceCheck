@@ -10,6 +10,7 @@ import java.util.Map;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
 import edu.isnap.ctd.hint.HintConfig;
+import edu.isnap.ctd.hint.HintConfig.ValuesPolicy;
 import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.edit.EditHint;
 import edu.isnap.ctd.hint.edit.Insertion;
@@ -174,8 +175,8 @@ public class Agreement {
 		List<EditHint> renames = new ArrayList<>();
 		SnapHintConfig config = new SnapHintConfig();
 		config.harmlessTypes.clear();
-		config.useValues = compareValues;
-		Mapping mapping = new Mapping(from, to, config, compareValues);
+		config.valuesPolicy = compareValues ? ValuesPolicy.MatchAllExactly : ValuesPolicy.IgnoreAll;
+		Mapping mapping = new Mapping(from, to, config);
 
 		for (String id : fromIDMap.keySet()) {
 			Node fromNode = fromIDMap.get(id);
