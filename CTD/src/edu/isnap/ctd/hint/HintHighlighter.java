@@ -129,11 +129,7 @@ public class HintHighlighter {
 				if (highlight == Highlight.Move) {
 					Node moveParent = mapping.getTo(pair.parent);
 					if (moveParent == null) {
-						// If the pair's parent has no original parent, we add a placeholder
-						// insert with a missing parent so the node is marked for movement
-						Node parentClone = pair.parent.copy();
-						parentClone.children.remove(pair.index());
-						Insertion insertion = new Insertion(parentClone, pair, pair.index(),
+						Insertion insertion = new Insertion(pair.parent, pair, pair.index(),
 								mapping.getMappedValue(node, true), true);
 						insertion.candidate = node;
 						edits.add(insertion);
@@ -332,11 +328,8 @@ public class HintHighlighter {
 					// This really only makes sense for code elements
 					if (!config.canMove(pair)) return;
 
-					// We clone the pair-parent and remove the pair, so the insert text is
-					// descriptive
-					Node parentClone = pair.parent.copy();
-					parentClone.children.remove(pair.index());
-					Insertion insertion = new Insertion(parentClone, pair, pair.index(),
+
+					Insertion insertion = new Insertion(pair.parent, pair, pair.index(),
 							mapping.getMappedValue(pair, false), true);
 					edits.add(insertion);
 				}
@@ -344,25 +337,17 @@ public class HintHighlighter {
 		});
 
 
-		// Filter out insertions
-		final List<Insertion> insertions = new LinkedList<>();
-		for (EditHint hint : edits) {
-			Insertion insert = Cast.cast(hint, Insertion.class);
-			if (insert != null) insertions.add(insert);
-		}
-
 		if (reuseDeletedBlocks) {
-			handleInsertionsAndMoves(colors, insertions, edits, mapping);
+			handleInsertionsAndMoves(colors, extractInsertions(edits), edits, mapping);
 		}
 
 		// If any insert into a script should contain the children of the existing node at that
 		// index, we want to express that as a replacement
-		for (int i = 0; i < edits.size(); i++) {
-			Insertion insertion = Cast.cast(edits.get(i), Insertion.class);
-			if (insertion != null) {
-				addScriptReplacement(insertion, mapping, edits, colors);
-			}
+		for (Insertion insertion : extractInsertions(edits)) {
+			addScriptReplacement(insertion, mapping, edits, colors);
 		}
+
+		extractSubedits(edits);
 
 		// Remove unneeded edits
 		for (int i = 0; i < edits.size(); i++) {
@@ -394,7 +379,7 @@ public class HintHighlighter {
 				}
 
 				// Also remove any deletions that are implicit in an inertion's replacement
-				for (Insertion inst : insertions) {
+				for (Insertion inst : extractInsertions(edits)) {
 					if (inst.replaced == deletion.node) {
 						edits.remove(i--);
 						break;
@@ -409,6 +394,36 @@ public class HintHighlighter {
 		Collections.sort(edits);
 
 		return edits;
+	}
+
+	private void extractSubedits(final List<EditHint> edits) {
+		if (!config.createSubedits) return;
+
+		// Find any insertion that has a missing parent which will be inserted by another insertion.
+		// Mark that as a subedit of the parent, so it will only be executed afterwards
+		List<Insertion> insertions = extractInsertions(edits);
+		for (Insertion parent : insertions) {
+			// Don't nest children (for now anyway)
+			if (parent.missingParent) continue;
+			for (int i = 0; i < edits.size(); i++) {
+				Insertion child = Cast.cast(edits.get(i), Insertion.class);
+				// We only use children as subedits if they have a candidate, since otherwise we
+				// would just every hint as a nested hint
+				if (child != null && child.parentPair == parent.pair && child.candidate != null) {
+					edits.remove(i--);
+					parent.subedits.add(child);
+				}
+			}
+		}
+	}
+
+	private List<Insertion> extractInsertions(final List<EditHint> edits) {
+		List<Insertion> insertions;
+		insertions = edits.stream()
+				.filter(e -> e instanceof Insertion)
+				.map(e -> (Insertion) e)
+				.collect(Collectors.toList());
+		return insertions;
 	}
 
 	@SuppressWarnings("deprecation")

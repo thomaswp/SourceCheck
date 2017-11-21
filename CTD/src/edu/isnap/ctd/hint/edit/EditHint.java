@@ -19,6 +19,7 @@ import edu.isnap.ctd.hint.Canonicalization.SwapBinaryArgs;
 import edu.isnap.ctd.hint.Hint;
 import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.NodeAlignment.Mapping;
+import edu.isnap.ctd.util.map.BiMap;
 
 public abstract class EditHint implements Hint, Comparable<EditHint> {
 	protected abstract void editChildren(List<String> children);
@@ -38,6 +39,8 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 	protected transient RuntimeException e;
 
 	private final boolean argsCanonSwapped;
+
+	public final List<EditHint> subedits = new ArrayList<>();
 
 	public EditHint(Node parent) {
 		this.parent = parent;
@@ -155,7 +158,17 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 		} else {
 			diff = from + " -> " + to;
 		}
-		return action().substring(0, 1) + ": " + rootString(parent) + ": " + diff;
+		String base = action().substring(0, 1) + ": " + rootString(parent) + ": " + diff;
+		for (EditHint subedit : subedits) {
+			String substr = subedit.toString();
+			String[] lines = substr.split("\n");
+			String arrow = " -> ";
+			for (String line : lines) {
+				base += "\n" + arrow + line;
+				arrow = "    ";
+			}
+		}
+		return base;
 	}
 
 	@Override
@@ -166,8 +179,7 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 	public static void applyEdits(Node root, List<EditHint> hints) {
 		List<Application> applications = new ArrayList<>();
 		for (EditHint hint : hints) {
-			Node editParent = Node.findMatchingNodeInCopy(hint.parent, root);
-			hint.addApplications(root, editParent, applications);
+			getApplications(root, applications, hint, 0);
 		}
 
 		// Start with hints in reverse order, since multiple inserts at the same index should
@@ -175,9 +187,12 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 		Collections.sort(applications, new Comparator<Application>() {
 			@Override
 			public int compare(Application o1, Application o2) {
+				// First compare the depth of the edits so that edits come before their children
+				int dc = Integer.compare(o1.depth, o2.depth);
+				if (dc != 0) return dc;
+
 				// Apply edits to longer root paths first
-				int rpc = -Integer.compare(
-						o1.parent.rootPathLength(), o2.parent.rootPathLength());
+				int rpc = -Integer.compare(o1.parentPathLength(), o2.parentPathLength());
 				if (rpc != 0) return rpc;
 
 				int ic = -Integer.compare(o1.index, o2.index);
@@ -188,15 +203,29 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 				return -Integer.compare(o1.pairIndex, o2.pairIndex);
 			}
 		});
-		for (Application application : applications) application.action.apply();
+		BiMap<Node, Node> createdNodeMap = new BiMap<>();
+		for (Application application : applications) application.action.apply(createdNodeMap);
 	}
 
+	private static void getApplications(Node root, List<Application> applications, EditHint hint,
+			int depth) {
+		Node editParent = Node.findMatchingNodeInCopy(hint.parent, root);
+		int start = applications.size();
+		hint.addApplications(root, editParent, applications);
+		// Mark all newly added applications with the depth of this recursive call
+		// This is used to sort child subedits to happen after their parents
+		for (int i = start; i < applications.size(); i++) applications.get(i).depth = depth;
+		for (EditHint subedit : hint.subedits) {
+			getApplications(root, applications, subedit, depth + 1);
+		}
+	}
 
 	protected static class Application {
 		final Node parent;
 		final int index;
 		final int pairIndex;
 		final EditAction action;
+		int depth;
 
 		public Application(Node parent, int index, EditAction action) {
 			// Non-insertions go first
@@ -208,6 +237,11 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 			this.index = index;
 			this.pairIndex = pairIndex;
 			this.action = action;
+		}
+
+		public int parentPathLength() {
+			if (parent == null) return 0;
+			return parent.rootPathLength();
 		}
 	}
 
@@ -237,6 +271,7 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 		};
 		builder.append(parent, rhs.parent);
 		builder.append(argsCanonSwapped, rhs.argsCanonSwapped);
+		builder.append(subedits, rhs.subedits);
 		appendEqualsFieds(builder, rhs);
 		return builder.isEquals();
 	}
@@ -255,11 +290,12 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 		builder.append(getClass());
 		builder.append(parent);
 		builder.append(argsCanonSwapped);
+		builder.append(subedits);
 		appendHashCodeFieds(builder);
 		return builder.toHashCode();
 	}
 
 	interface EditAction {
-		void apply();
+		void apply(BiMap<Node,Node> createdNodeMap);
 	}
 }

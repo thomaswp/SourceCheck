@@ -83,6 +83,12 @@ public abstract class HintConfig implements Serializable {
 	public double ruleSupportThreshold = 0.05;
 
 	/**
+	 * If true, hints can have subedit hints that should be presented with the parent hint as one
+	 * action
+	 */
+	public boolean createSubedits = true;
+
+	/**
 	 * Determines how Node values will be used when matching and hinting nodes
 	 */
 	public ValuesPolicy valuesPolicy = ValuesPolicy.MatchAllWithMapping;

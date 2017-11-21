@@ -8,6 +8,7 @@ import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.util.NodeAlignment.Mapping;
+import edu.isnap.ctd.util.map.BiMap;
 
 public class Deletion extends EditHint {
 	public final Node node;
@@ -45,7 +46,7 @@ public class Deletion extends EditHint {
 		final int index = node.index();
 		applications.add(new Application(editParent, index, new EditAction() {
 			@Override
-			public void apply() {
+			public void apply(BiMap<Node, Node> createdNodeMap) {
 				node.parent.children.remove(index);
 			}
 		}));

@@ -90,14 +90,14 @@ public class Reorder extends EditHint {
 		final int rIndex = node.index();
 		applications.add(new Application(editParent, rIndex, new EditAction() {
 			@Override
-			public void apply() {
+			public void apply(BiMap<Node, Node> createdNodeMap) {
 				node.parent.children.remove(rIndex);
 			}
 		}));
 		final int aIndex = index;
 		applications.add(new Application(editParent, aIndex, new EditAction() {
 			@Override
-			public void apply() {
+			public void apply(BiMap<Node, Node> createdNodeMap) {
 				node.parent.children.add(aIndex, node);
 			}
 		}));

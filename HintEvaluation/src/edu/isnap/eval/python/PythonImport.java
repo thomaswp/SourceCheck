@@ -69,8 +69,8 @@ public class PythonImport {
 			System.out.println(student);
 			System.out.println(firstAttempt.source);
 			System.out.println(target.source);
-			System.out.println(Diff.diff(from, to));
 			mapping.printValueMappings(System.out);
+			System.out.println(Diff.diff(from, to));
 			System.out.println(String.join("\n",
 					edits.stream().map(e -> e.toString()).collect(Collectors.toList())));
 			System.out.println("------------------------");

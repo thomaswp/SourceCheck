@@ -9,6 +9,7 @@ import org.json.JSONObject;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Predicate;
 import edu.isnap.ctd.util.NodeAlignment.Mapping;
+import edu.isnap.ctd.util.map.BiMap;
 
 public class Insertion extends EditHint {
 	public final String type;
@@ -21,6 +22,10 @@ public class Insertion extends EditHint {
 
 	// Used to mark the pair node in the solution this insertion represents
 	public final transient Node pair;
+
+	// For nodes with missing parents, we expect to be given a parent from the pair. We copy that
+	// node to create the parent used, but we store the original pair here.
+	public final transient Node parentPair;
 
 	/** The node the inserted node should replace (in the same location) */
 	public Node replaced;
@@ -36,12 +41,22 @@ public class Insertion extends EditHint {
 		this(parent, pair, index, value, false);
 	}
 
+	private static Node cloneParentIfMissing(Node parent, Node pair, boolean missingParent) {
+		if (!missingParent) return parent;
+		// If the parent is missing, we clone the pair-parent and remove the pair, so the insert
+		// text is descriptive
+		Node parentClone = pair.parent.copy();
+		parentClone.children.remove(pair.index());
+		return parentClone;
+	}
+
 	public Insertion(Node parent, Node pair, int index, String value, boolean missingParent) {
-		super(parent);
+		super(cloneParentIfMissing(parent, pair, missingParent));
 		this.type = pair.type();
 		this.value = value;
 		this.index = index;
 		this.missingParent = missingParent;
+		this.parentPair = missingParent ? parent : null;
 		this.pair = pair;
 		if (index > parent.children.size()) {
 			storeException("Insert index out of range");
@@ -112,37 +127,46 @@ public class Insertion extends EditHint {
 	protected void addApplications(Node root, Node editParent, List<Application> applications) {
 		Node candidate = Node.findMatchingNodeInCopy(this.candidate, root);
 		Node replaced = Node.findMatchingNodeInCopy(this.replaced, root);
-		final Node toInsert;
 		if (candidate != null) {
-			// Need to use the actual candidate in case other applications edit its children
-			// but this will cause its parent to be incorrect. This is ok, since we actually
-			// need its original parent to be used in the removal below, but still seems
-			// like a bad idea, so in short:
-			// TODO: fix this
-			toInsert = candidate; //.copyWithNewParent(parent);
-
 			applications.add(new Application(candidate.parent, candidate.index(),
 					new EditAction() {
 				@Override
-				public void apply() {
+				public void apply(BiMap<Node, Node> createdNodeMap) {
 					// It's possible this has already been removed (e.g. as a replacement for
 					// another insert), so we only remove it if it's still a child of its parent
 					int index = candidate.index();
 					if (index >= 0) candidate.parent.children.remove(index);
 				}
 			}));
-		} else {
-			toInsert = root.constructNode(editParent, type, value, null);
 		}
-
-		// If the parent is missing, we stop after removing the candidate
-		if (missingParent) return;
 
 		applications.add(new Application(editParent, index, pair.index(), new EditAction() {
 			@Override
-			public void apply() {
+			public void apply(BiMap<Node, Node> createdNodeMap) {
 				int index = Insertion.this.index;
 				Node parent = editParent;
+
+				// If this node had a missing parent, but it has been added by an earlier
+				// insertion, find the inserted node in the createdNodeMap and use that.
+				// Otherwise, we cannot add this node, so return.
+				if (missingParent) {
+					parent = createdNodeMap.getTo(parentPair);
+					if (parent == null) return;
+				}
+
+				Node toInsert;
+				if (candidate != null) {
+					// Need to use the actual candidate in case other applications edit its children
+					// but this will cause its parent to be incorrect. This is ok, since we actually
+					// need its original parent to be used in the removal below, but still seems
+					// like a bad idea, so in short:
+					// TODO: fix this
+					toInsert = candidate; //.copyWithNewParent(parent);
+				} else {
+					toInsert = root.constructNode(editParent, type, value, null);
+					createdNodeMap.put(toInsert, pair);
+				}
+
 				if (replaced != null) {
 					int rIndex = replaced.index();
 					if (rIndex >= 0) {
@@ -179,6 +203,13 @@ public class Insertion extends EditHint {
 							toInsert.children.add(child.copyWithNewParent(toInsert));
 						}
 					}
+				}
+
+				// In case this is a newly inserted parent, we pad with nulls
+				while (parent.children.size() < index) parent.children.add(null);
+				// and then remove them as children are inserted
+				if (index < parent.children.size() && parent.children.get(index) == null) {
+					parent.children.remove(index);
 				}
 				parent.children.add(index, toInsert);
 			}
