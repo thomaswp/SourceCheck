@@ -17,6 +17,7 @@ import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.edit.EditHint;
 import edu.isnap.ctd.util.Diff;
+import edu.isnap.ctd.util.NodeAlignment.Mapping;
 import edu.isnap.ctd.util.NullSream;
 import edu.isnap.ctd.util.map.ListMap;
 
@@ -26,7 +27,7 @@ public class PythonImport {
 		generateHints("../../PythonAST/data", "howManyEggCartons");
 
 //		GrammarBuilder builder = new GrammarBuilder("python", new HashMap<>());
-//		ListMap<String,PythonNode> nodes = loadAllAssignments("../../PythonAST/data");
+//		Map<String, ListMap<String, PythonNode>> nodes = loadAllAssignments("../../PythonAST/data");
 //		for (String assignment : nodes.keySet()) {
 //			List<PythonNode> correct = nodes.get(assignment).stream()
 //					.filter(n -> n.correct.orElse(false))
@@ -36,7 +37,8 @@ public class PythonImport {
 //					nodes.get(assignment).size());
 //			}
 //		}
-//		nodes.values().forEach(list -> list.forEach(n -> builder.add(n)));
+//		nodes.values().forEach(listMap -> listMap.values()
+//				.forEach(list -> list.forEach(n -> builder.add(n))));
 //		System.out.println(builder.toJSON());
 	}
 
@@ -52,7 +54,7 @@ public class PythonImport {
 			List<Node> subset = correct.stream()
 					.filter(n -> !student.equals(n.student))
 					.collect(Collectors.toList());
-			HintHighlighter highlighter = new HintHighlighter(subset, new PythonConfig());
+			HintHighlighter highlighter = new HintHighlighter(subset, new PythonHintConfig());
 			highlighter.trace = NullSream.instance;
 
 			String from = firstAttempt.prettyPrint(true);
@@ -61,12 +63,14 @@ public class PythonImport {
 			EditHint.applyEdits(copy, edits);
 			String to = copy.prettyPrint(true);
 
-			PythonNode target = (PythonNode) highlighter.findSolutionMapping(firstAttempt).to;
+			Mapping mapping = highlighter.findSolutionMapping(firstAttempt);
+			PythonNode target = (PythonNode) mapping.to;
 
 			System.out.println(student);
 			System.out.println(firstAttempt.source);
 			System.out.println(target.source);
 			System.out.println(Diff.diff(from, to));
+			mapping.printValueMappings(System.out);
 			System.out.println(String.join("\n",
 					edits.stream().map(e -> e.toString()).collect(Collectors.toList())));
 			System.out.println("------------------------");

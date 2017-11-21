@@ -3,10 +3,10 @@ package edu.isnap.eval.python;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.HintConfig;
 
-public class PythonConfig extends HintConfig {
+public class PythonHintConfig extends HintConfig {
 	private static final long serialVersionUID = 1L;
 
-	public PythonConfig() {
+	public PythonHintConfig() {
 		preprocessSolutions = false;
 	}
 
@@ -31,7 +31,7 @@ public class PythonConfig extends HintConfig {
 	}
 
 	private final static String[][] valueMappedTypes = new String[][] {
-//			new String[] { "Name", "arg" },
+			new String[] { "Name", "arg", "alias" },
 			new String[] { "FunctionDef" },
 	};
 
@@ -39,4 +39,15 @@ public class PythonConfig extends HintConfig {
 	public String[][] getValueMappedTypes() {
 		return valueMappedTypes;
 	}
+
+//	@Override
+//	public String getValueMappingClass(Node node) {
+//		if (node == null) return null;
+//		if (node.hasType("FunctionDef")) return node.type();
+//		if (node.hasType("Name", "arg")) {
+//			// Names are not interchangeable if they're values (e.g. foo in foo.bar)
+//			if (node.parentHasType("Attribute")) return null;
+//		}
+//		return null;
+//	}
 }

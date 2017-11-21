@@ -148,6 +148,25 @@ public class NodeAlignment {
 
 				if (valuesFrom.isEmpty() || valuesTo.isEmpty()) continue;
 
+				for (String type : types) {
+					valueMappings.put(type, valueMap);
+				}
+
+				// If any values match exactly in name, assume that's meaningful and match them
+				for (int i = 0; i < valuesFrom.size(); i++) {
+					String fromValue = valuesFrom.get(i);
+					for (int j = 0; j < valuesTo.size(); j++) {
+						if (fromValue.equals(valuesTo.get(j))) {
+							valuesFrom.remove(i--);
+							valuesTo.remove(j);
+							valueMap.put(fromValue, fromValue);
+							break;
+						}
+					}
+				}
+
+				if (valuesFrom.isEmpty() || valuesTo.isEmpty()) continue;
+
 				double[][] costMatrix = new double[valuesFrom.size()][valuesTo.size()];
 
 				double minCost = 0;
@@ -173,10 +192,6 @@ public class NodeAlignment {
 				for (int i = 0; i < matching.length; i++) {
 					int j = matching[i];
 					if (j != -1) valueMap.put(valuesFrom.get(i), valuesTo.get(j));
-				}
-
-				for (String type : types) {
-					valueMappings.put(type, valueMap);
 				}
 			}
 		}
