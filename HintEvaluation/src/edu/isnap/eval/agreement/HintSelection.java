@@ -11,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.json.JSONObject;
@@ -32,7 +33,7 @@ public class HintSelection {
 
 	private final static double START = 0.2, CUTOFF = 0.6;
 	private final static int DEFAULT_SEED = 1234;
-	private final static Filter[] DEFAULT_FILTERS = {
+	public final static Filter[] DEFAULT_FILTERS = {
 			new SnapParser.LikelySubmittedOnly(),
 	};
 
@@ -253,6 +254,16 @@ public class HintSelection {
 			SnapParser.Filter[] filters) {
 		return selectEarlyLate(assignment, filters, false,
 				new Random(assignment.name.hashCode() + DEFAULT_SEED));
+	}
+
+	public static List<HintRequest> selectFromRowIDs(Assignment assignment, Set<Integer> ids,
+			boolean dialogsOnly) {
+		Map<AssignmentAttempt, List<HintRequest>> requestMap = getAllHintRequests(assignment,
+				new SnapParser.Filter[] { }, dialogsOnly);
+		return requestMap.values().stream()
+				.flatMap(l -> l.stream())
+				.filter(request -> ids.contains(request.action.id))
+				.collect(Collectors.toList());
 	}
 
 	public static List<HintRequest> selectEarlyLate(Assignment assignment,

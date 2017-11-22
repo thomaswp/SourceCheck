@@ -31,6 +31,7 @@ import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.datasets.Fall2016;
 import edu.isnap.datasets.Spring2017;
+import edu.isnap.eval.agreement.HintSelection.HintRequest;
 import edu.isnap.eval.agreement.RateHints.GoldStandard;
 import edu.isnap.eval.agreement.RateHints.HintOutcome;
 import edu.isnap.eval.agreement.RateHints.HintSet;
@@ -83,6 +84,19 @@ public class TutorEdits {
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 //		compareHints(Fall2016.instance);
 //		verifyHints(Fall2016.instance);
+
+//		Map<String, HintSet> hintSets = readTutorHintSets(Spring2017.instance);
+//		for (HintSet hintSet : hintSets.values()) {
+//			System.out.println("------------ " + hintSet.name + " --------------");
+//			RateHints.rate(standard, hintSet);
+//		}
+
+		exportConsensusHintRequests(Spring2017.instance, "consensus-gg-sq.csv",
+				"hint-eval", Spring2017.Squiral, Spring2017.GuessingGame1);
+	}
+
+	@SuppressWarnings("unused")
+	private static void testConsensus() throws FileNotFoundException, IOException {
 		GoldStandard standard = readConsensus(Spring2017.instance, "consensus-gg-sq.csv");
 		HintConfig[] configs = new HintConfig[] {
 				new SnapHintConfig(), new SnapHintConfig(), new SnapHintConfig()
@@ -96,11 +110,33 @@ public class TutorEdits {
 					standard.getHintRequests(), configs[i]);
 			RateHints.rate(standard, hintSet);
 		}
-//		Map<String, HintSet> hintSets = readTutorHintSets(Spring2017.instance);
-//		for (HintSet hintSet : hintSets.values()) {
-//			System.out.println("------------ " + hintSet.name + " --------------");
-//			RateHints.rate(standard, hintSet);
-//		}
+	}
+
+	public static void exportConsensusHintRequests(Dataset dataset, String path, String folder,
+			Assignment... assignments)
+			throws FileNotFoundException, IOException {
+		CSVParser parser = new CSVParser(new FileReader(dataset.dataDir + "/" + path),
+				CSVFormat.DEFAULT.withHeader());
+		Set<Integer> ids = new HashSet<>();
+		for (CSVRecord record : parser) {
+			ids.add(Integer.parseInt(record.get("Row ID")));
+		}
+		parser.close();
+
+		Set<Integer> collectedIDs = new HashSet<>();
+		for (Assignment assignment : assignments) {
+			if (assignment.dataset != dataset) {
+				throw new RuntimeException("Assignment must be from given dataset!");
+			}
+			List<HintRequest> selected = HintSelection.selectFromRowIDs(assignment, ids, true);
+			selected.forEach(req -> collectedIDs.add(req.action.id));
+			HintSelection.exportSelected(assignment, folder, selected);
+		}
+
+		if (collectedIDs.size() != ids.size()) {
+			ids.removeAll(collectedIDs);
+			throw new RuntimeException("Missing row IDs: " + ids);
+		}
 	}
 
 	public static void verifyHints(Dataset dataset) throws FileNotFoundException, IOException {
