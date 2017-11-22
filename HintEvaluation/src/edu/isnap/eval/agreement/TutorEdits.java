@@ -131,15 +131,15 @@ public class TutorEdits {
 			if (assignment.dataset != dataset) {
 				throw new RuntimeException("Assignment must be from given dataset!");
 			}
-			Set<AssignmentAttempt> stopped = new HashSet<>();
+			Set<String> stopped = new HashSet<>();
 			Function<AssignmentAttempt, Predicate<AttemptAction>> actionFilter =
 					attempt -> action -> {
 				if (ids.contains(action.id)) {
-					stopped.add(attempt);
+					stopped.add(attempt.id);
 					collectedIDs.add(action.id);
 					return true;
 				}
-				return !stopped.contains(attempt);
+				return !stopped.contains(attempt.id);
 			};
 			JsonAST.exportAssignmentTraces(assignment, folder + "/requests",
 					attempt -> attempt.rows.rows.stream().anyMatch(a -> ids.contains(a.id)),
@@ -149,7 +149,7 @@ public class TutorEdits {
 									.map(a -> String.valueOf(a.id))
 									.findAny().orElse(attempt.id));
 			JsonAST.exportAssignmentTraces(assignment, folder + "/training",
-					attempt -> !stopped.contains(attempt) &&
+					attempt -> !stopped.contains(attempt.id) &&
 						attempt.grade != null && attempt.grade.average() == 1,
 					attempt -> action -> true,
 					attempt -> attempt.id);
