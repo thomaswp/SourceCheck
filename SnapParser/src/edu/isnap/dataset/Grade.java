@@ -22,6 +22,7 @@ public class Grade {
         NonTestColumns.add("Extra code");
         NonTestColumns.add("Graded ID");
         NonTestColumns.add("Outlier");
+        NonTestColumns.add("Comment");
     }
 
 	@SuppressWarnings("unused")

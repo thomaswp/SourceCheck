@@ -8,6 +8,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 import org.json.JSONObject;
 
@@ -33,6 +35,12 @@ public class JsonAST {
 
 
 	public final static Set<String> values = new TreeSet<>();
+
+	public static String flushWrittenValues() {
+		String ret = String.join("\n", values);
+		values.clear();
+		return ret;
+	}
 
 	public final static HashMap<String, String> valueReplacements = new HashMap<>();
 	static {
@@ -70,7 +78,7 @@ public class JsonAST {
 				if (solutionsOnly) {
 					exportAssignmentSolutions(assignment);
 				} else {
-					exportAssignmentTraces(assignment);
+					exportAllAssignmentTraces(assignment);
 				}
 			}
 		}
@@ -78,22 +86,35 @@ public class JsonAST {
 		write(dataset.dataDir + "/export/" + dir + "/values.txt", String.join("\n", values));
 	}
 
-	protected static void exportAssignmentTraces(Assignment assignment)
+	public static void exportAllAssignmentTraces(Assignment assignment)
 			throws FileNotFoundException {
-		System.out.println(assignment.name);
+		exportAssignmentTraces(assignment, "all-traces", a -> true, a -> action -> true, a -> a.id);
+	}
+
+	public static void exportAssignmentTraces(Assignment assignment, String folder,
+			Predicate<AssignmentAttempt> attemptFilter,
+			Function<AssignmentAttempt, Predicate<AttemptAction>> actionFilter,
+			Function<AssignmentAttempt, String> namer)
+			throws FileNotFoundException {
+		System.out.println(assignment.name + ": " + folder);
 		for (AssignmentAttempt attempt : assignment.load(
-				Mode.Use, true, true, new SnapParser.LikelySubmittedOnly()).values()) {
+				Mode.Use, false, true, new SnapParser.LikelySubmittedOnly()).values()) {
+			if (!attemptFilter.test(attempt)) continue;
 			String lastJSON = "";
 			System.out.println(attempt.id);
 //			String last = "";
 			int order = 0;
+			Snapshot lastSnapshot = null;
 			for (AttemptAction action : attempt) {
-				if (action.snapshot == null) continue;
-				String json = toJSON(action.snapshot).toString(2);
+				if (!actionFilter.apply(attempt).test(action)) continue;
+				if (lastSnapshot == action.lastSnapshot) continue;
+				lastSnapshot = action.lastSnapshot;
+				String json = toJSON(action.lastSnapshot).toString(2);
 				if (json.equals(lastJSON)) continue;
 				lastJSON = json;
 				write(String.format("%s/%s/%05d-%05d.json",
-						assignment.dir("export/all-traces"), attempt.id, order++, action.id), json);
+						assignment.dir("export/" + folder),
+						namer.apply(attempt), order++, action.id), json);
 //				System.out.println(action.id);
 //				System.out.println(Diff.diff(last,
 //						last = SimpleNodeBuilder.toTree(action.snapshot, true).prettyPrint(), 1));

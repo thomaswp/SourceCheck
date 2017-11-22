@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.apache.commons.csv.CSVFormat;
@@ -31,7 +33,6 @@ import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.datasets.Fall2016;
 import edu.isnap.datasets.Spring2017;
-import edu.isnap.eval.agreement.HintSelection.HintRequest;
 import edu.isnap.eval.agreement.RateHints.GoldStandard;
 import edu.isnap.eval.agreement.RateHints.HintOutcome;
 import edu.isnap.eval.agreement.RateHints.HintSet;
@@ -93,6 +94,8 @@ public class TutorEdits {
 
 		exportConsensusHintRequests(Spring2017.instance, "consensus-gg-sq.csv",
 				"hint-eval", Spring2017.Squiral, Spring2017.GuessingGame1);
+		exportConsensusHintRequests(Fall2016.instance, "consensus-gg-sq.csv",
+				"hint-eval", Fall2016.Squiral, Fall2016.GuessingGame1);
 	}
 
 	@SuppressWarnings("unused")
@@ -128,15 +131,36 @@ public class TutorEdits {
 			if (assignment.dataset != dataset) {
 				throw new RuntimeException("Assignment must be from given dataset!");
 			}
-			List<HintRequest> selected = HintSelection.selectFromRowIDs(assignment, ids, true);
-			selected.forEach(req -> collectedIDs.add(req.action.id));
-			HintSelection.exportSelected(assignment, folder, selected);
+			Set<AssignmentAttempt> stopped = new HashSet<>();
+			Function<AssignmentAttempt, Predicate<AttemptAction>> actionFilter =
+					attempt -> action -> {
+				if (ids.contains(action.id)) {
+					stopped.add(attempt);
+					collectedIDs.add(action.id);
+					return true;
+				}
+				return !stopped.contains(attempt);
+			};
+			JsonAST.exportAssignmentTraces(assignment, folder + "/requests",
+					attempt -> attempt.rows.rows.stream().anyMatch(a -> ids.contains(a.id)),
+					actionFilter,
+					attempt -> attempt.rows.rows.stream()
+									.filter(a -> ids.contains(a.id))
+									.map(a -> String.valueOf(a.id))
+									.findAny().orElse(attempt.id));
+			JsonAST.exportAssignmentTraces(assignment, folder + "/training",
+					attempt -> !stopped.contains(attempt) &&
+						attempt.grade != null && attempt.grade.average() == 1,
+					attempt -> action -> true,
+					attempt -> attempt.id);
 		}
 
 		if (collectedIDs.size() != ids.size()) {
 			ids.removeAll(collectedIDs);
 			throw new RuntimeException("Missing row IDs: " + ids);
 		}
+		JsonAST.write(dataset.dataDir + "/export/" + folder + "/values.txt",
+				JsonAST.flushWrittenValues());
 	}
 
 	public static void verifyHints(Dataset dataset) throws FileNotFoundException, IOException {
