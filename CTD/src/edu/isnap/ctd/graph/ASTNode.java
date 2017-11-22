@@ -121,10 +121,13 @@ public class ASTNode implements INode {
 		if (id != null) object.put("id", id);
 		if (childMap.size() > 0) {
 			JSONObject children = new JSONObject();
+			JSONArray childrenOrder = new JSONArray();
 			for (String relation : childMap.keySet()) {
 				children.put(relation, childMap.get(relation).toJSON());
+				childrenOrder.put(relation);
 			}
 			object.put("children", children);
+			object.put("childrenOrder", childrenOrder);
 		}
 		return object;
 	}
