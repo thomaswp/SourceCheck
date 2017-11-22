@@ -40,6 +40,20 @@ public class PythonHintConfig extends HintConfig {
 		return valueMappedTypes;
 	}
 
+	@Override
+	public boolean shouldAutoAdd(Node node) {
+		if (node == null || node.parent == null) return false;
+		Node parent = node.parent;
+		int index = node.index();
+		return (parent.hasType("BinOp") && index == 1) ||
+				(parent.hasType("UnaryOp") && index == 0) ||
+				(parent.hasType("BoolOp") && index == 0) ||
+				(parent.hasType("Compare") && index == 1) ||
+				// Children of auto-added lists (e.g. in compare) should also be auto-added
+				(parent.hasType("list") && shouldAutoAdd(parent)) ||
+				node.hasType("Load", "Store", "Del");
+	}
+
 //	@Override
 //	public String getValueMappingClass(Node node) {
 //		if (node == null) return null;

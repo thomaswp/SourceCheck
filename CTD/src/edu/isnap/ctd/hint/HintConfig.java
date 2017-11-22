@@ -36,6 +36,13 @@ public abstract class HintConfig implements Serializable {
 	public abstract String[][] getValueMappedTypes();
 
 	/**
+	 * Should return true if an Insertion for this node should be nested automatically in
+	 * an Insertion for its parent. For example, a BinaryOp may only make sense with its operation
+	 * type added, so we can add Add/Sub/Mult/Div/etc automatically.
+	 */
+	public abstract boolean shouldAutoAdd(Node node);
+
+	/**
 	 * Should return true if matching nodes of this type should not be valued when comparing ASTs.
 	 */
 	public boolean isValueless(String type) {
@@ -226,6 +233,11 @@ public abstract class HintConfig implements Serializable {
 
 		@Override
 		public boolean canMove(Node node) {
+			return false;
+		}
+
+		@Override
+		public boolean shouldAutoAdd(Node node) {
 			return false;
 		}
 

@@ -108,6 +108,11 @@ public class SnapHintConfig extends HintConfig {
 		return valueMappedTypes;
 	}
 
+	@Override
+	public boolean shouldAutoAdd(Node node) {
+		return false;
+	}
+
 	// BEGIN old CTD context attributes
 
 	public final HashSet<String> badContext = new HashSet<>();

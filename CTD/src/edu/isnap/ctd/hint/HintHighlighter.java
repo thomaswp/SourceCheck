@@ -403,13 +403,18 @@ public class HintHighlighter {
 		// Mark that as a subedit of the parent, so it will only be executed afterwards
 		List<Insertion> insertions = extractInsertions(edits);
 		for (Insertion parent : insertions) {
-			// Don't nest children (for now anyway)
-			if (parent.missingParent) continue;
 			for (int i = 0; i < edits.size(); i++) {
 				Insertion child = Cast.cast(edits.get(i), Insertion.class);
+				if (child == null || child.parentPair != parent.pair) continue;
+
 				// We only use children as subedits if they have a candidate, since otherwise we
 				// would just every hint as a nested hint
-				if (child != null && child.parentPair == parent.pair && child.candidate != null) {
+				boolean insertForCandidate = !parent.missingParent && child.candidate != null;
+				// Also add nodes that should be auto-inserted, but those without candidates
+				// TODO: Somehow insertions without a candidate get through here and show up later
+				// with a candidate..?
+				boolean insertAuto = config.shouldAutoAdd(child.pair) && child.candidate == null;
+				if (insertForCandidate || insertAuto) {
 					edits.remove(i--);
 					parent.subedits.add(child);
 				}
