@@ -87,6 +87,7 @@ public class RateHints {
 			if (node.id != null && !node.id.startsWith(Agreement.GEN_ID_PREFIX)) {
 				Node fromMatch = from.searchForNodeWithID(node.id);
 				if (fromMatch == null || !fromMatch.hasType(node.type())) {
+					// TODO: Make this configurable
 					Agreement.pruneImmediateChildren(node);
 				}
 			}
@@ -99,6 +100,10 @@ public class RateHints {
 				replacement.children.addAll(node.children);
 				node.children.clear();
 			}
+			// TODO: Make this configurable
+			if (node.children.size() == 0 && node.hasType("script")) {
+				node.parent.children.remove(node.index());
+			}
 		}
 		return to;
 	}
@@ -110,13 +115,31 @@ public class RateHints {
 		for (TutorEdit tutorEdit : validEdits) {
 			Node tutorOutcomeNode = normalizeNewValues(tutorEdit.from, tutorEdit.to);
 			if (outcomeNode.equals(tutorOutcomeNode)) return tutorEdit;
-			else if (outcome.outcome.equals(tutorEdit.to)) {
+
+			if (outcome.outcome.equals(tutorEdit.to)) {
 				System.out.println(Diff.diff(tutorEdit.from.prettyPrint(true),
 						tutorEdit.to.prettyPrint(true)));
 				System.out.println(Diff.diff(tutorOutcomeNode.prettyPrint(true),
 						outcomeNode.prettyPrint(true), 2));
 				throw new RuntimeException("Normalized nodes should be equal if nodes are equal!");
 			}
+
+//			Set<EditHint> correctEdits = new HashSet<>(tutorEdit.edits);
+//			correctEdits.retainAll(outcome.edits);
+//			if (correctEdits.size() > 0) {
+//				System.out.println("Partially overlapping hints: " +
+//						tutorEdit.rowID + " / " + tutorEdit.hintID);
+//				System.out.println("Tutor:");
+//				tutorEdit.edits.forEach(System.out::println);
+//				System.out.println("Generated:");
+//				outcome.edits.forEach(System.out::println);
+//				System.out.println("Overlapping:");
+//				correctEdits.forEach(System.out::println);
+//				System.out.println("Difference (generated -> tutor):");
+//				System.out.println(Diff.diff(outcome.outcome.prettyPrint(true),
+//						tutorOutcomeNode.prettyPrint(true)));
+//				System.out.println("--------------------");
+//			}
 		}
 		return null;
 	}

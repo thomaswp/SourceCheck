@@ -21,10 +21,11 @@ import org.apache.commons.lang.StringEscapeUtils;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.HintConfig;
-import edu.isnap.ctd.hint.HintConfig.ValuesPolicy;
 import edu.isnap.ctd.hint.HintJSON;
+import edu.isnap.ctd.hint.RuleSet;
 import edu.isnap.ctd.hint.edit.EditHint;
 import edu.isnap.ctd.util.Diff;
+import edu.isnap.ctd.util.NullSream;
 import edu.isnap.ctd.util.Tuple;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.dataset.Assignment;
@@ -92,25 +93,30 @@ public class TutorEdits {
 //			RateHints.rate(standard, hintSet);
 //		}
 
-		exportConsensusHintRequests(Spring2017.instance, "consensus-gg-sq.csv",
-				"hint-eval", Spring2017.Squiral, Spring2017.GuessingGame1);
-		exportConsensusHintRequests(Fall2016.instance, "consensus-gg-sq.csv",
-				"hint-eval", Fall2016.Squiral, Fall2016.GuessingGame1);
+		testConsensus(Fall2016.instance, Spring2017.instance);
+
+//		exportConsensusHintRequests(Spring2017.instance, "consensus-gg-sq.csv",
+//				"hint-eval", Spring2017.Squiral, Spring2017.GuessingGame1);
+//		exportConsensusHintRequests(Fall2016.instance, "consensus-gg-sq.csv",
+//				"hint-eval", Fall2016.Squiral, Fall2016.GuessingGame1);
 	}
 
-	@SuppressWarnings("unused")
-	private static void testConsensus() throws FileNotFoundException, IOException {
-		GoldStandard standard = readConsensus(Spring2017.instance, "consensus-gg-sq.csv");
+//	@SuppressWarnings("unused")
+	private static void testConsensus(Dataset testDataset, Dataset trainingDataset)
+			throws FileNotFoundException, IOException {
+		RuleSet.trace = NullSream.instance;
+		GoldStandard standard = readConsensus(testDataset, "consensus-gg-sq.csv");
 		HintConfig[] configs = new HintConfig[] {
-				new SnapHintConfig(), new SnapHintConfig(), new SnapHintConfig()
+				new SnapHintConfig(), // new SnapHintConfig(), new SnapHintConfig()
 		};
-		configs[0].useRulesToFilter = false; configs[0].valuesPolicy = ValuesPolicy.IgnoreAll;
-		configs[1].useRulesToFilter = true; configs[1].valuesPolicy = ValuesPolicy.IgnoreAll;
-		configs[2].useRulesToFilter = true; configs[2].valuesPolicy = ValuesPolicy.MappedOnly;
+//		configs[0].createSubedits = true;
+//		configs[0].useRulesToFilter = false; configs[0].valuesPolicy = ValuesPolicy.IgnoreAll;
+//		configs[1].useRulesToFilter = true; configs[1].valuesPolicy = ValuesPolicy.IgnoreAll;
+//		configs[2].useRulesToFilter = true; configs[2].valuesPolicy = ValuesPolicy.MappedOnly;
 
 		for (int i = 0; i < configs.length; i++) {
-			HighlightHintSet hintSet = new HighlightHintSet("H-Fall2016 " + i, Fall2016.instance,
-					standard.getHintRequests(), configs[i]);
+			HighlightHintSet hintSet = new HighlightHintSet(trainingDataset.getName(),
+					trainingDataset, standard.getHintRequests(), configs[i]);
 			RateHints.rate(standard, hintSet);
 		}
 	}

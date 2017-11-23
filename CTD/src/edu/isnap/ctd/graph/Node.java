@@ -339,7 +339,7 @@ public abstract class Node extends StringHashable implements INode {
 	public Node copyWithNewParent(Node parent) {
 		Node copy = shallowCopy(parent);
 		for (Node child : children) {
-			copy.children.add(child.copyWithNewParent(copy));
+			copy.children.add(child == null ? null : child.copyWithNewParent(copy));
 		}
 		return copy;
 	}
