@@ -46,19 +46,12 @@ import edu.isnap.parser.elements.Snapshot;
 public class TutorEdits {
 
 	public enum Validity {
-		Valid(1), TooEarly(0.5), Invalid(0);
+		NoTutors(0), OneTutor(1), MultipleTutors(2), Consensus(3);
 
-		public final double value;
+		public final int value;
 
-		Validity(double value) {
+		Validity(int value) {
 			this.value = value;
-		}
-
-		public static Validity fromDouble(double value) {
-			for (Validity validity : Validity.values()) {
-				if (validity.value == value) return validity;
-			}
-			return null;
 		}
 	}
 
@@ -93,7 +86,10 @@ public class TutorEdits {
 //			RateHints.rate(standard, hintSet);
 //		}
 
+		System.out.println("Fall");
 		testConsensus(Fall2016.instance, Spring2017.instance);
+		System.out.println("Spring");
+		testConsensus(Spring2017.instance, Fall2016.instance);
 
 //		exportConsensusHintRequests(Spring2017.instance, "consensus-gg-sq.csv",
 //				"hint-eval", Spring2017.Squiral, Spring2017.GuessingGame1);
@@ -289,8 +285,8 @@ public class TutorEdits {
 				if (ratings == null) {
 					throw new RuntimeException("No consensus rating for: " + hint.hintID);
 				}
-				// TODO: decide what to do with TooSoon hints
-				if (ratings.x != Validity.Valid) continue;
+				if (ratings.x == Validity.NoTutors) continue;
+				hint.validity = ratings.x;
 				hint.priority = ratings.y;
 				keeps.add(hint);
 			}
@@ -307,9 +303,20 @@ public class TutorEdits {
 					CSVFormat.DEFAULT.withHeader());
 			for (CSVRecord row : parser) {
 				int id = Integer.parseInt(row.get("Hint ID"));
-				double validity = Double.parseDouble(row.get("Consensus (Validity)"));
-				int priority = validity > 0 ? Integer.parseInt(row.get("Consensus (Priority)")) : 0;
-				map.put(id, new Tuple<>(Validity.fromDouble(validity), Priority.fromInt(priority)));
+				boolean consensus = Double.parseDouble(row.get("Consensus (Validity)")) == 1;
+				int priority = consensus ? Integer.parseInt(row.get("Consensus (Priority)")) : 0;
+				int v1 = Integer.parseInt(row.get("V1"));
+				Validity validity;
+				if (consensus) {
+					validity = Validity.Consensus;
+				} else if (v1 > 1) {
+					validity = Validity.MultipleTutors;
+				} else if (v1 > 0) {
+					validity = Validity.OneTutor;
+				} else {
+					validity = Validity.NoTutors;
+				}
+				map.put(id, new Tuple<>(validity, Priority.fromInt(priority)));
 			}
 			parser.close();
 		}
@@ -385,6 +392,7 @@ public class TutorEdits {
 		public final String toXML;
 		public final List<EditHint> edits;
 
+		public Validity validity;
 		public Priority priority;
 
 		public TutorEdit(int hintID, int rowID, String tutor, String assignmentID, Snapshot from,

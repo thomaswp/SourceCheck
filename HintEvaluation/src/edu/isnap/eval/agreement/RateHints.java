@@ -22,9 +22,11 @@ public class RateHints {
 			System.out.println("----- " + assignment + " -----");
 
 			ListMap<Integer, HintRating> ratings = new ListMap<>();
-			double totalWeightedValidity = 0, totalWeightedPriority = 0;
+			double totalWeightedPriority = 0;
+			double[] totalWeightedValidity = new double[3];
 			for (Integer snapshotID : standard.getSnapshotIDs(assignment)) {
 				List<TutorEdit> validEdits = standard.getValidEdits(assignment, snapshotID);
+				if (validEdits.size() == 0) continue;
 				List<HintOutcome> hints = hintSet.get(snapshotID);
 
 				// TODO: do both this and not this
@@ -35,38 +37,49 @@ public class RateHints {
 
 				if (hints == null || hints.size() == 0) continue;
 
+				double[] weightedValidity = new double[3];
+
 				for (HintOutcome hint : hints) {
 					HintRating rating = new HintRating(hint);
 					TutorEdit exactMatch = findMatchingEdit(validEdits, hint);
 
-					rating.validity = Validity.Invalid;
+					rating.validity = Validity.NoTutors;
 					if (exactMatch != null) {
-						rating.validity = Validity.Valid;
+						rating.validity = exactMatch.validity;
 						rating.priority = exactMatch.priority;
+						for (int i = 0; i < exactMatch.validity.value; i++) {
+							weightedValidity[i] += hint.weight;
+						}
 					}
 //					System.out.println(rating);
 					ratings.add(snapshotID, rating);
 				}
 				List<HintRating> snapshotRatings = ratings.get(snapshotID);
-				double totalWeight = snapshotRatings.stream().mapToDouble(r -> r.hint.weight).sum();
-				double validity = snapshotRatings.stream()
-						.mapToDouble(r -> r.hint.weight * r.validity.value)
-						.sum() / totalWeight;
+				double weight = snapshotRatings.stream().mapToDouble(r -> r.hint.weight).sum();
 				// TODO: figure out whether to count 0-priority items
 				double priority = snapshotRatings.stream()
 						.filter(r -> r.priority != null)
 						.mapToDouble(r -> r.hint.weight * r.priority.points())
-						.sum() / totalWeight;
+						.sum() / weight;
 
-				totalWeightedValidity += validity;
+				for (int i = 0; i < weightedValidity.length; i++) {
+					weightedValidity[i] /= weight;
+					totalWeightedValidity[i] += weightedValidity[i];
+				}
 				totalWeightedPriority += priority;
 
-				System.out.printf("%d: %.03fv / %.03fp\n", snapshotID, validity, priority);
+				System.out.printf("%d: [%.03f, %.03f, %.03f]v / %.03fp\n", snapshotID,
+						weightedValidity[0], weightedValidity[1], weightedValidity[2],
+						priority);
 			}
 
 			int nSnapshots = ratings.size();
-			System.out.printf("TOTAL: %.03fv / %.03fp\n",
-					totalWeightedValidity / nSnapshots, totalWeightedPriority / nSnapshots);
+			for (int i = 0; i < totalWeightedValidity.length; i++) {
+				totalWeightedValidity[i] /= nSnapshots;
+			}
+			System.out.printf("TOTAL: [%.03f, %.03f, %.03f]v / %.03fp\n",
+					totalWeightedValidity[0], totalWeightedValidity[1], totalWeightedValidity[2],
+					totalWeightedPriority / nSnapshots);
 		}
 	}
 
