@@ -24,19 +24,19 @@ import edu.isnap.ctd.util.map.ListMap;
 public class PythonImport {
 
 	public static void main(String[] args) throws IOException {
-		generateHints("../../PythonAST/data", "howManyEggCartons");
+//		generateHints("../../PythonAST/data", "howManyEggCartons");
 
+		Map<String, ListMap<String, PythonNode>> nodes = loadAllAssignments("../../PythonAST/data");
+		for (String assignment : nodes.keySet()) {
+			long correct = nodes.get(assignment).values().stream()
+					.filter(list -> list.stream().anyMatch(n -> n.correct.orElse(false)))
+					.count();
+			if (correct > 0) {
+				System.out.println(assignment + ": " + correct + "/" +
+					nodes.get(assignment).size());
+			}
+		}
 //		GrammarBuilder builder = new GrammarBuilder("python", new HashMap<>());
-//		Map<String, ListMap<String, PythonNode>> nodes = loadAllAssignments("../../PythonAST/data");
-//		for (String assignment : nodes.keySet()) {
-//			List<PythonNode> correct = nodes.get(assignment).stream()
-//					.filter(n -> n.correct.orElse(false))
-//					.collect(Collectors.toList());
-//			if (correct.size() > 0) {
-//				System.out.println(assignment + ": " + correct.size() + "/" +
-//					nodes.get(assignment).size());
-//			}
-//		}
 //		nodes.values().forEach(listMap -> listMap.values()
 //				.forEach(list -> list.forEach(n -> builder.add(n))));
 //		System.out.println(builder.toJSON());

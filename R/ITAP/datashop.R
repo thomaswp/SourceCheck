@@ -11,28 +11,24 @@ hintRows <- itap[itap$`Student Response Type` == "HINT_REQUEST" & !is.na(itap$In
 
 hints <- ddply(hintRows, c("`Anon Student Id`", "`Problem Name`", "`Time`", "`Input`", "`Feedback Text`"), summarize, id=first(`Transaction Id`), count=length(Time))
 names(hints) <- c("sid", "problem", "time", "code", "hint", "id", "count")
-dedup <- ddply(hints, c("sid", "problem", "code", "hint"), colwise(first))
+allRequests <- ddply(hints, c("sid", "problem", "code", "hint"), colwise(first))
 
-students <- ddply(hints, c("sid", "problem"), summarize, count=length(problem))
+write.csv(allRequests, "data/all-requests.csv")
 
-# table(hints$problem)
+# --- Now process them in python ---
 
-studentsPerProblem <- table(students$problem)
-problems <- names(studentsPerProblem[studentsPerProblem > 6])
-problems <- problems[problems != "helloWorld"]
+processed <- read_csv("data/processed-requests.csv")
+filtered <- allRequests[processed$parsable == "True" & (is.na(processed$correct) | processed$correct == "False"),]
+
+studentsPerProblem <- table(ddply(filtered, c("sid", "problem"), summarize, count=length(problem))$problem)
 
 set.seed(1234)
-selected <- ddply(dedup[dedup$problem %in% problems,], c("sid", "problem"), summarize, i=sample(1:length(time), min(2, length(time))), time=time[i], code=code[i], hint=hint[i], id=id[i])
+selected <- ddply(filtered, c("sid", "problem"), summarize, i=sample(1:length(time), min(2, length(time))), time=time[i], code=code[i], hint=hint[i], id=id[i])
 selected <- ddply(selected, c("problem", "code"), colwise(first))
 
-set.seed(1234)
-selected <- ddply(dedup[dedup$problem %in% problems,], c("sid", "problem"), colwise(last))
+requestsPerProblem <- table(selected$problem)
+problems <- names(requestsPerProblem[requestsPerProblem >= 8])
+# problems <- problems[problems != "helloWorld"]
 
-attempts <- ddply(itap[itap$`Student Response Type` == "ATTEMPT",], 
-                  c("`Anon Student Id`", "`Problem Name`", "`Time`", "`Input`"), 
-                  summarize, count=length(Time), correct=sum(Outcome=="CORRECT"))
-
-
-attempts[attempts$`Problem Name` == "convertToDegrees" & attempts$correct == attempts$count,]$Input
-table(attempts[attempts$`Problem Name` == "helloWorld" & attempts$correct == attempts$count,]$Input)
-table(attempts[attempts$`Problem Name` == "howManyEggCartons" & attempts$correct == attempts$count,]$Input)
+selected <- selected[selected$problem %in% problems,]
+write.csv(selected, "data/selected-requests.csv")
