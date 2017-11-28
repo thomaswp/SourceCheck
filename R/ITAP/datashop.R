@@ -31,4 +31,12 @@ problems <- names(requestsPerProblem[requestsPerProblem >= 8])
 # problems <- problems[problems != "helloWorld"]
 
 selected <- selected[selected$problem %in% problems,]
-write.csv(selected, "data/selected-requests.csv")
+write.csv(selected, "data/selected-requests.csv", row.names = F)
+
+sink("data/hints.sql")
+for (i in 1:nrow(selected)) {
+  line = sprintf("INSERT INTO `handmade_hints` (`userID`, `rowID`, `trueAssignmentID`) VALUES ('%s', '%s', '%s');\n",
+                "ITAP", selected[i, "id"], selected[i,"problem"])
+  cat(line)
+}
+sink()
