@@ -1,5 +1,6 @@
 package edu.isnap.eval.agreement;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,6 +17,8 @@ import edu.isnap.ctd.hint.edit.Deletion;
 import edu.isnap.ctd.hint.edit.EditHint;
 import edu.isnap.ctd.hint.edit.Insertion;
 import edu.isnap.ctd.hint.edit.Reorder;
+import edu.isnap.ctd.util.Diff;
+import edu.isnap.ctd.util.Diff.ColorStyle;
 import edu.isnap.ctd.util.NullSream;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.dataset.Assignment;
@@ -23,6 +26,7 @@ import edu.isnap.dataset.Dataset;
 import edu.isnap.eval.agreement.RateHints.HintOutcome;
 import edu.isnap.eval.agreement.RateHints.HintRequest;
 import edu.isnap.eval.agreement.RateHints.HintSet;
+import edu.isnap.eval.agreement.TutorEdits.TutorEdit;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.parser.Store.Mode;
 
@@ -76,7 +80,8 @@ public class HighlightHintSet extends HintSet {
 				EditHint.applyEdits(to, edits);
 				double priority = hint.priority.consensus();
 //				if (priority < 0.35) continue;
-				HintOutcome outcome = new HintOutcome(to, request.id, priority, edits);
+				HintOutcome outcome = new HighlightOutcome(request.code, request.assignmentID,
+						to, request.id, priority, edits);
 				add(request.id, outcome);
 			}
 		}
@@ -128,6 +133,37 @@ public class HighlightHintSet extends HintSet {
 			}
 		}
 		return false;
+	}
+
+	private static class HighlightOutcome extends HintOutcome {
+
+		final Node from;
+		final String assignmentID;
+
+		public HighlightOutcome(Node from, String assignment, Node outcome, int snapshotID,
+				double weight, List<EditHint> edits) {
+			super(outcome, snapshotID, weight, edits);
+			this.from = from;
+			this.assignmentID = assignment;
+		}
+
+	}
+
+	public List<TutorEdit> toTutorEdits() {
+		Diff.colorStyle = ColorStyle.HTML;
+		List<TutorEdit> edits = new ArrayList<>();
+		int hintID = 0;
+		for (int rowID : keySet()) {
+			for (HintOutcome o : get(rowID)) {
+				HighlightOutcome outcome = (HighlightOutcome) o;
+				String from = outcome.from.prettyPrint(true);
+				String to = outcome.outcome.prettyPrint(true);
+				edits.add(new TutorEdit(hintID++, rowID, null, outcome.assignmentID, outcome.from,
+						outcome.outcome, Diff.diff(from, to)));
+			}
+		}
+		Diff.colorStyle = ColorStyle.ANSI;
+		return edits;
 	}
 
 }

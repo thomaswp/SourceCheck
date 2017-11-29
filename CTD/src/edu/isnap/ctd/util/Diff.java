@@ -9,9 +9,13 @@ import difflib.DiffUtils;
 import difflib.Patch;
 
 public class Diff {
+	public enum ColorStyle {
+		None, ANSI, HTML
+	}
+
 	// To use ANSI colors in eclipse, get https://github.com/mihnita/ansi-econsole
 	// Otherwise, for unicode, set the run configuration output for UTF-8
-	public static boolean USE_ANSI_COLORS = true;
+	public static ColorStyle colorStyle = ColorStyle.ANSI;
 
 	public static String diff(String a, String b) {
 		return diff(a, b, Integer.MAX_VALUE / 2);
@@ -50,7 +54,7 @@ public class Diff {
 
 			List<String> originalLines = delta.getOriginal().getLines();
 			List<String> revisedLines = delta.getRevised().getLines();
-			if (USE_ANSI_COLORS &&  originalLines.size() == revisedLines.size()) {
+			if (colorStyle != ColorStyle.None &&  originalLines.size() == revisedLines.size()) {
 				String splitRegex = "[^A-Za-z]";
 				for (int i = 0; i < originalLines.size(); i++) {
 					String deleted = originalLines.get(i);
@@ -66,16 +70,16 @@ public class Diff {
 						}
 						out += inlineDiff(s1, s2) + "\n";
 					} else {
-						out += colorString("- " + deleted, 31) + "\n";
-						out += colorString("+ " + added, 32) + "\n";
+						out += colorString("- " + deleted, false) + "\n";
+						out += colorString("+ " + added, true) + "\n";
 					}
 				}
 			} else {
 				for (String deleted : originalLines) {
-					out += colorString("- " + deleted, 31) + "\n";
+					out += colorString("- " + deleted, false) + "\n";
 				}
 				for (String added : revisedLines) {
-					out += colorString("+ " + added, 32) + "\n";
+					out += colorString("+ " + added, true) + "\n";
 				}
 			}
 
@@ -97,9 +101,9 @@ public class Diff {
 		return out;
 	}
 
-	private static String colorString(String string, int colorCode) {
-		if (!USE_ANSI_COLORS) return string;
-		return String.format("\u001b[%dm%s\u001b[0m", colorCode, string);
+	private static String colorString(String string, boolean add) {
+		if (colorStyle == ColorStyle.None) return string;
+		return colorStringInline(string, add);
 	}
 
 	public static String inlineDiff(String a, String b, String splitRegex) {
@@ -156,9 +160,12 @@ public class Diff {
 	}
 
 	private static String colorStringInline(String string, boolean add) {
-		if (USE_ANSI_COLORS) {
+		if (colorStyle == ColorStyle.ANSI) {
 			int colorCode = add ? 32 : 31;
 			return String.format("\u001b[%dm%s\u001b[0m", colorCode, string);
+		} else if (colorStyle == ColorStyle.HTML){
+			return String.format("<span class=\"code-%s\">%s</span>",
+					add ? "add" : "delete", string);
 		} else {
 			return String.format("%s%s%s", add ? "\u3008" : "\u300A", string,
 					add ? "\u3009" : "\u300B");

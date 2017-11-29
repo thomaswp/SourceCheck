@@ -25,6 +25,7 @@ import edu.isnap.ctd.hint.HintJSON;
 import edu.isnap.ctd.hint.RuleSet;
 import edu.isnap.ctd.hint.edit.EditHint;
 import edu.isnap.ctd.util.Diff;
+import edu.isnap.ctd.util.Diff.ColorStyle;
 import edu.isnap.ctd.util.NullSream;
 import edu.isnap.ctd.util.Tuple;
 import edu.isnap.ctd.util.map.ListMap;
@@ -86,10 +87,13 @@ public class TutorEdits {
 //			RateHints.rate(standard, hintSet);
 //		}
 
-		System.out.println("Fall");
-		testConsensus(Fall2016.instance, Spring2017.instance);
-		System.out.println("Spring");
-		testConsensus(Spring2017.instance, Fall2016.instance);
+//		System.out.println("Fall");
+//		testConsensus(Fall2016.instance, Spring2017.instance);
+//		System.out.println("Spring");
+//		testConsensus(Spring2017.instance, Fall2016.instance);
+
+		highlightSQL(Fall2016.instance, Spring2017.instance);
+		highlightSQL(Spring2017.instance, Fall2016.instance);
 
 //		exportConsensusHintRequests(Spring2017.instance, "consensus-gg-sq.csv",
 //				"hint-eval", Spring2017.Squiral, Spring2017.GuessingGame1);
@@ -97,7 +101,7 @@ public class TutorEdits {
 //				"hint-eval", Fall2016.Squiral, Fall2016.GuessingGame1);
 	}
 
-//	@SuppressWarnings("unused")
+	@SuppressWarnings("unused")
 	private static void testConsensus(Dataset testDataset, Dataset trainingDataset)
 			throws FileNotFoundException, IOException {
 		RuleSet.trace = NullSream.instance;
@@ -113,8 +117,22 @@ public class TutorEdits {
 		for (int i = 0; i < configs.length; i++) {
 			HighlightHintSet hintSet = new HighlightHintSet(trainingDataset.getName(),
 					trainingDataset, standard.getHintRequests(), configs[i]);
-			RateHints.rate(standard, hintSet);
+//			RateHints.rate(standard, hintSet);
+			hintSet.toTutorEdits().forEach(e -> System.out.println(
+					e.toSQLInsert("handmade_hints", "highlight", 20000, false, true)));
 		}
+	}
+
+	private static void highlightSQL(Dataset testDataset, Dataset trainingDataset)
+			throws FileNotFoundException, IOException {
+		RuleSet.trace = NullSream.instance;
+		GoldStandard standard = readConsensus(testDataset, "consensus-gg-sq.csv");
+		HintConfig config = new SnapHintConfig();
+
+		HighlightHintSet hintSet = new HighlightHintSet(trainingDataset.getName(),
+				trainingDataset, standard.getHintRequests(), config);
+		hintSet.toTutorEdits().forEach(e -> System.out.println(
+				e.toSQLInsert("handmade_hints", "highlight", 20000, false, true)));
 	}
 
 	public static void exportConsensusHintRequests(Dataset dataset, String path, String folder,
@@ -397,12 +415,18 @@ public class TutorEdits {
 
 		public TutorEdit(int hintID, int rowID, String tutor, String assignmentID, Snapshot from,
 				Snapshot to, String toXML) {
+			this(hintID, rowID, tutor, assignmentID, Agreement.toTree(from), Agreement.toTree(to),
+					toXML);
+		}
+
+		public TutorEdit(int hintID, int rowID, String tutor, String assignmentID, Node from,
+				Node to, String toXML) {
 			this.hintID = hintID;
 			this.rowID = rowID;
 			this.tutor = tutor;
 			this.assignmentID = assignmentID;
-			this.from = Agreement.toTree(from);
-			this.to = Agreement.toTree(to);
+			this.from = from;
+			this.to = to;
 			this.toXML = toXML;
 			edits = Agreement.findEdits(this.from.copy(), this.to.copy(), true);
 			if (edits.size() == 0 && this.from.equals(this.to)) {
@@ -428,13 +452,13 @@ public class TutorEdits {
 		}
 
 		public static String editsToString(List<EditHint> edits, boolean useANSI) {
-			boolean oldANSI = Diff.USE_ANSI_COLORS;
-			Diff.USE_ANSI_COLORS = useANSI;
+			ColorStyle oldStyle = Diff.colorStyle;
+			Diff.colorStyle = useANSI ? ColorStyle.ANSI : ColorStyle.None;
 			String editsString = String.join(" AND\n",
 					edits.stream()
 					.map(e -> e.toString())
 					.collect(Collectors.toList()));
-			Diff.USE_ANSI_COLORS = oldANSI;
+			Diff.colorStyle = oldStyle;
 			return editsString;
 		}
 

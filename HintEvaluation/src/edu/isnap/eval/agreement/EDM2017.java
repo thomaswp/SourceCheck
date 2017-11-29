@@ -30,6 +30,7 @@ import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.hint.RuleSet;
 import edu.isnap.ctd.hint.edit.EditHint;
 import edu.isnap.ctd.util.Diff;
+import edu.isnap.ctd.util.Diff.ColorStyle;
 import edu.isnap.ctd.util.NullSream;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.dataset.Assignment;
@@ -303,7 +304,7 @@ public class EDM2017 {
 			if (edit.priority != null) System.out.println(edit.priority);
 
 			if (spreadsheet == null || edit.priority == null) continue;
-			Diff.USE_ANSI_COLORS = false;
+			Diff.colorStyle = ColorStyle.None;
 			spreadsheet.newRow();
 			spreadsheet.put("assignment", assignment.name);
 			spreadsheet.put("row", row);
@@ -322,7 +323,7 @@ public class EDM2017 {
 					ordering.isPresent() ? ordering.getAsDouble() : null);
 			spreadsheet.put("edit", edit.toString());
 			spreadsheet.put("category", category);
-			Diff.USE_ANSI_COLORS = true;
+			Diff.colorStyle = ColorStyle.ANSI;
 		}
 	}
 
