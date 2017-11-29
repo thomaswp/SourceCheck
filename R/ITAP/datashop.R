@@ -33,10 +33,21 @@ problems <- names(requestsPerProblem[requestsPerProblem >= 8])
 selected <- selected[selected$problem %in% problems,]
 write.csv(selected, "data/selected-requests.csv", row.names = F)
 
-sink("data/hints.sql")
-for (i in 1:nrow(selected)) {
-  line = sprintf("INSERT INTO `handmade_hints` (`userID`, `rowID`, `trueAssignmentID`) VALUES ('%s', '%s', '%s');\n",
-                "ITAP", selected[i, "id"], selected[i,"problem"])
-  cat(line)
+writeSQL <- function(rows, users, path) {
+  sink(path)
+  for (user in users) {
+    for (i in 1:nrow(rows)) {
+      line = sprintf("INSERT INTO `handmade_hints` (`userID`, `rowID`, `trueAssignmentID`) VALUES ('%s', '%s', '%s');\n",
+                    user, rows[i, "id"], rows[i,"problem"])
+      cat(line)
+    }
+  }
+  sink()
 }
-sink()
+writeSQL(selected, c("ITAP"), "data/selected-requests")
+
+set.seed(1234)
+testReqs <- filtered[!(filtered$id %in% selected$id) & filtered$problem %in% problems,]
+testReqs <- ddply(testReqs, "problem", summarize, i=sample(1:length(time), min(3, length(time))), sid=sid[i], code=code[i], hint=hint[i], id=id[i])
+write.csv(testReqs[,-2], "data/test-requests.csv", row.names = F)
+writeSQL(testReqs, c("twprice", "vmcatete", "nalytle"), "data/test-requests.sql")
