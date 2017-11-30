@@ -93,7 +93,7 @@ public class TutorEdits {
 //		testConsensus(Spring2017.instance, Fall2016.instance);
 
 		highlightSQL(Fall2016.instance, Spring2017.instance);
-		highlightSQL(Spring2017.instance, Fall2016.instance);
+//		highlightSQL(Spring2017.instance, Fall2016.instance);
 
 //		exportConsensusHintRequests(Spring2017.instance, "consensus-gg-sq.csv",
 //				"hint-eval", Spring2017.Squiral, Spring2017.GuessingGame1);
@@ -129,10 +129,26 @@ public class TutorEdits {
 		GoldStandard standard = readConsensus(testDataset, "consensus-gg-sq.csv");
 		HintConfig config = new SnapHintConfig();
 
+		int offset = 20000;
+
+		Spreadsheet spreadsheet = new Spreadsheet();
 		HighlightHintSet hintSet = new HighlightHintSet(trainingDataset.getName(),
 				trainingDataset, standard.getHintRequests(), config);
-		hintSet.toTutorEdits().forEach(e -> System.out.println(
-				e.toSQLInsert("handmade_hints", "highlight", 20000, false, true)));
+		hintSet.toTutorEdits().forEach(edit -> {
+			System.out.println(edit.toSQLInsert(
+					"handmade_hints", "highlight", offset, false, true));
+
+			spreadsheet.newRow();
+			spreadsheet.put("Assignment ID", edit.assignmentID);
+			spreadsheet.put("Row ID", edit.rowID);
+			spreadsheet.put("Hint ID", edit.hintID + offset);
+
+			spreadsheet.put("Valid (0-1)", null);
+			spreadsheet.put("Priority (1-3)", null);
+
+			spreadsheet.put("Hint", edit.editsString(false));
+		});
+		spreadsheet.write(testDataset.analysisDir() + "/highlight-hints.csv");
 	}
 
 	public static void exportConsensusHintRequests(Dataset dataset, String path, String folder,
