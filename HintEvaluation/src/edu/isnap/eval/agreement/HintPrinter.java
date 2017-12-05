@@ -12,7 +12,7 @@ import edu.isnap.ctd.hint.edit.EditHint;
 import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.Diff.ColorStyle;
 import edu.isnap.ctd.util.NodeAlignment.Mapping;
-import edu.isnap.ctd.util.NullSream;
+import edu.isnap.ctd.util.NullStream;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.datasets.Fall2016;
@@ -28,7 +28,7 @@ public class HintPrinter {
 
 	public static void main(String[] args) throws FileNotFoundException {
 		Diff.colorStyle = ColorStyle.None;
-		RuleSet.trace = NullSream.instance;
+		RuleSet.trace = NullStream.instance;
 		EditHint.useValues = false;
 		Random rand = new Random(1234);
 		printHints(Spring2017.Squiral, Fall2016.Squiral, rand);
@@ -49,7 +49,7 @@ public class HintPrinter {
 
 		HintHighlighter highlighter = new SnapHintBuilder(trainingAssignment)
 				.buildGenerator(Mode.Ignore).hintHighlighter();
-		highlighter.trace = NullSream.instance;
+		highlighter.trace = NullStream.instance;
 
 		for (HintRequest request : selected) {
 			AttemptAction action = request.action;

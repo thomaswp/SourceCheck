@@ -4,11 +4,11 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 
-public class NullSream extends PrintStream {
+public class NullStream extends PrintStream {
 
-	public final static NullSream instance = new NullSream();
+	public final static NullStream instance = new NullStream();
 
-	public NullSream() {
+	public NullStream() {
 		super(new OutputStream() {
 			@Override
 			public void write(int b) throws IOException { }

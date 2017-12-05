@@ -31,7 +31,7 @@ import edu.isnap.ctd.hint.RuleSet;
 import edu.isnap.ctd.hint.edit.EditHint;
 import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.Diff.ColorStyle;
-import edu.isnap.ctd.util.NullSream;
+import edu.isnap.ctd.util.NullStream;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
@@ -51,7 +51,7 @@ public class EDM2017 {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 		EditHint.useValues = false;
-		RuleSet.trace = NullSream.instance;
+		RuleSet.trace = NullStream.instance;
 
 //		compareEdits(Spring2017.instance, Fall2016.Squiral, Fall2016.GuessingGame1);
 //		compareEdits(Spring2017.instance, CSC200Solutions.Squiral, CSC200Solutions.GuessingGame1);
@@ -129,7 +129,7 @@ public class EDM2017 {
 			Snapshot h2Code = Snapshot.parse("h2", h2CodeXML);
 
 			HintHighlighter highlighter = highlighters.get(assignmentID);
-			highlighter.trace = NullSream.instance;
+			highlighter.trace = NullStream.instance;
 
 			Node fromNode = nodeMap.get(rowID);
 			if (fromNode == null) {

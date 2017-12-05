@@ -74,7 +74,14 @@ public class ASTNode implements INode {
 	}
 
 	public static ASTNode parse(String jsonSource) throws JSONException {
-		JSONObject object = new JSONObject(jsonSource);
+		JSONObject object;
+		try {
+			object = new JSONObject(jsonSource);
+		} catch (Exception e) {
+			System.out.println("Error parsing JSON:");
+			System.out.println(jsonSource);
+			throw e;
+		}
 		return parse(object);
 	}
 

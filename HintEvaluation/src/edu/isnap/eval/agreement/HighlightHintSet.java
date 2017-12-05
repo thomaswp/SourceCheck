@@ -19,7 +19,7 @@ import edu.isnap.ctd.hint.edit.Insertion;
 import edu.isnap.ctd.hint.edit.Reorder;
 import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.Diff.ColorStyle;
-import edu.isnap.ctd.util.NullSream;
+import edu.isnap.ctd.util.NullStream;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
@@ -55,7 +55,7 @@ public class HighlightHintSet extends HintSet {
 			if (highlighter == null) {
 				SnapHintBuilder builder = new SnapHintBuilder(assignment, baseMap);
 				highlighter = builder.buildGenerator(Mode.Ignore, 1).hintHighlighter();
-				highlighter.trace = NullSream.instance;
+				highlighter.trace = NullStream.instance;
 				highlighters.put(request.assignmentID, highlighter);
 			}
 
@@ -158,7 +158,8 @@ public class HighlightHintSet extends HintSet {
 				HighlightOutcome outcome = (HighlightOutcome) o;
 				String from = outcome.from.prettyPrint(true);
 				String to = outcome.outcome.prettyPrint(true);
-				edits.add(new TutorEdit(hintID++, rowID, null, outcome.assignmentID, outcome.from,
+				edits.add(new TutorEdit(hintID++, String.valueOf(rowID), null,
+						outcome.assignmentID, outcome.from,
 						outcome.outcome, Diff.diff(from, to)));
 			}
 		}

@@ -18,7 +18,7 @@ import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.edit.EditHint;
 import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.NodeAlignment.Mapping;
-import edu.isnap.ctd.util.NullSream;
+import edu.isnap.ctd.util.NullStream;
 import edu.isnap.ctd.util.map.ListMap;
 
 public class PythonImport {
@@ -55,7 +55,7 @@ public class PythonImport {
 					.filter(n -> !student.equals(n.student))
 					.collect(Collectors.toList());
 			HintHighlighter highlighter = new HintHighlighter(subset, new PythonHintConfig());
-			highlighter.trace = NullSream.instance;
+			highlighter.trace = NullStream.instance;
 
 			String from = firstAttempt.prettyPrint(true);
 			List<EditHint> edits = highlighter.highlight(firstAttempt);
@@ -128,13 +128,13 @@ public class PythonImport {
 		return nodes;
 	}
 
-	static class PythonNode extends Node {
+	public static class PythonNode extends Node {
 
 		public Optional<Boolean> correct = Optional.empty();
 		public String student;
 		public String source;
 
-		protected PythonNode(Node parent, String type, String value, String id) {
+		public PythonNode(Node parent, String type, String value, String id) {
 			super(parent, type, value, id);
 		}
 

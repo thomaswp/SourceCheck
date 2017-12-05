@@ -4,6 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -19,26 +20,28 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang.StringEscapeUtils;
 
+import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.HintConfig;
+import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.HintJSON;
 import edu.isnap.ctd.hint.RuleSet;
 import edu.isnap.ctd.hint.edit.EditHint;
 import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.Diff.ColorStyle;
-import edu.isnap.ctd.util.NullSream;
+import edu.isnap.ctd.util.NullStream;
 import edu.isnap.ctd.util.Tuple;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
-import edu.isnap.datasets.Fall2016;
-import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.agreement.RateHints.GoldStandard;
 import edu.isnap.eval.agreement.RateHints.HintOutcome;
 import edu.isnap.eval.agreement.RateHints.HintSet;
 import edu.isnap.eval.export.JsonAST;
+import edu.isnap.eval.python.PythonHintConfig;
+import edu.isnap.eval.python.PythonImport.PythonNode;
 import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.parser.Store.Mode;
@@ -79,6 +82,8 @@ public class TutorEdits {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 //		compareHints(Fall2016.instance);
+		compareHints("../data/itap");
+
 //		verifyHints(Fall2016.instance);
 
 //		Map<String, HintSet> hintSets = readTutorHintSets(Spring2017.instance);
@@ -92,7 +97,7 @@ public class TutorEdits {
 //		System.out.println("Spring");
 //		testConsensus(Spring2017.instance, Fall2016.instance);
 
-		highlightSQL(Fall2016.instance, Spring2017.instance);
+//		highlightSQL(Fall2016.instance, Spring2017.instance);
 //		highlightSQL(Spring2017.instance, Fall2016.instance);
 
 //		exportConsensusHintRequests(Spring2017.instance, "consensus-gg-sq.csv",
@@ -104,7 +109,7 @@ public class TutorEdits {
 	@SuppressWarnings("unused")
 	private static void testConsensus(Dataset testDataset, Dataset trainingDataset)
 			throws FileNotFoundException, IOException {
-		RuleSet.trace = NullSream.instance;
+		RuleSet.trace = NullStream.instance;
 		GoldStandard standard = readConsensus(testDataset, "consensus-gg-sq.csv");
 		HintConfig[] configs = new HintConfig[] {
 				new SnapHintConfig(), // new SnapHintConfig(), new SnapHintConfig()
@@ -123,9 +128,9 @@ public class TutorEdits {
 		}
 	}
 
-	private static void highlightSQL(Dataset testDataset, Dataset trainingDataset)
+	protected static void highlightSQL(Dataset testDataset, Dataset trainingDataset)
 			throws FileNotFoundException, IOException {
-		RuleSet.trace = NullSream.instance;
+		RuleSet.trace = NullStream.instance;
 		GoldStandard standard = readConsensus(testDataset, "consensus-gg-sq.csv");
 		HintConfig config = new SnapHintConfig();
 
@@ -140,7 +145,7 @@ public class TutorEdits {
 
 			spreadsheet.newRow();
 			spreadsheet.put("Assignment ID", edit.assignmentID);
-			spreadsheet.put("Row ID", edit.rowID);
+			spreadsheet.put("Row ID", edit.requestIDString);
 			spreadsheet.put("Hint ID", edit.hintID + offset);
 
 			spreadsheet.put("Valid (0-1)", null);
@@ -200,14 +205,26 @@ public class TutorEdits {
 	}
 
 	public static void verifyHints(Dataset dataset) throws FileNotFoundException, IOException {
-		ListMap<String, TutorEdit> edits = readTutorEdits(dataset);
+		ListMap<String, TutorEdit> edits = readTutorEditsSnap(dataset);
 		edits.values().forEach(l -> l.forEach(e -> e.verify()));
 	}
 
-	public static void compareHints(Dataset dataset) throws FileNotFoundException, IOException {
-		ListMap<String, TutorEdit> assignmentMap = readTutorEdits(dataset);
+	private final static int compareEditsHintOffset = 10000;
 
-		int hintOffset = 10000;
+	public static void compareHints(Dataset dataset) throws FileNotFoundException, IOException {
+		String writeDir = String.format("%s/tutor-hints/%d/", dataset.analysisDir(),
+				compareEditsHintOffset);
+		compareHints(readTutorEditsSnap(dataset), writeDir);
+	}
+
+	public static void compareHints(String dir)
+			throws FileNotFoundException, IOException {
+		String writeDir = String.format("%s/analysis/tutor-hints/%d/", dir, compareEditsHintOffset);
+		compareHints(readTutorEditsPython(dir), writeDir);
+	}
+
+	public static void compareHints(ListMap<String, TutorEdit> assignmentMap, String writeDir)
+			throws FileNotFoundException, IOException {
 
 		Set<String> tutors =  assignmentMap.values().stream()
 				.flatMap(List::stream).map(e -> e.tutor)
@@ -220,7 +237,10 @@ public class TutorEdits {
 			System.out.println("\n#---------> " + assignmentID + " <---------#\n");
 
 			List<TutorEdit> edits = assignmentMap.get(assignmentID);
-			Set<Integer> rowIDs = new TreeSet<>(edits.stream().map(e -> e.rowID)
+			edits = edits.stream()
+					.filter(e -> !"consensus".equals(e.tutor))
+					.collect(Collectors.toList());
+			Set<Integer> rowIDs = new TreeSet<>(edits.stream().map(e -> e.requestID)
 					.collect(Collectors.toSet()));
 
 			for (Integer rowID : rowIDs) {
@@ -228,8 +248,8 @@ public class TutorEdits {
 
 				ListMap<Node, TutorEdit> givers = new ListMap<>();
 				edits.stream()
-				.filter(e -> e.rowID == rowID)
-				.forEach(e -> givers.add(RateHints.normalizeNewValues(e.from, e.to), e));
+				.filter(e -> e.requestID == rowID)
+				.forEach(e -> givers.add(RateHints.normalizeNewValuesTo(e.from, e.to, false), e));
 
 				Node from = givers.values().stream().findFirst().get().get(0).from;
 				String fromPP = from.prettyPrint(true);
@@ -253,21 +273,32 @@ public class TutorEdits {
 					}
 
 					sql.append(firstEdit.toSQLInsert(
-							"handmade_hints", "consensus", hintOffset,
+							"handmade_hints", "consensus", compareEditsHintOffset,
 							priorityMatches == tutors.size(), true));
 					sql.append("\n");
 
-					Map<String, TutorEdit> givingTutors = tutorEdits.stream()
-							.collect(Collectors.toMap(e -> e.tutor, e -> e));
+					Map<String, TutorEdit> givingTutors = null;
+					try {
+						givingTutors = tutorEdits.stream()
+								.collect(Collectors.toMap(e -> e.tutor, e -> e));
+					} catch (Exception e) {
+						System.out.println("Duplicate hints from one tutor:");
+						System.out.println(from.prettyPrintWithIDs());
+						System.out.println(to.prettyPrintWithIDs());
+						tutorEdits.forEach(System.out::println);
+						throw e;
+					}
+
 					String editsStringNoANSI = firstEdit.editsString(false);
+
 					for (String tutor : tutorSpreadsheets.keySet()) {
 						TutorEdit edit = givingTutors.get(tutor);
 
 						Spreadsheet spreadsheet = tutorSpreadsheets.get(tutor);
 						spreadsheet.newRow();
 						spreadsheet.put("Assignment ID", firstEdit.assignmentID);
-						spreadsheet.put("Row ID", firstEdit.rowID);
-						spreadsheet.put("Hint ID", firstEdit.hintID + hintOffset);
+						spreadsheet.put("Row ID", firstEdit.requestIDString);
+						spreadsheet.put("Hint ID", firstEdit.hintID + compareEditsHintOffset);
 
 						spreadsheet.put("Valid (0-1)", edit == null ? null : 1);
 						spreadsheet.put("Priority (1-3)", edit == null ? null : edit.priority);
@@ -279,18 +310,17 @@ public class TutorEdits {
 			}
 		}
 
-		String dir = String.format("%s/tutor-hints/%d/", dataset.analysisDir(), hintOffset);
 		for (String tutor : tutorSpreadsheets.keySet()) {
 			Spreadsheet spreadsheet = tutorSpreadsheets.get(tutor);
-			spreadsheet.write(dir + tutor + ".csv");
+			spreadsheet.write(writeDir + tutor + ".csv");
 		}
-		JsonAST.write(dir + "consensus.sql", sql.toString());
+		JsonAST.write(writeDir + "consensus.sql", sql.toString());
 	}
 
 	public static Map<String, HintSet> readTutorHintSets(Dataset dataset)
 			throws FileNotFoundException, IOException {
 		Map<String, HintSet> hintSets = new HashMap<>();
-		ListMap<String, TutorEdit> allEdits = readTutorEdits(dataset);
+		ListMap<String, TutorEdit> allEdits = readTutorEditsSnap(dataset);
 		for (List<TutorEdit> list : allEdits.values()) {
 			for (TutorEdit edit : list) {
 				if (edit.tutor.equals("consensus")) continue;
@@ -298,7 +328,7 @@ public class TutorEdits {
 				if (set == null) {
 					hintSets.put(edit.tutor, set = new HintSet(edit.tutor));
 				}
-				set.add(edit.rowID, edit.toOutcome());
+				set.add(edit.requestID, edit.toOutcome());
 			}
 		}
 		return hintSets;
@@ -308,7 +338,7 @@ public class TutorEdits {
 			throws FileNotFoundException, IOException {
 		Map<Integer, Tuple<Validity, Priority>> consensus =
 				readConsensusSpreadsheet(dataset, consensusPaths);
-		ListMap<String, TutorEdit> allEdits = readTutorEdits(dataset);
+		ListMap<String, TutorEdit> allEdits = readTutorEditsSnap(dataset);
 		ListMap<String, TutorEdit> consensusEdits = new ListMap<>();
 		for (String assignmentID : allEdits.keySet()) {
 			List<TutorEdit> list = allEdits.get(assignmentID);
@@ -357,21 +387,90 @@ public class TutorEdits {
 		return map;
 	}
 
-	public static ListMap<String,TutorEdit> readTutorEdits(Dataset dataset)
+	public static ListMap<String,TutorEdit> readTutorEditsSnap(Dataset dataset)
 			throws FileNotFoundException, IOException {
-		CSVParser parser = new CSVParser(new FileReader(dataset.dataDir + "/handmade_hints.csv"),
-				CSVFormat.DEFAULT.withHeader());
-
-		ListMap<String, TutorEdit> edits = new ListMap<>();
 
 		Map<String, Assignment> assignments = dataset.getAssignmentMap();
 		Map<Integer, AttemptAction> hintActionMap = new HashMap<>();
 		Set<String> loadedAssignments = new HashSet<>();
 
+		return readTutorEdits(dataset.dataDir + "/handmade_hints.csv",
+				(hintID, requestID, tutor, assignmentID, toSource, row) -> {
+
+			int requestNumber = Integer.parseInt(requestID);
+			if (loadedAssignments.add(assignmentID)) {
+				loadAssignment(assignments, hintActionMap, assignmentID);
+			}
+
+			if (!hintActionMap.containsKey(requestNumber)) {
+				System.err.println("Missing hintID: " + requestNumber);
+			}
+
+			Snapshot fromS = hintActionMap.get(requestNumber).lastSnapshot;
+			Snapshot toS = Snapshot.parse(fromS.name, toSource);
+			Node from = Agreement.toTree(fromS), to = Agreement.toTree(toS);
+
+			return new TutorEdit(hintID, requestID, tutor, assignmentID, from, to, toSource);
+		});
+	}
+
+	private static Node toPrunedPythonNode(String json) {
+		ASTNode ast = ASTNode.parse(json);
+		Node node = ast.toNode(PythonNode::new);
+		node.recurse(n -> {
+			for (int i = 0; i < n.children.size(); i++) {
+				Node child = n.children.get(i);
+				if (child.hasType("Str") && "~".equals(child.value)) {
+					n.children.remove(i--);
+				}
+			}
+		});
+		return node;
+	}
+
+	public static ListMap<String,TutorEdit> readTutorEditsPython(String dir)
+			throws FileNotFoundException, IOException {
+		return readTutorEdits(dir + "/handmade_hints_ast.csv",
+				(hintID, requestID, tutor, assignmentID, toSource, row) -> {
+			Node from, to;
+			try {
+				from = toPrunedPythonNode(row.get("codeAST"));
+				to = toPrunedPythonNode(row.get("hintCodeAST"));
+			} catch (Exception e){
+				System.out.println("Error reading hint: " + hintID);
+				throw e;
+			}
+			HintConfig config = new PythonHintConfig();
+			List<Node> solutions = Collections.singletonList(to);
+			// TODO: Find a better way to parse/read the edits
+			// This shouldn't be strictly necessary to compare edits, since it should be using only
+			// the to Node for comparison, but it still seems important.
+			HintHighlighter highlighter = new HintHighlighter(solutions, config);
+			highlighter.trace = NullStream.instance;
+			List<EditHint> edits = highlighter.highlight(from);
+			return new TutorEdit(hintID, requestID, tutor, assignmentID, from, to, toSource,
+					edits);
+		});
+	}
+
+	private interface NodeParser {
+		TutorEdit parse(int hintID, String requestID, String tutor, String assignmentID,
+				String toSource, CSVRecord row);
+	}
+
+	public static ListMap<String,TutorEdit> readTutorEdits(String path, NodeParser np)
+			throws FileNotFoundException, IOException {
+		CSVParser parser = new CSVParser(new FileReader(path),
+				CSVFormat.DEFAULT.withHeader());
+
+		ListMap<String, TutorEdit> edits = new ListMap<>();
+
 		for (CSVRecord record : parser) {
 			int hintID = Integer.parseInt(record.get("hid"));
 			String tutor = record.get("userID");
-			int rowID = Integer.parseInt(record.get("rowID"));
+			// Highlight hints aren't parsable
+			if ("highlight".equals(tutor)) continue;
+			String requestID = record.get("rowID");
 			String assignmentID = record.get("trueAssignmentID");
 			String priorityString = record.get("priority");
 			Priority priority = null;
@@ -384,20 +483,11 @@ public class TutorEdits {
 				}
 			}
 
-			if (loadedAssignments.add(assignmentID)) {
-				loadAssignment(assignments, hintActionMap, assignmentID);
-			}
-
-			if (!hintActionMap.containsKey(rowID)) System.err.println("Missing hintID: " + rowID);
-			Snapshot from = hintActionMap.get(rowID).lastSnapshot;
-
-			String toXML = record.get("hintCode");
+			String toSource = record.get("hintCode");
 			// Skip empty hints (they may exist if no hint is appropriate for a snapshot)
-			if (toXML.equals("NULL")) continue;
+			if (toSource.trim().isEmpty() || toSource.equals("NULL")) continue;
 
-			Snapshot to = Snapshot.parse(from.name, toXML);
-
-			TutorEdit edit = new TutorEdit(hintID, rowID, tutor, assignmentID, from, to, toXML);
+			TutorEdit edit = np.parse(hintID, requestID, tutor, assignmentID, toSource, record);
 			edit.priority = priority;
 			edits.add(assignmentID, edit);
 		}
@@ -420,34 +510,49 @@ public class TutorEdits {
 	}
 
 	public static class TutorEdit {
-		public final int hintID, rowID;
+		public final int hintID;
+		// TODO: Make this just a string
+		public final int requestID;
+		public final String requestIDString;
 		public final String tutor, assignmentID;
 		public final Node from, to;
-		public final String toXML;
+		public final String toSource;
 		public final List<EditHint> edits;
 
 		public Validity validity;
 		public Priority priority;
 
-		public TutorEdit(int hintID, int rowID, String tutor, String assignmentID, Snapshot from,
-				Snapshot to, String toXML) {
-			this(hintID, rowID, tutor, assignmentID, Agreement.toTree(from), Agreement.toTree(to),
-					toXML);
+		public TutorEdit(int hintID, String requestID, String tutor, String assignmentID, Node from,
+				Node to, String toSource) {
+			this(hintID, requestID, tutor, assignmentID, from, to, toSource,
+					Agreement.findEdits(from.copy(), to.copy(), true));
 		}
 
-		public TutorEdit(int hintID, int rowID, String tutor, String assignmentID, Node from,
-				Node to, String toXML) {
+		public TutorEdit(int hintID, String requestID, String tutor, String assignmentID, Node from,
+				Node to, String toSource, List<EditHint> edits) {
 			this.hintID = hintID;
-			this.rowID = rowID;
+			this.requestIDString = requestID;
+			this.requestID = parseRequestID(requestID);
 			this.tutor = tutor;
 			this.assignmentID = assignmentID;
 			this.from = from;
 			this.to = to;
-			this.toXML = toXML;
-			edits = Agreement.findEdits(this.from.copy(), this.to.copy(), true);
+			this.toSource = toSource;
+			this.edits = edits;
 			if (edits.size() == 0 && this.from.equals(this.to)) {
 				System.out.println("No edits for " + this);
 			}
+		}
+
+		private static int parseRequestID(String requestID) {
+			try {
+				return Integer.parseInt(requestID);
+			} catch (NumberFormatException e) { }
+			if (requestID.length() > 8) requestID = requestID.substring(0, 8);
+			try {
+				return Integer.parseInt(requestID, 16);
+			} catch (NumberFormatException e) { }
+			return requestID.hashCode();
 		}
 
 		public boolean verify() {
@@ -460,7 +565,7 @@ public class TutorEdits {
 
 		@Override
 		public String toString() {
-			return String.format("%s, row #%d, hint #%d", tutor, rowID, hintID);
+			return String.format("%s, request %s, hint #%d", tutor, requestIDString, hintID);
 		}
 
 		private String editsString(boolean useANSI) {
@@ -482,16 +587,19 @@ public class TutorEdits {
 				boolean addPriority, boolean addDate) {
 			return String.format("INSERT INTO `%s` (`hid`, `userID`, `rowID`, `trueAssignmentID`, "
 					+ "`priority`, `hintCode`, `hintEdits`, `updatedTime`) "
-					+ "VALUES (%d, '%s', %d, '%s', %s, '%s', '%s', %s);",
-					table, hintID + hintIDOffset, user, rowID, assignmentID,
+					+ "VALUES (%d, '%s', %s, '%s', %s, '%s', '%s', %s);",
+					table, hintID + hintIDOffset, user,
+					String.valueOf(requestID).equals(requestIDString) ?
+							requestIDString : ("'" + requestIDString + "'"),
+					assignmentID,
 					addPriority ? String.valueOf(priority.value) : "NULL",
-					StringEscapeUtils.escapeSql(toXML),
+					StringEscapeUtils.escapeSql(toSource),
 					StringEscapeUtils.escapeSql(HintJSON.hintArray(edits).toString()),
 					addDate ? "NOW()" : "NULL");
 		}
 
 		public HintOutcome toOutcome() {
-			return new HintOutcome(to, rowID, priority == null ? 0 : (1.0 / priority.value), edits);
+			return new HintOutcome(to, requestID, priority == null ? 0 : (1.0 / priority.value), edits);
 		}
 	}
 }

@@ -83,7 +83,7 @@ public class RateHints {
 		}
 	}
 
-	public static Node normalizeNewValues(Node from, Node to) {
+	public static Node normalizeNewValuesTo(Node from, Node to, boolean prune) {
 		// We don't differentiate values by type, since multiple types can share values (e.g.
 		// varDecs and vars)
 		Set<String> usedValues = new HashSet<>();
@@ -97,7 +97,7 @@ public class RateHints {
 			if (node.index() == -1) continue;
 			// If this node has a non-generated ID but has no match in from (or it's been
 			// relabeled and has a new type), it's a new node, so prune its children
-			if (node.id != null && !node.id.startsWith(Agreement.GEN_ID_PREFIX)) {
+			if (prune && node.id != null && !node.id.startsWith(Agreement.GEN_ID_PREFIX)) {
 				Node fromMatch = from.searchForNodeWithID(node.id);
 				if (fromMatch == null || !fromMatch.hasType(node.type())) {
 					// TODO: Make this configurable
@@ -114,7 +114,7 @@ public class RateHints {
 				node.children.clear();
 			}
 			// TODO: Make this configurable
-			if (node.children.size() == 0 && node.hasType("script")) {
+			if (prune && node.children.size() == 0 && node.hasType("script")) {
 				node.parent.children.remove(node.index());
 			}
 		}
@@ -124,9 +124,9 @@ public class RateHints {
 	public static TutorEdit findMatchingEdit(List<TutorEdit> validEdits, HintOutcome outcome) {
 		if (validEdits.isEmpty()) return null;
 		// TODO: supersets, subsets of edits
-		Node outcomeNode = normalizeNewValues(validEdits.get(0).from, outcome.outcome);
+		Node outcomeNode = normalizeNewValuesTo(validEdits.get(0).from, outcome.outcome, true);
 		for (TutorEdit tutorEdit : validEdits) {
-			Node tutorOutcomeNode = normalizeNewValues(tutorEdit.from, tutorEdit.to);
+			Node tutorOutcomeNode = normalizeNewValuesTo(tutorEdit.from, tutorEdit.to, true);
 			if (outcomeNode.equals(tutorOutcomeNode)) return tutorEdit;
 
 			if (outcome.outcome.equals(tutorEdit.to)) {
@@ -228,13 +228,13 @@ public class RateHints {
 			for (String assignment : consensusEdits.keySet()) {
 				List<TutorEdit> list = consensusEdits.get(assignment);
 				ListMap<Integer, TutorEdit> snapshotMap = new ListMap<>();
-				list.forEach(edit -> snapshotMap.add(edit.rowID, edit));
+				list.forEach(edit -> snapshotMap.add(edit.requestID, edit));
 				map.put(assignment, snapshotMap);
 
 				Set<Integer> addedIDs = new HashSet<>();
 				list.forEach(edit -> {
-					if (addedIDs.add(edit.rowID)) {
-						hintRequests.add(new HintRequest(edit.rowID, assignment, edit.from));
+					if (addedIDs.add(edit.requestID)) {
+						hintRequests.add(new HintRequest(edit.requestID, assignment, edit.from));
 					}
 				});
 			}
