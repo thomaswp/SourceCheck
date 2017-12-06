@@ -259,6 +259,7 @@ public class TutorEdits {
 
 				List<Node> keys = new ArrayList<>(givers.keySet());
 				// Sort by how many raters gave the hint
+				// TODO: sort by hint ID instead
 				keys.sort((n1, n2) -> -Integer.compare(
 						givers.get(n1).size(), givers.get(n2).size()));
 				for (Node to : keys) {
