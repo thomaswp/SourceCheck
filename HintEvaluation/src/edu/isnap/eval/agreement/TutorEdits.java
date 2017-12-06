@@ -304,7 +304,8 @@ public class TutorEdits {
 						spreadsheet.put("Hint ID", firstEdit.hintID + compareEditsHintOffset);
 
 						spreadsheet.put("Valid (0-1)", edit == null ? null : 1);
-						spreadsheet.put("Priority (1-3)", edit == null ? null : edit.priority);
+						spreadsheet.put("Priority (1-3)",
+								edit == null ? null : edit.priority.value);
 
 						spreadsheet.put("Hint", editsStringNoANSI);
 					}
