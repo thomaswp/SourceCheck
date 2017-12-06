@@ -2,9 +2,27 @@ package edu.isnap.eval.python;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.HintConfig;
+import edu.isnap.eval.agreement.RateHints.RatingConfig;
 
 public class PythonHintConfig extends HintConfig {
 	private static final long serialVersionUID = 1L;
+
+	public static RatingConfig PythongRatingConfig = new RatingConfig() {
+		@Override
+		public boolean useSpecificNumericLiterals() {
+			return true;
+		}
+
+		@Override
+		public boolean trimIfParentIsAdded(String type) {
+			return false;
+		}
+
+		@Override
+		public boolean trimIfChildless(String type) {
+			return false;
+		}
+	};
 
 	public PythonHintConfig() {
 		preprocessSolutions = false;

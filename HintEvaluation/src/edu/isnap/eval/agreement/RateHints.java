@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.edit.EditHint;
@@ -41,7 +42,7 @@ public class RateHints {
 
 				for (HintOutcome hint : hints) {
 					HintRating rating = new HintRating(hint);
-					TutorEdit exactMatch = findMatchingEdit(validEdits, hint);
+					TutorEdit exactMatch = findMatchingEdit(validEdits, hint, hintSet.config);
 
 					rating.validity = Validity.NoTutors;
 					if (exactMatch != null) {
@@ -83,7 +84,21 @@ public class RateHints {
 		}
 	}
 
-	public static Node normalizeNewValuesTo(Node from, Node to, boolean prune) {
+	private static Node pruneImmediateChildren(Node node, Predicate<String> condition) {
+		for (int i = 0; i < node.children.size(); i++) {
+			Node child = node.children.get(i);
+			if (condition.test(child.type())) {
+				pruneImmediateChildren(child, condition);
+				if (child.children.isEmpty()) {
+					node.children.remove(i--);
+				}
+			}
+		}
+		return node;
+	}
+
+	public static Node normalizeNewValuesTo(Node from, Node to, RatingConfig config,
+			boolean prune) {
 		// We don't differentiate values by type, since multiple types can share values (e.g.
 		// varDecs and vars)
 		Set<String> usedValues = new HashSet<>();
@@ -100,33 +115,44 @@ public class RateHints {
 			if (prune && node.id != null && !node.id.startsWith(Agreement.GEN_ID_PREFIX)) {
 				Node fromMatch = from.searchForNodeWithID(node.id);
 				if (fromMatch == null || !fromMatch.hasType(node.type())) {
-					// TODO: Make this configurable
-					Agreement.pruneImmediateChildren(node);
+					pruneImmediateChildren(node, config::trimIfParentIsAdded);
 				}
 			}
 			if (node.value != null && !usedValues.contains(node.value)) {
-				Node parent = node.parent;
-				Node replacement = node.constructNode(parent, node.type(), "[NEW_VALUE]", node.id);
-				int index = node.index();
-				parent.children.remove(index);
-				parent.children.add(index, replacement);
-				replacement.children.addAll(node.children);
-				node.children.clear();
+				boolean trim = true;
+				if (config.useSpecificNumericLiterals()) {
+					try {
+						Double.parseDouble(node.value);
+						trim = false;
+					} catch (NumberFormatException e) { }
+				}
+				if (trim) {
+					Node parent = node.parent;
+					Node replacement = node.constructNode(
+							parent, node.type(), "[NEW_VALUE]", node.id);
+					int index = node.index();
+					parent.children.remove(index);
+					parent.children.add(index, replacement);
+					replacement.children.addAll(node.children);
+					node.children.clear();
+				}
 			}
-			// TODO: Make this configurable
-			if (prune && node.children.size() == 0 && node.hasType("script")) {
+			if (prune && node.children.size() == 0 && config.trimIfChildless(node.type())) {
 				node.parent.children.remove(node.index());
 			}
 		}
 		return to;
 	}
 
-	public static TutorEdit findMatchingEdit(List<TutorEdit> validEdits, HintOutcome outcome) {
+	public static TutorEdit findMatchingEdit(List<TutorEdit> validEdits, HintOutcome outcome,
+			RatingConfig config) {
 		if (validEdits.isEmpty()) return null;
 		// TODO: supersets, subsets of edits
-		Node outcomeNode = normalizeNewValuesTo(validEdits.get(0).from, outcome.outcome, true);
+		Node outcomeNode = normalizeNewValuesTo(validEdits.get(0).from, outcome.outcome,
+				config, true);
 		for (TutorEdit tutorEdit : validEdits) {
-			Node tutorOutcomeNode = normalizeNewValuesTo(tutorEdit.from, tutorEdit.to, true);
+			Node tutorOutcomeNode = normalizeNewValuesTo(tutorEdit.from, tutorEdit.to,
+					config, true);
 			if (outcomeNode.equals(tutorOutcomeNode)) return tutorEdit;
 
 			if (outcome.outcome.equals(tutorEdit.to)) {
@@ -159,9 +185,11 @@ public class RateHints {
 
 	public static class HintSet extends ListMap<Integer, HintOutcome> {
 		public final String name;
+		public final RatingConfig config;
 
-		public HintSet(String name) {
+		public HintSet(String name, RatingConfig config) {
 			this.name = name;
+			this.config = config;
 		}
 	}
 
@@ -252,5 +280,11 @@ public class RateHints {
 			this.assignmentID = assignmentID;
 			this.code = code;
 		}
+	}
+
+	public abstract static class RatingConfig {
+		public abstract boolean useSpecificNumericLiterals();
+		public abstract boolean trimIfChildless(String type);
+		public abstract boolean trimIfParentIsAdded(String type);
 	}
 }

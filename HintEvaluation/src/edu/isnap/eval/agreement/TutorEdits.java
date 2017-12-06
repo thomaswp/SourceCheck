@@ -39,6 +39,7 @@ import edu.isnap.dataset.Dataset;
 import edu.isnap.eval.agreement.RateHints.GoldStandard;
 import edu.isnap.eval.agreement.RateHints.HintOutcome;
 import edu.isnap.eval.agreement.RateHints.HintSet;
+import edu.isnap.eval.agreement.RateHints.RatingConfig;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.eval.python.PythonHintConfig;
 import edu.isnap.eval.python.PythonImport.PythonNode;
@@ -82,7 +83,7 @@ public class TutorEdits {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 //		compareHints(Fall2016.instance);
-		compareHints("../data/itap");
+		compareHintsPython("../data/itap");
 
 //		verifyHints(Fall2016.instance);
 
@@ -120,8 +121,8 @@ public class TutorEdits {
 //		configs[2].useRulesToFilter = true; configs[2].valuesPolicy = ValuesPolicy.MappedOnly;
 
 		for (int i = 0; i < configs.length; i++) {
-			HighlightHintSet hintSet = new HighlightHintSet(trainingDataset.getName(),
-					trainingDataset, standard.getHintRequests(), configs[i]);
+			HighlightHintSet hintSet = new HighlightHintSet(trainingDataset.getName(), configs[i],
+					trainingDataset, standard.getHintRequests());
 //			RateHints.rate(standard, hintSet);
 			hintSet.toTutorEdits().forEach(e -> System.out.println(
 					e.toSQLInsert("handmade_hints", "highlight", 20000, false, true)));
@@ -137,8 +138,8 @@ public class TutorEdits {
 		int offset = 20000;
 
 		Spreadsheet spreadsheet = new Spreadsheet();
-		HighlightHintSet hintSet = new HighlightHintSet(trainingDataset.getName(),
-				trainingDataset, standard.getHintRequests(), config);
+		HighlightHintSet hintSet = new HighlightHintSet(trainingDataset.getName(), config,
+				trainingDataset, standard.getHintRequests());
 		hintSet.toTutorEdits().forEach(edit -> {
 			System.out.println(edit.toSQLInsert(
 					"handmade_hints", "highlight", offset, false, true));
@@ -211,20 +212,20 @@ public class TutorEdits {
 
 	private final static int compareEditsHintOffset = 10000;
 
-	public static void compareHints(Dataset dataset) throws FileNotFoundException, IOException {
+	public static void compareHintsSnap(Dataset dataset) throws FileNotFoundException, IOException {
 		String writeDir = String.format("%s/tutor-hints/%d/", dataset.analysisDir(),
 				compareEditsHintOffset);
-		compareHints(readTutorEditsSnap(dataset), writeDir);
+		compareHints(readTutorEditsSnap(dataset), writeDir, HighlightHintSet.SnapRatingConfig);
 	}
 
-	public static void compareHints(String dir)
+	public static void compareHintsPython(String dir)
 			throws FileNotFoundException, IOException {
 		String writeDir = String.format("%s/analysis/tutor-hints/%d/", dir, compareEditsHintOffset);
-		compareHints(readTutorEditsPython(dir), writeDir);
+		compareHints(readTutorEditsPython(dir), writeDir, PythonHintConfig.PythongRatingConfig);
 	}
 
-	public static void compareHints(ListMap<String, TutorEdit> assignmentMap, String writeDir)
-			throws FileNotFoundException, IOException {
+	public static void compareHints(ListMap<String, TutorEdit> assignmentMap, String writeDir,
+			RatingConfig config) throws FileNotFoundException, IOException {
 
 		Set<String> tutors =  assignmentMap.values().stream()
 				.flatMap(List::stream).map(e -> e.tutor)
@@ -240,16 +241,17 @@ public class TutorEdits {
 			edits = edits.stream()
 					.filter(e -> !"consensus".equals(e.tutor))
 					.collect(Collectors.toList());
-			Set<Integer> rowIDs = new TreeSet<>(edits.stream().map(e -> e.requestID)
+			Set<String> requestIDs = new TreeSet<>(edits.stream().map(e -> e.requestIDString)
 					.collect(Collectors.toSet()));
 
-			for (Integer rowID : rowIDs) {
-				System.out.println("-------- " + rowID + " --------");
+			for (String requestID : requestIDs) {
+				System.out.println("-------- " + requestID + " --------");
 
 				ListMap<Node, TutorEdit> givers = new ListMap<>();
 				edits.stream()
-				.filter(e -> e.requestID == rowID)
-				.forEach(e -> givers.add(RateHints.normalizeNewValuesTo(e.from, e.to, false), e));
+				.filter(e -> e.requestIDString.equals(requestID))
+				.forEach(e -> givers.add(
+						RateHints.normalizeNewValuesTo(e.from, e.to, config, false), e));
 
 				Node from = givers.values().stream().findFirst().get().get(0).from;
 				String fromPP = from.prettyPrint(true);
@@ -260,7 +262,7 @@ public class TutorEdits {
 				keys.sort((n1, n2) -> -Integer.compare(
 						givers.get(n1).size(), givers.get(n2).size()));
 				for (Node to : keys) {
-//					System.out.println(Diff.diff(fromPP, to.prettyPrint(true), 1));
+					System.out.println(Diff.diff(fromPP, to.prettyPrint(true), 1));
 					List<TutorEdit> tutorEdits = givers.get(to);
 					TutorEdit firstEdit = tutorEdits.get(0);
 					String editsString = firstEdit.editsString(true);
@@ -271,6 +273,7 @@ public class TutorEdits {
 						System.out.printf("  %d/%s: #%d\n",
 								tutorEdit.priority.value, tutorEdit.tutor, tutorEdit.hintID);
 					}
+					System.out.println("=======");
 
 					sql.append(firstEdit.toSQLInsert(
 							"handmade_hints", "consensus", compareEditsHintOffset,
@@ -326,7 +329,8 @@ public class TutorEdits {
 				if (edit.tutor.equals("consensus")) continue;
 				HintSet set = hintSets.get(edit.tutor);
 				if (set == null) {
-					hintSets.put(edit.tutor, set = new HintSet(edit.tutor));
+					hintSets.put(edit.tutor,
+							set = new HintSet(edit.tutor, HighlightHintSet.SnapRatingConfig));
 				}
 				set.add(edit.requestID, edit.toOutcome());
 			}

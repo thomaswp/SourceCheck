@@ -124,7 +124,7 @@ public class Agreement {
 
 	// Nodes that might get auto-added as parameters to added nodes, which can be pruned away if
 	// they have no children to make comparison between trees simpler
-	private final static HashSet<String> prunable = new HashSet<>();
+	final static HashSet<String> prunable = new HashSet<>();
 	static {
 		for (String c : new String[] {
 				"literal",

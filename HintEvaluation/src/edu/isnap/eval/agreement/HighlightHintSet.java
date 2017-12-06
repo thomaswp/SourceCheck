@@ -26,6 +26,7 @@ import edu.isnap.dataset.Dataset;
 import edu.isnap.eval.agreement.RateHints.HintOutcome;
 import edu.isnap.eval.agreement.RateHints.HintRequest;
 import edu.isnap.eval.agreement.RateHints.HintSet;
+import edu.isnap.eval.agreement.RateHints.RatingConfig;
 import edu.isnap.eval.agreement.TutorEdits.TutorEdit;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.parser.Store.Mode;
@@ -35,9 +36,27 @@ public class HighlightHintSet extends HintSet {
 	private final Dataset dataset;
 	private final HintConfig config;
 
-	public HighlightHintSet(String name, Dataset dataset, List<HintRequest> requests,
-			HintConfig config) {
-		super(name);
+	public final static RatingConfig SnapRatingConfig = new RatingConfig() {
+		@Override
+		public boolean useSpecificNumericLiterals() {
+			return false;
+		}
+
+		@Override
+		public boolean trimIfChildless(String type) {
+			return "script".equals(type);
+		}
+
+		@Override
+		public boolean trimIfParentIsAdded(String type) {
+			return Agreement.prunable.contains(type);
+		}
+
+	};
+
+	public HighlightHintSet(String name, HintConfig config, Dataset dataset,
+			List<HintRequest> requests) {
+		super(name, SnapRatingConfig);
 		this.dataset = dataset;
 		this.config = config;
 		addHints(requests);
