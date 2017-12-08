@@ -100,7 +100,7 @@ public class HighlightHintSet extends HintSet {
 				double priority = hint.priority.consensus();
 //				if (priority < 0.35) continue;
 				HintOutcome outcome = new HighlightOutcome(request.code, request.assignmentID,
-						to, request.id, priority, edits);
+						to, request.id, priority);
 				add(request.id, outcome);
 			}
 		}
@@ -160,8 +160,8 @@ public class HighlightHintSet extends HintSet {
 		final String assignmentID;
 
 		public HighlightOutcome(Node from, String assignment, Node outcome, int snapshotID,
-				double weight, List<EditHint> edits) {
-			super(outcome, snapshotID, weight, edits);
+				double weight) {
+			super(outcome, snapshotID, weight);
 			this.from = from;
 			this.assignmentID = assignment;
 		}

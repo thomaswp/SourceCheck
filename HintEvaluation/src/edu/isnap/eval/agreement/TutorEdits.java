@@ -123,9 +123,9 @@ public class TutorEdits {
 		for (int i = 0; i < configs.length; i++) {
 			HighlightHintSet hintSet = new HighlightHintSet(trainingDataset.getName(), configs[i],
 					trainingDataset, standard.getHintRequests());
-//			RateHints.rate(standard, hintSet);
-			hintSet.toTutorEdits().forEach(e -> System.out.println(
-					e.toSQLInsert("handmade_hints", "highlight", 20000, false, true)));
+			RateHints.rate(standard, hintSet);
+//			hintSet.toTutorEdits().forEach(e -> System.out.println(
+//					e.toSQLInsert("handmade_hints", "highlight", 20000, false, true)));
 		}
 	}
 
@@ -605,7 +605,7 @@ public class TutorEdits {
 		}
 
 		public HintOutcome toOutcome() {
-			return new HintOutcome(to, requestID, priority == null ? 0 : (1.0 / priority.value), edits);
+			return new HintOutcome(to, requestID, priority == null ? 0 : (1.0 / priority.value));
 		}
 	}
 }

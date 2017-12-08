@@ -9,7 +9,6 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.hint.edit.EditHint;
 import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.eval.agreement.TutorEdits.Priority;
@@ -30,6 +29,11 @@ public class RateHints {
 				if (validEdits.size() == 0) continue;
 				List<HintOutcome> hints = hintSet.get(snapshotID);
 
+//				if (snapshotID == 145234) {
+//					validEdits.forEach(e -> System.out.println( e.to.prettyPrint(true)));
+//					System.out.println("!");
+//				}
+
 				// TODO: do both this and not this
 //				double maxWeight = hints.stream().mapToDouble(h -> h.weight).max().orElse(0);
 //				hints = hints.stream().
@@ -41,6 +45,9 @@ public class RateHints {
 				double[] weightedValidity = new double[3];
 
 				for (HintOutcome hint : hints) {
+//					if (hints.size() > 8 && hint == hints.get(8)) {
+//						System.out.println("!!");
+//					}
 					HintRating rating = new HintRating(hint);
 					TutorEdit exactMatch = findMatchingEdit(validEdits, hint, hintSet.config);
 
@@ -197,21 +204,14 @@ public class RateHints {
 		public final Node outcome;
 		public final int snapshotID;
 		public final double weight;
-		public final List<EditHint> edits;
 
-		public HintOutcome(Node outcome, int snapshotID, double weight, List<EditHint> edits) {
+		public HintOutcome(Node outcome, int snapshotID, double weight) {
 			this.outcome = outcome;
 			this.snapshotID = snapshotID;
 			this.weight = weight;
-			this.edits = edits;
-			if (weight <= 0) {
-				throw new IllegalArgumentException("All weights must be positive");
+			if (weight <= 0 || Double.isNaN(weight)) {
+				throw new IllegalArgumentException("All weights must be positive: " + weight);
 			}
-		}
-
-		@Override
-		public String toString() {
-			return snapshotID + ":\n" + TutorEdit.editsToString(edits, false);
 		}
 	}
 
