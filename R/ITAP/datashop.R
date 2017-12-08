@@ -31,6 +31,13 @@ problems <- names(requestsPerProblem[requestsPerProblem >= 8])
 # problems <- problems[problems != "helloWorld"]
 
 selected <- selected[selected$problem %in% problems,]
+
+# We remove whitespace from the code and merge again to get ride of duplicates
+# the differ only by whitespace. We do this now (instead of before selecting problems)
+# because I already settled on our problems before I wrote this
+selected$codeNoWS <- gsub("\\s|\\\\t|\\\\n", "", selected$code)
+selected <- ddply(selected, c("problem", "codeNoWS"), colwise(first))
+
 write.csv(selected, "data/selected-requests.csv", row.names = F)
 
 writeSQL <- function(rows, users, path) {
@@ -44,7 +51,7 @@ writeSQL <- function(rows, users, path) {
   }
   sink()
 }
-writeSQL(selected, c("ITAP"), "data/selected-requests")
+writeSQL(selected, c("twprice", "vmcatete", "nalytle"), "data/selected-requests.sql")
 
 set.seed(1234)
 testReqs <- filtered[!(filtered$id %in% selected$id) & filtered$problem %in% problems,]
