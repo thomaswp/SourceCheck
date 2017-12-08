@@ -53,6 +53,11 @@ writeSQL <- function(rows, users, path) {
 }
 writeSQL(selected, c("twprice", "vmcatete", "nalytle"), "data/selected-requests.sql")
 
+history <- ddply(itap, c("`Anon Student Id`", "`Problem Name`", "`Time`", "`Input`", "`Feedback Text`"), summarize, id=first(`Transaction Id`), count=length(Time), row=first(`Row`))
+names(history) <- c("sid", "problem", "time", "code", "hint", "id", "count", "row")
+history <- history[history$problem %in% problems,]
+write.csv(history, "data/history.csv", na="NULL")
+
 set.seed(1234)
 testReqs <- filtered[!(filtered$id %in% selected$id) & filtered$problem %in% problems,]
 testReqs <- ddply(testReqs, "problem", summarize, i=sample(1:length(time), min(3, length(time))), sid=sid[i], code=code[i], hint=hint[i], id=id[i])
