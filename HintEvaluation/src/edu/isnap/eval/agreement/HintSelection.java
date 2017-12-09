@@ -222,7 +222,7 @@ public class HintSelection {
 			throws IOException {
 		for (HintRequest request : selected) {
 			AttemptAction action = request.action;
-			JSONObject json = JsonAST.toJSON(action.lastSnapshot);
+			JSONObject json = JsonAST.toJSON(action.lastSnapshot, true);
 			JsonAST.write(String.format("%s/hint-selection/%s/%s/%d.json",
 					assignment.dataset.exportDir(), folder, assignment.name, action.id),
 					json.toString(2));

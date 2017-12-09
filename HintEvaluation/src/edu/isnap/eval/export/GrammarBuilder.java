@@ -89,7 +89,7 @@ public class GrammarBuilder {
 		for (Assignment assignment : assignments) {
 			assignment.load(Mode.Use, true).values().stream()
 			.flatMap(attempt -> attempt.rows.rows.stream())
-			.map(action ->  JsonAST.toAST(action.snapshot))
+			.map(action ->  JsonAST.toAST(action.snapshot, true))
 			.forEach(node -> builder.add(node));
 		}
 		return builder;

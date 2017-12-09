@@ -56,11 +56,15 @@ public class Sprite extends Code implements IHasID {
 		}
 	}
 
-	private List<Script> getScripts(boolean canon) {
+	public static List<Script> getScripts(List<Script> scripts, boolean canon) {
 		if (!canon || scripts.size() == 0) return scripts;
 		List<Script> list = new ArrayList<>(scripts);
 		Collections.sort(list);
 		return list;
+	}
+
+	private List<Script> getScripts(boolean canon) {
+		return getScripts(scripts, canon);
 	}
 
 	@Override
@@ -69,8 +73,8 @@ public class Sprite extends Code implements IHasID {
 		.add(name)
 		.indent()
 		.add(variables.size() == 0 ? null : ("variables: " + variables.toString() + "\n"))
-		.add(blocks.getWithEdits(true))
-		.add(getScripts(true))
+		.add(blocks.getWithEdits(canon))
+		.add(getScripts(canon))
 		.end();
 	}
 
@@ -80,7 +84,7 @@ public class Sprite extends Code implements IHasID {
 		addVariables(ac, variables);
 		ac.add(scripts);
 		if (scripts != this.scripts) ac.add(new Reorder(this.scripts, scripts));
-		ac.add(blocks.getWithEdits(canon));
+		ac.add(blocks.getWithEdits(true));
 	}
 
 	@Override

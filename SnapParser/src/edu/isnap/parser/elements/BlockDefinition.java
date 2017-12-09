@@ -167,7 +167,7 @@ public class BlockDefinition extends Code implements IHasID {
 		.ifNotCanon()
 		.add("scripts:")
 		.indent()
-		.add(scripts)
+		.add(Sprite.getScripts(scripts, canon))
 		.close()
 		.endIf()
 		.close()

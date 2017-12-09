@@ -62,7 +62,7 @@ public class JsonAST {
 //			break;
 //		}
 
-		exportDataset(Fall2016.instance, false, Fall2016.LightsCameraAction);
+		exportDataset(Fall2016.instance, true, false, Fall2016.LightsCameraAction);
 //		exportAssignment(Fall2016.PolygonMaker);
 
 //		for (Assignment assignment : BJCSolutions2017.All) {
@@ -71,28 +71,30 @@ public class JsonAST {
 //		}
 	}
 
-	protected static void exportDataset(Dataset dataset, boolean solutionsOnly,
+	protected static void exportDataset(Dataset dataset, boolean canon, boolean solutionsOnly,
 			Assignment... exclude) throws FileNotFoundException {
 		values.clear();
 		for (Assignment assignment : dataset.all()) {
 			if (!Arrays.asList(exclude).contains(assignment)) {
 				if (solutionsOnly) {
-					exportAssignmentSolutions(assignment);
+					exportAssignmentSolutions(assignment, canon);
 				} else {
-					exportAllAssignmentTraces(assignment);
+					exportAllAssignmentTraces(assignment, canon);
 				}
 			}
 		}
 		String dir = solutionsOnly ? "all-solutions" : "all-traces";
+		if (canon) dir += "-canon";
 		write(dataset.dataDir + "/export/" + dir + "/values.txt", String.join("\n", values));
 	}
 
-	public static void exportAllAssignmentTraces(Assignment assignment)
+	public static void exportAllAssignmentTraces(Assignment assignment, boolean canon)
 			throws FileNotFoundException {
-		exportAssignmentTraces(assignment, "all-traces", a -> true, a -> action -> true, a -> a.id);
+		exportAssignmentTraces(assignment, canon, "all-traces" + (canon ? "-canon" : ""),
+				a -> true, a -> action -> true, a -> a.id);
 	}
 
-	public static void exportAssignmentTraces(Assignment assignment, String folder,
+	public static void exportAssignmentTraces(Assignment assignment, boolean canon, String folder,
 			Predicate<AssignmentAttempt> attemptFilter,
 			Function<AssignmentAttempt, Predicate<AttemptAction>> actionFilter,
 			Function<AssignmentAttempt, String> namer)
@@ -110,7 +112,7 @@ public class JsonAST {
 				if (!actionFilter.apply(attempt).test(action)) continue;
 				if (lastSnapshot == action.lastSnapshot) continue;
 				lastSnapshot = action.lastSnapshot;
-				String json = toJSON(action.lastSnapshot).toString(2);
+				String json = toJSON(action.lastSnapshot, canon).toString(2);
 				if (json.equals(lastJSON)) continue;
 				lastJSON = json;
 				write(String.format("%s/%s/%05d-%05d.json",
@@ -124,17 +126,17 @@ public class JsonAST {
 		}
 	}
 
-	protected static void exportAssignmentSolutions(Assignment assignment)
+	protected static void exportAssignmentSolutions(Assignment assignment, boolean canon)
 			throws FileNotFoundException {
 		for (AssignmentAttempt attempt : assignment.load(
 				Mode.Use, true, true, new SnapParser.LikelySubmittedOnly()).values()) {
-			exportSolution(assignment, attempt.submittedSnapshot);
+			exportSolution(assignment, attempt.submittedSnapshot, canon);
 		}
 	}
 
-	protected static void exportSolution(Assignment assignment, Snapshot snapshot)
+	protected static void exportSolution(Assignment assignment, Snapshot snapshot, boolean canon)
 			throws FileNotFoundException {
-		JSONObject json = toJSON(snapshot);
+		JSONObject json = toJSON(snapshot, canon);
 		String jsonString = json.toString(2);
 //		System.out.println(jsonString);
 		String basePath = assignment.dir("export/all-solutions") + "/" + snapshot.guid;
@@ -150,13 +152,11 @@ public class JsonAST {
 		writer.close();
 	}
 
-	public static JSONObject toJSON(Code code) {
-		return toAST(code).toJSON();
+	public static JSONObject toJSON(Code code, boolean canon) {
+		return toAST(code, canon).toJSON();
 	}
 
-	public static ASTNode toAST(Code code) {
-
-
+	public static ASTNode toAST(Code code, boolean canon) {
 		String type = code.type();
 		String value = code.value();
 		String id = code instanceof IHasID ? ((IHasID) code).getID() : null;
@@ -183,7 +183,7 @@ public class JsonAST {
 
 		ASTNode node = new ASTNode(type, value, id);
 
-		code.addChildren(false, new Accumulator() {
+		code.addChildren(canon, new Accumulator() {
 			@Override
 			public void add(String type, String value) {
 				node.addChild(new ASTNode(type, value, null));
@@ -203,7 +203,7 @@ public class JsonAST {
 					// Skip imported block definitions
 					if (((BlockDefinition) code).isImported) return;
 				}
-				node.addChild(toAST(code));
+				node.addChild(toAST(code, canon));
 			}
 		});
 

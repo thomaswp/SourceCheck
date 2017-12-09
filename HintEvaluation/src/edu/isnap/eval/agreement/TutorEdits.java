@@ -36,6 +36,8 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
+import edu.isnap.datasets.Fall2016;
+import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.agreement.RateHints.GoldStandard;
 import edu.isnap.eval.agreement.RateHints.HintOutcome;
 import edu.isnap.eval.agreement.RateHints.HintSet;
@@ -44,6 +46,8 @@ import edu.isnap.eval.export.JsonAST;
 import edu.isnap.eval.python.PythonHintConfig;
 import edu.isnap.eval.python.PythonImport.PythonNode;
 import edu.isnap.hint.SnapHintConfig;
+import edu.isnap.hint.util.SimpleNodeBuilder;
+import edu.isnap.hint.util.SnapNode;
 import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.Snapshot;
@@ -83,7 +87,7 @@ public class TutorEdits {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 //		compareHints(Fall2016.instance);
-		compareHintsPython("../data/itap");
+//		compareHintsPython("../data/itap");
 
 //		verifyHints(Fall2016.instance);
 
@@ -93,10 +97,10 @@ public class TutorEdits {
 //			RateHints.rate(standard, hintSet);
 //		}
 
-//		System.out.println("Fall");
-//		testConsensus(Fall2016.instance, Spring2017.instance);
-//		System.out.println("Spring");
-//		testConsensus(Spring2017.instance, Fall2016.instance);
+		System.out.println("Fall");
+		testConsensus(Fall2016.instance, Spring2017.instance);
+		System.out.println("Spring");
+		testConsensus(Spring2017.instance, Fall2016.instance);
 
 //		highlightSQL(Fall2016.instance, Spring2017.instance);
 //		highlightSQL(Spring2017.instance, Fall2016.instance);
@@ -107,8 +111,7 @@ public class TutorEdits {
 //				"hint-eval", Fall2016.Squiral, Fall2016.GuessingGame1);
 	}
 
-	@SuppressWarnings("unused")
-	private static void testConsensus(Dataset testDataset, Dataset trainingDataset)
+	protected static void testConsensus(Dataset testDataset, Dataset trainingDataset)
 			throws FileNotFoundException, IOException {
 		RuleSet.trace = NullStream.instance;
 		GoldStandard standard = readConsensus(testDataset, "consensus-gg-sq.csv");
@@ -183,14 +186,14 @@ public class TutorEdits {
 				}
 				return !stopped.contains(attempt.id);
 			};
-			JsonAST.exportAssignmentTraces(assignment, folder + "/requests",
+			JsonAST.exportAssignmentTraces(assignment, true, folder + "/requests",
 					attempt -> attempt.rows.rows.stream().anyMatch(a -> ids.contains(a.id)),
 					actionFilter,
 					attempt -> attempt.rows.rows.stream()
 									.filter(a -> ids.contains(a.id))
 									.map(a -> String.valueOf(a.id))
 									.findAny().orElse(attempt.id));
-			JsonAST.exportAssignmentTraces(assignment, folder + "/training",
+			JsonAST.exportAssignmentTraces(assignment, true, folder + "/training",
 					attempt -> !stopped.contains(attempt.id) &&
 						attempt.grade != null && attempt.grade.average() == 1,
 					attempt -> action -> true,
@@ -414,7 +417,21 @@ public class TutorEdits {
 
 			Snapshot fromS = hintActionMap.get(requestNumber).lastSnapshot;
 			Snapshot toS = Snapshot.parse(fromS.name, toSource);
-			Node from = Agreement.toTree(fromS), to = Agreement.toTree(toS);
+
+			if (SimpleNodeBuilder.toTree(fromS, true).equals(SimpleNodeBuilder.toTree(toS, true))) {
+				System.out.printf("Node edits for %s, request %s, hint #%d\n",
+						tutor, requestID, hintID);
+				return null;
+			}
+
+			Node from = JsonAST.toAST(fromS, false).toNode(SnapNode::new);
+			Node to = JsonAST.toAST(toS, false).toNode(SnapNode::new);
+
+			if (from.equals(to)) {
+				// If the edit involves only changing literal values, we still exclude it, since the
+				// training dataset doesn't include these
+				return null;
+			}
 
 			return new TutorEdit(hintID, requestID, tutor, assignmentID, from, to, toSource);
 		});
@@ -446,16 +463,7 @@ public class TutorEdits {
 				System.out.println("Error reading hint: " + hintID);
 				throw e;
 			}
-			HintConfig config = new PythonHintConfig();
-			List<Node> solutions = Collections.singletonList(to);
-			// TODO: Find a better way to parse/read the edits
-			// This shouldn't be strictly necessary to compare edits, since it should be using only
-			// the to Node for comparison, but it still seems important.
-			HintHighlighter highlighter = new HintHighlighter(solutions, config);
-			highlighter.trace = NullStream.instance;
-			List<EditHint> edits = highlighter.highlight(from);
-			return new TutorEdit(hintID, requestID, tutor, assignmentID, from, to, toSource,
-					edits);
+			return new TutorEdit(hintID, requestID, tutor, assignmentID, from, to, toSource);
 		});
 	}
 
@@ -494,6 +502,9 @@ public class TutorEdits {
 			if (toSource.trim().isEmpty() || toSource.equals("NULL")) continue;
 
 			TutorEdit edit = np.parse(hintID, requestID, tutor, assignmentID, toSource, record);
+			// If parse returns null it means the edit is empty or shouldn't be used, e.g. literal-
+			// only hints
+			if (edit == null) continue;
 			edit.priority = priority;
 			edits.add(assignmentID, edit);
 		}
@@ -523,15 +534,30 @@ public class TutorEdits {
 		public final String tutor, assignmentID;
 		public final Node from, to;
 		public final String toSource;
-		public final List<EditHint> edits;
 
 		public Validity validity;
 		public Priority priority;
 
+		// Edits are for human reading _only_ and should not be used for comparisons, since they
+		// are generated by the SourceCheck algorithm
+		private final List<EditHint> edits;
+
+		private static List<EditHint> findEdits(Node from, Node to) {
+			// TODO: Find a better way to parse/read the edits
+			// This shouldn't be strictly necessary to compare edits, since it should be using only
+			// the to Node for comparison, but it still seems important.
+			HintConfig config = new PythonHintConfig();
+			List<Node> solutions = Collections.singletonList(to);
+			HintHighlighter highlighter = new HintHighlighter(solutions, config);
+			highlighter.trace = NullStream.instance;
+			List<EditHint> edits = highlighter.highlight(from);
+			return edits;
+		}
+
 		public TutorEdit(int hintID, String requestID, String tutor, String assignmentID, Node from,
 				Node to, String toSource) {
 			this(hintID, requestID, tutor, assignmentID, from, to, toSource,
-					Agreement.findEdits(from.copy(), to.copy(), true));
+					findEdits(from.copy(), to.copy()));
 		}
 
 		public TutorEdit(int hintID, String requestID, String tutor, String assignmentID, Node from,
@@ -545,9 +571,6 @@ public class TutorEdits {
 			this.to = to;
 			this.toSource = toSource;
 			this.edits = edits;
-			if (edits.size() == 0 && this.from.equals(this.to)) {
-				System.out.println("No edits for " + this);
-			}
 		}
 
 		private static int parseRequestID(String requestID) {

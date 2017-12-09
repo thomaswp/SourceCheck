@@ -60,7 +60,7 @@ public class CHFImport {
 				List<CHFEdit> edits = allHints.get(action.id);
 				if (edits == null) continue;
 
-				Node from = JsonAST.toAST(action.lastSnapshot).toNode(SnapNode::new);
+				Node from = JsonAST.toAST(action.lastSnapshot, true).toNode(SnapNode::new);
 				String fromString = from.prettyPrint(true);
 				System.out.println("--------- " + action.id + " ---------");
 				System.out.println(fromString);
