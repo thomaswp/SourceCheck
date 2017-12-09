@@ -424,8 +424,8 @@ public class TutorEdits {
 				return null;
 			}
 
-			Node from = JsonAST.toAST(fromS, false).toNode(SnapNode::new);
-			Node to = JsonAST.toAST(toS, false).toNode(SnapNode::new);
+			Node from = JsonAST.toAST(fromS, true).toNode(SnapNode::new);
+			Node to = JsonAST.toAST(toS, true).toNode(SnapNode::new);
 
 			if (from.equals(to)) {
 				// If the edit involves only changing literal values, we still exclude it, since the
