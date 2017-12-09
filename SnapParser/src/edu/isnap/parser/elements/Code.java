@@ -11,9 +11,9 @@ public abstract class Code implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	public abstract String toCode(boolean canon);
-	public abstract String type();
 	public abstract String value();
 	public abstract void addChildren(boolean canon, Accumulator ac);
+	protected abstract String type();
 
 	public final String toCode() {
 		return toCode(false);

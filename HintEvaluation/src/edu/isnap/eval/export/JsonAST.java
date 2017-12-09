@@ -157,7 +157,7 @@ public class JsonAST {
 	}
 
 	public static ASTNode toAST(Code code, boolean canon) {
-		String type = code.type();
+		String type = code.type(canon);
 		String value = code.value();
 		String id = code instanceof IHasID ? ((IHasID) code).getID() : null;
 

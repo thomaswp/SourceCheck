@@ -255,7 +255,7 @@ public class Datashop {
 		if (code == null) return null;
 
 		final JSONObject object = new OJSONObject();
-		String type = code.type();
+		String type = code.type(false);
 		object.put("type", type);
 		if (code instanceof IHasID && !(code instanceof Script)) {
 			String id = ((IHasID) code).getID();

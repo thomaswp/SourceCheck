@@ -97,7 +97,7 @@ public class Agreement {
 		public String getID(Code code, Node parent) {
 			String id = code instanceof IHasID ? ((IHasID) code).getID() : null;
 			if (code instanceof Script || id == null) {
-				return getID(code.type(), parent);
+				return getID(code.type(true), parent);
 			}
 			return id;
 		}

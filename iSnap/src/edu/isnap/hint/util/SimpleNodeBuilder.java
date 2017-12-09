@@ -102,7 +102,7 @@ public class SimpleNodeBuilder {
 		@Override
 		public String getID(Code code, Node parent) {
 			String id = code instanceof IHasID ? ((IHasID) code).getID() : null;
-			if (id == null) id = getID(code.type(), parent);
+			if (id == null) id = getID((String) null, parent);
 			return id;
 		}
 

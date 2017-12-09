@@ -97,18 +97,18 @@ public class TutorEdits {
 //			RateHints.rate(standard, hintSet);
 //		}
 
-		System.out.println("Fall");
-		testConsensus(Fall2016.instance, Spring2017.instance);
-		System.out.println("Spring");
-		testConsensus(Spring2017.instance, Fall2016.instance);
+//		System.out.println("Fall");
+//		testConsensus(Fall2016.instance, Spring2017.instance);
+//		System.out.println("Spring");
+//		testConsensus(Spring2017.instance, Fall2016.instance);
 
 //		highlightSQL(Fall2016.instance, Spring2017.instance);
 //		highlightSQL(Spring2017.instance, Fall2016.instance);
 
-//		exportConsensusHintRequests(Spring2017.instance, "consensus-gg-sq.csv",
-//				"hint-eval", Spring2017.Squiral, Spring2017.GuessingGame1);
-//		exportConsensusHintRequests(Fall2016.instance, "consensus-gg-sq.csv",
-//				"hint-eval", Fall2016.Squiral, Fall2016.GuessingGame1);
+		exportConsensusHintRequests(Spring2017.instance, "consensus-gg-sq.csv",
+				"hint-eval", Spring2017.Squiral, Spring2017.GuessingGame1);
+		exportConsensusHintRequests(Fall2016.instance, "consensus-gg-sq.csv",
+				"hint-eval", Fall2016.Squiral, Fall2016.GuessingGame1);
 	}
 
 	protected static void testConsensus(Dataset testDataset, Dataset trainingDataset)
