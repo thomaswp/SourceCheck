@@ -1,6 +1,8 @@
 package edu.isnap.eval.agreement;
 
 import java.io.IOException;
+import java.util.DoubleSummaryStatistics;
+import java.util.List;
 
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.dataset.Assignment;
@@ -24,7 +26,17 @@ public class CHFHintSet extends HintSet {
 			}
 
 			for (Integer id : hints.keySet()) {
-				hints.get(id).forEach(e -> add(id, e.toOutcome()));
+
+				List<CHFEdit> edits = hints.get(id);
+
+				DoubleSummaryStatistics errorStats = edits.stream()
+					.mapToDouble(e -> e.error)
+					.summaryStatistics();
+
+				double minError = errorStats.getMin();
+				double beta = 1 / (errorStats.getAverage() - minError);
+
+				edits.forEach(e -> add(id, e.toOutcome(minError, beta)));
 			}
 		}
 

@@ -122,13 +122,12 @@ public class CHFImport {
 			return edit;
 		}
 
-		public double weight() {
-			// TODO: Ask how to fix this
-			return Math.max(-Math.log(Math.max(error + 0.5, 0.00001)), 0.0001);
+		public double weight(double minError, double beta) {
+			return Math.exp(-beta * (error - minError));
 		}
 
-		public HintOutcome toOutcome() {
-			return new HintOutcome(outcome, rowID, weight());
+		public HintOutcome toOutcome(double minError, double beta) {
+			return new HintOutcome(outcome, rowID, weight(minError, beta));
 		}
 	}
 }
