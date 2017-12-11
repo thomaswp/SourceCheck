@@ -14,6 +14,8 @@ import java.util.function.Predicate;
 import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.ASTNode;
+import edu.isnap.ctd.graph.Node;
+import edu.isnap.ctd.graph.Node.NodeConstructor;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
@@ -33,6 +35,7 @@ import edu.isnap.parser.elements.util.IHasID;
 
 public class JsonAST {
 
+	public final static String SNAPSHOT_TYPE = "Snap!shot";
 
 	public final static Set<String> values = new TreeSet<>();
 
@@ -162,7 +165,7 @@ public class JsonAST {
 		String id = code instanceof IHasID ? ((IHasID) code).getID() : null;
 
 		if (type.equals("snapshot")) {
-			type = ASTNode.SNAPSHOT_TYPE;
+			type = SNAPSHOT_TYPE;
 		}
 
 		if (code instanceof LiteralBlock && ((LiteralBlock) code).type == Type.Text) {
@@ -207,6 +210,25 @@ public class JsonAST {
 			}
 		});
 
+		return node;
+	}
+
+	public static Node toNode(Code code, boolean canon, NodeConstructor constructor) {
+		return toNode(toAST(code, canon), constructor);
+	}
+
+	public static Node toNode(ASTNode astNode, NodeConstructor constructor) {
+		return toNode(astNode, null, constructor);
+	}
+
+	public static Node toNode(ASTNode astNode, Node parent, NodeConstructor constructor) {
+		String type = astNode.type;
+		if (SNAPSHOT_TYPE.equals(type)) type = "snapshot";
+		Node node = constructor.constructNode(parent, type, astNode.value, astNode.id);
+		node.tag = astNode;
+		for (ASTNode child : astNode.children()) {
+			node.children.add(toNode(child, node, constructor));
+		}
 		return node;
 	}
 }

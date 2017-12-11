@@ -2,7 +2,8 @@ package edu.isnap.eval.python;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.HintConfig;
-import edu.isnap.eval.agreement.RateHints.RatingConfig;
+import edu.isnap.eval.python.PythonImport.PythonNode;
+import edu.isnap.rating.RateHints.RatingConfig;
 
 public class PythonHintConfig extends HintConfig {
 	private static final long serialVersionUID = 1L;
@@ -21,6 +22,11 @@ public class PythonHintConfig extends HintConfig {
 		@Override
 		public boolean trimIfChildless(String type) {
 			return false;
+		}
+
+		@Override
+		public boolean nodeTypeHasBody(String type) {
+			return PythonNode.typeHasBody(type);
 		}
 	};
 

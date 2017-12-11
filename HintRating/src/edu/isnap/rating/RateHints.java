@@ -1,4 +1,4 @@
-package edu.isnap.eval.agreement;
+package edu.isnap.rating;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -8,12 +8,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import edu.isnap.ctd.graph.Node;
+import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.map.ListMap;
-import edu.isnap.eval.agreement.TutorEdits.Priority;
-import edu.isnap.eval.agreement.TutorEdits.TutorEdit;
-import edu.isnap.eval.agreement.TutorEdits.Validity;
+import edu.isnap.rating.TutorEdit.Priority;
+import edu.isnap.rating.TutorEdit.Validity;
 
 public class RateHints {
 
@@ -91,20 +90,20 @@ public class RateHints {
 		}
 	}
 
-	private static Node pruneImmediateChildren(Node node, Predicate<String> condition) {
-		for (int i = 0; i < node.children.size(); i++) {
-			Node child = node.children.get(i);
-			if (condition.test(child.type())) {
+	private static ASTNode pruneImmediateChildren(ASTNode node, Predicate<String> condition) {
+		for (int i = 0; i < node.children().size(); i++) {
+			ASTNode child = node.children().get(i);
+			if (condition.test(child.type)) {
 				pruneImmediateChildren(child, condition);
-				if (child.children.isEmpty()) {
-					node.children.remove(i--);
+				if (child.children().isEmpty()) {
+					node.removeChild(i--);
 				}
 			}
 		}
 		return node;
 	}
 
-	public static Node normalizeNewValuesTo(Node from, Node to, RatingConfig config,
+	public static ASTNode normalizeNewValuesTo(ASTNode from, ASTNode to, RatingConfig config,
 			boolean prune) {
 		// We don't differentiate values by type, since multiple types can share values (e.g.
 		// varDecs and vars)
@@ -113,14 +112,16 @@ public class RateHints {
 
 		to = to.copy();
 		// Create a list of nodes before iteration, since we'll be modifying children
-		List<Node> toNodes = new ArrayList<>();
+		List<ASTNode> toNodes = new ArrayList<>();
 		to.recurse(node -> toNodes.add(node));
-		for (Node node : toNodes) {
-			if (node.index() == -1) continue;
+		for (ASTNode node : toNodes) {
+			if (node.parent() == null) continue;
 			// If this node has a non-generated ID but has no match in from (or it's been
 			// relabeled and has a new type), it's a new node, so prune its children
-			if (prune && node.id != null && !node.id.startsWith(Agreement.GEN_ID_PREFIX)) {
-				Node fromMatch = from.searchForNodeWithID(node.id);
+			// TODO: This doesn't make sense for Python, where IDs aren't consistent,
+			// and right now it relies on snap-specific code
+			if (prune && node.id != null && !node.id.startsWith("GEN_")) {
+				ASTNode fromMatch = (ASTNode) from.search(n -> n != null && n.id() == node.id);
 				if (fromMatch == null || !fromMatch.hasType(node.type())) {
 					pruneImmediateChildren(node, config::trimIfParentIsAdded);
 				}
@@ -134,18 +135,19 @@ public class RateHints {
 					} catch (NumberFormatException e) { }
 				}
 				if (trim) {
-					Node parent = node.parent;
-					Node replacement = node.constructNode(
-							parent, node.type(), "[NEW_VALUE]", node.id);
+					ASTNode parent = node.parent();
+					ASTNode replacement = new ASTNode(node.type, "[NEW_VALUE]", node.id);
 					int index = node.index();
-					parent.children.remove(index);
-					parent.children.add(index, replacement);
-					replacement.children.addAll(node.children);
-					node.children.clear();
+					parent.removeChild(index);
+					parent.addChild(index, replacement);
+					for (ASTNode child : node.children()) {
+						replacement.addChild(child);
+					}
+					node.clearChildren();
 				}
 			}
-			if (prune && node.children.size() == 0 && config.trimIfChildless(node.type())) {
-				node.parent.children.remove(node.index());
+			if (prune && node.children().size() == 0 && config.trimIfChildless(node.type())) {
+				node.parent().removeChild(node.index());
 			}
 		}
 		return to;
@@ -155,18 +157,20 @@ public class RateHints {
 			RatingConfig config) {
 		if (validEdits.isEmpty()) return null;
 		// TODO: supersets, subsets of edits
-		Node outcomeNode = normalizeNewValuesTo(validEdits.get(0).from, outcome.outcome,
+		ASTNode outcomeNode = normalizeNewValuesTo(validEdits.get(0).from, outcome.outcome,
 				config, true);
 		for (TutorEdit tutorEdit : validEdits) {
-			Node tutorOutcomeNode = normalizeNewValuesTo(tutorEdit.from, tutorEdit.to,
+			ASTNode tutorOutcomeNode = normalizeNewValuesTo(tutorEdit.from, tutorEdit.to,
 					config, true);
 			if (outcomeNode.equals(tutorOutcomeNode)) return tutorEdit;
 
 			if (outcome.outcome.equals(tutorEdit.to)) {
-				System.out.println(Diff.diff(tutorEdit.from.prettyPrint(true),
-						tutorEdit.to.prettyPrint(true)));
-				System.out.println(Diff.diff(tutorOutcomeNode.prettyPrint(true),
-						outcomeNode.prettyPrint(true), 2));
+				System.out.println(Diff.diff(
+						tutorEdit.from.prettyPrint(true, config::nodeTypeHasBody),
+						tutorEdit.to.prettyPrint(true, config::nodeTypeHasBody)));
+				System.out.println(Diff.diff(
+						tutorOutcomeNode.prettyPrint(true, config::nodeTypeHasBody),
+						outcomeNode.prettyPrint(true, config::nodeTypeHasBody), 2));
 				throw new RuntimeException("Normalized nodes should be equal if nodes are equal!");
 			}
 
@@ -201,11 +205,11 @@ public class RateHints {
 	}
 
 	public static class HintOutcome {
-		public final Node outcome;
+		public final ASTNode outcome;
 		public final int snapshotID;
 		public final double weight;
 
-		public HintOutcome(Node outcome, int snapshotID, double weight) {
+		public HintOutcome(ASTNode outcome, int snapshotID, double weight) {
 			this.outcome = outcome;
 			this.snapshotID = snapshotID;
 			this.weight = weight;
@@ -252,9 +256,9 @@ public class RateHints {
 			return map.get(assignment).getList(snapshotID);
 		}
 
-		public GoldStandard(ListMap<String, TutorEdit> consensusEdits) {
+		public GoldStandard(ListMap<String, ? extends TutorEdit> consensusEdits) {
 			for (String assignment : consensusEdits.keySet()) {
-				List<TutorEdit> list = consensusEdits.get(assignment);
+				List<? extends TutorEdit> list = consensusEdits.get(assignment);
 				ListMap<Integer, TutorEdit> snapshotMap = new ListMap<>();
 				list.forEach(edit -> snapshotMap.add(edit.requestID, edit));
 				map.put(assignment, snapshotMap);
@@ -273,18 +277,19 @@ public class RateHints {
 	public static class HintRequest {
 		public final int id;
 		public final String assignmentID;
-		public final Node code;
+		public final ASTNode code;
 
-		public HintRequest(int id, String assignmentID, Node code) {
+		public HintRequest(int id, String assignmentID, ASTNode code) {
 			this.id = id;
 			this.assignmentID = assignmentID;
 			this.code = code;
 		}
 	}
 
-	public abstract static class RatingConfig {
-		public abstract boolean useSpecificNumericLiterals();
-		public abstract boolean trimIfChildless(String type);
-		public abstract boolean trimIfParentIsAdded(String type);
+	public static interface RatingConfig {
+		public boolean useSpecificNumericLiterals();
+		public boolean trimIfChildless(String type);
+		public boolean trimIfParentIsAdded(String type);
+		public boolean nodeTypeHasBody(String type);
 	}
 }

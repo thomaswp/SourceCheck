@@ -4,7 +4,9 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import edu.isnap.ctd.graph.INode;
 import edu.isnap.ctd.graph.Node;
+import edu.isnap.ctd.graph.PrettyPrint;
 import util.LblTree;
 
 public class SnapNode extends Node {
@@ -29,9 +31,13 @@ public class SnapNode extends Node {
 		return new SnapNode(parent, type, value, id);
 	}
 
+	public static boolean typeHasBody(String type) {
+		return BodyTypes.contains(type);
+	}
+
 	@Override
 	protected boolean nodeTypeHasBody(String type) {
-		return BodyTypes.contains(type);
+		return typeHasBody(type);
 	}
 
 	public static Node fromTree(Node parent, LblTree tree, boolean cache) {
@@ -43,6 +49,10 @@ public class SnapNode extends Node {
 		}
 		if (cache) node.cache();
 		return node;
+	}
+
+	public static String prettyPrint(INode node, boolean showValues) {
+		return PrettyPrint.toString(node, new Node.Params(showValues, null, BodyTypes::contains));
 	}
 
 }

@@ -38,52 +38,23 @@ import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.datasets.Fall2016;
 import edu.isnap.datasets.Spring2017;
-import edu.isnap.eval.agreement.RateHints.GoldStandard;
-import edu.isnap.eval.agreement.RateHints.HintOutcome;
-import edu.isnap.eval.agreement.RateHints.HintSet;
-import edu.isnap.eval.agreement.RateHints.RatingConfig;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.eval.python.PythonHintConfig;
-import edu.isnap.eval.python.PythonImport.PythonNode;
 import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.hint.util.SnapNode;
 import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.Snapshot;
+import edu.isnap.rating.RateHints;
+import edu.isnap.rating.RateHints.GoldStandard;
+import edu.isnap.rating.RateHints.HintSet;
+import edu.isnap.rating.RateHints.RatingConfig;
+import edu.isnap.rating.TutorEdit;
+import edu.isnap.rating.TutorEdit.Priority;
+import edu.isnap.rating.TutorEdit.Validity;
 
 public class TutorEdits {
-
-	public enum Validity {
-		NoTutors(0), OneTutor(1), MultipleTutors(2), Consensus(3);
-
-		public final int value;
-
-		Validity(int value) {
-			this.value = value;
-		}
-	}
-
-	public enum Priority {
-		Highest(1), High(2), Normal(3);
-
-		public final int value;
-
-		public int points() {
-			return 4 - value;
-		}
-
-		Priority(int value) {
-			this.value = value;
-		}
-
-		public static Priority fromInt(int value) {
-			for (Priority priority : Priority.values()) {
-				if (priority.value == value) return priority;
-			}
-			return null;
-		}
-	}
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 //		compareHints(Fall2016.instance);
@@ -209,7 +180,7 @@ public class TutorEdits {
 	}
 
 	public static void verifyHints(Dataset dataset) throws FileNotFoundException, IOException {
-		ListMap<String, TutorEdit> edits = readTutorEditsSnap(dataset);
+		ListMap<String, PrintableTutorEdit> edits = readTutorEditsSnap(dataset);
 		edits.values().forEach(l -> l.forEach(e -> e.verify()));
 	}
 
@@ -227,8 +198,8 @@ public class TutorEdits {
 		compareHints(readTutorEditsPython(dir), writeDir, PythonHintConfig.PythongRatingConfig);
 	}
 
-	public static void compareHints(ListMap<String, TutorEdit> assignmentMap, String writeDir,
-			RatingConfig config) throws FileNotFoundException, IOException {
+	public static void compareHints(ListMap<String, PrintableTutorEdit> assignmentMap,
+			String writeDir, RatingConfig config) throws FileNotFoundException, IOException {
 
 		Set<String> tutors =  assignmentMap.values().stream()
 				.flatMap(List::stream).map(e -> e.tutor)
@@ -240,7 +211,7 @@ public class TutorEdits {
 		for (String assignmentID : assignmentMap.keySet()) {
 			System.out.println("\n#---------> " + assignmentID + " <---------#\n");
 
-			List<TutorEdit> edits = assignmentMap.get(assignmentID);
+			List<PrintableTutorEdit> edits = assignmentMap.get(assignmentID);
 			edits = edits.stream()
 					.filter(e -> !"consensus".equals(e.tutor))
 					.collect(Collectors.toList());
@@ -250,25 +221,26 @@ public class TutorEdits {
 			for (String requestID : requestIDs) {
 				System.out.println("-------- " + requestID + " --------");
 
-				ListMap<Node, TutorEdit> givers = new ListMap<>();
+				ListMap<ASTNode, PrintableTutorEdit> givers = new ListMap<>();
 				edits.stream()
 				.filter(e -> e.requestIDString.equals(requestID))
 				.forEach(e -> givers.add(
 						RateHints.normalizeNewValuesTo(e.from, e.to, config, false), e));
 
-				Node from = givers.values().stream().findFirst().get().get(0).from;
-				String fromPP = from.prettyPrint(true);
+				ASTNode from = givers.values().stream().findFirst().get().get(0).from;
+				String fromPP = from.prettyPrint(true, config::nodeTypeHasBody);
 				System.out.println(fromPP);
 
-				List<Node> keys = new ArrayList<>(givers.keySet());
+				List<ASTNode> keys = new ArrayList<>(givers.keySet());
 				// Sort by how many raters gave the hint
 				// TODO: sort by hint ID instead
 				keys.sort((n1, n2) -> -Integer.compare(
 						givers.get(n1).size(), givers.get(n2).size()));
-				for (Node to : keys) {
-					System.out.println(Diff.diff(fromPP, to.prettyPrint(true), 1));
-					List<TutorEdit> tutorEdits = givers.get(to);
-					TutorEdit firstEdit = tutorEdits.get(0);
+				for (ASTNode to : keys) {
+					System.out.println(Diff.diff(fromPP,
+							to.prettyPrint(true, config::nodeTypeHasBody), 1));
+					List<PrintableTutorEdit> tutorEdits = givers.get(to);
+					PrintableTutorEdit firstEdit = tutorEdits.get(0);
 					String editsString = firstEdit.editsString(true);
 					System.out.println(editsString);
 					int priorityMatches = 0;
@@ -290,8 +262,8 @@ public class TutorEdits {
 								.collect(Collectors.toMap(e -> e.tutor, e -> e));
 					} catch (Exception e) {
 						System.out.println("Duplicate hints from one tutor:");
-						System.out.println(from.prettyPrintWithIDs());
-						System.out.println(to.prettyPrintWithIDs());
+						System.out.println(from.prettyPrint(true, config::nodeTypeHasBody));
+						System.out.println(to.prettyPrint(true, config::nodeTypeHasBody));
 						tutorEdits.forEach(System.out::println);
 						throw e;
 					}
@@ -328,8 +300,8 @@ public class TutorEdits {
 	public static Map<String, HintSet> readTutorHintSets(Dataset dataset)
 			throws FileNotFoundException, IOException {
 		Map<String, HintSet> hintSets = new HashMap<>();
-		ListMap<String, TutorEdit> allEdits = readTutorEditsSnap(dataset);
-		for (List<TutorEdit> list : allEdits.values()) {
+		ListMap<String, PrintableTutorEdit> allEdits = readTutorEditsSnap(dataset);
+		for (List<PrintableTutorEdit> list : allEdits.values()) {
 			for (TutorEdit edit : list) {
 				if (edit.tutor.equals("consensus")) continue;
 				HintSet set = hintSets.get(edit.tutor);
@@ -347,12 +319,12 @@ public class TutorEdits {
 			throws FileNotFoundException, IOException {
 		Map<Integer, Tuple<Validity, Priority>> consensus =
 				readConsensusSpreadsheet(dataset, consensusPaths);
-		ListMap<String, TutorEdit> allEdits = readTutorEditsSnap(dataset);
-		ListMap<String, TutorEdit> consensusEdits = new ListMap<>();
+		ListMap<String, PrintableTutorEdit> allEdits = readTutorEditsSnap(dataset);
+		ListMap<String, PrintableTutorEdit> consensusEdits = new ListMap<>();
 		for (String assignmentID : allEdits.keySet()) {
-			List<TutorEdit> list = allEdits.get(assignmentID);
-			List<TutorEdit> keeps = new ArrayList<>();
-			for (TutorEdit hint : list) {
+			List<PrintableTutorEdit> list = allEdits.get(assignmentID);
+			List<PrintableTutorEdit> keeps = new ArrayList<>();
+			for (PrintableTutorEdit hint : list) {
 				if (!hint.tutor.equals("consensus")) continue;
 				Tuple<Validity, Priority> ratings = consensus.get(hint.hintID);
 				if (ratings == null) {
@@ -396,7 +368,7 @@ public class TutorEdits {
 		return map;
 	}
 
-	public static ListMap<String,TutorEdit> readTutorEditsSnap(Dataset dataset)
+	public static ListMap<String, PrintableTutorEdit> readTutorEditsSnap(Dataset dataset)
 			throws FileNotFoundException, IOException {
 
 		Map<String, Assignment> assignments = dataset.getAssignmentMap();
@@ -424,8 +396,8 @@ public class TutorEdits {
 				return null;
 			}
 
-			Node from = JsonAST.toAST(fromS, true).toNode(SnapNode::new);
-			Node to = JsonAST.toAST(toS, true).toNode(SnapNode::new);
+			ASTNode from = JsonAST.toAST(fromS, true);
+			ASTNode to = JsonAST.toAST(toS, true);
 
 			if (from.equals(to)) {
 				// If the edit involves only changing literal values, we still exclude it, since the
@@ -433,29 +405,29 @@ public class TutorEdits {
 				return null;
 			}
 
-			return new TutorEdit(hintID, requestID, tutor, assignmentID, from, to, toSource);
+			return new PrintableTutorEdit(hintID, requestID, tutor, assignmentID, from, to,
+					toSource);
 		});
 	}
 
-	private static Node toPrunedPythonNode(String json) {
-		ASTNode ast = ASTNode.parse(json);
-		Node node = ast.toNode(PythonNode::new);
+	private static ASTNode toPrunedPythonNode(String json) {
+		ASTNode node = ASTNode.parse(json);
 		node.recurse(n -> {
-			for (int i = 0; i < n.children.size(); i++) {
-				Node child = n.children.get(i);
-				if (child.hasType("Str") && "~".equals(child.value)) {
-					n.children.remove(i--);
+			for (int i = 0; i < n.children().size(); i++) {
+				ASTNode child = n.children().get(i);
+				if (child != null && "Str".equals(child.type) && "~".equals(child.value)) {
+					n.removeChild(i--);
 				}
 			}
 		});
 		return node;
 	}
 
-	public static ListMap<String,TutorEdit> readTutorEditsPython(String dir)
+	public static ListMap<String, PrintableTutorEdit> readTutorEditsPython(String dir)
 			throws FileNotFoundException, IOException {
 		return readTutorEdits(dir + "/handmade_hints_ast.csv",
 				(hintID, requestID, tutor, assignmentID, toSource, row) -> {
-			Node from, to;
+			ASTNode from, to;
 			try {
 				from = toPrunedPythonNode(row.get("codeAST"));
 				to = toPrunedPythonNode(row.get("hintCodeAST"));
@@ -463,21 +435,22 @@ public class TutorEdits {
 				System.out.println("Error reading hint: " + hintID);
 				throw e;
 			}
-			return new TutorEdit(hintID, requestID, tutor, assignmentID, from, to, toSource);
+			return new PrintableTutorEdit(hintID, requestID, tutor, assignmentID, from, to,
+					toSource);
 		});
 	}
 
 	private interface NodeParser {
-		TutorEdit parse(int hintID, String requestID, String tutor, String assignmentID,
+		PrintableTutorEdit parse(int hintID, String requestID, String tutor, String assignmentID,
 				String toSource, CSVRecord row);
 	}
 
-	public static ListMap<String,TutorEdit> readTutorEdits(String path, NodeParser np)
+	public static ListMap<String, PrintableTutorEdit> readTutorEdits(String path, NodeParser np)
 			throws FileNotFoundException, IOException {
 		CSVParser parser = new CSVParser(new FileReader(path),
 				CSVFormat.DEFAULT.withHeader());
 
-		ListMap<String, TutorEdit> edits = new ListMap<>();
+		ListMap<String, PrintableTutorEdit> edits = new ListMap<>();
 
 		for (CSVRecord record : parser) {
 			int hintID = Integer.parseInt(record.get("hid"));
@@ -501,7 +474,8 @@ public class TutorEdits {
 			// Skip empty hints (they may exist if no hint is appropriate for a snapshot)
 			if (toSource.trim().isEmpty() || toSource.equals("NULL")) continue;
 
-			TutorEdit edit = np.parse(hintID, requestID, tutor, assignmentID, toSource, record);
+			PrintableTutorEdit edit = np.parse(
+					hintID, requestID, tutor, assignmentID, toSource, record);
 			// If parse returns null it means the edit is empty or shouldn't be used, e.g. literal-
 			// only hints
 			if (edit == null) continue;
@@ -526,78 +500,46 @@ public class TutorEdits {
 		}
 	}
 
-	public static class TutorEdit {
-		public final int hintID;
-		// TODO: Make this just a string
-		public final int requestID;
-		public final String requestIDString;
-		public final String tutor, assignmentID;
-		public final Node from, to;
-		public final String toSource;
+	static class PrintableTutorEdit extends TutorEdit {
 
-		public Validity validity;
-		public Priority priority;
+		public final String toSource;
 
 		// Edits are for human reading _only_ and should not be used for comparisons, since they
 		// are generated by the SourceCheck algorithm
 		private final List<EditHint> edits;
+		private final Node fromNode, toNode;
 
-		private static List<EditHint> findEdits(Node from, Node to) {
+
+		public PrintableTutorEdit(int hintID, String requestID, String tutor, String assignmentID,
+				ASTNode from, ASTNode to, String toSource) {
+			super(hintID, requestID, tutor, assignmentID, from, to);
+			fromNode = JsonAST.toNode(from, SnapNode::new);
+			toNode = JsonAST.toNode(to, SnapNode::new);
+			edits = calculateEdits();
+			this.toSource = toSource;
+		}
+
+		private List<EditHint> calculateEdits() {
 			// TODO: Find a better way to parse/read the edits
 			// This shouldn't be strictly necessary to compare edits, since it should be using only
 			// the to Node for comparison, but it still seems important.
 			HintConfig config = new PythonHintConfig();
-			List<Node> solutions = Collections.singletonList(to);
+			List<Node> solutions = Collections.singletonList(toNode);
 			HintHighlighter highlighter = new HintHighlighter(solutions, config);
 			highlighter.trace = NullStream.instance;
-			List<EditHint> edits = highlighter.highlight(from);
+			List<EditHint> edits = highlighter.highlight(fromNode);
 			return edits;
 		}
 
-		public TutorEdit(int hintID, String requestID, String tutor, String assignmentID, Node from,
-				Node to, String toSource) {
-			this(hintID, requestID, tutor, assignmentID, from, to, toSource,
-					findEdits(from.copy(), to.copy()));
-		}
-
-		public TutorEdit(int hintID, String requestID, String tutor, String assignmentID, Node from,
-				Node to, String toSource, List<EditHint> edits) {
-			this.hintID = hintID;
-			this.requestIDString = requestID;
-			this.requestID = parseRequestID(requestID);
-			this.tutor = tutor;
-			this.assignmentID = assignmentID;
-			this.from = from;
-			this.to = to;
-			this.toSource = toSource;
-			this.edits = edits;
-		}
-
-		private static int parseRequestID(String requestID) {
-			try {
-				return Integer.parseInt(requestID);
-			} catch (NumberFormatException e) { }
-			if (requestID.length() > 8) requestID = requestID.substring(0, 8);
-			try {
-				return Integer.parseInt(requestID, 16);
-			} catch (NumberFormatException e) { }
-			return requestID.hashCode();
-		}
-
 		public boolean verify() {
-			boolean pass = Agreement.testEditConsistency(from, to, true, true);
+			boolean pass = Agreement.testEditConsistency(fromNode, toNode, true, true);
 			if (!pass) {
 				System.out.println("Failed: " + this);
 			}
 			return pass;
 		}
 
-		@Override
-		public String toString() {
-			return String.format("%s, request %s, hint #%d", tutor, requestIDString, hintID);
-		}
-
-		private String editsString(boolean useANSI) {
+		String editsString(boolean useANSI) {
 			return editsToString(edits, useANSI);
 		}
 
@@ -627,8 +569,5 @@ public class TutorEdits {
 					addDate ? "NOW()" : "NULL");
 		}
 
-		public HintOutcome toOutcome() {
-			return new HintOutcome(to, requestID, priority == null ? 0 : (1.0 / priority.value));
-		}
 	}
 }

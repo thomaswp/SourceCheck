@@ -20,6 +20,7 @@ import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.NodeAlignment.Mapping;
 import edu.isnap.ctd.util.NullStream;
 import edu.isnap.ctd.util.map.ListMap;
+import edu.isnap.eval.export.JsonAST;
 
 public class PythonImport {
 
@@ -104,7 +105,7 @@ public class PythonImport {
 					JSONObject obj = new JSONObject(json);
 					ASTNode astNode = ASTNode.parse(obj);
 					astNode.autoID("");
-					node = (PythonNode) astNode.toNode(PythonNode::new);
+					node = (PythonNode) JsonAST.toNode(astNode, PythonNode::new);
 					if (obj.has("correct")) {
 						boolean correct = obj.getBoolean("correct");
 						node.correct = Optional.of(correct);
@@ -143,9 +144,13 @@ public class PythonImport {
 			return new PythonNode(parent, type, value, id);
 		}
 
+		public static boolean typeHasBody(String type) {
+			return "list".equals(type);
+		}
+
 		@Override
 		protected boolean nodeTypeHasBody(String type) {
-			return "list".equals(type);
+			return typeHasBody(type);
 		}
 
 	}

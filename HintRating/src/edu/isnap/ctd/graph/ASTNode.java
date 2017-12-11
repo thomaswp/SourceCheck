@@ -3,26 +3,30 @@ package edu.isnap.ctd.graph;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import edu.isnap.ctd.graph.Node.NodeConstructor;
+import edu.isnap.ctd.graph.PrettyPrint.Params;
 
 public class ASTNode implements INode {
-
-	// TODO: This really belongs in snap-specific code
-	public final static String SNAPSHOT_TYPE = "Snap!shot";
 
 	public String type, value, id;
 
 	private ASTNode parent;
-	private final Map<String, ASTNode> childMap = new LinkedHashMap<>();
+
+	private final List<ASTNode> children = new ArrayList<>();
+	private final List<ASTNode> unmodifiableChildren = Collections.unmodifiableList(children);
+
+	private final List<String> childRelations = new ArrayList<>();
+
 
 	@Override
 	public ASTNode parent() {
@@ -46,11 +50,7 @@ public class ASTNode implements INode {
 
 	@Override
 	public List<ASTNode> children() {
-		return new ArrayList<>(childMap.values());
-	}
-
-	public Map<String, ASTNode> childMap() {
-		return Collections.unmodifiableMap(childMap);
+		return unmodifiableChildren;
 	}
 
 	public ASTNode(String type, String value, String id) {
@@ -60,17 +60,45 @@ public class ASTNode implements INode {
 		this.id = id;
 	}
 
-	public void addChild(ASTNode child) {
-		int i = childMap.size();
-		while (childMap.containsKey(String.valueOf(i))) i++;
-		addChild(String.valueOf(i), child);
+	public boolean addChild(ASTNode child) {
+		return addChild(children.size(), child);
 	}
 
 	public boolean addChild(String relation, ASTNode child) {
-		if (childMap.containsKey(relation)) return false;
-		childMap.put(relation, child);
+		return addChild(children.size(), relation, child);
+	}
+
+	public boolean addChild(int index, ASTNode child) {
+		int i = children.size();
+		while (childRelations.contains(String.valueOf(i))) i++;
+		return addChild(String.valueOf(i), child);
+	}
+
+	public boolean addChild(int index, String relation, ASTNode child) {
+		if (childRelations.contains(relation)) return false;
+		children.add(index, child);
+		childRelations.add(index, relation);
 		child.parent = this;
 		return true;
+	}
+
+	public void removeChild(int index) {
+		ASTNode child = children.remove(index);
+		childRelations.remove(index);
+		child.parent = null;
+	}
+
+	public void clearChildren() {
+		children.forEach(c -> c.parent = null);
+		children.clear();
+		childRelations.clear();
+	}
+
+	public String prettyPrint(boolean showValues, Predicate<String> isBodyType) {
+		Params params = new Params();
+		params.showValues = showValues;
+		params.isBodyType = isBodyType;
+		return PrettyPrint.toString(this, params);
 	}
 
 	public static ASTNode parse(String jsonSource) throws JSONException {
@@ -126,11 +154,12 @@ public class ASTNode implements INode {
 		object.put("type", type);
 		if (value != null) object.put("value", value);
 		if (id != null) object.put("id", id);
-		if (childMap.size() > 0) {
+		if (children.size() > 0) {
 			JSONObject children = new JSONObject();
 			JSONArray childrenOrder = new JSONArray();
-			for (String relation : childMap.keySet()) {
-				children.put(relation, childMap.get(relation).toJSON());
+			for (int i = 0; i < this.children.size(); i++) {
+				String relation = childRelations.get(i);
+				children.put(relation, this.children.get(i).toJSON());
 				childrenOrder.put(relation);
 			}
 			object.put("children", children);
@@ -139,27 +168,60 @@ public class ASTNode implements INode {
 		return object;
 	}
 
-	public Node toNode(NodeConstructor constructor) {
-		return toNode(null, constructor);
-	}
-
-	public Node toNode(Node parent, NodeConstructor constructor) {
-		String type = this.type;
-		if (SNAPSHOT_TYPE.equals(type)) type = "snapshot";
-		Node node = constructor.constructNode(parent, type, value, id);
-		node.tag = this;
-		for (ASTNode child : childMap.values()) node.children.add(child.toNode(node, constructor));
-		return node;
-	}
-
 	public void autoID(String prefix) {
 		autoID(prefix, new AtomicInteger(0));
 	}
 
 	private void autoID(String prefix, AtomicInteger id) {
 		if (this.id == null) this.id = prefix + id.getAndIncrement();
-		for (ASTNode child : childMap.values()) {
+		for (ASTNode child : children) {
 			child.autoID(prefix, id);
 		}
+	}
+
+	public ASTNode copy() {
+		ASTNode copy = shallowCopy();
+		for (int i = 0; i < children.size(); i++) {
+			ASTNode child = children.get(i);
+			copy.addChild(childRelations.get(i), child == null ? null : child.copy());
+		}
+		return copy;
+	}
+
+	public ASTNode shallowCopy() {
+		return new ASTNode(type, value, id);
+	}
+
+	public void recurse(Consumer<ASTNode> action) {
+		action.accept(this);
+		this.children.stream()
+		.filter(child -> child != null)
+		.forEach(child -> child.recurse(action));
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == null) return false;
+		if (obj == this) return true;
+		if (obj.getClass() != getClass()) return false;
+		ASTNode rhs = (ASTNode) obj;
+		EqualsBuilder builder = new EqualsBuilder();
+		builder.append(type, rhs.type);
+		builder.append(value, rhs.value);
+		builder.append(id, rhs.id);
+		builder.append(children, rhs.children);
+		builder.append(childRelations, rhs.childRelations);
+		return builder.isEquals();
+	}
+
+	@Override
+	public int hashCode() {
+		HashCodeBuilder builder = new HashCodeBuilder(9, 15);
+		builder.append(type);
+		builder.append(value);
+		builder.append(id);
+		builder.append(children);
+		builder.append(childRelations);
+		return builder.toHashCode();
 	}
 }

@@ -7,8 +7,8 @@ import java.util.List;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.eval.agreement.CHFImport.CHFEdit;
-import edu.isnap.eval.agreement.RateHints.HintSet;
-import edu.isnap.eval.agreement.RateHints.RatingConfig;
+import edu.isnap.rating.RateHints.HintSet;
+import edu.isnap.rating.RateHints.RatingConfig;
 
 public class CHFHintSet extends HintSet {
 

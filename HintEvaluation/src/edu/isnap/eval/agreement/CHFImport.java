@@ -11,7 +11,6 @@ import java.util.Map;
 import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.ASTNode;
-import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.dataset.Assignment;
@@ -19,11 +18,12 @@ import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.datasets.Fall2016;
 import edu.isnap.datasets.Spring2017;
-import edu.isnap.eval.agreement.RateHints.GoldStandard;
-import edu.isnap.eval.agreement.RateHints.HintOutcome;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.hint.util.SnapNode;
 import edu.isnap.parser.Store.Mode;
+import edu.isnap.rating.RateHints;
+import edu.isnap.rating.RateHints.GoldStandard;
+import edu.isnap.rating.RateHints.HintOutcome;
 
 public class CHFImport {
 
@@ -64,14 +64,15 @@ public class CHFImport {
 				List<CHFEdit> edits = allHints.get(action.id);
 				if (edits == null) continue;
 
-				Node from = JsonAST.toAST(action.lastSnapshot, true).toNode(SnapNode::new);
-				String fromString = from.prettyPrint(true);
+				ASTNode from = JsonAST.toAST(action.lastSnapshot, true);
+				String fromString = SnapNode.prettyPrint(from, true);
 				System.out.println("--------- " + action.id + " ---------");
 				System.out.println(fromString);
 				for (CHFEdit edit : edits) {
 					errors.add(edit.error);
 					System.out.println(edit.priority + ": " + edit.error);
-					System.out.println(Diff.diff(fromString, edit.outcome.prettyPrint(true), 2));
+					System.out.println(Diff.diff(fromString,
+							SnapNode.prettyPrint(edit.outcome, true), 2));
 					System.out.println();
 				}
 
@@ -102,11 +103,11 @@ public class CHFImport {
 	}
 
 	public static class CHFEdit {
-		public final Node outcome;
+		public final ASTNode outcome;
 		public final double error;
 		public final int rowID, priority;
 
-		public CHFEdit(int rowID, Node outcome, double error, int priority) {
+		public CHFEdit(int rowID, ASTNode outcome, double error, int priority) {
 			this.rowID = rowID;
 			this.outcome = outcome;
 			this.error = error;
@@ -122,7 +123,7 @@ public class CHFImport {
 			int underscoreIndex = name.indexOf("_");
 			int id = Integer.parseInt(name.substring(0, underscoreIndex));
 			int priority = Integer.parseInt(name.substring(underscoreIndex + 1));
-			CHFEdit edit = new CHFEdit(id, root.toNode(SnapNode::new), error, priority);
+			CHFEdit edit = new CHFEdit(id, root, error, priority);
 			return edit;
 		}
 

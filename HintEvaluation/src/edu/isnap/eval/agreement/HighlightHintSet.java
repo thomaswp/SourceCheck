@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.HintHighlighter;
@@ -23,13 +24,15 @@ import edu.isnap.ctd.util.NullStream;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
-import edu.isnap.eval.agreement.RateHints.HintOutcome;
-import edu.isnap.eval.agreement.RateHints.HintRequest;
-import edu.isnap.eval.agreement.RateHints.HintSet;
-import edu.isnap.eval.agreement.RateHints.RatingConfig;
-import edu.isnap.eval.agreement.TutorEdits.TutorEdit;
+import edu.isnap.eval.agreement.TutorEdits.PrintableTutorEdit;
+import edu.isnap.eval.export.JsonAST;
 import edu.isnap.hint.SnapHintBuilder;
+import edu.isnap.hint.util.SnapNode;
 import edu.isnap.parser.Store.Mode;
+import edu.isnap.rating.RateHints.HintOutcome;
+import edu.isnap.rating.RateHints.HintRequest;
+import edu.isnap.rating.RateHints.HintSet;
+import edu.isnap.rating.RateHints.RatingConfig;
 
 public class HighlightHintSet extends HintSet {
 
@@ -50,6 +53,11 @@ public class HighlightHintSet extends HintSet {
 		@Override
 		public boolean trimIfParentIsAdded(String type) {
 			return Agreement.prunable.contains(type);
+		}
+
+		@Override
+		public boolean nodeTypeHasBody(String type) {
+			return SnapNode.typeHasBody(type);
 		}
 
 	};
@@ -78,7 +86,7 @@ public class HighlightHintSet extends HintSet {
 				highlighters.put(request.assignmentID, highlighter);
 			}
 
-			Node code = request.code.copy();
+			Node code = JsonAST.toNode(request.code, SnapNode::new);
 			List<EditHint> hints = highlighter.highlightWithPriorities(code);
 			Set<EditHint> originalHints = new HashSet<>(hints);
 			hints = filterHints(hints, false);
@@ -100,7 +108,7 @@ public class HighlightHintSet extends HintSet {
 				double priority = hint.priority.consensus();
 //				if (priority < 0.35) continue;
 				HintOutcome outcome = new HighlightOutcome(request.code, request.assignmentID,
-						to, request.id, priority);
+						to.toASTNode(), request.id, priority);
 				add(request.id, outcome);
 			}
 		}
@@ -156,10 +164,10 @@ public class HighlightHintSet extends HintSet {
 
 	private static class HighlightOutcome extends HintOutcome {
 
-		final Node from;
+		final ASTNode from;
 		final String assignmentID;
 
-		public HighlightOutcome(Node from, String assignment, Node outcome, int snapshotID,
+		public HighlightOutcome(ASTNode from, String assignment, ASTNode outcome, int snapshotID,
 				double weight) {
 			super(outcome, snapshotID, weight);
 			this.from = from;
@@ -168,16 +176,16 @@ public class HighlightHintSet extends HintSet {
 
 	}
 
-	public List<TutorEdit> toTutorEdits() {
+	public List<PrintableTutorEdit> toTutorEdits() {
 		Diff.colorStyle = ColorStyle.HTML;
-		List<TutorEdit> edits = new ArrayList<>();
+		List<PrintableTutorEdit> edits = new ArrayList<>();
 		int hintID = 0;
 		for (int rowID : keySet()) {
 			for (HintOutcome o : get(rowID)) {
 				HighlightOutcome outcome = (HighlightOutcome) o;
-				String from = outcome.from.prettyPrint(true);
-				String to = outcome.outcome.prettyPrint(true);
-				edits.add(new TutorEdit(hintID++, String.valueOf(rowID), null,
+				String from = outcome.from.prettyPrint(true, SnapRatingConfig::nodeTypeHasBody);
+				String to = outcome.outcome.prettyPrint(true, SnapRatingConfig::nodeTypeHasBody);
+				edits.add(new PrintableTutorEdit(hintID++, String.valueOf(rowID), null,
 						outcome.assignmentID, outcome.from,
 						outcome.outcome, Diff.diff(from, to)));
 			}
