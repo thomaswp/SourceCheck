@@ -34,7 +34,10 @@ public class CHFHintSet extends HintSet {
 					.summaryStatistics();
 
 				double minError = errorStats.getMin();
-				double beta = 1 / (errorStats.getAverage() - minError);
+				double expectedError = errorStats.getAverage() - minError;
+				// Beta is 1 / expectedError, but if expectedError is zero beta is multiplied by 0
+				// in the formula, so we simply set it to 1
+				double beta = expectedError == 0 ? 1 : 1 / (expectedError);
 
 				edits.forEach(e -> add(id, e.toOutcome(minError, beta)));
 			}

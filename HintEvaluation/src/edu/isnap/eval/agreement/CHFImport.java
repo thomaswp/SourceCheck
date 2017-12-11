@@ -17,6 +17,7 @@ import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
+import edu.isnap.datasets.Fall2016;
 import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.agreement.RateHints.GoldStandard;
 import edu.isnap.eval.agreement.RateHints.HintOutcome;
@@ -28,18 +29,21 @@ public class CHFImport {
 
 	public static void main(String[] args) throws IOException {
 //		testLoad(Spring2017.GuessingGame1, "hint-rating");
-//		testLoad(Spring2017.Squiral, "hint-rating"?);
+//		testLoad(Spring2017.Squiral, "hint-rating");
 
-		// TODO: 2 problems...
-		// 1) The public dataset doesn't include literal values unless they're numbers, but the
-		//    consensus dataset does. We'll have to remove them all first...
-		// 2) The consensus dataset has sorted scripts and the CHF one doesn't seem to...
-		GoldStandard standard = TutorEdits.readConsensus(
+		GoldStandard fall2016Standard = TutorEdits.readConsensus(
+				Fall2016.instance, "consensus-gg-sq.csv");
+		GoldStandard spring2017Standard = TutorEdits.readConsensus(
 				Spring2017.instance, "consensus-gg-sq.csv");
-		CHFHintSet hintSet = new CHFHintSet("chf", HighlightHintSet.SnapRatingConfig, "hint-rating",
+
+		CHFHintSet hintSet = new CHFHintSet("chf", HighlightHintSet.SnapRatingConfig,
+				"hint-rating-with-past",
 				Spring2017.Squiral, Spring2017.GuessingGame1);
 
-		RateHints.rate(standard, hintSet);
+		System.out.println("Fall 2016");
+		RateHints.rate(fall2016Standard, hintSet);
+		System.out.println("Spring 2017");
+		RateHints.rate(spring2017Standard, hintSet);
 
 
 	}
@@ -123,7 +127,13 @@ public class CHFImport {
 		}
 
 		public double weight(double minError, double beta) {
-			return Math.exp(-beta * (error - minError));
+			double weight = Math.exp(-beta * (error - minError));
+			if (Double.isNaN(weight)) {
+				throw new RuntimeException(String.format(
+						"Weight is Nan: e=%.05f; beta=%.05f; e_min=%.05f",
+						error, beta, minError));
+			}
+			return weight;
 		}
 
 		public HintOutcome toOutcome(double minError, double beta) {
