@@ -13,7 +13,7 @@ public class SnapNode extends Node {
 
 	private final static Set<String> BodyTypes = new HashSet<>(Arrays.asList(
 		new String[] {
-				"snapshot", "stage", "sprite", "script", "customBlock",
+				"snapshot", "Snap!shot", "stage", "sprite", "script", "customBlock",
 		}
 	));
 

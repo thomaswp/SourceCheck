@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import org.apache.commons.lang.StringUtils;
+
 import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.map.ListMap;
@@ -120,8 +122,9 @@ public class RateHints {
 			// relabeled and has a new type), it's a new node, so prune its children
 			// TODO: This doesn't make sense for Python, where IDs aren't consistent,
 			// and right now it relies on snap-specific code
-			if (prune && node.id != null && !node.id.startsWith("GEN_")) {
-				ASTNode fromMatch = (ASTNode) from.search(n -> n != null && n.id() == node.id);
+			if (prune && node.id != null) {
+				ASTNode fromMatch = (ASTNode) from.search(n -> n != null &&
+						StringUtils.equals(n.id(), node.id));
 				if (fromMatch == null || !fromMatch.hasType(node.type())) {
 					pruneImmediateChildren(node, config::trimIfParentIsAdded);
 				}
@@ -166,11 +169,11 @@ public class RateHints {
 
 			if (outcome.outcome.equals(tutorEdit.to)) {
 				System.out.println(Diff.diff(
-						tutorEdit.from.prettyPrint(true, config::nodeTypeHasBody),
-						tutorEdit.to.prettyPrint(true, config::nodeTypeHasBody)));
+						tutorEdit.from.prettyPrint(true, config),
+						tutorEdit.to.prettyPrint(true, config)));
 				System.out.println(Diff.diff(
-						tutorOutcomeNode.prettyPrint(true, config::nodeTypeHasBody),
-						outcomeNode.prettyPrint(true, config::nodeTypeHasBody), 2));
+						tutorOutcomeNode.prettyPrint(true, config),
+						outcomeNode.prettyPrint(true, config), 2));
 				throw new RuntimeException("Normalized nodes should be equal if nodes are equal!");
 			}
 

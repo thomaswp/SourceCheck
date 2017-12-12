@@ -14,6 +14,7 @@ import java.util.stream.Stream;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
+import edu.isnap.ctd.util.NullStream;
 import edu.isnap.ctd.util.map.CountMap;
 import edu.isnap.ctd.util.map.ListMap;
 
@@ -23,7 +24,7 @@ public class RuleSet implements Serializable {
 	public final HintConfig config;
 	private final List<Disjunction> decisions;
 
-	public static PrintStream trace = System.out;
+	public static PrintStream trace = NullStream.instance;
 
 	@SuppressWarnings("unused")
 	private RuleSet() { this(null, null); }

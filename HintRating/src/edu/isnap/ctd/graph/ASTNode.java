@@ -15,10 +15,31 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.PrettyPrint.Params;
+import edu.isnap.rating.RateHints.RatingConfig;
 
 public class ASTNode implements INode {
 
-	public String type, value, id;
+	/**
+	 * The type of this node, e.g. literal, variable-declaration, binary-operation.
+	 */
+	public String type;
+
+	/**
+	 * The value for this ASTNode, such as the value of a literal, the name of a function
+	 * definition, or the name of a variable.
+	 */
+	public String value;
+
+	/**
+	 * An identifier for this ASTNode, which should be unique for this AST (though uniqueness is not
+	 * enforced by this class).
+	 * Note: the {@link ASTNode#equals(Object)} method does not compare node IDs, since this is
+	 * assumed to be the preferred (and more useful) interpretation of equality between ASTNodes,
+	 * allowing code from different sources to be considered equal. The
+	 * {@link ASTNode#equals(ASTNode, boolean, boolean)} method can be used if this is the desired
+	 * behavior.
+	 */
+	public String id;
 
 	private ASTNode parent;
 
@@ -92,6 +113,10 @@ public class ASTNode implements INode {
 		children.forEach(c -> c.parent = null);
 		children.clear();
 		childRelations.clear();
+	}
+
+	public String prettyPrint(boolean showValues, RatingConfig config) {
+		return prettyPrint(showValues, config::nodeTypeHasBody);
 	}
 
 	public String prettyPrint(boolean showValues, Predicate<String> isBodyType) {
@@ -205,12 +230,16 @@ public class ASTNode implements INode {
 		if (obj == this) return true;
 		if (obj.getClass() != getClass()) return false;
 		ASTNode rhs = (ASTNode) obj;
+		return equals(rhs, false, false);
+	}
+
+	public boolean equals(ASTNode rhs, boolean compareIDs, boolean compareChildRelations) {
 		EqualsBuilder builder = new EqualsBuilder();
 		builder.append(type, rhs.type);
 		builder.append(value, rhs.value);
-		builder.append(id, rhs.id);
+		if (compareIDs) builder.append(id, rhs.id);
 		builder.append(children, rhs.children);
-		builder.append(childRelations, rhs.childRelations);
+		if (compareChildRelations) builder.append(childRelations, rhs.childRelations);
 		return builder.isEquals();
 	}
 
@@ -219,9 +248,7 @@ public class ASTNode implements INode {
 		HashCodeBuilder builder = new HashCodeBuilder(9, 15);
 		builder.append(type);
 		builder.append(value);
-		builder.append(id);
 		builder.append(children);
-		builder.append(childRelations);
 		return builder.toHashCode();
 	}
 }

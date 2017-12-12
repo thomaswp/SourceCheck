@@ -105,10 +105,12 @@ public class HighlightHintSet extends HintSet {
 				List<EditHint> edits = Collections.singletonList(hint);
 				Node to = code.copy();
 				EditHint.applyEdits(to, edits);
+				ASTNode outcomeNode = to.toASTNode();
+				if (outcomeNode.hasType("snapshot")) outcomeNode.type = "Snap!shot";
 				double priority = hint.priority.consensus();
 //				if (priority < 0.35) continue;
 				HintOutcome outcome = new HighlightOutcome(request.code, request.assignmentID,
-						to.toASTNode(), request.id, priority);
+						outcomeNode, request.id, priority);
 				add(request.id, outcome);
 			}
 		}

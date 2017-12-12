@@ -84,7 +84,6 @@ public class TutorEdits {
 
 	protected static void testConsensus(Dataset testDataset, Dataset trainingDataset)
 			throws FileNotFoundException, IOException {
-		RuleSet.trace = NullStream.instance;
 		GoldStandard standard = readConsensus(testDataset, "consensus-gg-sq.csv");
 		HintConfig[] configs = new HintConfig[] {
 				new SnapHintConfig(), // new SnapHintConfig(), new SnapHintConfig()
