@@ -36,8 +36,6 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
-import edu.isnap.datasets.Fall2016;
-import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.agreement.RateHints.GoldStandard;
 import edu.isnap.eval.agreement.RateHints.HintOutcome;
 import edu.isnap.eval.agreement.RateHints.HintSet;
@@ -65,7 +63,7 @@ public class TutorEdits {
 	}
 
 	public enum Priority {
-		Highest(1), High(2), Normal(3);
+		Highest(1), High(2), Normal(3), TooSoon(4);
 
 		public final int value;
 
@@ -87,7 +85,7 @@ public class TutorEdits {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 //		compareHints(Fall2016.instance);
-//		compareHintsPython("../data/itap");
+		compareHintsPython("../data/itap");
 
 //		verifyHints(Fall2016.instance);
 
@@ -97,10 +95,10 @@ public class TutorEdits {
 //			RateHints.rate(standard, hintSet);
 //		}
 
-		System.out.println("Fall");
-		testConsensus(Fall2016.instance, Spring2017.instance);
-		System.out.println("Spring");
-		testConsensus(Spring2017.instance, Fall2016.instance);
+//		System.out.println("Fall");
+//		testConsensus(Fall2016.instance, Spring2017.instance);
+//		System.out.println("Spring");
+//		testConsensus(Spring2017.instance, Fall2016.instance);
 
 //		highlightSQL(Fall2016.instance, Spring2017.instance);
 //		highlightSQL(Spring2017.instance, Fall2016.instance);
@@ -261,10 +259,10 @@ public class TutorEdits {
 				System.out.println(fromPP);
 
 				List<Node> keys = new ArrayList<>(givers.keySet());
-				// Sort by how many raters gave the hint
-				// TODO: sort by hint ID instead
-				keys.sort((n1, n2) -> -Integer.compare(
-						givers.get(n1).size(), givers.get(n2).size()));
+				// Sort by the hintID of the first hint with this outcome (which will be used
+				// as the representative TutorEdit)
+				keys.sort((n1, n2) -> Integer.compare(
+						givers.get(n1).get(0).hintID, givers.get(n2).get(0).hintID));
 				for (Node to : keys) {
 					System.out.println(Diff.diff(fromPP, to.prettyPrint(true), 1));
 					List<TutorEdit> tutorEdits = givers.get(to);
