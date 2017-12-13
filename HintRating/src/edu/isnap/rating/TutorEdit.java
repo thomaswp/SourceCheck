@@ -16,7 +16,7 @@ public class TutorEdit {
 	}
 
 	public enum Priority {
-		Highest(1), High(2), Normal(3);
+		Highest(1), High(2), Normal(3), TooSoon(4);
 
 		public final int value;
 

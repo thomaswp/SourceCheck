@@ -36,8 +36,6 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
-import edu.isnap.datasets.Fall2016;
-import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.eval.python.PythonHintConfig;
 import edu.isnap.hint.SnapHintConfig;
@@ -58,7 +56,7 @@ public class TutorEdits {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 //		compareHints(Fall2016.instance);
-//		compareHintsPython("../data/itap");
+		compareHintsPython("../data/itap");
 
 //		verifyHints(Fall2016.instance);
 
@@ -68,10 +66,10 @@ public class TutorEdits {
 //			RateHints.rate(standard, hintSet);
 //		}
 
-		System.out.println("Fall");
-		testConsensus(Fall2016.instance, Spring2017.instance);
-		System.out.println("Spring");
-		testConsensus(Spring2017.instance, Fall2016.instance);
+//		System.out.println("Fall");
+//		testConsensus(Fall2016.instance, Spring2017.instance);
+//		System.out.println("Spring");
+//		testConsensus(Spring2017.instance, Fall2016.instance);
 
 //		highlightSQL(Fall2016.instance, Spring2017.instance);
 //		highlightSQL(Spring2017.instance, Fall2016.instance);
