@@ -205,7 +205,8 @@ public class TutorEdits {
 				.collect(Collectors.toMap(t -> t, t -> new Spreadsheet()));
 		StringBuilder sql = new StringBuilder();
 
-		for (String assignmentID : assignmentMap.keySet()) {
+		Set<String> assignments = new TreeSet<>(assignmentMap.keySet());
+		for (String assignmentID : assignments) {
 			System.out.println("\n#---------> " + assignmentID + " <---------#\n");
 
 			List<PrintableTutorEdit> edits = assignmentMap.get(assignmentID);
@@ -277,7 +278,7 @@ public class TutorEdits {
 						spreadsheet.put("Hint ID", firstEdit.hintID + compareEditsHintOffset);
 
 						spreadsheet.put("Valid (0-1)", edit == null ? null : 1);
-						spreadsheet.put("Priority (1-3)",
+						spreadsheet.put("Priority (1-4)",
 								edit == null ? null : edit.priority.value);
 
 						spreadsheet.put("Hint", editsStringNoANSI);
