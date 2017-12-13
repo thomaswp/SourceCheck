@@ -229,10 +229,10 @@ public class TutorEdits {
 				System.out.println(fromPP);
 
 				List<ASTNode> keys = new ArrayList<>(givers.keySet());
-				// Sort by how many raters gave the hint
-				// TODO: sort by hint ID instead
-				keys.sort((n1, n2) -> -Integer.compare(
-						givers.get(n1).size(), givers.get(n2).size()));
+				// Sort by the hintID of the first hint with this outcome (which will be used
+				// as the representative TutorEdit)
+				keys.sort((n1, n2) -> Integer.compare(
+						givers.get(n1).get(0).hintID, givers.get(n2).get(0).hintID));
 				for (ASTNode to : keys) {
 					System.out.println(Diff.diff(fromPP,
 							to.prettyPrint(true, config::nodeTypeHasBody), 1));
