@@ -1,7 +1,6 @@
 package edu.isnap.rating;
 
 import edu.isnap.ctd.graph.ASTNode;
-import edu.isnap.rating.RateHints.HintOutcome;
 
 public class TutorEdit {
 

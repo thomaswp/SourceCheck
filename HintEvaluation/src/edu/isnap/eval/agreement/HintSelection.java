@@ -341,7 +341,7 @@ public class HintSelection {
 		}
 	}
 
-	public static class HintRequest {
+	protected static class HintRequest {
 		public final Assignment assignment;
 		public final AssignmentAttempt attempt;
 		public final AttemptAction action;

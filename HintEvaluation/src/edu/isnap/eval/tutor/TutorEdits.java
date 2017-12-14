@@ -36,6 +36,8 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
+import edu.isnap.datasets.Fall2016;
+import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.agreement.Agreement;
 import edu.isnap.eval.agreement.HintSelection;
 import edu.isnap.eval.export.JsonAST;
@@ -46,9 +48,9 @@ import edu.isnap.hint.util.SnapNode;
 import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.Snapshot;
+import edu.isnap.rating.GoldStandard;
+import edu.isnap.rating.HintSet;
 import edu.isnap.rating.RateHints;
-import edu.isnap.rating.RateHints.GoldStandard;
-import edu.isnap.rating.RateHints.HintSet;
 import edu.isnap.rating.RateHints.RatingConfig;
 import edu.isnap.rating.TutorEdit;
 import edu.isnap.rating.TutorEdit.Priority;
@@ -58,7 +60,7 @@ public class TutorEdits {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 //		compareHints(Fall2016.instance);
-		compareHintsPython("../data/itap");
+//		compareHintsPython("../data/itap");
 
 //		verifyHints(Fall2016.instance);
 
@@ -68,10 +70,10 @@ public class TutorEdits {
 //			RateHints.rate(standard, hintSet);
 //		}
 
-//		System.out.println("Fall");
-//		testConsensus(Fall2016.instance, Spring2017.instance);
-//		System.out.println("Spring");
-//		testConsensus(Spring2017.instance, Fall2016.instance);
+		System.out.println("Fall");
+		testConsensus(Fall2016.instance, Spring2017.instance);
+		System.out.println("Spring");
+		testConsensus(Spring2017.instance, Fall2016.instance);
 
 //		highlightSQL(Fall2016.instance, Spring2017.instance);
 //		highlightSQL(Spring2017.instance, Fall2016.instance);
@@ -309,9 +311,10 @@ public class TutorEdits {
 					hintSets.put(edit.tutor,
 							set = new HintSet(edit.tutor, HighlightHintSet.SnapRatingConfig));
 				}
-				set.add(edit.requestID, edit.toOutcome());
+				set.add(edit.toOutcome());
 			}
 		}
+		hintSets.values().forEach(s -> s.finish());
 		return hintSets;
 	}
 

@@ -1,8 +1,6 @@
 package edu.isnap.rating;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -28,7 +26,7 @@ public class RateHints {
 			for (Integer snapshotID : standard.getSnapshotIDs(assignment)) {
 				List<TutorEdit> validEdits = standard.getValidEdits(assignment, snapshotID);
 				if (validEdits.size() == 0) continue;
-				List<HintOutcome> hints = hintSet.get(snapshotID);
+				List<HintOutcome> hints = hintSet.getOutcomes(snapshotID);
 
 //				if (snapshotID == 145234) {
 //					validEdits.forEach(e -> System.out.println( e.to.prettyPrint(true)));
@@ -57,18 +55,18 @@ public class RateHints {
 						rating.validity = exactMatch.validity;
 						rating.priority = exactMatch.priority;
 						for (int i = 0; i < exactMatch.validity.value; i++) {
-							weightedValidity[i] += hint.weight;
+							weightedValidity[i] += hint.weight();
 						}
 					}
 //					System.out.println(rating);
 					ratings.add(snapshotID, rating);
 				}
 				List<HintRating> snapshotRatings = ratings.get(snapshotID);
-				double weight = snapshotRatings.stream().mapToDouble(r -> r.hint.weight).sum();
+				double weight = snapshotRatings.stream().mapToDouble(r -> r.hint.weight()).sum();
 				// TODO: figure out whether to count 0-priority items
 				double priority = snapshotRatings.stream()
 						.filter(r -> r.priority != null)
-						.mapToDouble(r -> r.hint.weight * r.priority.points())
+						.mapToDouble(r -> r.hint.weight() * r.priority.points())
 						.sum() / weight;
 
 				for (int i = 0; i < weightedValidity.length; i++) {
@@ -197,31 +195,6 @@ public class RateHints {
 		return null;
 	}
 
-	public static class HintSet extends ListMap<Integer, HintOutcome> {
-		public final String name;
-		public final RatingConfig config;
-
-		public HintSet(String name, RatingConfig config) {
-			this.name = name;
-			this.config = config;
-		}
-	}
-
-	public static class HintOutcome {
-		public final ASTNode outcome;
-		public final int snapshotID;
-		public final double weight;
-
-		public HintOutcome(ASTNode outcome, int snapshotID, double weight) {
-			this.outcome = outcome;
-			this.snapshotID = snapshotID;
-			this.weight = weight;
-			if (weight <= 0 || Double.isNaN(weight)) {
-				throw new IllegalArgumentException("All weights must be positive: " + weight);
-			}
-		}
-	}
-
 	public static class HintRating {
 		public final HintOutcome hint;
 
@@ -235,57 +208,6 @@ public class RateHints {
 		@Override
 		public String toString() {
 			return validity + " / " + priority + "\n" + hint;
-		}
-	}
-
-	public static class GoldStandard {
-
-		private final HashMap<String, ListMap<Integer, TutorEdit>> map = new HashMap<>();
-		private final List<HintRequest> hintRequests = new ArrayList<>();
-
-		public Set<String> getAssignments() {
-			return map.keySet();
-		}
-
-		public List<HintRequest> getHintRequests() {
-			return Collections.unmodifiableList(hintRequests);
-		}
-
-		public Set<Integer> getSnapshotIDs(String assignment) {
-			return map.get(assignment).keySet();
-		}
-
-		public List<TutorEdit> getValidEdits(String assignment, int snapshotID) {
-			return map.get(assignment).getList(snapshotID);
-		}
-
-		public GoldStandard(ListMap<String, ? extends TutorEdit> consensusEdits) {
-			for (String assignment : consensusEdits.keySet()) {
-				List<? extends TutorEdit> list = consensusEdits.get(assignment);
-				ListMap<Integer, TutorEdit> snapshotMap = new ListMap<>();
-				list.forEach(edit -> snapshotMap.add(edit.requestID, edit));
-				map.put(assignment, snapshotMap);
-
-				Set<Integer> addedIDs = new HashSet<>();
-				list.forEach(edit -> {
-					if (addedIDs.add(edit.requestID)) {
-						hintRequests.add(new HintRequest(edit.requestID, assignment, edit.from));
-					}
-				});
-			}
-		}
-	}
-
-	// TODO: Merge with or differentiate from other HintRequest class
-	public static class HintRequest {
-		public final int id;
-		public final String assignmentID;
-		public final ASTNode code;
-
-		public HintRequest(int id, String assignmentID, ASTNode code) {
-			this.id = id;
-			this.assignmentID = assignmentID;
-			this.code = code;
 		}
 	}
 

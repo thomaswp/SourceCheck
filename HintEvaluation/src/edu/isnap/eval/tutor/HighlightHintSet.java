@@ -30,9 +30,9 @@ import edu.isnap.eval.tutor.TutorEdits.PrintableTutorEdit;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.util.SnapNode;
 import edu.isnap.parser.Store.Mode;
-import edu.isnap.rating.RateHints.HintOutcome;
-import edu.isnap.rating.RateHints.HintRequest;
-import edu.isnap.rating.RateHints.HintSet;
+import edu.isnap.rating.HintOutcome;
+import edu.isnap.rating.HintRequest;
+import edu.isnap.rating.HintSet;
 import edu.isnap.rating.RateHints.RatingConfig;
 
 public class HighlightHintSet extends HintSet {
@@ -112,9 +112,10 @@ public class HighlightHintSet extends HintSet {
 //				if (priority < 0.35) continue;
 				HintOutcome outcome = new HighlightOutcome(request.code, request.assignmentID,
 						outcomeNode, request.id, priority);
-				add(request.id, outcome);
+				add(outcome);
 			}
 		}
+		finish();
 	}
 
 	// Filter out hints that wouldn't be shown in iSnap anyway
@@ -183,8 +184,8 @@ public class HighlightHintSet extends HintSet {
 		Diff.colorStyle = ColorStyle.HTML;
 		List<PrintableTutorEdit> edits = new ArrayList<>();
 		int hintID = 0;
-		for (int rowID : keySet()) {
-			for (HintOutcome o : get(rowID)) {
+		for (int rowID : getHintRequestIDs()) {
+			for (HintOutcome o : getOutcomes(rowID)) {
 				HighlightOutcome outcome = (HighlightOutcome) o;
 				String from = outcome.from.prettyPrint(true, SnapRatingConfig::nodeTypeHasBody);
 				String to = outcome.outcome.prettyPrint(true, SnapRatingConfig::nodeTypeHasBody);
