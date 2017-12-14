@@ -1,4 +1,4 @@
-package edu.isnap.eval.agreement;
+package edu.isnap.eval.tutor;
 
 import java.io.IOException;
 import java.util.DoubleSummaryStatistics;
@@ -6,7 +6,7 @@ import java.util.List;
 
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.dataset.Assignment;
-import edu.isnap.eval.agreement.CHFImport.CHFEdit;
+import edu.isnap.eval.tutor.CHFImport.CHFEdit;
 import edu.isnap.rating.RateHints.HintSet;
 import edu.isnap.rating.RateHints.RatingConfig;
 

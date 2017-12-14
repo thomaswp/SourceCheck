@@ -1,4 +1,4 @@
-package edu.isnap.eval.agreement;
+package edu.isnap.eval.tutor;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -36,6 +36,8 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
+import edu.isnap.eval.agreement.Agreement;
+import edu.isnap.eval.agreement.HintSelection;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.eval.python.PythonHintConfig;
 import edu.isnap.hint.SnapHintConfig;

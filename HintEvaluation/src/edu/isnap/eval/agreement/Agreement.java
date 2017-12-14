@@ -124,7 +124,7 @@ public class Agreement {
 
 	// Nodes that might get auto-added as parameters to added nodes, which can be pruned away if
 	// they have no children to make comparison between trees simpler
-	final static HashSet<String> prunable = new HashSet<>();
+	private final static HashSet<String> prunable = new HashSet<>();
 	static {
 		for (String c : new String[] {
 				"literal",
@@ -136,11 +136,15 @@ public class Agreement {
 		}
 	}
 
+	public static boolean isPrunable(String type) {
+		return prunable.contains(type);
+	}
+
 	public static Node prune(Node node) {
 		for (int i = 0; i < node.children.size(); i++) {
 			Node child = node.children.get(i);
 			prune(child);
-			if (prunable.contains(child.type()) && child.children.isEmpty()) {
+			if (isPrunable(child.type()) && child.children.isEmpty()) {
 				node.children.remove(i--);
 			}
 		}

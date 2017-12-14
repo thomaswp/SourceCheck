@@ -1,4 +1,4 @@
-package edu.isnap.eval.agreement;
+package edu.isnap.eval.tutor;
 
 import java.io.File;
 import java.io.IOException;

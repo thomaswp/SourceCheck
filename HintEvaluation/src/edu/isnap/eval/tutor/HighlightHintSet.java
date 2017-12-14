@@ -1,4 +1,4 @@
-package edu.isnap.eval.agreement;
+package edu.isnap.eval.tutor;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,8 +24,9 @@ import edu.isnap.ctd.util.NullStream;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
-import edu.isnap.eval.agreement.TutorEdits.PrintableTutorEdit;
+import edu.isnap.eval.agreement.Agreement;
 import edu.isnap.eval.export.JsonAST;
+import edu.isnap.eval.tutor.TutorEdits.PrintableTutorEdit;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.util.SnapNode;
 import edu.isnap.parser.Store.Mode;
@@ -52,7 +53,7 @@ public class HighlightHintSet extends HintSet {
 
 		@Override
 		public boolean trimIfParentIsAdded(String type) {
-			return Agreement.prunable.contains(type);
+			return Agreement.isPrunable(type);
 		}
 
 		@Override
