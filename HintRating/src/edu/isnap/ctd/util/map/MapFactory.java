@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 public interface MapFactory {
 	public <A, B> Map<A, B> createMap();
@@ -12,6 +13,13 @@ public interface MapFactory {
 		@Override
 		public <A, B> Map<A, B> createMap() {
 			return new HashMap<>();
+		}
+	};
+
+	public static final MapFactory TreeMapFactory = new MapFactory() {
+		@Override
+		public <A, B> Map<A, B> createMap() {
+			return new TreeMap<>();
 		}
 	};
 

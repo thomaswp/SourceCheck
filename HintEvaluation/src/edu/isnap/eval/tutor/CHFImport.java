@@ -56,7 +56,7 @@ public class CHFImport {
 		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, false);
 		for (AssignmentAttempt attempt : attempts.values()) {
 			for (AttemptAction action : attempt) {
-				List<HintOutcome> outcomes = allHints.getOutcomes(action.id);
+				List<HintOutcome> outcomes = allHints.getOutcomes(String.valueOf(action.id));
 				if (outcomes == null) continue;
 
 				ASTNode from = JsonAST.toAST(action.lastSnapshot, true);
@@ -67,7 +67,7 @@ public class CHFImport {
 					HintOutcome outcome = outcomes.get(i);
 					System.out.println(i + ": " + ((HintWithError) outcome).error);
 					System.out.println(Diff.diff(fromString,
-							SnapNode.prettyPrint(outcome.outcome, true), 2));
+							SnapNode.prettyPrint(outcome.result, true), 2));
 					System.out.println();
 				}
 

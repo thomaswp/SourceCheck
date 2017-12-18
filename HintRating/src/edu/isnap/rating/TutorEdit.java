@@ -36,9 +36,7 @@ public class TutorEdit {
 	}
 
 	public final int hintID;
-	// TODO: Make this just a string
-	public final int requestID;
-	public final String requestIDString;
+	public final String requestID;
 	public final String tutor, assignmentID;
 	public final ASTNode from, to;
 
@@ -48,28 +46,16 @@ public class TutorEdit {
 	public TutorEdit(int hintID, String requestID, String tutor, String assignmentID, ASTNode from,
 			ASTNode to) {
 		this.hintID = hintID;
-		this.requestIDString = requestID;
-		this.requestID = parseRequestID(requestID);
+		this.requestID = requestID;
 		this.tutor = tutor;
 		this.assignmentID = assignmentID;
 		this.from = from;
 		this.to = to;
 	}
 
-	private static int parseRequestID(String requestID) {
-		try {
-			return Integer.parseInt(requestID);
-		} catch (NumberFormatException e) { }
-		if (requestID.length() > 8) requestID = requestID.substring(0, 8);
-		try {
-			return Integer.parseInt(requestID, 16);
-		} catch (NumberFormatException e) { }
-		return requestID.hashCode();
-	}
-
 	@Override
 	public String toString() {
-		return String.format("%s, request %s, hint #%d", tutor, requestIDString, hintID);
+		return String.format("%s, request %s, hint #%d", tutor, requestID, hintID);
 	}
 
 	public HintOutcome toOutcome() {

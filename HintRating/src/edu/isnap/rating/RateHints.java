@@ -17,16 +17,16 @@ import edu.isnap.rating.TutorEdit.Validity;
 public class RateHints {
 
 	public static void rate(GoldStandard standard, HintSet hintSet) {
-		for (String assignment : standard.getAssignments()) {
+		for (String assignment : standard.getAssignmentIDs()) {
 			System.out.println("----- " + assignment + " -----");
 
-			ListMap<Integer, HintRating> ratings = new ListMap<>();
+			ListMap<String, HintRating> ratings = new ListMap<>();
 			double totalWeightedPriority = 0;
 			double[] totalWeightedValidity = new double[3];
-			for (Integer snapshotID : standard.getSnapshotIDs(assignment)) {
-				List<TutorEdit> validEdits = standard.getValidEdits(assignment, snapshotID);
+			for (String requestID : standard.getRequestIDs(assignment)) {
+				List<TutorEdit> validEdits = standard.getValidEdits(assignment, requestID);
 				if (validEdits.size() == 0) continue;
-				List<HintOutcome> hints = hintSet.getOutcomes(snapshotID);
+				List<HintOutcome> hints = hintSet.getOutcomes(requestID);
 
 //				if (snapshotID == 145234) {
 //					validEdits.forEach(e -> System.out.println( e.to.prettyPrint(true)));
@@ -59,9 +59,9 @@ public class RateHints {
 						}
 					}
 //					System.out.println(rating);
-					ratings.add(snapshotID, rating);
+					ratings.add(requestID, rating);
 				}
-				List<HintRating> snapshotRatings = ratings.get(snapshotID);
+				List<HintRating> snapshotRatings = ratings.get(requestID);
 				double weight = snapshotRatings.stream().mapToDouble(r -> r.hint.weight()).sum();
 				// TODO: figure out whether to count 0-priority items
 				double priority = snapshotRatings.stream()
@@ -75,7 +75,7 @@ public class RateHints {
 				}
 				totalWeightedPriority += priority;
 
-				System.out.printf("%d: [%.03f, %.03f, %.03f]v / %.03fp\n", snapshotID,
+				System.out.printf("%s: [%.03f, %.03f, %.03f]v / %.03fp\n", requestID,
 						weightedValidity[0], weightedValidity[1], weightedValidity[2],
 						priority);
 			}
@@ -158,14 +158,14 @@ public class RateHints {
 			RatingConfig config) {
 		if (validEdits.isEmpty()) return null;
 		// TODO: supersets, subsets of edits
-		ASTNode outcomeNode = normalizeNewValuesTo(validEdits.get(0).from, outcome.outcome,
+		ASTNode outcomeNode = normalizeNewValuesTo(validEdits.get(0).from, outcome.result,
 				config, true);
 		for (TutorEdit tutorEdit : validEdits) {
 			ASTNode tutorOutcomeNode = normalizeNewValuesTo(tutorEdit.from, tutorEdit.to,
 					config, true);
 			if (outcomeNode.equals(tutorOutcomeNode)) return tutorEdit;
 
-			if (outcome.outcome.equals(tutorEdit.to)) {
+			if (outcome.result.equals(tutorEdit.to)) {
 				System.out.println(Diff.diff(
 						tutorEdit.from.prettyPrint(true, config),
 						tutorEdit.to.prettyPrint(true, config)));

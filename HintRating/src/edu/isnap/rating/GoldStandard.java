@@ -8,13 +8,14 @@ import java.util.List;
 import java.util.Set;
 
 import edu.isnap.ctd.util.map.ListMap;
+import edu.isnap.ctd.util.map.MapFactory;
 
 public class GoldStandard {
 
-	private final HashMap<String, ListMap<Integer, TutorEdit>> map = new HashMap<>();
+	private final HashMap<String, ListMap<String, TutorEdit>> map = new HashMap<>();
 	private final List<HintRequest> hintRequests = new ArrayList<>();
 
-	public Set<String> getAssignments() {
+	public Set<String> getAssignmentIDs() {
 		return map.keySet();
 	}
 
@@ -22,22 +23,22 @@ public class GoldStandard {
 		return Collections.unmodifiableList(hintRequests);
 	}
 
-	public Set<Integer> getSnapshotIDs(String assignment) {
-		return map.get(assignment).keySet();
+	public Set<String> getRequestIDs(String assignmentID) {
+		return map.get(assignmentID).keySet();
 	}
 
-	public List<TutorEdit> getValidEdits(String assignment, int snapshotID) {
+	public List<TutorEdit> getValidEdits(String assignment, String snapshotID) {
 		return map.get(assignment).getList(snapshotID);
 	}
 
 	public GoldStandard(ListMap<String, ? extends TutorEdit> consensusEdits) {
 		for (String assignment : consensusEdits.keySet()) {
 			List<? extends TutorEdit> list = consensusEdits.get(assignment);
-			ListMap<Integer, TutorEdit> snapshotMap = new ListMap<>();
+			ListMap<String, TutorEdit> snapshotMap = new ListMap<>(MapFactory.TreeMapFactory);
 			list.forEach(edit -> snapshotMap.add(edit.requestID, edit));
 			map.put(assignment, snapshotMap);
 
-			Set<Integer> addedIDs = new HashSet<>();
+			Set<String> addedIDs = new HashSet<>();
 			list.forEach(edit -> {
 				if (addedIDs.add(edit.requestID)) {
 					hintRequests.add(new HintRequest(edit.requestID, assignment, edit.from));

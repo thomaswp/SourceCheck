@@ -17,7 +17,7 @@ public class HintSet {
 	public final String name;
 	public final RatingConfig config;
 
-	private final ListMap<Integer, HintOutcome> hintMap = new ListMap<>();
+	private final ListMap<String, HintOutcome> hintMap = new ListMap<>();
 
 	public HintSet(String name, RatingConfig config) {
 		this.name = name;
@@ -25,19 +25,19 @@ public class HintSet {
 	}
 
 	public void add(HintOutcome outcome) {
-		hintMap.add(outcome.snapshotID, outcome);
+		hintMap.add(outcome.requestID, outcome);
 	}
 
-	public Set<Integer> getHintRequestIDs() {
+	public Set<String> getHintRequestIDs() {
 		return hintMap.keySet();
 	}
 
-	public List<HintOutcome> getOutcomes(int snapshotID) {
+	public List<HintOutcome> getOutcomes(String snapshotID) {
 		return Collections.unmodifiableList(hintMap.get(snapshotID));
 	}
 
 	public void finish() {
-		for (Integer id : hintMap.keySet()) {
+		for (String id : hintMap.keySet()) {
 			List<HintWithError> outcomesWithError = hintMap.get(id).stream()
 					.filter(HintWithError.class::isInstance)
 					.map(HintWithError.class::cast)

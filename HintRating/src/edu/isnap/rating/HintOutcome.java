@@ -10,8 +10,8 @@ import edu.isnap.ctd.graph.ASTNode;
 
 public class HintOutcome implements Comparable<HintOutcome> {
 
-	public final ASTNode outcome;
-	public final int snapshotID;
+	public final ASTNode result;
+	public final String requestID;
 
 	private final double weight;
 
@@ -19,9 +19,9 @@ public class HintOutcome implements Comparable<HintOutcome> {
 		return weight;
 	}
 
-	public HintOutcome(ASTNode outcome, int snapshotID, double weight) {
-		this.outcome = outcome;
-		this.snapshotID = snapshotID;
+	public HintOutcome(ASTNode result, String requestID, double weight) {
+		this.result = result;
+		this.requestID = requestID;
 		this.weight = weight;
 		if (weight <= 0 || Double.isNaN(weight)) {
 			throw new IllegalArgumentException("All weights must be positive: " + weight);
@@ -38,10 +38,10 @@ public class HintOutcome implements Comparable<HintOutcome> {
 		JSONObject json = new JSONObject(contents);
 		ASTNode root = ASTNode.parse(json);
 		String name = file.getName().replace(".json", "");
-		int snapshotID;
+		String snapshotID;
 		try {
 			int underscoreIndex = name.indexOf("_");
-			snapshotID = Integer.parseInt(name.substring(0, underscoreIndex));
+			snapshotID = name.substring(0, underscoreIndex);
 		} catch (Exception e) {
 			throw new RuntimeException("Invalid outcome file name: " + file.getName());
 		}
@@ -70,8 +70,8 @@ public class HintOutcome implements Comparable<HintOutcome> {
 			return calculatedWeight;
 		}
 
-		public HintWithError(ASTNode outcome, int snapshotID, double error) {
-			super(outcome, snapshotID, 1);
+		public HintWithError(ASTNode result, String  snapshotID, double error) {
+			super(result, snapshotID, 1);
 			this.error = error;
 		}
 

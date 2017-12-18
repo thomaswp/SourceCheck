@@ -152,9 +152,9 @@ public abstract class HighlightHintSet extends HintSet {
 		final ASTNode from;
 		final String assignmentID;
 
-		public HighlightOutcome(ASTNode from, String assignment, ASTNode outcome, int snapshotID,
+		public HighlightOutcome(ASTNode from, String assignment, ASTNode result, String requestID,
 				double weight) {
-			super(outcome, snapshotID, weight);
+			super(result, requestID, weight);
 			this.from = from;
 			this.assignmentID = assignment;
 		}
@@ -165,14 +165,14 @@ public abstract class HighlightHintSet extends HintSet {
 		Diff.colorStyle = ColorStyle.HTML;
 		List<PrintableTutorEdit> edits = new ArrayList<>();
 		int hintID = 0;
-		for (int rowID : getHintRequestIDs()) {
-			for (HintOutcome o : getOutcomes(rowID)) {
+		for (String requestID : getHintRequestIDs()) {
+			for (HintOutcome o : getOutcomes(requestID)) {
 				HighlightOutcome outcome = (HighlightOutcome) o;
 				String from = outcome.from.prettyPrint(true, SnapRatingConfig::nodeTypeHasBody);
-				String to = outcome.outcome.prettyPrint(true, SnapRatingConfig::nodeTypeHasBody);
-				edits.add(new PrintableTutorEdit(hintID++, String.valueOf(rowID), null,
+				String to = outcome.result.prettyPrint(true, SnapRatingConfig::nodeTypeHasBody);
+				edits.add(new PrintableTutorEdit(hintID++, requestID, null,
 						outcome.assignmentID, outcome.from,
-						outcome.outcome, Diff.diff(from, to)));
+						outcome.result, Diff.diff(from, to)));
 			}
 		}
 		Diff.colorStyle = ColorStyle.ANSI;

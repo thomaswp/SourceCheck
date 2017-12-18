@@ -129,7 +129,7 @@ public class TutorEdits {
 
 			spreadsheet.newRow();
 			spreadsheet.put("Assignment ID", edit.assignmentID);
-			spreadsheet.put("Row ID", edit.requestIDString);
+			spreadsheet.put("Row ID", edit.requestID);
 			spreadsheet.put("Hint ID", edit.hintID + offset);
 
 			spreadsheet.put("Valid (0-1)", null);
@@ -225,7 +225,7 @@ public class TutorEdits {
 			edits = edits.stream()
 					.filter(e -> !"consensus".equals(e.tutor))
 					.collect(Collectors.toList());
-			Set<String> requestIDs = new TreeSet<>(edits.stream().map(e -> e.requestIDString)
+			Set<String> requestIDs = new TreeSet<>(edits.stream().map(e -> e.requestID)
 					.collect(Collectors.toSet()));
 
 			for (String requestID : requestIDs) {
@@ -233,7 +233,7 @@ public class TutorEdits {
 
 				ListMap<ASTNode, PrintableTutorEdit> givers = new ListMap<>();
 				edits.stream()
-				.filter(e -> e.requestIDString.equals(requestID))
+				.filter(e -> e.requestID.equals(requestID))
 				.forEach(e -> givers.add(
 						RateHints.normalizeNewValuesTo(e.from, e.to, config, false), e));
 
@@ -286,7 +286,7 @@ public class TutorEdits {
 						Spreadsheet spreadsheet = tutorSpreadsheets.get(tutor);
 						spreadsheet.newRow();
 						spreadsheet.put("Assignment ID", firstEdit.assignmentID);
-						spreadsheet.put("Row ID", firstEdit.requestIDString);
+						spreadsheet.put("Row ID", firstEdit.requestID);
 						spreadsheet.put("Hint ID", firstEdit.hintID + compareEditsHintOffset);
 
 						spreadsheet.put("Valid (0-1)", edit == null ? null : 1);
@@ -567,12 +567,17 @@ public class TutorEdits {
 
 		public String toSQLInsert(String table, String user, int hintIDOffset,
 				boolean addPriority, boolean addDate) {
+			boolean requestIDIsInt = false;
+			try {
+				Integer.parseInt(requestID);
+				requestIDIsInt = true;
+			} catch (NumberFormatException e) { }
+
 			return String.format("INSERT INTO `%s` (`hid`, `userID`, `rowID`, `trueAssignmentID`, "
 					+ "`priority`, `hintCode`, `hintEdits`, `updatedTime`) "
 					+ "VALUES (%d, '%s', %s, '%s', %s, '%s', '%s', %s);",
 					table, hintID + hintIDOffset, user,
-					String.valueOf(requestID).equals(requestIDString) ?
-							requestIDString : ("'" + requestIDString + "'"),
+					requestIDIsInt ? requestID : ("'" + requestID + "'"),
 					assignmentID,
 					addPriority ? String.valueOf(priority.value) : "NULL",
 					StringEscapeUtils.escapeSql(toSource),
