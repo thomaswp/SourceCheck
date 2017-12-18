@@ -2,7 +2,7 @@ package edu.isnap.rating;
 
 import edu.isnap.ctd.graph.ASTNode;
 
-public class TutorEdit {
+public class TutorHint {
 
 	public enum Validity {
 		NoTutors(0), OneTutor(1), MultipleTutors(2), Consensus(3);
@@ -43,7 +43,7 @@ public class TutorEdit {
 	public Validity validity;
 	public Priority priority;
 
-	public TutorEdit(int hintID, String requestID, String tutor, String assignmentID, ASTNode from,
+	public TutorHint(int hintID, String requestID, String tutor, String assignmentID, ASTNode from,
 			ASTNode to) {
 		this.hintID = hintID;
 		this.requestID = requestID;

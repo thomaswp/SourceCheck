@@ -52,6 +52,7 @@ public class ImportHighlightHintSet extends HighlightHintSet {
 					e.printStackTrace();
 				}
 			}
+			// TODO: Decide how to handle data where IDs are inconsistent
 			builder.addAttempt(trace, true);
 		}
 		builder.finishedAdding();

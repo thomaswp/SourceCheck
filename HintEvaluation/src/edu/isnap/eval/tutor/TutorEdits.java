@@ -53,9 +53,9 @@ import edu.isnap.rating.GoldStandard;
 import edu.isnap.rating.HintSet;
 import edu.isnap.rating.RateHints;
 import edu.isnap.rating.RateHints.RatingConfig;
-import edu.isnap.rating.TutorEdit;
-import edu.isnap.rating.TutorEdit.Priority;
-import edu.isnap.rating.TutorEdit.Validity;
+import edu.isnap.rating.TutorHint;
+import edu.isnap.rating.TutorHint.Priority;
+import edu.isnap.rating.TutorHint.Validity;
 
 public class TutorEdits {
 
@@ -254,7 +254,7 @@ public class TutorEdits {
 					String editsString = firstEdit.editsString(true);
 					System.out.println(editsString);
 					int priorityMatches = 0;
-					for (TutorEdit tutorEdit : tutorEdits) {
+					for (TutorHint tutorEdit : tutorEdits) {
 						if (tutorEdit.priority == firstEdit.priority) priorityMatches++;
 						System.out.printf("  %d/%s: #%d\n",
 								tutorEdit.priority.value, tutorEdit.tutor, tutorEdit.hintID);
@@ -266,7 +266,7 @@ public class TutorEdits {
 							priorityMatches == tutors.size(), true));
 					sql.append("\n");
 
-					Map<String, TutorEdit> givingTutors = null;
+					Map<String, TutorHint> givingTutors = null;
 					try {
 						givingTutors = tutorEdits.stream()
 								.collect(Collectors.toMap(e -> e.tutor, e -> e));
@@ -281,7 +281,7 @@ public class TutorEdits {
 					String editsStringNoANSI = firstEdit.editsString(false);
 
 					for (String tutor : tutorSpreadsheets.keySet()) {
-						TutorEdit edit = givingTutors.get(tutor);
+						TutorHint edit = givingTutors.get(tutor);
 
 						Spreadsheet spreadsheet = tutorSpreadsheets.get(tutor);
 						spreadsheet.newRow();
@@ -312,7 +312,7 @@ public class TutorEdits {
 		Map<String, HintSet> hintSets = new HashMap<>();
 		ListMap<String, PrintableTutorEdit> allEdits = readTutorEditsSnap(dataset);
 		for (List<PrintableTutorEdit> list : allEdits.values()) {
-			for (TutorEdit edit : list) {
+			for (TutorHint edit : list) {
 				if (edit.tutor.equals("consensus")) continue;
 				HintSet set = hintSets.get(edit.tutor);
 				if (set == null) {
@@ -511,7 +511,7 @@ public class TutorEdits {
 		}
 	}
 
-	static class PrintableTutorEdit extends TutorEdit {
+	static class PrintableTutorEdit extends TutorHint {
 
 		public final String toSource;
 

@@ -11,8 +11,8 @@ import org.apache.commons.lang.StringUtils;
 import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.map.ListMap;
-import edu.isnap.rating.TutorEdit.Priority;
-import edu.isnap.rating.TutorEdit.Validity;
+import edu.isnap.rating.TutorHint.Priority;
+import edu.isnap.rating.TutorHint.Validity;
 
 public class RateHints {
 
@@ -24,7 +24,7 @@ public class RateHints {
 			double totalWeightedPriority = 0;
 			double[] totalWeightedValidity = new double[3];
 			for (String requestID : standard.getRequestIDs(assignment)) {
-				List<TutorEdit> validEdits = standard.getValidEdits(assignment, requestID);
+				List<TutorHint> validEdits = standard.getValidEdits(assignment, requestID);
 				if (validEdits.size() == 0) continue;
 				List<HintOutcome> hints = hintSet.getOutcomes(requestID);
 
@@ -48,7 +48,7 @@ public class RateHints {
 //						System.out.println("!!");
 //					}
 					HintRating rating = new HintRating(hint);
-					TutorEdit exactMatch = findMatchingEdit(validEdits, hint, hintSet.config);
+					TutorHint exactMatch = findMatchingEdit(validEdits, hint, hintSet.config);
 
 					rating.validity = Validity.NoTutors;
 					if (exactMatch != null) {
@@ -154,13 +154,13 @@ public class RateHints {
 		return to;
 	}
 
-	public static TutorEdit findMatchingEdit(List<TutorEdit> validEdits, HintOutcome outcome,
+	public static TutorHint findMatchingEdit(List<TutorHint> validEdits, HintOutcome outcome,
 			RatingConfig config) {
 		if (validEdits.isEmpty()) return null;
 		// TODO: supersets, subsets of edits
 		ASTNode outcomeNode = normalizeNewValuesTo(validEdits.get(0).from, outcome.result,
 				config, true);
-		for (TutorEdit tutorEdit : validEdits) {
+		for (TutorHint tutorEdit : validEdits) {
 			ASTNode tutorOutcomeNode = normalizeNewValuesTo(tutorEdit.from, tutorEdit.to,
 					config, true);
 			if (outcomeNode.equals(tutorOutcomeNode)) return tutorEdit;
