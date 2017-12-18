@@ -22,8 +22,8 @@ public class ImportHighlightHintSet extends HighlightHintSet {
 
 	private final Map<String, HintHighlighter> highlighters = new HashMap<>();
 
-	public ImportHighlightHintSet(String name, HintConfig config, String directory) {
-		super(name, config);
+	public ImportHighlightHintSet(String name, HintConfig hintConfig, String directory) {
+		super(name, hintConfig);
 		File dirFile = new File(directory);
 		if (!dirFile.exists()) {
 			throw new RuntimeException("Directory does not exist: " +
@@ -36,7 +36,7 @@ public class ImportHighlightHintSet extends HighlightHintSet {
 
 	private void addAssignment(File directory) {
 		String assignment = directory.getName();
-		HintMapBuilder builder = new HintMapBuilder(new HintMap(config), 1);
+		HintMapBuilder builder = new HintMapBuilder(new HintMap(hintConfig), 1);
 		for (File attemptDir : directory.listFiles(f -> f.isDirectory())) {
 			List<Node> trace = new ArrayList<>();
 			for (File snapshotFile : attemptDir.listFiles()) {

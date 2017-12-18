@@ -15,7 +15,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.PrettyPrint.Params;
-import edu.isnap.rating.RateHints.RatingConfig;
+import edu.isnap.rating.RatingConfig;
 
 public class ASTNode implements INode {
 

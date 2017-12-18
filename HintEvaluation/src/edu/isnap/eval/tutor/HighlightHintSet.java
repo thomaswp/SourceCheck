@@ -19,51 +19,36 @@ import edu.isnap.ctd.hint.edit.Reorder;
 import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.Diff.ColorStyle;
 import edu.isnap.ctd.util.map.ListMap;
-import edu.isnap.eval.agreement.Agreement;
 import edu.isnap.eval.export.JsonAST;
+import edu.isnap.eval.python.PythonHintConfig;
 import edu.isnap.eval.tutor.TutorEdits.PrintableTutorEdit;
+import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.hint.util.SnapNode;
 import edu.isnap.rating.HintOutcome;
 import edu.isnap.rating.HintRequest;
 import edu.isnap.rating.HintSet;
-import edu.isnap.rating.RateHints.RatingConfig;
+import edu.isnap.rating.RatingConfig;
 
 public abstract class HighlightHintSet extends HintSet {
 
-	protected final HintConfig config;
-
-	public final static RatingConfig SnapRatingConfig = new RatingConfig() {
-		@Override
-		public boolean useSpecificNumericLiterals() {
-			return false;
-		}
-
-		@Override
-		public boolean trimIfChildless(String type) {
-			return "script".equals(type);
-		}
-
-		@Override
-		public boolean trimIfParentIsAdded(String type) {
-			return Agreement.isPrunable(type);
-		}
-
-		@Override
-		public boolean nodeTypeHasBody(String type) {
-			return SnapNode.typeHasBody(type);
-		}
-
-	};
+	protected final HintConfig hintConfig;
 
 	protected abstract HintHighlighter getHighlighter(HintRequest request, HintMap baseMap);
 
-	public HighlightHintSet(String name, HintConfig config) {
-		super(name, SnapRatingConfig);
-		this.config = config;
+	public HighlightHintSet(String name, HintConfig hintConfig) {
+		super(name, getRatingConfig(hintConfig));
+		this.hintConfig = hintConfig;
+	}
+
+	public static RatingConfig getRatingConfig(HintConfig config) {
+		if (config instanceof SnapHintConfig) return RatingConfig.Snap;
+		if (config instanceof PythonHintConfig) return RatingConfig.Python;
+		System.err.println("Unknown hint config: " + config.getClass().getName());
+		return RatingConfig.Default;
 	}
 
 	public HighlightHintSet addHints(List<HintRequest> requests) {
-		HintMap baseMap = new HintMap(config);
+		HintMap baseMap = new HintMap(hintConfig);
 
 		for (HintRequest request : requests) {
 			HintHighlighter highlighter = getHighlighter(request, baseMap);
@@ -168,8 +153,8 @@ public abstract class HighlightHintSet extends HintSet {
 		for (String requestID : getHintRequestIDs()) {
 			for (HintOutcome o : getOutcomes(requestID)) {
 				HighlightOutcome outcome = (HighlightOutcome) o;
-				String from = outcome.from.prettyPrint(true, SnapRatingConfig::nodeTypeHasBody);
-				String to = outcome.result.prettyPrint(true, SnapRatingConfig::nodeTypeHasBody);
+				String from = outcome.from.prettyPrint(true, config);
+				String to = outcome.result.prettyPrint(true, config);
 				edits.add(new PrintableTutorEdit(hintID++, requestID, null,
 						outcome.assignmentID, outcome.from,
 						outcome.result, Diff.diff(from, to)));

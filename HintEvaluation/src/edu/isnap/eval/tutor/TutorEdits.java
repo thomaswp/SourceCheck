@@ -52,7 +52,7 @@ import edu.isnap.parser.elements.Snapshot;
 import edu.isnap.rating.GoldStandard;
 import edu.isnap.rating.HintSet;
 import edu.isnap.rating.RateHints;
-import edu.isnap.rating.RateHints.RatingConfig;
+import edu.isnap.rating.RatingConfig;
 import edu.isnap.rating.TutorHint;
 import edu.isnap.rating.TutorHint.Priority;
 import edu.isnap.rating.TutorHint.Validity;
@@ -60,7 +60,7 @@ import edu.isnap.rating.TutorHint.Validity;
 public class TutorEdits {
 
 	private final static String ISNAP_DATA_DIR = "../data/hint-rating/isnap2017/";
-	private final static String ISNAP_GOLD_STANDARD = ISNAP_DATA_DIR + "gold-standard.csv";
+	private final static String ISNAP_GOLD_STANDARD = ISNAP_DATA_DIR + RateHints.GS_SPREADSHEET;
 	private final static String CONSENSUS_GG_SQ = "consensus-gg-sq.csv";
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
@@ -75,8 +75,10 @@ public class TutorEdits {
 //			RateHints.rate(standard, hintSet);
 //		}
 
+		writeStandard();
+
 		GoldStandard standard = GoldStandard.parseSpreadsheet(ISNAP_GOLD_STANDARD);
-		runConsensus("../data/hint-rating/isnap2017/training", standard);
+		runConsensus("../data/hint-rating/isnap2017/training", standard, new SnapHintConfig());
 
 
 //		System.out.println("Fall");
@@ -107,10 +109,11 @@ public class TutorEdits {
 //				e.toSQLInsert("handmade_hints", "highlight", 20000, false, true)));
 	}
 
-	protected static void runConsensus(String trainingDirectory, GoldStandard standard)
+	protected static void runConsensus(String trainingDirectory, GoldStandard standard,
+			HintConfig hintConfig)
 			throws FileNotFoundException, IOException {
 		HighlightHintSet hintSet = new ImportHighlightHintSet(
-				new File(trainingDirectory).getName(), new SnapHintConfig(), trainingDirectory);
+				new File(trainingDirectory).getName(), hintConfig, trainingDirectory);
 		hintSet.addHints(standard.getHintRequests());
 		RateHints.rate(standard, hintSet);
 	}
@@ -201,13 +204,13 @@ public class TutorEdits {
 	public static void compareHintsSnap(Dataset dataset) throws FileNotFoundException, IOException {
 		String writeDir = String.format("%s/tutor-hints/%d/", dataset.analysisDir(),
 				compareEditsHintOffset);
-		compareHints(readTutorEditsSnap(dataset), writeDir, HighlightHintSet.SnapRatingConfig);
+		compareHints(readTutorEditsSnap(dataset), writeDir, RatingConfig.Snap);
 	}
 
 	public static void compareHintsPython(String dir)
 			throws FileNotFoundException, IOException {
 		String writeDir = String.format("%s/analysis/tutor-hints/%d/", dir, compareEditsHintOffset);
-		compareHints(readTutorEditsPython(dir), writeDir, PythonHintConfig.PythongRatingConfig);
+		compareHints(readTutorEditsPython(dir), writeDir, RatingConfig.Python);
 	}
 
 	public static void compareHints(ListMap<String, PrintableTutorEdit> assignmentMap,
@@ -320,7 +323,7 @@ public class TutorEdits {
 				HintSet set = hintSets.get(edit.tutor);
 				if (set == null) {
 					hintSets.put(edit.tutor,
-							set = new HintSet(edit.tutor, HighlightHintSet.SnapRatingConfig));
+							set = new HintSet(edit.tutor, RatingConfig.Snap));
 				}
 				set.add(edit.toOutcome());
 			}

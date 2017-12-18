@@ -1,5 +1,8 @@
 package edu.isnap.rating;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -15,6 +18,28 @@ import edu.isnap.rating.TutorHint.Priority;
 import edu.isnap.rating.TutorHint.Validity;
 
 public class RateHints {
+
+	public final static String GS_SPREADSHEET = "gold-standard.csv";
+	public final static String ALGORITHMS = "algorithms";
+
+	public static void main(String[] args) throws FileNotFoundException, IOException {
+		rateDir("../data/hint-rating/isnap2017/", RatingConfig.Snap);
+	}
+
+	public static void rateDir(String path, RatingConfig config)
+			throws FileNotFoundException, IOException {
+		GoldStandard standard = GoldStandard.parseSpreadsheet(path + GS_SPREADSHEET);
+		File algorithmsFolder = new File(path, ALGORITHMS);
+		if (!algorithmsFolder.exists() || !algorithmsFolder.isDirectory()) {
+			throw new RuntimeException("Missing algorithms folder");
+		}
+		for (File algorithmFolder : algorithmsFolder.listFiles(file -> file.isDirectory())) {
+			HintSet hintSet = HintSet.fromFolder(algorithmFolder.getName(), config,
+					algorithmFolder.getPath());
+			System.out.println(hintSet.name);
+			rate(standard, hintSet);
+		}
+	}
 
 	public static void rate(GoldStandard standard, HintSet hintSet) {
 		for (String assignment : standard.getAssignmentIDs()) {
@@ -209,12 +234,5 @@ public class RateHints {
 		public String toString() {
 			return validity + " / " + priority + "\n" + hint;
 		}
-	}
-
-	public static interface RatingConfig {
-		public boolean useSpecificNumericLiterals();
-		public boolean trimIfChildless(String type);
-		public boolean trimIfParentIsAdded(String type);
-		public boolean nodeTypeHasBody(String type);
 	}
 }

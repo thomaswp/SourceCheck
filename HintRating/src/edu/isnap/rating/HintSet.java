@@ -10,7 +10,6 @@ import java.util.stream.Collectors;
 
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.rating.HintOutcome.HintWithError;
-import edu.isnap.rating.RateHints.RatingConfig;
 
 public class HintSet {
 
@@ -60,15 +59,15 @@ public class HintSet {
 		hintMap.values().forEach(Collections::sort);
 	}
 
-	public static HintSet fromFolder(String name, RatingConfig config, String path,
-			String... problems) throws IOException {
+	public static HintSet fromFolder(String name, RatingConfig config, String path)
+			throws IOException {
 		HintSet set = new HintSet(name, config);
-		for (String assignment : problems) {
-			File rootFolder = new File(path, assignment);
-			if (!rootFolder.exists()) {
-				throw new IOException("Missing hint directory: " + rootFolder);
-			}
-			for (File file : rootFolder.listFiles()) {
+		File rootFolder = new File(path);
+		if (!rootFolder.exists()) {
+			throw new IOException("Missing hint directory: " + rootFolder);
+		}
+		for (File assignmentDir : rootFolder.listFiles(file -> file.isDirectory())) {
+			for (File file : assignmentDir.listFiles()) {
 				HintOutcome edit = HintOutcome.parse(file);
 				set.add(edit);
 			}

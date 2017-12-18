@@ -20,16 +20,17 @@ import edu.isnap.rating.HintOutcome;
 import edu.isnap.rating.HintOutcome.HintWithError;
 import edu.isnap.rating.HintSet;
 import edu.isnap.rating.RateHints;
+import edu.isnap.rating.RatingConfig;
 
+@Deprecated
 public class CHFImport {
 
 	public static void main(String[] args) throws IOException {
 //		testLoad(Spring2017.GuessingGame1, "hint-rating");
 //		testLoad(Spring2017.Squiral, "hint-rating");
 
-		HintSet hintSet = HintSet.fromFolder("chf", HighlightHintSet.SnapRatingConfig,
-				Spring2017.dataDir + "/chf/hint-rating-with-past",
-				Spring2017.Squiral.name, Spring2017.GuessingGame1.name);
+		HintSet hintSet = HintSet.fromFolder("chf", RatingConfig.Snap,
+				Spring2017.dataDir + "/chf/hint-rating-with-past");
 
 		GoldStandard fall2016Standard = TutorEdits.readConsensus(
 				Fall2016.instance, "consensus-gg-sq.csv");
@@ -51,8 +52,8 @@ public class CHFImport {
 			return;
 		}
 
-		HintSet allHints = HintSet.fromFolder("chf", HighlightHintSet.SnapRatingConfig,
-				assignment.dir("chf/" + folder), assignment.name);
+		HintSet allHints = HintSet.fromFolder("chf", RatingConfig.Default,
+				assignment.dir("chf/" + folder));
 		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, false);
 		for (AssignmentAttempt attempt : attempts.values()) {
 			for (AttemptAction action : attempt) {
