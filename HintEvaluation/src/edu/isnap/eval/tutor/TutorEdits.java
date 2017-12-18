@@ -1,5 +1,6 @@
 package edu.isnap.eval.tutor;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -70,10 +71,13 @@ public class TutorEdits {
 //			RateHints.rate(standard, hintSet);
 //		}
 
-		System.out.println("Fall");
-		testConsensus(Fall2016.instance, Spring2017.instance);
-		System.out.println("Spring");
-		testConsensus(Spring2017.instance, Fall2016.instance);
+		runConsensus("../data/hint-rating/isnap2017/training",
+				Fall2016.instance, Spring2017.instance);
+
+//		System.out.println("Fall");
+//		runConsensus(Fall2016.instance, Spring207.instance);
+//		System.out.println("Spring");
+//		runConsensus(Spring2017.instance, Fall2016.instance);
 
 //		highlightSQL(Fall2016.instance, Spring2017.instance);
 //		highlightSQL(Spring2017.instance, Fall2016.instance);
@@ -84,23 +88,26 @@ public class TutorEdits {
 //				"hint-eval", Fall2016.Squiral, Fall2016.GuessingGame1);
 	}
 
-	protected static void testConsensus(Dataset testDataset, Dataset trainingDataset)
+	protected static void runConsensus(Dataset testDataset, Dataset trainingDataset)
 			throws FileNotFoundException, IOException {
 		GoldStandard standard = readConsensus(testDataset, "consensus-gg-sq.csv");
-		HintConfig[] configs = new HintConfig[] {
-				new SnapHintConfig(), // new SnapHintConfig(), new SnapHintConfig()
-		};
-//		configs[0].createSubedits = true;
-//		configs[0].useRulesToFilter = false; configs[0].valuesPolicy = ValuesPolicy.IgnoreAll;
-//		configs[1].useRulesToFilter = true; configs[1].valuesPolicy = ValuesPolicy.IgnoreAll;
-//		configs[2].useRulesToFilter = true; configs[2].valuesPolicy = ValuesPolicy.MappedOnly;
+		HighlightHintSet hintSet = new DatasetHighlightHintSet(
+			trainingDataset.getName(), new SnapHintConfig(), trainingDataset)
+				.addHints(standard.getHintRequests());
+		RateHints.rate(standard, hintSet);
+//		hintSet.toTutorEdits().forEach(e -> System.out.println(
+//				e.toSQLInsert("handmade_hints", "highlight", 20000, false, true)));
+	}
 
-		for (int i = 0; i < configs.length; i++) {
-			HighlightHintSet hintSet = new HighlightHintSet(trainingDataset.getName(), configs[i],
-					trainingDataset, standard.getHintRequests());
+	protected static void runConsensus(String trainingDirectory, Dataset... testDatasets)
+			throws FileNotFoundException, IOException {
+		HighlightHintSet hintSet = new ImportHighlightHintSet(
+				new File(trainingDirectory).getName(), new SnapHintConfig(), trainingDirectory);
+		for (Dataset testDataset : testDatasets) {
+			System.out.println(testDataset.getName());
+			GoldStandard standard = readConsensus(testDataset, "consensus-gg-sq.csv");
+			hintSet.addHints(standard.getHintRequests());
 			RateHints.rate(standard, hintSet);
-//			hintSet.toTutorEdits().forEach(e -> System.out.println(
-//					e.toSQLInsert("handmade_hints", "highlight", 20000, false, true)));
 		}
 	}
 
@@ -113,8 +120,9 @@ public class TutorEdits {
 		int offset = 20000;
 
 		Spreadsheet spreadsheet = new Spreadsheet();
-		HighlightHintSet hintSet = new HighlightHintSet(trainingDataset.getName(), config,
-				trainingDataset, standard.getHintRequests());
+		HighlightHintSet hintSet = new DatasetHighlightHintSet(
+				trainingDataset.getName(), config, trainingDataset)
+				.addHints(standard.getHintRequests());
 		hintSet.toTutorEdits().forEach(edit -> {
 			System.out.println(edit.toSQLInsert(
 					"handmade_hints", "highlight", offset, false, true));

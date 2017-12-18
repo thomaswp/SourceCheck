@@ -2,10 +2,8 @@ package edu.isnap.eval.tutor;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -20,25 +18,19 @@ import edu.isnap.ctd.hint.edit.Insertion;
 import edu.isnap.ctd.hint.edit.Reorder;
 import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.Diff.ColorStyle;
-import edu.isnap.ctd.util.NullStream;
 import edu.isnap.ctd.util.map.ListMap;
-import edu.isnap.dataset.Assignment;
-import edu.isnap.dataset.Dataset;
 import edu.isnap.eval.agreement.Agreement;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.eval.tutor.TutorEdits.PrintableTutorEdit;
-import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.util.SnapNode;
-import edu.isnap.parser.Store.Mode;
 import edu.isnap.rating.HintOutcome;
 import edu.isnap.rating.HintRequest;
 import edu.isnap.rating.HintSet;
 import edu.isnap.rating.RateHints.RatingConfig;
 
-public class HighlightHintSet extends HintSet {
+public abstract class HighlightHintSet extends HintSet {
 
-	private final Dataset dataset;
-	private final HintConfig config;
+	protected final HintConfig config;
 
 	public final static RatingConfig SnapRatingConfig = new RatingConfig() {
 		@Override
@@ -63,30 +55,18 @@ public class HighlightHintSet extends HintSet {
 
 	};
 
-	public HighlightHintSet(String name, HintConfig config, Dataset dataset,
-			List<HintRequest> requests) {
+	protected abstract HintHighlighter getHighlighter(HintRequest request, HintMap baseMap);
+
+	public HighlightHintSet(String name, HintConfig config) {
 		super(name, SnapRatingConfig);
-		this.dataset = dataset;
 		this.config = config;
-		addHints(requests);
 	}
 
-	private void addHints(List<HintRequest> requests) {
-		Map<String, HintHighlighter> highlighters = new HashMap<>();
-
-		Map<String, Assignment> assignmentMap = dataset.getAssignmentMap();
+	public HighlightHintSet addHints(List<HintRequest> requests) {
 		HintMap baseMap = new HintMap(config);
 
 		for (HintRequest request : requests) {
-			HintHighlighter highlighter = highlighters.get(request.assignmentID);
-			Assignment assignment = assignmentMap.get(request.assignmentID);
-			if (highlighter == null) {
-				SnapHintBuilder builder = new SnapHintBuilder(assignment, baseMap);
-				highlighter = builder.buildGenerator(Mode.Ignore, 1).hintHighlighter();
-				highlighter.trace = NullStream.instance;
-				highlighters.put(request.assignmentID, highlighter);
-			}
-
+			HintHighlighter highlighter = getHighlighter(request, baseMap);
 			Node code = JsonAST.toNode(request.code, SnapNode::new);
 			List<EditHint> hints = highlighter.highlightWithPriorities(code);
 			Set<EditHint> originalHints = new HashSet<>(hints);
@@ -116,10 +96,11 @@ public class HighlightHintSet extends HintSet {
 			}
 		}
 		finish();
+		return this;
 	}
 
 	// Filter out hints that wouldn't be shown in iSnap anyway
-	private List<EditHint> filterHints(List<EditHint> hints, boolean filterSameParentInsertions) {
+	protected List<EditHint> filterHints(List<EditHint> hints, boolean filterSameParentInsertions) {
 		List<Insertion> insertions = hints.stream()
 				.filter(h -> h instanceof Insertion)
 				.map(h -> (Insertion)h)

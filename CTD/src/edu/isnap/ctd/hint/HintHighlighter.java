@@ -32,6 +32,7 @@ import edu.isnap.ctd.util.NodeAlignment;
 import edu.isnap.ctd.util.NodeAlignment.DistanceMeasure;
 import edu.isnap.ctd.util.NodeAlignment.Mapping;
 import edu.isnap.ctd.util.NodeAlignment.ProgressDistanceMeasure;
+import edu.isnap.ctd.util.NullStream;
 import edu.isnap.ctd.util.map.BiMap;
 import edu.isnap.ctd.util.map.CountMap;
 import edu.isnap.ctd.util.map.ListMap;
@@ -42,7 +43,7 @@ public class HintHighlighter {
 		Good, Add, Delete, Order, Move, Replaced
 	}
 
-	public PrintStream trace = System.out;
+	public PrintStream trace = NullStream.instance;
 
 	private final List<Node> solutions;
 	private final HintConfig config;

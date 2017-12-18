@@ -45,4 +45,10 @@ public class GoldStandard {
 			});
 		}
 	}
+
+//	public void write(String rootDir) {
+//		for (String assignment : map.keySet()) {
+//
+//		}
+//	}
 }
