@@ -2,11 +2,15 @@ package edu.isnap.rating;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Collections;
 import java.util.DoubleSummaryStatistics;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.json.JSONObject;
 
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.rating.HintOutcome.HintWithError;
@@ -59,6 +63,28 @@ public class HintSet {
 		hintMap.values().forEach(Collections::sort);
 	}
 
+	public void writeToFolder(String path, boolean clean) throws IOException {
+		Set<String> madeDirs = new HashSet<>();
+		for (String requestID : hintMap.keySet()) {
+			List<HintOutcome> hints = hintMap.get(requestID);
+			for (int i = 0; i < hints.size(); i++) {
+				HintOutcome hint = hints.get(i);
+				File parentDir = new File(path, hint.assignmentID);
+				if (madeDirs.add(hint.assignmentID)) {
+					parentDir.mkdirs();
+					if (clean) {
+						for (File file : parentDir.listFiles()) file.delete();
+					}
+				}
+				String filename = String.format("%s_%02d.json", hint.requestID, i);
+				File file = new File(parentDir, filename);
+				JSONObject json = hint.result.toJSON();
+				json.put("weight", hint.weight());
+				Files.write(file.toPath(), json.toString(4).getBytes());
+			}
+		}
+	}
+
 	public static HintSet fromFolder(String name, RatingConfig config, String path)
 			throws IOException {
 		HintSet set = new HintSet(name, config);
@@ -67,8 +93,9 @@ public class HintSet {
 			throw new IOException("Missing hint directory: " + rootFolder);
 		}
 		for (File assignmentDir : rootFolder.listFiles(file -> file.isDirectory())) {
+			String assignmentID = assignmentDir.getName();
 			for (File file : assignmentDir.listFiles()) {
-				HintOutcome edit = HintOutcome.parse(file);
+				HintOutcome edit = HintOutcome.parse(file, assignmentID);
 				set.add(edit);
 			}
 		}

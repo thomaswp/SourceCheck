@@ -11,6 +11,7 @@ import edu.isnap.ctd.graph.ASTNode;
 public class HintOutcome implements Comparable<HintOutcome> {
 
 	public final ASTNode result;
+	public final String assignmentID;
 	public final String requestID;
 
 	private final double weight;
@@ -19,8 +20,9 @@ public class HintOutcome implements Comparable<HintOutcome> {
 		return weight;
 	}
 
-	public HintOutcome(ASTNode result, String requestID, double weight) {
+	public HintOutcome(ASTNode result, String assignmentID, String requestID, double weight) {
 		this.result = result;
+		this.assignmentID = assignmentID;
 		this.requestID = requestID;
 		this.weight = weight;
 		if (weight <= 0 || Double.isNaN(weight)) {
@@ -33,7 +35,7 @@ public class HintOutcome implements Comparable<HintOutcome> {
 		return Double.compare(weight(), o.weight());
 	}
 
-	public static HintOutcome parse(File file) throws IOException {
+	public static HintOutcome parse(File file, String assignmentID) throws IOException {
 		String contents = new String(Files.readAllBytes(file.toPath()));
 		JSONObject json = new JSONObject(contents);
 		ASTNode root = ASTNode.parse(json);
@@ -47,13 +49,13 @@ public class HintOutcome implements Comparable<HintOutcome> {
 		}
 		if (json.has("error")) {
 			double error = json.getDouble("error");
-			return new HintWithError(root, snapshotID, error);
+			return new HintWithError(root, assignmentID, snapshotID, error);
 		}
 		double weight = 1;
 		if (json.has("weight")) {
 			weight = json.getDouble("weight");
 		}
-		return new HintOutcome(root, snapshotID, weight);
+		return new HintOutcome(root, assignmentID, snapshotID, weight);
 	}
 
 	public static class HintWithError extends HintOutcome {
@@ -70,8 +72,8 @@ public class HintOutcome implements Comparable<HintOutcome> {
 			return calculatedWeight;
 		}
 
-		public HintWithError(ASTNode result, String  snapshotID, double error) {
-			super(result, snapshotID, 1);
+		public HintWithError(ASTNode result, String assignmentID, String snapshotID, double error) {
+			super(result, assignmentID, snapshotID, 1);
 			this.error = error;
 		}
 

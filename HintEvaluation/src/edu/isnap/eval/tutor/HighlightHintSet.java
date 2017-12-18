@@ -75,8 +75,8 @@ public abstract class HighlightHintSet extends HintSet {
 				if (outcomeNode.hasType("snapshot")) outcomeNode.type = "Snap!shot";
 				double priority = hint.priority.consensus();
 //				if (priority < 0.35) continue;
-				HintOutcome outcome = new HighlightOutcome(request.code, request.assignmentID,
-						outcomeNode, request.id, priority);
+				HintOutcome outcome = new HighlightOutcome(request.code, outcomeNode,
+						request.assignmentID, request.id, priority);
 				add(outcome);
 			}
 		}
@@ -135,13 +135,11 @@ public abstract class HighlightHintSet extends HintSet {
 	private static class HighlightOutcome extends HintOutcome {
 
 		final ASTNode from;
-		final String assignmentID;
 
-		public HighlightOutcome(ASTNode from, String assignment, ASTNode result, String requestID,
+		public HighlightOutcome(ASTNode from, ASTNode result, String assignmentID, String requestID,
 				double weight) {
-			super(result, requestID, weight);
+			super(result, assignmentID, requestID, weight);
 			this.from = from;
-			this.assignmentID = assignment;
 		}
 
 	}

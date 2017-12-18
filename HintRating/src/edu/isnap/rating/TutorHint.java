@@ -66,6 +66,6 @@ public class TutorHint {
 	}
 
 	public HintOutcome toOutcome() {
-		return new HintOutcome(to, requestID, priority == null ? 0 : (1.0 / priority.value));
+		return new HintOutcome(to, assignmentID, requestID, priority == null ? 0 : (1.0 / priority.value));
 	}
 }

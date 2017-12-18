@@ -20,7 +20,10 @@ import edu.isnap.rating.TutorHint.Validity;
 public class RateHints {
 
 	public final static String GS_SPREADSHEET = "gold-standard.csv";
-	public final static String ALGORITHMS = "algorithms";
+	public final static String ALGORITHMS_DIR = "algorithms";
+	public final static String TRAINING_DIR = "training";
+
+	public final static String ISNAP_DATA_DIR = "../data/hint-rating/isnap2017/";
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 		rateDir("../data/hint-rating/isnap2017/", RatingConfig.Snap);
@@ -29,7 +32,7 @@ public class RateHints {
 	public static void rateDir(String path, RatingConfig config)
 			throws FileNotFoundException, IOException {
 		GoldStandard standard = GoldStandard.parseSpreadsheet(path + GS_SPREADSHEET);
-		File algorithmsFolder = new File(path, ALGORITHMS);
+		File algorithmsFolder = new File(path, ALGORITHMS_DIR);
 		if (!algorithmsFolder.exists() || !algorithmsFolder.isDirectory()) {
 			throw new RuntimeException("Missing algorithms folder");
 		}

@@ -59,8 +59,8 @@ import edu.isnap.rating.TutorHint.Validity;
 
 public class TutorEdits {
 
-	private final static String ISNAP_DATA_DIR = "../data/hint-rating/isnap2017/";
-	private final static String ISNAP_GOLD_STANDARD = ISNAP_DATA_DIR + RateHints.GS_SPREADSHEET;
+	private final static String ISNAP_GOLD_STANDARD =
+			RateHints.ISNAP_DATA_DIR + RateHints.GS_SPREADSHEET;
 	private final static String CONSENSUS_GG_SQ = "consensus-gg-sq.csv";
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
@@ -78,8 +78,8 @@ public class TutorEdits {
 		writeStandard();
 
 		GoldStandard standard = GoldStandard.parseSpreadsheet(ISNAP_GOLD_STANDARD);
-		runConsensus("../data/hint-rating/isnap2017/training", standard, new SnapHintConfig());
-
+//		runConsensus("../data/hint-rating/isnap2017/training", standard, new SnapHintConfig());
+		writeHighlight(RateHints.ISNAP_DATA_DIR, "sourcecheck", standard, new SnapHintConfig());
 
 //		System.out.println("Fall");
 //		runConsensus(Fall2016.instance, readConsensus(Spring2017.instance, CONSENSUS_GG_SQ));
@@ -97,6 +97,16 @@ public class TutorEdits {
 		GoldStandard spring2017Standard = readConsensus(Spring2017.instance, CONSENSUS_GG_SQ);
 		GoldStandard standard = GoldStandard.merge(fall2016Standard, spring2017Standard);
 		standard.writeSpreadsheet(ISNAP_GOLD_STANDARD);
+	}
+
+	protected static void writeHighlight(String dataDirectory, String name, GoldStandard standard,
+			HintConfig hintConfig)
+			throws FileNotFoundException, IOException {
+		String trainingDirectory = new File(dataDirectory, RateHints.TRAINING_DIR).getPath();
+		HighlightHintSet hintSet = new ImportHighlightHintSet(name, hintConfig, trainingDirectory);
+		hintSet.addHints(standard.getHintRequests());
+		hintSet.writeToFolder(new File(
+				dataDirectory, RateHints.ALGORITHMS_DIR + File.separator + name).getPath(), true);
 	}
 
 	protected static void runConsensus(Dataset trainingDataset, GoldStandard standard)
