@@ -33,7 +33,9 @@ public class HintSet {
 	}
 
 	public List<HintOutcome> getOutcomes(String snapshotID) {
-		return Collections.unmodifiableList(hintMap.get(snapshotID));
+		List<HintOutcome> list = hintMap.get(snapshotID);
+		if (list == null) list = Collections.emptyList();
+		return Collections.unmodifiableList(list);
 	}
 
 	public void finish() {

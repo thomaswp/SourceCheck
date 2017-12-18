@@ -12,6 +12,13 @@ public class TutorHint {
 		Validity(int value) {
 			this.value = value;
 		}
+
+		public static Validity fromInt(int value) {
+			for (Validity validity : Validity.values()) {
+				if (validity.value == value) return validity;
+			}
+			return null;
+		}
 	}
 
 	public enum Priority {

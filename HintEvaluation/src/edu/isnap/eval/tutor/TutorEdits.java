@@ -59,6 +59,10 @@ import edu.isnap.rating.TutorHint.Validity;
 
 public class TutorEdits {
 
+	private final static String ISNAP_DATA_DIR = "../data/hint-rating/isnap2017/";
+	private final static String ISNAP_GOLD_STANDARD = ISNAP_DATA_DIR + "gold-standard.csv";
+	private final static String CONSENSUS_GG_SQ = "consensus-gg-sq.csv";
+
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 //		compareHints(Fall2016.instance);
 //		compareHintsPython("../data/itap");
@@ -71,26 +75,30 @@ public class TutorEdits {
 //			RateHints.rate(standard, hintSet);
 //		}
 
-		runConsensus("../data/hint-rating/isnap2017/training",
-				Fall2016.instance, Spring2017.instance);
+		GoldStandard standard = GoldStandard.parseSpreadsheet(ISNAP_GOLD_STANDARD);
+		runConsensus("../data/hint-rating/isnap2017/training", standard);
+
 
 //		System.out.println("Fall");
-//		runConsensus(Fall2016.instance, Spring207.instance);
+//		runConsensus(Fall2016.instance, readConsensus(Spring2017.instance, CONSENSUS_GG_SQ));
 //		System.out.println("Spring");
-//		runConsensus(Spring2017.instance, Fall2016.instance);
+//		runConsensus(Spring2017.instance, readConsensus(Fall2016.instance, CONSENSUS_GG_SQ));
 
-//		highlightSQL(Fall2016.instance, Spring2017.instance);
-//		highlightSQL(Spring2017.instance, Fall2016.instance);
-
-//		exportConsensusHintRequests(Spring2017.instance, "consensus-gg-sq.csv",
+//		exportConsensusHintRequests(Spring2017.instance, CONSENSUS_GG_SQ,
 //				"hint-eval", Spring2017.Squiral, Spring2017.GuessingGame1);
-//		exportConsensusHintRequests(Fall2016.instance, "consensus-gg-sq.csv",
+//		exportConsensusHintRequests(Fall2016.instance, CONSENSUS_GG_SQ,
 //				"hint-eval", Fall2016.Squiral, Fall2016.GuessingGame1);
 	}
 
-	protected static void runConsensus(Dataset testDataset, Dataset trainingDataset)
+	protected static void writeStandard() throws FileNotFoundException, IOException {
+		GoldStandard fall2016Standard = readConsensus(Fall2016.instance, CONSENSUS_GG_SQ);
+		GoldStandard spring2017Standard = readConsensus(Spring2017.instance, CONSENSUS_GG_SQ);
+		GoldStandard standard = GoldStandard.merge(fall2016Standard, spring2017Standard);
+		standard.writeSpreadsheet(ISNAP_GOLD_STANDARD);
+	}
+
+	protected static void runConsensus(Dataset trainingDataset, GoldStandard standard)
 			throws FileNotFoundException, IOException {
-		GoldStandard standard = readConsensus(testDataset, "consensus-gg-sq.csv");
 		HighlightHintSet hintSet = new DatasetHighlightHintSet(
 			trainingDataset.getName(), new SnapHintConfig(), trainingDataset)
 				.addHints(standard.getHintRequests());
@@ -99,22 +107,17 @@ public class TutorEdits {
 //				e.toSQLInsert("handmade_hints", "highlight", 20000, false, true)));
 	}
 
-	protected static void runConsensus(String trainingDirectory, Dataset... testDatasets)
+	protected static void runConsensus(String trainingDirectory, GoldStandard standard)
 			throws FileNotFoundException, IOException {
 		HighlightHintSet hintSet = new ImportHighlightHintSet(
 				new File(trainingDirectory).getName(), new SnapHintConfig(), trainingDirectory);
-		for (Dataset testDataset : testDatasets) {
-			System.out.println(testDataset.getName());
-			GoldStandard standard = readConsensus(testDataset, "consensus-gg-sq.csv");
-			hintSet.addHints(standard.getHintRequests());
-			RateHints.rate(standard, hintSet);
-		}
+		hintSet.addHints(standard.getHintRequests());
+		RateHints.rate(standard, hintSet);
 	}
 
-	protected static void highlightSQL(Dataset testDataset, Dataset trainingDataset)
+	protected static void highlightSQL(Dataset trainingDataset, GoldStandard standard)
 			throws FileNotFoundException, IOException {
 		RuleSet.trace = NullStream.instance;
-		GoldStandard standard = readConsensus(testDataset, "consensus-gg-sq.csv");
 		HintConfig config = new SnapHintConfig();
 
 		int offset = 20000;
@@ -137,7 +140,7 @@ public class TutorEdits {
 
 			spreadsheet.put("Hint", edit.editsString(false));
 		});
-		spreadsheet.write(testDataset.analysisDir() + "/highlight-hints.csv");
+		spreadsheet.write(trainingDataset.analysisDir() + "/highlight-hints.csv");
 	}
 
 	public static void exportConsensusHintRequests(Dataset dataset, String path, String folder,
