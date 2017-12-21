@@ -1,6 +1,7 @@
 package edu.isnap.rating;
 
 import edu.isnap.ctd.graph.ASTNode;
+import edu.isnap.ctd.util.Diff;
 
 public class TutorHint {
 
@@ -58,6 +59,10 @@ public class TutorHint {
 		this.assignmentID = assignmentID;
 		this.from = from;
 		this.to = to;
+	}
+
+	public String toDiff(RatingConfig config) {
+		return Diff.diff(from.prettyPrint(true, config), to.prettyPrint(true, config));
 	}
 
 	@Override

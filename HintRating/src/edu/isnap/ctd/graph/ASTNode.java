@@ -235,11 +235,17 @@ public class ASTNode implements INode {
 
 	public boolean equals(ASTNode rhs, boolean compareIDs, boolean compareChildRelations) {
 		EqualsBuilder builder = new EqualsBuilder();
+		if (!shallowEquals(rhs, compareIDs)) return false;
+		builder.append(children, rhs.children);
+		if (compareChildRelations) builder.append(childRelations, rhs.childRelations);
+		return builder.isEquals();
+	}
+
+	public boolean shallowEquals(ASTNode rhs, boolean compareIDs) {
+		EqualsBuilder builder = new EqualsBuilder();
 		builder.append(type, rhs.type);
 		builder.append(value, rhs.value);
 		if (compareIDs) builder.append(id, rhs.id);
-		builder.append(children, rhs.children);
-		if (compareChildRelations) builder.append(childRelations, rhs.childRelations);
 		return builder.isEquals();
 	}
 

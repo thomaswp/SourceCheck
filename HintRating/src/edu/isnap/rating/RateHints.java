@@ -202,23 +202,6 @@ public class RateHints {
 						outcomeNode.prettyPrint(true, config), 2));
 				throw new RuntimeException("Normalized nodes should be equal if nodes are equal!");
 			}
-
-//			Set<EditHint> correctEdits = new HashSet<>(tutorEdit.edits);
-//			correctEdits.retainAll(outcome.edits);
-//			if (correctEdits.size() > 0) {
-//				System.out.println("Partially overlapping hints: " +
-//						tutorEdit.rowID + " / " + tutorEdit.hintID);
-//				System.out.println("Tutor:");
-//				tutorEdit.edits.forEach(System.out::println);
-//				System.out.println("Generated:");
-//				outcome.edits.forEach(System.out::println);
-//				System.out.println("Overlapping:");
-//				correctEdits.forEach(System.out::println);
-//				System.out.println("Difference (generated -> tutor):");
-//				System.out.println(Diff.diff(outcome.outcome.prettyPrint(true),
-//						tutorOutcomeNode.prettyPrint(true)));
-//				System.out.println("--------------------");
-//			}
 		}
 		return null;
 	}

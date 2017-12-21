@@ -75,11 +75,13 @@ public class TutorEdits {
 //			RateHints.rate(standard, hintSet);
 //		}
 
-		writeStandard();
+//		writeStandard();
 
 		GoldStandard standard = GoldStandard.parseSpreadsheet(ISNAP_GOLD_STANDARD);
 //		runConsensus("../data/hint-rating/isnap2017/training", standard, new SnapHintConfig());
-		writeHighlight(RateHints.ISNAP_DATA_DIR, "sourcecheck", standard, new SnapHintConfig());
+//		writeHighlight(RateHints.ISNAP_DATA_DIR, "sourcecheck", standard, new SnapHintConfig());
+		RateHints.rate(standard, HintSet.fromFolder("sourcecheck", RatingConfig.Snap,
+				RateHints.ISNAP_DATA_DIR + RateHints.ALGORITHMS_DIR + "/sourcecheck"));
 
 //		System.out.println("Fall");
 //		runConsensus(Fall2016.instance, readConsensus(Spring2017.instance, CONSENSUS_GG_SQ));

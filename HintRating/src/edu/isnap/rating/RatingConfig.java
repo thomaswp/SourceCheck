@@ -6,6 +6,7 @@ import java.util.Set;
 
 public interface RatingConfig {
 	public boolean useSpecificNumericLiterals();
+	public boolean areNodeIDsConsistent();
 	public boolean trimIfChildless(String type);
 	public boolean trimIfParentIsAdded(String type);
 	/**
@@ -18,6 +19,11 @@ public interface RatingConfig {
 
 		@Override
 		public boolean useSpecificNumericLiterals() {
+			return false;
+		}
+
+		@Override
+		public boolean areNodeIDsConsistent() {
 			return false;
 		}
 
@@ -66,6 +72,11 @@ public interface RatingConfig {
 		}
 
 		@Override
+		public boolean areNodeIDsConsistent() {
+			return true;
+		}
+
+		@Override
 		public boolean trimIfChildless(String type) {
 			return "script".equals(type);
 		}
@@ -85,6 +96,11 @@ public interface RatingConfig {
 		@Override
 		public boolean useSpecificNumericLiterals() {
 			return true;
+		}
+
+		@Override
+		public boolean areNodeIDsConsistent() {
+			return false;
 		}
 
 		@Override

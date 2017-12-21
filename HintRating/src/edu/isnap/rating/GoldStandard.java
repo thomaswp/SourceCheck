@@ -18,6 +18,7 @@ import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.ctd.util.map.MapFactory;
 import edu.isnap.hint.util.Spreadsheet;
+import edu.isnap.rating.EditExtraction.Edit;
 import edu.isnap.rating.TutorHint.Priority;
 import edu.isnap.rating.TutorHint.Validity;
 
@@ -46,7 +47,13 @@ public class GoldStandard {
 		for (String assignment : hints.keySet()) {
 			List<? extends TutorHint> list = hints.get(assignment);
 			ListMap<String, TutorHint> hintMap = new ListMap<>(MapFactory.TreeMapFactory);
-			list.forEach(edit -> hintMap.add(edit.requestID, edit));
+			list.forEach(hint -> hintMap.add(hint.requestID, hint));
+			list.forEach(hint -> {
+				System.out.println(hint.toDiff(RatingConfig.Snap));
+				List<Edit> edits = EditExtraction.extractEdits(hint.from, hint.to);
+				edits.forEach(System.out::println);
+				System.out.println("------------");
+			});
 			map.put(assignment, hintMap);
 
 			Set<String> addedIDs = new HashSet<>();
