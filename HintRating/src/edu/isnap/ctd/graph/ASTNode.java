@@ -219,9 +219,9 @@ public class ASTNode implements INode {
 
 	public void recurse(Consumer<ASTNode> action) {
 		action.accept(this);
-		this.children.stream()
-		.filter(child -> child != null)
-		.forEach(child -> child.recurse(action));
+		for (ASTNode child : children) {
+			if (child != null) child.recurse(action);
+		}
 	}
 
 	@Override
@@ -256,5 +256,10 @@ public class ASTNode implements INode {
 		builder.append(value);
 		builder.append(children);
 		return builder.toHashCode();
+	}
+
+	@Override
+	public String toString() {
+		return prettyPrint(false, node -> false);
 	}
 }

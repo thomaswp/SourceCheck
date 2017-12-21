@@ -3,12 +3,14 @@ package edu.isnap.rating;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
+import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
@@ -55,7 +57,7 @@ public class EditExtraction {
 	}
 
 	public static List<Edit> extractEdits(ASTNode from, ASTNode to) {
-		BiMap<ASTNode, ASTNode> mapping = new BiMap<>();
+		BiMap<ASTNode, ASTNode> mapping = new BiMap<>(IdentityHashMap::new);
 		Map<String, ASTNode> fromMap = getIDMap(from);
 		Map<String, ASTNode> toMap = getIDMap(to);
 		for (String id : fromMap.keySet()) {
@@ -83,46 +85,87 @@ public class EditExtraction {
 	private static List<Edit> extractEdits(ASTNode from, ASTNode to,
 			BiMap<ASTNode, ASTNode> mapping) {
 
-		Set<ChildNodeReference> fromRefs = new HashSet<>();
+		Set<NodeReference> fromRefs = new HashSet<>();
 		from.recurse(node -> {
-			ASTNode parent = node.parent();
-			if (parent == null) return;
-			else fromRefs.add(new ChildNodeReference(node, getReferenceFrom(parent)));
+			NodeReference ref = getReferenceFrom(node);
+			if (ref != null) fromRefs.add(ref);
 		});
 
-		Set<ChildNodeReference> toRefs = new HashSet<>();
+		Set<NodeReference> toRefs = new HashSet<>();
 		to.recurse(node -> {
-			ASTNode parent = node.parent();
-			if (parent == null) return;
-			else toRefs.add(new ChildNodeReference(node, getReferenceTo(parent, mapping)));
+			NodeReference ref = getReferenceTo(node, mapping);
+			if (ref != null) {
+				if (!toRefs.add(ref)) {
+					throw new RuntimeException("Duplicate references in node");
+				}
+			}
 		});
 
-		Set<ChildNodeReference> removedRefs = new HashSet<>(fromRefs);
+		Set<NodeReference> removedRefs = new HashSet<>(fromRefs);
 		removedRefs.removeAll(toRefs);
 
-		Set<ChildNodeReference> addedRefs = new HashSet<>(toRefs);
+		Set<NodeReference> addedRefs = new HashSet<>(toRefs);
 		addedRefs.removeAll(fromRefs);
 
 		List<Edit> edits = new ArrayList<>();
-		for (ChildNodeReference removedRef : removedRefs) {
-			String removedID = removedRef.node.id;
-			if (removedID != null) {
-				ChildNodeReference match = null;;
-				for (ChildNodeReference addedRef : addedRefs) {
-					if (removedID.equals(addedRef.node.id)) {
-						match = addedRef;
+		removedRefs.forEach(removedRef -> edits.add(new Deletion(removedRef)));
+		addedRefs.forEach(addedRef -> edits.add(new Insertion(addedRef)));
+
+		// Find all nodes that have been moved to a new parent and mark them as having been removed
+		// from their previous location and added to their new location
+		Map<ASTNode, Void> moved = new IdentityHashMap<>();
+		to.recurse(toNode -> {
+			if (toNode.parent() == null) return;
+			ASTNode fromMatch = mapping.getTo(toNode);
+			if (fromMatch == null) return;
+			NodeReference fromParentMatch = getReferenceTo(toNode.parent(), mapping);
+			NodeReference fromMatchParent = getReferenceFrom(fromMatch.parent());
+			if (ObjectUtils.equals(fromParentMatch, fromMatchParent)) return;
+			moved.put(toNode, null);
+			addedRefs.add(getReferenceTo(toNode, mapping));
+			removedRefs.add(getReferenceFrom(fromMatch));
+		});
+
+		to.recurse(toNode -> {
+			if (toNode.parent() == null) return;
+			ASTNode fromMatch = mapping.getTo(toNode);
+			if (fromMatch == null) return;
+			if (!moved.containsKey(toNode)) {
+				NodeReference precederMatch = null;
+				for (int i = toNode.index() - 1; i >= 0; i--) {
+					NodeReference pm = getReferenceTo(toNode.parent().children().get(i), mapping);
+					if (!addedRefs.contains(pm)) {
+						precederMatch = pm;
 						break;
 					}
 				}
-				if (match != null) {
-					addedRefs.remove(match);
-					edits.add(new Move(removedRef, match));
-					continue;
+
+				NodeReference matchPreceder = null;
+				for (int i = fromMatch.index() - 1; i >= 0; i--) {
+					NodeReference pm = getReferenceFrom(fromMatch.parent().children().get(i));
+					if (!removedRefs.contains(pm)) {
+						matchPreceder = pm;
+						break;
+					}
+				}
+
+				if (ObjectUtils.equals(precederMatch, matchPreceder)) {
+					if (toNode.shallowEquals(fromMatch, false)) return;
 				}
 			}
-			edits.add(new Deletion(removedRef));
-		}
-		addedRefs.forEach(addedRef -> edits.add(new Insertion(addedRef)));
+
+			NodeReference fromRef = getReferenceFrom(fromMatch);
+			ChildNodeReference toRef = new ChildNodeReference(toNode,
+					getReferenceTo(toNode.parent(), mapping));
+			if (toNode.shallowEquals(fromMatch, false)) {
+				edits.add(new Move(fromRef, toRef));
+			} else {
+				// For consistency, we represent relabels as insertions + deletions, rather than
+				// "moves", since we don't want to represent them differently
+				edits.add(new Deletion(fromRef));
+				edits.add(new Insertion(toRef));
+			}
+		});
 
 		return edits;
 	}
@@ -165,6 +208,10 @@ public class EditExtraction {
 	static class Insertion extends Edit {
 		Insertion(NodeReference node) {
 			super(node);
+			if (node instanceof IDNodeReference) {
+				// If the node has an ID in the from node, it ought to have a match as well
+				throw new RuntimeException("Insertions cannot use an IDNodeReference");
+			}
 		}
 
 		@Override

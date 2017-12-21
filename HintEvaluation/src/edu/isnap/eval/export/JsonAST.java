@@ -168,6 +168,12 @@ public class JsonAST {
 			type = SNAPSHOT_TYPE;
 		}
 
+		// Scripts really shouldn't have an ID, since it doesn't stay constant over snapshots, but
+		// the current implementation does, and I'm afraid to break something, so we remove it here.
+		if (type.equals("script")) {
+			id = null;
+		}
+
 		if (code instanceof LiteralBlock && ((LiteralBlock) code).type == Type.Text) {
 			// Only keep numeric text literal values
 			try {
