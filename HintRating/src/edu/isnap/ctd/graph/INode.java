@@ -38,6 +38,12 @@ public interface INode {
 		return false;
 	}
 
+	public default int treeSize() {
+		int size = 1;
+		for (INode child : children()) size += child.treeSize();
+		return size;
+	}
+
 	public static void recurse(INode node, Consumer<INode> action) {
 		action.accept(node);
 		for (INode child : node.children()) {

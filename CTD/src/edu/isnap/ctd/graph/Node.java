@@ -382,12 +382,6 @@ public abstract class Node extends StringHashable implements INode {
 		return parent.children.get(index);
 	}
 
-	public int treeSize() {
-		int size = 1;
-		for (Node child : children) size += child.treeSize();
-		return size;
-	}
-
 	public String getTypeValueString() {
 		if (type.contains(":")) {
 			throw new RuntimeException("Illegal character in type: " + type);

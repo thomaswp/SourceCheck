@@ -4,13 +4,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Vector;
 
 import org.apache.commons.lang.ObjectUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
@@ -25,7 +26,9 @@ public class EditExtraction {
 	private static CostModel<ASTNode> costModel = new CostModel<ASTNode>() {
 		@Override
 		public float ren(Node<ASTNode> nodeA, Node<ASTNode> nodeB) {
-			return nodeA.getNodeData().shallowEquals(nodeB.getNodeData(), false) ? 0f : 1f;
+			if (nodeA.getNodeData().shallowEquals(nodeB.getNodeData(), false)) return 0;
+			if (StringUtils.equals(nodeA.getNodeData().id, nodeB.getNodeData().id)) return 0.1f;
+			return 2.1f;
 		}
 
 		@Override
@@ -50,13 +53,35 @@ public class EditExtraction {
 	private static BiMap<ASTNode, ASTNode> extractMap(Node<ASTNode> from, Node<ASTNode> to) {
 		APTED<CostModel<ASTNode>, ASTNode> apted = new APTED<>(costModel);
 		apted.computeEditDistance(from, to);
-		Vector<Node<ASTNode>> fromChildren = from.getChildren();
-		Vector<Node<ASTNode>> toChildren = to.getChildren();
-		LinkedList<int[]> computeEditMapping = apted.computeEditMapping();
-		return new BiMap<>();
+		LinkedList<int[]> editMapping = apted.computeEditMapping();
+		List<ASTNode> fromChildren = postOrderList(from.getNodeData(), new ArrayList<>());
+		List<ASTNode> toChildren = postOrderList(to.getNodeData(), new ArrayList<>());
+		BiMap<ASTNode, ASTNode> mapping = new BiMap<>(IdentityHashMap::new);
+		for (int[] pair : editMapping) {
+			ASTNode fromPair = readPair(fromChildren, pair[0]);
+			ASTNode toPair = readPair(toChildren, pair[1]);
+			if (fromPair != null && toPair != null) mapping.put(fromPair, toPair);
+		}
+		return mapping;
 	}
 
-	public static List<Edit> extractEdits(ASTNode from, ASTNode to) {
+	private static List<ASTNode> postOrderList(ASTNode node, List<ASTNode> list) {
+		for (ASTNode child : node.children()) postOrderList(child, list);
+		list.add(node);
+		return list;
+	}
+
+	private static ASTNode readPair(List<ASTNode> list, int index) {
+		if (index == 0) return null;
+		return list.get(index - 1);
+	}
+
+	public static Set<Edit> extractEditsUsingTED(ASTNode from, ASTNode to) {
+		BiMap<ASTNode, ASTNode> mapping = extractMap(toNode(from), toNode(to));
+		return extractEdits(from, to, mapping);
+	}
+
+	public static Set<Edit> extractEditsUsingIDs(ASTNode from, ASTNode to) {
 		BiMap<ASTNode, ASTNode> mapping = new BiMap<>(IdentityHashMap::new);
 		Map<String, ASTNode> fromMap = getIDMap(from);
 		Map<String, ASTNode> toMap = getIDMap(to);
@@ -82,7 +107,7 @@ public class EditExtraction {
 		return map;
 	}
 
-	private static List<Edit> extractEdits(ASTNode from, ASTNode to,
+	private static Set<Edit> extractEdits(ASTNode from, ASTNode to,
 			BiMap<ASTNode, ASTNode> mapping) {
 
 		Set<NodeReference> fromRefs = new HashSet<>();
@@ -103,13 +128,8 @@ public class EditExtraction {
 
 		Set<NodeReference> removedRefs = new HashSet<>(fromRefs);
 		removedRefs.removeAll(toRefs);
-
 		Set<NodeReference> addedRefs = new HashSet<>(toRefs);
 		addedRefs.removeAll(fromRefs);
-
-		List<Edit> edits = new ArrayList<>();
-		removedRefs.forEach(removedRef -> edits.add(new Deletion(removedRef)));
-		addedRefs.forEach(addedRef -> edits.add(new Insertion(addedRef)));
 
 		// Find all nodes that have been moved to a new parent and mark them as having been removed
 		// from their previous location and added to their new location
@@ -120,11 +140,16 @@ public class EditExtraction {
 			if (fromMatch == null) return;
 			NodeReference fromParentMatch = getReferenceTo(toNode.parent(), mapping);
 			NodeReference fromMatchParent = getReferenceFrom(fromMatch.parent());
+			// Only consider nodes whose parents have changed
 			if (ObjectUtils.equals(fromParentMatch, fromMatchParent)) return;
 			moved.put(toNode, null);
 			addedRefs.add(getReferenceTo(toNode, mapping));
 			removedRefs.add(getReferenceFrom(fromMatch));
 		});
+
+		Set<Edit> edits = new LinkedHashSet<>();
+		Set<NodeReference> movedFrom = new HashSet<>();
+		Set<NodeReference> movedTo = new HashSet<>();
 
 		to.recurse(toNode -> {
 			if (toNode.parent() == null) return;
@@ -154,10 +179,16 @@ public class EditExtraction {
 				}
 			}
 
+			// Ignore no-id nodes which have moved according to the mapping, but for which
+			// there is still a node in the original position in the to-tree
+			if (toNode.id == null && toRefs.contains(getReferenceFrom(fromMatch))) {
+				return;
+			}
+
 			NodeReference fromRef = getReferenceFrom(fromMatch);
 			ChildNodeReference toRef = new ChildNodeReference(toNode,
 					getReferenceTo(toNode.parent(), mapping));
-			if (toNode.shallowEquals(fromMatch, false)) {
+			if (StringUtils.equals(toNode.type, fromMatch.type)) {
 				edits.add(new Move(fromRef, toRef));
 			} else {
 				// For consistency, we represent relabels as insertions + deletions, rather than
@@ -165,7 +196,24 @@ public class EditExtraction {
 				edits.add(new Deletion(fromRef));
 				edits.add(new Insertion(toRef));
 			}
+			movedFrom.add(fromRef);
+			movedTo.add(toRef);
 		});
+
+		// Reset the removed and added refs, since they were modified above
+		removedRefs.clear();
+		removedRefs.addAll(fromRefs);
+		removedRefs.removeAll(toRefs);
+		addedRefs.clear();
+		addedRefs.addAll(toRefs);
+		addedRefs.removeAll(fromRefs);
+
+		// Moving takes precedence over adding or removing
+		removedRefs.removeAll(movedFrom);
+		addedRefs.removeAll(movedTo);
+
+		removedRefs.forEach(removedRef -> edits.add(new Deletion(removedRef)));
+		addedRefs.forEach(addedRef -> edits.add(new Insertion(addedRef)));
 
 		return edits;
 	}

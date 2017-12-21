@@ -49,10 +49,26 @@ public class GoldStandard {
 			ListMap<String, TutorHint> hintMap = new ListMap<>(MapFactory.TreeMapFactory);
 			list.forEach(hint -> hintMap.add(hint.requestID, hint));
 			list.forEach(hint -> {
-				System.out.println(hint.toDiff(RatingConfig.Snap));
-				List<Edit> edits = EditExtraction.extractEdits(hint.from, hint.to);
-				edits.forEach(System.out::println);
-				System.out.println("------------");
+				Set<Edit> editsTED = EditExtraction.extractEditsUsingTED(hint.from, hint.to);
+				Set<Edit> editsIDs = EditExtraction.extractEditsUsingIDs(hint.from, hint.to);
+				if (!editsTED.equals(editsIDs)) {
+					System.out.println(hint.toDiff(RatingConfig.Snap));
+					Set<Edit> ted = new HashSet<>(editsTED),
+							id = new HashSet<>(editsIDs),
+							both = new HashSet<>(editsIDs);
+					ted.removeAll(editsIDs);
+					id.removeAll(editsTED);
+					both.retainAll(editsTED);
+
+					System.out.println("Both:");
+					both.forEach(System.out::println);
+					System.out.println("IDs Only:");
+					id.forEach(System.out::println);
+					System.out.println("TED Only:");
+					ted.forEach(System.out::println);
+
+					System.out.println("------------");
+				}
 			});
 			map.put(assignment, hintMap);
 
