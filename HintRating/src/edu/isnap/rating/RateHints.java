@@ -14,6 +14,7 @@ import org.apache.commons.lang.StringUtils;
 import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.map.ListMap;
+import edu.isnap.rating.EditExtractor.Edit;
 import edu.isnap.rating.TutorHint.Priority;
 import edu.isnap.rating.TutorHint.Validity;
 
@@ -45,6 +46,7 @@ public class RateHints {
 	}
 
 	public static void rate(GoldStandard standard, HintSet hintSet) {
+		EditExtractor extractor = new EditExtractor(hintSet.config.areNodeIDsConsistent());
 		for (String assignment : standard.getAssignmentIDs()) {
 			System.out.println("----- " + assignment + " -----");
 
@@ -76,7 +78,8 @@ public class RateHints {
 //						System.out.println("!!");
 //					}
 					HintRating rating = new HintRating(hint);
-					TutorHint exactMatch = findMatchingEdit(validEdits, hint, hintSet.config);
+					TutorHint exactMatch = findMatchingEdit(validEdits, hint, hintSet.config,
+							extractor);
 
 					rating.validity = Validity.NoTutors;
 					if (exactMatch != null) {
@@ -182,26 +185,64 @@ public class RateHints {
 		return to;
 	}
 
-	public static TutorHint findMatchingEdit(List<TutorHint> validEdits, HintOutcome outcome,
-			RatingConfig config) {
-		if (validEdits.isEmpty()) return null;
+	public static TutorHint findMatchingEdit(List<TutorHint> validHints, HintOutcome outcome,
+			RatingConfig config, EditExtractor extractor) {
+		if (validHints.isEmpty()) return null;
 		// TODO: supersets, subsets of edits
-		ASTNode outcomeNode = normalizeNewValuesTo(validEdits.get(0).from, outcome.result,
+		ASTNode fromNode = validHints.get(0).from;
+		ASTNode outcomeNode = normalizeNewValuesTo(fromNode, outcome.result,
 				config, true);
-		for (TutorHint tutorEdit : validEdits) {
-			ASTNode tutorOutcomeNode = normalizeNewValuesTo(tutorEdit.from, tutorEdit.to,
-					config, true);
-			if (outcomeNode.equals(tutorOutcomeNode)) return tutorEdit;
+		for (TutorHint tutorHint : validHints) {
+			ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, tutorHint.to, config, true);
+			if (outcomeNode.equals(tutorOutcomeNode)) return tutorHint;
 
-			if (outcome.result.equals(tutorEdit.to)) {
+			if (outcome.result.equals(tutorHint.to)) {
 				System.out.println(Diff.diff(
-						tutorEdit.from.prettyPrint(true, config),
-						tutorEdit.to.prettyPrint(true, config)));
+						tutorHint.from.prettyPrint(true, config),
+						tutorHint.to.prettyPrint(true, config)));
 				System.out.println(Diff.diff(
 						tutorOutcomeNode.prettyPrint(true, config),
 						outcomeNode.prettyPrint(true, config), 2));
 				throw new RuntimeException("Normalized nodes should be equal if nodes are equal!");
 			}
+		}
+
+		outcomeNode = normalizeNewValuesTo(fromNode, outcome.result, config, false);
+		Set<Edit> outcomeEdits = extractor.getEdits(fromNode, outcome.result);
+		Set<Edit> bestOverlap = new HashSet<>();
+		TutorHint bestHint = null;
+		for (TutorHint tutorHint : validHints) {
+			ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, tutorHint.to, config, false);
+			Set<Edit> tutorEdits = extractor.getEdits(fromNode, tutorHint.to);
+			Set<Edit> overlap = new HashSet<>(tutorEdits);
+			overlap.retainAll(outcomeEdits);
+			// TODO: Should we use tutorHint.validity instead?
+//			if (overlap.size() == outcomeEdits.size() || overlap.size() == tutorEdits.size()) {
+			if (overlap.size() > bestOverlap.size()) {
+				bestOverlap = overlap;
+				bestHint = tutorHint;
+//				break;
+			}
+		}
+		if (bestHint != null) {
+			ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, bestHint.to, config, false);
+			System.out.println("Tutor Hint:");
+			System.out.println(Diff.diff(
+					fromNode.prettyPrint(true, config),
+					tutorOutcomeNode.prettyPrint(true, config), 2));
+			System.out.println("Alg Hint:");
+			System.out.println(Diff.diff(
+					fromNode.prettyPrint(true, config),
+					outcomeNode.prettyPrint(true, config), 2));
+			Set<Edit> tutorEdits = extractor.getEdits(bestHint.from, bestHint.to);
+			EditExtractor.printEditsComparison(tutorEdits, outcomeEdits, "Tutor Hint", "Alg Hint");
+			if (bestOverlap.size() == tutorEdits.size() &&
+					bestOverlap.size() == outcomeEdits.size() &&
+					bestOverlap.size() > 0) {
+				throw new RuntimeException("Edits should not match if hint outcomes did not!");
+			}
+			System.out.println("-------------------");
+
 		}
 		return null;
 	}

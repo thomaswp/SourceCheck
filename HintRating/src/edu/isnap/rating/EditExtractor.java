@@ -21,7 +21,24 @@ import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.util.map.BiMap;
 import node.Node;
 
-public class EditExtraction {
+public class EditExtractor {
+
+	private final Map<ASTNode, Set<Edit>> cache = new IdentityHashMap<>();
+
+	private final boolean useIDs;
+
+	public EditExtractor(boolean useIDs) {
+		this.useIDs = useIDs;
+	}
+
+	public Set<Edit> getEdits(ASTNode from, ASTNode to) {
+		Set<Edit> edits = cache.get(to);
+		if (edits == null) {
+			edits = useIDs ? extractEditsUsingIDs(from, to) : extractEditsUsingTED(from, to);
+			cache.put(to, edits);
+		}
+		return edits;
+	}
 
 	private static CostModel<ASTNode> costModel = new CostModel<ASTNode>() {
 		@Override
@@ -76,6 +93,23 @@ public class EditExtraction {
 		return list.get(index - 1);
 	}
 
+	public static void printEditsComparison(Set<Edit> editsA, Set<Edit> editsB,
+			String nameA, String nameB) {
+		Set<Edit> a = new HashSet<>(editsA),
+				b = new HashSet<>(editsB),
+				both = new HashSet<>(editsB);
+		a.removeAll(editsB);
+		b.removeAll(editsA);
+		both.retainAll(editsA);
+
+		System.out.println("Both:");
+		both.forEach(System.out::println);
+		System.out.println(nameA + " Only:");
+		a.forEach(System.out::println);
+		System.out.println(nameB + "Only:");
+		b.forEach(System.out::println);
+	}
+
 	public static Set<Edit> extractEditsUsingTED(ASTNode from, ASTNode to) {
 		BiMap<ASTNode, ASTNode> mapping = extractMap(toNode(from), toNode(to));
 		return extractEdits(from, to, mapping);
@@ -100,7 +134,8 @@ public class EditExtraction {
 		node.recurse(child -> {
 			if (child.id != null) {
 				if (map.put(child.id, child) != null) {
-					throw new RuntimeException("Duplicate ids in node!");
+					System.err.println(node.prettyPrint(true, RatingConfig.Snap));
+					throw new RuntimeException("Duplicate ids in node: " + child.id);
 				}
 			}
 		});
@@ -189,6 +224,7 @@ public class EditExtraction {
 			ChildNodeReference toRef = new ChildNodeReference(toNode,
 					getReferenceTo(toNode.parent(), mapping));
 			if (StringUtils.equals(toNode.type, fromMatch.type)) {
+				// TODO: See if there's a big difference if we treat moves as insert/delete pairs
 				edits.add(new Move(fromRef, toRef));
 			} else {
 				// For consistency, we represent relabels as insertions + deletions, rather than
@@ -218,20 +254,20 @@ public class EditExtraction {
 		return edits;
 	}
 
-	static NodeReference getReferenceFrom(ASTNode fromNode) {
+	private static NodeReference getReferenceFrom(ASTNode fromNode) {
 		if (fromNode.id != null) return new IDNodeReference(fromNode);
 		if (fromNode.parent() == null) return null;
 		return new ChildNodeReference(fromNode, getReferenceFrom(fromNode.parent()));
 	}
 
-	static NodeReference getReferenceTo(ASTNode toNode, BiMap<ASTNode, ASTNode> mapping) {
+	private static NodeReference getReferenceTo(ASTNode toNode, BiMap<ASTNode, ASTNode> mapping) {
 		ASTNode fromPair = mapping.getTo(toNode);
 		if (fromPair != null && fromPair.id != null) return new IDNodeReference(fromPair);
 		if (toNode.parent() == null) return null;
 		return new ChildNodeReference(toNode, getReferenceTo(toNode.parent(), mapping));
 	}
 
-	static abstract class Edit {
+	protected static abstract class Edit {
 		final NodeReference node;
 
 		Edit(NodeReference node) {

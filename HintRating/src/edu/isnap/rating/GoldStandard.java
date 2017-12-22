@@ -18,7 +18,7 @@ import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.ctd.util.map.MapFactory;
 import edu.isnap.hint.util.Spreadsheet;
-import edu.isnap.rating.EditExtraction.Edit;
+import edu.isnap.rating.EditExtractor.Edit;
 import edu.isnap.rating.TutorHint.Priority;
 import edu.isnap.rating.TutorHint.Validity;
 
@@ -48,28 +48,7 @@ public class GoldStandard {
 			List<? extends TutorHint> list = hints.get(assignment);
 			ListMap<String, TutorHint> hintMap = new ListMap<>(MapFactory.TreeMapFactory);
 			list.forEach(hint -> hintMap.add(hint.requestID, hint));
-			list.forEach(hint -> {
-				Set<Edit> editsTED = EditExtraction.extractEditsUsingTED(hint.from, hint.to);
-				Set<Edit> editsIDs = EditExtraction.extractEditsUsingIDs(hint.from, hint.to);
-				if (!editsTED.equals(editsIDs)) {
-					System.out.println(hint.toDiff(RatingConfig.Snap));
-					Set<Edit> ted = new HashSet<>(editsTED),
-							id = new HashSet<>(editsIDs),
-							both = new HashSet<>(editsIDs);
-					ted.removeAll(editsIDs);
-					id.removeAll(editsTED);
-					both.retainAll(editsTED);
-
-					System.out.println("Both:");
-					both.forEach(System.out::println);
-					System.out.println("IDs Only:");
-					id.forEach(System.out::println);
-					System.out.println("TED Only:");
-					ted.forEach(System.out::println);
-
-					System.out.println("------------");
-				}
-			});
+//			testEditExtraction(list);
 			map.put(assignment, hintMap);
 
 			Set<String> addedIDs = new HashSet<>();
@@ -79,6 +58,18 @@ public class GoldStandard {
 				}
 			});
 		}
+	}
+
+	protected void testEditExtraction(List<? extends TutorHint> list) {
+		list.forEach(hint -> {
+			Set<Edit> editsTED = EditExtractor.extractEditsUsingTED(hint.from, hint.to);
+			Set<Edit> editsIDs = EditExtractor.extractEditsUsingIDs(hint.from, hint.to);
+			if (!editsTED.equals(editsIDs)) {
+				System.out.println(hint.toDiff(RatingConfig.Snap));
+				EditExtractor.printEditsComparison(editsTED, editsIDs, "TED", "IDs");
+				System.out.println("------------");
+			}
+		});
 	}
 
 	public static GoldStandard merge(GoldStandard... standards) {
