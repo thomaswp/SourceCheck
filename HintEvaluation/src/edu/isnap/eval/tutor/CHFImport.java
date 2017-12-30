@@ -32,9 +32,9 @@ public class CHFImport {
 		HintSet hintSet = HintSet.fromFolder("chf", RatingConfig.Snap,
 				Spring2017.dataDir + "/chf/hint-rating-with-past");
 
-		GoldStandard fall2016Standard = TutorEdits.readConsensus(
+		GoldStandard fall2016Standard = TutorEdits.readConsensusSnap(
 				Fall2016.instance, "consensus-gg-sq.csv");
-		GoldStandard spring2017Standard = TutorEdits.readConsensus(
+		GoldStandard spring2017Standard = TutorEdits.readConsensusSnap(
 				Spring2017.instance, "consensus-gg-sq.csv");
 
 		System.out.println("Fall 2016");

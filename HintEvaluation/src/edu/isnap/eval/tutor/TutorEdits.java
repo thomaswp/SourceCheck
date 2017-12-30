@@ -75,13 +75,15 @@ public class TutorEdits {
 //			RateHints.rate(standard, hintSet);
 //		}
 
-//		writeStandard();
+//		writeSnapStandard();
 
-		GoldStandard standard = GoldStandard.parseSpreadsheet(ISNAP_GOLD_STANDARD);
+		GoldStandard standard = readConsensusPython("../data/itap");
+
+//		GoldStandard standard = GoldStandard.parseSpreadsheet(ISNAP_GOLD_STANDARD);
 //		runConsensus("../data/hint-rating/isnap2017/training", standard, new SnapHintConfig());
 //		writeHighlight(RateHints.ISNAP_DATA_DIR, "sourcecheck", standard, new SnapHintConfig());
-		RateHints.rate(standard, HintSet.fromFolder("sourcecheck", RatingConfig.Snap,
-				RateHints.ISNAP_DATA_DIR + RateHints.ALGORITHMS_DIR + "/sourcecheck"));
+//		RateHints.rate(standard, HintSet.fromFolder("sourcecheck", RatingConfig.Snap,
+//				RateHints.ISNAP_DATA_DIR + RateHints.ALGORITHMS_DIR + "/sourcecheck"));
 
 //		System.out.println("Fall");
 //		runConsensus(Fall2016.instance, readConsensus(Spring2017.instance, CONSENSUS_GG_SQ));
@@ -94,9 +96,9 @@ public class TutorEdits {
 //				"hint-eval", Fall2016.Squiral, Fall2016.GuessingGame1);
 	}
 
-	protected static void writeStandard() throws FileNotFoundException, IOException {
-		GoldStandard fall2016Standard = readConsensus(Fall2016.instance, CONSENSUS_GG_SQ);
-		GoldStandard spring2017Standard = readConsensus(Spring2017.instance, CONSENSUS_GG_SQ);
+	protected static void writeSnapStandard() throws FileNotFoundException, IOException {
+		GoldStandard fall2016Standard = readConsensusSnap(Fall2016.instance, CONSENSUS_GG_SQ);
+		GoldStandard spring2017Standard = readConsensusSnap(Spring2017.instance, CONSENSUS_GG_SQ);
 		GoldStandard standard = GoldStandard.merge(fall2016Standard, spring2017Standard);
 		standard.writeSpreadsheet(ISNAP_GOLD_STANDARD);
 	}
@@ -344,11 +346,24 @@ public class TutorEdits {
 		return hintSets;
 	}
 
-	public static GoldStandard readConsensus(Dataset dataset, String... consensusPaths)
+	protected static GoldStandard readConsensusSnap(Dataset dataset, String consensusPath)
 			throws FileNotFoundException, IOException {
 		Map<Integer, Tuple<Validity, Priority>> consensus =
-				readConsensusSpreadsheet(dataset, consensusPaths);
+				readConsensusSpreadsheet(new File(dataset.dataDir, consensusPath).getPath(), true);
 		ListMap<String, PrintableTutorEdit> allEdits = readTutorEditsSnap(dataset);
+		return readConsensus(consensus, allEdits);
+	}
+
+	protected static GoldStandard readConsensusPython(String dir)
+			throws FileNotFoundException, IOException {
+		Map<Integer, Tuple<Validity, Priority>> consensus =
+				readConsensusSpreadsheet(new File(dir, "consensus.csv").getPath(), false);
+		ListMap<String, PrintableTutorEdit> allEdits = readTutorEditsPython(dir);
+		return readConsensus(consensus, allEdits);
+	}
+
+	private static GoldStandard readConsensus(Map<Integer, Tuple<Validity, Priority>> consensus,
+			ListMap<String, PrintableTutorEdit> allEdits) {
 		ListMap<String, PrintableTutorEdit> consensusEdits = new ListMap<>();
 		for (String assignmentID : allEdits.keySet()) {
 			List<PrintableTutorEdit> list = allEdits.get(assignmentID);
@@ -369,31 +384,48 @@ public class TutorEdits {
 		return new GoldStandard(consensusEdits);
 	}
 
-	private static Map<Integer, Tuple<Validity, Priority>> readConsensusSpreadsheet(Dataset dataset,
-			String[] paths) throws FileNotFoundException, IOException {
+	private static Map<Integer, Tuple<Validity, Priority>> readConsensusSpreadsheet(String path,
+			boolean failIfNoConsensus)
+			throws FileNotFoundException, IOException {
 		Map<Integer, Tuple<Validity, Priority>> map = new HashMap<>();
-		for (String path : paths) {
-			CSVParser parser = new CSVParser(new FileReader(dataset.dataDir + "/" + path),
-					CSVFormat.DEFAULT.withHeader());
-			for (CSVRecord row : parser) {
-				int id = Integer.parseInt(row.get("Hint ID"));
-				boolean consensus = Double.parseDouble(row.get("Consensus (Validity)")) == 1;
-				int priority = consensus ? Integer.parseInt(row.get("Consensus (Priority)")) : 0;
-				int v1 = Integer.parseInt(row.get("V1"));
-				Validity validity;
-				if (consensus) {
-					validity = Validity.Consensus;
-				} else if (v1 > 1) {
-					validity = Validity.MultipleTutors;
-				} else if (v1 > 0) {
-					validity = Validity.OneTutor;
-				} else {
-					validity = Validity.NoTutors;
+		CSVParser parser = new CSVParser(new FileReader(path), CSVFormat.DEFAULT.withHeader());
+		for (CSVRecord row : parser) {
+			int id = Integer.parseInt(row.get("Hint ID"));
+			boolean consensus = false;
+			try {
+				consensus = Double.parseDouble(row.get("Consensus (Validity)")) == 1;
+			} catch (NumberFormatException e) {
+				if (failIfNoConsensus) {
+					parser.close();
+					throw e;
 				}
-				map.put(id, new Tuple<>(validity, Priority.fromInt(priority)));
 			}
-			parser.close();
+			String priorityString = row.get("Consensus (Priority)");
+			int priority = 0;
+			if (consensus) {
+				try {
+					priority = Integer.parseInt(priorityString);
+				} catch (NumberFormatException e) {
+					if (failIfNoConsensus) {
+						parser.close();
+						throw e;
+					}
+				}
+			}
+			int v1 = Integer.parseInt(row.get("V1"));
+			Validity validity;
+			if (consensus) {
+				validity = Validity.Consensus;
+			} else if (v1 > 1) {
+				validity = Validity.MultipleTutors;
+			} else if (v1 > 0) {
+				validity = Validity.OneTutor;
+			} else {
+				validity = Validity.NoTutors;
+			}
+			map.put(id, new Tuple<>(validity, Priority.fromInt(priority)));
 		}
+		parser.close();
 		return map;
 	}
 
