@@ -24,10 +24,12 @@ public class RateHints {
 	public final static String ALGORITHMS_DIR = "algorithms";
 	public final static String TRAINING_DIR = "training";
 
-	public final static String ISNAP_DATA_DIR = "../data/hint-rating/isnap2017/";
+	public final static String DATA_ROOT_DIR = "../data/hint-rating/";
+	public final static String ISNAP_DATA_DIR = DATA_ROOT_DIR + "isnap2017/";
+	public final static String ITAP_DATA_DIR = DATA_ROOT_DIR + "itap2016/";
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
-		rateDir("../data/hint-rating/isnap2017/", RatingConfig.Snap);
+		rateDir(ISNAP_DATA_DIR, RatingConfig.Snap);
 	}
 
 	public static void rateDir(String path, RatingConfig config)
@@ -69,6 +71,7 @@ public class RateHints {
 //						filter(h -> h.weight == maxWeight).
 //						collect(Collectors.toList());
 
+				System.out.println(requestID + ": " + hints.size());
 				if (hints == null || hints.size() == 0) continue;
 
 				double[] weightedValidity = new double[3];

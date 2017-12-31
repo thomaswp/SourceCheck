@@ -1,7 +1,9 @@
 package edu.isnap.eval.python;
 
 import edu.isnap.ctd.graph.Node;
+import edu.isnap.ctd.graph.Node.NodeConstructor;
 import edu.isnap.ctd.hint.HintConfig;
+import edu.isnap.eval.python.PythonImport.PythonNode;
 
 public class PythonHintConfig extends HintConfig {
 	private static final long serialVersionUID = 1L;
@@ -52,6 +54,11 @@ public class PythonHintConfig extends HintConfig {
 				// Children of auto-added lists (e.g. in compare) should also be auto-added
 				(parent.hasType("list") && shouldAutoAdd(parent)) ||
 				node.hasType("Load", "Store", "Del");
+	}
+
+	@Override
+	public NodeConstructor getNodeConstructor() {
+		return PythonNode::new;
 	}
 
 //	@Override

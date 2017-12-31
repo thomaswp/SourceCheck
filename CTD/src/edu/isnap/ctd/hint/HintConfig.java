@@ -3,10 +3,16 @@ package edu.isnap.ctd.hint;
 import java.io.Serializable;
 
 import edu.isnap.ctd.graph.Node;
+import edu.isnap.ctd.graph.Node.NodeConstructor;
+import edu.isnap.ctd.graph.SimpleNode;
 
 public abstract class HintConfig implements Serializable {
 	private static final long serialVersionUID = 1L;
 
+	/**
+	 * Should return a constructor for the Node to be used with this config.
+	 */
+	public abstract NodeConstructor getNodeConstructor();
 	/**
 	 * Should return true if children of this type have no meaningful order
 	 */
@@ -239,6 +245,11 @@ public abstract class HintConfig implements Serializable {
 		@Override
 		public boolean shouldAutoAdd(Node node) {
 			return false;
+		}
+
+		@Override
+		public NodeConstructor getNodeConstructor() {
+			return SimpleNode::new;
 		}
 
 	}

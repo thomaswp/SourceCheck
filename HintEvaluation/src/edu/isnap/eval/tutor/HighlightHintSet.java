@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import edu.isnap.ctd.graph.ASTNode;
@@ -21,9 +22,9 @@ import edu.isnap.ctd.util.Diff.ColorStyle;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.eval.python.PythonHintConfig;
-import edu.isnap.eval.tutor.TutorEdits.PrintableTutorEdit;
+import edu.isnap.eval.tutor.TutorEdits.PrintableTutorHint;
 import edu.isnap.hint.SnapHintConfig;
-import edu.isnap.hint.util.SnapNode;
+import edu.isnap.rating.GoldStandard;
 import edu.isnap.rating.HintOutcome;
 import edu.isnap.rating.HintRequest;
 import edu.isnap.rating.HintSet;
@@ -52,7 +53,9 @@ public abstract class HighlightHintSet extends HintSet {
 
 		for (HintRequest request : requests) {
 			HintHighlighter highlighter = getHighlighter(request, baseMap);
-			Node code = JsonAST.toNode(request.code, SnapNode::new);
+			Node code = JsonAST.toNode(request.code, hintConfig.getNodeConstructor());
+			code = copyWithIDs(code);
+			System.out.println(code.prettyPrint());
 			List<EditHint> hints = highlighter.highlightWithPriorities(code);
 			Set<EditHint> originalHints = new HashSet<>(hints);
 			hints = filterHints(hints, false);
@@ -82,6 +85,20 @@ public abstract class HighlightHintSet extends HintSet {
 		}
 		finish();
 		return this;
+	}
+
+	public static Node copyWithIDs(Node node) {
+		return copyWithIDs(node, null, new AtomicInteger(0));
+	}
+
+	private static Node copyWithIDs(Node node, Node parent, AtomicInteger count) {
+		String id = node.id;
+		if (id == null) id = "GEN_" + count.getAndIncrement();
+		Node copy = node.constructNode(parent, node.type(), node.value, id);
+		for (Node child : node.children) {
+			copy.children.add(copyWithIDs(child, node, count));
+		}
+		return copy;
 	}
 
 	// Filter out hints that wouldn't be shown in iSnap anyway
@@ -122,6 +139,10 @@ public abstract class HighlightHintSet extends HintSet {
 		return hints;
 	}
 
+	public void addHints(GoldStandard standard) {
+		addHints(standard.getHintRequests());
+	}
+
 	private static <T> boolean removeExactly(List<T> list, T element) {
 		for (int i = 0; i < list.size(); i++) {
 			if (list.get(i) == element) {
@@ -144,16 +165,16 @@ public abstract class HighlightHintSet extends HintSet {
 
 	}
 
-	public List<PrintableTutorEdit> toTutorEdits() {
+	public List<PrintableTutorHint> toTutorEdits() {
 		Diff.colorStyle = ColorStyle.HTML;
-		List<PrintableTutorEdit> edits = new ArrayList<>();
+		List<PrintableTutorHint> edits = new ArrayList<>();
 		int hintID = 0;
 		for (String requestID : getHintRequestIDs()) {
 			for (HintOutcome o : getOutcomes(requestID)) {
 				HighlightOutcome outcome = (HighlightOutcome) o;
 				String from = outcome.from.prettyPrint(true, config);
 				String to = outcome.result.prettyPrint(true, config);
-				edits.add(new PrintableTutorEdit(hintID++, requestID, null,
+				edits.add(new PrintableTutorHint(hintID++, requestID, null,
 						outcome.assignmentID, outcome.from,
 						outcome.result, Diff.diff(from, to)));
 			}

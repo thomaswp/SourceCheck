@@ -20,6 +20,8 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang.StringEscapeUtils;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.graph.Node;
@@ -43,6 +45,8 @@ import edu.isnap.eval.agreement.Agreement;
 import edu.isnap.eval.agreement.HintSelection;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.eval.python.PythonHintConfig;
+import edu.isnap.eval.python.PythonImport;
+import edu.isnap.eval.python.PythonImport.PythonNode;
 import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.hint.util.SnapNode;
@@ -78,6 +82,10 @@ public class TutorEdits {
 //		writeSnapStandard();
 
 		GoldStandard standard = readConsensusPython("../data/itap");
+		HighlightHintSet hintSet = new ImportHighlightHintSet("sourcecheck", new PythonHintConfig(),
+				RateHints.ITAP_DATA_DIR + RateHints.TRAINING_DIR);
+		hintSet.addHints(standard);
+		RateHints.rate(standard, hintSet);
 
 //		GoldStandard standard = GoldStandard.parseSpreadsheet(ISNAP_GOLD_STANDARD);
 //		runConsensus("../data/hint-rating/isnap2017/training", standard, new SnapHintConfig());
@@ -90,9 +98,10 @@ public class TutorEdits {
 //		System.out.println("Spring");
 //		runConsensus(Spring2017.instance, readConsensus(Fall2016.instance, CONSENSUS_GG_SQ));
 
-//		exportConsensusHintRequests(Spring2017.instance, CONSENSUS_GG_SQ,
+//		exportRatingDatasetPython("../../PythonAST/data", "../data/itap", RateHints.ITAP_DATA_DIR);
+//		exportRatingDatasetSnap(Spring2017.instance, CONSENSUS_GG_SQ,
 //				"hint-eval", Spring2017.Squiral, Spring2017.GuessingGame1);
-//		exportConsensusHintRequests(Fall2016.instance, CONSENSUS_GG_SQ,
+//		exportRatingDatasetSnap(Fall2016.instance, CONSENSUS_GG_SQ,
 //				"hint-eval", Fall2016.Squiral, Fall2016.GuessingGame1);
 	}
 
@@ -160,8 +169,8 @@ public class TutorEdits {
 		spreadsheet.write(trainingDataset.analysisDir() + "/highlight-hints.csv");
 	}
 
-	public static void exportConsensusHintRequests(Dataset dataset, String path, String folder,
-			Assignment... assignments)
+	public static void exportRatingDatasetSnap(Dataset dataset, String path,
+			String folder, Assignment... assignments)
 			throws FileNotFoundException, IOException {
 		CSVParser parser = new CSVParser(new FileReader(dataset.dataDir + "/" + path),
 				CSVFormat.DEFAULT.withHeader());
@@ -208,8 +217,73 @@ public class TutorEdits {
 				JsonAST.flushWrittenValues());
 	}
 
+	public static void exportRatingDatasetPython(String jsonDir, String editsDir, String outputDir)
+			throws IOException {
+		Map<String, ListMap<String, PythonNode>> nodeMap =
+				PythonImport.loadAllAssignments(jsonDir);
+		ListMap<String, PrintableTutorHint> tutorHint = readTutorEditsPython(editsDir);
+
+		for (String assignmentID : tutorHint.keySet()) {
+			List<PrintableTutorHint> list = tutorHint.get(assignmentID);
+			Set<String> hintRequestIDs = list.stream()
+					.filter(hint -> "consensus".equals(hint.tutor))
+					.map(hint -> hint.requestID)
+					.collect(Collectors.toSet());
+
+			ListMap<String, PythonNode> attemptMap = nodeMap.get(assignmentID);
+			for (String studentID : attemptMap.keySet()) {
+				List<PythonNode> snapshots = attemptMap.get(studentID);
+				List<PythonNode> hintRequestNodes = snapshots.stream()
+						.filter(node -> hintRequestIDs.contains(node.id))
+						.collect(Collectors.toList());
+				if (hintRequestNodes.isEmpty()) {
+					if (!snapshots.stream().anyMatch(node -> node.correct.orElse(false))) continue;
+					while (!snapshots.get(snapshots.size() - 1).correct.orElse(false)) {
+						snapshots.remove(snapshots.size() - 1);
+					}
+					exportHistory(outputDir, assignmentID, snapshots, null);
+				} else {
+					for (PythonNode request : hintRequestNodes) {
+						hintRequestIDs.remove(request.id);
+						exportHistory(outputDir, assignmentID, snapshots, request);
+					}
+				}
+			}
+
+			if (!hintRequestIDs.isEmpty()) {
+				throw new RuntimeException("Missing hint request IDs for " + assignmentID + ": " +
+						hintRequestIDs);
+			}
+		}
+	}
+
+	private static void exportHistory(String rootDir, String assignmentID,
+			List<PythonNode> snapshots, PythonNode requestNode)
+					throws FileNotFoundException, JSONException {
+		PythonNode lastNode = null;
+		int order = 0;
+		boolean isTraining = requestNode == null;
+		for (PythonNode snapshot : snapshots) {
+			if (snapshot.equals(lastNode)) continue;
+			JSONObject json = snapshot.toASTNode().toJSON();
+			json.put("isCorrect", snapshot.correct.orElse(false));
+			json.put("source", snapshot.source);
+			String id = snapshot.id;
+			if (id.length() > 8) id = id.substring(0, 8);
+			JsonAST.write(
+					String.format("%s/%s/%s/%s/%05d-%s.json",
+						rootDir,
+						isTraining ? "training" : "requests",
+						assignmentID,
+						isTraining ? snapshot.student : requestNode.id,
+						order++, id),
+					json.toString(2));
+			if (snapshot == requestNode) break;
+		}
+	}
+
 	public static void verifyHints(Dataset dataset) throws FileNotFoundException, IOException {
-		ListMap<String, PrintableTutorEdit> edits = readTutorEditsSnap(dataset);
+		ListMap<String, PrintableTutorHint> edits = readTutorEditsSnap(dataset);
 		edits.values().forEach(l -> l.forEach(e -> e.verify()));
 	}
 
@@ -227,7 +301,7 @@ public class TutorEdits {
 		compareHints(readTutorEditsPython(dir), writeDir, RatingConfig.Python);
 	}
 
-	public static void compareHints(ListMap<String, PrintableTutorEdit> assignmentMap,
+	public static void compareHints(ListMap<String, PrintableTutorHint> assignmentMap,
 			String writeDir, RatingConfig config) throws FileNotFoundException, IOException {
 
 		Set<String> tutors =  assignmentMap.values().stream()
@@ -241,7 +315,7 @@ public class TutorEdits {
 		for (String assignmentID : assignments) {
 			System.out.println("\n#---------> " + assignmentID + " <---------#\n");
 
-			List<PrintableTutorEdit> edits = assignmentMap.get(assignmentID);
+			List<PrintableTutorHint> edits = assignmentMap.get(assignmentID);
 			edits = edits.stream()
 					.filter(e -> !"consensus".equals(e.tutor))
 					.collect(Collectors.toList());
@@ -251,7 +325,7 @@ public class TutorEdits {
 			for (String requestID : requestIDs) {
 				System.out.println("-------- " + requestID + " --------");
 
-				ListMap<ASTNode, PrintableTutorEdit> givers = new ListMap<>();
+				ListMap<ASTNode, PrintableTutorHint> givers = new ListMap<>();
 				edits.stream()
 				.filter(e -> e.requestID.equals(requestID))
 				.forEach(e -> givers.add(
@@ -269,8 +343,8 @@ public class TutorEdits {
 				for (ASTNode to : keys) {
 					System.out.println(Diff.diff(fromPP,
 							to.prettyPrint(true, config::nodeTypeHasBody), 1));
-					List<PrintableTutorEdit> tutorEdits = givers.get(to);
-					PrintableTutorEdit firstEdit = tutorEdits.get(0);
+					List<PrintableTutorHint> tutorEdits = givers.get(to);
+					PrintableTutorHint firstEdit = tutorEdits.get(0);
 					String editsString = firstEdit.editsString(true);
 					System.out.println(editsString);
 					int priorityMatches = 0;
@@ -330,8 +404,8 @@ public class TutorEdits {
 	public static Map<String, HintSet> readTutorHintSets(Dataset dataset)
 			throws FileNotFoundException, IOException {
 		Map<String, HintSet> hintSets = new HashMap<>();
-		ListMap<String, PrintableTutorEdit> allEdits = readTutorEditsSnap(dataset);
-		for (List<PrintableTutorEdit> list : allEdits.values()) {
+		ListMap<String, PrintableTutorHint> allEdits = readTutorEditsSnap(dataset);
+		for (List<PrintableTutorHint> list : allEdits.values()) {
 			for (TutorHint edit : list) {
 				if (edit.tutor.equals("consensus")) continue;
 				HintSet set = hintSets.get(edit.tutor);
@@ -350,7 +424,7 @@ public class TutorEdits {
 			throws FileNotFoundException, IOException {
 		Map<Integer, Tuple<Validity, Priority>> consensus =
 				readConsensusSpreadsheet(new File(dataset.dataDir, consensusPath).getPath(), true);
-		ListMap<String, PrintableTutorEdit> allEdits = readTutorEditsSnap(dataset);
+		ListMap<String, PrintableTutorHint> allEdits = readTutorEditsSnap(dataset);
 		return readConsensus(consensus, allEdits);
 	}
 
@@ -358,17 +432,17 @@ public class TutorEdits {
 			throws FileNotFoundException, IOException {
 		Map<Integer, Tuple<Validity, Priority>> consensus =
 				readConsensusSpreadsheet(new File(dir, "consensus.csv").getPath(), false);
-		ListMap<String, PrintableTutorEdit> allEdits = readTutorEditsPython(dir);
+		ListMap<String, PrintableTutorHint> allEdits = readTutorEditsPython(dir);
 		return readConsensus(consensus, allEdits);
 	}
 
 	private static GoldStandard readConsensus(Map<Integer, Tuple<Validity, Priority>> consensus,
-			ListMap<String, PrintableTutorEdit> allEdits) {
-		ListMap<String, PrintableTutorEdit> consensusEdits = new ListMap<>();
+			ListMap<String, PrintableTutorHint> allEdits) {
+		ListMap<String, PrintableTutorHint> consensusEdits = new ListMap<>();
 		for (String assignmentID : allEdits.keySet()) {
-			List<PrintableTutorEdit> list = allEdits.get(assignmentID);
-			List<PrintableTutorEdit> keeps = new ArrayList<>();
-			for (PrintableTutorEdit hint : list) {
+			List<PrintableTutorHint> list = allEdits.get(assignmentID);
+			List<PrintableTutorHint> keeps = new ArrayList<>();
+			for (PrintableTutorHint hint : list) {
 				if (!hint.tutor.equals("consensus")) continue;
 				Tuple<Validity, Priority> ratings = consensus.get(hint.hintID);
 				if (ratings == null) {
@@ -429,7 +503,7 @@ public class TutorEdits {
 		return map;
 	}
 
-	public static ListMap<String, PrintableTutorEdit> readTutorEditsSnap(Dataset dataset)
+	public static ListMap<String, PrintableTutorHint> readTutorEditsSnap(Dataset dataset)
 			throws FileNotFoundException, IOException {
 
 		Map<String, Assignment> assignments = dataset.getAssignmentMap();
@@ -466,7 +540,7 @@ public class TutorEdits {
 				return null;
 			}
 
-			return new PrintableTutorEdit(hintID, requestID, tutor, assignmentID, from, to,
+			return new PrintableTutorHint(hintID, requestID, tutor, assignmentID, from, to,
 					toSource);
 		});
 	}
@@ -484,7 +558,7 @@ public class TutorEdits {
 		return node;
 	}
 
-	public static ListMap<String, PrintableTutorEdit> readTutorEditsPython(String dir)
+	public static ListMap<String, PrintableTutorHint> readTutorEditsPython(String dir)
 			throws FileNotFoundException, IOException {
 		return readTutorEdits(dir + "/handmade_hints_ast.csv",
 				(hintID, requestID, tutor, assignmentID, toSource, row) -> {
@@ -496,22 +570,22 @@ public class TutorEdits {
 				System.out.println("Error reading hint: " + hintID);
 				throw e;
 			}
-			return new PrintableTutorEdit(hintID, requestID, tutor, assignmentID, from, to,
+			return new PrintableTutorHint(hintID, requestID, tutor, assignmentID, from, to,
 					toSource);
 		});
 	}
 
 	private interface NodeParser {
-		PrintableTutorEdit parse(int hintID, String requestID, String tutor, String assignmentID,
+		PrintableTutorHint parse(int hintID, String requestID, String tutor, String assignmentID,
 				String toSource, CSVRecord row);
 	}
 
-	public static ListMap<String, PrintableTutorEdit> readTutorEdits(String path, NodeParser np)
+	public static ListMap<String, PrintableTutorHint> readTutorEdits(String path, NodeParser np)
 			throws FileNotFoundException, IOException {
 		CSVParser parser = new CSVParser(new FileReader(path),
 				CSVFormat.DEFAULT.withHeader());
 
-		ListMap<String, PrintableTutorEdit> edits = new ListMap<>();
+		ListMap<String, PrintableTutorHint> edits = new ListMap<>();
 
 		for (CSVRecord record : parser) {
 			int hintID = Integer.parseInt(record.get("hid"));
@@ -535,7 +609,7 @@ public class TutorEdits {
 			// Skip empty hints (they may exist if no hint is appropriate for a snapshot)
 			if (toSource.trim().isEmpty() || toSource.equals("NULL")) continue;
 
-			PrintableTutorEdit edit = np.parse(
+			PrintableTutorHint edit = np.parse(
 					hintID, requestID, tutor, assignmentID, toSource, record);
 			// If parse returns null it means the edit is empty or shouldn't be used, e.g. literal-
 			// only hints
@@ -561,7 +635,7 @@ public class TutorEdits {
 		}
 	}
 
-	static class PrintableTutorEdit extends TutorHint {
+	static class PrintableTutorHint extends TutorHint {
 
 		public final String toSource;
 
@@ -571,7 +645,7 @@ public class TutorEdits {
 		private final Node fromNode, toNode;
 
 
-		public PrintableTutorEdit(int hintID, String requestID, String tutor, String assignmentID,
+		public PrintableTutorHint(int hintID, String requestID, String tutor, String assignmentID,
 				ASTNode from, ASTNode to, String toSource) {
 			super(hintID, requestID, tutor, assignmentID, from, to);
 			fromNode = JsonAST.toNode(from, SnapNode::new);

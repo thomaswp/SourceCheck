@@ -15,6 +15,7 @@ import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.hint.HintMapBuilder;
 import edu.isnap.eval.export.JsonAST;
+import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.hint.util.SnapNode;
 import edu.isnap.rating.HintRequest;
 
@@ -31,7 +32,7 @@ public class ImportHighlightHintSet extends HighlightHintSet {
 		}
 		for (File assignmentDir : dirFile.listFiles(f -> f.isDirectory())) {
 			addAssignment(assignmentDir);
-		};
+		}
 	}
 
 	private void addAssignment(File directory) {
@@ -53,7 +54,8 @@ public class ImportHighlightHintSet extends HighlightHintSet {
 				}
 			}
 			// TODO: Decide how to handle data where IDs are inconsistent
-			builder.addAttempt(trace, true);
+			// Passing false here probably doesn't give ideal behavior either....
+			builder.addAttempt(trace, config instanceof SnapHintConfig);
 		}
 		builder.finishedAdding();
 		highlighters.put(assignment, builder.hintHighlighter());

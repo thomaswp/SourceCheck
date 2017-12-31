@@ -664,7 +664,7 @@ public class NodeAlignment {
 
 		Arrays.sort(mappings);
 
-		for (int i = 0; i < maxReturned; i++) {
+		for (int i = 0; i < maxReturned && i < mappings.length; i++) {
 			best.add(mappings[i]);
 		}
 		return best;

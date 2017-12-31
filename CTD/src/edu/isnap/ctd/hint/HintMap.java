@@ -109,7 +109,9 @@ public class HintMap {
 		List<String> children = new ArrayList<>();
 		if (node == null) return children;
 		for (Node child : node.children) {
-			if ("null".equals(child.type())) continue;
+			// Not sure why this was here, but since it's use with node.index(), it needs to
+			// include all children so the list length matches the node's number of children
+//			if ("null".equals(child.type())) continue;
 			children.add(child.type());
 		}
 		return children;

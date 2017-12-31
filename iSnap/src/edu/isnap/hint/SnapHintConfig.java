@@ -4,7 +4,9 @@ import java.util.Arrays;
 import java.util.HashSet;
 
 import edu.isnap.ctd.graph.Node;
+import edu.isnap.ctd.graph.Node.NodeConstructor;
 import edu.isnap.ctd.hint.HintConfig;
+import edu.isnap.hint.util.SnapNode;
 
 public class SnapHintConfig extends HintConfig {
 	private static final long serialVersionUID = 1L;
@@ -18,6 +20,11 @@ public class SnapHintConfig extends HintConfig {
 		// iSnap doesn't currently support displaying these, so they should not be used except in
 		// algorthm evaluation
 		this.createSubedits = false;
+	}
+
+	@Override
+	public NodeConstructor getNodeConstructor() {
+		return SnapNode::new;
 	}
 
 	@Override

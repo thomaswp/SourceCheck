@@ -81,7 +81,7 @@ public class PythonImport {
 
 	}
 
-	static Map<String, ListMap<String, PythonNode>> loadAllAssignments(String dataDir)
+	public static Map<String, ListMap<String, PythonNode>> loadAllAssignments(String dataDir)
 			throws IOException {
 		Map<String, ListMap<String, PythonNode>> map = new LinkedHashMap<>();
 		for (File dir : new File(dataDir).listFiles(f -> f.isDirectory())) {
