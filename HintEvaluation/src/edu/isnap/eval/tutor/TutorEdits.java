@@ -82,9 +82,11 @@ public class TutorEdits {
 //		writeSnapStandard();
 
 		GoldStandard standard = readConsensusPython("../data/itap");
-		HighlightHintSet hintSet = new ImportHighlightHintSet("sourcecheck", new PythonHintConfig(),
-				RateHints.ITAP_DATA_DIR + RateHints.TRAINING_DIR);
-		hintSet.addHints(standard);
+//		HighlightHintSet hintSet = new ImportHighlightHintSet("sourcecheck", new PythonHintConfig(),
+//				RateHints.ITAP_DATA_DIR + RateHints.TRAINING_DIR);
+//		hintSet.addHints(standard);
+		TutorHintSet hintSet = TutorHintSet.fromFile("ITAP", RatingConfig.Python,
+				"../data/itap/handmade_hints_itap_ast.csv");
 		RateHints.rate(standard, hintSet);
 
 //		GoldStandard standard = GoldStandard.parseSpreadsheet(ISNAP_GOLD_STANDARD);
@@ -221,7 +223,8 @@ public class TutorEdits {
 			throws IOException {
 		Map<String, ListMap<String, PythonNode>> nodeMap =
 				PythonImport.loadAllAssignments(jsonDir);
-		ListMap<String, PrintableTutorHint> tutorHint = readTutorEditsPython(editsDir);
+		ListMap<String, PrintableTutorHint> tutorHint =
+				readTutorEditsPython(editsDir + "/handmade_hints_ast.csv");
 
 		for (String assignmentID : tutorHint.keySet()) {
 			List<PrintableTutorHint> list = tutorHint.get(assignmentID);
@@ -298,7 +301,8 @@ public class TutorEdits {
 	public static void compareHintsPython(String dir)
 			throws FileNotFoundException, IOException {
 		String writeDir = String.format("%s/analysis/tutor-hints/%d/", dir, compareEditsHintOffset);
-		compareHints(readTutorEditsPython(dir), writeDir, RatingConfig.Python);
+		compareHints(readTutorEditsPython(dir + "/handmade_hints_ast.csv"),
+				writeDir, RatingConfig.Python);
 	}
 
 	public static void compareHints(ListMap<String, PrintableTutorHint> assignmentMap,
@@ -432,7 +436,8 @@ public class TutorEdits {
 			throws FileNotFoundException, IOException {
 		Map<Integer, Tuple<Validity, Priority>> consensus =
 				readConsensusSpreadsheet(new File(dir, "consensus.csv").getPath(), false);
-		ListMap<String, PrintableTutorHint> allEdits = readTutorEditsPython(dir);
+		ListMap<String, PrintableTutorHint> allEdits =
+				readTutorEditsPython(dir + "/handmade_hints_ast.csv");
 		return readConsensus(consensus, allEdits);
 	}
 
@@ -558,9 +563,9 @@ public class TutorEdits {
 		return node;
 	}
 
-	public static ListMap<String, PrintableTutorHint> readTutorEditsPython(String dir)
+	public static ListMap<String, PrintableTutorHint> readTutorEditsPython(String filePath)
 			throws FileNotFoundException, IOException {
-		return readTutorEdits(dir + "/handmade_hints_ast.csv",
+		return readTutorEdits(filePath,
 				(hintID, requestID, tutor, assignmentID, toSource, row) -> {
 			ASTNode from, to;
 			try {
