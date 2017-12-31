@@ -28,9 +28,9 @@ public class RateHints {
 	public final static String ISNAP_DATA_DIR = DATA_ROOT_DIR + "isnap2017/";
 	public final static String ITAP_DATA_DIR = DATA_ROOT_DIR + "itap2016/";
 
-	public static void main(String[] args) throws FileNotFoundException, IOException {
-		rateDir(ISNAP_DATA_DIR, RatingConfig.Snap);
-	}
+//	public static void main(String[] args) throws FileNotFoundException, IOException {
+//		rateDir(ISNAP_DATA_DIR, RatingConfig.Snap);
+//	}
 
 	public static void rateDir(String path, RatingConfig config)
 			throws FileNotFoundException, IOException {

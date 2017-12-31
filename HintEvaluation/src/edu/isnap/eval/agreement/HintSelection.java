@@ -40,7 +40,8 @@ public class HintSelection {
 	public static void main(String[] args) throws IOException {
 //		printFall2016();
 //		printSpring2017EDM();
-		printHintRating2017();
+//		printHintRating2017();
+		printFall2017Test();
 	}
 
 	protected static void printFall2016() {
@@ -85,6 +86,19 @@ public class HintSelection {
 			});
 			printSQL("hints", selected, "twprice", "rzhi");
 			exportSelected(assignment, "earlyLate", selected);
+		}
+	}
+
+
+	protected static void printFall2017Test() throws IOException {
+		Assignment[] assignments = {
+				Fall2017.Squiral,
+				Fall2017.GuessingGame1,
+		};
+		for (Assignment assignment : assignments) {
+			List<HintRequest> selected = selectEarlyLate(assignment, DEFAULT_FILTERS, false,
+					new Random(DEFAULT_SEED));
+			printSQL("handmade_hints", selected, "consensus");
 		}
 	}
 
