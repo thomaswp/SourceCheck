@@ -648,7 +648,7 @@ public class TutorEdits {
 		public PrintableTutorHint(int hintID, String requestID, String tutor, String assignmentID,
 				ASTNode from, ASTNode to, String toSource) {
 			super(hintID, requestID, tutor, assignmentID, from, to);
-			fromNode = JsonAST.toNode(from, SnapNode::new);
+			fromNode = HighlightHintSet.copyWithIDs(JsonAST.toNode(from, SnapNode::new));
 			toNode = JsonAST.toNode(to, SnapNode::new);
 			edits = calculateEdits();
 			this.toSource = toSource;

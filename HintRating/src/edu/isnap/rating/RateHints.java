@@ -71,7 +71,6 @@ public class RateHints {
 //						filter(h -> h.weight == maxWeight).
 //						collect(Collectors.toList());
 
-				System.out.println(requestID + ": " + hints.size());
 				if (hints == null || hints.size() == 0) continue;
 
 				double[] weightedValidity = new double[3];
@@ -218,6 +217,8 @@ public class RateHints {
 //		Collections.sort(validHints);
 		for (TutorHint tutorHint : validHints) {
 			ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, tutorHint.to, config, false);
+			// TODO: Figure out what to do if nodes don't have IDs (i.e. Python)
+			// TODO: Also figure confirm if this is over-generous with Python
 			Set<Edit> tutorEdits = extractor.getEdits(fromNode, tutorOutcomeNode);
 			Set<Edit> overlap = new HashSet<>(tutorEdits);
 			overlap.retainAll(outcomeEdits);

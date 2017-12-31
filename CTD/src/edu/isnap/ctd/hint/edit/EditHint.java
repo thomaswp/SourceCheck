@@ -45,7 +45,6 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 
 	public EditHint(Node parent) {
 		this.parent = parent;
-
 		boolean swap = false;
 		for (Canonicalization c : parent.canonicalizations) {
 			if (c instanceof SwapBinaryArgs) {
@@ -211,9 +210,6 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 	private static void getApplications(Node root, List<Application> applications, EditHint hint,
 			int depth) {
 		Node editParent = Node.findMatchingNodeInCopy(hint.parent, root);
-		if (hint.parent != null && editParent == null) {
-			throw new RuntimeException("Cannot find matching ID: " + hint.parent.id);
-		}
 		int start = applications.size();
 		hint.addApplications(root, editParent, applications);
 		// Mark all newly added applications with the depth of this recursive call

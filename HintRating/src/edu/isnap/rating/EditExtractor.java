@@ -61,8 +61,10 @@ public class EditExtractor {
 
 	private static Node<ASTNode> toNode(ASTNode astNode) {
 		Node<ASTNode> node = new Node<>(astNode);
-		for (ASTNode child : astNode.children()) {
-			node.addChild(toNode(child));
+		if (astNode != null) {
+			for (ASTNode child : astNode.children()) {
+				node.addChild(toNode(child));
+			}
 		}
 		return node;
 	}
@@ -156,7 +158,7 @@ public class EditExtractor {
 			NodeReference ref = getReferenceTo(node, mapping);
 			if (ref != null) {
 				if (!toRefs.add(ref)) {
-					throw new RuntimeException("Duplicate references in node");
+					throw new RuntimeException("Duplicate references in node: " + ref);
 				}
 			}
 		});
@@ -256,14 +258,19 @@ public class EditExtractor {
 
 	private static NodeReference getReferenceFrom(ASTNode fromNode) {
 		if (fromNode.id != null) return new IDNodeReference(fromNode);
-		if (fromNode.parent() == null) return null;
+		if (fromNode.parent() == null) return new RootNodeReference(fromNode);
 		return new ChildNodeReference(fromNode, getReferenceFrom(fromNode.parent()));
 	}
 
 	private static NodeReference getReferenceTo(ASTNode toNode, BiMap<ASTNode, ASTNode> mapping) {
 		ASTNode fromPair = mapping.getTo(toNode);
 		if (fromPair != null && fromPair.id != null) return new IDNodeReference(fromPair);
-		if (toNode.parent() == null) return null;
+		if (toNode.parent() == null) {
+			if (fromPair != null) return new RootNodeReference(fromPair);
+			System.err.println(toNode);
+			System.err.println(mapping);
+			throw new IllegalArgumentException("To root has no match in mapping!");
+		}
 		return new ChildNodeReference(toNode, getReferenceTo(toNode.parent(), mapping));
 	}
 
@@ -412,6 +419,7 @@ public class EditExtractor {
 
 		ChildNodeReference(ASTNode node, NodeReference parent) {
 			super(node);
+			if (parent == null) throw new IllegalArgumentException("Parent ref cannot be null");
 			this.index = node.index();
 			this.parent = parent;
 		}
@@ -433,6 +441,12 @@ public class EditExtractor {
 		@Override
 		public String toString() {
 			return String.format("%s->{%s#%02d}", parent.toString(), type, index);
+		}
+	}
+
+	static class RootNodeReference extends NodeReference {
+		public RootNodeReference(ASTNode node) {
+			super(node);
 		}
 	}
 }

@@ -99,7 +99,7 @@ public class ASTNode implements INode {
 		if (childRelations.contains(relation)) return false;
 		children.add(index, child);
 		childRelations.add(index, relation);
-		child.parent = this;
+		if (child != null) child.parent = this;
 		return true;
 	}
 
@@ -110,7 +110,9 @@ public class ASTNode implements INode {
 	}
 
 	public void clearChildren() {
-		children.forEach(c -> c.parent = null);
+		children.forEach(c -> {
+			if (c.parent == this) c.parent = null;
+		});
 		children.clear();
 		childRelations.clear();
 	}
@@ -242,6 +244,7 @@ public class ASTNode implements INode {
 	}
 
 	public boolean shallowEquals(ASTNode rhs, boolean compareIDs) {
+		if (rhs == null) return false;
 		EqualsBuilder builder = new EqualsBuilder();
 		builder.append(type, rhs.type);
 		builder.append(value, rhs.value);

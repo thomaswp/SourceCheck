@@ -206,9 +206,11 @@ public class Insertion extends EditHint {
 				}
 
 				// In case this is a newly inserted parent, we pad with nulls
-				while (parent.children.size() < index) parent.children.add(null);
+				while (parent.children.size() < index) {
+					parent.children.add(parent.constructNode(parent, "null"));
+				}
 				// and then remove them as children are inserted
-				if (index < parent.children.size() && parent.children.get(index) == null) {
+				if (index < parent.children.size() && parent.children.get(index).hasType("null")) {
 					parent.children.remove(index);
 				}
 				parent.children.add(index, toInsert);

@@ -55,7 +55,6 @@ public abstract class HighlightHintSet extends HintSet {
 			HintHighlighter highlighter = getHighlighter(request, baseMap);
 			Node code = JsonAST.toNode(request.code, hintConfig.getNodeConstructor());
 			code = copyWithIDs(code);
-			System.out.println(code.prettyPrint());
 			List<EditHint> hints = highlighter.highlightWithPriorities(code);
 			Set<EditHint> originalHints = new HashSet<>(hints);
 			hints = filterHints(hints, false);
@@ -96,7 +95,7 @@ public abstract class HighlightHintSet extends HintSet {
 		if (id == null) id = "GEN_" + count.getAndIncrement();
 		Node copy = node.constructNode(parent, node.type(), node.value, id);
 		for (Node child : node.children) {
-			copy.children.add(copyWithIDs(child, node, count));
+			copy.children.add(copyWithIDs(child, copy, count));
 		}
 		return copy;
 	}
