@@ -3,6 +3,7 @@ package edu.isnap.eval.python;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +21,7 @@ import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.NodeAlignment.Mapping;
 import edu.isnap.ctd.util.NullStream;
 import edu.isnap.ctd.util.map.ListMap;
+import edu.isnap.eval.export.GrammarBuilder;
 import edu.isnap.eval.export.JsonAST;
 
 public class PythonImport {
@@ -37,10 +39,10 @@ public class PythonImport {
 					nodes.get(assignment).size());
 			}
 		}
-//		GrammarBuilder builder = new GrammarBuilder("python", new HashMap<>());
-//		nodes.values().forEach(listMap -> listMap.values()
-//				.forEach(list -> list.forEach(n -> builder.add(n))));
-//		System.out.println(builder.toJSON());
+		GrammarBuilder builder = new GrammarBuilder("python", new HashMap<>());
+		nodes.values().forEach(listMap -> listMap.values()
+				.forEach(list -> list.forEach(n -> builder.add(n))));
+		System.out.println(builder.toJSON());
 	}
 
 	static void generateHints(String dataDir, String assignment) throws IOException {
@@ -104,7 +106,6 @@ public class PythonImport {
 					String json = new String(Files.readAllBytes(file.toPath()));
 					JSONObject obj = new JSONObject(json);
 					ASTNode astNode = ASTNode.parse(obj);
-					astNode.autoID("");
 					node = (PythonNode) JsonAST.toNode(astNode, PythonNode::new);
 					if (obj.has("correct")) {
 						boolean correct = obj.getBoolean("correct");
