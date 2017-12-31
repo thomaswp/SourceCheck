@@ -82,11 +82,11 @@ public class TutorEdits {
 //		writeSnapStandard();
 
 		GoldStandard standard = readConsensusPython("../data/itap");
-//		HighlightHintSet hintSet = new ImportHighlightHintSet("sourcecheck", new PythonHintConfig(),
-//				RateHints.ITAP_DATA_DIR + RateHints.TRAINING_DIR);
-//		hintSet.addHints(standard);
-		TutorHintSet hintSet = TutorHintSet.fromFile("ITAP", RatingConfig.Python,
-				"../data/itap/handmade_hints_itap_ast.csv");
+		HighlightHintSet hintSet = new ImportHighlightHintSet("sourcecheck", new PythonHintConfig(),
+				RateHints.ITAP_DATA_DIR + RateHints.TRAINING_DIR);
+		hintSet.addHints(standard);
+//		TutorHintSet hintSet = TutorHintSet.fromFile("ITAP", RatingConfig.Python,
+//				"../data/itap/handmade_hints_itap_ast.csv");
 		RateHints.rate(standard, hintSet);
 
 //		GoldStandard standard = GoldStandard.parseSpreadsheet(ISNAP_GOLD_STANDARD);

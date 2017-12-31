@@ -161,14 +161,14 @@ public class RateHints {
 				}
 			}
 			if (node.value != null && !usedValues.contains(node.value)) {
-				boolean trim = true;
+				boolean truncate = true;
 				if (config.useSpecificNumericLiterals()) {
 					try {
 						Double.parseDouble(node.value);
-						trim = false;
+						truncate = false;
 					} catch (NumberFormatException e) { }
 				}
-				if (trim) {
+				if (truncate) {
 					ASTNode parent = node.parent();
 					ASTNode replacement = new ASTNode(node.type, "[NEW_VALUE]", node.id);
 					int index = node.index();

@@ -15,7 +15,6 @@ import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.hint.HintMapBuilder;
 import edu.isnap.eval.export.JsonAST;
-import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.hint.util.SnapNode;
 import edu.isnap.rating.HintRequest;
 
@@ -55,7 +54,7 @@ public class ImportHighlightHintSet extends HighlightHintSet {
 			}
 			// TODO: Decide how to handle data where IDs are inconsistent
 			// Passing false here probably doesn't give ideal behavior either....
-			builder.addAttempt(trace, config instanceof SnapHintConfig);
+			builder.addAttempt(trace, config.areNodeIDsConsistent());
 		}
 		builder.finishedAdding();
 		highlighters.put(assignment, builder.hintHighlighter());
