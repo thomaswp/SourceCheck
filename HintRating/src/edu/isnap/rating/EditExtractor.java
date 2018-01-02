@@ -149,13 +149,13 @@ public class EditExtractor {
 
 		Set<NodeReference> fromRefs = new HashSet<>();
 		from.recurse(node -> {
-			NodeReference ref = getReferenceFrom(node);
+			NodeReference ref = getReference(node);
 			if (ref != null) fromRefs.add(ref);
 		});
 
 		Set<NodeReference> toRefs = new HashSet<>();
 		to.recurse(node -> {
-			NodeReference ref = getReferenceTo(node, mapping);
+			NodeReference ref = getReferenceInPair(node, mapping);
 			if (ref != null) {
 				if (!toRefs.add(ref)) {
 					throw new RuntimeException("Duplicate references in node: " + ref);
@@ -175,13 +175,13 @@ public class EditExtractor {
 			if (toNode.parent() == null) return;
 			ASTNode fromMatch = mapping.getTo(toNode);
 			if (fromMatch == null) return;
-			NodeReference fromParentMatch = getReferenceTo(toNode.parent(), mapping);
-			NodeReference fromMatchParent = getReferenceFrom(fromMatch.parent());
+			NodeReference fromParentMatch = getReferenceInPair(toNode.parent(), mapping);
+			NodeReference fromMatchParent = getReference(fromMatch.parent());
 			// Only consider nodes whose parents have changed
 			if (ObjectUtils.equals(fromParentMatch, fromMatchParent)) return;
 			moved.put(toNode, null);
-			addedRefs.add(getReferenceTo(toNode, mapping));
-			removedRefs.add(getReferenceFrom(fromMatch));
+			addedRefs.add(getReferenceInPair(toNode, mapping));
+			removedRefs.add(getReference(fromMatch));
 		});
 
 		Set<Edit> edits = new LinkedHashSet<>();
@@ -195,7 +195,7 @@ public class EditExtractor {
 			if (!moved.containsKey(toNode)) {
 				NodeReference precederMatch = null;
 				for (int i = toNode.index() - 1; i >= 0; i--) {
-					NodeReference pm = getReferenceTo(toNode.parent().children().get(i), mapping);
+					NodeReference pm = getReferenceInPair(toNode.parent().children().get(i), mapping);
 					if (!addedRefs.contains(pm)) {
 						precederMatch = pm;
 						break;
@@ -204,7 +204,7 @@ public class EditExtractor {
 
 				NodeReference matchPreceder = null;
 				for (int i = fromMatch.index() - 1; i >= 0; i--) {
-					NodeReference pm = getReferenceFrom(fromMatch.parent().children().get(i));
+					NodeReference pm = getReference(fromMatch.parent().children().get(i));
 					if (!removedRefs.contains(pm)) {
 						matchPreceder = pm;
 						break;
@@ -218,13 +218,13 @@ public class EditExtractor {
 
 			// Ignore no-id nodes which have moved according to the mapping, but for which
 			// there is still a node in the original position in the to-tree
-			if (toNode.id == null && toRefs.contains(getReferenceFrom(fromMatch))) {
+			if (toNode.id == null && toRefs.contains(getReference(fromMatch))) {
 				return;
 			}
 
-			NodeReference fromRef = getReferenceFrom(fromMatch);
+			NodeReference fromRef = getReference(fromMatch);
 			ChildNodeReference toRef = new ChildNodeReference(toNode,
-					getReferenceTo(toNode.parent(), mapping));
+					getReferenceInPair(toNode.parent(), mapping));
 			if (StringUtils.equals(toNode.type, fromMatch.type)) {
 				// TODO: See if there's a big difference if we treat moves as insert/delete pairs
 				edits.add(new Move(fromRef, toRef));
@@ -256,13 +256,14 @@ public class EditExtractor {
 		return edits;
 	}
 
-	private static NodeReference getReferenceFrom(ASTNode fromNode) {
-		if (fromNode.id != null) return new IDNodeReference(fromNode);
-		if (fromNode.parent() == null) return new RootNodeReference(fromNode);
-		return new ChildNodeReference(fromNode, getReferenceFrom(fromNode.parent()));
+	public static NodeReference getReference(ASTNode node) {
+		if (node.id != null) return new IDNodeReference(node);
+		if (node.parent() == null) return new RootNodeReference(node);
+		return new ChildNodeReference(node, getReference(node.parent()));
 	}
 
-	private static NodeReference getReferenceTo(ASTNode toNode, BiMap<ASTNode, ASTNode> mapping) {
+	private static NodeReference getReferenceInPair(ASTNode toNode,
+			BiMap<ASTNode, ASTNode> mapping) {
 		ASTNode fromPair = mapping.getTo(toNode);
 		if (fromPair != null && fromPair.id != null) return new IDNodeReference(fromPair);
 		if (toNode.parent() == null) {
@@ -271,7 +272,7 @@ public class EditExtractor {
 			System.err.println(mapping);
 			throw new IllegalArgumentException("To root has no match in mapping!");
 		}
-		return new ChildNodeReference(toNode, getReferenceTo(toNode.parent(), mapping));
+		return new ChildNodeReference(toNode, getReferenceInPair(toNode.parent(), mapping));
 	}
 
 	protected static abstract class Edit {

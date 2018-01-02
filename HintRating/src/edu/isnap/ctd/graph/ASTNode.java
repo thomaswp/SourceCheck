@@ -15,6 +15,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.PrettyPrint.Params;
+import edu.isnap.ctd.util.Diff;
 import edu.isnap.rating.RatingConfig;
 
 public class ASTNode implements INode {
@@ -128,6 +129,14 @@ public class ASTNode implements INode {
 		return PrettyPrint.toString(this, params);
 	}
 
+	public static String diff(ASTNode a, ASTNode b, RatingConfig config) {
+		return Diff.diff(a.prettyPrint(true, config), b.prettyPrint(true, config));
+	}
+
+	public static String diff(ASTNode a, ASTNode b, RatingConfig config, int margin) {
+		return Diff.diff(a.prettyPrint(true, config), b.prettyPrint(true, config), margin);
+	}
+
 	public static ASTNode parse(String jsonSource) throws JSONException {
 		JSONObject object;
 		try {
@@ -144,6 +153,9 @@ public class ASTNode implements INode {
 		String type = object.getString("type");
 		String value = object.has("value") ? object.getString("value") : null;
 		String id = object.has("id") ? object.getString("id") : null;
+
+		// TODO: Remove IDs from the data and remove this line!
+		if ("script".equals(type)) id = null;
 
 		ASTNode node = new ASTNode(type, value, id);
 

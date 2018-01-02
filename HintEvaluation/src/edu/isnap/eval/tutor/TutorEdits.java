@@ -79,21 +79,21 @@ public class TutorEdits {
 //			RateHints.rate(standard, hintSet);
 //		}
 
-//		writeSnapStandard();
 
-		GoldStandard standard = readConsensusPython("../data/itap");
-		HighlightHintSet hintSet = new ImportHighlightHintSet("sourcecheck", new PythonHintConfig(),
-				RateHints.ITAP_DATA_DIR + RateHints.TRAINING_DIR);
-		hintSet.addHints(standard);
+//		GoldStandard standard = readConsensusPython("../data/itap");
+//		HighlightHintSet hintSet = new ImportHighlightHintSet("sourcecheck", new PythonHintConfig(),
+//				RateHints.ITAP_DATA_DIR + RateHints.TRAINING_DIR);
+//		hintSet.addHints(standard);
 //		TutorHintSet hintSet = TutorHintSet.fromFile("ITAP", RatingConfig.Python,
 //				"../data/itap/handmade_hints_itap_ast.csv");
-		RateHints.rate(standard, hintSet);
+//		RateHints.rate(standard, hintSet);
 
-//		GoldStandard standard = GoldStandard.parseSpreadsheet(ISNAP_GOLD_STANDARD);
+		GoldStandard standard = GoldStandard.parseSpreadsheet(ISNAP_GOLD_STANDARD);
+//		writeSnapStandard();
 //		runConsensus("../data/hint-rating/isnap2017/training", standard, new SnapHintConfig());
 //		writeHighlight(RateHints.ISNAP_DATA_DIR, "sourcecheck", standard, new SnapHintConfig());
-//		RateHints.rate(standard, HintSet.fromFolder("sourcecheck", RatingConfig.Snap,
-//				RateHints.ISNAP_DATA_DIR + RateHints.ALGORITHMS_DIR + "/sourcecheck"));
+		RateHints.rate(standard, HintSet.fromFolder("sourcecheck", RatingConfig.Snap,
+				RateHints.ISNAP_DATA_DIR + RateHints.ALGORITHMS_DIR + "/sourcecheck"));
 
 //		System.out.println("Fall");
 //		runConsensus(Fall2016.instance, readConsensus(Spring2017.instance, CONSENSUS_GG_SQ));
@@ -333,7 +333,7 @@ public class TutorEdits {
 				edits.stream()
 				.filter(e -> e.requestID.equals(requestID))
 				.forEach(e -> givers.add(
-						RateHints.normalizeNewValuesTo(e.from, e.to, config, false), e));
+						RateHints.normalizeNewValuesTo(e.from, e.to, config), e));
 
 				ASTNode from = givers.values().stream().findFirst().get().get(0).from;
 				String fromPP = from.prettyPrint(true, config::nodeTypeHasBody);

@@ -151,19 +151,6 @@ public class Agreement {
 		return node;
 	}
 
-	public static Node pruneImmediateChildren(Node node) {
-		for (int i = 0; i < node.children.size(); i++) {
-			Node child = node.children.get(i);
-			if (prunable.contains(child.type())) {
-				pruneImmediateChildren(child);
-				if (child.children.isEmpty()) {
-					node.children.remove(i--);
-				}
-			}
-		}
-		return node;
-	}
-
 	@SuppressWarnings("unused")
 	private static List<EditHint> findEdits(Snapshot from, Snapshot to, boolean compareValues) {
 		Node fromNode = toTree(from);

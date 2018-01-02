@@ -9,12 +9,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import org.apache.commons.lang.StringUtils;
-
 import edu.isnap.ctd.graph.ASTNode;
-import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.rating.EditExtractor.Edit;
+import edu.isnap.rating.EditExtractor.NodeReference;
 import edu.isnap.rating.TutorHint.Priority;
 import edu.isnap.rating.TutorHint.Validity;
 
@@ -28,9 +26,9 @@ public class RateHints {
 	public final static String ISNAP_DATA_DIR = DATA_ROOT_DIR + "isnap2017/";
 	public final static String ITAP_DATA_DIR = DATA_ROOT_DIR + "itap2016/";
 
-//	public static void main(String[] args) throws FileNotFoundException, IOException {
-//		rateDir(ISNAP_DATA_DIR, RatingConfig.Snap);
-//	}
+	public static void main(String[] args) throws FileNotFoundException, IOException {
+		rateDir(ISNAP_DATA_DIR, RatingConfig.Snap);
+	}
 
 	public static void rateDir(String path, RatingConfig config)
 			throws FileNotFoundException, IOException {
@@ -126,49 +124,79 @@ public class RateHints {
 	private static ASTNode pruneImmediateChildren(ASTNode node, Predicate<String> condition) {
 		for (int i = 0; i < node.children().size(); i++) {
 			ASTNode child = node.children().get(i);
-			if (condition.test(child.type)) {
-				pruneImmediateChildren(child, condition);
-				if (child.children().isEmpty()) {
-					node.removeChild(i--);
-				}
+			if (condition.test(child.type) && child.children().isEmpty()) {
+				node.removeChild(i--);
 			}
 		}
 		return node;
 	}
 
-	public static ASTNode normalizeNewValuesTo(ASTNode from, ASTNode to, RatingConfig config,
-			boolean prune) {
-		// We don't differentiate values by type, since multiple types can share values (e.g.
-		// varDecs and vars)
-		Set<String> usedValues = new HashSet<>();
-		from.recurse(node -> usedValues.add(node.value));
-
-		to = to.copy();
+	/**
+	 * Prunes nodes from the given "to" AST based on the settings in the config.
+	 * Note: For efficiency this modifies with given node - it does not return a copy.
+	 */
+	public static void pruneNewNodesTo(ASTNode from, ASTNode to, RatingConfig config) {
 		// Create a list of nodes before iteration, since we'll be modifying children
 		List<ASTNode> toNodes = new ArrayList<>();
 		to.recurse(node -> toNodes.add(node));
-		for (ASTNode node : toNodes) {
-			if (node.parent() == null) continue;
-			// If this node has a non-generated ID but has no match in from (or it's been
-			// relabeled and has a new type), it's a new node, so prune its children
-			// TODO: This doesn't make sense for Python, where IDs aren't consistent,
-			// and right now it relies on snap-specific code
-			if (prune && node.id != null) {
-				ASTNode fromMatch = (ASTNode) from.search(n -> n != null &&
-						StringUtils.equals(n.id(), node.id));
-				if (fromMatch == null || !fromMatch.hasType(node.type())) {
+
+		// If node IDs are consistent, we can identify new nodes and prune their children.
+		// Note that we could theoretically do this even if they aren't, using the EditExtractor's
+		// TED algorithm, but currently only Snap needs this feature, and it has consistent IDs.
+		if (config.areNodeIDsConsistent()) {
+			// Get a list of node reference in the original AST, so we can see which have been added
+			Set<NodeReference> fromRefs = new HashSet<>();
+			from.recurse(node -> fromRefs.add(EditExtractor.getReference(node)));
+
+			for (ASTNode node : toNodes) {
+				if (node.parent() == null) continue;
+
+				// If this node was created in the hint, prune its immediate children for nodes
+				// that are added automatically, according to the config, e.g. literal nodes in Snap
+				NodeReference toRef = EditExtractor.getReference(node);
+				if (!fromRefs.contains(toRef)) {
 					pruneImmediateChildren(node, config::trimIfParentIsAdded);
 				}
 			}
+		}
+
+		// Remove nodes that should be pruned if childless
+		for (ASTNode node : toNodes) {
+			if (node.parent() == null) continue;
+			if (node.children().size() == 0 && config.trimIfChildless(node.type())) {
+				node.parent().removeChild(node.index());
+			}
+		}
+	}
+
+	public static ASTNode normalizeNewValuesTo(ASTNode from, ASTNode to, RatingConfig config) {
+		to = to.copy();
+
+		// Get a set of all the node values used in the original AST. We don't differentiate values
+		// by type, since multiple types can share values (e.g. varDecs and vars)
+		Set<String> usedValues = new HashSet<>();
+		from.recurse(node -> usedValues.add(node.value));
+
+		// Create a list of nodes before iteration, since we'll be modifying children
+		List<ASTNode> toNodes = new ArrayList<>();
+		to.recurse(node -> toNodes.add(node));
+
+		for (ASTNode node : toNodes) {
+			if (node.parent() == null) continue;
+
 			if (node.value != null && !usedValues.contains(node.value)) {
-				boolean truncate = true;
+				// If this node's value is new, we may normalize it
+				boolean normalize = true;
+				// First check if it's a new numeric literal and the config wants to normalize it
 				if (config.useSpecificNumericLiterals()) {
 					try {
 						Double.parseDouble(node.value);
-						truncate = false;
+						normalize = false;
 					} catch (NumberFormatException e) { }
 				}
-				if (truncate) {
+				if (normalize) {
+					// If so, we replace its value with a standard value, so all new values appear
+					// the same
 					ASTNode parent = node.parent();
 					ASTNode replacement = new ASTNode(node.type, "[NEW_VALUE]", node.id);
 					int index = node.index();
@@ -180,43 +208,43 @@ public class RateHints {
 					node.clearChildren();
 				}
 			}
-			if (prune && node.children().size() == 0 && config.trimIfChildless(node.type())) {
-				node.parent().removeChild(node.index());
-			}
 		}
+
 		return to;
 	}
 
 	public static TutorHint findMatchingEdit(List<TutorHint> validHints, HintOutcome outcome,
 			RatingConfig config, EditExtractor extractor) {
 		if (validHints.isEmpty()) return null;
-		// TODO: supersets, subsets of edits
 		ASTNode fromNode = validHints.get(0).from;
-		ASTNode outcomeNode = normalizeNewValuesTo(fromNode, outcome.result,
-				config, true);
+		ASTNode outcomeNode = normalizeNewValuesTo(fromNode, outcome.result, config);
+		pruneNewNodesTo(fromNode, outcomeNode, config);
 		for (TutorHint tutorHint : validHints) {
-			ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, tutorHint.to, config, true);
+			ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, tutorHint.to, config);
+			pruneNewNodesTo(fromNode, tutorOutcomeNode, config);
 			if (outcomeNode.equals(tutorOutcomeNode)) return tutorHint;
 
 			if (outcome.result.equals(tutorHint.to)) {
-				System.out.println(Diff.diff(
-						tutorHint.from.prettyPrint(true, config),
-						tutorHint.to.prettyPrint(true, config)));
-				System.out.println(Diff.diff(
-						tutorOutcomeNode.prettyPrint(true, config),
-						outcomeNode.prettyPrint(true, config), 2));
+				System.out.println("Matching hint:");
+				System.out.println(ASTNode.diff(tutorHint.from, tutorHint.to, config));
+				System.out.println("Difference in normalized nodes:");
+				System.out.println(ASTNode.diff(tutorOutcomeNode, outcomeNode, config, 2));
+				System.out.println("Tutor normalizing:");
+				System.out.println(ASTNode.diff(tutorHint.to, tutorOutcomeNode, config, 2));
+				System.out.println("Outcome normalizing:");
+				System.out.println(ASTNode.diff(outcome.result, outcomeNode, config, 2));
 				throw new RuntimeException("Normalized nodes should be equal if nodes are equal!");
 			}
 		}
 
-		outcomeNode = normalizeNewValuesTo(fromNode, outcome.result, config, false);
+		outcomeNode = normalizeNewValuesTo(fromNode, outcome.result, config);
 		Set<Edit> outcomeEdits = extractor.getEdits(fromNode, outcomeNode);
 		Set<Edit> bestOverlap = new HashSet<>();
 		TutorHint bestHint = null;
 		// TODO: sort by validity and priority first
 //		Collections.sort(validHints);
 		for (TutorHint tutorHint : validHints) {
-			ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, tutorHint.to, config, false);
+			ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, tutorHint.to, config);
 			// TODO: Figure out what to do if nodes don't have IDs (i.e. Python)
 			// TODO: Also figure confirm if this is over-generous with Python
 			Set<Edit> tutorEdits = extractor.getEdits(fromNode, tutorOutcomeNode);
