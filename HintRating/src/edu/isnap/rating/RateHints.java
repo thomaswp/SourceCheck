@@ -66,6 +66,7 @@ public class RateHints {
 //						filter(h -> h.weight == maxWeight).
 //						collect(Collectors.toList());
 
+				// TODO: Stop if consensus hints is 0 (but only if consensus exists...)
 				if (hints == null || hints.size() == 0) continue;
 
 				double[] weightedValidity = new double[3];

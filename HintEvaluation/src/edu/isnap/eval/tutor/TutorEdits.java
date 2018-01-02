@@ -40,6 +40,7 @@ import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.datasets.Fall2016;
+import edu.isnap.datasets.Fall2017;
 import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.agreement.Agreement;
 import edu.isnap.eval.agreement.HintSelection;
@@ -88,12 +89,14 @@ public class TutorEdits {
 //				"../data/itap/handmade_hints_itap_ast.csv");
 //		RateHints.rate(standard, hintSet);
 
-		GoldStandard standard = GoldStandard.parseSpreadsheet(ISNAP_GOLD_STANDARD);
+//		GoldStandard standard = GoldStandard.parseSpreadsheet(ISNAP_GOLD_STANDARD);
 //		writeSnapStandard();
 //		runConsensus("../data/hint-rating/isnap2017/training", standard, new SnapHintConfig());
 //		writeHighlight(RateHints.ISNAP_DATA_DIR, "sourcecheck", standard, new SnapHintConfig());
-		RateHints.rate(standard, HintSet.fromFolder("sourcecheck", RatingConfig.Snap,
-				RateHints.ISNAP_DATA_DIR + RateHints.ALGORITHMS_DIR + "/sourcecheck"));
+//		RateHints.rate(standard, HintSet.fromFolder("sourcecheck", RatingConfig.Snap,
+//				RateHints.ISNAP_DATA_DIR + RateHints.ALGORITHMS_DIR + "/sourcecheck"));
+
+		ListMap<String,PrintableTutorHint> fall2017 = readTutorEditsSnap(Fall2017.instance);
 
 //		System.out.println("Fall");
 //		runConsensus(Fall2016.instance, readConsensus(Spring2017.instance, CONSENSUS_GG_SQ));
@@ -531,7 +534,7 @@ public class TutorEdits {
 			Snapshot toS = Snapshot.parse(fromS.name, toSource);
 
 			if (SimpleNodeBuilder.toTree(fromS, true).equals(SimpleNodeBuilder.toTree(toS, true))) {
-				System.out.printf("Node edits for %s, request %s, hint #%d\n",
+				System.out.printf("No edits for %s, request %s, hint #%d\n",
 						tutor, requestID, hintID);
 				return null;
 			}

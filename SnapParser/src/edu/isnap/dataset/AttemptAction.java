@@ -96,6 +96,8 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	@Override
 	public int compareTo(AttemptAction o) {
 		if (timestamp == null) return o == null || o.timestamp == null ? 0 : -1;
-		return timestamp.compareTo(o.timestamp);
+		int tsc = timestamp.compareTo(o.timestamp);
+		if (tsc != 0) return tsc;
+		return Integer.compare(id, o.id);
 	}
 }
