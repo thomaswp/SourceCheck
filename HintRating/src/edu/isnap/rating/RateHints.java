@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -25,10 +26,6 @@ public class RateHints {
 	public final static String DATA_ROOT_DIR = "../data/hint-rating/";
 	public final static String ISNAP_DATA_DIR = DATA_ROOT_DIR + "isnap2017/";
 	public final static String ITAP_DATA_DIR = DATA_ROOT_DIR + "itap2016/";
-
-	public static void main(String[] args) throws FileNotFoundException, IOException {
-		rateDir(ISNAP_DATA_DIR, RatingConfig.Snap);
-	}
 
 	public static void rateDir(String path, RatingConfig config)
 			throws FileNotFoundException, IOException {
@@ -139,6 +136,16 @@ public class RateHints {
 		// Create a list of nodes before iteration, since we'll be modifying children
 		List<ASTNode> toNodes = new ArrayList<>();
 		to.recurse(node -> toNodes.add(node));
+		// Reverse the order so children are pruned before parents
+		Collections.reverse(toNodes);
+
+		// Remove nodes that should be pruned if childless
+		for (ASTNode node : toNodes) {
+			if (node.parent() == null) continue;
+			if (node.children().size() == 0 && config.trimIfChildless(node.type())) {
+				node.parent().removeChild(node.index());
+			}
+		}
 
 		// If node IDs are consistent, we can identify new nodes and prune their children.
 		// Note that we could theoretically do this even if they aren't, using the EditExtractor's
@@ -157,14 +164,6 @@ public class RateHints {
 				if (!fromRefs.contains(toRef)) {
 					pruneImmediateChildren(node, config::trimIfParentIsAdded);
 				}
-			}
-		}
-
-		// Remove nodes that should be pruned if childless
-		for (ASTNode node : toNodes) {
-			if (node.parent() == null) continue;
-			if (node.children().size() == 0 && config.trimIfChildless(node.type())) {
-				node.parent().removeChild(node.index());
 			}
 		}
 	}
@@ -275,7 +274,7 @@ public class RateHints {
 //			}
 //			System.out.println("-------------------");
 			// TODO: Treat this differently
-			return bestHint;
+//			return bestHint;
 		}
 		return null;
 	}
