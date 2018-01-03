@@ -89,7 +89,7 @@ public class Diff {
 		}
 
 		if (lastChunkEnd >= 0) {
-			int printStop = Math.min(lastChunkEnd + margin + 1, original.length - 1);
+			int printStop = Math.min(lastChunkEnd + margin, original.length - 1);
 			for (int i = lastChunkEnd + 1; i <= printStop; i++) {
 				out += "  " + original[i] + "\n";
 				printed[i] = true;
