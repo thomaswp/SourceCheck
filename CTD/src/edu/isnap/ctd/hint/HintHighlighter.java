@@ -504,15 +504,11 @@ public class HintHighlighter {
 	}
 
 	public Mapping findSolutionMapping(Node node) {
-		DistanceMeasure dm = getDistanceMeasure(config);
 		long startTime = System.currentTimeMillis();
-		List<Node> filteredSolutions = solutions;
-		if (ruleSet != null) {
-			RuleSet.trace = trace;
-			filteredSolutions = ruleSet.filterSolutions(solutions, node);
-		}
-		Mapping bestMatch = NodeAlignment.findBestMatch(node, filteredSolutions, dm, config);
-		if (bestMatch == null) throw new RuntimeException("No matches!");
+
+		List<Mapping> bestMatchList = findBestMappings(node, 1);
+		if (bestMatchList.size() == 0) throw new RuntimeException("No matches!");
+		Mapping bestMatch = bestMatchList.get(0);
 
 		if (trace != null) {
 			trace.println("------------------------------");
@@ -523,8 +519,17 @@ public class HintHighlighter {
 			trace.println(bestMatch.itemizedCostString());
 			bestMatch.printValueMappings(trace);
 		}
-
 		return bestMatch;
+	}
+
+	private List<Mapping> findBestMappings(Node node, int maxReturned) {
+		DistanceMeasure dm = getDistanceMeasure(config);
+		List<Node> filteredSolutions = solutions;
+		if (ruleSet != null) {
+			RuleSet.trace = trace;
+			filteredSolutions = ruleSet.filterSolutions(solutions, node);
+		}
+		return NodeAlignment.findBestMatches(node, filteredSolutions, dm, config, maxReturned);
 	}
 
 
@@ -711,9 +716,12 @@ public class HintHighlighter {
 	public void assignPriorities(Mapping bestMatch, List<EditHint> hints) {
 		Node node = bestMatch.from;
 		// TODO: why completely recalculate this?
-		List<Mapping> bestMatches = NodeAlignment.findBestMatches(
-				// TODO: config
-				node, solutions, getDistanceMeasure(), config, 10);
+		// TODO: Get maxReturned from config!
+		List<Mapping> bestMatches = findBestMappings(node, 10);
+
+		if (!bestMatches.stream().anyMatch(m -> m.to == bestMatch.to)) {
+			throw new IllegalArgumentException("bestMatch must be a member of hints");
+		}
 
 		// Get counts of how many times each edit appears in the top matches
 		CountMap<EditHint> hintCounts = new CountMap<>();
@@ -736,7 +744,7 @@ public class HintHighlighter {
 
 		for (EditHint hint : hints) {
 			Priority priority = new Priority();
-			priority.consensusNumerator = hintCounts.get(hint);
+			priority.consensusNumerator = hintCounts.getCount(hint);
 			priority.consensusDenominator = bestMatches.size();
 
 			if (nodePlacementTimes != null && nodePlacementTimes.containsKey(bestMatch.to)) {
