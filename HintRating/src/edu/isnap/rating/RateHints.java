@@ -12,10 +12,10 @@ import java.util.function.Predicate;
 
 import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.util.map.ListMap;
+import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.rating.EditExtractor.Edit;
 import edu.isnap.rating.EditExtractor.NodeReference;
 import edu.isnap.rating.TutorHint.Priority;
-import edu.isnap.rating.TutorHint.Validity;
 
 public class RateHints {
 
@@ -42,7 +42,8 @@ public class RateHints {
 		}
 	}
 
-	public static void rate(GoldStandard standard, HintSet hintSet) {
+	public static HintRatingSet rate(GoldStandard standard, HintSet hintSet) {
+		HintRatingSet set = new HintRatingSet(hintSet.name);
 		EditExtractor extractor = new EditExtractor(hintSet.config.areNodeIDsConsistent());
 		for (String assignment : standard.getAssignmentIDs()) {
 			System.out.println("----- " + assignment + " -----");
@@ -67,27 +68,22 @@ public class RateHints {
 				double[] weightedValidity = new double[3];
 
 				for (HintOutcome hint : hints) {
-					HintRating rating = new HintRating(hint);
-					TutorHint exactMatch = findMatchingEdit(validEdits, hint, hintSet.config,
+					HintRating rating = findMatchingEdit(validEdits, hint, hintSet.config,
 							extractor);
-
-					rating.validity = Validity.NoTutors;
-					if (exactMatch != null) {
-						rating.validity = exactMatch.validity;
-						rating.priority = exactMatch.priority;
-						for (int i = 0; i < exactMatch.validity.value; i++) {
+					if (rating.isValid()) {
+						for (int i = 0; i < rating.match.validity.value; i++) {
 							weightedValidity[i] += hint.weight();
 						}
 					}
-//					System.out.println(rating);
 					ratings.add(requestID, rating);
+					set.add(rating);
 				}
 				List<HintRating> snapshotRatings = ratings.get(requestID);
 				double weight = snapshotRatings.stream().mapToDouble(r -> r.hint.weight()).sum();
 				// TODO: figure out whether to count 0-priority items
 				double priority = snapshotRatings.stream()
-						.filter(r -> r.priority != null)
-						.mapToDouble(r -> r.hint.weight() * r.priority.points())
+						.filter(r -> r.priority() != null)
+						.mapToDouble(r -> r.hint.weight() * r.priority().points())
 						.sum() / weight;
 
 				for (int i = 0; i < weightedValidity.length; i++) {
@@ -109,6 +105,7 @@ public class RateHints {
 					totalWeightedValidity[0], totalWeightedValidity[1], totalWeightedValidity[2],
 					totalWeightedPriority / nSnapshots);
 		}
+		return set;
 	}
 
 	private static ASTNode pruneImmediateChildren(ASTNode node, Predicate<String> condition) {
@@ -207,16 +204,19 @@ public class RateHints {
 		return to;
 	}
 
-	public static TutorHint findMatchingEdit(List<TutorHint> validHints, HintOutcome outcome,
+	public static HintRating findMatchingEdit(List<TutorHint> validHints, HintOutcome outcome,
 			RatingConfig config, EditExtractor extractor) {
-		if (validHints.isEmpty()) return null;
+		if (validHints.isEmpty()) return new HintRating(outcome);
+
 		ASTNode fromNode = validHints.get(0).from;
 		ASTNode outcomeNode = normalizeNewValuesTo(fromNode, outcome.result, config);
 		pruneNewNodesTo(fromNode, outcomeNode, config);
 		for (TutorHint tutorHint : validHints) {
 			ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, tutorHint.to, config);
 			pruneNewNodesTo(fromNode, tutorOutcomeNode, config);
-			if (outcomeNode.equals(tutorOutcomeNode)) return tutorHint;
+			if (outcomeNode.equals(tutorOutcomeNode)) {
+				return new HintRating(outcome, tutorHint, MatchType.Full);
+			}
 
 			if (outcome.result.equals(tutorHint.to)) {
 				System.out.println("Matching hint:");
@@ -269,24 +269,71 @@ public class RateHints {
 //			}
 //			System.out.println("-------------------");
 			// TODO: Treat this differently
-//			return bestHint;
+			MatchType type = bestOverlap.size() == outcomeEdits.size() ?
+					MatchType.Subset : MatchType.Superset;
+			return new HintRating(outcome, bestHint, type);
 		}
-		return null;
+		return new HintRating(outcome);
+	}
+
+	public static enum MatchType {
+		Full, Subset, Superset, None
+	}
+
+	@SuppressWarnings("serial")
+	public static class HintRatingSet extends ArrayList<HintRating> {
+		public final String name;
+
+		public HintRatingSet(String name) {
+			this.name = name;
+		}
+
+		public void writeSpreadsheet(String path) throws FileNotFoundException, IOException {
+			Spreadsheet spreadsheet = new Spreadsheet();
+			forEach(rating -> rating.addToSpreadsheet(spreadsheet));
+			spreadsheet.write(path);
+		}
 	}
 
 	public static class HintRating {
 		public final HintOutcome hint;
+		public final TutorHint match;
+		public final MatchType matchType;
 
-		public Validity validity;
-		public Priority priority;
-
-		public HintRating(HintOutcome hint) {
-			this.hint = hint;
+		public boolean isValid() {
+			return match != null;
 		}
 
-		@Override
-		public String toString() {
-			return validity + " / " + priority + "\n" + hint;
+		public Priority priority() {
+			return match == null ? null : match.priority;
+		}
+
+		public HintRating(HintOutcome hint) {
+			this(hint, null, MatchType.None);
+		}
+
+		public HintRating(HintOutcome hint, TutorHint match, MatchType matchType) {
+			this.hint = hint;
+			this.match = match;
+			this.matchType = matchType;
+		}
+
+		public void addToSpreadsheet(Spreadsheet spreadsheet) {
+			spreadsheet.newRow();
+			spreadsheet.put("assignmentID", hint.assignmentID);
+			spreadsheet.put("requestID", hint.requestID);
+			spreadsheet.put("weight", hint.weight());
+			Integer matchID = null, validity = null, priority = null;
+			if (match != null) {
+				matchID = match.hintID;
+				validity = match.validity.value;
+				priority = match.priority == null ? null : match.priority.value;
+			}
+			spreadsheet.put("matchID", matchID);
+			spreadsheet.put("validity", validity);
+			spreadsheet.put("priority", priority);
+			spreadsheet.put("type", matchType.toString());
+
 		}
 	}
 }

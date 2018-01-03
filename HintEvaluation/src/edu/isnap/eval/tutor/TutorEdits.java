@@ -93,7 +93,8 @@ public class TutorEdits {
 //		runConsensus("../data/hint-rating/isnap2017/training", standard, new SnapHintConfig());
 //		writeHighlight(RateHints.ISNAP_DATA_DIR, "sourcecheck", standard, new SnapHintConfig());
 //		RateHints.rate(standard, HintSet.fromFolder("sourcecheck", RatingConfig.Snap,
-//				RateHints.ISNAP_DATA_DIR + RateHints.ALGORITHMS_DIR + "/sourcecheck"));
+//				RateHints.ISNAP_DATA_DIR + RateHints.ALGORITHMS_DIR + "/sourcecheck"))
+//		.writeSpreadsheet(RateHints.ISNAP_DATA_DIR + RateHints.ALGORITHMS_DIR + "/sourcecheck.csv");
 
 		ListMap<String,PrintableTutorHint> fall2017 = readTutorEditsSnap(Fall2017.instance);
 		fall2017.values().forEach(list -> list.forEach(hint -> hint.validity = Validity.OneTutor));
