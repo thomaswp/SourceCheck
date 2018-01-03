@@ -19,6 +19,7 @@ import edu.isnap.ctd.hint.edit.Insertion;
 import edu.isnap.ctd.hint.edit.Reorder;
 import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.Diff.ColorStyle;
+import edu.isnap.ctd.util.Tuple;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.eval.python.PythonHintConfig;
@@ -57,9 +58,9 @@ public abstract class HighlightHintSet extends HintSet {
 			// Applying edits requires nodes to have meaningful IDs, so if they don't by default, we
 			// generate them. We don't otherwise, since the generated IDs won't be consistent.
 			code = config.areNodeIDsConsistent() ? code.copy() : copyWithIDs(code);
-			List<EditHint> hints = highlighter.highlightWithPriorities(code);
-			Set<EditHint> originalHints = new HashSet<>(hints);
-			hints = filterHints(hints, false);
+			List<EditHint> allHints = highlighter.highlightWithPriorities(code);
+			Set<EditHint> originalHints = new HashSet<>(allHints);
+			Set<EditHint> hints = filterHints(allHints, true);
 			originalHints.removeAll(hints);
 
 //			System.out.println(request.id);
@@ -103,7 +104,7 @@ public abstract class HighlightHintSet extends HintSet {
 	}
 
 	// Filter out hints that wouldn't be shown in iSnap anyway
-	protected List<EditHint> filterHints(List<EditHint> hints, boolean filterSameParentInsertions) {
+	protected Set<EditHint> filterHints(List<EditHint> hints, boolean filterSameParentInsertions) {
 		// Don't include insertions with a missing parent (yellow highlights), since they can't
 		// be fully carried out yet
 		List<Insertion> insertions = hints.stream()
@@ -112,20 +113,19 @@ public abstract class HighlightHintSet extends HintSet {
 				.filter(i -> !i.missingParent)
 				.collect(Collectors.toList());
 
-		// If instructed, filter out insertions at the same index of the same parent, since these
-		// represent multiple edits to be carried out in order
+		// If instructed, filter out insertions at the same index of the same parent, since only the
+		// first of these will actually be shown
 		if (filterSameParentInsertions) {
-			// TODO: if you start using this, make it keep in mind the insert index, not just the
-			// insert parent
-			ListMap<Node, Insertion> parentMap = new ListMap<>();
+			ListMap<Tuple<Node, Integer>, Insertion> parentMap = new ListMap<>();
 			insertions.stream().filter(i -> i.parent.hasType("script"))
-			.forEach(i -> parentMap.add(i.parent, i));
+			.forEach(i -> parentMap.add(new Tuple<>(i.parent, i.index), i));
 
 			for (List<Insertion> childEdits : parentMap.values()) {
 				Insertion best = childEdits.stream().max((a, b) -> {
-					// Use consensus to find the most important insertion
-					int cp = -Double.compare(a.priority.consensus(), b.priority.consensus());
-					if (cp != 0) return cp;
+					// We could use consensus to find the most important insertion, but it's better
+					// to reflect the actual behavior of iSnap, which is to
+//					int cp = -Double.compare(a.priority.consensus(), b.priority.consensus());
+//					if (cp != 0) return cp;
 					// Break ties with the original ordering
 					return Integer.compare(insertions.indexOf(a), insertions.indexOf(b));
 				}).get();
@@ -134,16 +134,16 @@ public abstract class HighlightHintSet extends HintSet {
 			}
 		}
 
-		hints = hints.stream()
+		Set<EditHint> hintSet = hints.stream()
 				.filter(h -> !(h instanceof Insertion))
 				// Maybe? Last study showed these are not generally created by people
 				.filter(h -> !(h instanceof Reorder))
 				// Maybe? Technically we do show this, but it's just highlighting, and probably
 				// should go away
 				.filter(h -> !(h instanceof Deletion && ((Deletion) h).node.hasType("script")))
-				.collect(Collectors.toList());
-		hints.addAll(insertions);
-		return hints;
+				.collect(Collectors.toSet());
+		hintSet.addAll(insertions);
+		return hintSet;
 	}
 
 	public void addHints(GoldStandard standard) {
