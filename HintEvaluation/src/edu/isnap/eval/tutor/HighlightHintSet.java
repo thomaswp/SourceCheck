@@ -80,7 +80,7 @@ public abstract class HighlightHintSet extends HintSet {
 				double priority = hint.priority.consensus();
 //				if (priority < 0.35) continue;
 				HintOutcome outcome = new HighlightOutcome(request.code, outcomeNode,
-						request.assignmentID, request.id, priority);
+						request.assignmentID, request.id, priority, hint);
 				add(outcome);
 			}
 		}
@@ -104,13 +104,19 @@ public abstract class HighlightHintSet extends HintSet {
 
 	// Filter out hints that wouldn't be shown in iSnap anyway
 	protected List<EditHint> filterHints(List<EditHint> hints, boolean filterSameParentInsertions) {
+		// Don't include insertions with a missing parent (yellow highlights), since they can't
+		// be fully carried out yet
 		List<Insertion> insertions = hints.stream()
 				.filter(h -> h instanceof Insertion)
 				.map(h -> (Insertion)h)
 				.filter(i -> !i.missingParent)
 				.collect(Collectors.toList());
 
+		// If instructed, filter out insertions at the same index of the same parent, since these
+		// represent multiple edits to be carried out in order
 		if (filterSameParentInsertions) {
+			// TODO: if you start using this, make it keep in mind the insert index, not just the
+			// insert parent
 			ListMap<Node, Insertion> parentMap = new ListMap<>();
 			insertions.stream().filter(i -> i.parent.hasType("script"))
 			.forEach(i -> parentMap.add(i.parent, i));
@@ -154,16 +160,23 @@ public abstract class HighlightHintSet extends HintSet {
 		return false;
 	}
 
-	private static class HighlightOutcome extends HintOutcome {
+	private class HighlightOutcome extends HintOutcome {
 
 		final ASTNode from;
+		final EditHint editHint;
 
 		public HighlightOutcome(ASTNode from, ASTNode result, String assignmentID, String requestID,
-				double weight) {
+				double weight, EditHint editHint) {
 			super(result, assignmentID, requestID, weight);
 			this.from = from;
+			this.editHint = editHint;
 		}
 
+		@Override
+		public String resultString() {
+			return editHint.toString() + ":\n" +
+					ASTNode.diff(from, result, config);
+		}
 	}
 
 	public List<PrintableTutorHint> toTutorEdits() {

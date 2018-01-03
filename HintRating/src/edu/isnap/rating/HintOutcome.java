@@ -30,6 +30,10 @@ public class HintOutcome implements Comparable<HintOutcome> {
 		}
 	}
 
+	public String resultString() {
+		return result.toString();
+	}
+
 	@Override
 	public int compareTo(HintOutcome o) {
 		return Double.compare(weight(), o.weight());

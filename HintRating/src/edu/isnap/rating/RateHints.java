@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.util.map.ListMap;
@@ -71,6 +72,7 @@ public class RateHints {
 					HintRating rating = findMatchingEdit(validEdits, hint, hintSet.config,
 							extractor);
 					if (rating.isValid()) {
+						// TODO: Deal with TooSoon and don't include as valid
 						for (int i = 0; i < rating.match.validity.value; i++) {
 							weightedValidity[i] += hint.weight();
 						}
@@ -79,6 +81,7 @@ public class RateHints {
 					set.add(rating);
 				}
 				List<HintRating> snapshotRatings = ratings.get(requestID);
+				printRatings(snapshotRatings);
 				double weight = snapshotRatings.stream().mapToDouble(r -> r.hint.weight()).sum();
 				// TODO: figure out whether to count 0-priority items
 				double priority = snapshotRatings.stream()
@@ -106,6 +109,32 @@ public class RateHints {
 					totalWeightedPriority / nSnapshots);
 		}
 		return set;
+	}
+
+	private static void printRatings(List<HintRating> ratings) {
+		if (ratings.isEmpty()) return;
+		HintOutcome firstOutcome = ratings.get(0).hint;
+		System.out.println("+====+ " + firstOutcome.assignmentID + " / " + firstOutcome.requestID +
+				" +====+");
+		for (int tooSoonRound = 0; tooSoonRound < 2; tooSoonRound++) {
+			for (MatchType type : MatchType.values()) {
+				boolean tooSoon = tooSoonRound == 1;
+				List<HintRating> matching = ratings.stream()
+						.filter(rating -> tooSoon ? rating.isTooSoon() :
+							(rating.matchType == type && !rating.isTooSoon()))
+						.collect(Collectors.toList());
+				if (!matching.isEmpty()) {
+					String label = tooSoon ? "Too Soon" : type.toString();
+					System.out.println("               === " + label + " ===");
+					for (HintRating rating : matching) {
+						System.out.println("Weight: " + rating.hint.weight());
+						System.out.println(rating.hint.resultString());
+						System.out.println("-------");
+					}
+				}
+				if (tooSoon) break;
+			}
+		}
 	}
 
 	private static ASTNode pruneImmediateChildren(ASTNode node, Predicate<String> condition) {
@@ -304,6 +333,10 @@ public class RateHints {
 			return match != null;
 		}
 
+		public boolean isTooSoon() {
+			return match != null && match.priority == Priority.TooSoon;
+		}
+
 		public Priority priority() {
 			return match == null ? null : match.priority;
 		}
@@ -333,7 +366,15 @@ public class RateHints {
 			spreadsheet.put("validity", validity);
 			spreadsheet.put("priority", priority);
 			spreadsheet.put("type", matchType.toString());
+		}
 
+		@Override
+		public String toString() {
+			StringBuilder sb = new StringBuilder();
+			sb.append(hint.assignmentID).append(" / ").append(hint.requestID)
+			.append(": ").append(hint.weight())
+			.append(" - ").append(matchType);
+			return sb.toString();
 		}
 	}
 }
