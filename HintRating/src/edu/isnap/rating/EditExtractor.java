@@ -262,6 +262,11 @@ public class EditExtractor {
 		return new ChildNodeReference(node, getReference(node.parent()));
 	}
 
+	public static NodeReference getReferenceAsChild(ASTNode node) {
+		if (node.parent() == null) return new RootNodeReference(node);
+		return new ChildNodeReference(node, getReference(node.parent()));
+	}
+
 	private static NodeReference getReferenceInPair(ASTNode toNode,
 			BiMap<ASTNode, ASTNode> mapping) {
 		ASTNode fromPair = mapping.getTo(toNode);

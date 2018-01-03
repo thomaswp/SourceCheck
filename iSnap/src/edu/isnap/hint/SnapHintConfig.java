@@ -18,7 +18,7 @@ public class SnapHintConfig extends HintConfig {
 		// In snap, we currently ignore literal values that aren't mapped
 		this.valuesPolicy = ValuesPolicy.MappedOnly;
 		// iSnap doesn't currently support displaying these, so they should not be used except in
-		// algorthm evaluation
+		// algorithm evaluation
 		this.createSubedits = false;
 	}
 

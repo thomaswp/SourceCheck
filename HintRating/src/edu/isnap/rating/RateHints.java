@@ -55,11 +55,6 @@ public class RateHints {
 				if (validEdits.size() == 0) continue;
 				List<HintOutcome> hints = hintSet.getOutcomes(requestID);
 
-//				if (snapshotID == 145234) {
-//					validEdits.forEach(e -> System.out.println( e.to.prettyPrint(true)));
-//					System.out.println("!");
-//				}
-
 				// TODO: do both this and not this
 //				double maxWeight = hints.stream().mapToDouble(h -> h.weight).max().orElse(0);
 //				hints = hints.stream().
@@ -72,9 +67,6 @@ public class RateHints {
 				double[] weightedValidity = new double[3];
 
 				for (HintOutcome hint : hints) {
-//					if (hints.size() > 8 && hint == hints.get(8)) {
-//						System.out.println("!!");
-//					}
 					HintRating rating = new HintRating(hint);
 					TutorHint exactMatch = findMatchingEdit(validEdits, hint, hintSet.config,
 							extractor);
@@ -154,14 +146,16 @@ public class RateHints {
 		if (config.areNodeIDsConsistent()) {
 			// Get a list of node reference in the original AST, so we can see which have been added
 			Set<NodeReference> fromRefs = new HashSet<>();
-			from.recurse(node -> fromRefs.add(EditExtractor.getReference(node)));
+			from.recurse(node -> fromRefs.add(EditExtractor.getReferenceAsChild(node)));
 
 			for (ASTNode node : toNodes) {
 				if (node.parent() == null) continue;
 
 				// If this node was created in the hint, prune its immediate children for nodes
 				// that are added automatically, according to the config, e.g. literal nodes in Snap
-				NodeReference toRef = EditExtractor.getReference(node);
+				// We get a reference that includes at least the node's parent, so we can prune
+				// moved nodes as well.
+				NodeReference toRef = EditExtractor.getReferenceAsChild(node);
 				if (!fromRefs.contains(toRef)) {
 					pruneImmediateChildren(node, config::trimIfParentIsAdded);
 				}
@@ -226,7 +220,7 @@ public class RateHints {
 
 			if (outcome.result.equals(tutorHint.to)) {
 				System.out.println("Matching hint:");
-				System.out.println(ASTNode.diff(tutorHint.from, tutorHint.to, config));
+				System.out.println(ASTNode.diff(tutorHint.from, outcome.result, config));
 				System.out.println("Difference in normalized nodes:");
 				System.out.println(ASTNode.diff(tutorOutcomeNode, outcomeNode, config, 2));
 				System.out.println("Tutor normalizing:");

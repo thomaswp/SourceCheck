@@ -80,7 +80,6 @@ public class TutorEdits {
 //			RateHints.rate(standard, hintSet);
 //		}
 
-
 //		GoldStandard standard = readConsensusPython("../data/itap");
 //		HighlightHintSet hintSet = new ImportHighlightHintSet("sourcecheck", new PythonHintConfig(),
 //				RateHints.ITAP_DATA_DIR + RateHints.TRAINING_DIR);
@@ -97,6 +96,9 @@ public class TutorEdits {
 //				RateHints.ISNAP_DATA_DIR + RateHints.ALGORITHMS_DIR + "/sourcecheck"));
 
 		ListMap<String,PrintableTutorHint> fall2017 = readTutorEditsSnap(Fall2017.instance);
+		fall2017.values().forEach(list -> list.forEach(hint -> hint.validity = Validity.OneTutor));
+		runConsensus(Fall2016.instance, new GoldStandard(fall2017));
+		runConsensus(Spring2017.instance, new GoldStandard(fall2017));
 
 //		System.out.println("Fall");
 //		runConsensus(Fall2016.instance, readConsensus(Spring2017.instance, CONSENSUS_GG_SQ));
