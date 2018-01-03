@@ -53,8 +53,8 @@ public class RateHints {
 			double totalWeightedPriority = 0;
 			double[] totalWeightedValidity = new double[3];
 			for (String requestID : standard.getRequestIDs(assignment)) {
-				List<TutorHint> validEdits = standard.getValidEdits(assignment, requestID);
-				if (validEdits.size() == 0) continue;
+				List<TutorHint> validHints = standard.getValidEdits(assignment, requestID);
+				if (validHints.size() == 0) continue;
 				List<HintOutcome> hints = hintSet.getOutcomes(requestID);
 
 				// TODO: do both this and not this
@@ -69,7 +69,7 @@ public class RateHints {
 				double[] weightedValidity = new double[3];
 
 				for (HintOutcome hint : hints) {
-					HintRating rating = findMatchingEdit(validEdits, hint, hintSet.config,
+					HintRating rating = findMatchingEdit(validHints, hint, hintSet.config,
 							extractor);
 					if (rating.isValid()) {
 						// TODO: Deal with TooSoon and don't include as valid
@@ -81,9 +81,9 @@ public class RateHints {
 					set.add(rating);
 				}
 				List<HintRating> snapshotRatings = ratings.get(requestID);
-				printRatings(snapshotRatings);
+				printRatings(snapshotRatings, validHints.get(0).from, hintSet.config);
 				double weight = snapshotRatings.stream().mapToDouble(r -> r.hint.weight()).sum();
-				// TODO: figure out whether to count 0-priority items
+				// TODO: figure out whether to count invalid items
 				double priority = snapshotRatings.stream()
 						.filter(r -> r.priority() != null)
 						.mapToDouble(r -> r.hint.weight() * r.priority().points())
@@ -111,11 +111,12 @@ public class RateHints {
 		return set;
 	}
 
-	private static void printRatings(List<HintRating> ratings) {
+	private static void printRatings(List<HintRating> ratings, ASTNode from, RatingConfig config) {
 		if (ratings.isEmpty()) return;
 		HintOutcome firstOutcome = ratings.get(0).hint;
 		System.out.println("+====+ " + firstOutcome.assignmentID + " / " + firstOutcome.requestID +
 				" +====+");
+		System.out.println(from.prettyPrint(true, config));
 		for (int tooSoonRound = 0; tooSoonRound < 2; tooSoonRound++) {
 			for (MatchType type : MatchType.values()) {
 				boolean tooSoon = tooSoonRound == 1;

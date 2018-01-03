@@ -64,7 +64,7 @@ public abstract class HighlightHintSet extends HintSet {
 			originalHints.removeAll(hints);
 
 //			System.out.println(request.id);
-//			System.out.println(request.code.prettyPrint(true));
+//			System.out.println(request.code.prettyPrint(true, config));
 //			System.out.println("Kept Hints:");
 //			hints.forEach(System.out::println);
 //			System.out.println("Removed Hints: ");
@@ -79,9 +79,10 @@ public abstract class HighlightHintSet extends HintSet {
 				ASTNode outcomeNode = to.toASTNode();
 				if (outcomeNode.hasType("snapshot")) outcomeNode.type = "Snap!shot";
 				double priority = hint.priority.consensus();
-//				if (priority < 0.35) continue;
-				HintOutcome outcome = new HighlightOutcome(request.code, outcomeNode,
+//				if (priority < 0.25) continue;
+				HighlightOutcome outcome = new HighlightOutcome(request.code, outcomeNode,
 						request.assignmentID, request.id, priority, hint);
+				outcome.priority = hint.priority;
 				add(outcome);
 			}
 		}
@@ -127,7 +128,7 @@ public abstract class HighlightHintSet extends HintSet {
 //					int cp = -Double.compare(a.priority.consensus(), b.priority.consensus());
 //					if (cp != 0) return cp;
 					// Break ties with the original ordering
-					return Integer.compare(insertions.indexOf(a), insertions.indexOf(b));
+					return -Integer.compare(insertions.indexOf(a), insertions.indexOf(b));
 				}).get();
 				childEdits.stream().filter(i -> i != best)
 				.forEach(i -> removeExactly(insertions, i));
@@ -164,6 +165,7 @@ public abstract class HighlightHintSet extends HintSet {
 
 		final ASTNode from;
 		final EditHint editHint;
+		edu.isnap.ctd.hint.edit.Priority priority;
 
 		public HighlightOutcome(ASTNode from, ASTNode result, String assignmentID, String requestID,
 				double weight, EditHint editHint) {
@@ -174,8 +176,9 @@ public abstract class HighlightHintSet extends HintSet {
 
 		@Override
 		public String resultString() {
-			return editHint.toString() + ":\n" +
-					ASTNode.diff(from, result, config);
+			return (priority == null ? "" : (priority.toString() + "\n")) +
+					editHint.toString() + ":\n" +
+					ASTNode.diff(from, result, config, 1);
 		}
 	}
 
