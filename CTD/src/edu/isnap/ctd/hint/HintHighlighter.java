@@ -790,12 +790,14 @@ public class HintHighlighter {
 					continue;
 				}
 				String label = Ordering.getLabel(insertion.pair);
+				// If the label is null, this is not a meaningful node to track the ordering
+				if (label == null) continue;
 
 				// Get the number of times this item appears in the student's code
 				int count = nodeLabelCounts.getCount(label);
 				// If we are inserting without a candidate, this node will increase that count by 1
 				if (insertion.candidate == null ||
-						!Ordering.getLabel(insertion.candidate).equals(label)) {
+						!label.equals(Ordering.getLabel(insertion.candidate))) {
 					count++;
 				}
 				// But do not increase the count beyond the number present in the target solution
@@ -810,6 +812,7 @@ public class HintHighlighter {
 		List<Insertion> insertions = new ArrayList<>(insertionLabels.keySet());
 
 		for (Insertion insertion : insertions) {
+			if (!insertionLabels.containsKey(insertion)) continue;
 			CountMap<Addition> prereqs = new CountMap<>();
 			int total = 0;
 			for (Mapping match : bestMatches) {

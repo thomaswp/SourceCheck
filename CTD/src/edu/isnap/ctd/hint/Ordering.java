@@ -2,6 +2,7 @@ package edu.isnap.ctd.hint;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -72,7 +73,10 @@ public class Ordering {
 
 	public static CountMap<String> countLabels(Node node) {
 		CountMap<String> labelCounts = new CountMap<>(MapFactory.LinkedHashMapFactory);
-		node.recurse(child -> labelCounts.increment(getLabel(child)));
+		node.recurse(child -> {
+			String label = getLabel(child);
+			if (label != null) labelCounts.increment(getLabel(child));
+		});
 		return labelCounts;
 	}
 
@@ -83,10 +87,32 @@ public class Ordering {
 		additions.retainAll(additions.stream()
 				.filter(t -> labels.contains(t.label))
 				.collect(Collectors.toSet()));
+//		int i = 0;
+//		for (Addition addition : additions) {
+//			System.out.printf("%s,%s,%d\n",
+//					node.id, addition, i++);
+//		}
+	}
+
+	private static boolean ignore(String type) {
+		// TODO: config
+		return "literal".equals(type) || "script".equals(type);
 	}
 
 	public static String getLabel(Node node) {
-		return node.rootPathString(MAX_RP_LENGTH);
+		if (ignore(node.type())) return null;
+		List<String> path = new LinkedList<>();
+		Node n = node;
+		int length = 0;
+		while (n != null && length < MAX_RP_LENGTH) {
+			String type = n.type();
+			if (!ignore(type)) {
+				path.add(0, type);
+				length++;
+			}
+			n = n.parent;
+		}
+		return String.join("->", path);
 	}
 
 	@Override
@@ -133,7 +159,7 @@ public class Ordering {
 
 		@Override
 		public String toString() {
-			return String.format("{%s, %d}", label, count);
+			return String.format("{%s:%d}", label, count);
 		}
 	}
 }
