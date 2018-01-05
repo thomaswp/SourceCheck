@@ -65,8 +65,8 @@ public class TemplateParser {
 
 	}
 
-	private static void writeHints(String basePath, Assignment assignment, HintMapBuilder hmb, Kryo kryo)
-			throws FileNotFoundException {
+	private static void writeHints(String basePath, Assignment assignment, HintMapBuilder hmb,
+			Kryo kryo) throws FileNotFoundException {
 		String path = SnapHintBuilder.getStorePath(basePath, assignment.name, 1);
 		Output output = new Output(new FileOutputStream(path));
 		kryo.writeObject(output, hmb);

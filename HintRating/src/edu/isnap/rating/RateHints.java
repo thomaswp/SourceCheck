@@ -45,6 +45,10 @@ public class RateHints {
 	}
 
 	public static HintRatingSet rate(GoldStandard standard, HintSet hintSet) {
+		return rate(standard, hintSet, false);
+	}
+
+	public static HintRatingSet rate(GoldStandard standard, HintSet hintSet, boolean debug) {
 		HintRatingSet set = new HintRatingSet(hintSet.name);
 		EditExtractor extractor = new EditExtractor(hintSet.config.areNodeIDsConsistent());
 		for (String assignment : standard.getAssignmentIDs()) {
@@ -82,7 +86,7 @@ public class RateHints {
 					set.add(rating);
 				}
 				List<HintRating> snapshotRatings = ratings.get(requestID);
-				printRatings(snapshotRatings, validHints.get(0).from, hintSet.config);
+				if (debug) printRatings(snapshotRatings, validHints.get(0).from, hintSet.config);
 				double weight = snapshotRatings.stream().mapToDouble(r -> r.hint.weight()).sum();
 				// TODO: figure out whether to count invalid items
 				double priority = snapshotRatings.stream()

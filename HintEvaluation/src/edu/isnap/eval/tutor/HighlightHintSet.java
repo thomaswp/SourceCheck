@@ -80,15 +80,19 @@ public abstract class HighlightHintSet extends HintSet {
 				EditHint.applyEdits(to, edits);
 				ASTNode outcomeNode = to.toASTNode();
 				if (outcomeNode.hasType("snapshot")) outcomeNode.type = "Snap!shot";
-				double priority = hint.priority.consensus();
+				double weight = hint.priority.consensus() * getDefaultWeight(hint);
 //				if (priority < 0.25) continue;
 				HighlightOutcome outcome = new HighlightOutcome(request.code, outcomeNode,
-						request.assignmentID, request.id, priority, hint);
+						request.assignmentID, request.id, weight, hint);
 				add(outcome);
 			}
 		}
 		finish();
 		return this;
+	}
+	private static double getDefaultWeight(EditHint hint) {
+		if (hint instanceof Deletion) return 0.25f;
+		return 1;
 	}
 
 	public static Node copyWithIDs(Node node) {

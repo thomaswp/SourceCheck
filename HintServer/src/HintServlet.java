@@ -133,7 +133,7 @@ public class HintServlet extends HttpServlet {
 			try {
 				HintHighlighter highlighter = new HintHighlighter(hintMap);
 				// TODO: Use an actual logging framework
-//				highlighter.trace = NullSream.instance;
+//				highlighter.trace = System.out;
 
 				if (hintTypes.contains("debug")) {
 					HintDebugInfo info = highlighter.debugHighlight(node);

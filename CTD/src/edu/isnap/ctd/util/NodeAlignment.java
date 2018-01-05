@@ -36,6 +36,8 @@ public class NodeAlignment {
 	// Temporary instance variable for use during calculateMapping
 	private Mapping mapping;
 
+	private final static String GENERATED_TAG = "GEN";
+
 	public static class Mapping extends BiMap<Node, Node> implements Comparable<Mapping> {
 		public final Node from, to;
 		public final HintConfig config;
@@ -199,7 +201,9 @@ public class NodeAlignment {
 		private static List<String> getValues(Node root, String[] types) {
 			Set<String> values = new HashSet<>();
 			root.recurse(node -> {
-				if (node.hasType(types) && node.value != null && !node.value.trim().isEmpty()) {
+				if (node.hasType(types) && node.value != null && !node.value.trim().isEmpty() &&
+						// Ensure that we don't count nodes that were generated (due to annotations)
+						!GENERATED_TAG.equals(node.tag)) {
 					values.add(node.value);
 				}
 			});
@@ -485,6 +489,7 @@ public class NodeAlignment {
 						// Make a copy of the node and match them together
 						Node parent = mapping.getFrom(node.parent);
 						Node copy = node.shallowCopy(parent);
+						copy.tag = GENERATED_TAG;
 						parent.children.add(copy);
 						mapping.put(node, copy);
 

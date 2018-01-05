@@ -516,7 +516,7 @@ public class HintHighlighter {
 	private List<Mapping> findBestMappings(Node node, int maxReturned) {
 		DistanceMeasure dm = getDistanceMeasure(config);
 		List<Node> filteredSolutions = solutions;
-		if (hintMap != null) {
+		if (hintMap != null && hintMap.ruleSet != null) {
 			RuleSet.trace = trace;
 			filteredSolutions = hintMap.ruleSet.filterSolutions(solutions, node);
 		}
@@ -767,7 +767,7 @@ public class HintHighlighter {
 	}
 
 	private void findOrderingPriority(List<EditHint> hints, Node node, Mapping bestMatch) {
-		if (hintMap == null) return;
+		if (hintMap == null || hintMap.orderMatrix == null) return;
 
 		CountMap<String> nodeLabelCounts = Ordering.countLabels(node);
 		CountMap<String> matchLabelCounts = Ordering.countLabels(bestMatch.to);
@@ -853,7 +853,7 @@ public class HintHighlighter {
 
 	private void calculateOrderingRanks(List<Insertion> insertions,
 			Map<Insertion, Addition> insertionMap) {
-		if (hintMap == null) return;
+		if (hintMap == null || hintMap.orderMatrix == null) return;
 
 		OrderMatrix matrix = hintMap.orderMatrix;
 		List<Addition> additions = matrix.additions();

@@ -39,6 +39,7 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
+import edu.isnap.datasets.CSC200Solutions;
 import edu.isnap.datasets.Fall2016;
 import edu.isnap.datasets.Fall2017;
 import edu.isnap.datasets.Spring2017;
@@ -99,9 +100,15 @@ public class TutorEdits {
 
 		ListMap<String,PrintableTutorHint> fall2017 = readTutorEditsSnap(Fall2017.instance);
 		fall2017.values().forEach(list -> list.forEach(hint -> hint.validity = Validity.OneTutor));
-		runConsensus(Fall2016.instance, new GoldStandard(fall2017))
-		.writeSpreadsheet(Fall2017.GuessingGame1.exportDir() + "/fall2016-rating.csv");
-//		runConsensus(Spring2017.instance, new GoldStandard(fall2017));
+//		fall2017.remove("guess1Lab");
+		GoldStandard standard = new GoldStandard(fall2017);
+		HighlightHintSet hintSet = new TemplateHighlightHintSet(
+				"template", CSC200Solutions.instance);
+		hintSet.addHints(standard);
+		RateHints.rate(standard, hintSet, false);
+//		runConsensus(Fall2016.instance, standard)
+//		.writeSpreadsheet(Fall2017.GuessingGame1.exportDir() + "/fall2016-rating.csv");
+//		runConsensus(Spring2017.instance, standard);
 
 //		System.out.println("Fall");
 //		runConsensus(Fall2016.instance, readConsensus(Spring2017.instance, CONSENSUS_GG_SQ));
