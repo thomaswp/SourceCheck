@@ -5,7 +5,6 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,6 +23,7 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.json.JSONArray;
 
 import edu.isnap.ctd.graph.Node;
+import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.HintJSON;
 import edu.isnap.ctd.hint.HintMap;
@@ -41,7 +41,9 @@ import edu.isnap.datasets.Fall2016;
 import edu.isnap.datasets.Spring2016;
 import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.agreement.EditComparer.EditDifference;
+import edu.isnap.hint.ConfigurableAssignment;
 import edu.isnap.hint.SnapHintBuilder;
+import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
@@ -90,12 +92,12 @@ public class EDM2017 {
 
 		HashMap<String, HintHighlighter> highlighters = new HashMap<>();
 		for (Assignment assignment : trainingAssignments) {
+			HintConfig config = (assignment instanceof ConfigurableAssignment) ?
+					((ConfigurableAssignment) assignment).getConfig() : new SnapHintConfig();
+			config.useRulesToFilter = false;
 			SnapHintBuilder builder = new SnapHintBuilder(assignment);
 			HintMap hintMap = builder.buildGenerator(Mode.Ignore, 1).hintMap;
-			List<Node> solutions = new ArrayList<>(hintMap.solutions);
-			highlighters.put(assignment.name, new HintHighlighter(
-					solutions, null, hintMap.nodePlacementTimes, hintMap.nodeOrderings,
-					hintMap.getHintConfig()));
+			highlighters.put(assignment.name, new HintHighlighter(hintMap));
 		}
 
 		// Since sometimes assignments are incorrect in the logs, we have to redirect prequel

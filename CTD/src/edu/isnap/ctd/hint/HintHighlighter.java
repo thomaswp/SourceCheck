@@ -47,29 +47,21 @@ public class HintHighlighter {
 
 	private final List<Node> solutions;
 	private final HintConfig config;
-	private final RuleSet ruleSet;
-	private final Map<Node, Map<String, Double>> nodePlacementTimes;
-	private final Map<Node, Ordering> nodeOrderings;
+	private final HintMap hintMap;
 
 	public HintHighlighter(HintMap hintMap) {
-		this(hintMap.solutions, hintMap.ruleSet, hintMap.nodePlacementTimes, hintMap.nodeOrderings,
-				hintMap.config);
+		this(hintMap.solutions, hintMap.config, hintMap);
 	}
 
 	public HintHighlighter(List<Node> solutions, HintConfig config) {
-		this(solutions, null, null, null, config);
+		this(solutions, config, null);
 	}
 
-	public HintHighlighter(List<Node> solutions, RuleSet ruleSet,
-			Map<Node, Map<String, Double>> nodeCreationPercs, Map<Node, Ordering> nodeOrderings,
-			HintConfig config) {
+	public HintHighlighter(List<Node> solutions, HintConfig config, HintMap hintMap) {
 		this.solutions = config.preprocessSolutions ?
-				preprocessSolutions(solutions, nodeCreationPercs, nodeOrderings, config) :
-					solutions;
-		this.ruleSet = ruleSet;
-		this.nodePlacementTimes = nodeCreationPercs;
-		this.nodeOrderings = nodeOrderings;
+				preprocessSolutions(solutions, hintMap, config) : solutions;
 		this.config = config;
+		this.hintMap = hintMap;
 	}
 
 	public HintDebugInfo debugHighlight(Node node) {
@@ -525,9 +517,9 @@ public class HintHighlighter {
 	private List<Mapping> findBestMappings(Node node, int maxReturned) {
 		DistanceMeasure dm = getDistanceMeasure(config);
 		List<Node> filteredSolutions = solutions;
-		if (ruleSet != null) {
+		if (hintMap != null) {
 			RuleSet.trace = trace;
-			filteredSolutions = ruleSet.filterSolutions(solutions, node);
+			filteredSolutions = hintMap.ruleSet.filterSolutions(solutions, node);
 		}
 		return NodeAlignment.findBestMatches(node, filteredSolutions, dm, config, maxReturned);
 	}
@@ -539,10 +531,8 @@ public class HintHighlighter {
 	 */
 	@SuppressWarnings("deprecation")
 	// TODO: Rework to be not snap-specific
-	private static List<Node> preprocessSolutions(List<Node> allSolutions,
-			Map<Node, Map<String, Double>> nodeCreationPercs,
-			Map<Node, Ordering> nodeOrderings,
-			final HintConfig config) {
+	private static List<Node> preprocessSolutions(List<Node> allSolutions, HintMap hintMap,
+			HintConfig config) {
 
 		// TODO: This doesn't work well with multi-script and multi-sprite solutions
 
@@ -601,10 +591,12 @@ public class HintHighlighter {
 					}
 				}
 			});
-			if (nodeCreationPercs != null) {
+			if (hintMap != null) {
 				// Update references to this node in the nodeCreationPercs map
-				nodeCreationPercs.put(copy, nodeCreationPercs.remove(node));
-				nodeOrderings.put(copy, nodeOrderings.remove(node));
+				// TODO: This updates the original hintMap, which isn't ideal...
+				// Really, we shouldn't be using the Node as the key, but rather some ID...
+				hintMap.nodePlacementTimes.put(copy, hintMap.nodePlacementTimes.remove(node));
+				hintMap.nodeOrderings.put(copy, hintMap.nodeOrderings.remove(node));
 			}
 			solutions.add(copy);
 		}
@@ -731,10 +723,10 @@ public class HintHighlighter {
 		.forEach(set -> hintCounts.incrementAll(set));
 
 		Map<Mapping, Mapping> bestToGoodMappings = new HashMap<>();
-		if (nodePlacementTimes != null && nodePlacementTimes.containsKey(bestMatch.to)) {
+		if (hintMap != null && hintMap.nodePlacementTimes.containsKey(bestMatch.to)) {
 			for (Mapping match : bestMatches) {
 				if (bestMatch.to == match.to) continue;
-				Map<String, Double> creationPercs = nodePlacementTimes.get(match.to);
+				Map<String, Double> creationPercs = hintMap.nodePlacementTimes.get(match.to);
 				if (creationPercs == null) continue;
 				Mapping mapping = new NodeAlignment(bestMatch.to, match.to, config)
 						.calculateMapping(getDistanceMeasure());
@@ -747,8 +739,8 @@ public class HintHighlighter {
 			priority.consensusNumerator = hintCounts.getCount(hint);
 			priority.consensusDenominator = bestMatches.size();
 
-			if (nodePlacementTimes != null && nodePlacementTimes.containsKey(bestMatch.to)) {
-				Map<String, Double> creationPercs = nodePlacementTimes.get(bestMatch.to);
+			if (hintMap != null && hintMap.nodePlacementTimes.containsKey(bestMatch.to)) {
+				Map<String, Double> creationPercs = hintMap.nodePlacementTimes.get(bestMatch.to);
 				Node priorityToNode = hint.getPriorityToNode(bestMatch);
 				if (creationPercs != null && priorityToNode != null) {
 					List<Double> percs = new ArrayList<>();
@@ -757,7 +749,7 @@ public class HintHighlighter {
 					for (Mapping match : bestToGoodMappings.keySet()) {
 						Node from = bestToGoodMappings.get(match).getFrom(priorityToNode);
 						if (from == null) continue;
-						creationPercs = nodePlacementTimes.get(match.to);
+						creationPercs = hintMap.nodePlacementTimes.get(match.to);
 						percs.add(creationPercs.get(from.id));
 					}
 
@@ -777,7 +769,7 @@ public class HintHighlighter {
 
 	private void findOrderingPriority(List<EditHint> hints, Node node,
 			Mapping bestMatch, List<Mapping> bestMatches) {
-		if (nodeOrderings == null) return;
+		if (hintMap == null) return;
 
 		CountMap<String> nodeLabelCounts = Ordering.countLabels(node);
 		CountMap<String> matchLabelCounts = Ordering.countLabels(bestMatch.to);
@@ -816,7 +808,7 @@ public class HintHighlighter {
 			CountMap<Addition> prereqs = new CountMap<>();
 			int total = 0;
 			for (Mapping match : bestMatches) {
-				Ordering ordering = nodeOrderings.get(match.to);
+				Ordering ordering = hintMap.nodeOrderings.get(match.to);
 				List<Addition> precedingAdditions =
 						ordering.getPrecedingAdditions(insertionLabels.get(insertion));
 				prereqs.incrementAll(precedingAdditions);
@@ -849,6 +841,8 @@ public class HintHighlighter {
 
 	private void calculateOrderingRanks(List<Insertion> insertions, List<Mapping> bestMatches,
 			Map<Insertion, Addition> insertionMap) {
+		if (hintMap == null) return;
+
 		int n = insertionMap.size(), m = bestMatches.size();
 		int[][] orderings = new int[n][m];
 		double[][] rankings = new double[n][m];
@@ -859,7 +853,7 @@ public class HintHighlighter {
 
 			for (int j = 0; j < m; j++) {
 				Mapping mapping = bestMatches.get(j);
-				Ordering ordering = nodeOrderings.get(mapping.to);
+				Ordering ordering = hintMap.nodeOrderings.get(mapping.to);
 				orderings[i][j] = ordering == null ? -1 : ordering.getOrder(addition);
 			}
 		}

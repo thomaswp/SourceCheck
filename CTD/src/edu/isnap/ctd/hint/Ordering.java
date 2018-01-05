@@ -1,6 +1,7 @@
 package edu.isnap.ctd.hint;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -160,6 +161,48 @@ public class Ordering {
 		@Override
 		public String toString() {
 			return String.format("{%s:%d}", label, count);
+		}
+	}
+
+	public static class OrderMatrix {
+
+		private final List<Addition> additions;
+		private final double[][] matrix;
+
+		@SuppressWarnings("unused")
+		private OrderMatrix() {
+			additions = null;
+			matrix = null;
+		}
+
+		public OrderMatrix(Collection<Ordering> orderings, double frequencyThreshhold) {
+			CountMap<Addition> additionCounts = new CountMap<>();
+			for (Ordering ordering : orderings) {
+				ordering.additions.forEach(addition -> additionCounts.increment(addition));
+			}
+			int minCount = (int) (orderings.size() * frequencyThreshhold);
+			additions = additionCounts.keySet().stream()
+				.filter(addition -> additionCounts.getCount(addition) >= minCount)
+				.collect(Collectors.toList());
+
+			int n = additions.size();
+			matrix = new double[n][n];
+			for (int i = 0; i < n; i++) {
+				for (int j = 0; j < i; j++) {
+					Addition a = additions.get(i);
+					Addition b = additions.get(j);
+					int count = 0;
+					int aFirst = 0;
+					for (Ordering ordering : orderings) {
+						int orderA = ordering.getOrder(a);
+						int orderB = ordering.getOrder(b);
+						if (orderA == -1 || orderB == -1) continue;
+						count++;
+						if (orderA < orderB) count++;
+					}
+					matrix[i][j] = (double) aFirst / count;
+				}
+			}
 		}
 	}
 }

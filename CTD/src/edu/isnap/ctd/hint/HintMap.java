@@ -16,6 +16,7 @@ import edu.isnap.ctd.graph.Node.Action;
 import edu.isnap.ctd.graph.vector.IndexedVectorState;
 import edu.isnap.ctd.graph.vector.VectorGraph;
 import edu.isnap.ctd.graph.vector.VectorState;
+import edu.isnap.ctd.hint.Ordering.OrderMatrix;
 
 /**
  * Class for handling the core logic of the CTD algorithm.
@@ -27,11 +28,14 @@ public class HintMap {
 	public final List<Node> solutions = new ArrayList<>();
 	public final Map<Node, Map<String, Double>> nodePlacementTimes = new IdentityHashMap<>();
 	public final Map<Node, Ordering> nodeOrderings = new IdentityHashMap<>();
+	public OrderMatrix orderMatrix;
 
 	RuleSet ruleSet;
 	final HintConfig config;
 
 	private transient List<Node> currentHistory = new ArrayList<>();
+
+	protected final HashMap<Node, VectorGraph> map = new HashMap<>();
 
 	public HintConfig getHintConfig() {
 		return config;
@@ -49,9 +53,6 @@ public class HintMap {
 	public HintMap(HintConfig config) {
 		this.config = config;
 	}
-
-	protected final HashMap<Node, VectorGraph> map =
-			new HashMap<>();
 
 	/**
 	 * Gets the root path for the given Node, which contains only the nodes in the root path from
@@ -161,6 +162,8 @@ public class HintMap {
 		// Then save the current node creation percs, using the final solution as a key
 		nodePlacementTimes.put(solution, currentNodeCreationPercs);
 		nodeOrderings.put(solution, new Ordering(currentHistory));
+		// TODO: config
+		orderMatrix = new OrderMatrix(nodeOrderings.values(), 0.3);
 	}
 
 	public IndexedVectorState getContext(Node item) {
