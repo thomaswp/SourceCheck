@@ -2,6 +2,7 @@ package edu.isnap.ctd.hint;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -169,6 +170,16 @@ public class Ordering {
 		private final List<Addition> additions;
 		private final double[][] matrix;
 
+		public List<Addition> additions() {
+			return Collections.unmodifiableList(additions);
+		}
+
+		public double getPercOrdered(int beforeIndex, int afterIndex) {
+			if (beforeIndex < 0 || beforeIndex >= additions.size()) return 0;
+			if (afterIndex < 0 || afterIndex >= additions.size()) return 0;
+			return matrix[beforeIndex][afterIndex];
+		}
+
 		@SuppressWarnings("unused")
 		private OrderMatrix() {
 			additions = null;
@@ -188,7 +199,7 @@ public class Ordering {
 			int n = additions.size();
 			matrix = new double[n][n];
 			for (int i = 0; i < n; i++) {
-				for (int j = 0; j < i; j++) {
+				for (int j = i + 1; j < n; j++) {
 					Addition a = additions.get(i);
 					Addition b = additions.get(j);
 					int count = 0;
@@ -198,9 +209,10 @@ public class Ordering {
 						int orderB = ordering.getOrder(b);
 						if (orderA == -1 || orderB == -1) continue;
 						count++;
-						if (orderA < orderB) count++;
+						if (orderA < orderB) aFirst++;
 					}
 					matrix[i][j] = (double) aFirst / count;
+					matrix[j][i] = 1 - matrix[i][j];
 				}
 			}
 		}

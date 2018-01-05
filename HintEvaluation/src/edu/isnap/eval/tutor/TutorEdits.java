@@ -57,6 +57,7 @@ import edu.isnap.parser.elements.Snapshot;
 import edu.isnap.rating.GoldStandard;
 import edu.isnap.rating.HintSet;
 import edu.isnap.rating.RateHints;
+import edu.isnap.rating.RateHints.HintRatingSet;
 import edu.isnap.rating.RatingConfig;
 import edu.isnap.rating.TutorHint;
 import edu.isnap.rating.TutorHint.Priority;
@@ -98,8 +99,9 @@ public class TutorEdits {
 
 		ListMap<String,PrintableTutorHint> fall2017 = readTutorEditsSnap(Fall2017.instance);
 		fall2017.values().forEach(list -> list.forEach(hint -> hint.validity = Validity.OneTutor));
-		runConsensus(Fall2016.instance, new GoldStandard(fall2017));
-		runConsensus(Spring2017.instance, new GoldStandard(fall2017));
+		runConsensus(Fall2016.instance, new GoldStandard(fall2017))
+		.writeSpreadsheet(Fall2017.GuessingGame1.exportDir() + "/fall2016-rating.csv");
+//		runConsensus(Spring2017.instance, new GoldStandard(fall2017));
 
 //		System.out.println("Fall");
 //		runConsensus(Fall2016.instance, readConsensus(Spring2017.instance, CONSENSUS_GG_SQ));
@@ -130,12 +132,12 @@ public class TutorEdits {
 				dataDirectory, RateHints.ALGORITHMS_DIR + File.separator + name).getPath(), true);
 	}
 
-	protected static void runConsensus(Dataset trainingDataset, GoldStandard standard)
+	protected static HintRatingSet runConsensus(Dataset trainingDataset, GoldStandard standard)
 			throws FileNotFoundException, IOException {
 		HighlightHintSet hintSet = new DatasetHighlightHintSet(
 			trainingDataset.getName(), new SnapHintConfig(), trainingDataset)
 				.addHints(standard.getHintRequests());
-		RateHints.rate(standard, hintSet);
+		return RateHints.rate(standard, hintSet);
 //		hintSet.toTutorEdits().forEach(e -> System.out.println(
 //				e.toSQLInsert("handmade_hints", "highlight", 20000, false, true)));
 	}

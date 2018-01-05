@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -367,6 +368,10 @@ public class RateHints {
 			spreadsheet.put("validity", validity);
 			spreadsheet.put("priority", priority);
 			spreadsheet.put("type", matchType.toString());
+			Map<String, String> properties = hint.getDebuggingProperties();
+			for (String key : properties.keySet()) {
+				spreadsheet.put("p_" + key, properties.get(key));
+			}
 		}
 
 		@Override

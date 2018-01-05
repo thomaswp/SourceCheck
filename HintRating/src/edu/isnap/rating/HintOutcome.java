@@ -3,6 +3,8 @@ package edu.isnap.rating;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.json.JSONObject;
 
@@ -89,5 +91,9 @@ public class HintOutcome implements Comparable<HintOutcome> {
 						error, beta, minError));
 			}
 		}
+	}
+
+	public Map<String, String> getDebuggingProperties() {
+		return new HashMap<>();
 	}
 }

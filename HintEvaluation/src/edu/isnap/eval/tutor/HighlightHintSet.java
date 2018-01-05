@@ -2,8 +2,10 @@ package edu.isnap.eval.tutor;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -60,7 +62,7 @@ public abstract class HighlightHintSet extends HintSet {
 			code = config.areNodeIDsConsistent() ? code.copy() : copyWithIDs(code);
 			List<EditHint> allHints = highlighter.highlightWithPriorities(code);
 			Set<EditHint> originalHints = new HashSet<>(allHints);
-			Set<EditHint> hints = filterHints(allHints, true);
+			Set<EditHint> hints = filterHints(allHints, false);
 			originalHints.removeAll(hints);
 
 //			System.out.println(request.id);
@@ -82,7 +84,6 @@ public abstract class HighlightHintSet extends HintSet {
 //				if (priority < 0.25) continue;
 				HighlightOutcome outcome = new HighlightOutcome(request.code, outcomeNode,
 						request.assignmentID, request.id, priority, hint);
-				outcome.priority = hint.priority;
 				add(outcome);
 			}
 		}
@@ -123,8 +124,7 @@ public abstract class HighlightHintSet extends HintSet {
 
 			for (List<Insertion> childEdits : parentMap.values()) {
 				Insertion best = childEdits.stream().max((a, b) -> {
-					// We could use consensus to find the most important insertion, but it's better
-					// to reflect the actual behavior of iSnap, which is to
+					// TODO: Find a better way than order to prioritize insertions at the same place
 //					int cp = -Double.compare(a.priority.consensus(), b.priority.consensus());
 //					if (cp != 0) return cp;
 					// Break ties with the original ordering
@@ -165,7 +165,6 @@ public abstract class HighlightHintSet extends HintSet {
 
 		final ASTNode from;
 		final EditHint editHint;
-		edu.isnap.ctd.hint.edit.Priority priority;
 
 		public HighlightOutcome(ASTNode from, ASTNode result, String assignmentID, String requestID,
 				double weight, EditHint editHint) {
@@ -176,9 +175,21 @@ public abstract class HighlightHintSet extends HintSet {
 
 		@Override
 		public String resultString() {
-			return (priority == null ? "" : (priority.toString() + "\n")) +
+			return (editHint.priority == null ? "" : (editHint.priority.toString() + "\n")) +
 					editHint.toString() + ":\n" +
 					ASTNode.diff(from, result, config, 1);
+		}
+
+		@Override
+		public Map<String, String> getDebuggingProperties() {
+			if (editHint.priority == null) return super.getDebuggingProperties();
+			Map<String, Object> props = editHint.priority.getPropertiesMap();
+			Map<String, String> map = new HashMap<>();
+			for (String key : props.keySet()) {
+				Object value = props.get(key);
+				map.put(key, value == null ? null : value.toString());
+			}
+			return  map;
 		}
 	}
 

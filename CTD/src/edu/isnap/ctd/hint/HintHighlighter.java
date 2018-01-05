@@ -2,7 +2,6 @@ package edu.isnap.ctd.hint;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -14,12 +13,12 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
 import edu.isnap.ctd.hint.Ordering.Addition;
+import edu.isnap.ctd.hint.Ordering.OrderMatrix;
 import edu.isnap.ctd.hint.debug.HintDebugInfo;
 import edu.isnap.ctd.hint.edit.Deletion;
 import edu.isnap.ctd.hint.edit.EditHint;
@@ -763,27 +762,32 @@ public class HintHighlighter {
 		}
 
 
-		findOrderingPriority(hints, node, bestMatch, bestMatches);
+		findOrderingPriority(hints, node, bestMatch);
 
 	}
 
-	private void findOrderingPriority(List<EditHint> hints, Node node,
-			Mapping bestMatch, List<Mapping> bestMatches) {
+	private void findOrderingPriority(List<EditHint> hints, Node node, Mapping bestMatch) {
 		if (hintMap == null) return;
 
 		CountMap<String> nodeLabelCounts = Ordering.countLabels(node);
 		CountMap<String> matchLabelCounts = Ordering.countLabels(bestMatch.to);
-		Map<Insertion, Addition> insertionLabels = new HashMap<>();
+		Map<Insertion, Addition> insertionAdditions = new HashMap<>();
 		for (EditHint hint : hints) {
 			if (hint instanceof Insertion) {
 				Insertion insertion = (Insertion) hint;
 				if (insertion.pair == null) {
-					System.out.println("Insertion w/o pair: " + insertion);
+					System.err.println("Insertion w/o pair: " + insertion);
 					continue;
 				}
 				String label = Ordering.getLabel(insertion.pair);
 				// If the label is null, this is not a meaningful node to track the ordering
 				if (label == null) continue;
+
+				if (insertion.replaced != null && insertion.replaced.hasType(insertion.type)) {
+					// If this insertion just replaces a node with the same type, it does not
+					// it will not change the index count
+					continue;
+				}
 
 				// Get the number of times this item appears in the student's code
 				int count = nodeLabelCounts.getCount(label);
@@ -797,87 +801,78 @@ public class HintHighlighter {
 				count = Math.min(count, matchLabelCounts.get(label));
 
 				Addition addition = new Addition(label, count);
-				insertionLabels.put(insertion, addition);
+				insertionAdditions.put(insertion, addition);
 			}
 		}
 
-		List<Insertion> insertions = new ArrayList<>(insertionLabels.keySet());
+		List<Insertion> insertions = new ArrayList<>(insertionAdditions.keySet());
 
+		OrderMatrix matrix = hintMap.orderMatrix;
 		for (Insertion insertion : insertions) {
-			if (!insertionLabels.containsKey(insertion)) continue;
-			CountMap<Addition> prereqs = new CountMap<>();
-			int total = 0;
-			for (Mapping match : bestMatches) {
-				Ordering ordering = hintMap.nodeOrderings.get(match.to);
-				List<Addition> precedingAdditions =
-						ordering.getPrecedingAdditions(insertionLabels.get(insertion));
-				prereqs.incrementAll(precedingAdditions);
-				total += precedingAdditions.size();
+			if (!insertionAdditions.containsKey(insertion)) continue;
+
+			List<Addition> additions = matrix.additions();
+			Addition insertAddition = insertionAdditions.get(insertion);
+			int insertIndex = additions.indexOf(insertAddition);
+			if (insertIndex < 0) continue;
+
+			int satisfiedPrereqs = 0;
+			int totalPrereqs = 0;
+			int unsatisfiedPostreqs = 0;
+			int totalPostreqs = 0;
+
+			// TODO config;
+			double threshhold = 0.85;
+
+			for (int i = 0; i < additions.size(); i++) {
+				double percOrdered = matrix.getPercOrdered(i, insertIndex);
+				Addition addition = additions.get(i);
+				if (percOrdered >= threshhold) {
+					if (matchLabelCounts.getCount(addition.label) >= addition.count) {
+						totalPrereqs++;
+						if (nodeLabelCounts.getCount(addition.label) >= addition.count) {
+							satisfiedPrereqs++;
+						}
+					}
+				} else if (percOrdered < 1 - threshhold) {
+					totalPostreqs++;
+					if (nodeLabelCounts.getCount(addition.label) >= addition.count) {
+						unsatisfiedPostreqs++;
+					}
+				}
 			}
 
-			int satisfied = prereqs.keySet().stream()
-					.mapToInt(a -> nodeLabelCounts.getCount(a.label) >= a.count ?
-							prereqs.getCount(a) : 0)
-					.sum();
-
-			double thresh = bestMatches.size() * 0.6;
-			List<Addition> important = prereqs.keySet().stream()
-					.filter(a -> prereqs.getCount(a) >= thresh)
-					.collect(Collectors.toList());
-			total = important.size() + 1;
-			satisfied = important.stream()
-					.mapToInt(a -> nodeLabelCounts.getCount(a.label) >= a.count ? 1 : 0)
-					.sum() + 1;
-
-//			System.out.println(insertion);
-//			important.forEach(System.out::println);
-//			System.out.println();
-			insertion.priority.prereqsNumerator = satisfied;
-			insertion.priority.prereqsDenominator = total;
+			insertion.priority.prereqsNumerator = satisfiedPrereqs;
+			insertion.priority.prereqsDenominator = totalPrereqs;
+			insertion.priority.postreqsNumerator = unsatisfiedPostreqs;
+			insertion.priority.postreqsDenominator = totalPostreqs;
 		}
 
-		calculateOrderingRanks(insertions, bestMatches, insertionLabels);
+		calculateOrderingRanks(insertions, insertionAdditions);
 	}
 
-	private void calculateOrderingRanks(List<Insertion> insertions, List<Mapping> bestMatches,
+	private void calculateOrderingRanks(List<Insertion> insertions,
 			Map<Insertion, Addition> insertionMap) {
 		if (hintMap == null) return;
 
-		int n = insertionMap.size(), m = bestMatches.size();
-		int[][] orderings = new int[n][m];
-		double[][] rankings = new double[n][m];
+		OrderMatrix matrix = hintMap.orderMatrix;
+		List<Addition> additions = matrix.additions();
+		List<Insertion> orderedInsertions = insertionMap.keySet().stream()
+				.filter(insertion -> additions.contains(insertionMap.get(insertion)))
+				.collect(Collectors.toList());
+		Collections.sort(orderedInsertions, (a, b) -> {
+			Addition additionA = insertionMap.get(a);
+			Addition additionB = insertionMap.get(b);
+			// TODO: I think this may be able to produce inconsistent orderings
+			return matrix.getPercOrdered(
+					additions.indexOf(additionA), additions.indexOf(additionB)) >= 0.50 ?
+							-1 : 1;
+		});
+		for (int i = 0; i < orderedInsertions.size(); i++) {
+			Priority priority = orderedInsertions.get(i).priority;
+			priority.orderingNumerator = i + 1;
+			priority.orderingDenominator = orderedInsertions.size();
 
-		for (int i = 0; i < n; i++) {
-			Insertion insertion = insertions.get(i);
-			Addition addition = insertionMap.get(insertion);
-
-			for (int j = 0; j < m; j++) {
-				Mapping mapping = bestMatches.get(j);
-				Ordering ordering = hintMap.nodeOrderings.get(mapping.to);
-				orderings[i][j] = ordering == null ? -1 : ordering.getOrder(addition);
-			}
-		}
-		for (int j = 0; j < m; j++) {
-			int[] orders = new int[n];
-			for (int i = 0; i < n; i++) {
-				orders[i] = orderings[i][j] == -1 ? Integer.MAX_VALUE : orderings[i][j];
-			}
-			Arrays.sort(orders);
-
-			// Count how many of the inserts were found for this match
-			int valid = ArrayUtils.indexOf(orders, Integer.MAX_VALUE);
-			if (valid == -1) valid = orders.length;
-
-			for (int i = 0; i < n; i++) {
-				int ordering = orderings[i][j];
-				rankings[i][j] = ordering == -1 ? -1 :
-					((double) ArrayUtils.indexOf(orders, ordering) / valid);
-			}
-		}
-		for (int i = 0; i < n; i++) {
-			insertions.get(i).priority.meanOrderingRank = Arrays.stream(rankings[i])
-					.filter(x -> x != -1)
-					.average();
 		}
 	}
 

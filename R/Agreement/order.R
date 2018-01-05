@@ -2,13 +2,13 @@ library(readr)
 library(plyr)
 library(igraph)
 
-data <- read_csv("data/all.csv")
+data <- read_csv("data/fall2016-guess1Lab.csv")
 
 nProjs <- length(unique(data$project))
 labels <- ddply(data, "label", summarize, count=length(index), medIndex=median(index))
 labels$perc = labels$count / nProjs
 
-labels <- labels[labels$perc > 0.3, ]
+labels <- labels[labels$perc >= 0.3, ]
 
 filtered <- data[data$label %in% labels$label,]
 
@@ -70,4 +70,4 @@ delete <- sapply(1:length(E(g)), function(i) {
 deleteIdx <- (1:length(delete))[delete]
 pruned <- delete.edges(g, deleteIdx)
 
-write_graph(pruned, "C:/Users/Thomas/Desktop/all.graphml", "graphml")
+write_graph(pruned, "C:/Users/Thomas/Desktop/fall2016-guess1Lab.graphml", "graphml")

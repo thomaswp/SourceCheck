@@ -11,7 +11,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -311,18 +310,12 @@ public class EDM2017 {
 			spreadsheet.put("assignment", assignment.name);
 			spreadsheet.put("row", row);
 			spreadsheet.put("type", edit.action());
-			spreadsheet.put("consensus", edit.priority.consensus());
-			spreadsheet.put("consensusNum", edit.priority.consensusNumerator);
-			spreadsheet.put("consensusDen", edit.priority.consensusDenominator);
-			spreadsheet.put("prereqs", edit.priority.prereqs());
-			spreadsheet.put("prereqsNum", edit.priority.prereqsNumerator);
-			spreadsheet.put("prereqsDen", edit.priority.prereqsDenominator);
-			OptionalDouble creationTime = edit.priority.creationTime,
-					ordering = edit.priority.meanOrderingRank;
-			spreadsheet.put("creation",
-					creationTime.isPresent() ? creationTime.getAsDouble() : null);
-			spreadsheet.put("ordering",
-					ordering.isPresent() ? ordering.getAsDouble() : null);
+			if (edit.priority != null) {
+				Map<String, Object> props = edit.priority.getPropertiesMap();
+				for (String key : props.keySet()) {
+					spreadsheet.put(key, props.get(key));
+				}
+			}
 			spreadsheet.put("edit", edit.toString());
 			spreadsheet.put("category", category);
 			Diff.colorStyle = ColorStyle.ANSI;

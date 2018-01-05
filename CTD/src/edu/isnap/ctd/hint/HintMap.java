@@ -162,8 +162,6 @@ public class HintMap {
 		// Then save the current node creation percs, using the final solution as a key
 		nodePlacementTimes.put(solution, currentNodeCreationPercs);
 		nodeOrderings.put(solution, new Ordering(currentHistory));
-		// TODO: config
-		orderMatrix = new OrderMatrix(nodeOrderings.values(), 0.3);
 	}
 
 	public IndexedVectorState getContext(Node item) {
@@ -215,6 +213,8 @@ public class HintMap {
 			graph.bellmanBackup(config.pruneGoals);
 		}
 		ruleSet = new RuleSet(solutions, config);
+		// TODO: config
+		orderMatrix = new OrderMatrix(nodeOrderings.values(), 0.3);
 	}
 
 	public void addMap(HintMap hintMap) {
