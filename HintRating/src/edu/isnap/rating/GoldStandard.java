@@ -136,4 +136,12 @@ public class GoldStandard {
 		return new GoldStandard(hints);
 
 	}
+
+	public GoldStandard filterForAssignment(String assignmentID) {
+		ListMap<String, TutorHint> hints = new ListMap<>();
+		map.get(assignmentID).values()
+		.stream().flatMap(list -> list.stream())
+		.forEach(hint -> hints.add(assignmentID, hint));
+		return new GoldStandard(hints);
+	}
 }

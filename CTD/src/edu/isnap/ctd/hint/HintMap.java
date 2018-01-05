@@ -27,7 +27,7 @@ public class HintMap {
 	// TODO: should probably extract to a datastructure, rather than a list and some maps...
 	public final List<Node> solutions = new ArrayList<>();
 	public final Map<Node, Map<String, Double>> nodePlacementTimes = new IdentityHashMap<>();
-	public final Map<Node, Ordering> nodeOrderings = new IdentityHashMap<>();
+	private final Map<Node, Ordering> nodeOrderings = new IdentityHashMap<>();
 	public OrderMatrix orderMatrix;
 
 	RuleSet ruleSet;

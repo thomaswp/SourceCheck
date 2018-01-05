@@ -48,6 +48,8 @@ public class HintHighlighter {
 	private final HintConfig config;
 	private final HintMap hintMap;
 
+	private final Map<Node, Map<String, Double>> nodePlacementTimes;
+
 	public HintHighlighter(HintMap hintMap) {
 		this(hintMap.solutions, hintMap.config, hintMap);
 	}
@@ -57,8 +59,12 @@ public class HintHighlighter {
 	}
 
 	public HintHighlighter(List<Node> solutions, HintConfig config, HintMap hintMap) {
+		// Make a copy of the nodePlacementTimes so we can modify them when we replace nodes in the
+		// preprocessSolutions method
+		this.nodePlacementTimes = hintMap == null ? null :
+			new IdentityHashMap<>(hintMap.nodePlacementTimes);
 		this.solutions = config.preprocessSolutions ?
-				preprocessSolutions(solutions, hintMap, config) : solutions;
+				preprocessSolutions(solutions, config, nodePlacementTimes) : solutions;
 		this.config = config;
 		this.hintMap = hintMap;
 	}
@@ -530,8 +536,8 @@ public class HintHighlighter {
 	 */
 	@SuppressWarnings("deprecation")
 	// TODO: Rework to be not snap-specific
-	private static List<Node> preprocessSolutions(List<Node> allSolutions, HintMap hintMap,
-			HintConfig config) {
+	private static List<Node> preprocessSolutions(List<Node> allSolutions, HintConfig config,
+			Map<Node, Map<String, Double>> nodePlacementTimes) {
 
 		// TODO: This doesn't work well with multi-script and multi-sprite solutions
 
@@ -590,12 +596,10 @@ public class HintHighlighter {
 					}
 				}
 			});
-			if (hintMap != null) {
+			if (nodePlacementTimes != null) {
 				// Update references to this node in the nodeCreationPercs map
-				// TODO: This updates the original hintMap, which isn't ideal...
 				// Really, we shouldn't be using the Node as the key, but rather some ID...
-				hintMap.nodePlacementTimes.put(copy, hintMap.nodePlacementTimes.remove(node));
-				hintMap.nodeOrderings.put(copy, hintMap.nodeOrderings.remove(node));
+				nodePlacementTimes.put(copy, nodePlacementTimes.remove(node));
 			}
 			solutions.add(copy);
 		}
@@ -722,10 +726,10 @@ public class HintHighlighter {
 		.forEach(set -> hintCounts.incrementAll(set));
 
 		Map<Mapping, Mapping> bestToGoodMappings = new HashMap<>();
-		if (hintMap != null && hintMap.nodePlacementTimes.containsKey(bestMatch.to)) {
+		if (nodePlacementTimes != null && nodePlacementTimes.containsKey(bestMatch.to)) {
 			for (Mapping match : bestMatches) {
 				if (bestMatch.to == match.to) continue;
-				Map<String, Double> creationPercs = hintMap.nodePlacementTimes.get(match.to);
+				Map<String, Double> creationPercs = nodePlacementTimes.get(match.to);
 				if (creationPercs == null) continue;
 				Mapping mapping = new NodeAlignment(bestMatch.to, match.to, config)
 						.calculateMapping(getDistanceMeasure());
@@ -738,8 +742,8 @@ public class HintHighlighter {
 			priority.consensusNumerator = hintCounts.getCount(hint);
 			priority.consensusDenominator = bestMatches.size();
 
-			if (hintMap != null && hintMap.nodePlacementTimes.containsKey(bestMatch.to)) {
-				Map<String, Double> creationPercs = hintMap.nodePlacementTimes.get(bestMatch.to);
+			if (nodePlacementTimes != null && nodePlacementTimes.containsKey(bestMatch.to)) {
+				Map<String, Double> creationPercs = nodePlacementTimes.get(bestMatch.to);
 				Node priorityToNode = hint.getPriorityToNode(bestMatch);
 				if (creationPercs != null && priorityToNode != null) {
 					List<Double> percs = new ArrayList<>();
@@ -748,7 +752,7 @@ public class HintHighlighter {
 					for (Mapping match : bestToGoodMappings.keySet()) {
 						Node from = bestToGoodMappings.get(match).getFrom(priorityToNode);
 						if (from == null) continue;
-						creationPercs = hintMap.nodePlacementTimes.get(match.to);
+						creationPercs = nodePlacementTimes.get(match.to);
 						percs.add(creationPercs.get(from.id));
 					}
 

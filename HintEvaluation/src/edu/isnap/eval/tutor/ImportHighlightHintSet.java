@@ -1,14 +1,11 @@
 package edu.isnap.eval.tutor;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.HintHighlighter;
@@ -17,47 +14,31 @@ import edu.isnap.ctd.hint.HintMapBuilder;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.hint.util.SnapNode;
 import edu.isnap.rating.HintRequest;
+import edu.isnap.rating.TrainingDataset;
+import edu.isnap.rating.TrainingDataset.Trace;
 
 public class ImportHighlightHintSet extends HighlightHintSet {
 
 	private final Map<String, HintHighlighter> highlighters = new HashMap<>();
 
-	public ImportHighlightHintSet(String name, HintConfig hintConfig, String directory) {
-		super(name, hintConfig);
-		File dirFile = new File(directory);
-		if (!dirFile.exists()) {
-			throw new RuntimeException("Directory does not exist: " +
-					dirFile.getAbsolutePath());
-		}
-		for (File assignmentDir : dirFile.listFiles(f -> f.isDirectory())) {
-			addAssignment(assignmentDir);
-		}
+	public ImportHighlightHintSet(String name, HintConfig hintConfig, String directory)
+			throws IOException {
+		this(name, hintConfig, TrainingDataset.fromDirectory(name, directory));
 	}
 
-	private void addAssignment(File directory) {
-		String assignment = directory.getName();
-		HintMapBuilder builder = new HintMapBuilder(new HintMap(hintConfig), 1);
-		for (File attemptDir : directory.listFiles(f -> f.isDirectory())) {
-			List<Node> trace = new ArrayList<>();
-			for (File snapshotFile : attemptDir.listFiles()) {
-				try {
-					if (!snapshotFile.getName().toLowerCase().endsWith(".json")) {
-						System.err.println("Unknown file: " + snapshotFile.getAbsolutePath());
-						continue;
-					}
-					String source = new String(Files.readAllBytes(snapshotFile.toPath()));
-					ASTNode node = ASTNode.parse(source);
-					trace.add(JsonAST.toNode(node, SnapNode::new));
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
+	public ImportHighlightHintSet(String name, HintConfig hintConfig, TrainingDataset dataset) {
+		super(name, hintConfig);
+		for (String assignmentID : dataset.getAssignmentIDs()) {
+			HintMapBuilder builder = new HintMapBuilder(new HintMap(hintConfig), 1);
+			for (Trace trace : dataset.getTraces(assignmentID)) {
+				List<Node> nodes = trace.stream()
+						.map(node -> JsonAST.toNode(node, SnapNode::new))
+						.collect(Collectors.toList());
+				builder.addAttempt(nodes, config.areNodeIDsConsistent());
 			}
-			// TODO: Decide how to handle data where IDs are inconsistent
-			// Passing false here probably doesn't give ideal behavior either....
-			builder.addAttempt(trace, config.areNodeIDsConsistent());
+			builder.finishedAdding();
+			highlighters.put(assignmentID, builder.hintHighlighter());
 		}
-		builder.finishedAdding();
-		highlighters.put(assignment, builder.hintHighlighter());
 	}
 
 	@Override
