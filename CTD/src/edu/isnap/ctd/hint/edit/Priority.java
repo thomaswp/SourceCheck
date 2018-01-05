@@ -1,6 +1,6 @@
 package edu.isnap.ctd.hint.edit;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.OptionalDouble;
 
@@ -51,7 +51,7 @@ public class Priority {
 	}
 
 	public Map<String, Object> getPropertiesMap() {
-		Map<String, Object> map = new HashMap<>();
+		Map<String, Object> map = new LinkedHashMap<>();
 		map.put("consensus", consensus());
 		map.put("consensusNum", consensusNumerator);
 		map.put("consensusDen", consensusDenominator);

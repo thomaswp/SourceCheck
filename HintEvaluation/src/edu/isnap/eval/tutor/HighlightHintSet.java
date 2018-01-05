@@ -2,8 +2,8 @@ package edu.isnap.eval.tutor;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -182,9 +182,10 @@ public abstract class HighlightHintSet extends HintSet {
 
 		@Override
 		public Map<String, String> getDebuggingProperties() {
-			if (editHint.priority == null) return super.getDebuggingProperties();
+			Map<String, String> map = new LinkedHashMap<>();
+			map.put("action", editHint.action());
+			if (editHint.priority == null) return map;
 			Map<String, Object> props = editHint.priority.getPropertiesMap();
-			Map<String, String> map = new HashMap<>();
 			for (String key : props.keySet()) {
 				Object value = props.get(key);
 				map.put(key, value == null ? null : value.toString());
