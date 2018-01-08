@@ -30,9 +30,12 @@ public class CSC200Solutions extends Dataset {
 
 	public final static Assignment PolygonMaker = new CSC200Assignment("polygonMakerLab");
 	public final static Assignment Squiral = new CSC200Assignment("squiralHW");
+	public final static Assignment Pong1Lab = new CSC200Assignment("pong1Lab");
+	public final static Assignment Pong2HW = new CSC200Assignment("pong2HW");
 	public final static Assignment GuessingGame1 = new CSC200Assignment("guess1Lab");
 	public final static Assignment GuessingGame2 = new CSC200Assignment("guess2HW");
 	public final static Assignment GuessingGame3 = new CSC200Assignment("guess3Lab");
+	public final static Assignment GuessingGame2New = new CSC200Assignment("guess2Lab");
 
 	public final static Assignment[] All = {
 		PolygonMaker,

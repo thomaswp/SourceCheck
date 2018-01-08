@@ -68,7 +68,7 @@ public class PrettyPrint {
 				.append("]");
 			}
 			// TODO: remove
-			sb.append("<").append(node.id()).append(">");
+//			sb.append("<").append(node.id()).append(">");
 			return sb.toString();
 		}
 

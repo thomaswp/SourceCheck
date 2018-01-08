@@ -1,0 +1,78 @@
+snapshot {
+    stage {
+        sprite {
+            @defVar(FOREVER_KEYS) {
+                script {
+                    receiveGo
+                    setScale(literal)
+                    gotoXY(literal, literal)
+                    @if (FOREVER_KEYS) {
+                        doForever(script {
+                            doIf(reportAnd(reportKeyPressed(literal), reportLessThan(yPosition, literal)), script {
+                                changeYPosition(literal)
+                            })
+                            doIf(reportAnd(reportKeyPressed(literal), reportLessThan(literal, yPosition)), script {
+                                changeYPosition(literal)
+                            })
+                        })
+                    }
+                }
+                @unless (FOREVER_KEYS) {
+                    script {
+                        receiveKey
+                        doIf(reportLessThan(yPosition, literal), script {
+                            changeYPosition(literal)
+                        })
+                    }
+                    script {
+                        receiveKey
+                        doIf(reportLessThan(literal, yPosition), script {
+                            changeYPosition(literal)
+                        })
+                    }
+                }
+            }
+        }
+        sprite {
+            script {
+                receiveGo
+                @anyOrder {
+                    doSetVar(varMenu:rightPoints, literal)
+                    setScale(literal)
+                    evaluateCustomBlock:resetBall
+                }
+            }
+            script {
+                receiveKey(literal)
+                @optional { setHeading(@anything) }
+                doForever(script {
+                    @anyOrder {
+                        forward(literal)
+                        doIf(reportTouchingObject(literal), script {
+                            @anyOrder {
+                                setHeading(reportDifference(literal, direction))
+                                doChangeVar(varMenu:rightPoints, literal)
+                            }
+                        })
+                        doIf(@or {
+                            reportLessThan(literal, xPosition)
+                            reportAnd(reportLessThan(literal, xPosition), reportTouchingObject(literal))
+                        }, script {
+                                doSetVar(varMenu:rightPoints, literal)
+                                evaluateCustomBlock:resetBall
+                        })
+                    }
+                    bounceOffEdge
+                })
+            }
+        }
+    }
+    customBlock:resetBall {
+        script {
+            gotoXY(literal, literal)
+            setHeading(reportRandom(literal, literal))
+            doStopThis(literal)
+        }
+    }
+    varDec:rightPoints
+}
