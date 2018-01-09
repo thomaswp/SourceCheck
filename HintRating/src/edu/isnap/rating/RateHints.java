@@ -312,7 +312,11 @@ public class RateHints {
 	}
 
 	public static enum MatchType {
-		Full, Subset, Superset, None
+		Full, Subset, Superset, None;
+
+		public boolean isAtLeast(MatchType type) {
+			return this.ordinal() <= type.ordinal();
+		}
 	}
 
 	@SuppressWarnings("serial")
@@ -325,8 +329,22 @@ public class RateHints {
 
 		public void writeSpreadsheet(String path) throws FileNotFoundException, IOException {
 			Spreadsheet spreadsheet = new Spreadsheet();
-			forEach(rating -> rating.addToSpreadsheet(spreadsheet));
+			writeToSpreadsheet(spreadsheet);
 			spreadsheet.write(path);
+		}
+
+		public void writeToSpreadsheet(Spreadsheet spreadsheet) {
+			forEach(rating -> rating.addToSpreadsheet(spreadsheet));
+		}
+
+		public double validity(MatchType minMatchType, String assignmentID) {
+			return stream().filter(rating -> rating.hint.assignmentID.equals(assignmentID))
+				.mapToDouble(rating -> rating.matchType.isAtLeast(minMatchType) ? 1 : 0)
+				.average().orElse(0);
+		}
+
+		public Set<String> getAssignmentIDs() {
+			return stream().map(rating -> rating.hint.assignmentID).collect(Collectors.toSet());
 		}
 	}
 

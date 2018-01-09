@@ -1,9 +1,13 @@
 package edu.isnap.rating;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import edu.isnap.hint.util.Spreadsheet;
+import edu.isnap.rating.RateHints.HintRatingSet;
 import edu.isnap.rating.TrainingDataset.Trace;
 
 public class ColdStart {
@@ -20,14 +24,22 @@ public class ColdStart {
 		this.hintGenerator = hintGenerator;
 	}
 
-	public void test(int rounds, int step) {
+	public Spreadsheet test(int rounds, int step) {
 		Random rand = new Random(DEFAULT_SEED);
+		Spreadsheet spreadsheet = new Spreadsheet();
 		for (int i = 0; i < rounds; i++) {
-			testRound(i, rand.nextInt(), step);
+			spreadsheet.setHeader("round", i);
+			testRound(spreadsheet, i, rand.nextInt(), step);
 		}
+		return spreadsheet;
 	}
 
-	private void testRound(int round, int seed, int step) {
+	public void writeTest(String path, int rounds, int step)
+			throws FileNotFoundException, IOException {
+		test(rounds, step).write(path);
+	}
+
+	private void testRound(Spreadsheet spreadsheet, int round, int seed, int step) {
 		Random rand = new Random(seed);
 
 		for (String assignmentID : dataset.getAssignmentIDs()) {
@@ -46,7 +58,11 @@ public class ColdStart {
 				HintSet hintSet = hintGenerator.generateHints(name,
 						assignmentStandard.getHintRequests());
 				System.out.println("==== " + name + " ===");
-				RateHints.rate(assignmentStandard, hintSet);
+				HintRatingSet ratings = RateHints.rate(assignmentStandard, hintSet);
+
+				spreadsheet.setHeader("count", count);
+				spreadsheet.setHeader("total", n);
+				ratings.writeToSpreadsheet(spreadsheet);
 			}
 		}
 	}

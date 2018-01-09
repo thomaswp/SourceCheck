@@ -15,10 +15,14 @@ import org.apache.commons.csv.CSVPrinter;
 
 public class Spreadsheet {
 	private List<Map<String, Object>> rows = new LinkedList<>();
+	private Map<String, Object> header = new LinkedHashMap<>();
 	private Map<String,Object> row;
 
 	public void newRow() {
 		row = new LinkedHashMap<>();
+		for (String key : header.keySet()) {
+			row.put(key, header.get(key));
+		}
 		rows.add(row);
 	}
 
@@ -47,5 +51,9 @@ public class Spreadsheet {
 
 	public void sort(Comparator<Map<String, Object>> comparator) {
 		rows.sort(comparator);
+	}
+
+	public void setHeader(String key, Object value) {
+		header.put(key, value);
 	}
 }

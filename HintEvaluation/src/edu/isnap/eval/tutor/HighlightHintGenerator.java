@@ -30,7 +30,7 @@ public class HighlightHintGenerator implements ColdStart.HintGenerator {
 				"../data/hint-rating/isnap2017/training");
 		HintGenerator hintGenerator = new HighlightHintGenerator(new SnapHintConfig());
 		ColdStart coldStart = new ColdStart(standard, dataset, hintGenerator);
-		coldStart.test(1, 5);
+		coldStart.writeTest("../data/hint-rating/isnap2017/analysis/cold-start.csv", 1, 5);
 	}
 
 	private final RatingConfig ratingConfig;
