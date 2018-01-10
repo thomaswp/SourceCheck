@@ -205,7 +205,7 @@ public class RateHints {
 
 		outcomeNode = normalizeNewValuesTo(fromNode, outcome.result, config);
 		Set<Edit> outcomeEdits = extractor.getEdits(fromNode, outcomeNode);
-		Set<Edit> bestOverlap = new HashSet<>();
+//		Set<Edit> bestOverlap = new HashSet<>();
 		TutorHint bestHint = null;
 		// TODO: sort by validity and priority first
 //		Collections.sort(validHints);
@@ -217,7 +217,7 @@ public class RateHints {
 			Set<Edit> overlap = new HashSet<>(tutorEdits);
 			overlap.retainAll(outcomeEdits);
 			if (overlap.size() == outcomeEdits.size() || overlap.size() == tutorEdits.size()) {
-				bestOverlap = overlap;
+//				bestOverlap = overlap;
 				bestHint = tutorHint;
 				break;
 			}
@@ -240,18 +240,18 @@ public class RateHints {
 //				throw new RuntimeException("Edits should not match if hint outcomes did not!");
 //			}
 //			System.out.println("-------------------");
-			MatchType type = bestOverlap.size() == outcomeEdits.size() ?
-					MatchType.Subset : MatchType.Superset;
-			return new HintRating(outcome, bestHint, type);
+//			MatchType type = bestOverlap.size() == outcomeEdits.size() ?
+//					MatchType.Subset : MatchType.Superset;
+			return new HintRating(outcome, bestHint, MatchType.Partial);
 		}
 		return new HintRating(outcome);
 	}
 
 	public static enum MatchType {
-		Full, Subset, Superset, None;
+		None, Partial, Full;
 
 		public boolean isAtLeast(MatchType type) {
-			return this.ordinal() <= type.ordinal();
+			return this.ordinal() >= type.ordinal();
 		}
 	}
 
@@ -297,6 +297,10 @@ public class RateHints {
 		public void writeAllHints(Spreadsheet spreadsheet) {
 			forEach(rating -> rating.writeAllHints(spreadsheet));
 		}
+
+		public void writeAllRatings(Spreadsheet spreadsheet) {
+			forEach(rating -> rating.writeRating(spreadsheet));
+		}
 	}
 
 	@SuppressWarnings("serial")
@@ -311,6 +315,20 @@ public class RateHints {
 
 		public void writeAllHints(Spreadsheet spreadsheet) {
 			forEach(rating -> rating.addToSpreadsheet(spreadsheet));
+		}
+
+		public void writeRating(Spreadsheet spreadsheet) {
+			spreadsheet.newRow();
+			spreadsheet.put("assignmentID", assignmentID);
+			spreadsheet.put("requestID", requestID);
+			double weight = getTotalWeight();
+			for (Validity validity : Validity.values()) {
+				if (validity == Validity.NoTutors) continue;
+				for (MatchType type : MatchType.values()) {
+					if (type == MatchType.None) continue;
+					spreadsheet.put(validity + "_" + type, validityWeight(type, validity) / weight);
+				}
+			}
 		}
 
 		public double validityWeight(MatchType minMatchType, Validity minValidity) {
@@ -330,7 +348,7 @@ public class RateHints {
 			for (int i = 0; i < nValues; i++) {
 				validityArray[i * 2] = validityWeight(MatchType.Full, Validity.fromInt(i + 1));
 				validityArray[i * 2 + 1] =
-						validityWeight(MatchType.Superset, Validity.fromInt(i + 1));
+						validityWeight(MatchType.Partial, Validity.fromInt(i + 1));
 			}
 			double totalWeight = getTotalWeight();;
 			for (int i = 0; i < validityArray.length; i++) {
