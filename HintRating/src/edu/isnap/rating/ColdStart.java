@@ -62,7 +62,7 @@ public class ColdStart {
 
 				spreadsheet.setHeader("count", count);
 				spreadsheet.setHeader("total", n);
-				ratings.writeToSpreadsheet(spreadsheet);
+				ratings.writeAllHints(spreadsheet);
 			}
 		}
 	}

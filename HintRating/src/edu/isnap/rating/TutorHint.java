@@ -20,6 +20,10 @@ public class TutorHint {
 			}
 			return null;
 		}
+
+		public boolean isAtLeast(Validity minValidity) {
+			return value >= minValidity.value;
+		}
 	}
 
 	public enum Priority {

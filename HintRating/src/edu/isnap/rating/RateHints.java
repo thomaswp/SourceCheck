@@ -13,11 +13,11 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import edu.isnap.ctd.graph.ASTNode;
-import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.rating.EditExtractor.Edit;
 import edu.isnap.rating.EditExtractor.NodeReference;
 import edu.isnap.rating.TutorHint.Priority;
+import edu.isnap.rating.TutorHint.Validity;
 
 public class RateHints {
 
@@ -49,98 +49,35 @@ public class RateHints {
 	}
 
 	public static HintRatingSet rate(GoldStandard standard, HintSet hintSet, boolean debug) {
-		HintRatingSet set = new HintRatingSet(hintSet.name);
+		HintRatingSet ratingSet = new HintRatingSet(hintSet.name);
 		EditExtractor extractor = new EditExtractor(hintSet.config.areNodeIDsConsistent());
-		for (String assignment : standard.getAssignmentIDs()) {
-			System.out.println("----- " + assignment + " -----");
+		for (String assignmentID : standard.getAssignmentIDs()) {
+			System.out.println("----- " + assignmentID + " -----");
 
-			ListMap<String, HintRating> ratings = new ListMap<>();
-			double totalWeightedPriority = 0;
-			double[] totalWeightedValidity = new double[3];
-			for (String requestID : standard.getRequestIDs(assignment)) {
-				List<TutorHint> validHints = standard.getValidEdits(assignment, requestID);
+			for (String requestID : standard.getRequestIDs(assignmentID)) {
+				RequestRating requestRating = new RequestRating(requestID, assignmentID);
+
+				List<TutorHint> validHints = standard.getValidEdits(assignmentID, requestID);
 				if (validHints.size() == 0) continue;
 				List<HintOutcome> hints = hintSet.getOutcomes(requestID);
 
-				// TODO: do both this and not this
-//				double maxWeight = hints.stream().mapToDouble(h -> h.weight).max().orElse(0);
-//				hints = hints.stream().
-//						filter(h -> h.weight == maxWeight).
-//						collect(Collectors.toList());
-
 				// TODO: Stop if consensus hints is 0 (but only if consensus exists...)
+				// TODO: Rating should be 0 if there are validHints but no generated hitns
 				if (hints == null || hints.size() == 0) continue;
-
-				double[] weightedValidity = new double[3];
 
 				for (HintOutcome hint : hints) {
 					HintRating rating = findMatchingEdit(validHints, hint, hintSet.config,
 							extractor);
-					if (rating.isValid()) {
-						// TODO: Deal with TooSoon and don't include as valid
-						for (int i = 0; i < rating.match.validity.value; i++) {
-							weightedValidity[i] += hint.weight();
-						}
-					}
-					ratings.add(requestID, rating);
-					set.add(rating);
+					requestRating.add(rating);
 				}
-				List<HintRating> snapshotRatings = ratings.get(requestID);
-				if (debug) printRatings(snapshotRatings, validHints.get(0).from, hintSet.config);
-				double weight = snapshotRatings.stream().mapToDouble(r -> r.hint.weight()).sum();
-				// TODO: figure out whether to count invalid items
-				double priority = snapshotRatings.stream()
-						.filter(r -> r.priority() != null)
-						.mapToDouble(r -> r.hint.weight() * r.priority().points())
-						.sum() / weight;
-
-				for (int i = 0; i < weightedValidity.length; i++) {
-					weightedValidity[i] /= weight;
-					totalWeightedValidity[i] += weightedValidity[i];
-				}
-				totalWeightedPriority += priority;
-
-				System.out.printf("%s: [%.03f, %.03f, %.03f]v / %.03fp\n", requestID,
-						weightedValidity[0], weightedValidity[1], weightedValidity[2],
-						priority);
+				if (debug) requestRating.printRatings(validHints.get(0).from, hintSet.config);
+				ratingSet.add(requestRating);
+				requestRating.printSummary();
 			}
 
-			int nSnapshots = ratings.size();
-			for (int i = 0; i < totalWeightedValidity.length; i++) {
-				totalWeightedValidity[i] /= nSnapshots;
-			}
-			System.out.printf("TOTAL: [%.03f, %.03f, %.03f]v / %.03fp\n",
-					totalWeightedValidity[0], totalWeightedValidity[1], totalWeightedValidity[2],
-					totalWeightedPriority / nSnapshots);
+			ratingSet.printSummary(assignmentID);
 		}
-		return set;
-	}
-
-	private static void printRatings(List<HintRating> ratings, ASTNode from, RatingConfig config) {
-		if (ratings.isEmpty()) return;
-		HintOutcome firstOutcome = ratings.get(0).hint;
-		System.out.println("+====+ " + firstOutcome.assignmentID + " / " + firstOutcome.requestID +
-				" +====+");
-		System.out.println(from.prettyPrint(true, config));
-		for (int tooSoonRound = 0; tooSoonRound < 2; tooSoonRound++) {
-			for (MatchType type : MatchType.values()) {
-				boolean tooSoon = tooSoonRound == 1;
-				List<HintRating> matching = ratings.stream()
-						.filter(rating -> tooSoon ? rating.isTooSoon() :
-							(rating.matchType == type && !rating.isTooSoon()))
-						.collect(Collectors.toList());
-				if (!matching.isEmpty()) {
-					String label = tooSoon ? "Too Soon" : type.toString();
-					System.out.println("               === " + label + " ===");
-					for (HintRating rating : matching) {
-						System.out.println("Weight: " + rating.hint.weight());
-						System.out.println(rating.hint.resultString());
-						System.out.println("-------");
-					}
-				}
-				if (tooSoon) break;
-			}
-		}
+		return ratingSet;
 	}
 
 	private static ASTNode pruneImmediateChildren(ASTNode node, Predicate<String> condition) {
@@ -303,7 +240,6 @@ public class RateHints {
 //				throw new RuntimeException("Edits should not match if hint outcomes did not!");
 //			}
 //			System.out.println("-------------------");
-			// TODO: Treat this differently
 			MatchType type = bestOverlap.size() == outcomeEdits.size() ?
 					MatchType.Subset : MatchType.Superset;
 			return new HintRating(outcome, bestHint, type);
@@ -320,31 +256,139 @@ public class RateHints {
 	}
 
 	@SuppressWarnings("serial")
-	public static class HintRatingSet extends ArrayList<HintRating> {
+	public static class HintRatingSet extends ArrayList<RequestRating> {
 		public final String name;
 
 		public HintRatingSet(String name) {
 			this.name = name;
 		}
 
-		public void writeSpreadsheet(String path) throws FileNotFoundException, IOException {
+		public void printSummary(String assignmentID) {
+			List<RequestRating> ratings = stream()
+					.filter(rating -> rating.assignmentID.equals(assignmentID))
+					.collect(Collectors.toList());
+			if (ratings.size() == 0) return;
+			double[] validityArrayMean = null;
+			for (RequestRating rating : ratings) {
+				double[] ratingArray = rating.getValidityArray();
+				if (validityArrayMean == null) {
+					validityArrayMean = ratingArray;
+				} else {
+					for (int i = 0; i < validityArrayMean.length; i++) {
+						validityArrayMean[i] += ratingArray[i];
+					}
+				}
+			}
+			int nSnapshots = ratings.size();
+			for (int i = 0; i < validityArrayMean.length; i++) validityArrayMean[i] /= nSnapshots;
+			double priorityMean = stream()
+					.mapToDouble(RequestRating::getPriorityScore)
+					.average().getAsDouble();
+			System.out.printf("TOTAL: %s / %.02fp\n",
+					RequestRating.validityArrayToString(validityArrayMean), priorityMean);
+		}
+
+		public void writeAllHints(String path) throws FileNotFoundException, IOException {
 			Spreadsheet spreadsheet = new Spreadsheet();
-			writeToSpreadsheet(spreadsheet);
+			writeAllHints(spreadsheet);
 			spreadsheet.write(path);
 		}
 
-		public void writeToSpreadsheet(Spreadsheet spreadsheet) {
+		public void writeAllHints(Spreadsheet spreadsheet) {
+			forEach(rating -> rating.writeAllHints(spreadsheet));
+		}
+	}
+
+	@SuppressWarnings("serial")
+	public static class RequestRating extends ArrayList<HintRating> {
+		public final String requestID;
+		public final String assignmentID;
+
+		public RequestRating(String requestID, String assignmentID) {
+			this.requestID = requestID;
+			this.assignmentID = assignmentID;
+		}
+
+		public void writeAllHints(Spreadsheet spreadsheet) {
 			forEach(rating -> rating.addToSpreadsheet(spreadsheet));
 		}
 
-		public double validity(MatchType minMatchType, String assignmentID) {
-			return stream().filter(rating -> rating.hint.assignmentID.equals(assignmentID))
-				.mapToDouble(rating -> rating.matchType.isAtLeast(minMatchType) ? 1 : 0)
-				.average().orElse(0);
+		public double validityWeight(MatchType minMatchType, Validity minValidity) {
+			return stream()
+					.mapToDouble(rating -> rating.matchType.isAtLeast(minMatchType)
+							&& rating.validity().isAtLeast(minValidity) ? rating.hint.weight() : 0)
+					.sum();
 		}
 
-		public Set<String> getAssignmentIDs() {
-			return stream().map(rating -> rating.hint.assignmentID).collect(Collectors.toSet());
+		private double getTotalWeight() {
+			return stream().mapToDouble(r -> r.hint.weight()).sum();
+		}
+
+		protected double[] getValidityArray() {
+			int nValues = Validity.values().length - 1;
+			double[] validityArray = new double[nValues * 2];
+			for (int i = 0; i < nValues; i++) {
+				validityArray[i * 2] = validityWeight(MatchType.Full, Validity.fromInt(i + 1));
+				validityArray[i * 2 + 1] =
+						validityWeight(MatchType.Superset, Validity.fromInt(i + 1));
+			}
+			double totalWeight = getTotalWeight();;
+			for (int i = 0; i < validityArray.length; i++) {
+				validityArray[i] /= totalWeight;
+			}
+			return validityArray;
+		}
+
+		protected double getPriorityScore() {
+			// TODO: figure out whether to count invalid items
+			return stream()
+					.filter(r -> r.priority() != null)
+					.mapToDouble(r -> r.hint.weight() * r.priority().points())
+					.sum() / getTotalWeight();
+		}
+
+		public void printSummary() {
+			double[] validityArray = getValidityArray();
+			System.out.printf("%s: %s / %.02fp\n", requestID, validityArrayToString(validityArray),
+					getPriorityScore());
+		}
+
+		private static String validityArrayToString(double[] array) {
+			StringBuilder sb = new StringBuilder();
+			sb.append("[");
+			for (int i = 0; i < array.length / 2; i++) {
+				if (i > 0) sb.append(", ");
+				sb.append(String.format("%.02f (%.02f)", array[i * 2], array[i * 2 + 1]));
+			}
+			sb.append("]v");
+			return sb.toString();
+		}
+
+		private void printRatings(ASTNode from, RatingConfig config) {
+			if (isEmpty()) return;
+			HintOutcome firstOutcome = get(0).hint;
+			System.out.println("+====+ " + firstOutcome.assignmentID + " / " + firstOutcome.requestID +
+					" +====+");
+			System.out.println(from.prettyPrint(true, config));
+			for (int tooSoonRound = 0; tooSoonRound < 2; tooSoonRound++) {
+				for (MatchType type : MatchType.values()) {
+					boolean tooSoon = tooSoonRound == 1;
+					List<HintRating> matching = stream()
+							.filter(rating -> tooSoon ? rating.isTooSoon() :
+								(rating.matchType == type && !rating.isTooSoon()))
+							.collect(Collectors.toList());
+					if (!matching.isEmpty()) {
+						String label = tooSoon ? "Too Soon" : type.toString();
+						System.out.println("               === " + label + " ===");
+						for (HintRating rating : matching) {
+							System.out.println("Weight: " + rating.hint.weight());
+							System.out.println(rating.hint.resultString());
+							System.out.println("-------");
+						}
+					}
+					if (tooSoon) break;
+				}
+			}
 		}
 	}
 
@@ -353,8 +397,8 @@ public class RateHints {
 		public final TutorHint match;
 		public final MatchType matchType;
 
-		public boolean isValid() {
-			return match != null;
+		public Validity validity() {
+			return match == null ? Validity.NoTutors : match.validity;
 		}
 
 		public boolean isTooSoon() {
