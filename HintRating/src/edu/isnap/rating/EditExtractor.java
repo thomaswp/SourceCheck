@@ -69,21 +69,6 @@ public class EditExtractor {
 		return node;
 	}
 
-	private static BiMap<ASTNode, ASTNode> extractMap(Node<ASTNode> from, Node<ASTNode> to) {
-		APTED<CostModel<ASTNode>, ASTNode> apted = new APTED<>(costModel);
-		apted.computeEditDistance(from, to);
-		LinkedList<int[]> editMapping = apted.computeEditMapping();
-		List<ASTNode> fromChildren = postOrderList(from.getNodeData(), new ArrayList<>());
-		List<ASTNode> toChildren = postOrderList(to.getNodeData(), new ArrayList<>());
-		BiMap<ASTNode, ASTNode> mapping = new BiMap<>(IdentityHashMap::new);
-		for (int[] pair : editMapping) {
-			ASTNode fromPair = readPair(fromChildren, pair[0]);
-			ASTNode toPair = readPair(toChildren, pair[1]);
-			if (fromPair != null && toPair != null) mapping.put(fromPair, toPair);
-		}
-		return mapping;
-	}
-
 	private static List<ASTNode> postOrderList(ASTNode node, List<ASTNode> list) {
 		for (ASTNode child : node.children()) postOrderList(child, list);
 		list.add(node);
@@ -112,9 +97,27 @@ public class EditExtractor {
 		b.forEach(System.out::println);
 	}
 
-	public static Set<Edit> extractEditsUsingTED(ASTNode from, ASTNode to) {
-		BiMap<ASTNode, ASTNode> mapping = extractMap(toNode(from), toNode(to));
-		return extractEdits(from, to, mapping);
+	public static Set<Edit> extractEditsUsingTED(ASTNode fromAST, ASTNode toAST) {
+		Node<ASTNode> from = toNode(fromAST), to = toNode(toAST);
+		APTED<CostModel<ASTNode>, ASTNode> apted = new APTED<>(costModel);
+		apted.computeEditDistance(from, to);
+		LinkedList<int[]> editMapping = apted.computeEditMapping();
+		List<ASTNode> fromChildren = postOrderList(from.getNodeData(), new ArrayList<>());
+		List<ASTNode> toChildren = postOrderList(to.getNodeData(), new ArrayList<>());
+		Set<Edit> edits = new HashSet<>();
+		for (int[] pair : editMapping) {
+			ASTNode fromPair = readPair(fromChildren, pair[0]);
+			ASTNode toPair = readPair(toChildren, pair[1]);
+			if (fromPair == null) {
+				edits.add(new Insertion(getReferenceAsChildren(toPair)));
+			} else if (toPair == null) {
+				edits.add(new Deletion(getReferenceAsChildren(fromPair)));
+			} else if (!fromPair.shallowEquals(toPair, false)) {
+				edits.add(new Deletion(getReferenceAsChildren(fromPair)));
+				edits.add(new Insertion(getReferenceAsChildren(toPair)));
+			}
+		}
+		return edits;
 	}
 
 	public static Set<Edit> extractEditsUsingIDs(ASTNode from, ASTNode to) {
@@ -292,6 +295,11 @@ public class EditExtractor {
 	public static NodeReference getReferenceAsChild(ASTNode node) {
 		if (node.parent() == null) return new RootNodeReference(node);
 		return new ChildNodeReference(node, getReference(node.parent()));
+	}
+
+	public static NodeReference getReferenceAsChildren(ASTNode node) {
+		if (node.parent() == null) return new RootNodeReference(node);
+		return new ChildNodeReference(node, getReferenceAsChildren(node.parent()));
 	}
 
 	private static NodeReference getReferenceInPair(ASTNode toNode,

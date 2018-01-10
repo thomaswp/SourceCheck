@@ -13,7 +13,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import edu.isnap.ctd.graph.ASTNode;
-import edu.isnap.ctd.util.Diff;
 import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.rating.EditExtractor.Edit;
 import edu.isnap.rating.EditExtractor.NodeReference;
@@ -219,34 +218,29 @@ public class RateHints {
 			if (tutorEdits.size() == 0) continue;
 			Set<Edit> overlap = new HashSet<>(tutorEdits);
 			overlap.retainAll(outcomeEdits);
-			if (overlap.size() == outcomeEdits.size() || overlap.size() == tutorEdits.size()) {
+			if (overlap.size() == outcomeEdits.size()) {
+				if (overlap.size() == tutorEdits.size()) {
+					throw new RuntimeException("Edits should not match if hint outcomes did not!");
+				}
 				bestOverlap = overlap;
 				bestHint = tutorHint;
 				break;
 			}
 		}
 		if (bestHint != null) {
-			ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, bestHint.to, config);
-			System.out.println("Tutor Hint:");
-			System.out.println(Diff.diff(
-					fromNode.prettyPrint(true, config),
-					tutorOutcomeNode.prettyPrint(true, config)));
-			System.out.println("Alg Hint:");
-			System.out.println(Diff.diff(
-					fromNode.prettyPrint(true, config),
-					outcomeNode.prettyPrint(true, config), 2));
-			Set<Edit> tutorEdits = extractor.getEdits(bestHint.from, bestHint.to);
-			EditExtractor.printEditsComparison(tutorEdits, outcomeEdits, "Tutor Hint", "Alg Hint");
-			if (bestOverlap.size() == tutorEdits.size() &&
-					bestOverlap.size() == outcomeEdits.size() &&
-					bestOverlap.size() > 0) {
-				throw new RuntimeException("Edits should not match if hint outcomes did not!");
-			}
-			System.out.println("-------------------");
-			if (outcomeEdits.stream().anyMatch(e -> e.toString().equals("M: root->{list#00}->{FunctionDef#00}->{list#01}->{For#00}->{list#02}->{AugAssign#00}->{Call#02}->{list#01}->{Name#00} -> root->{list#00}->{FunctionDef#00}->{list#01}->{For#01}->{list#02}->{AugAssign#00}->{Call#02}->{list#01}->{Name#00}"))) {
-				System.out.println("!");
-				extractor.getEdits(fromNode, outcomeNode);
-			}
+//			ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, bestHint.to, config);
+//			System.out.println("Tutor Hint:");
+//			System.out.println(Diff.diff(
+//					fromNode.prettyPrint(true, config),
+//					tutorOutcomeNode.prettyPrint(true, config)));
+//			System.out.println("Alg Hint:");
+//			System.out.println(Diff.diff(
+//					fromNode.prettyPrint(true, config),
+//					outcomeNode.prettyPrint(true, config), 2));
+//			Set<Edit> tutorEdits = extractor.getEdits(bestHint.from, tutorOutcomeNode);
+//			EditExtractor.printEditsComparison(tutorEdits, outcomeEdits, "Tutor Hint", "Alg Hint");
+//			System.out.println("-------------------");
+
 			return new HintRating(outcome, bestHint, MatchType.Partial);
 		}
 		return new HintRating(outcome);
