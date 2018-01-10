@@ -124,40 +124,40 @@ public class HintHighlighter {
 				Highlight highlight = parentMatches ? Highlight.Good : Highlight.Move;
 				colors.put(node, highlight);
 
-				if (highlight == Highlight.Move) {
-					Node moveParent = mapping.getTo(pair.parent);
-					if (moveParent == null) {
-						Insertion insertion = new Insertion(pair.parent, pair, pair.index(),
-								mapping.getMappedValue(node, true), true);
-						insertion.candidate = node;
-						edits.add(insertion);
-					} else {
-						// For those with a matching parent, we need to insert them where
-						// they belong
-						int insertIndex = 0;
-						// Look back through your pair's earlier siblings...
-						for (int i = pair.index() - 1; i >= 0; i--) {
-							Node sibling = pair.parent.children.get(i);
-							// If you can find one with a pair in the moveParent
-							Node siblingPair = mapping.getTo(sibling);
-							if (siblingPair != null && siblingPair.parent == moveParent) {
-								// Set the insert index to right after it
-								insertIndex = siblingPair.index() + 1;
-								break;
-							}
-						}
+				if (!(highlight == Highlight.Move && config.canMove(node))) return;
 
-						Insertion insertion = new Insertion(moveParent, pair, insertIndex,
-								mapping.getMappedValue(node, true));
-						insertion.candidate = node;
-						// If this is a code element parent, inserting the node should replace
-						// the current node at this index
-						if (config.hasFixedChildren(moveParent) &&
-								insertIndex < moveParent.children.size()) {
-							insertion.replaced = moveParent.children.get(insertIndex);
+				Node moveParent = mapping.getTo(pair.parent);
+				if (moveParent == null) {
+					Insertion insertion = new Insertion(pair.parent, pair, pair.index(),
+							mapping.getMappedValue(node, true), true);
+					insertion.candidate = node;
+					edits.add(insertion);
+				} else {
+					// For those with a matching parent, we need to insert them where
+					// they belong
+					int insertIndex = 0;
+					// Look back through your pair's earlier siblings...
+					for (int i = pair.index() - 1; i >= 0; i--) {
+						Node sibling = pair.parent.children.get(i);
+						// If you can find one with a pair in the moveParent
+						Node siblingPair = mapping.getTo(sibling);
+						if (siblingPair != null && siblingPair.parent == moveParent) {
+							// Set the insert index to right after it
+							insertIndex = siblingPair.index() + 1;
+							break;
 						}
-						edits.add(insertion);
 					}
+
+					Insertion insertion = new Insertion(moveParent, pair, insertIndex,
+							mapping.getMappedValue(node, true));
+					insertion.candidate = node;
+					// If this is a code element parent, inserting the node should replace
+					// the current node at this index
+					if (config.hasFixedChildren(moveParent) &&
+							insertIndex < moveParent.children.size()) {
+						insertion.replaced = moveParent.children.get(insertIndex);
+					}
+					edits.add(insertion);
 				}
 			}
 		});
@@ -323,7 +323,7 @@ public class HintHighlighter {
 					// It's useful to list these insertions anyway, since it allows us to mark nodes
 					// as Move instead of Delete when they're used in not-yet-added parents
 
-					// This really only makes sense for code elements
+					// This really only makes sense for code blocks
 					if (!config.canMove(pair)) return;
 
 

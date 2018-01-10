@@ -1,5 +1,9 @@
 package edu.isnap.eval.python;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.NodeConstructor;
 import edu.isnap.ctd.hint.HintConfig;
@@ -22,9 +26,23 @@ public class PythonHintConfig extends HintConfig {
 		return node != null && !"list".equals(node.type());
 	}
 
+	// No hint should suggest moving lists or most literal types
+	private final Set<String> immobileTypes = new HashSet<>(Arrays.asList(
+			new String[] {
+					"list",
+					"Num",
+					"Str",
+					"FormattedValue",
+					"JoinedStr",
+					"Bytes",
+					"Ellipsis",
+					"NamedConstant",
+			}
+	));
+
 	@Override
 	public boolean canMove(Node node) {
-		return node != null && !"list".equals(node.type());
+		return node != null && !immobileTypes.contains(node.type());
 	}
 
 	@Override
