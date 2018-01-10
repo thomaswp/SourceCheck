@@ -13,6 +13,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import edu.isnap.ctd.graph.ASTNode;
+import edu.isnap.ctd.util.Diff;
 import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.rating.EditExtractor.Edit;
 import edu.isnap.rating.EditExtractor.NodeReference;
@@ -205,7 +206,8 @@ public class RateHints {
 
 		outcomeNode = normalizeNewValuesTo(fromNode, outcome.result, config);
 		Set<Edit> outcomeEdits = extractor.getEdits(fromNode, outcomeNode);
-//		Set<Edit> bestOverlap = new HashSet<>();
+		if (outcomeEdits.size() == 0) return new HintRating(outcome);
+		Set<Edit> bestOverlap = new HashSet<>();
 		TutorHint bestHint = null;
 		// TODO: sort by validity and priority first
 //		Collections.sort(validHints);
@@ -214,34 +216,37 @@ public class RateHints {
 			// TODO: Figure out what to do if nodes don't have IDs (i.e. Python)
 			// TODO: Also figure confirm if this is over-generous with Python
 			Set<Edit> tutorEdits = extractor.getEdits(fromNode, tutorOutcomeNode);
+			if (tutorEdits.size() == 0) continue;
 			Set<Edit> overlap = new HashSet<>(tutorEdits);
 			overlap.retainAll(outcomeEdits);
 			if (overlap.size() == outcomeEdits.size() || overlap.size() == tutorEdits.size()) {
-//				bestOverlap = overlap;
+				bestOverlap = overlap;
 				bestHint = tutorHint;
 				break;
 			}
 		}
 		if (bestHint != null) {
-//			ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, bestHint.to, config, false);
-//			System.out.println("Tutor Hint:");
-//			System.out.println(Diff.diff(
-//					fromNode.prettyPrint(true, config),
-//					tutorOutcomeNode.prettyPrint(true, config)));
-//			System.out.println("Alg Hint:");
-//			System.out.println(Diff.diff(
-//					fromNode.prettyPrint(true, config),
-//					outcomeNode.prettyPrint(true, config), 2));
-//			Set<Edit> tutorEdits = extractor.getEdits(bestHint.from, bestHint.to);
-//			EditExtractor.printEditsComparison(tutorEdits, outcomeEdits, "Tutor Hint", "Alg Hint");
-//			if (bestOverlap.size() == tutorEdits.size() &&
-//					bestOverlap.size() == outcomeEdits.size() &&
-//					bestOverlap.size() > 0) {
-//				throw new RuntimeException("Edits should not match if hint outcomes did not!");
-//			}
-//			System.out.println("-------------------");
-//			MatchType type = bestOverlap.size() == outcomeEdits.size() ?
-//					MatchType.Subset : MatchType.Superset;
+			ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, bestHint.to, config);
+			System.out.println("Tutor Hint:");
+			System.out.println(Diff.diff(
+					fromNode.prettyPrint(true, config),
+					tutorOutcomeNode.prettyPrint(true, config)));
+			System.out.println("Alg Hint:");
+			System.out.println(Diff.diff(
+					fromNode.prettyPrint(true, config),
+					outcomeNode.prettyPrint(true, config), 2));
+			Set<Edit> tutorEdits = extractor.getEdits(bestHint.from, bestHint.to);
+			EditExtractor.printEditsComparison(tutorEdits, outcomeEdits, "Tutor Hint", "Alg Hint");
+			if (bestOverlap.size() == tutorEdits.size() &&
+					bestOverlap.size() == outcomeEdits.size() &&
+					bestOverlap.size() > 0) {
+				throw new RuntimeException("Edits should not match if hint outcomes did not!");
+			}
+			System.out.println("-------------------");
+			if (outcomeEdits.stream().anyMatch(e -> e.toString().equals("M: root->{list#00}->{FunctionDef#00}->{list#01}->{For#00}->{list#02}->{AugAssign#00}->{Call#02}->{list#01}->{Name#00} -> root->{list#00}->{FunctionDef#00}->{list#01}->{For#01}->{list#02}->{AugAssign#00}->{Call#02}->{list#01}->{Name#00}"))) {
+				System.out.println("!");
+				extractor.getEdits(fromNode, outcomeNode);
+			}
 			return new HintRating(outcome, bestHint, MatchType.Partial);
 		}
 		return new HintRating(outcome);
@@ -334,7 +339,8 @@ public class RateHints {
 		public double validityWeight(MatchType minMatchType, Validity minValidity) {
 			return stream()
 					.mapToDouble(rating -> rating.matchType.isAtLeast(minMatchType)
-							&& rating.validity().isAtLeast(minValidity) ? rating.hint.weight() : 0)
+							&& rating.validity().isAtLeast(minValidity) && !rating.isTooSoon()
+							? rating.hint.weight() : 0)
 					.sum();
 		}
 

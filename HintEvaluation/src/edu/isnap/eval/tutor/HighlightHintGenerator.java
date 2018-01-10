@@ -11,13 +11,14 @@ import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.hint.HintMapBuilder;
 import edu.isnap.eval.export.JsonAST;
-import edu.isnap.hint.SnapHintConfig;
+import edu.isnap.eval.python.PythonHintConfig;
 import edu.isnap.hint.util.SnapNode;
 import edu.isnap.rating.ColdStart;
 import edu.isnap.rating.ColdStart.HintGenerator;
 import edu.isnap.rating.GoldStandard;
 import edu.isnap.rating.HintRequest;
 import edu.isnap.rating.HintSet;
+import edu.isnap.rating.RateHints;
 import edu.isnap.rating.RatingConfig;
 import edu.isnap.rating.TrainingDataset;
 import edu.isnap.rating.TrainingDataset.Trace;
@@ -25,12 +26,18 @@ import edu.isnap.rating.TrainingDataset.Trace;
 public class HighlightHintGenerator implements ColdStart.HintGenerator {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
-		GoldStandard standard = GoldStandard.parseSpreadsheet(TutorEdits.ISNAP_GOLD_STANDARD);
+//		GoldStandard standard = GoldStandard.parseSpreadsheet(TutorEdits.ISNAP_GOLD_STANDARD);
+//		TrainingDataset dataset = TrainingDataset.fromDirectory("",
+//				"../data/hint-rating/isnap2017/training");
+//		HintGenerator hintGenerator = new HighlightHintGenerator(new SnapHintConfig());
+
+		GoldStandard standard = TutorEdits.readConsensusPython("../data/itap");
 		TrainingDataset dataset = TrainingDataset.fromDirectory("",
-				"../data/hint-rating/isnap2017/training");
-		HintGenerator hintGenerator = new HighlightHintGenerator(new SnapHintConfig());
+				RateHints.ITAP_DATA_DIR + RateHints.TRAINING_DIR);
+		HintGenerator hintGenerator = new HighlightHintGenerator(new PythonHintConfig());
+
 		ColdStart coldStart = new ColdStart(standard, dataset, hintGenerator);
-		coldStart.writeTest("../data/hint-rating/isnap2017/analysis/cold-start.csv", 100, 3);
+		coldStart.writeTest("../data/hint-rating/itap2016/analysis/cold-start.csv", 10, 3);
 	}
 
 	private final RatingConfig ratingConfig;

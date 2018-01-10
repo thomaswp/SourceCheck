@@ -80,17 +80,17 @@ public class TutorEdits {
 //			RateHints.rate(standard, hintSet);
 //		}
 
-//		GoldStandard standard = readConsensusPython("../data/itap");
-//		HighlightHintSet hintSet = new ImportHighlightHintSet("sourcecheck", new PythonHintConfig(),
-//				RateHints.ITAP_DATA_DIR + RateHints.TRAINING_DIR);
-//		hintSet.addHints(standard);
+		GoldStandard standard = readConsensusPython("../data/itap");
+		HighlightHintSet hintSet = new ImportHighlightHintSet("sourcecheck", new PythonHintConfig(),
+				RateHints.ITAP_DATA_DIR + RateHints.TRAINING_DIR);
+		hintSet.addHints(standard);
 //		TutorHintSet hintSet = TutorHintSet.fromFile("ITAP", RatingConfig.Python,
 //				"../data/itap/handmade_hints_itap_ast.csv");
-//		RateHints.rate(standard, hintSet);
+		RateHints.rate(standard, hintSet);
 
-		GoldStandard standard = GoldStandard.parseSpreadsheet(ISNAP_GOLD_STANDARD);
+//		GoldStandard standard = GoldStandard.parseSpreadsheet(ISNAP_GOLD_STANDARD);
 //		writeSnapStandard();
-		runConsensus("../data/hint-rating/isnap2017/training", standard, new SnapHintConfig());
+//		runConsensus("../data/hint-rating/isnap2017/training", standard, new SnapHintConfig());
 //		writeHighlight(RateHints.ISNAP_DATA_DIR, "sourcecheck", standard, new SnapHintConfig());
 //		RateHints.rate(standard, HintSet.fromFolder("sourcecheck", RatingConfig.Snap,
 //				RateHints.ISNAP_DATA_DIR + RateHints.ALGORITHMS_DIR + "/sourcecheck"));

@@ -147,6 +147,7 @@ public class EditExtractor {
 	private static Set<Edit> extractEdits(ASTNode from, ASTNode to,
 			BiMap<ASTNode, ASTNode> mapping) {
 
+		// First get sets of all references in the from and to AST
 		Set<NodeReference> fromRefs = new HashSet<>();
 		from.recurse(node -> {
 			NodeReference ref = getReference(node);
@@ -163,6 +164,7 @@ public class EditExtractor {
 			}
 		});
 
+		// The removed refs are those present in from and not to, with added being the reverse
 		Set<NodeReference> removedRefs = new HashSet<>(fromRefs);
 		removedRefs.removeAll(toRefs);
 		Set<NodeReference> addedRefs = new HashSet<>(toRefs);
@@ -180,18 +182,34 @@ public class EditExtractor {
 			// Only consider nodes whose parents have changed
 			if (ObjectUtils.equals(fromParentMatch, fromMatchParent)) return;
 			moved.put(toNode, null);
+
+			// Temporarily, we add these to the added and moved refs, so we know to differentiate
+			// between nodes which have been moved, and those which have earlier siblings
+			// added/deleted/moved
 			addedRefs.add(getReferenceInPair(toNode, mapping));
 			removedRefs.add(getReference(fromMatch));
 		});
 
 		Set<Edit> edits = new LinkedHashSet<>();
+
+		// We keep track of the refs that have been moved, so we don't double-count them as added
+		// and removed
 		Set<NodeReference> movedFrom = new HashSet<>();
 		Set<NodeReference> movedTo = new HashSet<>();
 
+		// Keep track of no-id nodes that have been displaced by earlier siblings being changed,
+		// so their references will have changed, but they have not actually been added/remvoed
+		Set<NodeReference> displacedFrom = new HashSet<>();
+		Set<NodeReference> displacedTo = new HashSet<>();
+
+		// Now we find all instances of node movement
 		to.recurse(toNode -> {
 			if (toNode.parent() == null) return;
 			ASTNode fromMatch = mapping.getTo(toNode);
 			if (fromMatch == null) return;
+
+			// First we check to make sure the node is actually moved and not that earlier siblings
+			// have been changed
 			if (!moved.containsKey(toNode)) {
 				NodeReference precederMatch = null;
 				for (int i = toNode.index() - 1; i >= 0; i--) {
@@ -212,7 +230,11 @@ public class EditExtractor {
 				}
 
 				if (ObjectUtils.equals(precederMatch, matchPreceder)) {
-					if (toNode.shallowEquals(fromMatch, false)) return;
+					if (toNode.shallowEquals(fromMatch, false)) {
+						displacedFrom.add(getReference(fromMatch));
+						displacedTo.add(getReferenceInPair(toNode, mapping));
+						return;
+					}
 				}
 			}
 
@@ -246,9 +268,14 @@ public class EditExtractor {
 		addedRefs.addAll(toRefs);
 		addedRefs.removeAll(fromRefs);
 
-		// Moving takes precedence over adding or removing
+		// Moving takes precedence over adding or removing, so remove the refs that were moved
 		removedRefs.removeAll(movedFrom);
 		addedRefs.removeAll(movedTo);
+
+		// Don't list nodes as removed/added if they have a pair and their index only changed due
+		// to modified ealier siblings
+		removedRefs.removeAll(displacedFrom);
+		addedRefs.removeAll(displacedTo);
 
 		removedRefs.forEach(removedRef -> edits.add(new Deletion(removedRef)));
 		addedRefs.forEach(addedRef -> edits.add(new Insertion(addedRef)));
@@ -453,6 +480,11 @@ public class EditExtractor {
 	static class RootNodeReference extends NodeReference {
 		public RootNodeReference(ASTNode node) {
 			super(node);
+		}
+
+		@Override
+		public String toString() {
+			return "root";
 		}
 	}
 }
