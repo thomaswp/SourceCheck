@@ -63,6 +63,7 @@ public class HintHighlighter {
 		// preprocessSolutions method
 		this.nodePlacementTimes = hintMap == null ? null :
 			new IdentityHashMap<>(hintMap.nodePlacementTimes);
+		if (solutions.isEmpty()) throw new IllegalArgumentException("Solutions cannot be empty");
 		this.solutions = config.preprocessSolutions ?
 				preprocessSolutions(solutions, config, nodePlacementTimes) : solutions;
 		this.config = config;
@@ -525,6 +526,7 @@ public class HintHighlighter {
 		if (hintMap != null && hintMap.ruleSet != null) {
 			RuleSet.trace = trace;
 			filteredSolutions = hintMap.ruleSet.filterSolutions(solutions, node);
+			if (filteredSolutions.size() == 0) throw new RuntimeException("No solutions!");
 		}
 		return NodeAlignment.findBestMatches(node, filteredSolutions, dm, config, maxReturned);
 	}

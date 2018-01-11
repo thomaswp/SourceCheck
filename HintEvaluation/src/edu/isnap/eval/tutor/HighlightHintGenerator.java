@@ -37,7 +37,7 @@ public class HighlightHintGenerator implements ColdStart.HintGenerator {
 		HintGenerator hintGenerator = new HighlightHintGenerator(new PythonHintConfig());
 
 		ColdStart coldStart = new ColdStart(standard, dataset, hintGenerator);
-		coldStart.writeTest("../data/hint-rating/itap2016/analysis/cold-start.csv", 10, 3);
+		coldStart.writeTest("../data/hint-rating/itap2016/analysis/cold-start.csv", 100, 2);
 	}
 
 	private final RatingConfig ratingConfig;
