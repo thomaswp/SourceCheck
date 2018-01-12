@@ -18,10 +18,10 @@ snapshot {
                         @block ASK
                         doSayFor(reportJoinWords(list(literal, getLastAnswer)), literal)
                         doAsk
-                        doSetVar(var:min, getLastAnswer)
+                        doSetVar(varMenu:min, getLastAnswer)
                         doAsk
-                        doSetVar(var:max, getLastAnswer)
-                        doSetVar(var:secret, reportRandom(var:min, var:max))
+                        doSetVar(varMenu:max, getLastAnswer)
+                        doSetVar(varMenu:secret, reportRandom(var:min, var:max))
                         @if (SET_VAR, LAST) { doSetVar(varMenu:guesses, reportNewList(list)) }
                     }
                     @defBlock GUESS {
