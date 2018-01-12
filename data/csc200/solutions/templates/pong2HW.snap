@@ -46,6 +46,7 @@ snapshot {
                 receiveGo
                 @anyOrder {
                     doSetVar(varMenu:rightPoints, literal)
+                    doSetVar(varMenu:leftPoints, literal)
                     setScale(literal)
                     evaluateCustomBlock:resetBall
                 }
@@ -56,34 +57,52 @@ snapshot {
                 doForever(script {
                     @anyOrder {
                         forward(literal)
-                        @defBlock BOUNCE {
-                            reportTouchingObject(literal), script {
-                                @anyOrder {
-                                    setHeading(reportDifference(literal, direction))
-                                    doChangeVar(varMenu:rightPoints, literal)
-                                }
-                            }
-                        }
-                        @defBlock RESET {
-                            doIf(@or {
-                                reportLessThan(literal, xPosition)
-                                reportAnd(reportLessThan(literal, xPosition), reportTouchingObject(literal))
-                            }, script {
-                                    doSetVar(varMenu:rightPoints, literal)
-                                    evaluateCustomBlock:resetBall
-                            })
-                        }
                         @or {
-                            @inline {
-                                doIf(@block BOUNCE)
-                                @block RESET
+                            @repeat(2) {
+                                doIf (reportTouchingObject(literal), script {
+                                    setHeading(reportDifference(literal, direction))
+                                })
                             }
-                            doIfElse(@block BOUNCE, script {
-                                @block RESET
+                            doIf (reportOr(reportTouchingObject(literal), reportTouchingObject(literal)), script {
+                                setHeading(reportDifference(literal, direction))
                             })
                         }
+                        doIf(@or {
+                            reportLessThan(literal, xPosition)
+                            reportAnd(reportLessThan(literal, xPosition), reportTouchingObject(literal))
+                        }, script {
+                            doChangeVar(varMenu:leftPoints, literal)
+                            evaluateCustomBlock:resetBall
+                        })
+                        doIf(@or {
+                            reportLessThan(xPosition, literal)
+                            reportAnd(reportLessThan(xPosition, literal), reportTouchingObject(literal))
+                        }, script {
+                            doChangeVar(varMenu:rightPoints, literal)
+                            evaluateCustomBlock:resetBall
+                        })
                     }
                     bounceOffEdge
+                })
+            }
+        }
+        sprite {
+            script {
+                receiveGo
+                setScale(literal)
+                gotoXY(literal, literal)
+                doForever(script {
+                    @or {
+                        @inline {
+                            doIf(reportLessThan(reportMouseY, yPosition), script {
+                                changeYPosition(literal)
+                            })
+                            doIf(reportLessThan(yPosition, reportMouseY), script {
+                                changeYPosition(literal)
+                            })
+                        }
+                        setYPosition(reportMouseY)
+                    }
                 })
             }
         }
@@ -96,4 +115,5 @@ snapshot {
         }
     }
     varDec:rightPoints
+    varDec:leftPoints
 }

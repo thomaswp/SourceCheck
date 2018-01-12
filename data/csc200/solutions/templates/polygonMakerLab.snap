@@ -8,21 +8,21 @@ snapshot {
         script {
             @anyOrder {
                 down
-                setSize(var)
+                setSize(var:thickness)
             }
-            doRepeat(var, script {
+            doRepeat(var:sides, script {
                 @anyOrder {
-                    forward(var)
+                    forward(var:length)
                     @or {
-                        turn(reportQuotient(literal, var))
-                        turnLeft(reportQuotient(literal, var))
+                        turn(reportQuotient(literal, var:sides))
+                        turnLeft(reportQuotient(literal, var:sides))
                     }
                 }
             })
             up
         }
-        varDec
-        varDec
-        varDec
+        varDec:length
+        varDec:sides
+        varDec:thickness
     }
 }

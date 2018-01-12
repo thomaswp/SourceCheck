@@ -109,8 +109,14 @@ public class SnapHintBuilder {
 	}
 
 	public static String getStorePath(String baseDir, String assignmentName, double minGrade) {
-		return new File(baseDir, String.format("%s-g%03d.cached",
-				assignmentName, Math.round(minGrade * 100))).getAbsolutePath();
+		return getStorePath(baseDir, assignmentName, minGrade, null);
+	}
+
+	public static String getStorePath(String baseDir, String assignmentName, double minGrade,
+			String dataset) {
+		return new File(baseDir, String.format("%s-g%03d%s.cached",
+				assignmentName, Math.round(minGrade * 100),
+				dataset == null ? "" : ("-" + dataset))).getAbsolutePath();
 	}
 
 	/**

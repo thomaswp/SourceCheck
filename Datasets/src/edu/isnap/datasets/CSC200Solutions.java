@@ -41,8 +41,12 @@ public class CSC200Solutions extends Dataset {
 		PolygonMaker,
 		Squiral,
 		GuessingGame1,
-		GuessingGame2,
-		GuessingGame3,
+		Pong1Lab,
+		Pong2HW,
+		// Not actually written yet
+//		GuessingGame2,
+//		GuessingGame3,
+		GuessingGame2New,
 	};
 
 	private CSC200Solutions() {
