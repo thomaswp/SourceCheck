@@ -95,13 +95,13 @@ snapshot {
                                             @unless (ASK_TOP) { @block NOT_EQ_FEEDBACK_IFS }
                                         }
                                         doIfElse(@block EQ_COMPARE, script {
-                                            @if (CORRECT_IN_LOOP) { doSayFor(literal) }
+                                            @if (CORRECT_IN_LOOP) { @block SAY }
                                         }, script {
                                             @block NOT_EQ_FEEDBACK
                                         })
                                     }
                                 })
-                                @unless (CORRECT_IN_LOOP) { doSayFor(literal) }
+                                @unless (CORRECT_IN_LOOP) { @block SAY }
                             }
                         }
 

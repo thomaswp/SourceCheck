@@ -1,52 +1,76 @@
 snapshot {
-    stage {
-        sprite {
-            @anything
-        }
-    }
     @defVar (VAR, GLOBAL, LOCAL, ARG) {
-        customBlock:squiral {
-            script {
-                @anyOrder {
-                    @if (VAR, LOCAL) {
-                        doDeclareVariables(list(varMenu:length))
-                    }
-                    down
-                    doSetVar(varMenu:length, literal)
+        @defBlock SQUIRAL {
+            @anyOrder {
+                @if (VAR, LOCAL) {
+                    doDeclareVariables(list(varMenu:length))
                 }
-                @defVar (LOOP, TIMES, NESTED) {
-                    @defBlock BODY {
-                        @anyOrder {
-                            forward(var:length)
-                            @or {
-                                turn(literal:90)
-                                turnLeft(literal:90)
-                            }
-                            @or {
-                                doChangeVar(varMenu:length, literal)
-                                doSetVar(varMenu:length, reportSum(literal, var:length))
-                            }
+                down
+                doSetVar(varMenu:length, literal)
+            }
+            @defVar (LOOP, TIMES, NESTED) {
+                @defBlock BODY {
+                    @anyOrder {
+                        forward(var:length)
+                        @or {
+                            turn(literal:90)
+                            turnLeft(literal:90)
+                        }
+                        @or {
+                            doChangeVar(varMenu:length, literal)
+                            doSetVar(varMenu:length, reportSum(literal, var:length))
                         }
                     }
-                    @if (LOOP, TIMES) {
-                        doRepeat(reportProduct(literal:4, var:rotations), script {
-                            @block BODY
+                }
+                @if (LOOP, TIMES) {
+                    doRepeat(reportProduct(literal:4, var:rotations), script {
+                        @block BODY
+                    })
+                }
+                @if (LOOP, NESTED) {
+                    @defVar (OUTER, VAR, LIT) {
+                        doRepeat(@if (OUTER, VAR) { var:rotations } @if (OUTER, LIT) { literal:4 }, script {
+                            doRepeat(@if (OUTER, LIT) { var:rotations } @if (OUTER, VAR) { literal:4 }, script {
+                                @block BODY
+                            })
                         })
                     }
-                    @if (LOOP, NESTED) {
-                        @defVar (OUTER, VAR, LIT) {
-                            doRepeat(@if (OUTER, VAR) { var:rotations } @if (OUTER, LIT) { literal:4 }, script {
-                                doRepeat(@if (OUTER, LIT) { var:rotations } @if (OUTER, VAR) { literal:4 }, script {
-                                    @block BODY
-                                })
-                            })
+                }
+            }
+            up
+        }
+        @defVar (CUSTOM) {
+            stage {
+                sprite {
+                    @defBlock HEADER {
+                        @anyOrder {
+                            @optional { receiveGo }
+                            @optional { clear }
+                            @optional { gotoXY }
+                            @optional { down }
+                        }
+                    }
+                    script {
+                        @block HEADER
+                        @if (CUSTOM) {
+                            evaluateCustomBlock:squiral
+                        } @unless (CUSTOM) {
+                            @block SQUIRAL
                         }
                     }
                 }
-                up
             }
-            varDec:rotations
-            @if (VAR, ARG) { varDec:length }
+            customBlock:squiral {
+                script {
+                    @if (CUSTOM) {
+                        @block SQUIRAL
+                    }
+                }
+                @if (CUSTOM) {
+                    varDec:rotations
+                    @if (VAR, ARG) { varDec:length }
+                }
+            }
         }
         @if (VAR, GLOBAL) varDec:length
     }

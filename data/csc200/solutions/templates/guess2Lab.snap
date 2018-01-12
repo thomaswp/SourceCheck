@@ -1,0 +1,119 @@
+snapshot {
+    @defBlock SAY {
+        doSayFor(@anything)
+    }
+    @defBlock ASK {
+        doAsk(@anything)
+    }
+    @defVar (GUESS_VAR) {
+        stage {
+            sprite {
+                script {
+                    receiveGo
+                    @+defVar (SET_VAR, LAST, FIRST) {
+                        @if (SET_VAR, FIRST) { doSetVar(varMenu:guesses, reportNewList(list)) }
+                        @+repeat(1, 2) {
+                            @block SAY
+                        }
+                        @block ASK
+                        doSayFor(reportJoinWords(list(literal, getLastAnswer)), literal)
+                        doAsk
+                        doSetVar(var:min, getLastAnswer)
+                        doAsk
+                        doSetVar(var:max, getLastAnswer)
+                        doSetVar(var:secret, reportRandom(var:min, var:max))
+                        @if (SET_VAR, LAST) { doSetVar(varMenu:guesses, reportNewList(list)) }
+                    }
+                    @defBlock GUESS {
+                        @if (GUESS_VAR) { var:guess }
+                        @unless (GUESS_VAR) { getLastAnswer }
+                    }
+                    @defBlock GET_GUESS {
+                        @block ASK
+                        doUntil(reportNot(reportListContainsItem(var:guesses, getLastAnswer)), script {
+                            @+optional {
+                                doSayFor(@anything, literal)
+                            }
+                            doAsk(literal)
+                        })
+                        doAddToList(getLastAnswer, var:guesses)
+                        @if (GUESS_VAR) { doSetVar(varMenu:guess, getLastAnswer) }
+                    }
+                    @defBlock EQ_COMPARE {
+                        reportEquals(@block GUESS, var:secret)
+                    }
+                    @defBlock NOT_EQ_COMPARE {
+                        reportLessThan(@or {
+                            @inline { @block GUESS, var:secret }
+                            @inline { var:secret, @block GUESS }
+                        })
+                    }
+
+                    @defVar (ASK_TOP) {
+                        @defVar (CORRECT_IN_LOOP) {
+                            @defBlock EQ_FEEDBACK {
+                                @if (CORRECT_IN_LOOP) {
+                                    doIf(@block EQ_COMPARE, script {
+                                        @block SAY
+                                    })
+                                }
+                            }
+                            @defBlock NOT_EQ_FEEDBACK_IFS {
+                                @anyOrder {
+                                    doIf(reportLessThan(@block GUESS, var:secret), script {
+                                        @block SAY
+                                        @if (ASK_TOP) { @block GET_GUESS }
+                                    })
+                                    doIf(reportLessThan(var:secret, @block GUESS), script {
+                                        @block SAY
+                                        @if (ASK_TOP) { @block GET_GUESS }
+                                    })
+                                }
+                            }
+                            @defBlock NOT_EQ_FEEDBACK_IF_ELSE {
+                                doIfElse(@block NOT_EQ_COMPARE, script {
+                                    @block SAY
+                                }, script {
+                                    @block SAY
+                                })
+                                @if (ASK_TOP) { @block GET_GUESS }
+                            }
+                            @defBlock NOT_EQ_FEEDBACK {
+                                @or {
+                                    @block NOT_EQ_FEEDBACK_IFS
+                                    @block NOT_EQ_FEEDBACK_IF_ELSE
+                                }
+                            }
+
+                            @if (ASK_TOP) { @block GET_GUESS }
+                            doUntil(@block EQ_COMPARE, script {
+                                @unless (ASK_TOP) { @block GET_GUESS }
+                                @or {
+                                    @inline {
+                                        @block EQ_FEEDBACK
+                                        @if (ASK_TOP) { @block NOT_EQ_FEEDBACK }
+                                        @unless (ASK_TOP) { @block NOT_EQ_FEEDBACK_IFS }
+                                    }
+                                    doIfElse(@block EQ_COMPARE, script {
+                                        @if (CORRECT_IN_LOOP) { @block SAY }
+                                    }, script {
+                                        @block NOT_EQ_FEEDBACK
+                                    })
+                                }
+                            })
+                            @unless (CORRECT_IN_LOOP) { @block SAY }
+                        }
+                    }
+
+                }
+            }
+        }
+        @anyOrder {
+            varDec:secret
+            @if (GUESS_VAR) { varDec:guess }
+            varDec:min
+            varDec:max
+            varDec:guesses
+        }
+    }
+}
