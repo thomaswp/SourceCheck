@@ -8,6 +8,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -16,6 +18,7 @@ import com.esotericsoftware.kryo.io.Output;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
+import edu.isnap.ctd.graph.Node.NodeConstructor;
 import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.hint.HintMapBuilder;
@@ -34,35 +37,41 @@ import edu.isnap.template.data.DefaultNode;
 public class TemplateParser {
 
 	public static void parseTemplate(Assignment assignment) throws IOException {
-		byte[] encoded = Files.readAllBytes(Paths.get(assignment.templateFileBase() + ".snap"));
-		String template = new String(encoded);
-		DefaultNode node = new TemplateParser(template).parse();
-
-
-		Node sample = SimpleNodeBuilder.toTree(
-				Snapshot.parse(new File(assignment.templateFileBase() + ".xml")), true);
-		List<BNode> variants = node.getVariants(Context.fromSample(sample));
-
+		String baseFile = assignment.templateFileBase();
 		HintConfig config = assignment instanceof ConfigurableAssignment ?
 				((ConfigurableAssignment) assignment).getConfig() : new SnapHintConfig();
-		HintMap hintMap = new HintMap(config);
-		for (BNode variant : variants) {
-			Node n = variant.toNode();
-			verifyNode(n);
-			hintMap.solutions.add(n);
-		}
-
-		printVariants(node.getVariants(Context.fromSample(sample).withOptional(false)));
-		System.out.println("--------------------");
-		System.out.println(variants.size());
-		System.out.println(sample.prettyPrint());
-
+		Node sample = SimpleNodeBuilder.toTree(Snapshot.parse(new File(baseFile + ".xml")), true);
+		HintMap hintMap = parseTemplate(baseFile, sample, config);
 		HintMapBuilder hmb = new HintMapBuilder(hintMap, 1);
 
 		Kryo kryo = SnapHintBuilder.getKryo();
 		writeHints("../HintServer/WebContent/WEB-INF/data", assignment, hmb, kryo);
 		writeHints(assignment.dataset.dataDir, assignment, hmb, kryo);
+	}
 
+	public static HintMap parseTemplate(String baseFile, Node sample, HintConfig config)
+			throws IOException {
+		byte[] encoded = Files.readAllBytes(Paths.get(baseFile + ".snap"));
+		String template = new String(encoded);
+		DefaultNode node = new TemplateParser(template).parse();
+
+
+		List<BNode> variants = node.getVariants(Context.fromSample(sample));
+
+		HintMap hintMap = new HintMap(config);
+		for (BNode variant : variants) {
+			Node n = variant.toNode(sample::constructNode);
+			verifyNode(n);
+			hintMap.solutions.add(n);
+		}
+
+		printVariants(node.getVariants(Context.fromSample(sample).withOptional(false)),
+				sample::constructNode);
+		System.out.println("--------------------");
+		System.out.println(variants.size());
+		System.out.println(sample.prettyPrint(true));
+
+		return hintMap;
 	}
 
 	private static void writeHints(String basePath, Assignment assignment, HintMapBuilder hmb,
@@ -100,12 +109,12 @@ public class TemplateParser {
 		});
 	}
 
-	private static void printVariants(List<BNode> variants) {
+	private static void printVariants(List<BNode> variants, NodeConstructor constructor) {
 		String last = "";
 		for (BNode variant : variants) {
 			System.out.println("--------------------");
 			System.out.println(variant.deepestContextSnapshot());
-			String out = variant.toNode().prettyPrint(true);
+			String out = variant.toNode(constructor).prettyPrint(true);
 			String diff = Diff.diff(last, out, 2);
 			if (StringUtils.countMatches(out, "\n") <= StringUtils.countMatches(diff, "\n")) {
 				System.out.println(out);
@@ -120,9 +129,23 @@ public class TemplateParser {
 	private int index;
 
 	public TemplateParser(String template) {
-//		this.template = template;
-		this.parts = template.replaceAll("(\\{|\\}|\\(|\\))", " $1 ")
+		Pattern pattern = Pattern.compile(":`([^`]*)`");
+		Matcher matcher = pattern.matcher(template);
+		StringBuffer sb = new StringBuffer();
+		while (matcher.find()) {
+			// TODO: This should really escape ( { } ) and space
+			matcher.appendReplacement(sb, ":" + matcher.group(1).replaceAll(" ", "&nbsp;"));
+		}
+		matcher.appendTail(sb);
+		template = sb.toString();
+		this.parts = template
+				.replaceAll("(\\{|\\}|\\(|\\))", " $1 ")
+				.replaceAll("(\\{|\\}|\\(|\\))", " $1 ")
 				.replace(",", "").split("\\s+");
+
+		for (int i = 0; i < parts.length; i++) {
+			parts[i] = parts[i].replaceAll("&nbsp;", " ");
+		}
 //		for (String part : parts) {
 //			System.out.println("`" + part + "`");
 //		}
