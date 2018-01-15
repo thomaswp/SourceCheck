@@ -5,7 +5,7 @@ library(reshape2)
 
 se <- function(x) ifelse(length(x) == 0, 0, sqrt(var(x, na.rm=T)/sum(!is.na(x))))
 
-ratings <- read_csv("../../data/hint-rating/isnap2017/analysis/cold-start.csv")
+ratings <- read_csv("../../data/hint-rating/itap2016/analysis/cold-start.csv")
 
 assignments <- ddply(ratings, c("round", "count", "total", "assignmentID"), colwise(mean))
 
