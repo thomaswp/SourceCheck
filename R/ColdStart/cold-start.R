@@ -5,7 +5,7 @@ library(reshape2)
 
 se <- function(x) ifelse(length(x) == 0, 0, sqrt(var(x, na.rm=T)/sum(!is.na(x))))
 
-ratings <- read_csv("~/GitHub/SnapHints/data/hint-rating/isnap2017/analysis/cold-start.csv")
+ratings <- read_csv("../../data/hint-rating/itap2016/analysis/cold-start.csv")
 
 assignments <- ddply(ratings, c("round", "count", "total", "assignmentID"), colwise(mean))
 
@@ -24,3 +24,5 @@ ggplot(melt(rounds[,c(1:4, 6)], id=c("count", "total", "assignmentID")), aes(x=c
   geom_line() + facet_grid(. ~ assignmentID)
 
 ggplot(requests, aes(x=count, y=fullMean, color=requestID)) + geom_line() + facet_grid(. ~ assignmentID)
+
+ggplot(ratings[ratings$assignmentID=="guess1Lab",], aes(x=ordered(count), y=MultipleTutors_Partial)) + geom_boxplot() + facet_grid(requestID ~ .)

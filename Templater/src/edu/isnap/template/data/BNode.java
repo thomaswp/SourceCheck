@@ -6,7 +6,7 @@ import java.util.List;
 import org.apache.commons.lang3.mutable.MutableInt;
 
 import edu.isnap.ctd.graph.Node;
-import edu.isnap.hint.util.SnapNode;
+import edu.isnap.ctd.graph.Node.NodeConstructor;
 
 public class BNode {
 	public final String type;
@@ -35,21 +35,21 @@ public class BNode {
 		this.contextSnapshot = contextSnapshot;
 	}
 
-	private Node createNode(Node parent, MutableInt id) {
+	private Node createNode(NodeConstructor constructor, Node parent, MutableInt id) {
 		String type = this.type, value = null;
 		int colonIndex = type.indexOf(":");
 		if (colonIndex >= 0) {
 			value = type.substring(colonIndex + 1, type.length());
 			type = type.substring(0, colonIndex);
 		}
-		Node node = new SnapNode(parent, type, value, String.valueOf(id.getAndAdd(1)));
+		Node node = constructor.constructNode(parent, type, value, String.valueOf(id.getAndAdd(1)));
 		return node;
 	}
 
-	public Node toNode() {
+	public Node toNode(NodeConstructor constructor) {
 		if (inline) throw new RuntimeException("Cannot convert inline BNode to Node");
 		MutableInt id = new MutableInt();
-		Node node = createNode(null, id);
+		Node node = createNode(constructor, null, id);
 		node.setOrderGroup(orderGroup);
 		for (BNode child : children) {
 			child.addToParent(node, id);
@@ -72,7 +72,7 @@ public class BNode {
 				child.addToParent(parent, id);
 			}
 		} else {
-			Node node = createNode(parent, id);
+			Node node = createNode(parent::constructNode, parent, id);
 			node.setOrderGroup(orderGroup);
 			parent.children.add(node);
 			for (BNode child : children) {

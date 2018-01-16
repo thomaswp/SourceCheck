@@ -66,6 +66,8 @@ public class TutorEdits {
 
 	final static String ISNAP_GOLD_STANDARD =
 			RateHints.ISNAP_DATA_DIR + RateHints.GS_SPREADSHEET;
+	final static String ITAP_GOLD_STANDARD =
+			RateHints.ITAP_DATA_DIR + RateHints.GS_SPREADSHEET;
 	final static String CONSENSUS_GG_SQ = "consensus-gg-sq.csv";
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
@@ -81,6 +83,7 @@ public class TutorEdits {
 //		}
 
 		GoldStandard standard = readConsensusPython("../data/itap");
+//		standard.writeSpreadsheet(ITAP_GOLD_STANDARD);
 		HighlightHintSet hintSet = new ImportHighlightHintSet("sourcecheck", new PythonHintConfig(),
 				RateHints.ITAP_DATA_DIR + RateHints.TRAINING_DIR);
 		hintSet.addHints(standard);
