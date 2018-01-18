@@ -56,16 +56,18 @@ public class PrettyPrint {
 		public int indent = 2;
 		public boolean showValues = true;
 		public Predicate<String> isBodyType = s -> false;
+		public boolean surroundValueAssignments = true;
+		public String valueAssignment = "=";
 
 		public String baseString(INode node) {
 			StringBuilder sb = new StringBuilder();
 			sb.append(node.type());
 			String value = node.value();
 			if (showValues && value != null) {
-				sb.insert(0, "[")
-				.append("=")
-				.append(value)
-				.append("]");
+				if (surroundValueAssignments) sb.insert(0, "[");
+				sb.append(valueAssignment)
+				.append(value);
+				if (surroundValueAssignments) sb.append("]");
 			}
 			// TODO: remove
 //			sb.append("<").append(node.id()).append(">");

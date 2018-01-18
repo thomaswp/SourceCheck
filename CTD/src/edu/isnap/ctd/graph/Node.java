@@ -22,6 +22,7 @@ import util.LblTree;
 public abstract class Node extends StringHashable implements INode {
 
 	public static int PrettyPrintSpacing = 2;
+	public static boolean PrettyPrintUseColon = false;
 
 	private String type;
 	// Annotations used to specify that nodes have a non-concrete meaning, such as having a partial
@@ -416,6 +417,10 @@ public abstract class Node extends StringHashable implements INode {
 			this.indent = PrettyPrintSpacing;
 			this.prefixMap = prefixMap;
 			this.isBodyType = isBodyType;
+			if (PrettyPrintUseColon) {
+				this.surroundValueAssignments = false;
+				this.valueAssignment = ":";
+			}
 		}
 
 		@Override

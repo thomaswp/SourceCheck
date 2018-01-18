@@ -14,7 +14,8 @@ import edu.isnap.template.parse.TemplateParser;
 public class RunPythonTemplater {
 	public static void main(String[] args) throws IOException {
 		Node.PrettyPrintSpacing = 4;
-		parse("../data/itap/templates", "helloWorld");
+		Node.PrettyPrintUseColon = true;
+		parse("../data/itap/templates", "firstAndLast");
 	}
 
 	private static void parse(String baseDir, String assignment) throws IOException {

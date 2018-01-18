@@ -132,6 +132,11 @@ public class TemplateParser {
 	private int index;
 
 	public TemplateParser(String template) {
+		template = Arrays.stream(template.split("\n")).map(line -> {
+				int comment = line.indexOf("//");
+				if (comment < 0) return line;
+				return line.substring(0, comment);
+			}).reduce("", (a, b) -> a + b);
 		Pattern pattern = Pattern.compile(":`([^`]*)`");
 		Matcher matcher = pattern.matcher(template);
 		StringBuffer sb = new StringBuffer();

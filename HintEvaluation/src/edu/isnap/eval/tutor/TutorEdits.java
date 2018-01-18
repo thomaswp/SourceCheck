@@ -90,13 +90,13 @@ public class TutorEdits {
 //				RateHints.ITAP_DATA_DIR + RateHints.TRAINING_DIR);
 		TrainingDataset.fromDirectory("itap", RateHints.ITAP_DATA_DIR + RateHints.TRAINING_DIR)
 		.printAllSolutions("firstAndLast", RatingConfig.Python);
-		standard = standard.filterForAssignment("helloWorld");
-//		HighlightHintSet hintSet = new TemplateHighlightHintSet(
-//				"template", "../data/itap/templates", new PythonHintConfig());
-//		hintSet.addHints(standard);
+		standard = standard.filterForAssignment("firstAndLast");
+		HighlightHintSet hintSet = new TemplateHighlightHintSet(
+				"template", "../data/itap/templates", new PythonHintConfig());
+		hintSet.addHints(standard);
 //		TutorHintSet hintSet = TutorHintSet.fromFile("ITAP", RatingConfig.Python,
 //				"../data/itap/handmade_hints_itap_ast.csv");
-//		RateHints.rate(standard, hintSet);
+		RateHints.rate(standard, hintSet);
 
 		// iSnap Consensus
 //		GoldStandard standard = GoldStandard.parseSpreadsheet(ISNAP_GOLD_STANDARD);
