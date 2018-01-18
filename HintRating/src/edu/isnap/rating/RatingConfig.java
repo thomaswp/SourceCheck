@@ -27,9 +27,15 @@ public interface RatingConfig {
 			return false;
 		}
 
+		private final Set<String> Prunable = new HashSet<>(Arrays.asList(
+			new String[] {
+					"Expr",
+			}
+		));
+
 		@Override
 		public boolean trimIfChildless(String type) {
-			return false;
+			return Prunable.contains(type);
 		}
 
 		@Override

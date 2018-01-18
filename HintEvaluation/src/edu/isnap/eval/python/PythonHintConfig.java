@@ -88,15 +88,4 @@ public class PythonHintConfig extends HintConfig {
 	public NodeConstructor getNodeConstructor() {
 		return PythonNode::new;
 	}
-
-//	@Override
-//	public String getValueMappingClass(Node node) {
-//		if (node == null) return null;
-//		if (node.hasType("FunctionDef")) return node.type();
-//		if (node.hasType("Name", "arg")) {
-//			// Names are not interchangeable if they're values (e.g. foo in foo.bar)
-//			if (node.parentHasType("Attribute")) return null;
-//		}
-//		return null;
-//	}
 }
