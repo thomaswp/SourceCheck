@@ -6,10 +6,16 @@ Module(list {
             @defBlock FIRST {
                 Subscript(Name:s(Load), Index(Num:0), Load)
             }
+            @defBlock LAST_INDEX {
+                @or {
+                    BinOp(Call(Name:len(Load), list {
+                        Name:s(Load)
+                    }, list), Sub, Num:1)
+                    UnaryOp(USub, Num:1)
+                }
+            }
             @defBlock LAST {
-                Subscript(Name:s(Load), Index(BinOp(Call(Name:len(Load), list {
-                    Name:s(Load)
-                }, list), Sub, Num:1), Load), Load)
+                Subscript(Name:s(Load), Index(@block LAST_INDEX, Load), Load)
             }
             @if (VARS) {
                 @anyOrder {

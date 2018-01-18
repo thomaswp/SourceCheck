@@ -21,14 +21,24 @@ public class PythonHintConfig extends HintConfig {
 		return false;
 	}
 
+	// Some nodes in python have list children that almost always have a single child, such as
+	// comparison and assignment operators. This allows the children of these to be replaced, as
+	// fixed arguments, rather than added and removed separately as statements.
+	private final static String[] usuallySingleListParents = new String[] {
+			"Compare",
+			"Assign",
+	};
+
 	@Override
 	public boolean hasFixedChildren(Node node) {
-		return node != null && !"list".equals(node.type());
+		return node != null &&
+				(!"list".equals(node.type()) || node.parentHasType(usuallySingleListParents));
 	}
 
 	// No hint should suggest moving lists or most literal types
 	private final Set<String> immobileTypes = new HashSet<>(Arrays.asList(
 			new String[] {
+					"null",
 					"list",
 					"Num",
 					"Str",

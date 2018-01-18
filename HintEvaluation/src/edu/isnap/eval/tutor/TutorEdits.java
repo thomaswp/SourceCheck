@@ -54,6 +54,7 @@ import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.Snapshot;
 import edu.isnap.rating.GoldStandard;
+import edu.isnap.rating.HintRequest;
 import edu.isnap.rating.HintSet;
 import edu.isnap.rating.RateHints;
 import edu.isnap.rating.RateHints.HintRatingSet;
@@ -88,15 +89,19 @@ public class TutorEdits {
 //		standard.writeSpreadsheet(ITAP_GOLD_STANDARD);
 //		HighlightHintSet hintSet = new ImportHighlightHintSet("sourcecheck", new PythonHintConfig(),
 //				RateHints.ITAP_DATA_DIR + RateHints.TRAINING_DIR);
-		TrainingDataset.fromDirectory("itap", RateHints.ITAP_DATA_DIR + RateHints.TRAINING_DIR)
-		.printAllSolutions("firstAndLast", RatingConfig.Python);
-		standard = standard.filterForAssignment("firstAndLast");
+		TrainingDataset training = TrainingDataset.fromDirectory(
+				"itap", RateHints.ITAP_DATA_DIR + RateHints.TRAINING_DIR);
+		String assignment = "oneToN";
+		training.printAllSolutions(assignment, RatingConfig.Python);
+		standard = standard.filterForAssignment(assignment);
 		HighlightHintSet hintSet = new TemplateHighlightHintSet(
 				"template", "../data/itap/templates", new PythonHintConfig());
-		hintSet.addHints(standard);
+		hintSet.addHints(training.getTraces(assignment).stream()
+				.map(trace -> new HintRequest(trace.name, assignment, trace.getSolution()))
+				.collect(Collectors.toList()));
 //		TutorHintSet hintSet = TutorHintSet.fromFile("ITAP", RatingConfig.Python,
 //				"../data/itap/handmade_hints_itap_ast.csv");
-		RateHints.rate(standard, hintSet);
+//		RateHints.rate(standard, hintSet);
 
 		// iSnap Consensus
 //		GoldStandard standard = GoldStandard.parseSpreadsheet(ISNAP_GOLD_STANDARD);
