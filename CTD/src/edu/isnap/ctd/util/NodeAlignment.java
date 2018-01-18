@@ -44,6 +44,7 @@ public class NodeAlignment {
 
 		private double cost;
 		private List<MappingCost> itemizedCost = new ArrayList<>();
+		private Set<String> mappedTypes = new HashSet<>();
 
 		public final Map<String, BiMap<String, String>> valueMappings = new LinkedHashMap<>();
 
@@ -65,6 +66,9 @@ public class NodeAlignment {
 			this.from = from;
 			this.to = to;
 			this.config = config;
+			for (String[] types : config.getValueMappedTypes()) {
+				for (String type : types) mappedTypes.add(type);
+			}
 		}
 
 		public double cost() {
@@ -114,14 +118,20 @@ public class NodeAlignment {
 		 * (or its match) will be returned. Otherwise, it will return null.
 		 */
 		public String getMappedValue(Node node, boolean isFrom) {
-			if (config.valuesPolicy == ValuesPolicy.MatchAllExactly) return node.value;
 			String type = node.type(), value = node.value;
+			// If we match values exactly, the we don't check the mapping
+			if (config.valuesPolicy == ValuesPolicy.MatchAllExactly) return value;
+			// If we match all values, we only use the mapping for those with a mapped type
+			if (config.valuesPolicy == ValuesPolicy.MatchAllWithMapping &&
+					!mappedTypes.contains(type)) {
+				return value;
+			}
+
 			BiMap<String,String> map = valueMappings.get(type);
 			if (map != null) {
-				if (isFrom &&  map.containsFrom(value)) return value;
+				if (isFrom && map.containsFrom(value)) return value;
 				if (!isFrom && map.containsTo(value)) return map.getTo(value);
 			}
-			if (config.valuesPolicy == ValuesPolicy.MatchAllWithMapping) return value;
 			return null;
 		}
 

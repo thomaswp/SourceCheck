@@ -108,9 +108,15 @@ public abstract class HintConfig implements Serializable {
 	public enum ValuesPolicy {
 		/** All values are ignored, and only types are used for matching */
 		IgnoreAll,
-		/** Only values in the {@link HintConfig#getValueMappedTypes()} list are used in matching */
+		/**
+		 * Only values in the {@link HintConfig#getValueMappedTypes()} list are used in matching.
+		 * Other values are ignored, with types used instead.
+		 */
 		MappedOnly,
-		/** All values are used when matching nodes, and mapping is used */
+		/**
+		 * All values are used when matching nodes, and a mapping is used for nodes in the
+		 *  {@link HintConfig#getValueMappedTypes()} list.
+		 */
 		MatchAllWithMapping,
 		/** All values are used exactly when matching nodes, and no mapping is used */
 		MatchAllExactly,
