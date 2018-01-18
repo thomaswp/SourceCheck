@@ -77,6 +77,8 @@ public abstract class HighlightHintSet extends HintSet {
 			for (EditHint hint : hints) {
 				List<EditHint> edits = Collections.singletonList(hint);
 				Node to = code.copy();
+				System.out.println(to.prettyPrint(true));
+				System.out.println(hint);
 				EditHint.applyEdits(to, edits);
 				ASTNode outcomeNode = to.toASTNode();
 				if (outcomeNode.hasType("snapshot")) outcomeNode.type = "Snap!shot";

@@ -58,6 +58,7 @@ import edu.isnap.rating.HintSet;
 import edu.isnap.rating.RateHints;
 import edu.isnap.rating.RateHints.HintRatingSet;
 import edu.isnap.rating.RatingConfig;
+import edu.isnap.rating.TrainingDataset;
 import edu.isnap.rating.TutorHint;
 import edu.isnap.rating.TutorHint.Priority;
 import edu.isnap.rating.TutorHint.Validity;
@@ -71,34 +72,46 @@ public class TutorEdits {
 	final static String CONSENSUS_GG_SQ = "consensus-gg-sq.csv";
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
+		// Tutor consensus hint generation
 //		compareHints(Fall2016.instance);
 //		compareHintsPython("../data/itap");
 
-//		verifyHints(Fall2016.instance);
-
+		// Compare tutor hints to each other
 //		Map<String, HintSet> hintSets = readTutorHintSets(Spring2017.instance);
 //		for (HintSet hintSet : hintSets.values()) {
 //			System.out.println("------------ " + hintSet.name + " --------------");
 //			RateHints.rate(standard, hintSet);
 //		}
 
+		// Python Consensus
 		GoldStandard standard = readConsensusPython("../data/itap");
 //		standard.writeSpreadsheet(ITAP_GOLD_STANDARD);
-		HighlightHintSet hintSet = new ImportHighlightHintSet("sourcecheck", new PythonHintConfig(),
-				RateHints.ITAP_DATA_DIR + RateHints.TRAINING_DIR);
-		hintSet.addHints(standard);
+//		HighlightHintSet hintSet = new ImportHighlightHintSet("sourcecheck", new PythonHintConfig(),
+//				RateHints.ITAP_DATA_DIR + RateHints.TRAINING_DIR);
+		TrainingDataset.fromDirectory("itap", RateHints.ITAP_DATA_DIR + RateHints.TRAINING_DIR)
+		.printAllSolutions("firstAndLast", RatingConfig.Python);
+		standard = standard.filterForAssignment("helloWorld");
+//		HighlightHintSet hintSet = new TemplateHighlightHintSet(
+//				"template", "../data/itap/templates", new PythonHintConfig());
+//		hintSet.addHints(standard);
 //		TutorHintSet hintSet = TutorHintSet.fromFile("ITAP", RatingConfig.Python,
 //				"../data/itap/handmade_hints_itap_ast.csv");
-		RateHints.rate(standard, hintSet);
+//		RateHints.rate(standard, hintSet);
 
+		// iSnap Consensus
 //		GoldStandard standard = GoldStandard.parseSpreadsheet(ISNAP_GOLD_STANDARD);
 //		writeSnapStandard();
 //		runConsensus("../data/hint-rating/isnap2017/training", standard, new SnapHintConfig());
 //		writeHighlight(RateHints.ISNAP_DATA_DIR, "sourcecheck", standard, new SnapHintConfig());
-//		RateHints.rate(standard, HintSet.fromFolder("sourcecheck", RatingConfig.Snap,
-//				RateHints.ISNAP_DATA_DIR + RateHints.ALGORITHMS_DIR + "/sourcecheck"));
+//		HighlightHintSet hintSet = new TemplateHighlightHintSet(
+//				"template", CSC200Solutions.instance);
+//		hintSet.addHints(standard);
+//		writeHighlight hintSet = HintSet.fromFolder("sourcecheck", RatingConfig.Snap,
+//				RateHints.ISNAP_DATA_DIR + RateHints.ALGORITHMS_DIR + "/sourcecheck");
+//		RateHints.rate(standard, hintSet);
 //		.writeSpreadsheet(RateHints.ISNAP_DATA_DIR + RateHints.ALGORITHMS_DIR + "/sourcecheck.csv");
 
+		// Test with Fall 2017 preliminary tutor hints
 //		ListMap<String,PrintableTutorHint> fall2017 = readTutorEditsSnap(Fall2017.instance);
 //		fall2017.values().forEach(list -> list.forEach(hint -> hint.validity = Validity.OneTutor));
 //		fall2017.remove("guess1Lab");
@@ -111,11 +124,13 @@ public class TutorEdits {
 //		.writeSpreadsheet(Fall2017.GuessingGame1.exportDir() + "/fall2016-rating.csv");
 //		runConsensus(Spring2017.instance, standard);
 
+		// Run consensus using only fall or spring data
 //		System.out.println("Fall");
 //		runConsensus(Fall2016.instance, readConsensus(Spring2017.instance, CONSENSUS_GG_SQ));
 //		System.out.println("Spring");
 //		runConsensus(Spring2017.instance, readConsensus(Fall2016.instance, CONSENSUS_GG_SQ));
 
+		// Export training+request data
 //		exportRatingDatasetPython("../../PythonAST/data", "../data/itap", RateHints.ITAP_DATA_DIR);
 //		exportRatingDatasetSnap(Spring2017.instance, CONSENSUS_GG_SQ,
 //				"hint-eval", Spring2017.Squiral, Spring2017.GuessingGame1);

@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.List;
 
 import edu.isnap.ctd.graph.ASTNode;
+import edu.isnap.ctd.util.map.CountMap;
 import edu.isnap.ctd.util.map.ListMap;
 
 public class TrainingDataset {
@@ -58,9 +59,28 @@ public class TrainingDataset {
 		}
 	}
 
+	public void printAllSolutions(String assignmentID, RatingConfig config) {
+		CountMap<String> solutions = new CountMap<>();
+		for (Trace trace : getTraces(assignmentID)) {
+			ASTNode solution = trace.getSolution();
+			if (solution == null) continue;
+			solutions.increment(solution.prettyPrint(true, config));
+		}
+		for (String solution : solutions.keySet()) {
+			System.out.println(solutions.getCount(solution));
+			System.out.println(solution);
+			System.out.println("----------------");
+		}
+	}
+
 	@SuppressWarnings("serial")
 	public static class Trace extends ArrayList<ASTNode> {
 		public final String name;
+
+		public ASTNode getSolution() {
+			if (isEmpty()) return null;
+			return get(size() - 1);
+		}
 
 		public Trace(String name) {
 			this.name = name;

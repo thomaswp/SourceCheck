@@ -12,7 +12,7 @@ public class RunTemplater {
 		Node.PrettyPrintSpacing = 4;
 //		TemplateParser.parseTemplate(CSC200Solutions.GuessingGame2New);
 		for (Assignment assignment : CSC200Solutions.All) {
-			TemplateParser.parseTemplate(assignment);
+			TemplateParser.parseSnapTemplate(assignment);
 		}
 	}
 }

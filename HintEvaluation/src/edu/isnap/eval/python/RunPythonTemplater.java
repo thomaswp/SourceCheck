@@ -6,18 +6,24 @@ import java.nio.file.Files;
 
 import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.graph.Node;
+import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.eval.python.PythonImport.PythonNode;
 import edu.isnap.template.parse.TemplateParser;
 
 public class RunPythonTemplater {
 	public static void main(String[] args) throws IOException {
-		parse("../data/itap/templates/helloWorld");
+		Node.PrettyPrintSpacing = 4;
+		parse("../data/itap/templates", "helloWorld");
 	}
 
-	private static void parse(String baseFile) throws IOException {
-		String source = new String(Files.readAllBytes(new File(baseFile + ".json").toPath()));
+	private static void parse(String baseDir, String assignment) throws IOException {
+		String source = new String(Files.readAllBytes(
+				new File(baseDir, assignment + ".json").toPath()));
 		Node sample = JsonAST.toNode(ASTNode.parse(source), PythonNode::new);
-		TemplateParser.parseTemplate(baseFile, sample, new PythonHintConfig());
+		String templatePath = new File(baseDir, assignment).getPath();
+		HintMap hintMap = TemplateParser.parseTemplate(
+				templatePath, sample, new PythonHintConfig());
+		TemplateParser.saveHintMap(hintMap, baseDir, assignment);
 	}
 }

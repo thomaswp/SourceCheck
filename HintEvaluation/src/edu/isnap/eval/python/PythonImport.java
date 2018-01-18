@@ -136,6 +136,11 @@ public class PythonImport {
 		public String student;
 		public String source;
 
+		@SuppressWarnings("unused")
+		private PythonNode() {
+			this(null, null, null, null);
+		}
+
 		public PythonNode(Node parent, String type, String value, String id) {
 			super(parent, type, value, id);
 		}

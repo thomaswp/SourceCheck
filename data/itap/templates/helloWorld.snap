@@ -1,5 +1,13 @@
 Module(list {
-  FunctionDef(arguments(list, null, list, list, null, list), list {
-    Return(Str:`Hello World!`)
-  }, list, null)
+    FunctionDef:helloWorld(arguments(list, null, list, list, null, list), list {
+        @or {
+            Return(Str:`Hello World!`)
+            @inline {
+                Assign(list {
+                    Name:message(Store)
+                }, Str:`Hello World!`)
+                Return(Name:message(Load))
+            }
+        }
+      }, list, null)
 })
