@@ -21,6 +21,16 @@ import edu.isnap.rating.RatingConfig;
 public class ASTNode implements INode {
 
 	/**
+	 * Represents JSON AST nodes that were null, meaning a empty node. Rather than reading these as
+	 * null (which could mess up any algorithms operating on the ASTNode), we create a node with the
+	 * type held in this constant (and no value or id). This is different than an node actually
+	 * representing null/nil/None in the AST, which would presumably have a different type.
+	 * We chose not to ignore these nodes completely, since often they are placeholders for other
+	 * nodes that could exist but where non currently exists, and the index ordering is meaningful.
+	 */
+	public final static String EMPTY_TYPE = "null";
+
+	/**
 	 * The type of this node, e.g. literal, variable-declaration, binary-operation.
 	 */
 	public String type;
@@ -176,7 +186,7 @@ public class ASTNode implements INode {
 			for (int i = 0; i < childrenOrder.length(); i++) {
 				String relation = childrenOrder.getString(i);
 				if (children.isNull(relation)) {
-					node.addChild(relation, new ASTNode("null", null, null));
+					node.addChild(relation, new ASTNode(EMPTY_TYPE, null, null));
 					continue;
 				}
 

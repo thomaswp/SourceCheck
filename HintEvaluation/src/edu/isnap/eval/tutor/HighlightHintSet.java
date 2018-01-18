@@ -74,14 +74,9 @@ public abstract class HighlightHintSet extends HintSet {
 //			System.out.println("----------------\n");
 
 
-			if (hints.size() > 0) {
-				System.out.println(code.prettyPrint(true));
-				highlighter.findSolutionMapping(code).printValueMappings(System.out);
-			}
 			for (EditHint hint : hints) {
 				List<EditHint> edits = Collections.singletonList(hint);
 				Node to = code.copy();
-				System.out.println(hint);
 				EditHint.applyEdits(to, edits);
 				ASTNode outcomeNode = to.toASTNode();
 				if (outcomeNode.hasType("snapshot")) outcomeNode.type = "Snap!shot";
@@ -95,7 +90,8 @@ public abstract class HighlightHintSet extends HintSet {
 		finish();
 		return this;
 	}
-	private static double getDefaultWeight(EditHint hint) {
+
+	private static double getDefaultWeight(EditHint hint) {
 		if (hint instanceof Deletion) return 0.25f;
 		return 1;
 	}

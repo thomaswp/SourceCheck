@@ -104,7 +104,10 @@ public class RateHints {
 		// Remove nodes that should be pruned if childless
 		for (ASTNode node : toNodes) {
 			if (node.parent() == null) continue;
-			if (node.children().size() == 0 && config.trimIfChildless(node.type())) {
+			// All empty-type nodes can be pruned, since they're just placeholders
+			if (node.hasType(ASTNode.EMPTY_TYPE) ||
+					//
+					(node.children().size() == 0 && config.trimIfChildless(node.type()))) {
 				node.parent().removeChild(node.index());
 			}
 		}
@@ -227,7 +230,7 @@ public class RateHints {
 				break;
 			}
 		}
-		if (bestHint != null) {
+		if (!bestOverlap.isEmpty()) {
 //			ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, bestHint.to, config);
 //			System.out.println("Tutor Hint:");
 //			System.out.println(Diff.diff(

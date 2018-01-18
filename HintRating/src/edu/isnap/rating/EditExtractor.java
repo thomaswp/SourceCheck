@@ -9,6 +9,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
@@ -276,14 +277,17 @@ public class EditExtractor {
 		addedRefs.removeAll(movedTo);
 
 		// Don't list nodes as removed/added if they have a pair and their index only changed due
-		// to modified ealier siblings
+		// to modified earlier siblings
 		removedRefs.removeAll(displacedFrom);
 		addedRefs.removeAll(displacedTo);
 
 		removedRefs.forEach(removedRef -> edits.add(new Deletion(removedRef)));
 		addedRefs.forEach(addedRef -> edits.add(new Insertion(addedRef)));
 
-		return edits;
+		// Remove any edits to NULL nodes, since these aren't really there to begin with
+		return edits.stream()
+				.filter(e -> !ASTNode.EMPTY_TYPE.equals(e.node.type))
+				.collect(Collectors.toSet());
 	}
 
 	public static NodeReference getReference(ASTNode node) {

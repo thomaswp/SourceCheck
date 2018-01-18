@@ -11,7 +11,7 @@ Module(list {
                     BinOp(Call(Name:len(Load), list {
                         Name:s(Load)
                     }, list), Sub, Num:1)
-                    UnaryOp(USub, Num:1)
+                    // UnaryOp(USub, Num:1)
                 }
             }
             @defBlock LAST {

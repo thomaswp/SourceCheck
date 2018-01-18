@@ -15,7 +15,16 @@ public class RunPythonTemplater {
 	public static void main(String[] args) throws IOException {
 		Node.PrettyPrintSpacing = 4;
 		Node.PrettyPrintUseColon = true;
-		parse("../data/itap/templates", "oneToN");
+		String[] problems = new String[] {
+				"helloWorld",
+				"firstAndLast",
+				"isPunctuation",
+				"kthDigit",
+				"oneToN",
+		};
+		for (String problem : problems) {
+			parse("../data/itap/templates", problem);
+		}
 	}
 
 	private static void parse(String baseDir, String assignment) throws IOException {

@@ -6,6 +6,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.json.JSONObject;
 
+import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Predicate;
 import edu.isnap.ctd.util.NodeAlignment.Mapping;
@@ -205,12 +206,13 @@ public class Insertion extends EditHint {
 					}
 				}
 
-				// In case this is a newly inserted parent, we pad with nulls
+				// In case this is a newly inserted parent, we pad with placeholder nodes
 				while (parent.children.size() < index) {
-					parent.children.add(parent.constructNode(parent, "null"));
+					parent.children.add(parent.constructNode(parent, ASTNode.EMPTY_TYPE));
 				}
 				// and then remove them as children are inserted
-				if (index < parent.children.size() && parent.children.get(index).hasType("null")) {
+				if (index < parent.children.size() &&
+						parent.children.get(index).hasType(ASTNode.EMPTY_TYPE)) {
 					parent.children.remove(index);
 				}
 				parent.children.add(index, toInsert);
