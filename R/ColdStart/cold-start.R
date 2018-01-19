@@ -45,5 +45,5 @@ plotRequestBoxplots <- function(ratings) {
 runme <- function() {
   isnap <- read_csv("../../data/hint-rating/isnap2017/analysis/cold-start.csv")
   
-  plotColdStart(isnap) + labs(title="iSnap - Quality Cold Start")
+  plotColdStart(isnap) + labs(title="iSnap - Quality Cold Start") + scale_y_continuous(limits=c(0,.3))
 }
