@@ -7,22 +7,65 @@ twoColors <- c("#a1d99b","#2c7fb8")
 
 se <- function(x) ifelse(length(x) == 0, 0, sqrt(var(x, na.rm=T)/sum(!is.na(x))))
 
-plotColdStart <- function(ratings) {
-  assignments <- ddply(ratings, c("round", "count", "total", "assignmentID"), colwise(mean))
+createTemplateCopy <- function(template, source, means) {
+  assignments <- unique(template$assignmentID)
+  for (assignment in assignments) {
+    template[template$assignmentID == assignment,]$mean <- means[[assignment]]
+  }
+  template$source <- source
+  return (template)
+}
+
+
+assignmentNames <- c(
+  `guess1Lab` = "Guessing Game",
+  `squiralHW` = "Squiral",
+  `helloWorld` = "Hello World",
+  `firstAndLast` = "First and Last",
+  `oneToN` = "One to N",
+  `isPunctuation` = "Is Punctuation",
+  `kthDigit` = "Kth Digit"
+)
+
+getRounds <- function(ratings) {
+  assignments <- ddply(ratings[,-5], c("round", "count", "total", "assignmentID"), colwise(mean))
   
   rounds <- ddply(assignments, c("count", "total", "assignmentID"), summarize, 
                   fullMean=mean(MultipleTutors_Full), fullSE=se(MultipleTutors_Full),
                   partialMean=mean(MultipleTutors_Partial), partialSE=se(MultipleTutors_Partial))
+}
+
+plotColdStartBounded <- function(ratings, isFull, template, single) {
+  rounds <- getRounds(ratings)
+  rounds$source <- "students"
+  rounds$mean <- if(isFull) rounds$fullMean else rounds$partialMean
   
-  assignmentNames <- c(
-    `guess1Lab`="Guessing Game",
-    `squiralHW`="Squiral"
-  )
+  bounds <- rounds
+  if (!missing(template)) {
+    bounds <- rbind(bounds, createTemplateCopy(rounds, "template", template))
+  }
+  if (!missing(single)) {
+    bounds <- rbind(bounds, createTemplateCopy(rounds, "single", single))
+  }
+  rounds <- bounds
   
-  ggplot(melt(rounds[,c(1:4, 6)], id=c("count", "total", "assignmentID")), aes(x=count, y=value, color=variable)) + 
-    geom_line() + facet_wrap(~assignmentID, scales = "free_x", labeller=as_labeller(assignmentNames)) +
-    xlab("Training Dataset Size") + ylab("Mean Quality Score") + labs(color="Match") +
-    scale_color_manual(labels=c("Full", "Partial"), values=twoColors) +
+  rounds$source <- ordered(rounds$source, c("template", "single", "students"))
+  
+  ggplot(rounds, aes(x=count, y=mean, color=source)) + 
+    geom_line(size=1) + facet_wrap(~assignmentID, scales = "free_x", labeller=as_labeller(assignmentNames)) +
+    xlab("Training Dataset Size") + ylab("Mean Quality Score") + labs(color="Data") +
+    scale_color_manual(labels=c("Expert All", "Expert 1", "Students"), values=c(twoColors, "black")) +
+    theme_bw()
+}
+
+plotColdStart <- function(ratings) {
+  rounds <- getRounds(ratings)
+  melted <- melt(rounds[,c(1:4, 6)], id=c("count", "total", "assignmentID"))
+  
+  ggplot(melted, aes(x=count, y=value, linetype=variable)) + 
+    geom_line(size=1) + facet_wrap(~assignmentID, scales = "free_x", labeller=as_labeller(assignmentNames)) +
+    xlab("Training Dataset Size") + ylab("Mean Quality Score") + labs(linetype="Match") +
+    scale_linetype_discrete(labels=c("Full", "Partial")) +
     theme_bw()
 }
 
@@ -45,5 +88,32 @@ plotRequestBoxplots <- function(ratings) {
 runme <- function() {
   isnap <- read_csv("../../data/hint-rating/isnap2017/analysis/cold-start.csv")
   
-  plotColdStart(isnap) + labs(title="iSnap - Quality Cold Start") + scale_y_continuous(limits=c(0,.3))
+  iSnapTemplateFull <- c("guess1Lab" = 0.361, "squiralHW" = 0.272)
+  iSnapTemplatePartial <- c("guess1Lab" = 0.400, "squiralHW" = 0.322)
+  
+  iSnapSingleFull <- c("guess1Lab" = 0.249, "squiralHW" = 0.217)
+  iSnapSinglePartial <- c("guess1Lab" = 0.279, "squiralHW" = 0.250)
+  
+  plotColdStart(isnap) + labs(title="iSnap - Quality Cold Start")
+  plotColdStartBounded(isnap, T, iSnapTemplateFull, iSnapSingleFull) + 
+    labs(title="iSnap - Quality Cold Start (Full)")
+  plotColdStartBounded(isnap, F, iSnapTemplatePartial, iSnapSinglePartial) + 
+    labs(title="iSnap - Quality Cold Start (Partial)")
+  
+  
+  
+  itap <- read_csv("../../data/hint-rating/itap2016/analysis/cold-start.csv")
+  itapTemplateFull <- c("helloWorld" = 0.357, "firstAndLast" = 0.429,
+                        "isPunctuation" = 0.231, "kthDigit" = 0.399, "oneToN" = 0.119)
+  itapTemplatePartial <- c("helloWorld" = 0.595, "firstAndLast" = 0.429,
+                          "isPunctuation" = 0.388, "kthDigit" = 0.493, "oneToN" = 0.437)
+  itapSingleFull <- c("helloWorld" = 0.333, "firstAndLast" = 0.492,
+                      "isPunctuation" = 0.192, "kthDigit" = 0.250, "oneToN" = 0.112)
+  itapSinglePartial <- c("helloWorld" = 0.638, "firstAndLast" = 0.492,
+                         "isPunctuation" = 0.308, "kthDigit" = 0.286, "oneToN" = 0.283)
+  
+  plotColdStartBounded(itap, T, itapTemplateFull, itapSingleFull) + 
+    labs(title="ITAP - Quality Cold Start (Full)")
+  plotColdStartBounded(itap, F, itapTemplatePartial, itapSinglePartial) + 
+    labs(title="ITAP - Quality Cold Start (Partial)")
 }

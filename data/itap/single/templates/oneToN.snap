@@ -1,0 +1,18 @@
+Module(list {
+    FunctionDef:oneToN(arguments(list {
+        arg:n(null)
+    }, null, list, list, null, list), list {
+        Assign(list {
+            Name:text(Store)
+        }, Str:)
+        For(Name:i(Store), Call(Name:range(Load), list {
+            Num:1
+            BinOp(Name:n(Load), Add, Num:1)
+        }, list), list {
+            AugAssign(Name:text(Store), Add, Call(Name:str(Load), list {
+                Name:i(Load)
+            }, list))
+        }, list)
+        Return(Name:text(Load))
+    }, list, null)
+})

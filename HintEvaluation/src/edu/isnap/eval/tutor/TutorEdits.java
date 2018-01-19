@@ -39,6 +39,7 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
+import edu.isnap.datasets.CSC200Solutions;
 import edu.isnap.datasets.Fall2016;
 import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.agreement.Agreement;
@@ -90,6 +91,7 @@ public class TutorEdits {
 //		HighlightHintSet hintSet = new ImportHighlightHintSet("sourcecheck", new PythonHintConfig(),
 //				RateHints.ITAP_DATA_DIR + RateHints.TRAINING_DIR);
 //		hintSet.addHints(standard);
+//		standard = standard.filterForAssignment("helloWorld");
 //		TutorHintSet hintSet = TutorHintSet.fromFile("ITAP", RatingConfig.Python,
 //				"../data/itap/handmade_hints_itap_ast.csv");
 //		RateHints.rate(standard, hintSet);
@@ -97,14 +99,14 @@ public class TutorEdits {
 		// iSnap Consensus
 		GoldStandard standard = GoldStandard.parseSpreadsheet(ISNAP_GOLD_STANDARD);
 //		writeSnapStandard();
-		runConsensus("../data/hint-rating/isnap2017/training", standard, new SnapHintConfig());
+//		runConsensus("../data/hint-rating/isnap2017/training", standard, new SnapHintConfig());
 //		writeHighlight(RateHints.ISNAP_DATA_DIR, "sourcecheck", standard, new SnapHintConfig());
-//		HighlightHintSet hintSet = new TemplateHighlightHintSet(
-//				"template", CSC200Solutions.instance);
-//		hintSet.addHints(standard);
+		HighlightHintSet hintSet = new TemplateHighlightHintSet(
+				"template", CSC200Solutions.instance);
+		hintSet.addHints(standard);
 //		writeHighlight hintSet = HintSet.fromFolder("sourcecheck", RatingConfig.Snap,
 //				RateHints.ISNAP_DATA_DIR + RateHints.ALGORITHMS_DIR + "/sourcecheck");
-//		RateHints.rate(standard, hintSet);
+		RateHints.rate(standard, hintSet);
 //		.writeAllHints(RateHints.ISNAP_DATA_DIR + RateHints.ALGORITHMS_DIR + "/sourcecheck.csv");
 
 		// Test with Fall 2017 preliminary tutor hints

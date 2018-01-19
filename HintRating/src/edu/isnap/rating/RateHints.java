@@ -286,8 +286,8 @@ public class RateHints {
 			double priorityMean = stream()
 					.mapToDouble(RequestRating::getPriorityScore)
 					.average().getAsDouble();
-			System.out.printf("TOTAL: %s / %.02fp\n",
-					RequestRating.validityArrayToString(validityArrayMean), priorityMean);
+			System.out.printf("TOTAL: %s / %.03fp\n",
+					RequestRating.validityArrayToString(validityArrayMean, 3), priorityMean);
 		}
 
 		public void writeAllHints(String path) throws FileNotFoundException, IOException {
@@ -370,16 +370,17 @@ public class RateHints {
 
 		public void printSummary() {
 			double[] validityArray = getValidityArray();
-			System.out.printf("%s: %s / %.02fp\n", requestID, validityArrayToString(validityArray),
-					getPriorityScore());
+			System.out.printf("%s: %s / %.02fp\n",
+					requestID, validityArrayToString(validityArray, 2), getPriorityScore());
 		}
 
-		private static String validityArrayToString(double[] array) {
+		private static String validityArrayToString(double[] array, int digits) {
+			String format = "%.0" + digits + "f (%.0" + digits + "f)";
 			StringBuilder sb = new StringBuilder();
 			sb.append("[");
 			for (int i = 0; i < array.length / 2; i++) {
 				if (i > 0) sb.append(", ");
-				sb.append(String.format("%.02f (%.02f)", array[i * 2], array[i * 2 + 1]));
+				sb.append(String.format(format, array[i * 2], array[i * 2 + 1]));
 			}
 			sb.append("]v");
 			return sb.toString();
