@@ -83,21 +83,21 @@ public class TutorEdits {
 //		}
 
 		// Python Consensus
-		GoldStandard standard = readConsensusPython("../data/itap");
+//		GoldStandard standard = readConsensusPython("../data/itap");
 //		standard.writeSpreadsheet(ITAP_GOLD_STANDARD);
-		HighlightHintSet hintSet = new TemplateHighlightHintSet(
-				"template", "../data/itap/templates", new PythonHintConfig());
+//		HighlightHintSet hintSet = new TemplateHighlightHintSet(
+//				"template", "../data/itap/templates", new PythonHintConfig());
 //		HighlightHintSet hintSet = new ImportHighlightHintSet("sourcecheck", new PythonHintConfig(),
 //				RateHints.ITAP_DATA_DIR + RateHints.TRAINING_DIR);
-		hintSet.addHints(standard);
+//		hintSet.addHints(standard);
 //		TutorHintSet hintSet = TutorHintSet.fromFile("ITAP", RatingConfig.Python,
 //				"../data/itap/handmade_hints_itap_ast.csv");
-		RateHints.rate(standard, hintSet);
+//		RateHints.rate(standard, hintSet);
 
 		// iSnap Consensus
-//		GoldStandard standard = GoldStandard.parseSpreadsheet(ISNAP_GOLD_STANDARD);
+		GoldStandard standard = GoldStandard.parseSpreadsheet(ISNAP_GOLD_STANDARD);
 //		writeSnapStandard();
-//		runConsensus("../data/hint-rating/isnap2017/training", standard, new SnapHintConfig());
+		runConsensus("../data/hint-rating/isnap2017/training", standard, new SnapHintConfig());
 //		writeHighlight(RateHints.ISNAP_DATA_DIR, "sourcecheck", standard, new SnapHintConfig());
 //		HighlightHintSet hintSet = new TemplateHighlightHintSet(
 //				"template", CSC200Solutions.instance);
@@ -105,7 +105,7 @@ public class TutorEdits {
 //		writeHighlight hintSet = HintSet.fromFolder("sourcecheck", RatingConfig.Snap,
 //				RateHints.ISNAP_DATA_DIR + RateHints.ALGORITHMS_DIR + "/sourcecheck");
 //		RateHints.rate(standard, hintSet);
-//		.writeSpreadsheet(RateHints.ISNAP_DATA_DIR + RateHints.ALGORITHMS_DIR + "/sourcecheck.csv");
+//		.writeAllHints(RateHints.ISNAP_DATA_DIR + RateHints.ALGORITHMS_DIR + "/sourcecheck.csv");
 
 		// Test with Fall 2017 preliminary tutor hints
 //		ListMap<String,PrintableTutorHint> fall2017 = readTutorEditsSnap(Fall2017.instance);
