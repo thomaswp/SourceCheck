@@ -6,6 +6,8 @@ library(reshape2)
 twoColors <- c("#a1d99b","#2c7fb8")
 
 se <- function(x) ifelse(length(x) == 0, 0, sqrt(var(x, na.rm=T)/sum(!is.na(x))))
+first <- function(x) head(x, 1)
+last <- function(x) tail(x, 1)
 
 createTemplateCopy <- function(template, source, means) {
   assignments <- unique(template$assignmentID)
@@ -85,6 +87,17 @@ plotRequestBoxplots <- function(ratings) {
          aes(x=ordered(count), y=MultipleTutors_Partial)) + geom_boxplot() + facet_grid(requestID ~ .)
 }
 
+qualityStats <- function(ratings, isFull, template, single) {
+  rounds <- getRounds(ratings)
+  rounds$mean <- if (isFull) rounds$fullMean else rounds$partialMean
+  stats <- ddply(rounds, "assignmentID", summarize, bestStudents=count[first(which(mean==max(mean)))],
+                 maxRating=max(mean),maxStudents=max(count), finalRating=last(mean))
+  stats <- stats[match(stats$assignmentID, names(template)),]
+  stats$single <- single
+  stats$template <- template
+  stats
+}
+
 runme <- function() {
   isnap <- read_csv("../../data/hint-rating/isnap2017/analysis/cold-start.csv")
   
@@ -100,7 +113,12 @@ runme <- function() {
   plotColdStartBounded(isnap, F, iSnapTemplatePartial, iSnapSinglePartial) + 
     labs(title="iSnap - Quality Cold Start (Partial)")
   
-  
+  iSnapStatsFull <- qualityStats(isnap, T, iSnapTemplateFull, iSnapSingleFull)
+  iSnapStatsFull$match <- "Full"
+  iSnapStatsPartial <- qualityStats(isnap, F, iSnapTemplatePartial, iSnapSinglePartial)
+  iSnapStatsPartial$match <- "Partial"
+  iSnapStats <- rbind(iSnapStatsFull, iSnapStatsPartial)
+  iSnapStats$dataset <- "iSnap"
   
   itap <- read_csv("../../data/hint-rating/itap2016/analysis/cold-start.csv")
   itapTemplateFull <- c("helloWorld" = 0.357, "firstAndLast" = 0.429,
@@ -116,4 +134,14 @@ runme <- function() {
     labs(title="ITAP - Quality Cold Start (Full)")
   plotColdStartBounded(itap, F, itapTemplatePartial, itapSinglePartial) + 
     labs(title="ITAP - Quality Cold Start (Partial)")
+  
+  itapStatsFull <- qualityStats(itap, T, itapTemplateFull, itapSingleFull)
+  itapStatsFull$match <- "Full"
+  itapStatsPartial <- qualityStats(itap, F, itapTemplatePartial, itapSinglePartial)
+  itapStatsPartial$match <- "Partial"
+  itapStats <- rbind(itapStatsFull, itapStatsPartial)
+  itapStats$dataset <- "ITAP"
+  
+  allStats <- rbind(iSnapStats, itapStats)
+  write.csv(allStats, "C:/Users/Thomas/Desktop/stats.csv")
 }
