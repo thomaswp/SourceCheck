@@ -70,7 +70,9 @@ public class RateHints {
 							extractor);
 					requestRating.add(rating);
 				}
-				if (debug) requestRating.printRatings(validHints.get(0).from, hintSet.config);
+				if (debug) {
+					requestRating.printRatings(validHints.get(0).from, hintSet.config, validHints);
+				}
 				ratingSet.add(requestRating);
 				requestRating.printSummary();
 			}
@@ -386,11 +388,15 @@ public class RateHints {
 			return sb.toString();
 		}
 
-		private void printRatings(ASTNode from, RatingConfig config) {
+		private void printRatings(ASTNode from, RatingConfig config, List<TutorHint> validHints) {
 			if (isEmpty()) return;
 			HintOutcome firstOutcome = get(0).hint;
-			System.out.println("+====+ " + firstOutcome.assignmentID + " / " + firstOutcome.requestID +
-					" +====+");
+			System.out.println("+====+ " + firstOutcome.assignmentID + " / " +
+					firstOutcome.requestID + " +====+");
+			Set<TutorHint> valid = validHints.stream()
+					.filter(hint -> hint.validity.isAtLeast(Validity.MultipleTutors) &&
+							(hint.priority == null || hint.priority != Priority.TooSoon))
+					.collect(Collectors.toSet());
 			System.out.println(from.prettyPrint(true, config));
 			for (int tooSoonRound = 0; tooSoonRound < 2; tooSoonRound++) {
 				for (MatchType type : MatchType.values()) {
@@ -406,11 +412,18 @@ public class RateHints {
 							System.out.println("Weight: " + rating.hint.weight());
 							System.out.println(rating.hint.resultString());
 							System.out.println("-------");
+							valid.remove(rating.match);
 						}
 					}
 					if (tooSoon) break;
 				}
 			}
+//			if (!valid.isEmpty()) System.out.println("               === Missed ===");
+//			for (TutorHint missed : valid) {
+//				System.out.println(missed.hintID);
+//				System.out.println(missed.toDiff(config));
+//				System.out.println("-------");
+//			}
 		}
 	}
 
