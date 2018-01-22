@@ -3,8 +3,8 @@ library(ggplot2)
 library(plyr)
 library(reshape2)
 
-traces <- read_csv("../../pairs/hint-rating/isnap2017/analysis/traces.csv")
-dists <- read_csv("../../pairs/hint-rating/isnap2017/analysis/distances.csv")
+traces <- read_csv("../../data/hint-rating/isnap2017/analysis/traces.csv")
+dists <- read_csv("../../data/hint-rating/isnap2017/analysis/distances.csv")
 
 pairs <- merge(traces, dists, by=c("traceID", "requestID"))
 pairs$quality <- pairs$MultipleTutors_Full
