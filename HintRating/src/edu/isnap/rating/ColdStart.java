@@ -67,6 +67,26 @@ public class ColdStart {
 		}
 	}
 
+	public Spreadsheet testSingleTraces() {
+		Spreadsheet spreadsheet = new Spreadsheet();
+		for (String assignmentID : dataset.getAssignmentIDs()) {
+			List<Trace> allTraces = new ArrayList<>(dataset.getTraces(assignmentID));
+			GoldStandard assignmentStandard = standard.filterForAssignment(assignmentID);
+			for (Trace trace : allTraces) {
+				hintGenerator.clearTraces();
+				hintGenerator.addTrace(trace);
+				HintSet hintSet = hintGenerator.generateHints(trace.name,
+						assignmentStandard.getHintRequests());
+				System.out.println("==== " + trace.name + " ===");
+				HintRatingSet ratings = RateHints.rate(assignmentStandard, hintSet);
+
+				spreadsheet.setHeader("traceID", trace.name);
+				ratings.writeAllRatings(spreadsheet);
+			}
+		}
+		return spreadsheet;
+	}
+
 	public static interface HintGenerator {
 		void clearTraces();
 		void addTrace(Trace trace);

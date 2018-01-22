@@ -39,8 +39,14 @@ public class GoldStandard {
 		return map.get(assignmentID).keySet();
 	}
 
-	public List<TutorHint> getValidEdits(String assignment, String snapshotID) {
-		return map.get(assignment).getList(snapshotID);
+	public List<TutorHint> getValidEdits(String assignment, String requestID) {
+		return map.get(assignment).getList(requestID);
+	}
+
+	public ASTNode getHintRequestNode(String assignment, String requestID) {
+		List<TutorHint> edits = getValidEdits(assignment, requestID);
+		if (edits == null || edits.isEmpty()) return null;
+		return edits.get(0).from;
 	}
 
 	public GoldStandard(ListMap<String, ? extends TutorHint> hints) {
@@ -143,5 +149,18 @@ public class GoldStandard {
 		.stream().flatMap(list -> list.stream())
 		.forEach(hint -> hints.add(assignmentID, hint));
 		return new GoldStandard(hints);
+	}
+
+	public void printAllRequestNodes(RatingConfig config) {
+		for (String assignmentID : getAssignmentIDs()) {
+			System.out.println(" ============= " + assignmentID + " ============= ");
+			for (String requestID : getRequestIDs(assignmentID)) {
+				ASTNode from = getHintRequestNode(assignmentID, requestID);
+				if (from == null) continue;
+				System.out.println(requestID);
+				System.out.println(from.prettyPrint(true, config));
+				System.out.println("----------------");
+			}
+		}
 	}
 }

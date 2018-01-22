@@ -59,13 +59,21 @@ public class TrainingDataset {
 		}
 	}
 
-	public void printAllSolutions(String assignmentID, RatingConfig config) {
+	public void printAllSolutions(String assignmentID, RatingConfig config, boolean group) {
 		CountMap<String> solutions = new CountMap<>();
 		for (Trace trace : getTraces(assignmentID)) {
 			ASTNode solution = trace.getSolution();
 			if (solution == null) continue;
-			solutions.increment(solution.prettyPrint(true, config));
+			String prettyPrint = solution.prettyPrint(true, config);
+			if (!group) {
+				System.out.println(trace.name);
+				System.out.println(prettyPrint);
+				System.out.println("----------------");
+				continue;
+			}
+			solutions.increment(prettyPrint);
 		}
+		if (!group) return;
 		for (String solution : solutions.keySet()) {
 			System.out.println(solutions.getCount(solution));
 			System.out.println(solution);

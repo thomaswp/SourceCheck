@@ -27,6 +27,7 @@ public class Spreadsheet {
 	}
 
 	public void put(String key, Object value) {
+		if (row == null) throw new RuntimeException("Must create a newRow() before calling put()");
 		row.put(key, value);
 	}
 
