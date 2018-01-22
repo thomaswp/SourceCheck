@@ -79,7 +79,7 @@ plotRequests <- function(ratings) {
                     partialMean=mean(MultipleTutors_Partial), partialSE=se(MultipleTutors_Partial))
   
   
-  ggplot(requests, aes(x=count, y=fullMean, color=requestID)) + geom_line() + facet_grid(. ~ assignmentID)
+  ggplot(requests, aes(x=count, y=fullMean, color=requestID)) + geom_line() + facet_wrap(~ assignmentID, scales="free_x")
 }
 
 plotRequestBoxplots <- function(ratings) {
