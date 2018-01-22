@@ -93,7 +93,7 @@ Before starting the server, you also need to change the properties for HintServe
 - Select the 'Deployment Assembly', Add CTD, Datasets, iSnap, and SnapParser;
 - Select Project Facets, Check 'Dynamic Web Module', 'Java', and 'JavaScript'.
 
-If any error occurs, usually that is due to the Java Compiler version is not set properly. You may need to change the Java Compiler to the newest version for all the projects. You can do it by clicking 'Markers', selecting problems, right click and choose quick fix. After resolving all the issues, you can start the server. A default message 'Loaded cache for guess1Lab' shows on the web page if the server runs as expected.
+If any error occurs, usually that is due to the Java Compiler version which is not set properly. You may need to change the Java Compiler to the newest version for all the projects. You can do it by clicking 'Markers', selecting problems, right click and choose quick fix. After resolving all the issues, you can start the server. A default message 'Loaded cache for guess1Lab' shows on the web page if the server runs as expected.
 
 ## HintEvaluation
 
