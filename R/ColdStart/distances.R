@@ -20,6 +20,6 @@ pairs$costQuartile <- as.ordered(as.integer(pairs$pCost * 3.999))
 best <- ddply(pairs, "requestID", summarize, maxQuality = max(quality), maxCount = sum(quality==1))
 hist(best$maxQuality)
 
-ggplot(pairs, aes(x=pCost, y=quality)) + geom_point() + geom_jitter(height=0.05)
-ggplot(pairs, aes(x=pCost, y=quality)) + geom_point() + geom_jitter(height=0.05) + facet_wrap(~requestID)
+ggplot(pairs, aes(x=pCost, y=quality)) + geom_jitter(height=0.05)
+ggplot(pairs, aes(x=pCost, y=quality)) + geom_jitter(height=0.05) + facet_wrap(~requestID)
 ggplot(pairs, aes(x=costQuartile, y=quality)) + geom_boxplot() + facet_wrap(~requestID)
