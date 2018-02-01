@@ -9,6 +9,12 @@ se <- function(x) ifelse(length(x) == 0, 0, sqrt(var(x, na.rm=T)/sum(!is.na(x)))
 first <- function(x) head(x, 1)
 last <- function(x) tail(x, 1)
 
+slope <- function(x) {
+  df <- data.frame(idx=1:length(x), x=x)
+  model <- lm(x ~ idx, df)
+  return (model$coefficients["idx"][[1]])
+}
+
 createTemplateCopy <- function(template, source, means) {
   assignments <- unique(template$assignmentID)
   for (assignment in assignments) {
@@ -34,7 +40,10 @@ getRounds <- function(ratings) {
   
   rounds <- ddply(assignments, c("count", "total", "assignmentID"), summarize, 
                   fullMean=mean(MultipleTutors_Full), fullSE=se(MultipleTutors_Full),
-                  partialMean=mean(MultipleTutors_Partial), partialSE=se(MultipleTutors_Partial))
+                  partialMean=mean(MultipleTutors_Partial), partialSE=se(MultipleTutors_Partial),
+                  fullWeight=mean(MultipleTutors_Full_validWeight),
+                  partialWeight=mean(MultipleTutors_Partial_validWeight),
+                  totalWeight=mean(totalWeight))
 }
 
 plotColdStartBounded <- function(ratings, isFull, template, single) {
@@ -57,6 +66,22 @@ plotColdStartBounded <- function(ratings, isFull, template, single) {
     geom_line(size=1) + facet_wrap(~assignmentID, scales = "free_x", labeller=as_labeller(assignmentNames)) +
     xlab("Training Dataset Size") + ylab("Mean Quality Score") + labs(color="Data") +
     scale_color_manual(labels=c("Expert All", "Expert 1", "Students"), values=c(twoColors, "black")) +
+    theme_bw()
+}
+
+plotColdStartWeights <- function(ratings, isFull) {
+  rounds <- getRounds(ratings)
+  rounds$weight <- if(isFull) rounds$fullWeight else rounds$partialWeight
+  rounds$mean <- if(isFull) rounds$fullMean else rounds$partialMean
+  rounds$mean2 <- rounds$weight / rounds$totalWeight
+  rounds$badWeight <- rounds$totalWeight - rounds$weight
+  rounds$totalWeight <- 1 / rounds$totalWeight
+  
+  melted <- melt(rounds[,c(1:3, 10:14)], id=c("count", "total", "assignmentID"))
+  
+  ggplot(melted, aes(x=count, y=value, color=variable)) + 
+    geom_line(size=1) + facet_wrap(~assignmentID, scales = "free_x", labeller=as_labeller(assignmentNames)) +
+    xlab("Training Dataset Size") + ylab("Mean Weight") + labs(color="Weight") +
     theme_bw()
 }
 
@@ -144,4 +169,20 @@ runme <- function() {
   
   allStats <- rbind(iSnapStats, itapStats)
   write.csv(allStats, "C:/Users/Thomas/Desktop/stats.csv")
+}
+
+plotNegSlopeCurve <- function(ratings, isFull) {
+  bests <- getBests(ratings)
+  negIDs <- bests$requestID[bests$sl < 0]
+  negRatings <- ratings[ratings$requestID %in% negIDs,]
+  plotColdStartWeights(negRatings, isFull)
+}
+
+getBests <- function(ratings) {
+  requests <- ddply(ratings, c("count", "total", "assignmentID", "requestID"), summarize, 
+                    fullMean=mean(MultipleTutors_Full), fullSE=se(MultipleTutors_Full),
+                    partialMean=mean(MultipleTutors_Partial), partialSE=se(MultipleTutors_Partial))
+  best <- ddply(requests, c("assignmentID", "requestID", "total"), summarize, best=max(fullMean), bestCount=count[best==fullMean][[1]], sl=slope(fullMean))
+  best$bestPerc <- best$bestCount / best$total
+  return (best)
 }

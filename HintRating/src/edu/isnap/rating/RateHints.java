@@ -331,8 +331,11 @@ public class RateHints {
 				for (MatchType type : MatchType.values()) {
 					if (type == MatchType.None) continue;
 					spreadsheet.put(validity + "_" + type, validityWeight(type, validity) / weight);
+					spreadsheet.put(validity + "_" + type + "_validWeight",
+							validityWeight(type, validity));
 				}
 			}
+			spreadsheet.put("totalWeight", weight);
 		}
 
 		public double validityWeight(MatchType minMatchType, Validity minValidity) {

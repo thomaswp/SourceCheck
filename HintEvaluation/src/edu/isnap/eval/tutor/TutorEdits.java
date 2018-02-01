@@ -83,24 +83,23 @@ public class TutorEdits {
 //		}
 
 		// Python Consensus
-		GoldStandard standard = readConsensusPython("../data/itap");
+//		GoldStandard standard = readConsensusPython("../data/itap");
 //		standard.writeSpreadsheet(ITAP_GOLD_STANDARD);
 //		GoldStandard standard = GoldStandard.parseSpreadsheet(ITAP_GOLD_STANDARD);
 //		HighlightHintSet hintSet = new TemplateHighlightHintSet(
 //				"template", "../data/itap/templates", new PythonHintConfig());
-		HighlightHintSet hintSet = new ImportHighlightHintSet("sourcecheck", new PythonHintConfig(),
-				RateHints.ITAP_DATA_DIR + RateHints.TRAINING_DIR);
-		hintSet.addHints(standard);
+//		HighlightHintSet hintSet = new ImportHighlightHintSet("sourcecheck", new PythonHintConfig(),
+//				RateHints.ITAP_DATA_DIR + RateHints.TRAINING_DIR);
+//		hintSet.addHints(standard);
 //		hintSet.writeToFolder(new File(RateHints.ITAP_DATA_DIR,
 //				RateHints.ALGORITHMS_DIR + "/sourcecheck").getPath(), true);
 //		TutorHintSet hintSet = TutorHintSet.fromFile("ITAP", RatingConfig.Python,
 //				"../data/itap/handmade_hints_itap_ast.csv");
-		RateHints.rate(standard, hintSet);
+//		RateHints.rate(standard, hintSet);
 
 		// iSnap Consensus
-//		GoldStandard standard = GoldStandard.parseSpreadsheet(ISNAP_GOLD_STANDARD);
+		GoldStandard standard = GoldStandard.parseSpreadsheet(ISNAP_GOLD_STANDARD);
 //		writeSnapStandard();
-//		runConsensus("../data/hint-rating/isnap2017/training", standard, new SnapHintConfig());
 //		writeHighlight(RateHints.ISNAP_DATA_DIR, "sourcecheck", standard, new SnapHintConfig());
 //		HighlightHintSet hintSet = new TemplateHighlightHintSet(
 //				"template", CSC200Solutions.instance);
@@ -108,7 +107,8 @@ public class TutorEdits {
 //		writeHighlight hintSet = HintSet.fromFolder("sourcecheck", RatingConfig.Snap,
 //				RateHints.ISNAP_DATA_DIR + RateHints.ALGORITHMS_DIR + "/sourcecheck");
 //		RateHints.rate(standard, hintSet);
-//		.writeAllHints(RateHints.ISNAP_DATA_DIR + RateHints.ALGORITHMS_DIR + "/sourcecheck.csv");
+		runConsensus("../data/hint-rating/isnap2017/training", standard, new SnapHintConfig())
+		.writeAllHints(RateHints.ISNAP_DATA_DIR + RateHints.ALGORITHMS_DIR + "/sourcecheck.csv");
 
 		// Test with Fall 2017 preliminary tutor hints
 //		ListMap<String,PrintableTutorHint> fall2017 = readTutorEditsSnap(Fall2017.instance);
@@ -164,13 +164,13 @@ public class TutorEdits {
 //				e.toSQLInsert("handmade_hints", "highlight", 20000, false, true)));
 	}
 
-	protected static void runConsensus(String trainingDirectory, GoldStandard standard,
+	protected static HintRatingSet runConsensus(String trainingDirectory, GoldStandard standard,
 			HintConfig hintConfig)
 			throws FileNotFoundException, IOException {
 		HighlightHintSet hintSet = new ImportHighlightHintSet(
 				new File(trainingDirectory).getName(), hintConfig, trainingDirectory);
 		hintSet.addHints(standard.getHintRequests());
-		RateHints.rate(standard, hintSet);
+		return RateHints.rate(standard, hintSet);
 	}
 
 	protected static void highlightSQL(Dataset trainingDataset, GoldStandard standard)

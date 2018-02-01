@@ -16,13 +16,14 @@ import edu.isnap.ctd.util.NodeAlignment;
 import edu.isnap.ctd.util.NodeAlignment.DistanceMeasure;
 import edu.isnap.ctd.util.NodeAlignment.Mapping;
 import edu.isnap.eval.export.JsonAST;
-import edu.isnap.hint.SnapHintConfig;
+import edu.isnap.eval.python.PythonHintConfig;
 import edu.isnap.hint.util.SnapNode;
 import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.rating.ColdStart;
 import edu.isnap.rating.GoldStandard;
 import edu.isnap.rating.HintRequest;
 import edu.isnap.rating.HintSet;
+import edu.isnap.rating.RateHints;
 import edu.isnap.rating.RatingConfig;
 import edu.isnap.rating.TrainingDataset;
 import edu.isnap.rating.TrainingDataset.Trace;
@@ -32,18 +33,18 @@ public class HighlightHintGenerator implements ColdStart.HintGenerator {
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 		String baseDir = "../data/hint-rating/isnap2017/";
 
-		GoldStandard standard = GoldStandard.parseSpreadsheet(TutorEdits.ISNAP_GOLD_STANDARD);
-		TrainingDataset dataset = TrainingDataset.fromDirectory("",
-				baseDir + "training");
-		HighlightHintGenerator hintGenerator = new HighlightHintGenerator(new SnapHintConfig());
-
-//		GoldStandard standard = TutorEdits.readConsensusPython("../data/itap");
+//		GoldStandard standard = GoldStandard.parseSpreadsheet(TutorEdits.ISNAP_GOLD_STANDARD);
 //		TrainingDataset dataset = TrainingDataset.fromDirectory("",
-//				RateHints.ITAP_DATA_DIR + RateHints.TRAINING_DIR);
-//		HintGenerator hintGenerator = new HighlightHintGenerator(new PythonHintConfig());
+//				baseDir + "training");
+//		HighlightHintGenerator hintGenerator = new HighlightHintGenerator(new SnapHintConfig());
 
-//		ColdStart coldStart = new ColdStart(standard, dataset, hintGenerator);
-//		coldStart.writeTest("../data/hint-rating/isnap2017/analysis/cold-start.csv", 100, 1);
+		GoldStandard standard = TutorEdits.readConsensusPython("../data/itap");
+		TrainingDataset dataset = TrainingDataset.fromDirectory("",
+				RateHints.ITAP_DATA_DIR + RateHints.TRAINING_DIR);
+		HighlightHintGenerator hintGenerator = new HighlightHintGenerator(new PythonHintConfig());
+
+		ColdStart coldStart = new ColdStart(standard, dataset, hintGenerator);
+		coldStart.writeTest("../data/hint-rating/itap2016/analysis/cold-start.csv", 100, 2);
 //		coldStart.testSingleTraces().write(baseDir + "analysis/traces.csv");
 //		getCostsSpreadsheet(dataset, standard, hintGenerator.hintConfig)
 //		.write(baseDir + "analysis/distances.csv");
@@ -52,7 +53,7 @@ public class HighlightHintGenerator implements ColdStart.HintGenerator {
 //			System.out.println(" ============= " + assignmentID + " ============= ");
 //			dataset.printAllSolutions(assignmentID, hintGenerator.ratingConfig, false);
 //		}
-		standard.printAllRequestNodes(hintGenerator.ratingConfig);
+//		standard.printAllRequestNodes(hintGenerator.ratingConfig);
 	}
 
 	private final RatingConfig ratingConfig;
