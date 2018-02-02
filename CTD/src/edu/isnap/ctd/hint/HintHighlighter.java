@@ -407,7 +407,7 @@ public class HintHighlighter {
 				if (child == null || child.parentPair != parent.pair) continue;
 
 				// We only use children as subedits if they have a candidate, since otherwise we
-				// would just every hint as a nested hint
+				// would just give every hint as a nested hint
 				boolean insertForCandidate = !parent.missingParent && child.candidate != null;
 				// Also add nodes that should be auto-inserted, but those without candidates
 				// TODO: Somehow insertions without a candidate get through here and show up later
@@ -731,6 +731,9 @@ public class HintHighlighter {
 			Priority priority = new Priority();
 			priority.consensusNumerator = hintCounts.getCount(hint);
 			priority.consensusDenominator = bestMatches.size();
+			if (priority.consensusNumerator > priority.consensusDenominator) {
+				throw new RuntimeException("Inconsistent EditHint equality.");
+			}
 			hint.priority = priority;
 		}
 

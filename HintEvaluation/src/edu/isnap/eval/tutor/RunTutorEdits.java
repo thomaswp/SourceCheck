@@ -40,7 +40,7 @@ public class RunTutorEdits extends TutorEdits {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
-		RatingDataset dataset = iSnap2017;
+		RatingDataset dataset = ITAP2016;
 		Source source = Source.StudentData;
 		boolean debug = false;
 		boolean writeHints = false;
@@ -52,9 +52,9 @@ public class RunTutorEdits extends TutorEdits {
 
 //		dataset.verifyGoldStandard();
 
-//		dataset.runHintRating(source, debug, writeHints);
+		dataset.runHintRating(source, debug, writeHints);
 
-		dataset.writeColdStart(3, 3);
+//		dataset.writeColdStart(200, 1);
 
 		// Tutor consensus hint generation
 //		compareHintsSnap(Fall2016.instance);

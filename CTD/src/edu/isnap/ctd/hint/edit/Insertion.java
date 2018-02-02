@@ -244,6 +244,16 @@ public class Insertion extends EditHint {
 	}
 
 	@Override
+	protected Object getParentForComparison() {
+		if (!missingParent) return super.getParentForComparison();
+		// We consider two moves (to a not-yet-existant parent) to be equivalent if the new parents
+		// have the same type, even if they're in different places. In iSnap these are simply
+		// displayed as highlights without indicating the destination. This might need to change
+		// later if more details from these hints are given.
+		return parent.type();
+	}
+
+	@Override
 	public Node getPriorityToNode(Mapping mapping) {
 		return pair;
 	}

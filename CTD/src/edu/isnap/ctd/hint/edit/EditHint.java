@@ -256,6 +256,11 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 		return node.hashCode();
 	}
 
+
+	protected Object getParentForComparison() {
+		return parent;
+	}
+
 	@Override
 	public final boolean equals(Object obj) {
 		if (obj == null) return false;
@@ -271,7 +276,7 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 				return super.append(lhs, rhs);
 			}
 		};
-		builder.append(parent, rhs.parent);
+		builder.append(getParentForComparison(), rhs.getParentForComparison());
 		builder.append(argsCanonSwapped, rhs.argsCanonSwapped);
 		builder.append(subedits, rhs.subedits);
 		appendEqualsFieds(builder, rhs);
@@ -290,7 +295,7 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 			}
 		};
 		builder.append(getClass());
-		builder.append(parent);
+		builder.append(getParentForComparison());
 		builder.append(argsCanonSwapped);
 		builder.append(subedits);
 		appendHashCodeFieds(builder);

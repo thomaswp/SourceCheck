@@ -67,4 +67,9 @@ public class Deletion extends EditHint {
 	public Node getPriorityToNode(Mapping mapping) {
 		return null;
 	}
+
+	@Override
+	protected Object getParentForComparison() {
+		return parent;
+	}
 }
