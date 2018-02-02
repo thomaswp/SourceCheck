@@ -7,7 +7,6 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.json.JSONArray;
@@ -246,7 +245,10 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 	}
 
 	protected static boolean nodesIDEqual(Node a, Node b) {
-		return a == b || (a != null && b != null && StringUtils.equals(a.id, b.id));
+		if (a == b) return true;
+		if (a == null || b == null) return false;
+		if (a.id == null) return a == b;
+		return a.id.equals(b.id);
 	}
 
 	protected static int nodeIDHashCode(Node node) {
