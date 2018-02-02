@@ -527,8 +527,11 @@ public class SnapParser {
 				if (!assignmentID.equals(assignment.name)) continue;
 
 				String attemptID = record.get("id");
-				int codeStart = Integer.parseInt(record.get("code"));
-				starts.put(attemptID, codeStart);
+				String codeStartString = record.get("code");
+				if (codeStartString != null && codeStartString.trim().length() > 0) {
+					int codeStart = Integer.parseInt(codeStartString);
+					starts.put(attemptID, codeStart);
+				}
 			}
 
 			parser.close();
