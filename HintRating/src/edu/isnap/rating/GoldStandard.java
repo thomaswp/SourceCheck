@@ -39,12 +39,12 @@ public class GoldStandard {
 		return map.get(assignmentID).keySet();
 	}
 
-	public List<TutorHint> getValidEdits(String assignment, String requestID) {
-		return map.get(assignment).getList(requestID);
+	public List<TutorHint> getValidHints(String assignmentID, String requestID) {
+		return map.get(assignmentID).getList(requestID);
 	}
 
 	public ASTNode getHintRequestNode(String assignment, String requestID) {
-		List<TutorHint> edits = getValidEdits(assignment, requestID);
+		List<TutorHint> edits = getValidHints(assignment, requestID);
 		if (edits == null || edits.isEmpty()) return null;
 		return edits.get(0).from;
 	}

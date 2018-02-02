@@ -81,6 +81,7 @@ public abstract class HighlightHintSet extends HintSet {
 				ASTNode outcomeNode = to.toASTNode();
 				if (outcomeNode.hasType("snapshot")) outcomeNode.type = "Snap!shot";
 				double weight = hint.priority.consensus() * getDefaultWeight(hint);
+//				weight = 1;
 //				if (priority < 0.25) continue;
 				HighlightOutcome outcome = new HighlightOutcome(request.code, outcomeNode,
 						request.assignmentID, request.id, weight, hint);

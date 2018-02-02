@@ -57,7 +57,7 @@ public class RateHints {
 			for (String requestID : standard.getRequestIDs(assignmentID)) {
 				RequestRating requestRating = new RequestRating(requestID, assignmentID);
 
-				List<TutorHint> validHints = standard.getValidEdits(assignmentID, requestID);
+				List<TutorHint> validHints = standard.getValidHints(assignmentID, requestID);
 				if (validHints.size() == 0) continue;
 				List<HintOutcome> hints = hintSet.getOutcomes(requestID);
 
