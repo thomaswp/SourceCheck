@@ -135,6 +135,10 @@ public abstract class HintConfig implements Serializable {
 	 * If true, these solutions came from students and should be preprocessed to remove side-scripts
 	 */
 	public boolean preprocessSolutions = true;
+	/**
+	 * If true, hint priorities will be calculated and used to prioritize more important hints
+	 */
+	public boolean usePriority = true;
 
 	// BEGIN old CDT config attributes
 	// TODO: Remove these elements and clean up old CTD algorithm

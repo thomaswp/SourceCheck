@@ -59,7 +59,9 @@ public abstract class HighlightHintSet extends HintSet {
 			// Applying edits requires nodes to have meaningful IDs, so if they don't by default, we
 			// generate them. We don't otherwise, since the generated IDs won't be consistent.
 			code = config.areNodeIDsConsistent() ? code.copy() : copyWithIDs(code);
-			List<EditHint> allHints = highlighter.highlightWithPriorities(code);
+			List<EditHint> allHints = hintConfig.usePriority ?
+					highlighter.highlightWithPriorities(code) :
+						highlighter.highlight(code);
 //			Set<EditHint> originalHints = new HashSet<>(allHints);
 			Set<EditHint> hints = filterHints(allHints, false);
 
@@ -79,9 +81,13 @@ public abstract class HighlightHintSet extends HintSet {
 				EditHint.applyEdits(to, edits);
 				ASTNode outcomeNode = to.toASTNode();
 				if (outcomeNode.hasType("snapshot")) outcomeNode.type = "Snap!shot";
-				double weight = hint.priority.consensus() * getDefaultWeight(hint);
-//				weight = 1;
-//				if (priority < 0.25) continue;
+				double weight;
+				if (hintConfig.usePriority) {
+					weight = hint.priority.consensus() * getDefaultWeight(hint);
+//					if (priority < 0.25) continue;
+				} else {
+					weight = 1;
+				}
 				HighlightOutcome outcome = new HighlightOutcome(request.code, outcomeNode,
 						request.assignmentID, request.id, weight, hint);
 				add(outcome);

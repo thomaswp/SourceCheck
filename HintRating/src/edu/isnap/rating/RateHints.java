@@ -330,19 +330,24 @@ public class RateHints {
 				if (validity == Validity.NoTutors) continue;
 				for (MatchType type : MatchType.values()) {
 					if (type == MatchType.None) continue;
-					spreadsheet.put(validity + "_" + type, validityWeight(type, validity) / weight);
+					spreadsheet.put(validity + "_" + type,
+							validityWeight(type, validity, true) / weight);
 					spreadsheet.put(validity + "_" + type + "_validWeight",
-							validityWeight(type, validity));
+							validityWeight(type, validity, true));
+					spreadsheet.put(validity + "_" + type  + "_validCount",
+							validityWeight(type, validity, false));
 				}
 			}
 			spreadsheet.put("totalWeight", weight);
+			spreadsheet.put("totalCount", size());
 		}
 
-		public double validityWeight(MatchType minMatchType, Validity minValidity) {
+		public double validityWeight(MatchType minMatchType, Validity minValidity,
+				boolean useWeights) {
 			return stream()
 					.mapToDouble(rating -> rating.matchType.isAtLeast(minMatchType)
 							&& rating.validity().isAtLeast(minValidity) && !rating.isTooSoon()
-							? rating.hint.weight() : 0)
+							? (useWeights ? rating.hint.weight() : 1) : 0)
 					.sum();
 		}
 
@@ -354,9 +359,10 @@ public class RateHints {
 			int nValues = Validity.values().length - 1;
 			double[] validityArray = new double[nValues * 2];
 			for (int i = 0; i < nValues; i++) {
-				validityArray[i * 2] = validityWeight(MatchType.Full, Validity.fromInt(i + 1));
+				validityArray[i * 2] =
+						validityWeight(MatchType.Full, Validity.fromInt(i + 1), true);
 				validityArray[i * 2 + 1] =
-						validityWeight(MatchType.Partial, Validity.fromInt(i + 1));
+						validityWeight(MatchType.Partial, Validity.fromInt(i + 1), true);
 			}
 			double totalWeight = getTotalWeight();;
 			for (int i = 0; i < validityArray.length; i++) {
