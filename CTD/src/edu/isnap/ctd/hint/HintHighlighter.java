@@ -494,7 +494,7 @@ public class HintHighlighter {
 	}
 
 	public DistanceMeasure getDistanceMeasure() {
-		return new ProgressDistanceMeasure(config);
+		return getDistanceMeasure(config);
 	}
 
 	public static DistanceMeasure getDistanceMeasure(HintConfig config) {
@@ -727,6 +727,13 @@ public class HintHighlighter {
 		.map(m -> new HashSet<>(highlight(node, m)))
 		.forEach(set -> hintCounts.incrementAll(set));
 
+		for (EditHint hint : hints) {
+			Priority priority = new Priority();
+			priority.consensusNumerator = hintCounts.getCount(hint);
+			priority.consensusDenominator = bestMatches.size();
+			hint.priority = priority;
+		}
+
 		Map<Mapping, Mapping> bestToGoodMappings = new HashMap<>();
 		if (nodePlacementTimes != null && nodePlacementTimes.containsKey(bestMatch.to)) {
 			for (Mapping match : bestMatches) {
@@ -740,10 +747,6 @@ public class HintHighlighter {
 		}
 
 		for (EditHint hint : hints) {
-			Priority priority = new Priority();
-			priority.consensusNumerator = hintCounts.getCount(hint);
-			priority.consensusDenominator = bestMatches.size();
-
 			if (nodePlacementTimes != null && nodePlacementTimes.containsKey(bestMatch.to)) {
 				Map<String, Double> creationPercs = nodePlacementTimes.get(bestMatch.to);
 				Node priorityToNode = hint.getPriorityToNode(bestMatch);
@@ -758,18 +761,14 @@ public class HintHighlighter {
 						percs.add(creationPercs.get(from.id));
 					}
 
-					priority.creationTime = percs.stream()
+					hint.priority.creationTime = percs.stream()
 							.filter(d -> d != null).mapToDouble(d -> d)
 							.average();
 				}
 			}
-
-			hint.priority = priority;
 		}
 
-
 		findOrderingPriority(hints, node, bestMatch);
-
 	}
 
 	private void findOrderingPriority(List<EditHint> hints, Node node, Mapping bestMatch) {

@@ -3,6 +3,7 @@ package edu.isnap.rating;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -17,6 +18,10 @@ public class HintOutcome implements Comparable<HintOutcome> {
 	public final String requestID;
 
 	private final double weight;
+
+	private final static Comparator<HintOutcome> comparator =
+			Comparator.comparing((HintOutcome a) -> a.weight()).thenComparing(
+					Comparator.comparing(a -> a.result.hashCode()));
 
 	public double weight() {
 		return weight;
@@ -38,7 +43,7 @@ public class HintOutcome implements Comparable<HintOutcome> {
 
 	@Override
 	public int compareTo(HintOutcome o) {
-		return Double.compare(weight(), o.weight());
+		return comparator.compare(this, o);
 	}
 
 	public static HintOutcome parse(File file, String assignmentID) throws IOException {

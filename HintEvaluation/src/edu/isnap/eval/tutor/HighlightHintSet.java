@@ -2,7 +2,6 @@ package edu.isnap.eval.tutor;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,10 +60,10 @@ public abstract class HighlightHintSet extends HintSet {
 			// generate them. We don't otherwise, since the generated IDs won't be consistent.
 			code = config.areNodeIDsConsistent() ? code.copy() : copyWithIDs(code);
 			List<EditHint> allHints = highlighter.highlightWithPriorities(code);
-			Set<EditHint> originalHints = new HashSet<>(allHints);
+//			Set<EditHint> originalHints = new HashSet<>(allHints);
 			Set<EditHint> hints = filterHints(allHints, false);
-			originalHints.removeAll(hints);
 
+//			originalHints.removeAll(hints);
 //			System.out.println(request.id);
 //			System.out.println(request.code.prettyPrint(true, config));
 //			System.out.println("Kept Hints:");

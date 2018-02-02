@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.util.Diff;
@@ -41,7 +42,7 @@ public class RunTutorEdits extends TutorEdits {
 
 		RatingDataset dataset = iSnap2017;
 		Source source = Source.StudentData;
-		boolean debug = true;
+		boolean debug = false;
 		boolean writeHints = false;
 
 		// Exporting things
@@ -52,6 +53,8 @@ public class RunTutorEdits extends TutorEdits {
 //		dataset.verifyGoldStandard();
 
 		dataset.runHintRating(source, debug, writeHints);
+
+//		dataset.writeColdStart(2, 3);
 
 		// Tutor consensus hint generation
 //		compareHintsSnap(Fall2016.instance);
@@ -157,7 +160,7 @@ public class RunTutorEdits extends TutorEdits {
 
 		public void runHintRating(Source source, boolean debug, boolean write)
 				throws FileNotFoundException, IOException {
-			GoldStandard standard = generateGoldStandard();
+			GoldStandard standard = readGoldStandard();
 			HighlightHintSet hintSet = getHintSet(source, standard);
 			HintRatingSet rate = RateHints.rate(standard, hintSet, debug);
 			if (write) {
@@ -187,7 +190,7 @@ public class RunTutorEdits extends TutorEdits {
 
 		public void writeColdStart(int rounds, int step) throws IOException {
 			ColdStart coldStart = getColdStart();
-			coldStart.writeTest(getDataDir() + "analysis/cold-start.csv", 300, 1);
+			coldStart.writeTest(getDataDir() + "analysis/cold-start.csv", rounds, step);
 		}
 
 		public void writeSingleTraces() throws FileNotFoundException, IOException {
@@ -217,6 +220,16 @@ public class RunTutorEdits extends TutorEdits {
 		private void verifyGoldStandard() throws FileNotFoundException, IOException {
 			GoldStandard gs1 = readGoldStandard();
 			GoldStandard gs2 = generateGoldStandard();
+
+			List<String> rqs1 =
+					gs1.getHintRequests().stream().map(r -> r.id).collect(Collectors.toList());
+			List<String> rqs2 =
+					gs2.getHintRequests().stream().map(r -> r.id).collect(Collectors.toList());
+
+			if (!rqs1.equals(rqs2)) {
+				System.out.println("Read: " + rqs1);
+				System.out.println("Gen:  " + rqs2);
+			}
 
 			for (String assignmentID : gs1.getAssignmentIDs()) {
 				for (String requestID : gs1.getRequestIDs(assignmentID)) {

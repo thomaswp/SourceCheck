@@ -42,7 +42,6 @@ import edu.isnap.dataset.Dataset;
 import edu.isnap.eval.agreement.Agreement;
 import edu.isnap.eval.agreement.HintSelection;
 import edu.isnap.eval.export.JsonAST;
-import edu.isnap.eval.python.PythonHintConfig;
 import edu.isnap.eval.python.PythonImport;
 import edu.isnap.eval.python.PythonImport.PythonNode;
 import edu.isnap.hint.SnapHintConfig;
@@ -582,7 +581,7 @@ public class TutorEdits {
 			// TODO: Find a better way to parse/read the edits
 			// This shouldn't be strictly necessary to compare edits, since it should be using only
 			// the to Node for comparison, but it still seems important.
-			HintConfig config = new PythonHintConfig();
+			HintConfig config = new SnapHintConfig();
 			List<Node> solutions = Collections.singletonList(toNode);
 			HintHighlighter highlighter = new HintHighlighter(solutions, config);
 			highlighter.trace = NullStream.instance;
