@@ -126,8 +126,8 @@ qualityStats <- function(ratings, isFull, template, single) {
 runme <- function() {
   isnap <- read_csv("../../data/hint-rating/isnap2017/analysis/cold-start.csv")
   
-  iSnapTemplateFull <- c("guess1Lab" = 0.361, "squiralHW" = 0.272)
-  iSnapTemplatePartial <- c("guess1Lab" = 0.400, "squiralHW" = 0.322)
+  iSnapTemplateFull <- c("guess1Lab" = 0.358, "squiralHW" = 0.272)
+  iSnapTemplatePartial <- c("guess1Lab" = 0.397, "squiralHW" = 0.321)
   
   iSnapSingleFull <- c("guess1Lab" = 0.249, "squiralHW" = 0.217)
   iSnapSinglePartial <- c("guess1Lab" = 0.279, "squiralHW" = 0.250)

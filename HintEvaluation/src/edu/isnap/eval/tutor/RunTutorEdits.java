@@ -40,7 +40,7 @@ public class RunTutorEdits extends TutorEdits {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
-		RatingDataset dataset = ITAP2016;
+		RatingDataset dataset = iSnap2017;
 		Source source = Source.StudentData;
 		boolean debug = false;
 		boolean writeHints = false;
@@ -87,8 +87,9 @@ public class RunTutorEdits extends TutorEdits {
 		}
 
 		@Override
-		String getTemplateRootDir() {
-			return CSC200Solutions.dataDir + "/";
+		String getTemplateDir(Source source) {
+			String dir = source == Source.Template ? "" : "/single";
+			return CSC200Solutions.dataDir + dir;
 		}
 
 		@Override
@@ -120,8 +121,9 @@ public class RunTutorEdits extends TutorEdits {
 		}
 
 		@Override
-		String getTemplateRootDir() {
-			return "../data/itap/";
+		String getTemplateDir(Source source) {
+			String dir = source == Source.Template ? "" : "single/";
+			return "../data/itap/" + dir + "template";
 		}
 
 		@Override
@@ -136,7 +138,7 @@ public class RunTutorEdits extends TutorEdits {
 		abstract GoldStandard generateGoldStandard() throws FileNotFoundException, IOException;
 		abstract HintConfig getHintConfig();
 		abstract String getDataDir();
-		abstract String getTemplateRootDir();
+		abstract String getTemplateDir(Source source);
 		abstract void exportTrainingData() throws IOException;
 
 		public GoldStandard readGoldStandard() throws FileNotFoundException, IOException {
@@ -150,9 +152,8 @@ public class RunTutorEdits extends TutorEdits {
 				hintSet = new ImportHighlightHintSet("sourcecheck", getHintConfig(),
 						 getDataDir() + RateHints.TRAINING_DIR);
 			} else {
-				String dir = source == Source.Template ? "templates" : "single/templates";
-				dir = getTemplateRootDir() + dir;
-				hintSet = new TemplateHighlightHintSet("template", dir, getHintConfig());
+				hintSet = new TemplateHighlightHintSet("template", getTemplateDir(source),
+						getHintConfig());
 			}
 			hintSet.addHints(standard);
 			return hintSet;

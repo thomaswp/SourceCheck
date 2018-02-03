@@ -11,7 +11,7 @@ import edu.isnap.hint.SnapHintConfig;
 public class SingleSolutions extends Dataset {
 
 	public final static Date start = null;
-	public final static String dataDir = "../data/csc200/solutions/singles";
+	public final static String dataDir = "../data/csc200/solutions/single";
 	public final static SingleSolutions instance = new SingleSolutions();
 
 	private static class CSC200Assignment extends ConfigurableAssignment {
