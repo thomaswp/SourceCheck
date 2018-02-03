@@ -147,13 +147,13 @@ runme <- function() {
   
   itap <- read_csv("../../data/hint-rating/itap2016/analysis/cold-start.csv")
   itapTemplateFull <- c("helloWorld" = 0.357, "firstAndLast" = 0.429,
-                        "isPunctuation" = 0.231, "kthDigit" = 0.399, "oneToN" = 0.119)
+                        "isPunctuation" = 0.231, "kthDigit" = 0.399, "oneToN" = 0.131)
   itapTemplatePartial <- c("helloWorld" = 0.595, "firstAndLast" = 0.429,
-                          "isPunctuation" = 0.388, "kthDigit" = 0.493, "oneToN" = 0.437)
+                          "isPunctuation" = 0.311, "kthDigit" = 0.493, "oneToN" = 0.356)
   itapSingleFull <- c("helloWorld" = 0.333, "firstAndLast" = 0.492,
                       "isPunctuation" = 0.192, "kthDigit" = 0.250, "oneToN" = 0.112)
   itapSinglePartial <- c("helloWorld" = 0.638, "firstAndLast" = 0.492,
-                         "isPunctuation" = 0.308, "kthDigit" = 0.286, "oneToN" = 0.283)
+                         "isPunctuation" = 0.231, "kthDigit" = 0.286, "oneToN" = 0.214)
   
   plotColdStartBounded(itap, T, itapTemplateFull, itapSingleFull) + 
     labs(title="ITAP - Quality Cold Start (Full)")
