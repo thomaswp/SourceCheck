@@ -43,11 +43,12 @@ getRounds <- function(ratings) {
                   partialMean=mean(MultipleTutors_Partial), partialSE=se(MultipleTutors_Partial),
                   fullWeight=mean(MultipleTutors_Full_validWeight),
                   partialWeight=mean(MultipleTutors_Partial_validWeight),
-                  totalWeight=mean(totalWeight))
+                  totalWeight=mean(totalWeight),
+                  fullEven=mean(MultipleTutors_Full_validCount / totalCount),
+                  partialEven=mean(MultipleTutors_Partial_validCount / totalCount))
 }
 
-plotColdStartBounded <- function(ratings, isFull, template, single) {
-  rounds <- getRounds(ratings)
+plotColdStartBounded <- function(rounds, isFull, template, single) {
   rounds$source <- "students"
   rounds$mean <- if(isFull) rounds$fullMean else rounds$partialMean
   
@@ -69,8 +70,37 @@ plotColdStartBounded <- function(ratings, isFull, template, single) {
     theme_bw()
 }
 
-plotColdStartWeights <- function(ratings, isFull) {
-  rounds <- getRounds(ratings)
+plotColdStartCompareWeights <- function(rounds, isFull, template, single) {
+  rounds$source <- "students"
+  rounds$mean <- if(isFull) rounds$fullMean else rounds$partialMean
+  rounds$weight <- "weighted"
+  
+  roundsEven <- rounds
+  roundsEven$mean <- if(isFull) rounds$fullEven else rounds$partialEven
+  roundsEven$weight <- "even"
+  
+  rounds <- rbind(rounds, roundsEven)
+  
+  bounds <- rounds
+  if (!missing(template)) {
+    bounds <- rbind(bounds, createTemplateCopy(rounds, "template", template))
+  }
+  if (!missing(single)) {
+    bounds <- rbind(bounds, createTemplateCopy(rounds, "single", single))
+  }
+  rounds <- bounds
+  
+  rounds$source <- ordered(rounds$source, c("template", "single", "students"))
+  
+  ggplot(rounds, aes(x=count, y=mean, color=source, linetype=weight)) + 
+    geom_line(size=1) + facet_wrap(~assignmentID, scales = "free_x", labeller=as_labeller(assignmentNames)) +
+    xlab("Training Dataset Size") + ylab("Mean Quality Score") + labs(color="Data", linetype="Weights") +
+    scale_color_manual(labels=c("AllExpert", "OneExpert", "Students"), values=c(twoColors, "black")) +
+    scale_linetype_manual(labels=c("Even", "Voting"), values=c("solid", "dashed")) +
+    theme_bw()
+}
+
+plotColdStartWeights <- function(rounds, isFull) {
   rounds$weight <- if(isFull) rounds$fullWeight else rounds$partialWeight
   rounds$mean <- if(isFull) rounds$fullMean else rounds$partialMean
   rounds$mean2 <- rounds$weight / rounds$totalWeight
@@ -85,9 +115,18 @@ plotColdStartWeights <- function(ratings, isFull) {
     theme_bw()
 }
 
-plotColdStart <- function(ratings) {
-  rounds <- getRounds(ratings)
+plotColdStart <- function(rounds) {
   melted <- melt(rounds[,c(1:4, 6)], id=c("count", "total", "assignmentID"))
+  
+  ggplot(melted, aes(x=count, y=value, linetype=variable)) + 
+    geom_line(size=1) + facet_wrap(~assignmentID, scales = "free_x", labeller=as_labeller(assignmentNames)) +
+    xlab("Training Dataset Size") + ylab("Mean Quality Score") + labs(linetype="Match") +
+    scale_linetype_discrete(labels=c("Full", "Partial")) +
+    theme_bw()
+}
+
+plotColdStartUnweighted <- function(rounds) {
+  melted <- melt(rounds[,c(1:3,11,12)], id=c("count", "total", "assignmentID"))
   
   ggplot(melted, aes(x=count, y=value, linetype=variable)) + 
     geom_line(size=1) + facet_wrap(~assignmentID, scales = "free_x", labeller=as_labeller(assignmentNames)) +
@@ -112,8 +151,7 @@ plotRequestBoxplots <- function(ratings) {
          aes(x=ordered(count), y=MultipleTutors_Partial)) + geom_boxplot() + facet_grid(requestID ~ .)
 }
 
-qualityStats <- function(ratings, isFull, template, single) {
-  rounds <- getRounds(ratings)
+qualityStats <- function(rounds, isFull, template, single) {
   rounds$mean <- if (isFull) rounds$fullMean else rounds$partialMean
   stats <- ddply(rounds, "assignmentID", summarize, bestStudents=count[first(which(mean==max(mean)))],
                  maxRating=max(mean),maxStudents=max(count), finalRating=last(mean))
@@ -125,6 +163,7 @@ qualityStats <- function(ratings, isFull, template, single) {
 
 runme <- function() {
   isnap <- read_csv("../../data/hint-rating/isnap2017/analysis/cold-start.csv")
+  isnapRounds <- getRounds(isnap)
   
   iSnapTemplateFull <- c("guess1Lab" = 0.358, "squiralHW" = 0.272)
   iSnapTemplatePartial <- c("guess1Lab" = 0.397, "squiralHW" = 0.321)
@@ -132,20 +171,23 @@ runme <- function() {
   iSnapSingleFull <- c("guess1Lab" = 0.249, "squiralHW" = 0.217)
   iSnapSinglePartial <- c("guess1Lab" = 0.279, "squiralHW" = 0.250)
   
-  plotColdStart(isnap) + labs(title="iSnap - Quality Cold Start")
-  plotColdStartBounded(isnap, T, iSnapTemplateFull, iSnapSingleFull) + 
+  plotColdStart(isnapRounds) + labs(title="iSnap - Quality Cold Start")
+  plotColdStartBounded(isnapRounds, T, iSnapTemplateFull, iSnapSingleFull) + 
     labs(title="iSnap - Quality Cold Start (Full)")
-  plotColdStartBounded(isnap, F, iSnapTemplatePartial, iSnapSinglePartial) + 
+  plotColdStartBounded(isnapRounds, F, iSnapTemplatePartial, iSnapSinglePartial) + 
     labs(title="iSnap - Quality Cold Start (Partial)")
   
-  iSnapStatsFull <- qualityStats(isnap, T, iSnapTemplateFull, iSnapSingleFull)
+  iSnapStatsFull <- qualityStats(isnapRounds, T, iSnapTemplateFull, iSnapSingleFull)
   iSnapStatsFull$match <- "Full"
-  iSnapStatsPartial <- qualityStats(isnap, F, iSnapTemplatePartial, iSnapSinglePartial)
+  iSnapStatsPartial <- qualityStats(isnapRounds, F, iSnapTemplatePartial, iSnapSinglePartial)
   iSnapStatsPartial$match <- "Partial"
   iSnapStats <- rbind(iSnapStatsFull, iSnapStatsPartial)
   iSnapStats$dataset <- "iSnap"
   
   itap <- read_csv("../../data/hint-rating/itap2016/analysis/cold-start.csv")
+  itapRounds <- getRounds(itap)
+  itapRounds$assignmentID <- ordered(itapRounds$assignmentID, c("helloWorld", "firstAndLast", "isPunctuation",
+                                                                "kthDigit", "oneToN"))
   itapTemplateFull <- c("helloWorld" = 0.357, "firstAndLast" = 0.429,
                         "isPunctuation" = 0.231, "kthDigit" = 0.399, "oneToN" = 0.131)
   itapTemplatePartial <- c("helloWorld" = 0.595, "firstAndLast" = 0.429,
@@ -155,14 +197,14 @@ runme <- function() {
   itapSinglePartial <- c("helloWorld" = 0.638, "firstAndLast" = 0.492,
                          "isPunctuation" = 0.231, "kthDigit" = 0.286, "oneToN" = 0.214)
   
-  plotColdStartBounded(itap, T, itapTemplateFull, itapSingleFull) + 
+  plotColdStartBounded(itapRounds, T, itapTemplateFull, itapSingleFull) + 
     labs(title="ITAP - Quality Cold Start (Full)")
-  plotColdStartBounded(itap, F, itapTemplatePartial, itapSinglePartial) + 
+  plotColdStartBounded(itapRounds, F, itapTemplatePartial, itapSinglePartial) + 
     labs(title="ITAP - Quality Cold Start (Partial)")
   
-  itapStatsFull <- qualityStats(itap, T, itapTemplateFull, itapSingleFull)
+  itapStatsFull <- qualityStats(itapRounds, T, itapTemplateFull, itapSingleFull)
   itapStatsFull$match <- "Full"
-  itapStatsPartial <- qualityStats(itap, F, itapTemplatePartial, itapSinglePartial)
+  itapStatsPartial <- qualityStats(itapRounds, F, itapTemplatePartial, itapSinglePartial)
   itapStatsPartial$match <- "Partial"
   itapStats <- rbind(itapStatsFull, itapStatsPartial)
   itapStats$dataset <- "ITAP"
@@ -181,8 +223,12 @@ plotNegSlopeCurve <- function(ratings, isFull) {
 getBests <- function(ratings) {
   requests <- ddply(ratings, c("count", "total", "assignmentID", "requestID"), summarize, 
                     fullMean=mean(MultipleTutors_Full), fullSE=se(MultipleTutors_Full),
-                    partialMean=mean(MultipleTutors_Partial), partialSE=se(MultipleTutors_Partial))
-  best <- ddply(requests, c("assignmentID", "requestID", "total"), summarize, best=max(fullMean), bestCount=count[best==fullMean][[1]], sl=slope(fullMean))
+                    partialMean=mean(MultipleTutors_Partial), partialSE=se(MultipleTutors_Partial),
+                    fullEven=mean(MultipleTutors_Full_validCount / totalCount),
+                    partialEven=mean(MultipleTutors_Partial_validCount / totalCount))
+  best <- ddply(requests, c("assignmentID", "requestID", "total"), summarize, 
+                best=max(fullMean), bestCount=count[best==fullMean][[1]], sl=slope(fullMean),
+                bestEven=max(fullEven), bestCountEven=count[bestEven==fullEven][[1]], slEven=slope(fullEven))
   best$bestPerc <- best$bestCount / best$total
   return (best)
 }
