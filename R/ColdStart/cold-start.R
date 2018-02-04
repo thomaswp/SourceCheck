@@ -225,6 +225,13 @@ runme <- function() {
   
   allStats <- rbind(iSnapStats, itapStats)
   write.csv(allStats, "C:/Users/Thomas/Desktop/stats.csv")
+  
+  ddply(isnapRounds, "assignmentID", summarize, 
+        maxVote=max(fullMean), finalVote=last(fullMean), lossVote=finalVote/maxVote,
+        maxEven=max(fullEven), finalEven=last(fullEven), lossEven=finalEven/maxEven)
+  ddply(itapRounds, "assignmentID", summarize, 
+        maxVote=max(partialMean), finalVote=last(partialMean), lossVote=finalVote/maxVote,
+        maxEven=max(partialEven), finalEven=last(partialEven), lossEven=finalEven/maxEven)
 }
 
 plotNegSlopeCurve <- function(ratings, isFull) {
