@@ -43,6 +43,11 @@ assignmentNames <- c(
 )
 
 getRounds <- function(ratings) {
+  # These need to be calculated before taking the mean; otherwise, fractions will be averaged
+  # by averaging their numerators and denominators
+  ratings$fullEven <- ratings$MultipleTutors_Full_validCount / ratings$totalCount
+  ratings$partialEven <- ratings$MultipleTutors_Partial_validCount / ratings$totalCount
+
   assignments <- ddply(ratings[,-5], c("round", "count", "total", "assignmentID"), colwise(mean))
   
   rounds <- ddply(assignments, c("count", "total", "assignmentID"), summarize, 
@@ -51,8 +56,8 @@ getRounds <- function(ratings) {
                   fullWeight=mean(MultipleTutors_Full_validWeight),
                   partialWeight=mean(MultipleTutors_Partial_validWeight),
                   totalWeight=mean(totalWeight),
-                  fullEven=mean(MultipleTutors_Full_validCount / totalCount),
-                  partialEven=mean(MultipleTutors_Partial_validCount / totalCount))
+                  fullEven=mean(fullEven),
+                  partialEven=mean(partialEven))
 }
 
 plotColdStartBounded <- function(rounds, isFull, template, single) {
@@ -181,9 +186,9 @@ runme <- function() {
   iSnapSinglePartial <- c("guess1Lab" = 0.279, "squiralHW" = 0.250)
   
   plotColdStart(isnapRounds) + labs(title="iSnap - Quality Cold Start")
-  plotColdStartBounded(isnapRounds, T, iSnapTemplateFull, iSnapSingleFull) + 
+  plotColdStartCompareWeights(isnapRounds, T, iSnapTemplateFull, iSnapSingleFull) + 
     labs(title="iSnap - Quality Cold Start (Full)")
-  plotColdStartBounded(isnapRounds, F, iSnapTemplatePartial, iSnapSinglePartial) + 
+  plotColdStartCompareWeights(isnapRounds, F, iSnapTemplatePartial, iSnapSinglePartial) + 
     labs(title="iSnap - Quality Cold Start (Partial)")
   
   iSnapStatsFull <- qualityStats(isnapRounds, T, iSnapTemplateFull, iSnapSingleFull)
@@ -206,9 +211,9 @@ runme <- function() {
   itapSinglePartial <- c("helloWorld" = 0.638, "firstAndLast" = 0.492,
                          "isPunctuation" = 0.231, "kthDigit" = 0.286, "oneToN" = 0.214)
   
-  plotColdStartBounded(itapRounds, T, itapTemplateFull, itapSingleFull) + 
+  plotColdStartCompareWeights(itapRounds, T, itapTemplateFull, itapSingleFull) + 
     labs(title="ITAP - Quality Cold Start (Full)")
-  plotColdStartBounded(itapRounds, F, itapTemplatePartial, itapSinglePartial) + 
+  plotColdStartCompareWeights(itapRounds, F, itapTemplatePartial, itapSinglePartial) + 
     labs(title="ITAP - Quality Cold Start (Partial)")
   
   itapStatsFull <- qualityStats(itapRounds, T, itapTemplateFull, itapSingleFull)
