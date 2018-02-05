@@ -33,13 +33,13 @@ createTemplateCopy <- function(template, source, means) {
 
 
 assignmentNames <- c(
-  `guess1Lab` = "Guessing Game",
+  `guess1Lab` = "GuessingGame",
   `squiralHW` = "Squiral",
-  `helloWorld` = "Hello World",
-  `firstAndLast` = "First and Last",
-  `oneToN` = "One to N",
-  `isPunctuation` = "Is Punctuation",
-  `kthDigit` = "Kth Digit"
+  `helloWorld` = "HelloWorld",
+  `firstAndLast` = "FirstAndLast",
+  `oneToN` = "OneToN",
+  `isPunctuation` = "IsPunctuation",
+  `kthDigit` = "KthDigit"
 )
 
 getRounds <- function(ratings) {
@@ -88,10 +88,8 @@ plotColdStartCompareWeights <- function(rounds, isFull, template, single) {
   rounds$weight <- "weighted"
   
   roundsEven <- rounds
-  roundsEven$mean <- if(isFull) rounds$fullEven else rounds$partialEven
+  roundsEven$mean <- if(isFull) roundsEven$fullEven else roundsEven$partialEven
   roundsEven$weight <- "even"
-  
-  rounds <- rbind(rounds, roundsEven)
   
   bounds <- rounds
   if (!missing(template)) {
@@ -102,13 +100,15 @@ plotColdStartCompareWeights <- function(rounds, isFull, template, single) {
   }
   rounds <- bounds
   
+  rounds <- rbind(rounds, roundsEven)
+  
   rounds$source <- ordered(rounds$source, c("template", "single", "students"))
   
   ggplot(rounds, aes(x=count, y=mean, color=source, linetype=weight)) + 
     geom_line(size=1) + facet_wrap(~assignmentID, scales = "free_x", labeller=as_labeller(assignmentNames)) +
     xlab("Training Dataset Size") + ylab("Mean Quality Score") + labs(color="Data", linetype="Weights") +
     scale_color_manual(labels=c("AllExpert", "OneExpert", "Students"), values=c(twoColors, "black")) +
-    scale_linetype_manual(labels=c("Even", "Voting"), values=c("solid", "dashed")) +
+    scale_linetype_manual(labels=c("Uniform", "Voting"), values=c("dashed", "solid")) +
     theme_bw()
 }
 
