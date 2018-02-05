@@ -17,6 +17,7 @@ import edu.isnap.datasets.Fall2017;
 import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.python.PythonHintConfig;
 import edu.isnap.hint.SnapHintConfig;
+import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.rating.ColdStart;
 import edu.isnap.rating.GoldStandard;
 import edu.isnap.rating.HintSet;
@@ -52,9 +53,9 @@ public class RunTutorEdits extends TutorEdits {
 
 //		dataset.verifyGoldStandard();
 
-//		dataset.runHintRating(source, debug, writeHints);
+		dataset.runHintRating(source, debug, writeHints);
 
-		dataset.writeColdStart(200, 1);
+//		dataset.writeColdStart(200, 1);
 
 		// Tutor consensus hint generation
 //		compareHintsSnap(Fall2016.instance);
@@ -166,14 +167,17 @@ public class RunTutorEdits extends TutorEdits {
 			HintRatingSet rate = RateHints.rate(standard, hintSet, debug);
 			if (write) {
 				String name = getSourceName(source) + ".csv";
-				rate.writeAllHints(getDataDir() + RateHints.ALGORITHMS_DIR + name);
+				rate.writeAllHints(getDataDir() + RateHints.ALGORITHMS_DIR + "/" + name);
+				Spreadsheet spreadsheet = new Spreadsheet();
+				rate.writeAllRatings(spreadsheet);
+				spreadsheet.write(getDataDir() + "analysis/ratings-" + name);
 			}
 		}
 
 		public static String getSourceName(Source source) {
-			String name = "source-check";
+			String name = "sourcecheck";
 			if (source == Source.Template) name += "-template";
-			if (source == Source.Template) name += "-expert1";
+			if (source == Source.SingleExpert) name += "-expert1";
 			return name;
 		}
 

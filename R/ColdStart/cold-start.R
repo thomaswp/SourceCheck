@@ -3,6 +3,8 @@ library(ggplot2)
 library(plyr)
 library(reshape2)
 
+source("../Hints Comparison/util.R")
+
 twoColors <- c("#a1d99b","#2c7fb8")
 
 se <- function(x) ifelse(length(x) == 0, 0, sqrt(var(x, na.rm=T)/sum(!is.na(x))))
@@ -23,9 +25,10 @@ lateSlope <- function(x) {
 }
 
 createTemplateCopy <- function(template, source, means) {
+  means <- means[means$type == source,]
   assignments <- unique(template$assignmentID)
   for (assignment in assignments) {
-    template[template$assignmentID == assignment,]$mean <- means[[assignment]]
+    template[template$assignmentID == assignment,]$mean <- means$mean[means$assignmentID==assignment]
   }
   template$source <- source
   return (template)
@@ -60,16 +63,15 @@ getRounds <- function(ratings) {
                   partialEven=mean(partialEven))
 }
 
-plotColdStartBounded <- function(rounds, isFull, template, single) {
+plotColdStartBounded <- function(rounds, isFull, baselines) {
   rounds$source <- "students"
   rounds$mean <- if(isFull) rounds$fullMean else rounds$partialMean
   
+  baselines$mean = if (isFull) baselines$fullMean else baselines$partialMean
   bounds <- rounds
-  if (!missing(template)) {
-    bounds <- rbind(bounds, createTemplateCopy(rounds, "template", template))
-  }
-  if (!missing(single)) {
-    bounds <- rbind(bounds, createTemplateCopy(rounds, "single", single))
+  if (!missing(baselines)) {
+    bounds <- rbind(bounds, createTemplateCopy(rounds, "template", baselines))
+    bounds <- rbind(bounds, createTemplateCopy(rounds, "single", baselines))
   }
   rounds <- bounds
   
@@ -82,7 +84,7 @@ plotColdStartBounded <- function(rounds, isFull, template, single) {
     theme_bw()
 }
 
-plotColdStartCompareWeights <- function(rounds, isFull, template, single) {
+plotColdStartCompareWeights <- function(rounds, isFull, baselines) {
   rounds$source <- "students"
   rounds$mean <- if(isFull) rounds$fullMean else rounds$partialMean
   rounds$weight <- "weighted"
@@ -91,12 +93,12 @@ plotColdStartCompareWeights <- function(rounds, isFull, template, single) {
   roundsEven$mean <- if(isFull) roundsEven$fullEven else roundsEven$partialEven
   roundsEven$weight <- "even"
   
+  baselines$mean = if (isFull) baselines$fullMean else baselines$partialMean
+  
   bounds <- rounds
-  if (!missing(template)) {
-    bounds <- rbind(bounds, createTemplateCopy(rounds, "template", template))
-  }
-  if (!missing(single)) {
-    bounds <- rbind(bounds, createTemplateCopy(rounds, "single", single))
+  if (!missing(baselines)) {
+    bounds <- rbind(bounds, createTemplateCopy(rounds, "template", baselines))
+    bounds <- rbind(bounds, createTemplateCopy(rounds, "single", baselines))
   }
   rounds <- bounds
   
@@ -165,13 +167,15 @@ plotRequestBoxplots <- function(ratings) {
          aes(x=ordered(count), y=MultipleTutors_Partial)) + geom_boxplot() + facet_grid(requestID ~ .)
 }
 
-qualityStats <- function(rounds, isFull, template, single) {
+qualityStats <- function(rounds, isFull, baselines) {
   rounds$mean <- if (isFull) rounds$fullMean else rounds$partialMean
   stats <- ddply(rounds, "assignmentID", summarize, bestStudents=count[first(which(mean==max(mean)))],
                  maxRating=max(mean),maxStudents=max(count), finalRating=last(mean))
-  stats <- stats[match(stats$assignmentID, names(template)),]
-  stats$single <- single
-  stats$template <- template
+  
+  baselines$mean = if (isFull) baselines$fullMean else baselines$partialMean
+  baselines <- baselines[order(baselines$assignmentID),]
+  stats$single <- baselines$mean[baselines$type == "single"]
+  stats$template <- baselines$mean[baselines$type == "template"]
   stats
 }
 
@@ -189,31 +193,40 @@ getBests <- function(ratings) {
                     fullEven=mean(MultipleTutors_Full_validCount / totalCount),
                     partialEven=mean(MultipleTutors_Partial_validCount / totalCount))
   best <- ddply(requests, c("assignmentID", "requestID", "total"), summarize, 
-                best=max(fullMean), bestCount=count[best==fullMean][[1]], sl=lateSlope(fullMean),
-                bestEven=max(fullEven), bestCountEven=count[bestEven==fullEven][[1]], slEven=lateSlope(fullEven))
+                best=max(fullMean), bestCount=count[best==fullMean][[1]], sl=slope(fullMean),
+                bestEven=max(fullEven), bestCountEven=count[bestEven==fullEven][[1]], slEven=slope(fullEven))
   best$bestPerc <- best$bestCount / best$total
   return (best)
+}
+
+getBaseline <- function(ratings) {
+  ddply(ratings, c("assignmentID"), summarize, fullMean=mean(MultipleTutors_Full), partialMean=mean(MultipleTutors_Partial))
+}
+
+parseBaselines <- function(dir) {
+  template <- getBaseline(read_csv(paste("../../data/hint-rating", dir, "analysis/ratings-sourcecheck-template.csv", sep="/")))
+  template$type <- "template"
+  
+  single <- getBaseline(read_csv(paste("../../data/hint-rating", dir, "analysis/ratings-sourcecheck-expert1.csv", sep="/")))
+  single$type <- "single"
+  return(rbind(template,single))
 }
 
 runme <- function() {
   isnap <- read_csv("../../data/hint-rating/isnap2017/analysis/cold-start.csv")
   isnapRounds <- getRounds(isnap)
   
-  iSnapTemplateFull <- c("guess1Lab" = 0.358, "squiralHW" = 0.272)
-  iSnapTemplatePartial <- c("guess1Lab" = 0.397, "squiralHW" = 0.321)
-  
-  iSnapSingleFull <- c("guess1Lab" = 0.249, "squiralHW" = 0.217)
-  iSnapSinglePartial <- c("guess1Lab" = 0.279, "squiralHW" = 0.250)
+  isnapBaselines <- parseBaselines("isnap2017")
   
   plotColdStart(isnapRounds) + labs(title="iSnap - Quality Cold Start")
-  plotColdStartCompareWeights(isnapRounds, T, iSnapTemplateFull, iSnapSingleFull) + 
+  plotColdStartCompareWeights(isnapRounds, T, isnapBaselines) + 
     labs(title="iSnap - Quality Cold Start (Full)")
-  plotColdStartCompareWeights(isnapRounds, F, iSnapTemplatePartial, iSnapSinglePartial) + 
+  plotColdStartCompareWeights(isnapRounds, F, isnapBaselines) + 
     labs(title="iSnap - Quality Cold Start (Partial)")
   
-  iSnapStatsFull <- qualityStats(isnapRounds, T, iSnapTemplateFull, iSnapSingleFull)
+  iSnapStatsFull <- qualityStats(isnapRounds, T, isnapBaselines)
   iSnapStatsFull$match <- "Full"
-  iSnapStatsPartial <- qualityStats(isnapRounds, F, iSnapTemplatePartial, iSnapSinglePartial)
+  iSnapStatsPartial <- qualityStats(isnapRounds, F, isnapBaselines)
   iSnapStatsPartial$match <- "Partial"
   iSnapStats <- rbind(iSnapStatsFull, iSnapStatsPartial)
   iSnapStats$dataset <- "iSnap"
@@ -222,23 +235,19 @@ runme <- function() {
   itapRounds <- getRounds(itap)
   itapRounds$assignmentID <- ordered(itapRounds$assignmentID, c("helloWorld", "firstAndLast", "isPunctuation",
                                                                 "kthDigit", "oneToN"))
-  itapTemplateFull <- c("helloWorld" = 0.357, "firstAndLast" = 0.429,
-                        "isPunctuation" = 0.231, "kthDigit" = 0.399, "oneToN" = 0.131)
-  itapTemplatePartial <- c("helloWorld" = 0.595, "firstAndLast" = 0.429,
-                          "isPunctuation" = 0.311, "kthDigit" = 0.493, "oneToN" = 0.356)
-  itapSingleFull <- c("helloWorld" = 0.333, "firstAndLast" = 0.492,
-                      "isPunctuation" = 0.192, "kthDigit" = 0.250, "oneToN" = 0.112)
-  itapSinglePartial <- c("helloWorld" = 0.638, "firstAndLast" = 0.492,
-                         "isPunctuation" = 0.231, "kthDigit" = 0.286, "oneToN" = 0.214)
   
-  plotColdStartCompareWeights(itapRounds, T, itapTemplateFull, itapSingleFull) + 
+  itapBaselines <- parseBaselines("itap2016")
+  itapBaselines$assignmentID <- ordered(itapBaselines$assignmentID, c("helloWorld", "firstAndLast", "isPunctuation",
+                                                                      "kthDigit", "oneToN"))
+  
+  plotColdStartCompareWeights(itapRounds, T, itapBaselines) + 
     labs(title="ITAP - Quality Cold Start (Full)")
-  plotColdStartCompareWeights(itapRounds, F, itapTemplatePartial, itapSinglePartial) + 
+  plotColdStartCompareWeights(itapRounds, F, itapBaselines) + 
     labs(title="ITAP - Quality Cold Start (Partial)")
   
-  itapStatsFull <- qualityStats(itapRounds, T, itapTemplateFull, itapSingleFull)
+  itapStatsFull <- qualityStats(itapRounds, T, itapBaselines)
   itapStatsFull$match <- "Full"
-  itapStatsPartial <- qualityStats(itapRounds, F, itapTemplatePartial, itapSinglePartial)
+  itapStatsPartial <- qualityStats(itapRounds, F, itapBaselines)
   itapStatsPartial$match <- "Partial"
   itapStats <- rbind(itapStatsFull, itapStatsPartial)
   itapStats$dataset <- "ITAP"
@@ -246,10 +255,35 @@ runme <- function() {
   allStats <- rbind(iSnapStats, itapStats)
   write.csv(allStats, "C:/Users/Thomas/Desktop/stats.csv")
   
+  ddply(getBests(isnap), c("assignmentID"), summarize, down=mean(sl < 0), up=mean(sl > 0), 
+        downEven=mean(slEven < 0), upEven=mean(slEven > 0))
+  ddply(getBests(itap), c("assignmentID"), summarize, down=mean(sl < 0), up=mean(sl > 0), 
+        downEven=mean(slEven < 0), upEven=mean(slEven > 0))
+  
   ddply(isnapRounds, "assignmentID", summarize, 
         maxVote=max(fullMean), finalVote=last(fullMean), lossVote=finalVote/maxVote,
         maxEven=max(fullEven), finalEven=last(fullEven), lossEven=finalEven/maxEven)
   ddply(itapRounds, "assignmentID", summarize, 
         maxVote=max(partialMean), finalVote=last(partialMean), lossVote=finalVote/maxVote,
         maxEven=max(partialEven), finalEven=last(partialEven), lossEven=finalEven/maxEven)
+  
+  isnapRequests <- ddply(isnap, c("assignmentID", "requestID"), summarize, 
+                         fullMean=mean(MultipleTutors_Full), 
+                         fullEven=mean(MultipleTutors_Full_validCount / totalCount))
+  # sig
+  wilcox.test(isnapRequests$fullMean[isnapRequests$assignmentID=="guess1Lab"], 
+              isnapRequests$fullEven[isnapRequests$assignmentID=="guess1Lab"], paired=T)
+  # not-sig
+  wilcox.test(isnapRequests$fullMean[isnapRequests$assignmentID=="squiralHW"], 
+              isnapRequests$fullEven[isnapRequests$assignmentID=="squiralHW"], paired=T)
+  #sig
+  wilcox.test(isnapRequests$fullMean, isnapRequests$fullEven, paired=T)
+  cohen.d(isnapRequests$fullMean, isnapRequests$fullEven)
+  
+  itapRequests <- ddply(itap, c("assignmentID", "requestID"), summarize, 
+                         partialMean=mean(MultipleTutors_Partial), 
+                         partialEven=mean(MultipleTutors_Partial_validCount / totalCount))
+  # not sig
+  wilcox.test(itapRequests$partialMean, itapRequests$partialEven, paired=T)
+  cohen.d(itapRequests$partialMean, itapRequests$partialEven)
 }

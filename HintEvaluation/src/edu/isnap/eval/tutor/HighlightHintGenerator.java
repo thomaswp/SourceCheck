@@ -22,6 +22,7 @@ import edu.isnap.rating.ColdStart;
 import edu.isnap.rating.GoldStandard;
 import edu.isnap.rating.HintRequest;
 import edu.isnap.rating.HintSet;
+import edu.isnap.rating.RateHints;
 import edu.isnap.rating.RatingConfig;
 import edu.isnap.rating.TrainingDataset;
 import edu.isnap.rating.TrainingDataset.Trace;
@@ -30,10 +31,12 @@ public class HighlightHintGenerator implements ColdStart.HintGenerator {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
-//		for (String assignmentID : dataset.getAssignmentIDs()) {
-//			System.out.println(" ============= " + assignmentID + " ============= ");
-//			dataset.printAllSolutions(assignmentID, hintGenerator.ratingConfig, false);
-//		}
+		TrainingDataset dataset = TrainingDataset.fromDirectory("itap",
+				RunTutorEdits.ITAP2016.getDataDir() + RateHints.TRAINING_DIR);
+		for (String assignmentID : dataset.getAssignmentIDs()) {
+			System.out.println(" ============= " + assignmentID + " ============= ");
+			dataset.printAllSolutions(assignmentID, RatingConfig.Python, true);
+		}
 //		standard.printAllRequestNodes(hintGenerator.ratingConfig);
 	}
 
