@@ -123,7 +123,7 @@ public class RunTutorEdits extends TutorEdits {
 		@Override
 		String getTemplateDir(Source source) {
 			String dir = source == Source.Template ? "" : "single/";
-			return "../data/itap/" + dir + "template";
+			return "../data/itap/" + dir + "templates";
 		}
 
 		@Override
