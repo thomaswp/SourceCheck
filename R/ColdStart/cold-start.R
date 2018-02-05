@@ -175,6 +175,26 @@ qualityStats <- function(rounds, isFull, template, single) {
   stats
 }
 
+plotNegSlopeCurve <- function(ratings, isFull) {
+  bests <- getBests(ratings)
+  negIDs <- bests$requestID[bests$sl < 0]
+  negRatings <- ratings[ratings$requestID %in% negIDs,]
+  plotColdStartWeights(getRounds(negRatings), isFull)
+}
+
+getBests <- function(ratings) {
+  requests <- ddply(ratings, c("count", "total", "assignmentID", "requestID"), summarize, 
+                    fullMean=mean(MultipleTutors_Full), fullSE=se(MultipleTutors_Full),
+                    partialMean=mean(MultipleTutors_Partial), partialSE=se(MultipleTutors_Partial),
+                    fullEven=mean(MultipleTutors_Full_validCount / totalCount),
+                    partialEven=mean(MultipleTutors_Partial_validCount / totalCount))
+  best <- ddply(requests, c("assignmentID", "requestID", "total"), summarize, 
+                best=max(fullMean), bestCount=count[best==fullMean][[1]], sl=lateSlope(fullMean),
+                bestEven=max(fullEven), bestCountEven=count[bestEven==fullEven][[1]], slEven=lateSlope(fullEven))
+  best$bestPerc <- best$bestCount / best$total
+  return (best)
+}
+
 runme <- function() {
   isnap <- read_csv("../../data/hint-rating/isnap2017/analysis/cold-start.csv")
   isnapRounds <- getRounds(isnap)
@@ -232,24 +252,4 @@ runme <- function() {
   ddply(itapRounds, "assignmentID", summarize, 
         maxVote=max(partialMean), finalVote=last(partialMean), lossVote=finalVote/maxVote,
         maxEven=max(partialEven), finalEven=last(partialEven), lossEven=finalEven/maxEven)
-}
-
-plotNegSlopeCurve <- function(ratings, isFull) {
-  bests <- getBests(ratings)
-  negIDs <- bests$requestID[bests$sl < 0]
-  negRatings <- ratings[ratings$requestID %in% negIDs,]
-  plotColdStartWeights(getRounds(negRatings), isFull)
-}
-
-getBests <- function(ratings) {
-  requests <- ddply(ratings, c("count", "total", "assignmentID", "requestID"), summarize, 
-                    fullMean=mean(MultipleTutors_Full), fullSE=se(MultipleTutors_Full),
-                    partialMean=mean(MultipleTutors_Partial), partialSE=se(MultipleTutors_Partial),
-                    fullEven=mean(MultipleTutors_Full_validCount / totalCount),
-                    partialEven=mean(MultipleTutors_Partial_validCount / totalCount))
-  best <- ddply(requests, c("assignmentID", "requestID", "total"), summarize, 
-                best=max(fullMean), bestCount=count[best==fullMean][[1]], sl=lateSlope(fullMean),
-                bestEven=max(fullEven), bestCountEven=count[bestEven==fullEven][[1]], slEven=lateSlope(fullEven))
-  best$bestPerc <- best$bestCount / best$total
-  return (best)
 }

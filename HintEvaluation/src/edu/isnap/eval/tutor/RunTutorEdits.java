@@ -52,9 +52,9 @@ public class RunTutorEdits extends TutorEdits {
 
 //		dataset.verifyGoldStandard();
 
-		dataset.runHintRating(source, debug, writeHints);
+//		dataset.runHintRating(source, debug, writeHints);
 
-//		dataset.writeColdStart(200, 1);
+		dataset.writeColdStart(200, 1);
 
 		// Tutor consensus hint generation
 //		compareHintsSnap(Fall2016.instance);

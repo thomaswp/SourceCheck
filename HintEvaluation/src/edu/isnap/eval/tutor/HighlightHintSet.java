@@ -98,7 +98,7 @@ public abstract class HighlightHintSet extends HintSet {
 	}
 
 	private static double getDefaultWeight(EditHint hint) {
-		if (hint instanceof Deletion) return 0.25f;
+//		if (hint instanceof Deletion) return 0.25f;
 		return 1;
 	}
 
