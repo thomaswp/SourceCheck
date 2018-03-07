@@ -19,6 +19,7 @@ import edu.isnap.eval.python.PythonHintConfig;
 import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.rating.ColdStart;
+import edu.isnap.rating.ColdStart.HintGenerator;
 import edu.isnap.rating.GoldStandard;
 import edu.isnap.rating.HintSet;
 import edu.isnap.rating.RateHints;
@@ -43,19 +44,20 @@ public class RunTutorEdits extends TutorEdits {
 
 		RatingDataset dataset = iSnap2017;
 		Source source = Source.StudentData;
+		HintAlgorithm algorithm = CTD;
 		boolean debug = false;
 		boolean writeHints = false;
 
 		// Exporting things
 //		dataset.exportTrainingData();
 //		dataset.writeGoldStandard();
-//		dataset.writeHintSet(source);
+//		dataset.writeHintSet(algorithm, source);
 
 //		dataset.verifyGoldStandard();
 
-		dataset.runHintRating(source, debug, writeHints);
+		dataset.runHintRating(algorithm, source, debug, writeHints);
 
-//		dataset.writeColdStart(200, 1);
+//		dataset.writeColdStart(algorithm, 200, 1);
 
 		// Tutor consensus hint generation
 //		compareHintsSnap(Fall2016.instance);
@@ -146,24 +148,24 @@ public class RunTutorEdits extends TutorEdits {
 			return GoldStandard.parseSpreadsheet(getDataDir() + RateHints.GS_SPREADSHEET);
 		}
 
-		public HighlightHintSet getHintSet(Source source, GoldStandard standard)
-				throws IOException {
-			HighlightHintSet hintSet;
+		public HintMapHintSet getHintSet(HintAlgorithm algorithm, Source source,
+				GoldStandard standard) throws IOException {
+			HintMapHintSet hintSet;
 			if (source == Source.StudentData) {
-				hintSet = new ImportHighlightHintSet("sourcecheck", getHintConfig(),
-						 getDataDir() + RateHints.TRAINING_DIR);
+				hintSet = algorithm.getHintSetFromTrainingDataset(
+						getHintConfig(), getDataDir() + RateHints.TRAINING_DIR);
 			} else {
-				hintSet = new TemplateHighlightHintSet("template", getTemplateDir(source),
-						getHintConfig());
+				hintSet = algorithm.getHintSetFromTemplate(getHintConfig(),
+						getTemplateDir(source));
 			}
 			hintSet.addHints(standard);
 			return hintSet;
 		}
 
-		public void runHintRating(Source source, boolean debug, boolean write)
-				throws FileNotFoundException, IOException {
+		public void runHintRating(HintAlgorithm algorithm, Source source, boolean debug,
+				boolean write) throws FileNotFoundException, IOException {
 			GoldStandard standard = readGoldStandard();
-			HighlightHintSet hintSet = getHintSet(source, standard);
+			HintMapHintSet hintSet = getHintSet(algorithm, source, standard);
 			HintRatingSet rate = RateHints.rate(standard, hintSet, debug);
 			if (write) {
 				String name = getSourceName(source) + ".csv";
@@ -181,9 +183,10 @@ public class RunTutorEdits extends TutorEdits {
 			return name;
 		}
 
-		public void writeHintSet(Source source) throws FileNotFoundException, IOException {
+		public void writeHintSet(HintAlgorithm algorithm, Source source)
+				throws FileNotFoundException, IOException {
 			GoldStandard standard = readGoldStandard();
-			HighlightHintSet hintSet = getHintSet(source, standard);
+			HintMapHintSet hintSet = getHintSet(algorithm, source, standard);
 			String name = getSourceName(source);
 			hintSet.writeToFolder(new File(getDataDir(),
 					RateHints.ALGORITHMS_DIR + getSourceName(source)).getPath(), true);
@@ -193,13 +196,15 @@ public class RunTutorEdits extends TutorEdits {
 			generateGoldStandard().writeSpreadsheet(getDataDir() + RateHints.GS_SPREADSHEET);
 		}
 
-		public void writeColdStart(int rounds, int step) throws IOException {
-			ColdStart coldStart = getColdStart();
+		public void writeColdStart(HintAlgorithm algorithm, int rounds, int step)
+				throws IOException {
+			ColdStart coldStart = getColdStart(algorithm);
 			coldStart.writeTest(getDataDir() + "analysis/cold-start.csv", rounds, step);
 		}
 
-		public void writeSingleTraces() throws FileNotFoundException, IOException {
-			ColdStart coldStart = getColdStart();
+		public void writeSingleTraces(HintAlgorithm algorithm)
+				throws FileNotFoundException, IOException {
+			ColdStart coldStart = getColdStart(algorithm);
 			coldStart.testSingleTraces().write(getDataDir() + "analysis/traces.csv");
 		}
 
@@ -209,15 +214,17 @@ public class RunTutorEdits extends TutorEdits {
 			HighlightHintGenerator.getCostsSpreadsheet(dataset, standard, getHintConfig())
 			.write(getDataDir() + "analysis/distances.csv");
 		}
+
 		private TrainingDataset getTrainingDataset() throws IOException {
 			return TrainingDataset.fromDirectory("",
 					getDataDir() + RateHints.TRAINING_DIR);
 		}
 
-		private ColdStart getColdStart() throws FileNotFoundException, IOException {
+		private ColdStart getColdStart(HintAlgorithm algorithm)
+				throws FileNotFoundException, IOException {
 			GoldStandard standard = readGoldStandard();
 			TrainingDataset dataset = getTrainingDataset();
-			HighlightHintGenerator hintGenerator = new HighlightHintGenerator(getHintConfig());
+			HintGenerator hintGenerator = algorithm.getHintGenerator(getHintConfig());
 			ColdStart coldStart = new ColdStart(standard, dataset, hintGenerator);
 			return coldStart;
 		}
@@ -255,6 +262,52 @@ public class RunTutorEdits extends TutorEdits {
 				}
 			}
 		}
+	}
+
+	private static HintAlgorithm SourceCheck = new HintAlgorithm() {
+
+		@Override
+		public HintMapHintSet getHintSetFromTrainingDataset(HintConfig config, String directory)
+				throws IOException {
+			return new ImportHighlightHintSet("SourceCheck", config, directory);
+		}
+
+		@Override
+		public HintMapHintSet getHintSetFromTemplate(HintConfig config, String directory) {
+			return new TemplateHighlightHintSet("SourceCheck", config, directory);
+		}
+
+		@Override
+		public HintGenerator getHintGenerator(HintConfig config) {
+			return new HighlightHintGenerator(config);
+		}
+	};
+
+	private static HintAlgorithm CTD = new HintAlgorithm() {
+
+		@Override
+		public HintMapHintSet getHintSetFromTrainingDataset(HintConfig config, String directory)
+				throws IOException {
+			return new CTDHintSet("CTD", config, directory);
+		}
+
+		@Override
+		public HintMapHintSet getHintSetFromTemplate(HintConfig config, String directory) {
+			throw new UnsupportedOperationException("CTD does not fully support templates.");
+		}
+
+		@Override
+		public HintGenerator getHintGenerator(HintConfig config) {
+			// TODO: refactor HighlightHintGenerator to support both algorithms
+			throw new UnsupportedOperationException();
+		}
+	};
+
+	private static interface HintAlgorithm {
+		HintMapHintSet getHintSetFromTrainingDataset(HintConfig config, String directory)
+				throws IOException;
+		HintMapHintSet getHintSetFromTemplate(HintConfig config, String directory);
+		HintGenerator getHintGenerator(HintConfig config);
 	}
 
 	private static void printTutorInternalRatings(Dataset dataset)

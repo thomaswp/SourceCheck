@@ -25,10 +25,10 @@ public class TemplateHighlightHintSet extends HighlightHintSet {
 	private final String baseDir;
 
 	public TemplateHighlightHintSet(String name, Dataset dataset) {
-		this(name, dataset.dataDir, new SnapHintConfig());
+		this(name, new SnapHintConfig(), dataset.dataDir);
 	}
 
-	public TemplateHighlightHintSet(String name, String baseDir, HintConfig config) {
+	public TemplateHighlightHintSet(String name, HintConfig config, String baseDir) {
 		super(name, config);
 		this.hintConfig.preprocessSolutions = false;
 		this.baseDir = baseDir;
