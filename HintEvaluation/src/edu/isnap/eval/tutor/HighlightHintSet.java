@@ -6,7 +6,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import edu.isnap.ctd.graph.ASTNode;
@@ -23,33 +22,19 @@ import edu.isnap.ctd.util.Diff.ColorStyle;
 import edu.isnap.ctd.util.Tuple;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.eval.export.JsonAST;
-import edu.isnap.eval.python.PythonHintConfig;
 import edu.isnap.eval.tutor.TutorEdits.PrintableTutorHint;
-import edu.isnap.hint.SnapHintConfig;
-import edu.isnap.rating.GoldStandard;
 import edu.isnap.rating.HintOutcome;
 import edu.isnap.rating.HintRequest;
-import edu.isnap.rating.HintSet;
-import edu.isnap.rating.RatingConfig;
 
-public abstract class HighlightHintSet extends HintSet {
-
-	protected final HintConfig hintConfig;
+public abstract class HighlightHintSet extends HintMapHintSet {
 
 	protected abstract HintHighlighter getHighlighter(HintRequest request, HintMap baseMap);
 
 	public HighlightHintSet(String name, HintConfig hintConfig) {
-		super(name, getRatingConfig(hintConfig));
-		this.hintConfig = hintConfig;
+		super(name, hintConfig);
 	}
 
-	public static RatingConfig getRatingConfig(HintConfig config) {
-		if (config instanceof SnapHintConfig) return RatingConfig.Snap;
-		if (config instanceof PythonHintConfig) return RatingConfig.Python;
-		System.err.println("Unknown hint config: " + config.getClass().getName());
-		return RatingConfig.Default;
-	}
-
+	@Override
 	public HighlightHintSet addHints(List<HintRequest> requests) {
 		HintMap baseMap = new HintMap(hintConfig);
 
@@ -102,20 +87,6 @@ public abstract class HighlightHintSet extends HintSet {
 		return 1;
 	}
 
-	public static Node copyWithIDs(Node node) {
-		return copyWithIDs(node, null, new AtomicInteger(0));
-	}
-
-	private static Node copyWithIDs(Node node, Node parent, AtomicInteger count) {
-		String id = node.id;
-		if (id == null) id = "GEN_" + count.getAndIncrement();
-		Node copy = node.constructNode(parent, node.type(), node.value, id);
-		for (Node child : node.children) {
-			copy.children.add(copyWithIDs(child, copy, count));
-		}
-		return copy;
-	}
-
 	// Filter out hints that wouldn't be shown in iSnap anyway
 	protected Set<EditHint> filterHints(List<EditHint> hints, boolean filterSameParentInsertions) {
 		// Don't include insertions with a missing parent (yellow highlights), since they can't
@@ -156,10 +127,6 @@ public abstract class HighlightHintSet extends HintSet {
 				.collect(Collectors.toSet());
 		hintSet.addAll(insertions);
 		return hintSet;
-	}
-
-	public void addHints(GoldStandard standard) {
-		addHints(standard.getHintRequests());
 	}
 
 	private static <T> boolean removeExactly(List<T> list, T element) {
