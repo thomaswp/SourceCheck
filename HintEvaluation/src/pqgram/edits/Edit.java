@@ -17,11 +17,11 @@ public abstract class Edit {
 	protected int lineNumber;
 	protected int startPosition;
 	protected int endPosition;
-	
+
 	public Edit(String a, String b, Graph aG, Graph bG) {
 		this(a, b, aG, bG, -1, -1, -1);
 	}
-	
+
 	public Edit(String a, String b, Graph aG, Graph bG, int lineNumber, int startPosition, int endPosition) {
 		this.a = a;
 		this.b = b;
@@ -31,62 +31,62 @@ public abstract class Edit {
 		this.startPosition = startPosition;
 		this.endPosition = endPosition;
 	}
-	
-	public abstract Node outcome(Map<String, Tree> fromMap, Map<String, Tree> toMap);
+
+	public abstract Node outcome(Node from);
 	public abstract Node getParentNode(Map<String, Tree> fromMap);
-	
+
 	public Graph getAG() {
 		return this.aG;
 	}
-	
+
 	public void setAG(Graph aG) {
 		this.aG = aG;
 	}
-	
+
 	public Graph getBG() {
 		return this.bG;
 	}
-	
+
 	public void setBG(Graph bG) {
 		this.bG = bG;
 	}
-	
+
 	public String getA() {
 		return this.a;
 	}
-	
+
 	public void setA(String a) {
 		this.a = a;
 	}
-	
+
 	public String getB() {
 		return this.b;
 	}
-	
+
 	public void setB(String b) {
 		this.b = b;
 	}
-	
+
 	public void setLineNumber(int lineNumber) {
 		this.lineNumber = lineNumber;
 	}
-	
+
 	public int getLineNumber() {
 		return this.lineNumber;
 	}
-	
+
 	public void setStartPosition(int startPosition) {
 		this.startPosition = startPosition;
 	}
-	
+
 	public void setEndPosition(int endPosition) {
 		this.endPosition = endPosition;
 	}
-	
+
 	public int getStartPosition() {
 		return this.startPosition;
 	}
-	
+
 	public int getEndPosition() {
 		return this.endPosition;
 	}

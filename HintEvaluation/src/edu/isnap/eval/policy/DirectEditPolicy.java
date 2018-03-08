@@ -42,7 +42,7 @@ public class DirectEditPolicy implements HintPolicy {
 
 		Set<Node> outcomes = new HashSet<>();
 		for (Edit edit : edits) {
-			Node outcome = edit.outcome(fromMap, toMap);
+			Node outcome = edit.outcome(from);
 			if (outcome == null) {
 				continue;
 			}
@@ -179,7 +179,7 @@ public class DirectEditPolicy implements HintPolicy {
 			if (parent == null) continue;
 			int depth = parent.depth();
 			if (depth < bestDepth) {
-				Node outcome = edit.outcome(fromMap, toMap);
+				Node outcome = edit.outcome(from);
 				if (outcome == null) continue;
 				best = outcome;
 				bestDepth = depth;

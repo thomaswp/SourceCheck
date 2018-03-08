@@ -44,7 +44,7 @@ public class RunTutorEdits extends TutorEdits {
 
 		RatingDataset dataset = iSnap2017;
 		Source source = Source.StudentData;
-		HintAlgorithm algorithm = CTD;
+		HintAlgorithm algorithm = PQGram;
 		boolean debug = false;
 		boolean writeHints = false;
 
@@ -294,6 +294,26 @@ public class RunTutorEdits extends TutorEdits {
 		@Override
 		public HintMapHintSet getHintSetFromTemplate(HintConfig config, String directory) {
 			throw new UnsupportedOperationException("CTD does not fully support templates.");
+		}
+
+		@Override
+		public HintGenerator getHintGenerator(HintConfig config) {
+			// TODO: refactor HighlightHintGenerator to support both algorithms
+			throw new UnsupportedOperationException();
+		}
+	};
+
+	private static HintAlgorithm PQGram = new HintAlgorithm() {
+
+		@Override
+		public HintMapHintSet getHintSetFromTrainingDataset(HintConfig config, String directory)
+				throws IOException {
+			return new PQGramHintSet("PQGram", config, directory);
+		}
+
+		@Override
+		public HintMapHintSet getHintSetFromTemplate(HintConfig config, String directory) {
+			throw new UnsupportedOperationException("PQGram does not support templates.");
 		}
 
 		@Override

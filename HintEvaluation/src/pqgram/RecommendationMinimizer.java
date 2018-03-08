@@ -5,19 +5,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import astrecognition.model.Tree;
 import pqgram.edits.Deletion;
 import pqgram.edits.Insertion;
 import pqgram.edits.Relabeling;
-import astrecognition.model.Tree;
 /**
  * Minimizes deletions and insertions based on their order, keeping track of previous edits
  */
 public class RecommendationMinimizer {
 
 	public static void minimizeDeletions(List<Insertion> insertions, List<Deletion> deletions, Map<String, String> relabelings) {
-		List<Insertion> insertionsToRemove = new ArrayList<Insertion>();
-		List<Deletion> deletionsToRemove = new ArrayList<Deletion>();
-		Map<String, String> deletedToParent = new HashMap<String, String>();
+		List<Insertion> insertionsToRemove = new ArrayList<>();
+		List<Deletion> deletionsToRemove = new ArrayList<>();
+		Map<String, String> deletedToParent = new HashMap<>();
 		// add all unaffected deletions
 		for (Deletion deletion : deletions) {
 			String firstDeletionpart = deletion.getA();
@@ -39,7 +39,7 @@ public class RecommendationMinimizer {
 				deletion.setA(newA);
 				deletion.setB(newB);
 			}
-			
+
 			if (!relabelings.containsKey(deletion.getB())) { // not a relabeling
 				deletedToParent.put(deletion.getB(), deletion.getA()); // add to deleted -> parent mapping
 				String newParentLabel = deletion.getA();
@@ -71,11 +71,11 @@ public class RecommendationMinimizer {
 				}
 			}
 		}
-		
+
 		insertions.removeAll(insertionsToRemove);
 		deletions.removeAll(deletionsToRemove);
 	}
-	
+
 	private static String getOriginalLabel(String uniqueLabel) {
 		if (uniqueLabel.contains(":")) {
 			return uniqueLabel.substring(0, uniqueLabel.indexOf(':'));
@@ -84,11 +84,11 @@ public class RecommendationMinimizer {
 	}
 
 	public static void minimizeInsertions(List<Insertion> insertions, List<Deletion> deletions, Map<String, String> relabelings) {
-		List<Insertion> insertionsToRemove = new ArrayList<Insertion>();
-		List<Deletion> deletionsToRemove = new ArrayList<Deletion>();
-		
-		Map<String, String> parentToInserted = new HashMap<String, String>();
-		Map<String, Insertion> finalInsertions = new HashMap<String, Insertion>();
+		List<Insertion> insertionsToRemove = new ArrayList<>();
+		List<Deletion> deletionsToRemove = new ArrayList<>();
+
+		Map<String, String> parentToInserted = new HashMap<>();
+		Map<String, Insertion> finalInsertions = new HashMap<>();
 		// remove all of the deletions and insertions that weren't caught above
 		for (Insertion insertion : insertions) {
 			if (!relabelings.containsKey(insertion.getB())) { // not a relabeling
@@ -104,7 +104,7 @@ public class RecommendationMinimizer {
 							if (finalInsertions.containsKey(insertion.getA())) {
 								Insertion parentInsertion = finalInsertions.get(insertion.getA());
 								parentInsertion.addInheritedChild(insertion.getB());
-								
+
 								while (finalInsertions.containsKey(parentInsertion.getA())) { // Richard understands this
 									parentInsertion = finalInsertions.get(parentInsertion.getA());
 									parentInsertion.addInheritedChild(insertion.getB());
@@ -119,16 +119,16 @@ public class RecommendationMinimizer {
 				}
 			}
 		}
-	
+
 		insertions.removeAll(insertionsToRemove);
 		deletions.removeAll(deletionsToRemove);
 	}
 
 	public static Map<String, String> getRelabelings(List<Insertion> insertions, List<Deletion> deletions, List<Relabeling> relabelingEdits, Tree sourceTree, Tree targetTree) {
-		List<Insertion> insertionsToRemove = new ArrayList<Insertion>();
-		List<Deletion> deletionsToRemove = new ArrayList<Deletion>();
-		
-		Map<String, String> relabelings = new HashMap<String, String>();
+		List<Insertion> insertionsToRemove = new ArrayList<>();
+		List<Deletion> deletionsToRemove = new ArrayList<>();
+
+		Map<String, String> relabelings = new HashMap<>();
 		for (Insertion insertion : insertions) {
 			String insertedOn = insertion.getA();
 			String inserted = insertion.getB();
@@ -169,10 +169,10 @@ public class RecommendationMinimizer {
 				}
 			}
 		}
-		
+
 		insertions.removeAll(insertionsToRemove);
 		deletions.removeAll(deletionsToRemove);
-	
+
 		return relabelings;
 	}
 

@@ -11,23 +11,24 @@ import edu.isnap.ctd.graph.Node;
  */
 public class PositionalEdit extends Edit {
 	protected int start;
-	
+
 	public PositionalEdit(String a, String b, Graph aG, Graph bG, int start) {
 		super(a, b, aG, bG);
 		this.start = start;
 	}
-	
+
 	public int getPosition() {
 		return this.start;
 	}
-	
+
+	@Override
 	public Node getParentNode(Map<String, Tree> fromMap) {
 		if (!fromMap.containsKey(a)) return null;
 		return fromMap.get(a).tag;
 	}
 
 	@Override
-	public Node outcome(Map<String, Tree> fromMap, Map<String, Tree> toMap) {
+	public Node outcome(Node from) {
 		throw new UnsupportedOperationException();
 	}
 }
