@@ -62,8 +62,10 @@ public class RateHints {
 				List<HintOutcome> hints = hintSet.getOutcomes(requestID);
 
 				// TODO: Stop if consensus hints is 0 (but only if consensus exists...)
-				// TODO: Rating should be 0 if there are validHints but no generated hitns
-				if (hints == null || hints.size() == 0) continue;
+				if (hints.isEmpty()) {
+					System.err.printf("No hints generated for request %s/%s.\n",
+							assignmentID, requestID);
+				}
 
 				for (HintOutcome hint : hints) {
 					HintRating rating = findMatchingEdit(validHints, hint, hintSet.config,
@@ -330,8 +332,8 @@ public class RateHints {
 				if (validity == Validity.NoTutors) continue;
 				for (MatchType type : MatchType.values()) {
 					if (type == MatchType.None) continue;
-					spreadsheet.put(validity + "_" + type,
-							validityWeight(type, validity, true) / weight);
+					double validityValue = weight == 0 ? 0 : validityWeight(type, validity, true);
+					spreadsheet.put(validity + "_" + type, validityValue);
 					spreadsheet.put(validity + "_" + type + "_validWeight",
 							validityWeight(type, validity, true));
 					spreadsheet.put(validity + "_" + type  + "_validCount",
@@ -358,6 +360,7 @@ public class RateHints {
 		protected double[] getValidityArray() {
 			int nValues = Validity.values().length - 1;
 			double[] validityArray = new double[nValues * 2];
+			if (isEmpty()) return validityArray;
 			for (int i = 0; i < nValues; i++) {
 				validityArray[i * 2] =
 						validityWeight(MatchType.Full, Validity.fromInt(i + 1), true);
@@ -372,6 +375,7 @@ public class RateHints {
 		}
 
 		protected double getPriorityScore() {
+			if (isEmpty()) return 0;
 			// TODO: figure out whether to count invalid items
 			return stream()
 					.filter(r -> r.priority() != null)

@@ -44,11 +44,11 @@ public class CTDHintSet extends HintMapHintSet{
 
 			List<VectorHint> hints = generator.getHints(code);
 			for (VectorHint hint : hints) {
-				Node to = hint.outcome();
+				Node to = hint.outcome().root();
 				ASTNode outcomeNode = to.toASTNode();
 				if (outcomeNode.hasType("snapshot")) outcomeNode.type = "Snap!shot";
 				HintOutcome outcome = new HintOutcome(outcomeNode, request.assignmentID,
-						request.assignmentID, 1);
+						request.id, 1);
 				add(outcome);
 			}
 		}

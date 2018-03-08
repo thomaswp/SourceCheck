@@ -41,6 +41,9 @@ public class LinkHint extends VectorHint {
 
 	@Override
 	public Node outcome() {
-		throw new UnsupportedOperationException();
+		Node outcome = super.outcome();
+		Node scriptToRemove = oldRoot.findMatchingNodeInCopy(outcome.root());
+		scriptToRemove.parent.children.remove(scriptToRemove.index());
+		return outcome;
 	}
 }
