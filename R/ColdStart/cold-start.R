@@ -2,6 +2,7 @@ library(readr)
 library(ggplot2)
 library(plyr)
 library(reshape2)
+library(car)
 
 source("../Hints Comparison/util.R")
 
@@ -267,7 +268,8 @@ runme <- function() {
         maxVote=max(partialMean), finalVote=last(partialMean), lossVote=finalVote/maxVote,
         maxEven=max(partialEven), finalEven=last(partialEven), lossEven=finalEven/maxEven)
   
-  isnapRequests <- ddply(isnap, c("assignmentID", "requestID"), summarize, 
+  isnapFinal <- isnap[isnap$count == isnap$total,]
+  isnapRequests <- ddply(isnapFinal, c("assignmentID", "requestID"), summarize, 
                          fullMean=mean(MultipleTutors_Full), 
                          fullEven=mean(MultipleTutors_Full_validCount / totalCount))
   # sig
@@ -280,7 +282,27 @@ runme <- function() {
   wilcox.test(isnapRequests$fullMean, isnapRequests$fullEven, paired=T)
   cohen.d(isnapRequests$fullMean, isnapRequests$fullEven)
   
-  itapRequests <- ddply(itap, c("assignmentID", "requestID"), summarize, 
+  isnapTemplate <- read_csv("../../data/hint-rating/isnap2017/analysis/ratings-sourcecheck-template.csv")
+  isnapTemplate$template <- isnapTemplate$MultipleTutors_Full
+  isnapRequests <- merge(isnapRequests, isnapTemplate[,c("requestID", "template")], by="requestID")
+  
+  # not-sig
+  wilcox.test(isnapRequests$fullMean[isnapRequests$assignmentID=="guess1Lab"], 
+              isnapRequests$template[isnapRequests$assignmentID=="guess1Lab"], paired=T)
+  # not-sig
+  wilcox.test(isnapRequests$fullMean[isnapRequests$assignmentID=="squiralHW"], 
+              isnapRequests$template[isnapRequests$assignmentID=="squiralHW"], paired=T)
+  # not-sig
+  wilcox.test(isnapRequests$fullMean, isnapRequests$template, paired=T)
+  cohen.d(isnapRequests$template, isnapRequests$fullMean)
+  
+  # Maybe sig without ties (also true got just GG1)?
+  ps <- sapply(1:1000, function(i) wilcox.test(isnapRequests$fullMean, jitter(isnapRequests$template, amount=0.001), paired=T)$p.value)
+  mean(ps < 0.05)
+  mean(ps)
+  
+  itapFinal <- itap[itap$count == itap$total,]
+  itapRequests <- ddply(itapFinal, c("assignmentID", "requestID"), summarize, 
                          partialMean=mean(MultipleTutors_Partial), 
                          partialEven=mean(MultipleTutors_Partial_validCount / totalCount))
   # not sig
