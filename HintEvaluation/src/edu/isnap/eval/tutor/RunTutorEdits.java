@@ -55,7 +55,7 @@ public class RunTutorEdits extends TutorEdits {
 
 //		dataset.verifyGoldStandard();
 
-		dataset.runHintRating(algorithm, source, debug, writeHints);
+//		dataset.runHintRating(algorithm, source, debug, writeHints);
 
 //		dataset.writeColdStart(algorithm, 200, 1);
 
@@ -65,7 +65,7 @@ public class RunTutorEdits extends TutorEdits {
 //		compareHintsPython("../data/itap");
 
 		// Test with Fall 2017 preliminary tutor hints
-//		testFall2017Pelim();
+		testFall2017Pelim();
 	}
 
 	public static RatingDataset iSnap2017 = new RatingDataset() {
@@ -346,15 +346,15 @@ public class RunTutorEdits extends TutorEdits {
 		ListMap<String,PrintableTutorHint> fall2017 =
 				readTutorEditsSnap(Fall2017.instance);
 		fall2017.values().forEach(list -> list.forEach(hint -> hint.validity = Validity.OneTutor));
-		fall2017.remove("guess1Lab");
+//		fall2017.remove("guess1Lab");
 		GoldStandard standard = new GoldStandard(fall2017);
 		HighlightHintSet hintSet = new TemplateHighlightHintSet(
 				"template", CSC200Solutions.instance);
 		hintSet.addHints(standard);
-		RateHints.rate(standard, hintSet, false);
-		runConsensus(Fall2016.instance, standard)
-		.writeAllHints(Fall2017.GuessingGame1.exportDir() + "/fall2016-rating.csv");
-		runConsensus(Spring2017.instance, standard);
+		RateHints.rate(standard, hintSet, true);
+//		runConsensus(Fall2016.instance, standard)
+//		.writeAllHints(Fall2017.GuessingGame1.exportDir() + "/fall2016-rating.csv");
+//		runConsensus(Spring2017.instance, standard);
 	}
 
 	protected static void writeHighlight(String dataDirectory, String name, GoldStandard standard,
