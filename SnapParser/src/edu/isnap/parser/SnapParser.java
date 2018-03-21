@@ -430,12 +430,37 @@ public class SnapParser {
 						if (prequel == assignment) break;
 						Map<String, Submission> prequelSubmissions = allSubmissions.get(prequel.name);
 						if (prequelSubmissions.containsKey(attemptID)) {
+							Submission prequelSubmission = prequelSubmissions.get(attemptID);
+
+							// If this submission was submitted under the correct assignment and
+							// the prequel was submitted under a different assignment, there's
+							// no reason to expect this submission contains any work on the prequel
+							// (and we could get false positives if prequels were later reopened
+							// and re-exported)
+							if (assignment.name.equals(submission.location) &&
+									!assignment.name.equals(prequelSubmission.location)) {
+								continue;
+							}
+
 							// If so, and there's a submission row, we put (or update) that as the
-							// prequel row. It makes no sense to process data that was logged before the
-							// previous assignment was submitted.
-							Integer submittedRowID = prequelSubmissions.get(attemptID).submittedRowID;
-							if (submittedRowID != null) {
-								prequelEndRows.put(attemptID, submittedRowID);
+							// prequel row. It makes no sense to process data that was logged before
+							// the previous assignment was submitted.
+							Integer prequalSubmittedRowID = prequelSubmission.submittedRowID;
+							if (prequalSubmittedRowID != null) {
+								if (submission.submittedRowID != null &&
+										submission.submittedRowID < prequalSubmittedRowID) {
+									System.err.printf(
+											"Prequel submitted later. Check for issues: %s.%s %s\n",
+											assignment.dataset.getName(), assignment.name,
+											attemptID);
+									continue;
+								}
+//								System.out.printf("%s.%s / %s:\n\t%s: %d vs\n\t%s: %d\n",
+//										assignment.dataset.getName(), assignment.name, attemptID,
+//										submission.location, submission.submittedRowID,
+//										prequelSubmission.location,
+//										prequelSubmission.submittedRowID);
+								prequelEndRows.put(attemptID, prequalSubmittedRowID);
 							}
 						}
 					}
