@@ -40,8 +40,8 @@ public class HintSelection {
 	public static void main(String[] args) throws IOException {
 //		printFall2016();
 //		printSpring2017EDM();
-//		printHintRating2017();
-		printFall2017Test();
+		printHintRating2017();
+//		printFall2017Test();
 	}
 
 	protected static void printFall2016() {
@@ -105,20 +105,24 @@ public class HintSelection {
 	protected static void printHintRating2017() throws IOException {
 		Assignment[][] assignments = {
 				new Assignment[] {
-						Fall2016.PolygonMaker,
+//						Fall2016.PolygonMaker,
 //						Spring2017.PolygonMaker,
+						Fall2017.PolygonMaker,
 				},
 				new Assignment[] {
-						Fall2016.Squiral,
+//						Fall2016.Squiral,
 //						Spring2017.Squiral,
+						Fall2017.Squiral,
 				},
 				new Assignment[] {
-						Fall2016.GuessingGame1,
+//						Fall2016.GuessingGame1,
 //						Spring2017.GuessingGame1,
+						Fall2017.GuessingGame1,
 				},
 				new Assignment[] {
-						Fall2016.GuessingGame2,
+//						Fall2016.GuessingGame2,
 //						Spring2017.GuessingGame2,
+						Fall2017.GuessingGame2,
 				},
 		};
 
@@ -222,12 +226,12 @@ public class HintSelection {
 					(req.assignment.dataset instanceof Fall2017 ? fall2017 : fall2016)).add(req);
 			}
 			// Be careful with this output, since it uses the USE directive
-			System.out.println("USE snap_fall2016;");
-			printSQL("handmade_hints", fall2016, users);
+//			System.out.println("USE snap_fall2016;");
+//			printSQL("handmade_hints", fall2016, users);
 //			System.out.println("USE snap_spring2017;");
 //			printSQL("handmade_hints", spring2017, users);
-//			System.out.println("USE snap;");
-//			printSQL("handmade_hints", fall2017, users);
+			System.out.println("USE snap_fall2017;");
+			printSQL("handmade_hints", fall2017, users);
 		}
 	}
 
