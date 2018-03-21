@@ -42,9 +42,9 @@ public class RunTutorEdits extends TutorEdits {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
-		RatingDataset dataset = iSnap2017;
+		RatingDataset dataset = ITAP2016;
 		Source source = Source.StudentData;
-		HintAlgorithm algorithm = PQGram;
+		HintAlgorithm algorithm = SourceCheck;
 		boolean debug = false;
 		boolean writeHints = false;
 
@@ -55,7 +55,7 @@ public class RunTutorEdits extends TutorEdits {
 
 //		dataset.verifyGoldStandard();
 
-//		dataset.runHintRating(algorithm, source, debug, writeHints);
+		dataset.runHintRating(algorithm, source, debug, writeHints);
 
 //		dataset.writeColdStart(algorithm, 200, 1);
 
@@ -65,7 +65,7 @@ public class RunTutorEdits extends TutorEdits {
 //		compareHintsPython("../data/itap");
 
 		// Test with Fall 2017 preliminary tutor hints
-		testFall2017Pelim();
+//		testFall2017Pelim();
 	}
 
 	public static RatingDataset iSnap2017 = new RatingDataset() {

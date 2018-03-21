@@ -387,30 +387,49 @@ public class TutorEdits {
 		CSVParser parser = new CSVParser(new FileReader(path), CSVFormat.DEFAULT.withHeader());
 		for (CSVRecord row : parser) {
 			int id = Integer.parseInt(row.get("Hint ID"));
-			boolean consensus = false;
+			String priorityString = row.get("Consensus (Priority)");
+			boolean consensusValid = false;
+			boolean hasConsensus = false;
+			int priority = 0;
 			try {
-				consensus = Double.parseDouble(row.get("Consensus (Validity)")) == 1;
+				consensusValid = Double.parseDouble(row.get("Consensus (Validity)")) == 1;
+				if (consensusValid) {
+					priority = Integer.parseInt(priorityString);
+				}
+				hasConsensus = true;
 			} catch (NumberFormatException e) {
 				if (failIfNoConsensus) {
 					parser.close();
 					throw e;
 				}
 			}
-			String priorityString = row.get("Consensus (Priority)");
-			int priority = 0;
-			if (consensus) {
-				try {
-					priority = Integer.parseInt(priorityString);
-				} catch (NumberFormatException e) {
-					if (failIfNoConsensus) {
-						parser.close();
-						throw e;
-					}
-				}
-			}
+
 			int v1 = Integer.parseInt(row.get("V1"));
+
+			if (!hasConsensus) {
+				// Count the validity using the number of P1-P3 votes, since P4 votes (which are
+				// counted in V1) should not count as votes for validity unless there is consensus.
+				// If there is consensus, none of it matters, since we will use that validity value.
+				int validPriorityCount = 0;
+				for (int i = 1; i <= 3; i++) {
+					String key = "P" + i;
+					validPriorityCount += Integer.parseInt(row.get(key));
+				}
+				int tooSoonCount = 0;
+				if (parser.getHeaderMap().containsKey("P4")) {
+					tooSoonCount = Integer.parseInt(row.get("P4"));
+				}
+				if (v1 > validPriorityCount + tooSoonCount) {
+					parser.close();
+					System.err.printf("ID: %d, V1: %d > (P1-3: %d) + (P4: %d)\n",
+							id, v1, validPriorityCount, tooSoonCount);
+					throw new RuntimeException("Valid count does not match priority count.");
+				}
+				v1 -= tooSoonCount;
+			}
+
 			Validity validity;
-			if (consensus) {
+			if (consensusValid) {
 				validity = Validity.Consensus;
 			} else if (v1 > 1) {
 				validity = Validity.MultipleTutors;
