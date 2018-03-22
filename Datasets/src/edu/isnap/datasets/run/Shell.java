@@ -15,6 +15,7 @@ import edu.isnap.datasets.HelpSeekingExperts;
 import edu.isnap.datasets.Samples;
 import edu.isnap.datasets.Spring2016;
 import edu.isnap.datasets.Spring2017;
+import edu.isnap.datasets.Spring2018;
 import edu.isnap.datasets.aggregate.CSC200;
 import edu.isnap.parser.LogSplitter;
 import edu.isnap.parser.ParseSubmitted;
@@ -31,6 +32,7 @@ public class Shell {
 			Fall2016.instance,
 			Spring2017.instance,
 			Fall2017.instance,
+			Spring2018.instance,
 			Demo.instance,
 			HelpSeekingExperts.instance,
 			HelpSeeking.instance,
