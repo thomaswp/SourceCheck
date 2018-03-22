@@ -332,7 +332,8 @@ public class RateHints {
 				if (validity == Validity.NoTutors) continue;
 				for (MatchType type : MatchType.values()) {
 					if (type == MatchType.None) continue;
-					double validityValue = weight == 0 ? 0 : validityWeight(type, validity, true);
+					double validityValue = weight == 0 ? 0 :
+						(validityWeight(type, validity, true) / weight);
 					spreadsheet.put(validity + "_" + type, validityValue);
 					spreadsheet.put(validity + "_" + type + "_validWeight",
 							validityWeight(type, validity, true));
