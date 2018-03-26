@@ -28,7 +28,8 @@ public class Spring2018 extends Dataset {
 		}
 	};
 
-	public final static Assignment Squiral = new Assignment(instance,
+	// TODO: Currently this fails for most students. Need to fix! Ask Rui about it :P
+	public final static Assignment SquiralObjectives = new Assignment(instance,
 			"squiralHW", Assignment.date(2018, 1, 30), true, false, null) {
 	};
 
@@ -68,7 +69,7 @@ public class Spring2018 extends Dataset {
 	};
 
 	public final static Assignment[] All = {
-		LightsCameraAction, PolygonMaker, Squiral,
+		LightsCameraAction, PolygonMaker, SquiralObjectives,
 		Pong1, Pong2, GuessingGame1, GuessingGame2Lab
 	};
 
