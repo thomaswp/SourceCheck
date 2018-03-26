@@ -207,23 +207,22 @@ public class TutorEdits {
 		edits.values().forEach(l -> l.forEach(e -> e.verify()));
 	}
 
-	private final static int compareEditsHintOffset = 10000;
-
-	public static void compareHintsSnap(Dataset dataset) throws FileNotFoundException, IOException {
-		String writeDir = String.format("%s/tutor-hints/%d/", dataset.analysisDir(),
-				compareEditsHintOffset);
-		compareHints(readTutorEditsSnap(dataset), writeDir, RatingConfig.Snap);
+	public static void compareHintsSnap(Dataset dataset, int offset)
+			throws FileNotFoundException, IOException {
+		String writeDir = String.format("%s/tutor-hints/%d/", dataset.analysisDir(), offset);
+		compareHints(readTutorEditsSnap(dataset), writeDir, offset, RatingConfig.Snap);
 	}
 
-	public static void compareHintsPython(String dir)
+	public static void compareHintsPython(String dir, int offset)
 			throws FileNotFoundException, IOException {
-		String writeDir = String.format("%s/analysis/tutor-hints/%d/", dir, compareEditsHintOffset);
+		String writeDir = String.format("%s/analysis/tutor-hints/%d/", dir, offset);
 		compareHints(readTutorEditsPython(dir + "/handmade_hints_ast.csv"),
-				writeDir, RatingConfig.Python);
+				writeDir, offset, RatingConfig.Python);
 	}
 
 	public static void compareHints(ListMap<String, PrintableTutorHint> assignmentMap,
-			String writeDir, RatingConfig config) throws FileNotFoundException, IOException {
+			String writeDir, int offset, RatingConfig config)
+					throws FileNotFoundException, IOException {
 
 		Set<String> tutors =  assignmentMap.values().stream()
 				.flatMap(List::stream).map(e -> e.tutor)
@@ -277,7 +276,7 @@ public class TutorEdits {
 					System.out.println("=======");
 
 					sql.append(firstEdit.toSQLInsert(
-							"handmade_hints", "consensus", compareEditsHintOffset,
+							"handmade_hints", "consensus", offset,
 							priorityMatches == tutors.size(), true));
 					sql.append("\n");
 
@@ -302,7 +301,7 @@ public class TutorEdits {
 						spreadsheet.newRow();
 						spreadsheet.put("Assignment ID", firstEdit.assignmentID);
 						spreadsheet.put("Row ID", firstEdit.requestID);
-						spreadsheet.put("Hint ID", firstEdit.hintID + compareEditsHintOffset);
+						spreadsheet.put("Hint ID", firstEdit.hintID + offset);
 
 						spreadsheet.put("Valid (0-1)", edit == null ? null : 1);
 						spreadsheet.put("Priority (1-4)",
@@ -445,13 +444,18 @@ public class TutorEdits {
 	}
 
 	public static ListMap<String, PrintableTutorHint> readTutorEditsSnap(Dataset dataset)
-			throws FileNotFoundException, IOException {
+			 throws FileNotFoundException, IOException {
+		return readTutorEditsSnap(dataset, "handmade_hints.csv");
+	}
+
+	public static ListMap<String, PrintableTutorHint> readTutorEditsSnap(Dataset dataset,
+			String csvFile) throws FileNotFoundException, IOException {
 
 		Map<String, Assignment> assignments = dataset.getAssignmentMap();
 		Map<Integer, AttemptAction> hintActionMap = new HashMap<>();
 		Set<String> loadedAssignments = new HashSet<>();
 
-		return readTutorEdits(dataset.dataDir + "/handmade_hints.csv",
+		return readTutorEdits(dataset.dataDir + File.separator + csvFile,
 				(hintID, requestID, tutor, assignmentID, toSource, row) -> {
 
 			int requestNumber = Integer.parseInt(requestID);
@@ -522,7 +526,7 @@ public class TutorEdits {
 				String toSource, CSVRecord row);
 	}
 
-	public static ListMap<String, PrintableTutorHint> readTutorEdits(String path, NodeParser np)
+	private static ListMap<String, PrintableTutorHint> readTutorEdits(String path, NodeParser np)
 			throws FileNotFoundException, IOException {
 		CSVParser parser = new CSVParser(new FileReader(path),
 				CSVFormat.DEFAULT.withHeader());
