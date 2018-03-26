@@ -425,7 +425,14 @@ public class SnapParser {
 					Submission submission = submissions.get(attemptID);
 					if (submission.location == null) continue;
 
-					// Loop through all earlier assignments and see if any have the same submission ID.
+					// TODO: Change this to look through all assignments, not just prequels
+					// It is possible for students to use non-prequel assignments as a starter
+					// projects, (e.g. a student does GG2 on PolygonMaker), and in this case the
+					// current implementation will include all of the starter work in the later
+					// submission (e.g. the GG2 trace will include PolygonMaker).
+
+					// Loop through all earlier assignments and see if any have the same submission
+					// ID.
 					for (Assignment prequel : assignment.dataset.all()) {
 						if (prequel == assignment) break;
 						Map<String, Submission> prequelSubmissions = allSubmissions.get(prequel.name);
