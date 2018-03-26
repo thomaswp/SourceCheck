@@ -18,6 +18,14 @@ public class Spring2018 extends Dataset {
 
 	public final static Assignment PolygonMaker = new Assignment(instance,
 			"polygonMakerLab", Assignment.date(2018, 1, 24), true, false, null) {
+
+		@Override
+		public Assignment getLocationAssignment(String attemptID) {
+			if ("ae29ae0b-1dca-4f55-8ed7-e152d38f127d".equals(attemptID)) {
+				return LightsCameraAction;
+			}
+			return super.getLocationAssignment(attemptID);
+		}
 	};
 
 	public final static Assignment Squiral = new Assignment(instance,
@@ -29,11 +37,23 @@ public class Spring2018 extends Dataset {
 	};
 
 	public final static Assignment Pong2 = new Assignment(instance,
-			"pong2HW", Assignment.date(2018, 2, 2), true, false, null) {
+			"pong2HW", Assignment.date(2018, 2, 2), true, false, Pong1) {
 	};
 
 	public final static Assignment GuessingGame1 = new Assignment(instance,
 			"guess1Lab", Assignment.date(2018, 2, 2), true, false, null) {
+		@Override
+		public Assignment getLocationAssignment(String attemptID) {
+			if ("b86cf4d7-8352-45f6-baba-cad302acc8bc".equals(attemptID)) {
+				return Pong1;
+			}
+			return super.getLocationAssignment(attemptID);
+		}
+
+		@Override
+		public boolean ignore(String attemptID) {
+			return "c3b814f8-54d8-4bcf-9bf3-a7ec7e4518ab".equals(attemptID);
+		};
 	};
 
 	/**
