@@ -166,7 +166,7 @@ public class Assignment {
 			// If we don't have an attempt, add a fake one
 			if (attempts.containsKey(attemptID)) continue;
 			Grade grade = grades.get(attemptID);
-			AssignmentAttempt attempt = new AssignmentAttempt(attemptID, grade);
+			AssignmentAttempt attempt = new AssignmentAttempt(attemptID, name, grade);
 			attempt.exported = grade == null || !grade.outlier;
 			attempts.put(attemptID, attempt);
 		}
