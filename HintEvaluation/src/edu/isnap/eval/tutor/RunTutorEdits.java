@@ -42,7 +42,7 @@ public class RunTutorEdits extends TutorEdits {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
-		RatingDataset dataset = ITAP2016;
+		RatingDataset dataset = iSnap2017;
 		Source source = Source.StudentData;
 		HintAlgorithm algorithm = SourceCheck;
 		boolean debug = false;
@@ -55,9 +55,9 @@ public class RunTutorEdits extends TutorEdits {
 
 //		dataset.verifyGoldStandard();
 
-		dataset.runHintRating(algorithm, source, debug, writeHints);
+//		dataset.runHintRating(algorithm, source, debug, writeHints);
 
-//		dataset.writeColdStart(algorithm, 200, 1);
+		dataset.writeColdStart(algorithm, 200, 1);
 
 		// Tutor consensus hint generation
 //		compareHintsSnap(Fall2016.instance, 10000);
@@ -76,7 +76,9 @@ public class RunTutorEdits extends TutorEdits {
 			GoldStandard fall2016Standard = readConsensusSnap(Fall2016.instance, CONSENSUS_GG_SQ);
 			GoldStandard spring2017Standard =
 					readConsensusSnap(Spring2017.instance, CONSENSUS_GG_SQ);
-			GoldStandard standard = GoldStandard.merge(fall2016Standard, spring2017Standard);
+			GoldStandard fall2017Standard = readConsensusSnap(Fall2017.instance, CONSENSUS_GG_SQ);
+			GoldStandard standard = GoldStandard.merge(
+					fall2016Standard, spring2017Standard, fall2017Standard);
 			return standard;
 		}
 
