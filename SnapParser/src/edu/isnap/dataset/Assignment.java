@@ -126,7 +126,7 @@ public class Assignment {
 		return dataDir + "/" + name;
 	}
 
-	public Map<String, AssignmentAttempt> load(Mode mode, boolean snapshotsOnly) {
+	public final Map<String, AssignmentAttempt> load(Mode mode, boolean snapshotsOnly) {
 		return load(mode, snapshotsOnly, true);
 	}
 
