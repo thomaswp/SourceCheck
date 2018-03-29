@@ -14,6 +14,7 @@ public class AssignmentAttempt implements Iterable<AttemptAction> {
 	public final static int NOT_SUBMITTED = -2;
 
 	public final String id;
+	public final String loggedAssignmentID;
 	public final ActionRows rows = new ActionRows();
 	public final Grade grade;
 	/** Whether the attempt was ever exported from Snap. */
@@ -49,11 +50,12 @@ public class AssignmentAttempt implements Iterable<AttemptAction> {
 
 	@SuppressWarnings("unused")
 	private AssignmentAttempt() {
-		this(null, null);
+		this(null, null, null);
 	}
 
-	public AssignmentAttempt(String id, Grade grade) {
+	public AssignmentAttempt(String id, String loggedAssignmentID, Grade grade) {
 		this.id = id;
+		this.loggedAssignmentID = loggedAssignmentID;
 		this.grade = grade;
 	}
 

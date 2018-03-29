@@ -60,9 +60,10 @@ public class RunTutorEdits extends TutorEdits {
 		dataset.writeColdStart(algorithm, 200, 1);
 
 		// Tutor consensus hint generation
-//		compareHintsSnap(Fall2016.instance);
-//		compareHintsSnap(Spring2017.instance);
-//		compareHintsPython("../data/itap");
+//		compareHintsSnap(Fall2016.instance, 10000);
+//		compareHintsSnap(Spring2017.instance, 10000);
+//		compareHintsSnap(Fall2017.instance, 30000);
+//		compareHintsPython("../data/itap", 10000);
 
 		// Test with Fall 2017 preliminary tutor hints
 //		testFall2017Pelim();

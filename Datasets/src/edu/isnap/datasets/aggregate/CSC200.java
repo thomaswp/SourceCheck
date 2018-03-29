@@ -16,6 +16,7 @@ public class CSC200 extends AggregateDataset {
 	public CSC200() {
 		super(dataDir, Fall2015.instance, Spring2016.instance, Fall2016.instance,
 				Spring2017.instance, Fall2017.instance);
+		// Currently not including Spring 2018 until we decide how to count the new Squiral and GG2
 	}
 
 	@Override
