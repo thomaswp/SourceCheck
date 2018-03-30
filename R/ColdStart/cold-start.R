@@ -278,7 +278,7 @@ runme <- function() {
   # not-sig
   wilcox.test(isnapRequests$fullMean[isnapRequests$assignmentID=="squiralHW"], 
               isnapRequests$fullEven[isnapRequests$assignmentID=="squiralHW"], paired=T)
-  #sig
+  # sig
   wilcox.test(isnapRequests$fullMean, isnapRequests$fullEven, paired=T)
   cohen.d(isnapRequests$fullMean, isnapRequests$fullEven)
   
@@ -292,11 +292,12 @@ runme <- function() {
   # not-sig
   wilcox.test(isnapRequests$fullMean[isnapRequests$assignmentID=="squiralHW"], 
               isnapRequests$template[isnapRequests$assignmentID=="squiralHW"], paired=T)
-  # not-sig
+  # sig
   wilcox.test(isnapRequests$fullMean, isnapRequests$template, paired=T)
   cohen.d(isnapRequests$template, isnapRequests$fullMean)
   
   # Maybe sig without ties (also true got just GG1)?
+  # This is not needed, plus probably invalid since it includes breaking ties on 0s.
   ps <- sapply(1:1000, function(i) wilcox.test(isnapRequests$fullMean, jitter(isnapRequests$template, amount=0.001), paired=T)$p.value)
   mean(ps < 0.05)
   mean(ps)
