@@ -14,6 +14,10 @@ import edu.isnap.parser.Store.Mode;
 
 public class SelectSquiralProjects {
 	public static void main(String[] args) throws FileNotFoundException, IOException {
+		writeRatingIDs();
+	}
+
+	public static void writeDataSpreadsheet() throws FileNotFoundException, IOException {
 		String baseURL = "http://arena.csc.ncsu.edu/history/fall2016/logging/view/display.php";
 		Spreadsheet spreadsheet = new Spreadsheet();
 		Assignment assignment = Fall2016.Squiral;
@@ -39,5 +43,29 @@ public class SelectSquiralProjects {
 		}
 
 		spreadsheet.write(assignment.exportDir() + "/feature-tagging.csv");
+	}
+
+	public static void writeRatingIDs() {
+		Assignment assignment = Fall2016.Squiral;
+		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, false, true,
+				new SnapParser.SubmittedOnly());
+		for (AssignmentAttempt attempt : attempts.values()) {
+//			if (attempt.grade.average() != 1) continue;
+			boolean usedHint = false;
+			for (AttemptAction action : attempt) {
+				if (AttemptAction.HINT_DIALOG_DESTROY.equals(action.message)) {
+					usedHint = true;
+					break;
+				}
+			}
+			if (usedHint) continue;
+			System.out.println(attempt.id);
+			for (AttemptAction action : attempt) {
+				if (action.snapshot != null) {
+					System.out.println(action.id);
+				}
+			}
+			System.out.println("\n");
+		}
 	}
 }
