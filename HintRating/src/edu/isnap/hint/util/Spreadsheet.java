@@ -17,8 +17,19 @@ public class Spreadsheet {
 	private List<Map<String, Object>> rows = new LinkedList<>();
 	private Map<String, Object> header = new LinkedHashMap<>();
 	private Map<String,Object> row;
+	private CSVPrinter printer;
+	private PrintStream printStream;
+
+	public boolean isWriting() {
+		return printStream != null;
+	}
 
 	public void newRow() {
+		try {
+			writeRows();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		row = new LinkedHashMap<>();
 		for (String key : header.keySet()) {
 			row.put(key, header.get(key));
@@ -35,19 +46,40 @@ public class Spreadsheet {
 		put(key, value ? "TRUE" : "FALSE");
 	}
 
-	public void write(String path) throws FileNotFoundException, IOException {
-		if (rows.size() == 0) return;
-		String[] header = row.keySet().toArray(new String[row.keySet().size()]);
+	public void beginWrite(String path) throws IOException {
+		if (isWriting()) throw new RuntimeException("Already writing");
 		File file = new File(path);
-		file.getParentFile().mkdirs();
-		CSVPrinter printer = new CSVPrinter(new PrintStream(file),
-				CSVFormat.DEFAULT.withHeader(header));
+		File parent = file.getParentFile();
+		if (parent != null) parent.mkdirs();
+		printStream = new PrintStream(file);
+		writeRows();
+	}
 
+	private void writeRows() throws IOException {
+		if (!isWriting()) return;
+		if (row == null) return;
+		if (printer == null) {
+			String[] header = row.keySet().toArray(new String[row.keySet().size()]);
+			printer = new CSVPrinter(printStream, CSVFormat.DEFAULT.withHeader(header));
+		}
 		for (Map<String,Object> row : rows) {
 			printer.printRecord(row.values());
 		}
+		rows.clear();
+	}
 
+	public void endWrite() throws IOException {
+		if (!isWriting()) return;
+		writeRows();
 		printer.close();
+		printer = null;
+		printStream = null;
+	}
+
+	public void write(String path) throws FileNotFoundException, IOException {
+		if (rows.size() == 0) return;
+		beginWrite(path);
+		endWrite();
 	}
 
 	public void sort(Comparator<Map<String, Object>> comparator) {

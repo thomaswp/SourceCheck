@@ -25,18 +25,25 @@ public class ColdStart {
 	}
 
 	public Spreadsheet test(int rounds, int step) {
-		Random rand = new Random(DEFAULT_SEED);
 		Spreadsheet spreadsheet = new Spreadsheet();
+		runTest(rounds, step, spreadsheet);
+		return spreadsheet;
+	}
+
+	private void runTest(int rounds, int step, Spreadsheet spreadsheet) {
+		Random rand = new Random(DEFAULT_SEED);
 		for (int i = 0; i < rounds; i++) {
 			spreadsheet.setHeader("round", i);
 			testRound(spreadsheet, i, rand.nextInt(), step);
 		}
-		return spreadsheet;
 	}
 
 	public void writeTest(String path, int rounds, int step)
 			throws FileNotFoundException, IOException {
-		test(rounds, step).write(path);
+		Spreadsheet spreadsheet = new Spreadsheet();
+		spreadsheet.beginWrite(path);
+		runTest(rounds, step, spreadsheet);
+		spreadsheet.endWrite();
 	}
 
 	private void testRound(Spreadsheet spreadsheet, int round, int seed, int step) {
