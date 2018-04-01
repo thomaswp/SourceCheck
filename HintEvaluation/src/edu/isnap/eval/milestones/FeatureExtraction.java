@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
@@ -26,8 +27,8 @@ import edu.isnap.parser.Store.Mode;
 public class FeatureExtraction {
 
 	public static void main(String[] args) {
-		Assignment assignment = CSC200.Squiral;
 
+		Assignment assignment = CSC200.Squiral;
 		Map<AssignmentAttempt, List<Node>>  traceMap = assignment.load(
 				Mode.Use, true, true, new SnapParser.SubmittedOnly()).values().stream()
 				.collect(Collectors.toMap(
@@ -42,15 +43,19 @@ public class FeatureExtraction {
 				.map(trace -> trace.get(trace.size() - 1))
 				.collect(Collectors.toList());
 
+
+		int n = correctSubmissions.size();
+		System.out.println(n);
+
 		Map<PQGram, PQGramRule> rulesMap = new HashMap<>();
-		for (int p = 1; p <= 3; p++) {
-			for (int q = 1; q <= 4; q++) {
-				for (Node node : correctSubmissions) {
+		for (Node node : correctSubmissions) {
+			for (int p = 3; p > 0; p--) {
+				for (int q = 4; q > 0; q--) {
 					Set<PQGram> pqGrams = new HashSet<>(PQGram.extractFromNode(node, p, q));
 					for (PQGram gram : pqGrams) {
 						PQGramRule rule = rulesMap.get(gram);
 						if (rule == null) {
-							rulesMap.put(gram, rule = new PQGramRule(gram));
+							rulesMap.put(gram, rule = new PQGramRule(gram, n));
 						}
 						rule.followers.add(node.id);
 					}
@@ -58,11 +63,22 @@ public class FeatureExtraction {
 			}
 		}
 
+
 		List<PQGramRule> rules = new ArrayList<>(rulesMap.values());
+		rules.removeIf(rule -> rule.followers.size() < n * 0.2);
 		removeDuplicateRulesAndSort(rules);
 
-		System.out.println(correctSubmissions.size());
-		rules.forEach(System.out::println);
+//		rules.forEach(System.out::println);
+
+		System.out.println("Rules: ");
+		rules.stream().filter(rule -> rule.support() >= 0.8).forEach(System.out::println);
+
+		System.out.println("Decisions: ");
+		List<Disjunction> decisions = extractDecisions(rules);
+		decisions.forEach(System.out::println);
+
+
+
 	}
 
 	private static void removeDuplicateRulesAndSort(List<PQGramRule> rules) {
@@ -79,11 +95,18 @@ public class FeatureExtraction {
 		List<PQGramRule> toRemove = new ArrayList<>();
 		for (int i = 0; i < nRules; i++) {
 			PQGramRule deleteCandidate = rules.get(i);
-			if (deleteCandidate.followers.size() >= maxFollowers * 0.8) continue;
 			for (int j = nRules - 1; j > i; j--) {
 				PQGramRule supercedeCandidate = rules.get(j);
 				if (deleteCandidate.jaccardDistance(supercedeCandidate) >= 0.975) {
-					System.out.println("> " + deleteCandidate + "\n< " + supercedeCandidate);
+					// We only want to remove a duplicate rule if _either_ both rules have a support
+					// less than 80%, but it's the same 80%, _or_ they have a support > 80%, it is
+					// the same group of attempts, and one rule is a superset of the other
+					if (deleteCandidate.followers.size() >= maxFollowers * 0.8) {
+						if (!supercedeCandidate.pqGram.contains(deleteCandidate.pqGram)) {
+							continue;
+						}
+					}
+					System.out.println("- " + deleteCandidate + "\n+ " + supercedeCandidate);
 					System.out.println();
 					supercedeCandidate.duplicateRules.add(deleteCandidate);
 					supercedeCandidate.duplicateRules.addAll(deleteCandidate.duplicateRules);
@@ -95,21 +118,64 @@ public class FeatureExtraction {
 		rules.removeAll(toRemove);
 	}
 
+	private static List<Disjunction> extractDecisions(List<PQGramRule> sortedRules) {
+		List<Disjunction> decisions = new ArrayList<>();
+		for (int i = sortedRules.size() - 1; i >= 0; i--) {
+			PQGramRule startRule = sortedRules.get(i);
+			Disjunction disjunction = new Disjunction();
+			disjunction.addRule(startRule);
+
+			while (disjunction.support() < 1) {
+				// TODO: config
+				double bestRatio = 0.4;
+				PQGramRule bestRule = null;
+				for (int j = i - 1; j >= 0; j--) {
+					PQGramRule candidate = sortedRules.get(j);
+					int intersect = disjunction.countIntersect(candidate);
+					// TODO: config
+					// Ignore tiny overlap - there can always be a fluke
+					if (intersect <= candidate.followCount() * 0.15) intersect = 0;
+					double ratio = (double) intersect / candidate.followCount();
+					if (ratio < bestRatio) {
+						bestRatio = ratio;
+						bestRule = candidate;
+					}
+					if (ratio == 0) break;
+				}
+
+				if (bestRule == null) break;
+				disjunction.addRule(bestRule);
+			}
+			// TODO: config
+			// We only want high-support decisions that have multiple choices
+			if (disjunction.support() >= 0.9 && disjunction.rules.size() > 1) {
+				decisions.add(disjunction);
+			}
+		}
+		return decisions;
+	}
+
 
 	public static class PQGramRule implements Comparable<PQGramRule> {
 
 		public final PQGram pqGram;
 
 		public final Set<String> followers = new HashSet<>();
+		public final int maxFollowers;
 
 		private final List<PQGramRule> duplicateRules = new ArrayList<>();
 
-		public PQGramRule(PQGram pqGram) {
+		public PQGramRule(PQGram pqGram, int maxFollowers) {
 			this.pqGram = pqGram;
+			this.maxFollowers = maxFollowers;
 		}
 
 		public int followCount() {
 			return followers.size();
+		}
+
+		public double support() {
+			return (double) followers.size() / maxFollowers;
 		}
 
 		public int countIntersect(PQGramRule rule) {
@@ -137,6 +203,35 @@ public class FeatureExtraction {
 			int fc = Integer.compare(followCount(), o.followCount());
 			if (fc != 0) return fc;
 			return pqGram.compareTo(o.pqGram);
+		}
+	}
+
+	static class Disjunction {
+		private List<PQGramRule> rules = new ArrayList<>();
+		private final Set<String> followers = new HashSet<>();
+
+		public void addRule(PQGramRule rule) {
+			rules.add(rule);
+			followers.addAll(rule.followers);
+		}
+
+		public double support() {
+			if (rules.size() == 0) return 0;
+			return (double) followers.size() / rules.get(0).maxFollowers;
+		}
+
+		public int countIntersect(PQGramRule rule) {
+			return (int) followers.stream().filter(rule.followers::contains).count();
+		}
+
+		public String name() {
+			return "\t" + String.join(" OR\n\t\t",
+					rules.stream().map(r -> (CharSequence) r.toString())::iterator);
+		}
+
+		@Override
+		public String toString() {
+			return name();
 		}
 	}
 
@@ -192,13 +287,50 @@ public class FeatureExtraction {
 		}
 
 		private final static Comparator<PQGram> comparator =
-				Comparator.comparing((PQGram gram) -> gram.p)
-				.thenComparing(gram -> gram.q)
-				.thenComparing(gram -> -gram.nEmpty);
+				Comparator.comparing((PQGram gram) -> gram.q)
+				.thenComparing(gram -> gram.p)
+				.thenComparing(gram -> -gram.nEmpty)
+				.thenComparing(gram -> gram.tokens[gram.p - 1]);
 
 		@Override
 		public int compareTo(PQGram o) {
 			return comparator.compare(this, o);
+		}
+
+		public boolean contains(PQGram o) {
+			if (o.q > q) return false;
+			if (o.p > p + 1) return false;
+			if (o.p > p && o.q > 1) return false;
+
+			if (o.q == 1) {
+				// If the the other is a path, check if it is a subsequence of our p
+				if (containsSubsequece(tokens, 0, p, o.tokens, 0, o.tokens.length)) return true;
+			}
+
+			// Next make sure that other's p is a subset of ours
+			for (int i = 0; i < p && i < o.p; i++) {
+				if (!StringUtils.equals(tokens[p - i - 1], o.tokens[o.p - i - 1])) return false;
+			}
+
+			// Then make sure the other's q is a subsequence of ours
+			return containsSubsequece(tokens, p, q, o.tokens, o.p, o.q);
+		}
+
+		private static boolean containsSubsequece(String[] a, int startA, int lengthA,
+				String[] b, int startB, int lengthB) {
+			if (lengthB > lengthA) return false;
+
+			for (int offset = 0; offset <= lengthA - lengthB; offset++) {
+				boolean eq = true;
+				for (int i = 0; i < lengthB; i++) {
+					if (!StringUtils.equals(a[startA + i + offset], b[startB + i])) {
+						eq = false;
+						break;
+					}
+				}
+				if (eq) return true;
+			}
+			return false;
 		}
 
 		public static String labelForNode(Node node) {
