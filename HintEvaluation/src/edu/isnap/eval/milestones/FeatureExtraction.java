@@ -49,29 +49,50 @@ public class FeatureExtraction {
 
 		Map<PQGram, PQGramRule> rulesMap = new HashMap<>();
 		for (Node node : correctSubmissions) {
-			for (int p = 3; p > 0; p--) {
-				for (int q = 4; q > 0; q--) {
-					Set<PQGram> pqGrams = new HashSet<>(PQGram.extractFromNode(node, p, q));
-					for (PQGram gram : pqGrams) {
-						PQGramRule rule = rulesMap.get(gram);
-						if (rule == null) {
-							rulesMap.put(gram, rule = new PQGramRule(gram, n));
-						}
-						rule.followers.add(node.id);
-					}
+			for (PQGram gram : extractPQGrams(node)) {
+				PQGramRule rule = rulesMap.get(gram);
+				if (rule == null) {
+					rulesMap.put(gram, rule = new PQGramRule(gram, n));
 				}
+				rule.followers.add(node.id);
 			}
 		}
 
 
+
 		List<PQGramRule> rules = new ArrayList<>(rulesMap.values());
 		rules.removeIf(rule -> rule.followers.size() < n * 0.2);
-		removeDuplicateRulesAndSort(rules);
+		Collections.sort(rules);
 
-//		rules.forEach(System.out::println);
+		List<List<Node>> allTraces = new ArrayList<>(traceMap.values());
+
+		int nRules = rules.size();
+		int nSnapshots = allTraces.stream().mapToInt(list -> list.size()).sum();
+
+		byte[][] featureMatrix = new byte[nRules][nSnapshots];
+		Map<PQGram, Integer> featureIndexMap = new HashMap<>();
+		for (int i = 0; i < rules.size(); i++) featureIndexMap.put(rules.get(i).pqGram, i);
+
+		int snapshotIndex = 0;
+
+		for (List<Node> trace : allTraces) {
+			for (Node snapshot : trace) {
+				for (PQGram gram : extractPQGrams(snapshot)) {
+					Integer featureIndex = featureIndexMap.get(gram);
+					if (featureIndex == null) continue;
+					featureMatrix[featureIndex][snapshotIndex] = 1;
+				}
+				snapshotIndex++;
+				if (snapshotIndex % (nSnapshots / 50) == 0) System.out.print("+");
+			}
+		}
+		System.out.println();
+		if (snapshotIndex != nSnapshots) throw new RuntimeException();
+
+		removeDuplicateRules(rules, featureMatrix);
 
 		System.out.println("Rules: ");
-		rules.stream().filter(rule -> rule.support() >= 0.8).forEach(System.out::println);
+		rules.stream().filter(rule -> rule.support() >= 0).forEach(System.out::println);
 
 		System.out.println("Decisions: ");
 		List<Disjunction> decisions = extractDecisions(rules);
@@ -81,31 +102,59 @@ public class FeatureExtraction {
 
 	}
 
-	private static void removeDuplicateRulesAndSort(List<PQGramRule> rules) {
-		Collections.sort(rules);
-		int maxFollowers = rules.get(rules.size() - 1).followCount();
+	private static Set<PQGram> extractPQGrams(Node node) {
+		Set<PQGram> pqGrams = new HashSet<>();
+		for (int p = 3; p > 0; p--) {
+			for (int q = 4; q > 0; q--) {
+				pqGrams.addAll(PQGram.extractFromNode(node, p, q));
+			}
+		}
+		return pqGrams;
+	}
+
+	private static void removeDuplicateRules(List<PQGramRule> rules,
+			byte[][] featureMatrix) {
+		int maxFollowers = featureMatrix[0].length;
 		int nRules = rules.size();
+
+		int[] followerCounts = new int[nRules];
+		for (int i = 0; i < followerCounts.length; i++) {
+			int count = 0;
+			byte[] array = featureMatrix[i];
+			for (int j = 0; j < array.length; j++) {
+				count += array[j];
+			}
+			followerCounts[i] = count;
+		}
+
 		double[][] jaccardMatrix = new double[nRules][nRules];
 		for (int i = 0; i < nRules; i++) {
+			byte[] fA = featureMatrix[i];
 			for (int j = i + 1; j < nRules; j++) {
-				jaccardMatrix[i][j] = jaccardMatrix[j][i] =
-						rules.get(i).jaccardDistance(rules.get(j));
+				byte[] fB = featureMatrix[j];
+				int intersect = 0;
+				for (int k = 0; k < maxFollowers; k++) {
+					if (fA[k] == 1 && fB[k] == 1) intersect++;
+				}
+				jaccardMatrix[i][j] =
+						(double)intersect / (followerCounts[i] + followerCounts[j] - intersect);
 			}
 		}
 		List<PQGramRule> toRemove = new ArrayList<>();
 		for (int i = 0; i < nRules; i++) {
 			PQGramRule deleteCandidate = rules.get(i);
+
+			// Remove any rule with a very high support, since these will be trivially true
+			if (followerCounts[i] >= maxFollowers * 0.95) {
+				toRemove.add(deleteCandidate);
+				System.out.println("-- " + deleteCandidate);
+				System.out.println();
+				continue;
+			}
+
 			for (int j = nRules - 1; j > i; j--) {
 				PQGramRule supercedeCandidate = rules.get(j);
-				if (deleteCandidate.jaccardDistance(supercedeCandidate) >= 0.975) {
-					// We only want to remove a duplicate rule if _either_ both rules have a support
-					// less than 80%, but it's the same 80%, _or_ they have a support > 80%, it is
-					// the same group of attempts, and one rule is a superset of the other
-					if (deleteCandidate.followers.size() >= maxFollowers * 0.8) {
-						if (!supercedeCandidate.pqGram.contains(deleteCandidate.pqGram)) {
-							continue;
-						}
-					}
+				if (jaccardMatrix[i][j] >= 0.975) {
 					System.out.println("- " + deleteCandidate + "\n+ " + supercedeCandidate);
 					System.out.println();
 					supercedeCandidate.duplicateRules.add(deleteCandidate);
