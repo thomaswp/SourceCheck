@@ -60,9 +60,8 @@ public class FeatureExtraction {
 
 
 
+		rulesMap.keySet().removeIf(gram -> rulesMap.get(gram).followers.size() < n * 0.2);
 		List<PQGramRule> rules = new ArrayList<>(rulesMap.values());
-		rules.removeIf(rule -> rule.followers.size() < n * 0.2);
-		rulesMap.keySet().retainAll(rules);
 		Collections.sort(rules);
 
 		List<List<Node>> allTraces = new ArrayList<>(traceMap.values());
