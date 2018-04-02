@@ -62,25 +62,21 @@ public class FeatureExtraction {
 
 		List<PQGramRule> rules = new ArrayList<>(rulesMap.values());
 		rules.removeIf(rule -> rule.followers.size() < n * 0.2);
+		rulesMap.keySet().retainAll(rules);
 		Collections.sort(rules);
 
 		List<List<Node>> allTraces = new ArrayList<>(traceMap.values());
 
-		int nRules = rules.size();
 		int nSnapshots = allTraces.stream().mapToInt(list -> list.size()).sum();
-
-		byte[][] featureMatrix = new byte[nRules][nSnapshots];
-		Map<PQGram, Integer> featureIndexMap = new HashMap<>();
-		for (int i = 0; i < rules.size(); i++) featureIndexMap.put(rules.get(i).pqGram, i);
+		rules.forEach(rule -> rule.snapshotVector = new byte[nSnapshots]);
 
 		int snapshotIndex = 0;
-
 		for (List<Node> trace : allTraces) {
 			for (Node snapshot : trace) {
 				for (PQGram gram : extractPQGrams(snapshot)) {
-					Integer featureIndex = featureIndexMap.get(gram);
-					if (featureIndex == null) continue;
-					featureMatrix[featureIndex][snapshotIndex] = 1;
+					PQGramRule rule = rulesMap.get(gram);
+					if (rule == null) continue;
+					rule.snapshotVector[snapshotIndex] = 1;
 				}
 				snapshotIndex++;
 				if (snapshotIndex % (nSnapshots / 50) == 0) System.out.print("+");
@@ -88,8 +84,9 @@ public class FeatureExtraction {
 		}
 		System.out.println();
 		if (snapshotIndex != nSnapshots) throw new RuntimeException();
+		rules.forEach(rule -> rule.calculateSnapshotCount());
 
-		removeDuplicateRules(rules, featureMatrix);
+		removeDuplicateRules(rules);
 
 		System.out.println("Rules: ");
 		rules.stream().filter(rule -> rule.support() >= 0).forEach(System.out::println);
@@ -112,40 +109,31 @@ public class FeatureExtraction {
 		return pqGrams;
 	}
 
-	private static void removeDuplicateRules(List<PQGramRule> rules,
-			byte[][] featureMatrix) {
-		int maxFollowers = featureMatrix[0].length;
+	private static void removeDuplicateRules(List<? extends Rule> rules) {
+		int maxFollowers = rules.get(0).snapshotVector.length;
 		int nRules = rules.size();
-
-		int[] followerCounts = new int[nRules];
-		for (int i = 0; i < followerCounts.length; i++) {
-			int count = 0;
-			byte[] array = featureMatrix[i];
-			for (int j = 0; j < array.length; j++) {
-				count += array[j];
-			}
-			followerCounts[i] = count;
-		}
 
 		double[][] jaccardMatrix = new double[nRules][nRules];
 		for (int i = 0; i < nRules; i++) {
-			byte[] fA = featureMatrix[i];
+			Rule ruleA = rules.get(i);
+			byte[] fA = ruleA.snapshotVector;
 			for (int j = i + 1; j < nRules; j++) {
-				byte[] fB = featureMatrix[j];
+				Rule ruleB = rules.get(j);
+				byte[] fB = ruleB.snapshotVector;
 				int intersect = 0;
 				for (int k = 0; k < maxFollowers; k++) {
 					if (fA[k] == 1 && fB[k] == 1) intersect++;
 				}
 				jaccardMatrix[i][j] =
-						(double)intersect / (followerCounts[i] + followerCounts[j] - intersect);
+						(double)intersect / (ruleA.snapshotCount + ruleB.snapshotCount - intersect);
 			}
 		}
-		List<PQGramRule> toRemove = new ArrayList<>();
+		List<Rule> toRemove = new ArrayList<>();
 		for (int i = 0; i < nRules; i++) {
-			PQGramRule deleteCandidate = rules.get(i);
+			Rule deleteCandidate = rules.get(i);
 
 			// Remove any rule with a very high support, since these will be trivially true
-			if (followerCounts[i] >= maxFollowers * 0.95) {
+			if (deleteCandidate.snapshotCount >= maxFollowers * 0.95) {
 				toRemove.add(deleteCandidate);
 				System.out.println("-- " + deleteCandidate);
 				System.out.println();
@@ -153,7 +141,7 @@ public class FeatureExtraction {
 			}
 
 			for (int j = nRules - 1; j > i; j--) {
-				PQGramRule supercedeCandidate = rules.get(j);
+				Rule supercedeCandidate = rules.get(j);
 				if (jaccardMatrix[i][j] >= 0.975) {
 					System.out.println("- " + deleteCandidate + "\n+ " + supercedeCandidate);
 					System.out.println();
@@ -171,8 +159,7 @@ public class FeatureExtraction {
 		List<Disjunction> decisions = new ArrayList<>();
 		for (int i = sortedRules.size() - 1; i >= 0; i--) {
 			PQGramRule startRule = sortedRules.get(i);
-			Disjunction disjunction = new Disjunction();
-			disjunction.addRule(startRule);
+			Disjunction disjunction = new Disjunction(startRule);
 
 			while (disjunction.support() < 1) {
 				// TODO: config
@@ -204,19 +191,25 @@ public class FeatureExtraction {
 		return decisions;
 	}
 
-
-	public static class PQGramRule implements Comparable<PQGramRule> {
-
-		public final PQGram pqGram;
-
+	public static abstract class Rule {
 		public final Set<String> followers = new HashSet<>();
 		public final int maxFollowers;
 
-		private final List<PQGramRule> duplicateRules = new ArrayList<>();
+		protected final List<Rule> duplicateRules = new ArrayList<>();
 
-		public PQGramRule(PQGram pqGram, int maxFollowers) {
-			this.pqGram = pqGram;
+		protected byte[] snapshotVector;
+		protected int snapshotCount;
+
+		public Rule(int maxFollowers) {
 			this.maxFollowers = maxFollowers;
+		}
+
+		public void calculateSnapshotCount() {
+			int count = 0;
+			for (int j = 0; j < snapshotVector.length; j++) {
+				count += snapshotVector[j];
+			}
+			snapshotCount = count;
 		}
 
 		public int followCount() {
@@ -240,12 +233,21 @@ public class FeatureExtraction {
 			int intersect = countIntersect(rule);
 			return (double)intersect / (followCount() + rule.followCount() - intersect);
 		}
+	}
+
+	public static class PQGramRule extends Rule implements Comparable<PQGramRule> {
+
+		public final PQGram pqGram;
+
+		public PQGramRule(PQGram pqGram, int maxFollowers) {
+			super(maxFollowers);
+			this.pqGram = pqGram;
+		}
 
 		@Override
 		public String toString() {
 			return String.format("%03d: %s", followers.size(), pqGram);
 		}
-
 
 		@Override
 		public int compareTo(PQGramRule o) {
@@ -255,32 +257,34 @@ public class FeatureExtraction {
 		}
 	}
 
-	static class Disjunction {
+	static class Disjunction extends Rule {
+
 		private List<PQGramRule> rules = new ArrayList<>();
-		private final Set<String> followers = new HashSet<>();
+
+		public Disjunction(PQGramRule startRule) {
+			super(startRule.maxFollowers);
+			snapshotVector = new byte[startRule.snapshotVector.length];
+			addRule(startRule);
+		}
 
 		public void addRule(PQGramRule rule) {
 			rules.add(rule);
 			followers.addAll(rule.followers);
+			for (int i = 0; i < snapshotVector.length; i++) {
+				if (rule.snapshotVector[i] == 1) snapshotVector[i] = 1;
+			}
+			calculateSnapshotCount();
 		}
 
-		public double support() {
-			if (rules.size() == 0) return 0;
-			return (double) followers.size() / rules.get(0).maxFollowers;
-		}
-
+		@Override
 		public int countIntersect(PQGramRule rule) {
 			return (int) followers.stream().filter(rule.followers::contains).count();
 		}
 
-		public String name() {
-			return "\t" + String.join(" OR\n\t\t",
-					rules.stream().map(r -> (CharSequence) r.toString())::iterator);
-		}
-
 		@Override
 		public String toString() {
-			return name();
+			return "\t" + String.join(" OR\n\t\t",
+					rules.stream().map(r -> (CharSequence) r.toString())::iterator);
 		}
 	}
 
