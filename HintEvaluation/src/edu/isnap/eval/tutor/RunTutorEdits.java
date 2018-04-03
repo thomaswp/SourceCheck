@@ -48,7 +48,7 @@ public class RunTutorEdits extends TutorEdits {
 		boolean debug = false;
 		boolean writeHints = false;
 
-		// Exporting things
+		// Exporting things (Note: this may require some copy and paste)
 //		dataset.exportTrainingData();
 //		dataset.writeGoldStandard();
 //		dataset.writeHintSet(algorithm, source);
@@ -104,6 +104,12 @@ public class RunTutorEdits extends TutorEdits {
 					"hint-eval", Spring2017.Squiral, Spring2017.GuessingGame1);
 			exportRatingDatasetSnap(Fall2016.instance, CONSENSUS_GG_SQ,
 					"hint-eval", Fall2016.Squiral, Fall2016.GuessingGame1);
+			exportRatingDatasetSnap(Fall2017.instance, CONSENSUS_GG_SQ,
+					"hint-eval", Fall2017.Squiral, Fall2017.GuessingGame1);
+
+			System.out.println();
+			System.out.println("Data exported to respective assignment/export folders.");
+			System.out.println("Please copy to hint-rating directory if desired");
 		}
 	};
 

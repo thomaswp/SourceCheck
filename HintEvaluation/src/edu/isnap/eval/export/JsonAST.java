@@ -52,6 +52,7 @@ public class JsonAST {
 		valueReplacements.put("Bryson", "name");
 		valueReplacements.put("Ellis", "name");
 		valueReplacements.put("Your name is Bruce", "Your name is name");
+		valueReplacements.put("Sabrina", "name");
 	}
 
 	public static void main(String[] args) throws IOException {
