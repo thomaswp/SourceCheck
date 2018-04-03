@@ -7,8 +7,7 @@ import java.util.Map;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.Dataset;
-import edu.isnap.datasets.Spring2016;
-import edu.isnap.datasets.Spring2017;
+import edu.isnap.datasets.Fall2017;
 import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.parser.Store.Mode;
 
@@ -18,8 +17,9 @@ public class CreateStartTimesSpreadsheet {
 		String formatBase = "http://arena.csc.ncsu.edu/%s/logging/view/display.php";
 //		createSpreadsheet(Fall2015.instance, String.format(formatBase, "history/fall2015"));
 //		createSpreadsheet(Fall2016.instance, String.format(formatBase, "snap"));
-		createSpreadsheet(Spring2017.instance, String.format(formatBase, "history/spring2017"));
-		createSpreadsheet(Spring2016.instance, String.format(formatBase, "history/spring2016"));
+//		createSpreadsheet(Spring2017.instance, String.format(formatBase, "history/spring2017"));
+//		createSpreadsheet(Spring2016.instance, String.format(formatBase, "history/spring2016"));
+		createSpreadsheet(Fall2017.instance, String.format(formatBase, "history/fall2017"));
 	}
 
 	private static void createSpreadsheet(Dataset dataset, String baseURL) {
@@ -34,7 +34,7 @@ public class CreateStartTimesSpreadsheet {
 				int end = attempt.submittedActionID;
 
 				String link = String.format("%s?id=%s&assignment=%s&start=%d&end=%d&snapshots=true",
-						baseURL, attempt.id, assignment.name, start, end);
+						baseURL, attempt.id, attempt.loggedAssignmentID, start, end);
 
 				spreadsheet.newRow();
 				spreadsheet.put("dataset", dataset.getName());
