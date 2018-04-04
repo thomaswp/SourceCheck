@@ -12,10 +12,6 @@ se <- function(x) ifelse(length(x) == 0, 0, sqrt(var(x, na.rm=T)/sum(!is.na(x)))
 first <- function(x) head(x, 1)
 last <- function(x) tail(x, 1)
 
-isnapDir <- "isnapF16-F17"
-itapDir <- "itapS16"
-coldStartFile <- sprintf("cold-start-%03d-%d.csv", 200, 1)
-
 slope <- function(x) {
   df <- data.frame(idx=1:length(x), x=x)
   model <- lm(x ~ idx, df)
@@ -84,7 +80,7 @@ plotColdStartBounded <- function(rounds, isFull, baselines) {
   
   ggplot(rounds, aes(x=count, y=mean, color=source)) + 
     geom_line(size=1) + facet_wrap(~assignmentID, scales = "free_x", labeller=as_labeller(assignmentNames)) +
-    xlab("Training Dataset Size") + ylab("Mean Quality Score") + labs(color="Data") +
+    xlab("Training Dataset Size") + ylab("Mean QualityScore") + labs(color="Data") +
     scale_color_manual(labels=c("Expert All", "Expert 1", "Students"), values=c(twoColors, "black")) +
     theme_bw()
 }
@@ -111,12 +107,13 @@ plotColdStartCompareWeights <- function(rounds, isFull, baselines) {
   
   rounds$source <- ordered(rounds$source, c("template", "single", "students"))
   
+  textSize <- 14
   ggplot(rounds, aes(x=count, y=mean, color=source, linetype=weight)) + 
-    geom_line(size=1) + facet_wrap(~assignmentID, scales = "free_x", labeller=as_labeller(assignmentNames)) +
-    xlab("Training Dataset Size") + ylab("Mean Quality Score") + labs(color="Data", linetype="Weights") +
+    geom_line(size=0.75) + facet_wrap(~assignmentID, scales = "free_x", labeller=as_labeller(assignmentNames)) +
+    xlab("Training Dataset Size") + ylab("Mean QualityScore") + labs(color="Data", linetype="Weights") +
     scale_color_manual(labels=c("AllExpert", "OneExpert", "Students"), values=c(twoColors, "black")) +
-    scale_linetype_manual(labels=c("Uniform", "Voting"), values=c("dashed", "solid")) +
-    theme_bw()
+    scale_linetype_manual(labels=c("Uniform", "Voting"), values=c("dotted", "solid")) +
+    theme_bw(base_size = textSize) + theme(plot.title = element_text(hjust = 0.5, size=textSize))
 }
 
 plotColdStartWeights <- function(rounds, isFull) {
@@ -141,7 +138,7 @@ plotColdStart <- function(rounds) {
   
   ggplot(melted, aes(x=count, y=value, linetype=variable)) + 
     geom_line(size=1) + facet_wrap(~assignmentID, scales = "free_x", labeller=as_labeller(assignmentNames)) +
-    xlab("Training Dataset Size") + ylab("Mean Quality Score") + labs(linetype="Match") +
+    xlab("Training Dataset Size") + ylab("Mean QualityScore") + labs(linetype="Match") +
     scale_linetype_discrete(labels=c("Full", "Partial")) +
     theme_bw()
 }
@@ -151,7 +148,7 @@ plotColdStartUnweighted <- function(rounds) {
   
   ggplot(melted, aes(x=count, y=value, linetype=variable)) + 
     geom_line(size=1) + facet_wrap(~assignmentID, scales = "free_x", labeller=as_labeller(assignmentNames)) +
-    xlab("Training Dataset Size") + ylab("Mean Quality Score") + labs(linetype="Match") +
+    xlab("Training Dataset Size") + ylab("Mean QualityScore") + labs(linetype="Match") +
     scale_linetype_discrete(labels=c("Full", "Partial")) +
     theme_bw()
 }
@@ -221,17 +218,29 @@ read_hints <- function(dir) {
   read_csv(paste0("../../data/hint-rating/", dir, "/analysis/", coldStartFile))
 }
 
-runme <- function() {
+plotKs <- function(dir, full) {
+  ktest <- read_csv(paste0("../../data/hint-rating/", dir, "/analysis/k-test-sourcecheck.csv"))
+  scores <- ddply(ktest, c("k", "assignmentID"), summarize, fullMean=mean(MultipleTutors_Full), partialMean=mean(MultipleTutors_Partial))
+  scores$score <- if (full) scores$fullMean else scores$partialMean
+  ggplot(scores, aes(x=k, y=score)) + geom_line() + facet_wrap(~ assignmentID)
+}
+
+aied2018 <- function() {
+  
+  isnapDir <- "isnapF16-S17"
+  itapDir <- "itapS16"
+  coldStartFile <- sprintf("cold-start-%03d-%d.csv", 200, 1)
+  
   isnap <- read_hints(isnapDir)
   isnapRounds <- getRounds(isnap)
   
   isnapBaselines <- parseBaselines(isnapDir)
   
-  plotColdStart(isnapRounds) + labs(title="iSnap - Quality Cold Start")
+  plotColdStart(isnapRounds) + labs(title="iSnap - QualityScore Cold Start")
   plotColdStartCompareWeights(isnapRounds, T, isnapBaselines) + 
-    labs(title="iSnap - Quality Cold Start (Full)")
+    labs(title="iSnap - QualityScore Cold Start (Full)")
   plotColdStartCompareWeights(isnapRounds, F, isnapBaselines) + 
-    labs(title="iSnap - Quality Cold Start (Partial)")
+    labs(title="iSnap - QualityScore Cold Start (Partial)")
   
   iSnapStatsFull <- qualityStats(isnapRounds, T, isnapBaselines)
   iSnapStatsFull$match <- "Full"
@@ -250,9 +259,9 @@ runme <- function() {
                                                                       "kthDigit", "oneToN"))
   
   plotColdStartCompareWeights(itapRounds, T, itapBaselines) + 
-    labs(title="ITAP - Quality Cold Start (Full)")
+    labs(title="ITAP - QualityScore Cold Start (Full)")
   plotColdStartCompareWeights(itapRounds, F, itapBaselines) + 
-    labs(title="ITAP - Quality Cold Start (Partial)")
+    labs(title="ITAP - QualityScore Cold Start (Partial)")
   
   itapStatsFull <- qualityStats(itapRounds, T, itapBaselines)
   itapStatsFull$match <- "Full"
@@ -300,7 +309,7 @@ runme <- function() {
   # not-sig
   wilcox.test(isnapRequests$fullMean[isnapRequests$assignmentID=="squiralHW"], 
               isnapRequests$template[isnapRequests$assignmentID=="squiralHW"], paired=T)
-  # sig
+  # not-sig
   wilcox.test(isnapRequests$fullMean, isnapRequests$template, paired=T)
   cohen.d(isnapRequests$template, isnapRequests$fullMean)
   
