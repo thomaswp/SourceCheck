@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.map.ListMap;
+import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.datasets.CSC200Solutions;
 import edu.isnap.datasets.Fall2016;
@@ -42,7 +43,7 @@ public class RunTutorEdits extends TutorEdits {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
-		RatingDataset dataset = iSnap2017;
+		RatingDataset dataset = iSnapF16F17;
 		Source source = Source.StudentData;
 		HintAlgorithm algorithm = SourceCheck;
 		boolean debug = false;
@@ -69,27 +70,56 @@ public class RunTutorEdits extends TutorEdits {
 //		testFall2017Pelim();
 	}
 
-	public static RatingDataset iSnap2017 = new RatingDataset() {
+	public static RatingDataset iSnapF16F17 = new SnapRatingDataset() {
+
+		private final Dataset[] datasets = new Dataset[] {
+				Fall2016.instance, Spring2017.instance, Fall2017.instance
+		};
+
+		@Override
+		String getDataDir() {
+			return RateHints.ISNAP_F16_F17_DATA_DIR;
+		}
+
+		@Override
+		protected Dataset[] getDatasets() {
+			return datasets;
+		}
+	};
+
+	public static RatingDataset iSnapF16S17 = new SnapRatingDataset() {
+
+		private final Dataset[] datasets = new Dataset[] {
+				Fall2016.instance, Spring2017.instance
+		};
+
+		@Override
+		String getDataDir() {
+			return RateHints.ISNAP_F16_S17_DATA_DIR;
+		}
+
+		@Override
+		protected Dataset[] getDatasets() {
+			return datasets;
+		}
+	};
+
+	private static abstract class SnapRatingDataset extends RatingDataset {
+		protected abstract Dataset[] getDatasets();
 
 		@Override
 		GoldStandard generateGoldStandard() throws FileNotFoundException, IOException {
-			GoldStandard fall2016Standard = readConsensusSnap(Fall2016.instance, CONSENSUS_GG_SQ);
-			GoldStandard spring2017Standard =
-					readConsensusSnap(Spring2017.instance, CONSENSUS_GG_SQ);
-			GoldStandard fall2017Standard = readConsensusSnap(Fall2017.instance, CONSENSUS_GG_SQ);
-			GoldStandard standard = GoldStandard.merge(
-					fall2016Standard, spring2017Standard, fall2017Standard);
-			return standard;
+			Dataset[] datasets = getDatasets();
+			GoldStandard[] standards = new GoldStandard[datasets.length];
+			for (int i = 0; i < datasets.length; i++) {
+				standards[i] = readConsensusSnap(datasets[i], CONSENSUS_GG_SQ);
+			}
+			return GoldStandard.merge(standards);
 		}
 
 		@Override
 		HintConfig getHintConfig() {
 			return new SnapHintConfig();
-		}
-
-		@Override
-		String getDataDir() {
-			return RateHints.ISNAP_DATA_DIR;
 		}
 
 		@Override
@@ -100,18 +130,19 @@ public class RunTutorEdits extends TutorEdits {
 
 		@Override
 		void exportTrainingData() throws FileNotFoundException, IOException {
-			exportRatingDatasetSnap(Spring2017.instance, CONSENSUS_GG_SQ,
-					"hint-eval", Spring2017.Squiral, Spring2017.GuessingGame1);
-			exportRatingDatasetSnap(Fall2016.instance, CONSENSUS_GG_SQ,
-					"hint-eval", Fall2016.Squiral, Fall2016.GuessingGame1);
-			exportRatingDatasetSnap(Fall2017.instance, CONSENSUS_GG_SQ,
-					"hint-eval", Fall2017.Squiral, Fall2017.GuessingGame1);
-
+			Dataset[] datasets = getDatasets();
+			for (int i = 0; i < datasets.length; i++) {
+				Map<String, Assignment> assignmentMap = datasets[i].getAssignmentMap();
+				Assignment guessingGame = assignmentMap.get("guess1Lab");
+				Assignment squiral = assignmentMap.get("squiralHW");
+				exportRatingDatasetSnap(datasets[i], CONSENSUS_GG_SQ, "hint-eval",
+						guessingGame, squiral);
+			}
 			System.out.println();
 			System.out.println("Data exported to respective assignment/export folders.");
 			System.out.println("Please copy to hint-rating directory if desired");
 		}
-	};
+	}
 
 	public static RatingDataset ITAP2016 = new RatingDataset() {
 
@@ -129,7 +160,7 @@ public class RunTutorEdits extends TutorEdits {
 
 		@Override
 		String getDataDir() {
-			return RateHints.ITAP_DATA_DIR;
+			return RateHints.ITAP_S16_DATA_DIR;
 		}
 
 		@Override
@@ -141,7 +172,7 @@ public class RunTutorEdits extends TutorEdits {
 		@Override
 		void exportTrainingData() throws IOException {
 			exportRatingDatasetPython("../../PythonAST/data", "../data/itap",
-					RateHints.ITAP_DATA_DIR);
+					RateHints.ITAP_S16_DATA_DIR);
 		}
 	};
 

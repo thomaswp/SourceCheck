@@ -6,6 +6,6 @@ import java.io.IOException;
 public class RunRateHints {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
-		RateHints.rateDir(RateHints.ITAP_DATA_DIR, RatingConfig.Python);
+		RateHints.rateDir(RateHints.ITAP_S16_DATA_DIR, RatingConfig.Python);
 	}
 }
