@@ -56,9 +56,10 @@ public class RunTutorEdits extends TutorEdits {
 
 //		dataset.verifyGoldStandard();
 
-//		dataset.runHintRating(algorithm, source, debug, writeHints);
+		dataset.runHintRating(algorithm, source, debug, writeHints);
 
-		dataset.writeColdStart(algorithm, 75, 3);
+//		dataset.testKValues(algorithm, source, debug, writeHints, 1, 20);
+//		dataset.writeColdStart(algorithm, 200, 1);
 
 		// Tutor consensus hint generation
 //		compareHintsSnap(Fall2016.instance, 10000);
@@ -118,7 +119,7 @@ public class RunTutorEdits extends TutorEdits {
 		}
 
 		@Override
-		HintConfig getHintConfig() {
+		HintConfig createHintConfig() {
 			return new SnapHintConfig();
 		}
 
@@ -144,7 +145,7 @@ public class RunTutorEdits extends TutorEdits {
 		}
 	}
 
-	public static RatingDataset ITAP2016 = new RatingDataset() {
+	public static RatingDataset ITAPS16 = new RatingDataset() {
 
 
 		@Override
@@ -154,7 +155,7 @@ public class RunTutorEdits extends TutorEdits {
 		}
 
 		@Override
-		HintConfig getHintConfig() {
+		HintConfig createHintConfig() {
 			return new PythonHintConfig();
 		}
 
@@ -178,8 +179,10 @@ public class RunTutorEdits extends TutorEdits {
 
 	public static abstract class RatingDataset {
 
+		protected HintConfig hintConfig = createHintConfig();
+
 		abstract GoldStandard generateGoldStandard() throws FileNotFoundException, IOException;
-		abstract HintConfig getHintConfig();
+		abstract HintConfig createHintConfig();
 		abstract String getDataDir();
 		abstract String getTemplateDir(Source source);
 		abstract void exportTrainingData() throws IOException;
@@ -193,10 +196,9 @@ public class RunTutorEdits extends TutorEdits {
 			HintMapHintSet hintSet;
 			if (source == Source.StudentData) {
 				hintSet = algorithm.getHintSetFromTrainingDataset(
-						getHintConfig(), getDataDir() + RateHints.TRAINING_DIR);
+						hintConfig, getDataDir() + RateHints.TRAINING_DIR);
 			} else {
-				hintSet = algorithm.getHintSetFromTemplate(getHintConfig(),
-						getTemplateDir(source));
+				hintSet = algorithm.getHintSetFromTemplate(hintConfig, getTemplateDir(source));
 			}
 			hintSet.addHints(standard);
 			return hintSet;
@@ -213,6 +215,26 @@ public class RunTutorEdits extends TutorEdits {
 				Spreadsheet spreadsheet = new Spreadsheet();
 				rate.writeAllRatings(spreadsheet);
 				spreadsheet.write(getDataDir() + "analysis/ratings-" + name);
+			}
+		}
+
+		public void testKValues(HintAlgorithm algorithm, Source source, boolean debug,
+				boolean write, int minK, int maxK) throws FileNotFoundException, IOException {
+			GoldStandard standard = readGoldStandard();
+			Spreadsheet spreadsheet = new Spreadsheet();
+			for (int k = minK; k <= maxK; k++) {
+				System.out.println("------ k = " + k + " ------");
+				hintConfig.votingK = k;
+				HintMapHintSet hintSet = getHintSet(algorithm, source, standard);
+				HintRatingSet rate = RateHints.rate(standard, hintSet, debug);
+				if (write) {
+					spreadsheet.setHeader("k", k);
+					rate.writeAllRatings(spreadsheet);
+				}
+			}
+			if (write) {
+				String name = getSourceName(source) + ".csv";
+				spreadsheet.write(getDataDir() + "analysis/k-test-" + name);
 			}
 		}
 
@@ -252,7 +274,7 @@ public class RunTutorEdits extends TutorEdits {
 		public void writeCostsSpreadsheet() throws FileNotFoundException, IOException {
 			GoldStandard standard = readGoldStandard();
 			TrainingDataset dataset = getTrainingDataset();
-			HighlightHintGenerator.getCostsSpreadsheet(dataset, standard, getHintConfig())
+			HighlightHintGenerator.getCostsSpreadsheet(dataset, standard, hintConfig)
 			.write(getDataDir() + "analysis/distances.csv");
 		}
 
@@ -265,7 +287,7 @@ public class RunTutorEdits extends TutorEdits {
 				throws FileNotFoundException, IOException {
 			GoldStandard standard = readGoldStandard();
 			TrainingDataset dataset = getTrainingDataset();
-			HintGenerator hintGenerator = algorithm.getHintGenerator(getHintConfig());
+			HintGenerator hintGenerator = algorithm.getHintGenerator(hintConfig);
 			ColdStart coldStart = new ColdStart(standard, dataset, hintGenerator);
 			return coldStart;
 		}

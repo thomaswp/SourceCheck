@@ -139,6 +139,10 @@ public abstract class HintConfig implements Serializable {
 	 * If true, hint priorities will be calculated and used to prioritize more important hints
 	 */
 	public boolean usePriority = true;
+	/**
+	 * The k used when assigning a priority using k-nearest neighbors
+	 */
+	public int votingK = 10;
 
 	// BEGIN old CDT config attributes
 	// TODO: Remove these elements and clean up old CTD algorithm
