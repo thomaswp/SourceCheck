@@ -12,6 +12,10 @@ se <- function(x) ifelse(length(x) == 0, 0, sqrt(var(x, na.rm=T)/sum(!is.na(x)))
 first <- function(x) head(x, 1)
 last <- function(x) tail(x, 1)
 
+isnapDir <- "isnapF16-F17"
+itapDir <- "itapS16"
+coldStartFile <- sprintf("cold-start-%03d-%d.csv", 200, 1)
+
 slope <- function(x) {
   df <- data.frame(idx=1:length(x), x=x)
   model <- lm(x ~ idx, df)
@@ -213,11 +217,15 @@ parseBaselines <- function(dir) {
   return(rbind(template,single))
 }
 
+read_hints <- function(dir) {
+  read_csv(paste0("../../data/hint-rating/", dir, "/analysis/", coldStartFile))
+}
+
 runme <- function() {
-  isnap <- read_csv("../../data/hint-rating/isnap2017/analysis/cold-start.csv")
+  isnap <- read_hints(isnapDir)
   isnapRounds <- getRounds(isnap)
   
-  isnapBaselines <- parseBaselines("isnap2017")
+  isnapBaselines <- parseBaselines(isnapDir)
   
   plotColdStart(isnapRounds) + labs(title="iSnap - Quality Cold Start")
   plotColdStartCompareWeights(isnapRounds, T, isnapBaselines) + 
@@ -232,12 +240,12 @@ runme <- function() {
   iSnapStats <- rbind(iSnapStatsFull, iSnapStatsPartial)
   iSnapStats$dataset <- "iSnap"
   
-  itap <- read_csv("../../data/hint-rating/itap2016/analysis/cold-start.csv")
+  itap <- read_hints(itapDir)
   itapRounds <- getRounds(itap)
   itapRounds$assignmentID <- ordered(itapRounds$assignmentID, c("helloWorld", "firstAndLast", "isPunctuation",
                                                                 "kthDigit", "oneToN"))
   
-  itapBaselines <- parseBaselines("itap2016")
+  itapBaselines <- parseBaselines(itapDir)
   itapBaselines$assignmentID <- ordered(itapBaselines$assignmentID, c("helloWorld", "firstAndLast", "isPunctuation",
                                                                       "kthDigit", "oneToN"))
   
@@ -282,7 +290,7 @@ runme <- function() {
   wilcox.test(isnapRequests$fullMean, isnapRequests$fullEven, paired=T)
   cohen.d(isnapRequests$fullMean, isnapRequests$fullEven)
   
-  isnapTemplate <- read_csv("../../data/hint-rating/isnap2017/analysis/ratings-sourcecheck-template.csv")
+  isnapTemplate <- read_csv(paste("../../data/hint-rating", isnapDir, "analysis/ratings-sourcecheck-template.csv", sep="/"))
   isnapTemplate$template <- isnapTemplate$MultipleTutors_Full
   isnapRequests <- merge(isnapRequests, isnapTemplate[,c("requestID", "template")], by="requestID")
   

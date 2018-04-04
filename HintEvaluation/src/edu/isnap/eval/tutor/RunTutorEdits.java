@@ -56,9 +56,9 @@ public class RunTutorEdits extends TutorEdits {
 
 //		dataset.verifyGoldStandard();
 
-		dataset.runHintRating(algorithm, source, debug, writeHints);
+//		dataset.runHintRating(algorithm, source, debug, writeHints);
 
-//		dataset.writeColdStart(algorithm, 200, 1);
+		dataset.writeColdStart(algorithm, 75, 3);
 
 		// Tutor consensus hint generation
 //		compareHintsSnap(Fall2016.instance, 10000);
@@ -239,7 +239,8 @@ public class RunTutorEdits extends TutorEdits {
 		public void writeColdStart(HintAlgorithm algorithm, int rounds, int step)
 				throws IOException {
 			ColdStart coldStart = getColdStart(algorithm);
-			coldStart.writeTest(getDataDir() + "analysis/cold-start.csv", rounds, step);
+			coldStart.writeTest(String.format("%sanalysis/cold-start-%03d-%d.csv",
+					getDataDir(), rounds, step), rounds, step);
 		}
 
 		public void writeSingleTraces(HintAlgorithm algorithm)
