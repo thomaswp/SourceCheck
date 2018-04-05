@@ -1,5 +1,6 @@
 package edu.isnap.eval.milestones;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -100,6 +101,29 @@ public class FeatureExtraction {
 //		Collections.sort(decisions);
 		pqRules.removeIf(rule -> rule.support() < minSupport);
 
+		for (int i = 0; i < pqRules.size(); i++) pqRules.get(i).index = i;
+
+		List<State> states = new ArrayList<>();
+		for (List<Node> trace : allTraces) {
+			byte[] lastState = new byte[pqRules.size()];
+			for (Node snapshot : trace) {
+				byte[] state = new byte[pqRules.size()];
+				for (PQGram gram : extractPQGrams(snapshot)) {
+					PQGramRule rule = rulesMap.get(gram);
+					if (rule == null) continue;
+					state[rule.index] = 1;
+				}
+				if (!Arrays.equals(lastState, state)) {
+					states.add(new State(lastState));
+					lastState = state;
+				}
+			}
+			states.add(new State(lastState));
+		}
+
+		writeStatesMatrix(states, assignment.analysisDir() + "/feature-states.csv");
+		writeRuleSnapshotsMatrix(pqRules, assignment.analysisDir() + "/feature-snapshots.csv");
+
 		List<Rule> allRules = new ArrayList<>();
 //		allRules.addAll(decisions);
 		allRules.addAll(pqRules);
@@ -117,8 +141,15 @@ public class FeatureExtraction {
 		double[][] meanFeautresOrderMatrix = getMeanFeautresOrderMatrix(featureOrdersMatrix);
 		writeMatrix(meanFeautresOrderMatrix, assignment.analysisDir() + "/feature-order.csv");
 
+		double[] feautresOrderSD = getFeautresOrderSD(featureOrdersMatrix, meanFeautresOrderMatrix);
+		for (int i = 0; i < allRules.size(); i++) allRules.get(i).orderSD = feautresOrderSD[i];
+
+//		List<Integer> order = IntStream.range(0, allRules.size()).mapToObj(i -> i)
+//				.sorted((i, j) -> Double.compare(dominateMatrix[i][j], dominateMatrix[j][i]))
+//				.collect(Collectors.toList());
+
 		List<Integer> order = IntStream.range(0, allRules.size()).mapToObj(i -> i)
-				.sorted((i, j) -> Double.compare(dominateMatrix[i][j], dominateMatrix[j][i]))
+				.sorted((i, j) -> Double.compare(feautresOrderSD[i], feautresOrderSD[j]))
 				.collect(Collectors.toList());
 
 		Spreadsheet spreadsheet = new Spreadsheet();
@@ -126,16 +157,20 @@ public class FeatureExtraction {
 		for (int o = 0; o < allRules.size(); o++) {
 			int i = order.get(o);
 			Rule rule = allRules.get(i);
-			System.out.printf("%02d: %s\n", i + 1, rule);
+			System.out.printf("%02d (%.02f): %s\n", i + 1, rule.orderSD, rule);
 			spreadsheet.newRow();
 			spreadsheet.put("name", rule.toString());
 			spreadsheet.put("support", rule.support());
+			spreadsheet.put("orderSD", rule.orderSD);
 			spreadsheet.put("snapshotCount", rule.snapshotCount);
-			spreadsheet.put("snapshots", Arrays.toString(rule.snapshotVector));
 		}
 		spreadsheet.write(assignment.analysisDir() + "/features.csv");
 
+	}
 
+	private static class State {
+		public final byte[] array;
+		public State(byte[] array) { this.array = array; }
 	}
 
 	private static int[][][] getFeatureOrdersMatrix(List<List<Node>> traces,
@@ -191,13 +226,59 @@ public class FeatureExtraction {
 		return mat;
 	}
 
+	private static double[] getFeautresOrderSD(int[][][] orders, double[][] means) {
+		int nRules = orders[0].length;
+
+		double[] mat = new double[nRules];
+		for (int i = 0; i < nRules; i++) {
+			for (int j = 0; j < nRules; j++) {
+				int sum = 0;
+				for (int k = 0; k < orders.length; k++) {
+					sum += Math.pow(orders[k][i][j] - means[i][j], 2);
+				}
+				mat[i] += (double) sum / orders.length;
+			}
+			mat[i] = Math.sqrt(mat[i] / nRules);
+		}
+
+		return mat;
+	}
+
 	private static void writeMatrix(double[][] matrix, String path)
 			throws FileNotFoundException {
+		File file = new File(path);
+		if (file.getParentFile() != null) file.getParentFile().mkdirs();
 		PrintStream printer = new PrintStream(path);
 		for (double[] row : matrix) {
 			printer.println(Arrays.stream(row)
 					.mapToObj(v -> String.valueOf(v))
 					.collect(Collectors.joining(",")));
+		}
+		printer.close();
+	}
+
+	private static void writeStatesMatrix(List<State> states, String path)
+			throws FileNotFoundException {
+		File file = new File(path);
+		if (file.getParentFile() != null) file.getParentFile().mkdirs();
+		PrintStream printer = new PrintStream(path);
+		for (State state : states) {
+			String out = Arrays.toString(state.array);
+			out = out.substring(1, out.length() - 1);
+			printer.println(out);
+		}
+		printer.close();
+	}
+
+	private static void writeRuleSnapshotsMatrix(List<PQGramRule> rules, String path)
+			throws FileNotFoundException {
+		File file = new File(path);
+		if (file.getParentFile() != null) file.getParentFile().mkdirs();
+		PrintStream printer = new PrintStream(path);
+		for (PQGramRule rule : rules) {
+			String out = Arrays.toString(rule.snapshotVector);
+			out = out.substring(1, out.length() - 1);
+			printer.println(out);
 		}
 		printer.close();
 	}
@@ -328,6 +409,7 @@ public class FeatureExtraction {
 	}
 
 	public static abstract class Rule {
+		public double orderSD;
 		public final Set<String> followers = new HashSet<>();
 		public final int maxFollowers;
 
@@ -374,6 +456,7 @@ public class FeatureExtraction {
 	public static class PQGramRule extends Rule implements Comparable<PQGramRule> {
 
 		public final PQGram pqGram;
+		public int index;
 
 		public PQGramRule(PQGram pqGram, int maxFollowers) {
 			super(maxFollowers);
