@@ -28,6 +28,8 @@ public class Fall2017 extends Dataset {
 			"guess1Lab", Assignment.date(2017, 9, 8), true, false, null) {
 	};
 
+	// NOTE: One student plagiarized another, and I have removed the copied submission, since the
+	// second student did no actual work, logged or otherwise
 	public final static Assignment GuessingGame2 = new Assignment(instance,
 			"guess2HW", Assignment.date(2017, 9, 15), true, false, GuessingGame1) {
 	};

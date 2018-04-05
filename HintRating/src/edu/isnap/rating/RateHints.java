@@ -26,8 +26,9 @@ public class RateHints {
 	public final static String TRAINING_DIR = "training";
 
 	public final static String DATA_ROOT_DIR = "../data/hint-rating/";
-	public final static String ISNAP_DATA_DIR = DATA_ROOT_DIR + "isnap2017/";
-	public final static String ITAP_DATA_DIR = DATA_ROOT_DIR + "itap2016/";
+	public final static String ISNAP_F16_S17_DATA_DIR = DATA_ROOT_DIR + "isnapF16-S17/";
+	public final static String ISNAP_F16_F17_DATA_DIR = DATA_ROOT_DIR + "isnapF16-F17/";
+	public final static String ITAP_S16_DATA_DIR = DATA_ROOT_DIR + "itapS16/";
 
 	public static void rateDir(String path, RatingConfig config)
 			throws FileNotFoundException, IOException {

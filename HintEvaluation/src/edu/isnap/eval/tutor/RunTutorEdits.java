@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.map.ListMap;
+import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.datasets.CSC200Solutions;
 import edu.isnap.datasets.Fall2016;
@@ -42,22 +43,23 @@ public class RunTutorEdits extends TutorEdits {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
-		RatingDataset dataset = iSnap2017;
+		RatingDataset dataset = iSnapF16F17;
 		Source source = Source.StudentData;
 		HintAlgorithm algorithm = SourceCheck;
 		boolean debug = false;
 		boolean writeHints = false;
 
-		// Exporting things
+		// Exporting things (Note: this may require some copy and paste)
 //		dataset.exportTrainingData();
 //		dataset.writeGoldStandard();
 //		dataset.writeHintSet(algorithm, source);
 
 //		dataset.verifyGoldStandard();
 
-//		dataset.runHintRating(algorithm, source, debug, writeHints);
+		dataset.runHintRating(algorithm, source, debug, writeHints);
 
-		dataset.writeColdStart(algorithm, 200, 1);
+//		dataset.testKValues(algorithm, source, debug, writeHints, 1, 20);
+//		dataset.writeColdStart(algorithm, 200, 1);
 
 		// Tutor consensus hint generation
 //		compareHintsSnap(Fall2016.instance, 10000);
@@ -69,27 +71,56 @@ public class RunTutorEdits extends TutorEdits {
 //		testFall2017Pelim();
 	}
 
-	public static RatingDataset iSnap2017 = new RatingDataset() {
+	public static RatingDataset iSnapF16F17 = new SnapRatingDataset() {
 
-		@Override
-		GoldStandard generateGoldStandard() throws FileNotFoundException, IOException {
-			GoldStandard fall2016Standard = readConsensusSnap(Fall2016.instance, CONSENSUS_GG_SQ);
-			GoldStandard spring2017Standard =
-					readConsensusSnap(Spring2017.instance, CONSENSUS_GG_SQ);
-			GoldStandard fall2017Standard = readConsensusSnap(Fall2017.instance, CONSENSUS_GG_SQ);
-			GoldStandard standard = GoldStandard.merge(
-					fall2016Standard, spring2017Standard, fall2017Standard);
-			return standard;
-		}
-
-		@Override
-		HintConfig getHintConfig() {
-			return new SnapHintConfig();
-		}
+		private final Dataset[] datasets = new Dataset[] {
+				Fall2016.instance, Spring2017.instance, Fall2017.instance
+		};
 
 		@Override
 		String getDataDir() {
-			return RateHints.ISNAP_DATA_DIR;
+			return RateHints.ISNAP_F16_F17_DATA_DIR;
+		}
+
+		@Override
+		protected Dataset[] getDatasets() {
+			return datasets;
+		}
+	};
+
+	public static RatingDataset iSnapF16S17 = new SnapRatingDataset() {
+
+		private final Dataset[] datasets = new Dataset[] {
+				Fall2016.instance, Spring2017.instance
+		};
+
+		@Override
+		String getDataDir() {
+			return RateHints.ISNAP_F16_S17_DATA_DIR;
+		}
+
+		@Override
+		protected Dataset[] getDatasets() {
+			return datasets;
+		}
+	};
+
+	private static abstract class SnapRatingDataset extends RatingDataset {
+		protected abstract Dataset[] getDatasets();
+
+		@Override
+		GoldStandard generateGoldStandard() throws FileNotFoundException, IOException {
+			Dataset[] datasets = getDatasets();
+			GoldStandard[] standards = new GoldStandard[datasets.length];
+			for (int i = 0; i < datasets.length; i++) {
+				standards[i] = readConsensusSnap(datasets[i], CONSENSUS_GG_SQ);
+			}
+			return GoldStandard.merge(standards);
+		}
+
+		@Override
+		HintConfig createHintConfig() {
+			return new SnapHintConfig();
 		}
 
 		@Override
@@ -100,14 +131,21 @@ public class RunTutorEdits extends TutorEdits {
 
 		@Override
 		void exportTrainingData() throws FileNotFoundException, IOException {
-			exportRatingDatasetSnap(Spring2017.instance, CONSENSUS_GG_SQ,
-					"hint-eval", Spring2017.Squiral, Spring2017.GuessingGame1);
-			exportRatingDatasetSnap(Fall2016.instance, CONSENSUS_GG_SQ,
-					"hint-eval", Fall2016.Squiral, Fall2016.GuessingGame1);
+			Dataset[] datasets = getDatasets();
+			for (int i = 0; i < datasets.length; i++) {
+				Map<String, Assignment> assignmentMap = datasets[i].getAssignmentMap();
+				Assignment guessingGame = assignmentMap.get("guess1Lab");
+				Assignment squiral = assignmentMap.get("squiralHW");
+				exportRatingDatasetSnap(datasets[i], CONSENSUS_GG_SQ, "hint-eval",
+						guessingGame, squiral);
+			}
+			System.out.println();
+			System.out.println("Data exported to respective assignment/export folders.");
+			System.out.println("Please copy to hint-rating directory if desired");
 		}
-	};
+	}
 
-	public static RatingDataset ITAP2016 = new RatingDataset() {
+	public static RatingDataset ITAPS16 = new RatingDataset() {
 
 
 		@Override
@@ -117,13 +155,13 @@ public class RunTutorEdits extends TutorEdits {
 		}
 
 		@Override
-		HintConfig getHintConfig() {
+		HintConfig createHintConfig() {
 			return new PythonHintConfig();
 		}
 
 		@Override
 		String getDataDir() {
-			return RateHints.ITAP_DATA_DIR;
+			return RateHints.ITAP_S16_DATA_DIR;
 		}
 
 		@Override
@@ -135,14 +173,16 @@ public class RunTutorEdits extends TutorEdits {
 		@Override
 		void exportTrainingData() throws IOException {
 			exportRatingDatasetPython("../../PythonAST/data", "../data/itap",
-					RateHints.ITAP_DATA_DIR);
+					RateHints.ITAP_S16_DATA_DIR);
 		}
 	};
 
 	public static abstract class RatingDataset {
 
+		protected HintConfig hintConfig = createHintConfig();
+
 		abstract GoldStandard generateGoldStandard() throws FileNotFoundException, IOException;
-		abstract HintConfig getHintConfig();
+		abstract HintConfig createHintConfig();
 		abstract String getDataDir();
 		abstract String getTemplateDir(Source source);
 		abstract void exportTrainingData() throws IOException;
@@ -156,10 +196,9 @@ public class RunTutorEdits extends TutorEdits {
 			HintMapHintSet hintSet;
 			if (source == Source.StudentData) {
 				hintSet = algorithm.getHintSetFromTrainingDataset(
-						getHintConfig(), getDataDir() + RateHints.TRAINING_DIR);
+						hintConfig, getDataDir() + RateHints.TRAINING_DIR);
 			} else {
-				hintSet = algorithm.getHintSetFromTemplate(getHintConfig(),
-						getTemplateDir(source));
+				hintSet = algorithm.getHintSetFromTemplate(hintConfig, getTemplateDir(source));
 			}
 			hintSet.addHints(standard);
 			return hintSet;
@@ -176,6 +215,26 @@ public class RunTutorEdits extends TutorEdits {
 				Spreadsheet spreadsheet = new Spreadsheet();
 				rate.writeAllRatings(spreadsheet);
 				spreadsheet.write(getDataDir() + "analysis/ratings-" + name);
+			}
+		}
+
+		public void testKValues(HintAlgorithm algorithm, Source source, boolean debug,
+				boolean write, int minK, int maxK) throws FileNotFoundException, IOException {
+			GoldStandard standard = readGoldStandard();
+			Spreadsheet spreadsheet = new Spreadsheet();
+			for (int k = minK; k <= maxK; k++) {
+				System.out.println("------ k = " + k + " ------");
+				hintConfig.votingK = k;
+				HintMapHintSet hintSet = getHintSet(algorithm, source, standard);
+				HintRatingSet rate = RateHints.rate(standard, hintSet, debug);
+				if (write) {
+					spreadsheet.setHeader("k", k);
+					rate.writeAllRatings(spreadsheet);
+				}
+			}
+			if (write) {
+				String name = getSourceName(source) + ".csv";
+				spreadsheet.write(getDataDir() + "analysis/k-test-" + name);
 			}
 		}
 
@@ -202,7 +261,8 @@ public class RunTutorEdits extends TutorEdits {
 		public void writeColdStart(HintAlgorithm algorithm, int rounds, int step)
 				throws IOException {
 			ColdStart coldStart = getColdStart(algorithm);
-			coldStart.writeTest(getDataDir() + "analysis/cold-start.csv", rounds, step);
+			coldStart.writeTest(String.format("%sanalysis/cold-start-%03d-%d.csv",
+					getDataDir(), rounds, step), rounds, step);
 		}
 
 		public void writeSingleTraces(HintAlgorithm algorithm)
@@ -214,7 +274,7 @@ public class RunTutorEdits extends TutorEdits {
 		public void writeCostsSpreadsheet() throws FileNotFoundException, IOException {
 			GoldStandard standard = readGoldStandard();
 			TrainingDataset dataset = getTrainingDataset();
-			HighlightHintGenerator.getCostsSpreadsheet(dataset, standard, getHintConfig())
+			HighlightHintGenerator.getCostsSpreadsheet(dataset, standard, hintConfig)
 			.write(getDataDir() + "analysis/distances.csv");
 		}
 
@@ -227,7 +287,7 @@ public class RunTutorEdits extends TutorEdits {
 				throws FileNotFoundException, IOException {
 			GoldStandard standard = readGoldStandard();
 			TrainingDataset dataset = getTrainingDataset();
-			HintGenerator hintGenerator = algorithm.getHintGenerator(getHintConfig());
+			HintGenerator hintGenerator = algorithm.getHintGenerator(hintConfig);
 			ColdStart coldStart = new ColdStart(standard, dataset, hintGenerator);
 			return coldStart;
 		}

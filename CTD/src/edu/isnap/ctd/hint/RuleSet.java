@@ -180,13 +180,6 @@ public class RuleSet implements Serializable {
 	private void removeDuplicateRulesAndSort(List<Rule> rules) {
 		Collections.sort(rules);
 		int nRules = rules.size();
-		double[][] jaccardMatrix = new double[nRules][nRules];
-		for (int i = 0; i < nRules; i++) {
-			for (int j = i + 1; j < nRules; j++) {
-				jaccardMatrix[i][j] = jaccardMatrix[j][i] =
-						rules.get(i).jaccardDistance(rules.get(j));
-			}
-		}
 		List<Rule> toRemove = new ArrayList<>();
 		for (int i = 0; i < nRules; i++) {
 			for (int j = nRules - 1; j > i; j--) {

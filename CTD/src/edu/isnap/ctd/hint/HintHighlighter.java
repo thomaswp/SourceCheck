@@ -713,8 +713,7 @@ public class HintHighlighter {
 	public void assignPriorities(Mapping bestMatch, List<EditHint> hints) {
 		Node node = bestMatch.from;
 		// TODO: why completely recalculate this?
-		// TODO: Get maxReturned from config!
-		List<Mapping> bestMatches = findBestMappings(node, 10);
+		List<Mapping> bestMatches = findBestMappings(node, config.votingK);
 
 		if (!bestMatches.stream().anyMatch(m -> m.to == bestMatch.to)) {
 			throw new IllegalArgumentException("bestMatch must be a member of hints");
@@ -731,7 +730,10 @@ public class HintHighlighter {
 			Priority priority = new Priority();
 			priority.consensusNumerator = hintCounts.getCount(hint);
 			priority.consensusDenominator = bestMatches.size();
-			if (priority.consensusNumerator > priority.consensusDenominator) {
+			// Numerators should be less than demoninators, and if there's only one best match,
+			// it should always match itself
+			if (priority.consensusNumerator > priority.consensusDenominator ||
+					(priority.consensusNumerator == 1 && priority.consensusNumerator != 1)) {
 				throw new RuntimeException("Inconsistent EditHint equality.");
 			}
 			hint.priority = priority;
