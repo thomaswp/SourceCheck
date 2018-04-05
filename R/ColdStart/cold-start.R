@@ -326,4 +326,12 @@ aied2018 <- function() {
   # not sig
   wilcox.test(itapRequests$partialMean, itapRequests$partialEven, paired=T)
   cohen.d(itapRequests$partialMean, itapRequests$partialEven)
+
+  # Loss of peak quality
+  # Uniform weighting
+  1 - last(isnapRounds$fullEven[isnapRounds$assignmentID=="guess1Lab"]) / max(isnapRounds$fullEven[isnapRounds$assignmentID=="guess1Lab"])
+  1 - last(isnapRounds$fullEven[isnapRounds$assignmentID=="squiralHW"]) / max(isnapRounds$fullEven[isnapRounds$assignmentID=="squiralHW"])
+  # Voting-based weighting
+  1 - last(isnapRounds$fullMean[isnapRounds$assignmentID=="guess1Lab"]) / max(isnapRounds$fullMean[isnapRounds$assignmentID=="guess1Lab"])
+  1 - last(isnapRounds$fullMean[isnapRounds$assignmentID=="squiralHW"]) / max(isnapRounds$fullMean[isnapRounds$assignmentID=="squiralHW"])
 }
