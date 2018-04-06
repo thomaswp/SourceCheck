@@ -121,9 +121,21 @@ public class Assignment {
 		return null;
 	}
 
+	/**
+	 * Override to manually identify a project as have had unstable logging. This can be
+	 * investigated using the CheckForLoggingProblems script
+	 */
+	public boolean wasLoggingUnstable(String attemptID) {
+		return false;
+	}
+
 	@Override
 	public String toString() {
 		return dataDir + "/" + name;
+	}
+
+	public Map<String, AssignmentAttempt> loadSubmitted(Mode mode, boolean snapshotsOnly) {
+		return load(mode, snapshotsOnly, true, new SnapParser.SubmittedOnly());
 	}
 
 	public Map<String, AssignmentAttempt> load(Mode mode, boolean snapshotsOnly) {

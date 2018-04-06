@@ -14,10 +14,12 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	private static final long serialVersionUID = 1L;
 
 	public static final String ASSIGNMENT_SET_ID_FROM = "Assignment.setIDFrom";
+	public static final String ASSIGNMENT_SET_ID = "Assignment.setID";
 	public final static String BLOCK_CLICK_RUN = "Block.clickRun";
 	public final static String BLOCK_EDITOR_START = "BlockEditor.start";
 	public final static String BLOCK_EDITOR_APPLY = "BlockEditor.apply";
 	public final static String BLOCK_EDITOR_OK = "BlockEditor.ok";
+	public final static String BLOCK_EDITOR_CANCEL = "BlockEditor.cancel";
 	public final static String BLOCK_GRABBED = "Block.grabbed";
 	public final static String BLOCK_DUPLICATE_ALL = "Block.duplicateAll";
 	public final static String BLOCK_DUPLICATE_BLOCK = "Block.duplicateBlock";

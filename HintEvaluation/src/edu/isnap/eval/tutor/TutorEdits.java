@@ -123,6 +123,7 @@ public class TutorEdits {
 									.findAny().orElse(attempt.id));
 			JsonAST.exportAssignmentTraces(assignment, true, folder + "/training",
 					attempt -> !stopped.contains(attempt.id) &&
+						!assignment.wasLoggingUnstable(attempt.id) &&
 						attempt.grade != null && attempt.grade.average() == 1,
 					attempt -> action -> true,
 					attempt -> attempt.id);
