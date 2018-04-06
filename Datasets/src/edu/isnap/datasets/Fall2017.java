@@ -22,10 +22,29 @@ public class Fall2017 extends Dataset {
 
 	public final static Assignment Squiral = new Assignment(instance,
 			"squiralHW", Assignment.date(2017, 9, 9), true, false, null) {
+
+		boolean wasLoggingUnstable(String id) {
+			return "3d3c3ba4-fa83-4ced-b6b8-29c4c0ba56c1".equals(id);
+		}
 	};
 
 	public final static Assignment GuessingGame1 = new Assignment(instance,
 			"guess1Lab", Assignment.date(2017, 9, 8), true, false, null) {
+
+		boolean wasLoggingUnstable(String id) {
+			return "3ee80769-6131-467e-957f-b5cc5b8afc6f".equals(id) ||
+					"7d70dc70-6811-448f-b222-59a01fcf0bd9".equals(id) ||
+					"1758ee25-8566-48a9-9bbe-cc4f21617f1e".equals(id) ||
+					"196e801a-7cea-4481-81ce-6325cf219765".equals(id);
+		}
+
+		@Override
+		public Integer getSubmittedRow(String attemptID) {
+			switch (attemptID) {
+			case "85ba2644-7df1-4234-b06a-95789b84edb0": return 170468;
+			}
+			return super.getSubmittedRow(attemptID);
+		};
 	};
 
 	// NOTE: One student plagiarized another, and I have removed the copied submission, since the

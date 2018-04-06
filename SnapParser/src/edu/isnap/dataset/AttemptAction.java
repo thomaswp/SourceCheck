@@ -16,8 +16,11 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	public static final String ASSIGNMENT_SET_ID_FROM = "Assignment.setIDFrom";
 	public final static String BLOCK_CLICK_RUN = "Block.clickRun";
 	public final static String BLOCK_EDITOR_START = "BlockEditor.start";
+	public final static String BLOCK_EDITOR_APPLY = "BlockEditor.apply";
 	public final static String BLOCK_EDITOR_OK = "BlockEditor.ok";
 	public final static String BLOCK_GRABBED = "Block.grabbed";
+	public final static String BLOCK_DUPLICATE_ALL = "Block.duplicateAll";
+	public final static String BLOCK_DUPLICATE_BLOCK = "Block.duplicateBlock";
 	public static final String IDE_ADD_SPRITE = "IDE.addSprite";
 	public static final String IDE_CHANGE_CATEGORY = "IDE.changeCategory";
 	public final static String IDE_GREEN_FLAG_RUN = "IDE.greenFlag";

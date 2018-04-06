@@ -50,7 +50,7 @@ public class RunTutorEdits extends TutorEdits {
 		boolean writeHints = false;
 
 		// Exporting things (Note: this may require some copy and paste)
-//		dataset.exportTrainingData();
+//		dataset.exportTrainingAndTestData();
 //		dataset.writeGoldStandard();
 //		dataset.writeHintSet(algorithm, source);
 
@@ -130,7 +130,7 @@ public class RunTutorEdits extends TutorEdits {
 		}
 
 		@Override
-		void exportTrainingData() throws FileNotFoundException, IOException {
+		void exportTrainingAndTestData() throws FileNotFoundException, IOException {
 			Dataset[] datasets = getDatasets();
 			for (int i = 0; i < datasets.length; i++) {
 				Map<String, Assignment> assignmentMap = datasets[i].getAssignmentMap();
@@ -171,7 +171,7 @@ public class RunTutorEdits extends TutorEdits {
 		}
 
 		@Override
-		void exportTrainingData() throws IOException {
+		void exportTrainingAndTestData() throws IOException {
 			exportRatingDatasetPython("../../PythonAST/data", "../data/itap",
 					RateHints.ITAP_S16_DATA_DIR);
 		}
@@ -185,7 +185,7 @@ public class RunTutorEdits extends TutorEdits {
 		abstract HintConfig createHintConfig();
 		abstract String getDataDir();
 		abstract String getTemplateDir(Source source);
-		abstract void exportTrainingData() throws IOException;
+		abstract void exportTrainingAndTestData() throws IOException;
 
 		public GoldStandard readGoldStandard() throws FileNotFoundException, IOException {
 			return GoldStandard.parseSpreadsheet(getDataDir() + RateHints.GS_SPREADSHEET);
