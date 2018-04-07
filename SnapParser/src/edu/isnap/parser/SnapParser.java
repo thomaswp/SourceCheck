@@ -8,6 +8,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -15,7 +16,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -211,7 +214,7 @@ public class SnapParser {
 		return null;
 	}
 
-	private AssignmentAttempt parseRows(AttemptParams params) throws IOException {
+	private AssignmentAttempt parseRows(AttemptParams params) {
 		String attemptID = params.id;
 
 		ActionRows actions = parseActions(new File(params.logPath));
@@ -416,16 +419,35 @@ public class SnapParser {
 		}
 
 		Map<String, AssignmentAttempt> attempts = new TreeMap<>();
-		final AtomicInteger threads = new AtomicInteger();
+		ExecutorService executor = Executors.newFixedThreadPool(8);
 		for (String attemptID : paramsMap.keySet()) {
 			AttemptParams params = paramsMap.get(attemptID);
+
+			if (assignment.ignore(attemptID)) continue;
+			// TODO: Need to check that all attempts without a grade are really outliers
+			if (params.grade != null && params.grade.outlier) continue;
+			// Allow filters to skip over attempts before parsing them
+			if (Arrays.stream(filters).anyMatch(filter -> filter.skip(params))) continue;
+
 			File file = new File(params.logPath);
 			if (!file.exists()) {
 				throw new RuntimeException("Missing submission data: " + file.getPath());
 			}
-			parseCSV(params, attempts, filters, threads);
+			executor.submit(() -> {
+				AssignmentAttempt attempt = parseRows(params);
+				if (!Arrays.stream(filters).allMatch(filter -> filter.keep(attempt))) return;
+				if (attempt.size() <= 3) return;
+				synchronized (attempts) {
+					attempts.put(attemptID, attempt);
+				}
+			});
 		}
-		waitForThreads(threads);
+		executor.shutdown();
+		try {
+			executor.awaitTermination(10, TimeUnit.MINUTES);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		return attempts;
 	}
 
@@ -442,18 +464,10 @@ public class SnapParser {
 			Submission submission = submissions.get(attemptID);
 			if (submission.location == null) continue;
 
-			// TODO: Change this to look through all assignments, not just prequels
-			// It is possible for students to use non-prequel assignments as a starter
-			// projects, (e.g. a student does GG2 on PolygonMaker), and in this case the
-			// current implementation will include all of the starter work in the later
-			// submission (e.g. the GG2 trace will include PolygonMaker).
-
-			// Loop through all earlier assignments and see if any have the same submission
-			// ID.
+			// Loop through all earlier assignments and see if any have the same submission ID.
 			for (Assignment prequel : assignment.dataset.all()) {
 				if (prequel == assignment) break;
-				Map<String, Submission> prequelSubmissions =
-						allSubmissions.get(prequel.name);
+				Map<String, Submission> prequelSubmissions = allSubmissions.get(prequel.name);
 				if (prequelSubmissions.containsKey(attemptID)) {
 					Submission prequelSubmission = prequelSubmissions.get(attemptID);
 
@@ -467,7 +481,7 @@ public class SnapParser {
 						continue;
 					}
 
-					// If so, and there's a submission row, we put (or update) that as the
+					// Otherwise, if there's a submission row, we put (or update) that as the
 					// prequel row. It makes no sense to process data that was logged before
 					// the previous assignment was submitted.
 					Integer prequalSubmittedRowID = prequelSubmission.submittedRowID;
@@ -480,11 +494,11 @@ public class SnapParser {
 									attemptID);
 							continue;
 						}
-//								System.out.printf("%s.%s / %s:\n\t%s: %d vs\n\t%s: %d\n",
-//										assignment.dataset.getName(), assignment.name, attemptID,
-//										submission.location, submission.submittedRowID,
-//										prequelSubmission.location,
-//										prequelSubmission.submittedRowID);
+//						System.out.printf("%s.%s / %s:\n\t%s: %d vs\n\t%s: %d\n",
+//								assignment.dataset.getName(), assignment.name, attemptID,
+//								submission.location, submission.submittedRowID,
+//								prequelSubmission.location,
+//								prequelSubmission.submittedRowID);
 						prequelEndID = prequalSubmittedRowID;
 					}
 				}
@@ -506,47 +520,6 @@ public class SnapParser {
 			params.submittedActionID = submission.submittedRowID;
 		}
 		paramsMap.values().forEach(params -> params.knownSubmissions = true);
-	}
-
-	private void waitForThreads(final AtomicInteger threads) {
-		while (threads.get() != 0) {
-			try {
-				Thread.sleep(100);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-	}
-
-	private void parseCSV(AttemptParams params, Map<String, AssignmentAttempt> attempts,
-			Filter[] filters, AtomicInteger threads) {
-		if (assignment.ignore(params.id)) return;
-
-		threads.incrementAndGet();
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
-				try {
-					// TODO: Need to check that all attempts without a grade are really outliers
-					if (params.grade == null || !params.grade.outlier) {
-						AssignmentAttempt attempt = parseRows(params);
-						for (Filter filter : filters) {
-							if (!filter.keep(attempt)) return;
-						}
-						if (attempt.size() > 3) {
-							synchronized (attempts) {
-								attempts.put(params.id, attempt);
-							}
-						}
-					}
-				} catch (IOException e) {
-					e.printStackTrace();
-				} finally {
-					threads.decrementAndGet();
-				}
-			}
-		// TODO: Limit threads
-		}).start();
 	}
 
 	public void addStartIDs(Map<String, AttemptParams> paramsMap) {
@@ -623,10 +596,18 @@ public class SnapParser {
 	}
 
 	public interface Filter {
+		public default boolean skip(AttemptParams params) {
+			return false;
+		}
 		public boolean keep(AssignmentAttempt attempt);
 	}
 
 	public static class SubmittedOnly implements Filter {
+		@Override
+		public boolean skip(AttemptParams params) {
+			return params.submittedActionID == null;
+		}
+
 		@Override
 		public boolean keep(AssignmentAttempt attempt) {
 			return attempt.isSubmitted();
