@@ -21,6 +21,7 @@ public class Fall2017 extends Dataset {
 			"polygonMakerLab", Assignment.date(2017, 9, 1), true, false, null) {
 	};
 
+	// Added starts for students starting on different assignments
 	public final static Assignment Squiral = new Assignment(instance,
 			"squiralHW", Assignment.date(2017, 9, 9), true, false, null) {
 
@@ -31,6 +32,7 @@ public class Fall2017 extends Dataset {
 		}
 	};
 
+	// Added starts for students starting on different assignments
 	public final static Assignment GuessingGame1 = new Assignment(instance,
 			"guess1Lab", Assignment.date(2017, 9, 8), true, false, null) {
 
