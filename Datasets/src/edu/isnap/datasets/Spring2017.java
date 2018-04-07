@@ -5,6 +5,7 @@ import java.util.Date;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
 
+// TODO: Check for students starting on different assignments (for all but GG1, SQ)
 public class Spring2017 extends Dataset {
 
 	public final static Date start = Assignment.date(2017, 1, 1);
@@ -30,6 +31,7 @@ public class Spring2017 extends Dataset {
 			"polygonMakerLab", Assignment.date(2017, 2, 2), true, false, null) {
 	};
 
+	// Added starts for students starting on different assignments
 	public final static Assignment Squiral = new Assignment(instance,
 			"squiralHW", Assignment.date(2017, 2, 9), true, false, null) {
 
@@ -49,6 +51,7 @@ public class Spring2017 extends Dataset {
 		};
 	};
 
+	// Added starts for students starting on different assignments
 	public final static Assignment GuessingGame1 = new Assignment(instance,
 			"guess1Lab", Assignment.date(2017, 2, 9), true, false, null) {
 

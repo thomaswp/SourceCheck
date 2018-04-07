@@ -5,6 +5,7 @@ import java.util.Date;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
 
+// TODO: Check for students starting on different assignments
 public class Fall2017 extends Dataset {
 
 	public final static Date start = Assignment.date(2017, 8, 15);
@@ -55,7 +56,6 @@ public class Fall2017 extends Dataset {
 	public final static Assignment GuessingGame2 = new Assignment(instance,
 			"guess2HW", Assignment.date(2017, 9, 15), true, false, GuessingGame1) {
 	};
-
 
 	public final static Assignment GuessingGame3 = new Assignment(instance,
 			"guess3Lab", Assignment.date(2017, 9, 15), true, false, GuessingGame1) {

@@ -5,6 +5,7 @@ import java.util.Date;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
 
+//TODO: Check for students starting on different assignments
 public class Spring2018 extends Dataset {
 
 	public final static Date start = Assignment.date(2018, 1, 6);

@@ -219,10 +219,15 @@ public class SnapParser {
 		return null;
 	}
 
-	private AssignmentAttempt parseRows(AttemptParams params) {
+	private ActionRows getAllActionRows(AttemptParams params) {
 		String attemptID = params.id;
 
+		// First, get all action rows for the attempt
 		ActionRows actions = parseActions(new File(params.logPath));
+		actions.forEach(action -> action.loggedAssignmentID = params.loggedAssignmentID);
+
+		// Then, if the project started under another assigmentID which was manually identified,
+		// add those rows to the beginning
 		if (params.startAssignment != null && actions.size() > 0 && params.startID != null) {
 			ActionRows startActions =
 					parseActions(new File(getLogFilePath(params.startAssignment, attemptID)));
@@ -230,9 +235,42 @@ public class SnapParser {
 					.filter(action -> action.id >= params.startID)
 					.findFirst().get().id;
 			startActions.rows.removeIf(action -> action.id < params.startID && action.id > startID);
+			startActions.forEach(action -> action.loggedAssignmentID = params.startAssignment);
 			actions.rows.addAll(0, startActions.rows);
-			System.out.println(attemptID + ": " + startActions.size());
 		}
+
+		// Last, if the project switched between assignments and then came back before submission,
+		// add the rows that occurred in between
+		for (int i = 0; i < actions.size() - 1; i++) {
+			AttemptAction actionSet = actions.get(i);
+			if (!AttemptAction.ASSIGNMENT_SET_ID.equals(actionSet.message)) continue;
+			String assignmentID = actionSet.data;
+			if (assignmentID == null || assignmentID.length() <= 2) continue;
+			// At some point, this may need to be less specific, but it seems for now they're always
+			// back to back
+			AttemptAction actionSetFrom = actions.get(i + 1);
+			if (!AttemptAction.ASSIGNMENT_SET_ID_FROM.equals(actionSetFrom.message)) continue;
+			if (!actionSetFrom.data.equals(assignmentID)) continue;
+			// Trim the quotes
+			assignmentID = assignmentID.substring(1, assignmentID.length() - 1);
+			ActionRows interlude = parseActions(new File(getLogFilePath(assignmentID, attemptID)));
+			// Keep only the rows that come in between the set and setFrom actions
+			interlude.rows.removeIf(
+					action -> action.id < actionSet.id || action.id > actionSetFrom.id);
+			for (AttemptAction action : interlude) action.loggedAssignmentID = assignmentID;
+			actions.rows.addAll(i + 1, interlude.rows);
+			i += interlude.size();
+		}
+
+		// Resort, in case the items we've added were not in time order
+		Collections.sort(actions.rows);
+
+		return actions;
+	}
+
+	private AssignmentAttempt parseRows(AttemptParams params) {
+		String attemptID = params.id;
+		ActionRows actions = getAllActionRows(params);
 
 		Date minDate = assignment.start, maxDate = assignment.end;
 
@@ -272,8 +310,6 @@ public class SnapParser {
 			if (params.prequelEndID != null && action.id <= params.prequelEndID) continue;
 			// If we have a start ID, ignore rows that come before it
 			if (params.startID != null && action.id < params.startID) continue;
-
-			action.loggedAssignmentID = params.loggedAssignmentID;
 
 			// In Spring 2017 there was a logging error that failed to log processed hints
 			// The are recreated by the HighlightDataRepairer and stored as .json files, which
