@@ -83,6 +83,11 @@ public class SnapParser {
 				assignment.name, false, snapshotsOnly));
 	}
 
+	private String getLogFilePath(String assignmentID, String attemptID) {
+		return String.format("%s/parsed/%s/%s.csv",
+				assignment.dataDir, assignmentID, attemptID);
+	}
+
 	private ActionRows parseActions(final File logFile) {
 		final String attemptID = logFile.getName().replace(".csv", "");
 		String cachePath = logFile.getAbsolutePath().replace(".csv", ".cached");
@@ -218,6 +223,16 @@ public class SnapParser {
 		String attemptID = params.id;
 
 		ActionRows actions = parseActions(new File(params.logPath));
+		if (params.startAssignment != null && actions.size() > 0 && params.startID != null) {
+			ActionRows startActions =
+					parseActions(new File(getLogFilePath(params.startAssignment, attemptID)));
+			int startID = actions.rows.stream()
+					.filter(action -> action.id >= params.startID)
+					.findFirst().get().id;
+			startActions.rows.removeIf(action -> action.id < params.startID && action.id > startID);
+			actions.rows.addAll(0, startActions.rows);
+			System.out.println(attemptID + ": " + startActions.size());
+		}
 
 		Date minDate = assignment.start, maxDate = assignment.end;
 
@@ -242,19 +257,6 @@ public class SnapParser {
 
 		for (int i = 0; i < actions.size(); i++) {
 			AttemptAction action = actions.get(i);
-			action.loggedAssignmentID = params.loggedAssignmentID;
-
-			// In Spring 2017 there was a logging error that failed to log processed hints
-			// The are recreated by the HighlightDataRepairer and stored as .json files, which
-			// can be loaded and re-inserted into the data.
-			if (repairedHints != null && AttemptAction.HINT_PROCESS_HINTS.equals(action.message)) {
-				String key = String.valueOf(action.id);
-				if (repairedHints.has(key)) {
-					String data = repairedHints.getJSONArray(key).toString();
-					action = new AttemptAction(action.id, action.timestamp, action.sessionID,
-							action.message, data, action.snapshot);
-				}
-			}
 
 			// Ignore actions outside of our time range
 			if (params.addMetadata && action.timestamp != null && (
@@ -270,6 +272,20 @@ public class SnapParser {
 			if (params.prequelEndID != null && action.id <= params.prequelEndID) continue;
 			// If we have a start ID, ignore rows that come before it
 			if (params.startID != null && action.id < params.startID) continue;
+
+			action.loggedAssignmentID = params.loggedAssignmentID;
+
+			// In Spring 2017 there was a logging error that failed to log processed hints
+			// The are recreated by the HighlightDataRepairer and stored as .json files, which
+			// can be loaded and re-inserted into the data.
+			if (repairedHints != null && AttemptAction.HINT_PROCESS_HINTS.equals(action.message)) {
+				String key = String.valueOf(action.id);
+				if (repairedHints.has(key)) {
+					String data = repairedHints.getJSONArray(key).toString();
+					action = new AttemptAction(action.id, action.timestamp, action.sessionID,
+							action.message, data, action.snapshot);
+				}
+			}
 
 			// Update time statistics, regardless of the action being taken
 			{
@@ -404,8 +420,7 @@ public class SnapParser {
 			// TODO: Parse the file name to get the projectID (before the _)
 			// Do the same throughout this class
 			String attemptID = file.getName().replace(".csv", "");
-			String path = assignment.getLocationAssignment(attemptID).parsedDir() + "/" +
-					attemptID + ".csv";
+			String path = getLogFilePath(assignment.name, attemptID);
 			AttemptParams params = new AttemptParams(attemptID, path, assignment.name, addMetadata,
 					snapshotsOnly);
 			paramsMap.put(attemptID, params);
@@ -505,8 +520,7 @@ public class SnapParser {
 			}
 
 			// Update the log path with the one specified in the submission file
-			String path = assignment.dataDir + "/parsed/" + submission.location + "/" +
-					attemptID + ".csv";
+			String path = getLogFilePath(submission.location, attemptID);
 
 			AttemptParams params = paramsMap.get(attemptID);
 			if (params == null) {
@@ -545,6 +559,10 @@ public class SnapParser {
 						continue;
 					}
 					params.startID = codeStart;
+					if (record.isMapped("startAssignment")) {
+						String startAssignment = record.get("startAssignment");
+						if (startAssignment.length() > 0) params.startAssignment = startAssignment;
+					}
 				}
 			}
 
@@ -644,6 +662,7 @@ public class SnapParser {
 		public String loggedAssignmentID;
 		public Grade grade;
 		public Integer startID;
+		public String startAssignment;
 		public boolean knownSubmissions;
 		public Integer submittedActionID;
 		public Integer prequelEndID;

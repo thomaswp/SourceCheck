@@ -19,9 +19,9 @@ public class CheckForLoggingProblems {
 	private final static int SIZE_GAP = 5;
 
 	public static void main(String[] args) {
-//		checkForAssignmentSwitching(Fall2017.GuessingGame1);
+		checkForAssignmentSwitching(Spring2017.GuessingGame1);
 //		checkForUnstableLogs(Fall2017.Squiral);
-		getSummaryHashes(Spring2017.instance);
+//		getSummaryHashes(Spring2017.instance);
 	}
 
 	private static void getSummaryHashes(Dataset dataset) {

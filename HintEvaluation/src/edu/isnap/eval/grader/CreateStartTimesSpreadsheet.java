@@ -43,6 +43,7 @@ public class CreateStartTimesSpreadsheet {
 				spreadsheet.put("link", link);
 				spreadsheet.put("start", start);
 				spreadsheet.put("code", "");
+				spreadsheet.put("startAssignment", "");
 			}
 		}
 
