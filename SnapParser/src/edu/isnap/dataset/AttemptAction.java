@@ -64,10 +64,15 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	public final Date timestamp;
 	public final String sessionID, message, data;
 
-	/** Last snapshot saved when this action occurred (possible this action's snapshot). */
+	/** Last snapshot saved when this action occurred (possiblly this action's snapshot). */
 	public transient Snapshot lastSnapshot;
 	/** The cumulative active time (in seconds) the student has spent after this action. */
 	public transient int currentActiveTime;
+	/**
+	 * The assignmentID logged with this action, which may be different than that of the parent
+	 * {@link AssignmentAttempt} if the attempt involved a change of assignment.
+	 */
+	public transient String loggedAssignmentID;
 
 	private static Snapshot loadSnapshot(String attemptID, Date timestamp, String snapshotXML) {
 		String name = attemptID;

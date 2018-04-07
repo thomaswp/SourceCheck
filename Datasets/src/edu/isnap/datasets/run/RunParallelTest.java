@@ -22,9 +22,19 @@ public class RunParallelTest {
 		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Ignore, false);
 		long load = System.currentTimeMillis() - start;
 
+		int hash = getSummaryHash(attempts);
+		System.out.println("Load Time: " + load);
+		System.out.println(assignment.name + ": " + hash);
+	}
+
+	public static int getSummaryHash(Map<String, AssignmentAttempt> attempts) {
 		List<Integer> hashes = new LinkedList<>();
 		for (AssignmentAttempt attempt : attempts.values()) {
 			hashes.add(attempt.id.hashCode());
+			hashes.add(attempt.grade == null ? null : Double.hashCode(attempt.grade.average()));
+			hashes.add(attempt.loggedAssignmentID == null ?
+					null : attempt.loggedAssignmentID.hashCode());
+			hashes.add(attempt.submittedActionID);
 			for (AttemptAction action : attempt) {
 				hashes.add(action.message.hashCode());
 				hashes.add(action.data.hashCode());
@@ -33,7 +43,7 @@ public class RunParallelTest {
 				}
 			}
 		}
-		System.out.println("Load Time: " + load);
-		System.out.println(hashes.hashCode());
+		int hash = hashes.hashCode();
+		return hash;
 	}
 }

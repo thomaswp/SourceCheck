@@ -14,8 +14,9 @@ public class AssignmentAttempt implements Iterable<AttemptAction> {
 	public final static int NOT_SUBMITTED = -2;
 
 	public final String id;
-	public final String loggedAssignmentID;
 	public final ActionRows rows = new ActionRows();
+	/** The primary assignmentID of the logs (e.g. when the attempt was submitted). */
+	public final String loggedAssignmentID;
 	public final Grade grade;
 	/** Whether the attempt was ever exported from Snap. */
 	public boolean exported;

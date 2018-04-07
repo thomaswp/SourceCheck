@@ -6,7 +6,9 @@ import java.util.Map;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
-import edu.isnap.datasets.Fall2017;
+import edu.isnap.dataset.Dataset;
+import edu.isnap.datasets.Spring2017;
+import edu.isnap.datasets.run.RunParallelTest;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.Store.Mode;
 
@@ -17,8 +19,16 @@ public class CheckForLoggingProblems {
 	private final static int SIZE_GAP = 5;
 
 	public static void main(String[] args) {
-		checkForAssignmentSwitching(Fall2017.GuessingGame1);
+//		checkForAssignmentSwitching(Fall2017.GuessingGame1);
 //		checkForUnstableLogs(Fall2017.Squiral);
+		getSummaryHashes(Spring2017.instance);
+	}
+
+	private static void getSummaryHashes(Dataset dataset) {
+		for (Assignment assignment : dataset.all()) {
+			int hash = RunParallelTest.getSummaryHash(assignment.load(Mode.Use, false));
+			System.out.println(assignment.name + ": " + hash);
+		}
 	}
 
 	private static void checkForAssignmentSwitching(Assignment assignment) {

@@ -75,8 +75,9 @@ public class SnapParser {
 	}
 
 	public AssignmentAttempt parseSubmission(String id, boolean snapshotsOnly) throws IOException {
-		return parseRows(new File(assignment.parsedDir(), id + ".csv"),
-				null, null, null, false, null, null, snapshotsOnly, true);
+		return parseRows(new AttemptParams(id,
+				assignment.parsedDir() + File.separator + id + ".csv",
+				assignment.name, false, snapshotsOnly));
 	}
 
 	private ActionRows parseActions(final File logFile) {
@@ -210,28 +211,26 @@ public class SnapParser {
 		return null;
 	}
 
-	private AssignmentAttempt parseRows(File logFile, String loggedAssignmentID, Grade grade,
-			Integer startID, boolean knownSubmissions, Integer submittedActionID,
-			Integer prequelEndID, boolean snapshotsOnly, boolean addMetadata)
-					throws IOException {
-		String attemptID = logFile.getName().replace(".csv", "");
+	private AssignmentAttempt parseRows(AttemptParams params) throws IOException {
+		String attemptID = params.id;
 
-		ActionRows actions = parseActions(logFile);
+		ActionRows actions = parseActions(new File(params.logPath));
 
 		Date minDate = assignment.start, maxDate = assignment.end;
 
-		AssignmentAttempt attempt = new AssignmentAttempt(attemptID, loggedAssignmentID, grade);
+		AssignmentAttempt attempt = new AssignmentAttempt(attemptID, params.loggedAssignmentID,
+				params.grade);
 		attempt.rows.userID = actions.userID;
-		attempt.submittedActionID = knownSubmissions ?
+		attempt.submittedActionID = params.knownSubmissions ?
 				AssignmentAttempt.NOT_SUBMITTED : AssignmentAttempt.UNKNOWN;
 		List<AttemptAction> currentWork = new ArrayList<>();
 
-		int gradedRow = grade == null ? -1 : grade.gradedRow;
+		int gradedRow = params.grade == null ? -1 : params.grade.gradedRow;
 		boolean foundGraded = false;
 		Snapshot lastSnaphot = null;
 
 		JSONObject repairedHints = null;
-		if (addMetadata) repairedHints = loadRepairedHints(attemptID);
+		if (params.addMetadata) repairedHints = loadRepairedHints(attemptID);
 
 		int activeTime = 0;
 		int idleTime = 0;
@@ -240,6 +239,7 @@ public class SnapParser {
 
 		for (int i = 0; i < actions.size(); i++) {
 			AttemptAction action = actions.get(i);
+			action.loggedAssignmentID = params.loggedAssignmentID;
 
 			// In Spring 2017 there was a logging error that failed to log processed hints
 			// The are recreated by the HighlightDataRepairer and stored as .json files, which
@@ -254,19 +254,19 @@ public class SnapParser {
 			}
 
 			// Ignore actions outside of our time range
-			if (addMetadata && action.timestamp != null && (
+			if (params.addMetadata && action.timestamp != null && (
 					(minDate != null && action.timestamp.before(minDate)) ||
 					// Only check max date if we don't have a final submission ID (late work is
 					// ok if we can verify it was submitted)
-					(submittedActionID == null &&
+					(params.submittedActionID == null &&
 					maxDate != null && action.timestamp.after(maxDate)))) {
 				continue;
 			}
 			// If we're using log data from a prequel assignment, ignore rows before the prequel was
 			// submitted
-			if (prequelEndID != null && action.id <= prequelEndID) continue;
+			if (params.prequelEndID != null && action.id <= params.prequelEndID) continue;
 			// If we have a start ID, ignore rows that come before it
-			if (startID != null && action.id < startID) continue;
+			if (params.startID != null && action.id < params.startID) continue;
 
 			// Update time statistics, regardless of the action being taken
 			{
@@ -293,7 +293,7 @@ public class SnapParser {
 			// If we're only concerned with snapshots, and this was a Block.grabbed action,
 			// we skip it if the next action (presumably a Block.snapped) produces a snapshot
 			// as well. This smooths out some of the quick delete/insert pairs into "moved" events.
-			if (snapshotsOnly && action.snapshot != null &&
+			if (params.snapshotsOnly && action.snapshot != null &&
 					AttemptAction.BLOCK_GRABBED.equals(action.message)) {
 				if (i + 1 < actions.size() && actions.get(i + 1).snapshot != null) {
 					continue;
@@ -305,9 +305,9 @@ public class SnapParser {
 			action.lastSnapshot = lastSnaphot;
 
 			// Add this row unless it has not snapshot and we want snapshots only
-			boolean addRow = !(snapshotsOnly && action.snapshot == null);
+			boolean addRow = !(params.snapshotsOnly && action.snapshot == null);
 
-			if (addMetadata) {
+			if (params.addMetadata) {
 				if (addRow) {
 					currentWork.add(action);
 				}
@@ -328,7 +328,7 @@ public class SnapParser {
 				}
 
 				// If this is the submitted action, store that information and finish
-				if (submittedActionID != null && action.id == submittedActionID) {
+				if (params.submittedActionID != null && action.id == params.submittedActionID) {
 					attempt.submittedSnapshot = lastSnaphot;
 					attempt.submittedActionID = action.id;
 					// The attempt must have been exported if we're seeing it, and exported should
@@ -350,22 +350,22 @@ public class SnapParser {
 			}
 		}
 
-		if (addMetadata) {
+		if (params.addMetadata) {
 			if (gradedRow >= 0 && !foundGraded) {
-				System.err.println("No grade row for: " + logFile.getName());
+				System.err.println("No grade row for: " + params.id);
 			}
 
 			// If the solution was exported and submitted, but the log data does not contain
 			// the submitted snapshot, check to see what's wrong manually
-			if (submittedActionID != null && attempt.submittedSnapshot == null) {
+			if (params.submittedActionID != null && attempt.submittedSnapshot == null) {
 				if (attempt.size() > 0) {
 					System.out.println(attemptID + ": " + attempt.rows.getLast().id);
 				} else {
 					System.out.println(assignment.name + " " +
-							attemptID + ": 0 / " + actions.size() + " / " + prequelEndID);
+							attemptID + ": 0 / " + actions.size() + " / " + params.prequelEndID);
 				}
 				System.err.printf("Submitted id not found for %s: %s\n",
-						attemptID, submittedActionID);
+						attemptID, params.submittedActionID);
 			}
 		}
 
@@ -389,20 +389,13 @@ public class SnapParser {
 	// TODO: This should be a different data structure, either a List or a custom class
 	public Map<String, AssignmentAttempt> parseAssignment(boolean snapshotsOnly,
 			boolean addMetadata, Filter... filters) {
-		Map<String, AssignmentAttempt> attempts = new TreeMap<>();
-
-
-		HashMap<String, Grade> grades = new HashMap<>();
-		HashMap<String, Integer> startIDs = new HashMap<>();
-		Map<String, Submission> submissions = null;
+		Map<String, AttemptParams> paramsMap = new TreeMap<>();
 
 		File assignmentDir = new File(assignment.parsedDir());
 		if (!assignmentDir.exists()) {
 			throw new RuntimeException("Assignment has not been added and parsed: " + assignment);
 		}
 
-		Map<String, String> attemptFiles = new TreeMap<>();
-		Map<String, String> loggedAssignments = new HashMap<>();
 		for (File file : assignmentDir.listFiles()) {
 			if (!file.getName().endsWith(".csv")) continue;
 			// TODO: Parse the file name to get the projectID (before the _)
@@ -410,95 +403,109 @@ public class SnapParser {
 			String attemptID = file.getName().replace(".csv", "");
 			String path = assignment.getLocationAssignment(attemptID).parsedDir() + "/" +
 					attemptID + ".csv";
-			attemptFiles.put(attemptID, path);
-			loggedAssignments.put(attemptID, assignment.name);
+			AttemptParams params = new AttemptParams(attemptID, path, assignment.name, addMetadata,
+					snapshotsOnly);
+			paramsMap.put(attemptID, params);
 		}
 
-		Map<String, Integer> prequelEndRows = new HashMap<>();
 		if (addMetadata) {
-			grades = parseGrades();
-			startIDs = parseStartIDs();
-			Map<String, Map<String, Submission>> allSubmissions =
-					ParseSubmitted.getAllSubmissions(assignment.dataset);
-			submissions = allSubmissions.get(assignment.name);
+			// Must come first, since it adds attempts that may have grades/startIDs
+			addSubmissionInfo(snapshotsOnly, addMetadata, paramsMap);
+			addGrades(paramsMap);
+			addStartIDs(paramsMap);
+		}
 
-			if (submissions != null) {
-				for (String attemptID : submissions.keySet()) {
-					Submission submission = submissions.get(attemptID);
-					if (submission.location == null) continue;
+		Map<String, AssignmentAttempt> attempts = new TreeMap<>();
+		final AtomicInteger threads = new AtomicInteger();
+		for (String attemptID : paramsMap.keySet()) {
+			AttemptParams params = paramsMap.get(attemptID);
+			File file = new File(params.logPath);
+			if (!file.exists()) {
+				throw new RuntimeException("Missing submission data: " + file.getPath());
+			}
+			parseCSV(params, attempts, filters, threads);
+		}
+		waitForThreads(threads);
+		return attempts;
+	}
 
-					// TODO: Change this to look through all assignments, not just prequels
-					// It is possible for students to use non-prequel assignments as a starter
-					// projects, (e.g. a student does GG2 on PolygonMaker), and in this case the
-					// current implementation will include all of the starter work in the later
-					// submission (e.g. the GG2 trace will include PolygonMaker).
+	private void addSubmissionInfo(boolean snapshotsOnly, boolean addMetadata,
+			Map<String, AttemptParams> paramsMap) {
+		Map<String, Map<String, Submission>> allSubmissions =
+				ParseSubmitted.getAllSubmissions(assignment.dataset);
+		Map<String, Submission> submissions = allSubmissions.get(assignment.name);
 
-					// Loop through all earlier assignments and see if any have the same submission
-					// ID.
-					for (Assignment prequel : assignment.dataset.all()) {
-						if (prequel == assignment) break;
-						Map<String, Submission> prequelSubmissions = allSubmissions.get(prequel.name);
-						if (prequelSubmissions.containsKey(attemptID)) {
-							Submission prequelSubmission = prequelSubmissions.get(attemptID);
+		if (submissions == null) return;
 
-							// If this submission was submitted under the correct assignment and
-							// the prequel was submitted under a different assignment, there's
-							// no reason to expect this submission contains any work on the prequel
-							// (and we could get false positives if prequels were later reopened
-							// and re-exported)
-							if (assignment.name.equals(submission.location) &&
-									!assignment.name.equals(prequelSubmission.location)) {
-								continue;
-							}
+		for (String attemptID : submissions.keySet()) {
+			Integer prequelEndID = null;
+			Submission submission = submissions.get(attemptID);
+			if (submission.location == null) continue;
 
-							// If so, and there's a submission row, we put (or update) that as the
-							// prequel row. It makes no sense to process data that was logged before
-							// the previous assignment was submitted.
-							Integer prequalSubmittedRowID = prequelSubmission.submittedRowID;
-							if (prequalSubmittedRowID != null) {
-								if (submission.submittedRowID != null &&
-										submission.submittedRowID < prequalSubmittedRowID) {
-									System.err.printf(
-											"Prequel submitted later. Check for issues: %s.%s %s\n",
-											assignment.dataset.getName(), assignment.name,
-											attemptID);
-									continue;
-								}
+			// TODO: Change this to look through all assignments, not just prequels
+			// It is possible for students to use non-prequel assignments as a starter
+			// projects, (e.g. a student does GG2 on PolygonMaker), and in this case the
+			// current implementation will include all of the starter work in the later
+			// submission (e.g. the GG2 trace will include PolygonMaker).
+
+			// Loop through all earlier assignments and see if any have the same submission
+			// ID.
+			for (Assignment prequel : assignment.dataset.all()) {
+				if (prequel == assignment) break;
+				Map<String, Submission> prequelSubmissions =
+						allSubmissions.get(prequel.name);
+				if (prequelSubmissions.containsKey(attemptID)) {
+					Submission prequelSubmission = prequelSubmissions.get(attemptID);
+
+					// If this submission was submitted under the correct assignment and
+					// the prequel was submitted under a different assignment, there's
+					// no reason to expect this submission contains any work on the prequel
+					// (and we could get false positives if prequels were later reopened
+					// and re-exported)
+					if (assignment.name.equals(submission.location) &&
+							!assignment.name.equals(prequelSubmission.location)) {
+						continue;
+					}
+
+					// If so, and there's a submission row, we put (or update) that as the
+					// prequel row. It makes no sense to process data that was logged before
+					// the previous assignment was submitted.
+					Integer prequalSubmittedRowID = prequelSubmission.submittedRowID;
+					if (prequalSubmittedRowID != null) {
+						if (submission.submittedRowID != null &&
+								submission.submittedRowID < prequalSubmittedRowID) {
+							System.err.printf(
+									"Prequel submitted later. Check for issues: %s.%s %s\n",
+									assignment.dataset.getName(), assignment.name,
+									attemptID);
+							continue;
+						}
 //								System.out.printf("%s.%s / %s:\n\t%s: %d vs\n\t%s: %d\n",
 //										assignment.dataset.getName(), assignment.name, attemptID,
 //										submission.location, submission.submittedRowID,
 //										prequelSubmission.location,
 //										prequelSubmission.submittedRowID);
-								prequelEndRows.put(attemptID, prequalSubmittedRowID);
-							}
-						}
+						prequelEndID = prequalSubmittedRowID;
 					}
-
-					// Update the log path with the one specified in the submission file
-					String path = assignment.dataDir + "/parsed/" + submission.location + "/" +
-							attemptID + ".csv";
-					attemptFiles.put(attemptID, path);
-					loggedAssignments.put(attemptID, submission.location);
 				}
 			}
-		}
 
-		final AtomicInteger threads = new AtomicInteger();
-		for (String attemptID : attemptFiles.keySet()) {
-			File file = new File(attemptFiles.get(attemptID));
-			if (!file.exists()) {
-				throw new RuntimeException("Missing submission data: " + file.getPath());
-			}
-			Integer prequelEndRow = prequelEndRows.get(attemptID);
-			boolean knownSubmissions = submissions != null;
-			Submission submission = knownSubmissions ? submissions.get(attemptID) : null;
-			Integer submittedRowID = submission != null ? submission.submittedRowID : null;
-			parseCSV(file, loggedAssignments.get(attemptID), snapshotsOnly, addMetadata, attempts,
-					filters, knownSubmissions, submittedRowID, grades.get(attemptID),
-					startIDs.get(attemptID), prequelEndRow, threads);
+			// Update the log path with the one specified in the submission file
+			String path = assignment.dataDir + "/parsed/" + submission.location + "/" +
+					attemptID + ".csv";
+
+			AttemptParams params = paramsMap.get(attemptID);
+			if (params == null) {
+				paramsMap.put(attemptID, params = new AttemptParams(
+						attemptID, path, submission.location, addMetadata, snapshotsOnly));
+			} else {
+				params.logPath = path;
+				params.loggedAssignmentID = submission.location;
+			};
+			params.prequelEndID = prequelEndID;
+			params.submittedActionID = submission.submittedRowID;
 		}
-		waitForThreads(threads);
-		return attempts;
+		paramsMap.values().forEach(params -> params.knownSubmissions = true);
 	}
 
 	private void waitForThreads(final AtomicInteger threads) {
@@ -511,29 +518,24 @@ public class SnapParser {
 		}
 	}
 
-	private void parseCSV(final File file, String loggedAssignmentID, final boolean snapshotsOnly,
-			final boolean addMetadata, final Map<String, AssignmentAttempt> attempts,
-			final Filter[] filters, final boolean knownSubmissions, final Integer submittedRowID,
-			final Grade grade, final Integer startID, final Integer prequelEndRow,
-			final AtomicInteger threads) {
-		final String guid = file.getName().replace(".csv", "");
-		if (assignment.ignore(guid)) return;
+	private void parseCSV(AttemptParams params, Map<String, AssignmentAttempt> attempts,
+			Filter[] filters, AtomicInteger threads) {
+		if (assignment.ignore(params.id)) return;
 
 		threads.incrementAndGet();
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
 				try {
-					if (grade == null || !grade.outlier) {
-						AssignmentAttempt attempt = parseRows(file, loggedAssignmentID, grade,
-								startID, knownSubmissions, submittedRowID, prequelEndRow,
-								snapshotsOnly, addMetadata);
+					// TODO: Need to check that all attempts without a grade are really outliers
+					if (params.grade == null || !params.grade.outlier) {
+						AssignmentAttempt attempt = parseRows(params);
 						for (Filter filter : filters) {
 							if (!filter.keep(attempt)) return;
 						}
 						if (attempt.size() > 3) {
 							synchronized (attempts) {
-								attempts.put(guid, attempt);
+								attempts.put(params.id, attempt);
 							}
 						}
 					}
@@ -547,12 +549,10 @@ public class SnapParser {
 		}).start();
 	}
 
-	public HashMap<String, Integer> parseStartIDs() {
-		HashMap<String, Integer> starts = new HashMap<>();
-
+	public void addStartIDs(Map<String, AttemptParams> paramsMap) {
 		File file = new File(assignment.dataset.startsFile());
 		if (!file.exists()) {
-			return starts;
+			return;
 		}
 
 		try {
@@ -566,7 +566,12 @@ public class SnapParser {
 				String codeStartString = record.get("code");
 				if (codeStartString != null && codeStartString.trim().length() > 0) {
 					int codeStart = Integer.parseInt(codeStartString);
-					starts.put(attemptID, codeStart);
+					AttemptParams params = paramsMap.get(attemptID);
+					if (params == null) {
+						System.err.println("Missing logs for attempt with start id: " + attemptID);
+						continue;
+					}
+					params.startID = codeStart;
 				}
 			}
 
@@ -574,8 +579,18 @@ public class SnapParser {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
 
-		return starts;
+	public void addGrades(Map<String, AttemptParams> paramsMap) {
+		HashMap<String,Grade> grades = parseGrades();
+		for (String attemptID : grades.keySet()) {
+			AttemptParams params = paramsMap.get(attemptID);
+			if (params == null) {
+				System.err.println("Missing logs for graded attempt: " + attemptID);
+				continue;
+			}
+			params.grade = grades.get(attemptID);
+		}
 	}
 
 	public HashMap<String, Grade> parseGrades() {
@@ -636,6 +651,31 @@ public class SnapParser {
 		public boolean keep(AssignmentAttempt attempt) {
 			return attempt.rows.size() > 0 && attempt.rows.get(0).timestamp.after(after);
 		}
+	}
+
+	private static class AttemptParams {
+
+		public final String id;
+		public final boolean addMetadata;
+		public final boolean snapshotsOnly;
+
+		public String logPath;
+		public String loggedAssignmentID;
+		public Grade grade;
+		public Integer startID;
+		public boolean knownSubmissions;
+		public Integer submittedActionID;
+		public Integer prequelEndID;
+
+		public AttemptParams(String id, String logPath, String loggedAssignmentID, boolean addMetadata,
+				boolean snapshotsOnly) {
+			this.id = id;
+			this.logPath = logPath;
+			this.loggedAssignmentID = loggedAssignmentID;
+			this.addMetadata = addMetadata;
+			this.snapshotsOnly = snapshotsOnly;
+		}
+
 	}
 }
 
