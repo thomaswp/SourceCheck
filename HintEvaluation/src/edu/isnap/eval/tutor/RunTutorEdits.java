@@ -50,11 +50,11 @@ public class RunTutorEdits extends TutorEdits {
 		boolean writeHints = false;
 
 		// Exporting things (Note: this may require some copy and paste)
-//		dataset.exportTrainingAndTestData();
 //		dataset.writeGoldStandard();
+//		dataset.exportTrainingAndTestData();
 //		dataset.writeHintSet(algorithm, source);
 
-//		dataset.verifyGoldStandard();
+		dataset.verifyGoldStandard();
 
 		dataset.runHintRating(algorithm, source, debug, writeHints);
 
