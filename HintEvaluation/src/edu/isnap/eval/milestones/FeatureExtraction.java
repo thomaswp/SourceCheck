@@ -104,7 +104,7 @@ public class FeatureExtraction {
 		for (int i = 0; i < pqRules.size(); i++) pqRules.get(i).index = i;
 
 		List<State> states = new ArrayList<>();
-		for (List<Node> trace : allTraces) {
+		for (List<Node> trace : correctTraces) {
 			byte[] lastState = new byte[pqRules.size()];
 			for (Node snapshot : trace) {
 				byte[] state = new byte[pqRules.size()];
@@ -144,13 +144,13 @@ public class FeatureExtraction {
 		double[] feautresOrderSD = getFeautresOrderSD(featureOrdersMatrix, meanFeautresOrderMatrix);
 		for (int i = 0; i < allRules.size(); i++) allRules.get(i).orderSD = feautresOrderSD[i];
 
-//		List<Integer> order = IntStream.range(0, allRules.size()).mapToObj(i -> i)
-//				.sorted((i, j) -> Double.compare(dominateMatrix[i][j], dominateMatrix[j][i]))
-//				.collect(Collectors.toList());
-
 		List<Integer> order = IntStream.range(0, allRules.size()).mapToObj(i -> i)
-				.sorted((i, j) -> Double.compare(feautresOrderSD[i], feautresOrderSD[j]))
+				.sorted((i, j) -> Double.compare(dominateMatrix[i][j], dominateMatrix[j][i]))
 				.collect(Collectors.toList());
+
+//		List<Integer> order = IntStream.range(0, allRules.size()).mapToObj(i -> i)
+//				.sorted((i, j) -> Double.compare(feautresOrderSD[i], feautresOrderSD[j]))
+//				.collect(Collectors.toList());
 
 		Spreadsheet spreadsheet = new Spreadsheet();
 		System.out.println("All Rules: ");
@@ -160,6 +160,7 @@ public class FeatureExtraction {
 			System.out.printf("%02d (%.02f): %s\n", i + 1, rule.orderSD, rule);
 			spreadsheet.newRow();
 			spreadsheet.put("name", rule.toString());
+			spreadsheet.put("id", i + 1);
 			spreadsheet.put("support", rule.support());
 			spreadsheet.put("orderSD", rule.orderSD);
 			spreadsheet.put("snapshotCount", rule.snapshotCount);
@@ -496,11 +497,6 @@ public class FeatureExtraction {
 		}
 
 		@Override
-		public int countIntersect(PQGramRule rule) {
-			return (int) followers.stream().filter(rule.followers::contains).count();
-		}
-
-		@Override
 		public String toString() {
 			return String.format("%.02f:\t%s", support(), String.join(" OR\n\t\t",
 					rules.stream().map(r -> (CharSequence) r.toString())::iterator));
@@ -516,6 +512,33 @@ public class FeatureExtraction {
 
 			return rules.stream().max(PQGramRule::compareTo).get().compareTo(
 					o.rules.stream().max(PQGramRule::compareTo).get());
+		}
+	}
+
+	static class Conjunction extends Rule {
+
+		private List<PQGramRule> rules = new ArrayList<>();
+
+		public Conjunction(PQGramRule startRule) {
+			super(startRule.maxFollowers);
+			snapshotVector = new byte[startRule.snapshotVector.length];
+			followers.addAll(startRule.followers);
+			addRule(startRule);
+		}
+
+		public void addRule(PQGramRule rule) {
+			rules.add(rule);
+			followers.retainAll(rule.followers);
+			for (int i = 0; i < snapshotVector.length; i++) {
+				if (rule.snapshotVector[i] == 0) snapshotVector[i] = 0;
+			}
+			calculateSnapshotCount();
+		}
+
+		@Override
+		public String toString() {
+			return String.format("%.02f:\t%s", support(), String.join(" AND\n\t\t",
+					rules.stream().map(r -> (CharSequence) r.toString())::iterator));
 		}
 	}
 
