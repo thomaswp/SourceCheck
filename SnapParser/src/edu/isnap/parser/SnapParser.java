@@ -611,12 +611,16 @@ public class SnapParser {
 	public void addGrades(Map<String, AttemptParams> paramsMap) {
 		HashMap<String,Grade> grades = parseGrades();
 		for (String attemptID : grades.keySet()) {
+			if (assignment.ignore(attemptID)) continue;
+			Grade grade = grades.get(attemptID);
 			AttemptParams params = paramsMap.get(attemptID);
 			if (params == null) {
-				System.err.println("Missing logs for graded attempt: " + attemptID);
+				if (!attemptID.startsWith(ParseSubmitted.NO_LOG_PREFIX)) {
+					System.err.println("Missing logs for graded attempt: " + attemptID);
+				}
 				continue;
 			}
-			params.grade = grades.get(attemptID);
+			params.grade = grade;
 		}
 	}
 
