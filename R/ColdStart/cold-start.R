@@ -2,7 +2,6 @@ library(readr)
 library(ggplot2)
 library(plyr)
 library(reshape2)
-library(car)
 
 source("../Hints Comparison/util.R")
 
