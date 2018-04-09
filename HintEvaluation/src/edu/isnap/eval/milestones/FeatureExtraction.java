@@ -13,8 +13,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang.StringUtils;
@@ -22,8 +22,10 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
 import edu.isnap.ctd.graph.Node;
+import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
+import edu.isnap.dataset.AttemptAction;
 import edu.isnap.datasets.aggregate.CSC200;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.hint.util.Spreadsheet;
@@ -33,15 +35,10 @@ import edu.isnap.parser.Store.Mode;
 public class FeatureExtraction {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
-
-		Assignment assignment = CSC200.Squiral;
-		Map<AssignmentAttempt, List<Node>>  traceMap = assignment.load(
-				Mode.Use, true, true, new SnapParser.SubmittedOnly()).values().stream()
-				.collect(Collectors.toMap(
-						attempt -> attempt,
-						attempt -> attempt.rows.rows.stream()
-						.map(action -> SimpleNodeBuilder.toTree(action.snapshot, true))
-						.collect(Collectors.toList())));
+		Assignment out = CSC200.Squiral;
+		Map<AssignmentAttempt, List<Node>>  traceMap = loadAssignments(
+				CSC200.Squiral);
+//				Fall2016.Squiral, Spring2017.Squiral);
 
 		List<List<Node>> correctTraces = traceMap.keySet().stream()
 				.filter(attempt -> attempt.grade != null && attempt.grade.average() == 1)
@@ -56,21 +53,19 @@ public class FeatureExtraction {
 		int n = correctSubmissions.size();
 		System.out.println(n);
 
-		Map<PQGram, PQGramRule> rulesMap = new HashMap<>();
+		Map<PQGram, PQGramRule> pqRulesMap = new HashMap<>();
 		for (Node node : correctSubmissions) {
 			for (PQGram gram : extractPQGrams(node)) {
-				PQGramRule rule = rulesMap.get(gram);
+				PQGramRule rule = pqRulesMap.get(gram);
 				if (rule == null) {
-					rulesMap.put(gram, rule = new PQGramRule(gram, n));
+					pqRulesMap.put(gram, rule = new PQGramRule(gram, n));
 				}
 				rule.followers.add(node.id);
 			}
 		}
 
-
-
-		rulesMap.keySet().removeIf(gram -> rulesMap.get(gram).followers.size() < n * 0.2);
-		List<PQGramRule> pqRules = new ArrayList<>(rulesMap.values());
+		pqRulesMap.keySet().removeIf(gram -> pqRulesMap.get(gram).followers.size() < n * 0.2);
+		List<PQGramRule> pqRules = new ArrayList<>(pqRulesMap.values());
 		Collections.sort(pqRules);
 
 		List<List<Node>> allTraces = new ArrayList<>(traceMap.values());
@@ -82,7 +77,7 @@ public class FeatureExtraction {
 		for (List<Node> trace : allTraces) {
 			for (Node snapshot : trace) {
 				for (PQGram gram : extractPQGrams(snapshot)) {
-					PQGramRule rule = rulesMap.get(gram);
+					PQGramRule rule = pqRulesMap.get(gram);
 					if (rule == null) continue;
 					rule.snapshotVector[snapshotIndex] = 1;
 				}
@@ -94,24 +89,42 @@ public class FeatureExtraction {
 		if (snapshotIndex != nSnapshots) throw new RuntimeException();
 		pqRules.forEach(rule -> rule.calculateSnapshotCount());
 
-		double minSupport = 0.8;
 
 		removeDuplicateRules(pqRules);
-//		List<Disjunction> decisions = extractDecisions(pqRules);
-//		Collections.sort(decisions);
+		List<Disjunction> decisions = extractDecisions(pqRules);
+		Collections.sort(decisions);
+
+		// Wait until after decisions are extracted to remove low-support rules
+		double minSupport = 0.8;
+		decisions.removeIf(rule -> rule.support() < minSupport);
 		pqRules.removeIf(rule -> rule.support() < minSupport);
 
-		for (int i = 0; i < pqRules.size(); i++) pqRules.get(i).index = i;
+		List<Rule> allRules = new ArrayList<>();
+		allRules.addAll(decisions);
+		allRules.addAll(pqRules);
+		removeDuplicateRules(allRules);
+
+		for (int i = 0; i < allRules.size(); i++) allRules.get(i).index = i;
+
+		ListMap<PQGram, Rule> rulesMap = new ListMap<>();
+		for (PQGramRule pqRule : pqRules) {
+			rulesMap.add(pqRule.pqGram, pqRule);
+		}
+		for (Disjunction decision : decisions) {
+			for (PQGramRule pqRule : decision.rules) {
+				rulesMap.add(pqRule.pqGram, decision);
+			}
+		}
 
 		List<State> states = new ArrayList<>();
 		for (List<Node> trace : correctTraces) {
-			byte[] lastState = new byte[pqRules.size()];
+			byte[] lastState = new byte[allRules.size()];
 			for (Node snapshot : trace) {
-				byte[] state = new byte[pqRules.size()];
+				byte[] state = new byte[allRules.size()];
 				for (PQGram gram : extractPQGrams(snapshot)) {
-					PQGramRule rule = rulesMap.get(gram);
-					if (rule == null) continue;
-					state[rule.index] = 1;
+					List<Rule> rules = rulesMap.get(gram);
+					if (rules == null) continue;
+					rules.forEach(rule -> state[rule.index] = 1);
 				}
 				if (!Arrays.equals(lastState, state)) {
 					states.add(new State(lastState));
@@ -121,32 +134,27 @@ public class FeatureExtraction {
 			states.add(new State(lastState));
 		}
 
-		writeStatesMatrix(states, assignment.analysisDir() + "/feature-states.csv");
-		writeRuleSnapshotsMatrix(pqRules, assignment.analysisDir() + "/feature-snapshots.csv");
+		writeStatesMatrix(states, out.analysisDir() + "/feature-states.csv");
+		writeRuleSnapshotsMatrix(pqRules, out.analysisDir() + "/feature-snapshots.csv");
 
-		List<Rule> allRules = new ArrayList<>();
-//		allRules.addAll(decisions);
-		allRules.addAll(pqRules);
-		allRules.removeIf(rule -> rule.support() < minSupport);
-//		removeDuplicateRules(allRules);
 
-		double[][] jaccardMatrix = removeDuplicateRules(allRules);
-		if (jaccardMatrix.length != allRules.size()) throw new RuntimeException();
-		writeMatrix(jaccardMatrix, assignment.analysisDir() + "/feature-jaccard.csv");
+//		double[][] jaccardMatrix = removeDuplicateRules(allRules);
+//		if (jaccardMatrix.length != allRules.size()) throw new RuntimeException();
+//		writeMatrix(jaccardMatrix, out.analysisDir() + "/feature-jaccard.csv");
 
 		double[][] dominateMatrix = createDominateMatrix(allRules);
-		writeMatrix(dominateMatrix, assignment.analysisDir() + "/feature-dominate.csv");
+		writeMatrix(dominateMatrix, out.analysisDir() + "/feature-dominate.csv");
 
-		int[][][] featureOrdersMatrix = getFeatureOrdersMatrix(correctTraces, pqRules);
-		double[][] meanFeautresOrderMatrix = getMeanFeautresOrderMatrix(featureOrdersMatrix);
-		writeMatrix(meanFeautresOrderMatrix, assignment.analysisDir() + "/feature-order.csv");
+//		int[][][] featureOrdersMatrix = getFeatureOrdersMatrix(correctTraces, pqRules);
+//		double[][] meanFeautresOrderMatrix = getMeanFeautresOrderMatrix(featureOrdersMatrix);
+//		writeMatrix(meanFeautresOrderMatrix, out.analysisDir() + "/feature-order.csv");
 
-		double[] feautresOrderSD = getFeautresOrderSD(featureOrdersMatrix, meanFeautresOrderMatrix);
-		for (int i = 0; i < allRules.size(); i++) allRules.get(i).orderSD = feautresOrderSD[i];
+//		double[] feautresOrderSD = getFeautresOrderSD(featureOrdersMatrix, meanFeautresOrderMatrix);
+//		for (int i = 0; i < allRules.size(); i++) allRules.get(i).orderSD = feautresOrderSD[i];
 
-		List<Integer> order = IntStream.range(0, allRules.size()).mapToObj(i -> i)
-				.sorted((i, j) -> Double.compare(dominateMatrix[i][j], dominateMatrix[j][i]))
-				.collect(Collectors.toList());
+//		List<Integer> order = IntStream.range(0, allRules.size()).mapToObj(i -> i)
+//				.sorted((i, j) -> Double.compare(dominateMatrix[i][j], dominateMatrix[j][i]))
+//				.collect(Collectors.toList());
 
 //		List<Integer> order = IntStream.range(0, allRules.size()).mapToObj(i -> i)
 //				.sorted((i, j) -> Double.compare(feautresOrderSD[i], feautresOrderSD[j]))
@@ -155,9 +163,9 @@ public class FeatureExtraction {
 		Spreadsheet spreadsheet = new Spreadsheet();
 		System.out.println("All Rules: ");
 		for (int o = 0; o < allRules.size(); o++) {
-			int i = order.get(o);
+			int i = o; //order.get(o);
 			Rule rule = allRules.get(i);
-			System.out.printf("%02d (%.02f): %s\n", i + 1, rule.orderSD, rule);
+			System.out.printf("%02d: %s\n", i + 1, rule);
 			spreadsheet.newRow();
 			spreadsheet.put("name", rule.toString());
 			spreadsheet.put("id", i + 1);
@@ -165,8 +173,35 @@ public class FeatureExtraction {
 			spreadsheet.put("orderSD", rule.orderSD);
 			spreadsheet.put("snapshotCount", rule.snapshotCount);
 		}
-		spreadsheet.write(assignment.analysisDir() + "/features.csv");
+		spreadsheet.write(out.analysisDir() + "/features.csv");
 
+	}
+
+	private static Map<AssignmentAttempt, List<Node>> loadAssignments(Assignment... assignments) {
+		Map<AssignmentAttempt, List<Node>> map =
+				new TreeMap<>(Comparator.comparing(attempt -> attempt.id));
+		for (Assignment assignment : assignments) {
+			Set<String> usedHints =
+					assignment.load(Mode.Use, false, true, new SnapParser.SubmittedOnly()).values()
+					.stream()
+					// Ignore students who used hints
+					.filter(attempt -> attempt.rows.rows.stream()
+							.anyMatch(action -> AttemptAction.HINT_DIALOG_DESTROY.equals(
+									action.message)))
+					.map(attempt -> attempt.id)
+					.collect(Collectors.toSet());
+			Map<AssignmentAttempt, List<Node>> loaded =
+					assignment.load(Mode.Use, true, true, new SnapParser.SubmittedOnly()).values()
+					.stream()
+					.filter(attempt -> !usedHints.contains(attempt.id))
+					.collect(Collectors.toMap(
+							attempt -> attempt,
+							attempt -> attempt.rows.rows.stream()
+							.map(action -> SimpleNodeBuilder.toTree(action.snapshot, true))
+							.collect(Collectors.toList())));
+			map.putAll(loaded);
+		}
+		return map;
 	}
 
 	private static class State {
@@ -306,16 +341,16 @@ public class FeatureExtraction {
 			// Remove any rule with a very high support, since these will be trivially true
 			if (deleteCandidate.snapshotCount >= maxFollowers * 0.95) {
 				toRemove.add(deleteCandidate);
-				System.out.println("-- " + deleteCandidate);
-				System.out.println();
+//				System.out.println("-- " + deleteCandidate);
+//				System.out.println();
 				continue;
 			}
 
 			for (int j = nRules - 1; j > i; j--) {
 				Rule supercedeCandidate = rules.get(j);
 				if (jaccardMatrix[i][j] >= 0.975) {
-					System.out.println("- " + deleteCandidate + "\n+ " + supercedeCandidate);
-					System.out.println();
+//					System.out.println("- " + deleteCandidate + "\n+ " + supercedeCandidate);
+//					System.out.println();
 					supercedeCandidate.duplicateRules.add(deleteCandidate);
 					supercedeCandidate.duplicateRules.addAll(deleteCandidate.duplicateRules);
 					toRemove.add(deleteCandidate);
@@ -410,6 +445,7 @@ public class FeatureExtraction {
 	}
 
 	public static abstract class Rule {
+		public int index;
 		public double orderSD;
 		public final Set<String> followers = new HashSet<>();
 		public final int maxFollowers;
@@ -457,7 +493,6 @@ public class FeatureExtraction {
 	public static class PQGramRule extends Rule implements Comparable<PQGramRule> {
 
 		public final PQGram pqGram;
-		public int index;
 
 		public PQGramRule(PQGram pqGram, int maxFollowers) {
 			super(maxFollowers);
@@ -498,7 +533,7 @@ public class FeatureExtraction {
 
 		@Override
 		public String toString() {
-			return String.format("%.02f:\t%s", support(), String.join(" OR\n\t\t",
+			return String.format("%.02f:\t%s", support(), String.join(" OR\n\t\t\t\t",
 					rules.stream().map(r -> (CharSequence) r.toString())::iterator));
 		}
 
@@ -537,7 +572,7 @@ public class FeatureExtraction {
 
 		@Override
 		public String toString() {
-			return String.format("%.02f:\t%s", support(), String.join(" AND\n\t\t",
+			return String.format("%.02f:\t%s", support(), String.join(" AND\n\t\t\t\t",
 					rules.stream().map(r -> (CharSequence) r.toString())::iterator));
 		}
 	}

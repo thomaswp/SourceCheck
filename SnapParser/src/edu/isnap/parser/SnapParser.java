@@ -347,7 +347,7 @@ public class SnapParser {
 
 			// If we're only concerned with snapshots, and this was a Block.grabbed action,
 			// we skip it if the next action (presumably a Block.snapped) produces a snapshot
-			// as well. This smooths out some of the quick delete/insert pairs into "moved" events.
+			// as well. This smoothes out some of the quick delete/insert pairs into "moved" events.
 			if (params.snapshotsOnly && action.snapshot != null &&
 					AttemptAction.BLOCK_GRABBED.equals(action.message)) {
 				if (i + 1 < actions.size() && actions.get(i + 1).snapshot != null) {
