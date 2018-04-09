@@ -38,6 +38,7 @@ public class FeatureExtraction {
 		Assignment out = CSC200.Squiral;
 		Map<AssignmentAttempt, List<Node>>  traceMap = loadAssignments(
 				CSC200.Squiral);
+//				Fall2017.Squiral);
 //				Fall2016.Squiral, Spring2017.Squiral);
 
 		List<List<Node>> correctTraces = traceMap.keySet().stream()
@@ -49,6 +50,7 @@ public class FeatureExtraction {
 				.map(trace -> trace.get(trace.size() - 1))
 				.collect(Collectors.toList());
 
+//		correctSubmissions.forEacach(node -> System.out.println(node.prettyPrint()));
 
 		int n = correctSubmissions.size();
 		System.out.println(n);
@@ -88,9 +90,10 @@ public class FeatureExtraction {
 		System.out.println();
 		if (snapshotIndex != nSnapshots) throw new RuntimeException();
 		pqRules.forEach(rule -> rule.calculateSnapshotCount());
-
-
 		removeDuplicateRules(pqRules);
+		pqRules.forEach(System.out::println);
+
+
 		List<Disjunction> decisions = extractDecisions(pqRules);
 		Collections.sort(decisions);
 
@@ -209,7 +212,7 @@ public class FeatureExtraction {
 		public State(byte[] array) { this.array = array; }
 	}
 
-	private static int[][][] getFeatureOrdersMatrix(List<List<Node>> traces,
+	protected static int[][][] getFeatureOrdersMatrix(List<List<Node>> traces,
 			List<PQGramRule> rules) {
 		int nRules = rules.size();
 		int nTraces = traces.size();
@@ -245,7 +248,7 @@ public class FeatureExtraction {
 		return orders;
 	}
 
-	private static double[][] getMeanFeautresOrderMatrix(int[][][] orders) {
+	protected static double[][] getMeanFeautresOrderMatrix(int[][][] orders) {
 		int nRules = orders[0].length;
 
 		double[][] mat = new double[nRules][nRules];
@@ -262,7 +265,7 @@ public class FeatureExtraction {
 		return mat;
 	}
 
-	private static double[] getFeautresOrderSD(int[][][] orders, double[][] means) {
+	protected static double[] getFeautresOrderSD(int[][][] orders, double[][] means) {
 		int nRules = orders[0].length;
 
 		double[] mat = new double[nRules];
@@ -387,25 +390,30 @@ public class FeatureExtraction {
 	}
 
 	private static double[][] createJaccardMatrix(List<? extends Rule> rules) {
-		int maxFollowers = rules.get(0).snapshotVector.length;
 		int nRules = rules.size();
 
 		double[][] jaccardMatrix = new double[nRules][nRules];
 		for (int i = 0; i < nRules; i++) {
 			Rule ruleA = rules.get(i);
-			byte[] fA = ruleA.snapshotVector;
 			for (int j = i + 1; j < nRules; j++) {
 				Rule ruleB = rules.get(j);
-				byte[] fB = ruleB.snapshotVector;
-				int intersect = 0;
-				for (int k = 0; k < maxFollowers; k++) {
-					if (fA[k] == 1 && fB[k] == 1) intersect++;
-				}
-				jaccardMatrix[i][j] = jaccardMatrix[j][i] =
-						(double)intersect / (ruleA.snapshotCount + ruleB.snapshotCount - intersect);
+				double value = jaccardDistance(ruleA, ruleB);
+				jaccardMatrix[i][j] = jaccardMatrix[j][i] = value;
 			}
 		}
 		return jaccardMatrix;
+	}
+
+	private static double jaccardDistance(Rule ruleA, Rule ruleB) {
+		byte[] fA = ruleA.snapshotVector;
+		byte[] fB = ruleB.snapshotVector;
+		int intersect = 0;
+		for (int k = 0; k < fA.length; k++) {
+			if (fA[k] == 1 && fB[k] == 1) intersect++;
+		}
+		double value = (double)intersect /
+				(ruleA.snapshotCount + ruleB.snapshotCount - intersect);
+		return value;
 	}
 
 	private static List<Disjunction> extractDecisions(List<PQGramRule> sortedRules) {
@@ -413,6 +421,10 @@ public class FeatureExtraction {
 		for (int i = sortedRules.size() - 1; i >= 0; i--) {
 			PQGramRule startRule = sortedRules.get(i);
 			Disjunction disjunction = new Disjunction(startRule);
+
+			if (startRule.toString().equals("0.67: [reportProduct, {var}, *]")) {
+				System.out.println("!");
+			}
 
 			while (disjunction.support() < 1) {
 				// TODO: config
@@ -437,7 +449,7 @@ public class FeatureExtraction {
 			}
 			// TODO: config
 			// We only want high-support decisions that have multiple choices
-			if (disjunction.support() >= 0.9 && disjunction.rules.size() > 1) {
+			if (disjunction.rules.size() > 1) {
 				decisions.add(disjunction);
 			}
 		}
@@ -522,6 +534,20 @@ public class FeatureExtraction {
 			addRule(startRule);
 		}
 
+		private double meanJaccard() {
+			int n = rules.size();
+			double totalJacc = 0;
+			int count = 1;
+			for (int i = 0; i < n; i++) {
+				PQGramRule ruleA = rules.get(i);
+				for (int j = i + 1; j < n; j++) {
+					totalJacc += FeatureExtraction.jaccardDistance(ruleA, rules.get(j));
+					count++;
+				}
+			}
+			return totalJacc / count;
+		}
+
 		public void addRule(PQGramRule rule) {
 			rules.add(rule);
 			followers.addAll(rule.followers);
@@ -533,8 +559,8 @@ public class FeatureExtraction {
 
 		@Override
 		public String toString() {
-			return String.format("%.02f:\t%s", support(), String.join(" OR\n\t\t\t\t",
-					rules.stream().map(r -> (CharSequence) r.toString())::iterator));
+			return String.format("%.02f:\t%s\n%.04f", support(), String.join(" OR\n\t\t\t\t",
+					rules.stream().map(r -> (CharSequence) r.toString())::iterator), meanJaccard());
 		}
 
 		@Override
@@ -585,6 +611,7 @@ public class FeatureExtraction {
 		public final int p, q;
 
 		private final int nEmpty;
+		private final int nonEmptyP, nonEmptyQ;
 
 		private PQGram(int p, int q, String[] tokens) {
 			if (tokens.length != p + q) {
@@ -596,6 +623,14 @@ public class FeatureExtraction {
 			this.tokens = tokens;
 
 			nEmpty = (int) Arrays.stream(tokens).filter(EMPTY::equals).count();
+			int pr = 0, qr = 0;
+			for (int i = 0 ; i < tokens.length; i++) {
+				if (EMPTY.equals(tokens[i])) continue;
+				if (i < p) pr++;
+				else if (i > p) qr++;
+			}
+			this.nonEmptyP = pr;
+			this.nonEmptyQ = qr;
 		}
 
 		@Override
@@ -629,8 +664,8 @@ public class FeatureExtraction {
 		}
 
 		private final static Comparator<PQGram> comparator =
-				Comparator.comparing((PQGram gram) -> gram.q)
-				.thenComparing(gram -> gram.p)
+				Comparator.comparing((PQGram gram) -> gram.nonEmptyQ)
+				.thenComparing(gram -> gram.nonEmptyP)
 				.thenComparing(gram -> -gram.nEmpty)
 				.thenComparing(gram -> gram.tokens[gram.p - 1]);
 
@@ -639,6 +674,7 @@ public class FeatureExtraction {
 			return comparator.compare(this, o);
 		}
 
+		// Not currently in use...
 		public boolean contains(PQGram o) {
 			if (o.q > q) return false;
 			if (o.p > p + 1) return false;
