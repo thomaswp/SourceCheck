@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 
 import org.json.JSONObject;
 
+import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.rating.HintOutcome.HintWithError;
 
@@ -101,5 +102,26 @@ public class HintSet {
 		}
 		set.finish();
 		return set;
+	}
+
+	public void printHints(GoldStandard standard) {
+		for (String requestID : hintMap.keySet()) {
+			System.out.println("RequestID: " + requestID);
+			List<HintOutcome> hints = hintMap.get(requestID);
+			if (hints.isEmpty()) continue;
+			List<TutorHint> validHints = standard.getValidHints(
+					hints.get(0).assignmentID, requestID);
+			if (validHints.isEmpty()) continue;
+			ASTNode from = validHints.get(0).from;
+			System.out.println(from.prettyPrint(true, config));
+			for (HintOutcome outcome : hints) {
+				ASTNode result = outcome.result;
+
+				System.out.println("Weight: " + outcome.weight());
+				System.out.println(ASTNode.diff(from, result, config, 2));
+				System.out.println("-----------------");
+			}
+			System.out.println("\n");
+		}
 	}
 }
