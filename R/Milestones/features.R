@@ -99,7 +99,7 @@ runMe <- function (nClusters) {
   snapshots <- snapshots | snapshots
   features <- read_csv("../../data/csc200/all/analysis/squiralHW/features.csv", col_names = TRUE)
   clusters <- go(snapshots, nClusters)
-  features$cluster <- sapply(features$id, function(i) clusterIndex(clusters, i))
+  features$cluster <- sapply(features$id, function(i) clusterIndex(clusters, i + 1))
   
   features <- features[order(features$cluster),]
   lastCluster <- 1

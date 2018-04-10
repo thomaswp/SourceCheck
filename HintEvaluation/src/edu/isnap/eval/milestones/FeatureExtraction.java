@@ -1,7 +1,10 @@
 package edu.isnap.eval.milestones;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -17,9 +20,16 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.EqualsBuilder;
+
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.util.map.ListMap;
@@ -38,6 +48,73 @@ import edu.isnap.parser.Store.Mode;
 public class FeatureExtraction {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
+//		writeFeatures();
+		readFeatures();
+	}
+
+	private static void readFeatures() throws IOException {
+		Assignment out = CSC200.Squiral;
+
+		Kryo kryo = new Kryo();
+		Input input = new Input(new FileInputStream(out.analysisDir() + "/features.cached"));
+		@SuppressWarnings("unchecked")
+		ArrayList<Rule> allRules = kryo.readObject(input, ArrayList.class);
+		input.close();
+
+		allRules.sort(Comparator.comparing(rule -> rule.index));
+
+		CSVParser parser = new CSVParser(
+				new FileReader(out.analysisDir() + "/feature-clusters.csv"),
+				CSVFormat.DEFAULT.withHeader());
+
+		Map<Integer, Feature> features = new TreeMap<>();
+
+		for (CSVRecord record : parser) {
+			int id = Integer.parseInt(record.get("id"));
+			int cluster = Integer.parseInt(record.get("cluster"));
+			String name = record.get("name");
+			Rule rule = allRules.get(id);
+			if (rule.index != id || !rule.toString().replaceAll("\\s", "")
+					.equals(name.replaceAll("\\s", ""))) {
+				parser.close();
+				System.out.println(rule.index);
+				throw new RuntimeException("Feautres out of date: " + id + " != " + rule);
+			}
+
+			Feature feature = features.get(cluster);
+			if (feature == null) features.put(cluster, feature = new Feature(rule, cluster));
+			else feature.addRule(rule);
+		}
+
+		parser.close();
+
+		features.values().forEach(System.out::println);
+
+		Spreadsheet spreadsheet = new Spreadsheet();
+		List<AssignmentAttempt> attempts = SelectSquiralProjects.selectAttempts();
+		int nActions = attempts.stream().mapToInt(attempt -> attempt.size()).sum();
+
+		System.out.println("Testing features: ");
+		PrintUpdater updater = new PrintUpdater(50, nActions);
+		for (AssignmentAttempt attempt : attempts) {
+			for (AttemptAction action : attempt) {
+				updater.incrementValue();
+				if (action.snapshot == null) continue;
+				spreadsheet.newRow();
+				spreadsheet.put("traceID", attempt.id);
+				spreadsheet.put("RowID", action.id);
+				Node node = SimpleNodeBuilder.toTree(action.snapshot, true);
+				Set<PQGram> pqGrams = extractPQGrams(node);
+				for (Feature feature : features.values()) {
+					spreadsheet.put("F" + feature.id, feature.isSatisfied(pqGrams) ? 1 : 0);
+				}
+			}
+		}
+		System.out.println();
+		spreadsheet.write(out.analysisDir() + "/feature-test.csv");
+	}
+
+	private static void writeFeatures() throws IOException {
 		Assignment out = CSC200.Squiral;
 		Map<AssignmentAttempt, List<Node>>  traceMap = loadAssignments(
 //				CSC200.Squiral);
@@ -154,16 +231,20 @@ public class FeatureExtraction {
 		for (int o = 0; o < allRules.size(); o++) {
 			int i = o; //order.get(o);
 			Rule rule = allRules.get(i);
-			System.out.printf("%02d: %s\n", i + 1, rule);
+			System.out.printf("%02d: %s\n", rule.index, rule);
 			spreadsheet.newRow();
 			spreadsheet.put("name", rule.toString());
-			spreadsheet.put("id", i + 1);
+			spreadsheet.put("id", rule.index);
 			spreadsheet.put("support", rule.support());
 			spreadsheet.put("orderSD", rule.orderSD);
 			spreadsheet.put("snapshotCount", rule.snapshotCount);
 		}
 		spreadsheet.write(out.analysisDir() + "/features.csv");
 
+		Kryo kryo = new Kryo();
+		Output output = new Output(new FileOutputStream(out.analysisDir() + "/features.cached"));
+		kryo.writeObject(output, allRules);
+		output.close();
 	}
 
 	private static void calculateSnapshotVectors(Map<PQGram, PQGramRule> pqRulesMap,
@@ -477,8 +558,10 @@ public class FeatureExtraction {
 
 		protected final List<Rule> duplicateRules = new ArrayList<>();
 
-		protected byte[] snapshotVector;
-		protected int snapshotCount;
+		protected transient byte[] snapshotVector;
+		protected transient int snapshotCount;
+
+		public abstract boolean isSatisfied(Set<PQGram> pqGrams);
 
 		public Rule(int maxFollowers) {
 			this.maxFollowers = maxFollowers;
@@ -513,12 +596,14 @@ public class FeatureExtraction {
 			int intersect = countIntersect(rule);
 			return (double)intersect / (followCount() + rule.followCount() - intersect);
 		}
+
 	}
 
 	public static class PQGramRule extends Rule implements Comparable<PQGramRule> {
 
 		public final PQGram pqGram;
 
+		@SuppressWarnings("unused")
 		private PQGramRule() {
 			this(null, 0);
 		}
@@ -538,6 +623,11 @@ public class FeatureExtraction {
 			int fc = Integer.compare(followCount(), o.followCount());
 			if (fc != 0) return fc;
 			return pqGram.compareTo(o.pqGram);
+		}
+
+		@Override
+		public boolean isSatisfied(Set<PQGram> pqGrams) {
+			return pqGrams.contains(pqGram);
 		}
 	}
 
@@ -595,36 +685,36 @@ public class FeatureExtraction {
 			return rules.stream().max(PQGramRule::compareTo).get().compareTo(
 					o.rules.stream().max(PQGramRule::compareTo).get());
 		}
+
+		@Override
+		public boolean isSatisfied(Set<PQGram> pqGrams) {
+			return rules.stream().anyMatch(rule -> rule.isSatisfied(pqGrams));
+		}
 	}
 
-	static class Conjunction extends Rule {
+	static class Feature {
 
-		private List<PQGramRule> rules = new ArrayList<>();
+		private final List<Rule> rules = new ArrayList<>();
+		private final int id;
 
-		private Conjunction() {
-			super(0);
-		}
-
-		public Conjunction(PQGramRule startRule) {
-			super(startRule.maxFollowers);
-			snapshotVector = new byte[startRule.snapshotVector.length];
-			followers.addAll(startRule.followers);
+		public Feature(Rule startRule, int id) {
+			this.id = id;
 			addRule(startRule);
 		}
 
-		public void addRule(PQGramRule rule) {
+		public void addRule(Rule rule) {
 			rules.add(rule);
-			followers.retainAll(rule.followers);
-			for (int i = 0; i < snapshotVector.length; i++) {
-				if (rule.snapshotVector[i] == 0) snapshotVector[i] = 0;
-			}
-			calculateSnapshotCount();
 		}
 
 		@Override
 		public String toString() {
-			return String.format("%.02f:\t%s", support(), String.join(" AND\n\t\t\t\t",
-					rules.stream().map(r -> (CharSequence) r.toString())::iterator));
+			return String.format("%02d:\t%s", id, String.join(" AND\n\t",
+					rules.stream()
+					.map(r -> (CharSequence) r.toString().replaceAll("\\s+", " "))::iterator));
+		}
+
+		public boolean isSatisfied(Set<PQGram> pqGrams) {
+			return rules.stream().allMatch(rule -> rule.isSatisfied(pqGrams));
 		}
 	}
 
@@ -640,7 +730,7 @@ public class FeatureExtraction {
 		private final int nonEmptyP, nonEmptyQ;
 
 		private PQGram() {
-			this(0, 0, null);
+			this(0, 0, new String[0]);
 		}
 
 		private PQGram(int p, int q, String[] tokens) {
