@@ -128,7 +128,7 @@ public class SolveEval {
 				while (count.get() > 0) {
 					try {
 						Thread.sleep(100);
-						updater.update((total - (double)count.get()) / total);
+						updater.updateTo((total - (double)count.get()) / total);
 					} catch (InterruptedException e) {
 						e.printStackTrace();
 					}
