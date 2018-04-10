@@ -26,6 +26,8 @@ import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
+import edu.isnap.datasets.Fall2016;
+import edu.isnap.datasets.Spring2017;
 import edu.isnap.datasets.aggregate.CSC200;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.hint.util.Spreadsheet;
@@ -37,9 +39,9 @@ public class FeatureExtraction {
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 		Assignment out = CSC200.Squiral;
 		Map<AssignmentAttempt, List<Node>>  traceMap = loadAssignments(
-				CSC200.Squiral);
+//				CSC200.Squiral);
 //				Fall2017.Squiral);
-//				Fall2016.Squiral, Spring2017.Squiral);
+				Fall2016.Squiral, Spring2017.Squiral);
 
 		List<List<Node>> correctTraces = traceMap.keySet().stream()
 				.filter(attempt -> attempt.grade != null && attempt.grade.average() == 1)
@@ -66,7 +68,7 @@ public class FeatureExtraction {
 			}
 		}
 
-		pqRulesMap.keySet().removeIf(gram -> pqRulesMap.get(gram).followers.size() < n * 0.2);
+		pqRulesMap.keySet().removeIf(gram -> pqRulesMap.get(gram).followers.size() < n * 0.1);
 		List<PQGramRule> pqRules = new ArrayList<>(pqRulesMap.values());
 		Collections.sort(pqRules);
 
@@ -98,7 +100,7 @@ public class FeatureExtraction {
 		Collections.sort(decisions);
 
 		// Wait until after decisions are extracted to remove low-support rules
-		double minSupport = 0.8;
+		double minSupport = 0.95;
 		decisions.removeIf(rule -> rule.support() < minSupport);
 		pqRules.removeIf(rule -> rule.support() < minSupport);
 
@@ -422,20 +424,17 @@ public class FeatureExtraction {
 			PQGramRule startRule = sortedRules.get(i);
 			Disjunction disjunction = new Disjunction(startRule);
 
-			if (startRule.toString().equals("0.67: [reportProduct, {var}, *]")) {
-				System.out.println("!");
-			}
 
 			while (disjunction.support() < 1) {
 				// TODO: config
-				double bestRatio = 0.4;
+				double bestRatio = 0.2;
 				PQGramRule bestRule = null;
 				for (int j = i - 1; j >= 0; j--) {
 					PQGramRule candidate = sortedRules.get(j);
 					int intersect = disjunction.countIntersect(candidate);
 					// TODO: config
 					// Ignore tiny overlap - there can always be a fluke
-					if (intersect <= candidate.followCount() * 0.15) intersect = 0;
+					if (intersect <= candidate.followCount() * 0.05) intersect = 0;
 					double ratio = (double) intersect / candidate.followCount();
 					if (ratio < bestRatio) {
 						bestRatio = ratio;
@@ -449,7 +448,7 @@ public class FeatureExtraction {
 			}
 			// TODO: config
 			// We only want high-support decisions that have multiple choices
-			if (disjunction.rules.size() > 1) {
+			if (disjunction.rules.size() > 1 && disjunction.meanJaccard() > 0) {
 				decisions.add(disjunction);
 			}
 		}
@@ -559,8 +558,8 @@ public class FeatureExtraction {
 
 		@Override
 		public String toString() {
-			return String.format("%.02f:\t%s\n%.04f", support(), String.join(" OR\n\t\t\t\t",
-					rules.stream().map(r -> (CharSequence) r.toString())::iterator), meanJaccard());
+			return String.format("%.02f: %s", support(), String.join("  -OR-  ",
+					rules.stream().map(r -> (CharSequence) r.toString())::iterator));
 		}
 
 		@Override
@@ -609,6 +608,7 @@ public class FeatureExtraction {
 
 		public final String[] tokens;
 		public final int p, q;
+		public int count = 1;
 
 		private final int nEmpty;
 		private final int nonEmptyP, nonEmptyQ;
@@ -642,6 +642,7 @@ public class FeatureExtraction {
 			return new EqualsBuilder()
 					.append(p, rhs.p)
 					.append(q, rhs.q)
+					.append(count, rhs.count)
 					.append(tokens, rhs.tokens)
 					.isEquals();
 		}
@@ -652,6 +653,7 @@ public class FeatureExtraction {
 			return new HashCodeBuilder(5, 17)
 					.append(p)
 					.append(q)
+					.append(count)
 					.append(tokens)
 					.toHashCode();
 		}
@@ -660,12 +662,13 @@ public class FeatureExtraction {
 		public String toString() {
 			String[] out = Arrays.copyOf(tokens, tokens.length);
 			out[p - 1] = "{" + out[p - 1]  + "}";
-			return Arrays.toString(out);
+			return Arrays.toString(out) + (count > 1 ? (" x" + count) : "");
 		}
 
 		private final static Comparator<PQGram> comparator =
 				Comparator.comparing((PQGram gram) -> gram.nonEmptyQ)
 				.thenComparing(gram -> gram.nonEmptyP)
+				.thenComparing(gram -> gram.count)
 				.thenComparing(gram -> -gram.nEmpty)
 				.thenComparing(gram -> gram.tokens[gram.p - 1]);
 
@@ -716,13 +719,13 @@ public class FeatureExtraction {
 			return node.type();
 		}
 
-		public static List<PQGram> extractFromNode(Node node, int p, int q) {
-			List<PQGram> list = new ArrayList<>();
-			extractFromNode(node, p, q, list);
-			return list;
+		public static Set<PQGram> extractFromNode(Node node, int p, int q) {
+			Set<PQGram> set = new HashSet<>();
+			extractFromNode(node, p, q, set);
+			return set;
 		}
 
-		private static void extractFromNode(Node node, int p, int q, List<PQGram> list) {
+		private static void extractFromNode(Node node, int p, int q, Set<PQGram> set) {
 			String[] tokens = new String[p + q];
 			Arrays.fill(tokens, EMPTY);
 
@@ -733,7 +736,7 @@ public class FeatureExtraction {
 			}
 
 			if (node.children.size() == 0) {
-				list.add(new PQGram(p, q, tokens));
+				set.add(new PQGram(p, q, tokens));
 				return;
 			}
 
@@ -746,11 +749,12 @@ public class FeatureExtraction {
 							node.children.get(childIndex) : null;
 					tokens[tokenIndex] = labelForNode(child);
 				}
-				list.add(new PQGram(p, q, tokens));
+				PQGram pqGram = new PQGram(p, q, tokens);
+				while (!set.add(pqGram)) pqGram.count++;
 			}
 
 			for (Node child : node.children) {
-				extractFromNode(child, p, q, list);
+				extractFromNode(child, p, q, set);
 			}
 		}
 	}

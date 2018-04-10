@@ -82,8 +82,8 @@ go <- function(snapshots, nClusters = 10) {
     }
     
     print(nRules)
-    print(score)
-    print(bestJacc)
+    print(score / nrow(snapshots))
+    # print(bestJacc)
     cat("\n")
   }
   plot(scores, col=(scores==redScore)+1)
