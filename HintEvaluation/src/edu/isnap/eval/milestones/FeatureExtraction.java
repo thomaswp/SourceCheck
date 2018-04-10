@@ -29,6 +29,7 @@ import edu.isnap.dataset.AttemptAction;
 import edu.isnap.datasets.Fall2016;
 import edu.isnap.datasets.Spring2017;
 import edu.isnap.datasets.aggregate.CSC200;
+import edu.isnap.eval.util.PrintUpdater;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.parser.SnapParser;
@@ -74,40 +75,24 @@ public class FeatureExtraction {
 
 		List<List<Node>> allTraces = new ArrayList<>(traceMap.values());
 
-		int nSnapshots = allTraces.stream().mapToInt(list -> list.size()).sum();
-		pqRules.forEach(rule -> rule.snapshotVector = new byte[nSnapshots]);
-
-		int snapshotIndex = 0;
-		for (List<Node> trace : allTraces) {
-			for (Node snapshot : trace) {
-				for (PQGram gram : extractPQGrams(snapshot)) {
-					PQGramRule rule = pqRulesMap.get(gram);
-					if (rule == null) continue;
-					rule.snapshotVector[snapshotIndex] = 1;
-				}
-				snapshotIndex++;
-				if (snapshotIndex % (nSnapshots / 50) == 0) System.out.print("+");
-			}
-		}
-		System.out.println();
-		if (snapshotIndex != nSnapshots) throw new RuntimeException();
+		calculateSnapshotVectors(pqRulesMap, allTraces);
 		pqRules.forEach(rule -> rule.calculateSnapshotCount());
-		removeDuplicateRules(pqRules);
-		pqRules.forEach(System.out::println);
+		removeDuplicateRules(pqRules, 0.95, 0.975);
+//		pqRules.forEach(System.out::println);
 
 
 		List<Disjunction> decisions = extractDecisions(pqRules);
 		Collections.sort(decisions);
+		removeDuplicateRules(decisions, 0.85, 0.90);
 
 		// Wait until after decisions are extracted to remove low-support rules
-		double minSupport = 0.95;
-		decisions.removeIf(rule -> rule.support() < minSupport);
-		pqRules.removeIf(rule -> rule.support() < minSupport);
+		decisions.removeIf(rule -> rule.support() < 0.95);
+		pqRules.removeIf(rule -> rule.support() < 0.90);
 
 		List<Rule> allRules = new ArrayList<>();
 		allRules.addAll(decisions);
 		allRules.addAll(pqRules);
-		removeDuplicateRules(allRules);
+		removeDuplicateRules(allRules, 0.95, 0.975);
 
 		for (int i = 0; i < allRules.size(); i++) allRules.get(i).index = i;
 
@@ -143,9 +128,8 @@ public class FeatureExtraction {
 		writeRuleSnapshotsMatrix(pqRules, out.analysisDir() + "/feature-snapshots.csv");
 
 
-//		double[][] jaccardMatrix = removeDuplicateRules(allRules);
-//		if (jaccardMatrix.length != allRules.size()) throw new RuntimeException();
-//		writeMatrix(jaccardMatrix, out.analysisDir() + "/feature-jaccard.csv");
+		double[][] jaccardMatrix = createJaccardMatrix(allRules);
+		writeMatrix(jaccardMatrix, out.analysisDir() + "/feature-jaccard.csv");
 
 		double[][] dominateMatrix = createDominateMatrix(allRules);
 		writeMatrix(dominateMatrix, out.analysisDir() + "/feature-dominate.csv");
@@ -180,6 +164,30 @@ public class FeatureExtraction {
 		}
 		spreadsheet.write(out.analysisDir() + "/features.csv");
 
+	}
+
+	private static void calculateSnapshotVectors(Map<PQGram, PQGramRule> pqRulesMap,
+			List<List<Node>> allTraces) {
+		int nSnapshots = allTraces.stream().mapToInt(list -> list.size()).sum();
+		pqRulesMap.values().forEach(rule -> rule.snapshotVector = new byte[nSnapshots]);
+
+		System.out.println("Calculating Vectors:");
+		PrintUpdater updater = new PrintUpdater(50, nSnapshots);
+
+		int snapshotIndex = 0;
+		for (List<Node> trace : allTraces) {
+			for (Node snapshot : trace) {
+				for (PQGram gram : extractPQGrams(snapshot)) {
+					PQGramRule rule = pqRulesMap.get(gram);
+					if (rule == null) continue;
+					rule.snapshotVector[snapshotIndex] = 1;
+				}
+				snapshotIndex++;
+				updater.incrementValue();
+			}
+		}
+		System.out.println();
+		if (snapshotIndex != nSnapshots) throw new RuntimeException();
 	}
 
 	private static Map<AssignmentAttempt, List<Node>> loadAssignments(Assignment... assignments) {
@@ -334,7 +342,8 @@ public class FeatureExtraction {
 		return pqGrams;
 	}
 
-	private static double[][] removeDuplicateRules(List<? extends Rule> rules) {
+	private static double[][] removeDuplicateRules(List<? extends Rule> rules, double maxSupport,
+			double maxJaccard) {
 		int maxFollowers = rules.get(0).snapshotVector.length;
 		int nRules = rules.size();
 
@@ -344,7 +353,7 @@ public class FeatureExtraction {
 			Rule deleteCandidate = rules.get(i);
 
 			// Remove any rule with a very high support, since these will be trivially true
-			if (deleteCandidate.snapshotCount >= maxFollowers * 0.95) {
+			if (deleteCandidate.snapshotCount >= maxFollowers * maxSupport) {
 				toRemove.add(deleteCandidate);
 //				System.out.println("-- " + deleteCandidate);
 //				System.out.println();
@@ -353,7 +362,7 @@ public class FeatureExtraction {
 
 			for (int j = nRules - 1; j > i; j--) {
 				Rule supercedeCandidate = rules.get(j);
-				if (jaccardMatrix[i][j] >= 0.975) {
+				if (jaccardMatrix[i][j] >= maxJaccard) {
 //					System.out.println("- " + deleteCandidate + "\n+ " + supercedeCandidate);
 //					System.out.println();
 					supercedeCandidate.duplicateRules.add(deleteCandidate);
@@ -394,6 +403,9 @@ public class FeatureExtraction {
 	private static double[][] createJaccardMatrix(List<? extends Rule> rules) {
 		int nRules = rules.size();
 
+		System.out.printf("Creating jaccard matrix %dx%d:\n", nRules, nRules);
+		PrintUpdater updater = new PrintUpdater(50, nRules * (nRules - 2) / 2);
+
 		double[][] jaccardMatrix = new double[nRules][nRules];
 		for (int i = 0; i < nRules; i++) {
 			Rule ruleA = rules.get(i);
@@ -401,8 +413,10 @@ public class FeatureExtraction {
 				Rule ruleB = rules.get(j);
 				double value = jaccardDistance(ruleA, ruleB);
 				jaccardMatrix[i][j] = jaccardMatrix[j][i] = value;
+				updater.incrementValue();
 			}
 		}
+		System.out.println();
 		return jaccardMatrix;
 	}
 
@@ -558,7 +572,7 @@ public class FeatureExtraction {
 
 		@Override
 		public String toString() {
-			return String.format("%.02f: %s", support(), String.join("  -OR-  ",
+			return String.format("%.02f:\t%s", support(), String.join(" OR\n\t\t\t\t",
 					rules.stream().map(r -> (CharSequence) r.toString())::iterator));
 		}
 

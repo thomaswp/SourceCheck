@@ -64,7 +64,7 @@ go <- function(snapshots, nClusters = 10) {
     bestJacc <- max(jaccMat)
     bestIndex <- which(jaccMat == bestJacc)[[1]] - 1
     r <- bestIndex %% nRules + 1
-    c <- bestIndex / nRules + 1
+    c <- bestIndex %/% nRules + 1
     
     newRule <- rules[,r] & rules[,c]
     rules <- rules[,c(-r, -c)]
