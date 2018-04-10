@@ -109,4 +109,6 @@ runMe <- function (nClusters) {
     lastCluster <- cluster
     cat(sprintf("%02d %02d: %s\n", features$cluster[i], features$id[i], features$name[i]))
   }
+  
+  write.csv(features, "../../data/csc200/all/analysis/squiralHW/feature-clusters.csv")
 }

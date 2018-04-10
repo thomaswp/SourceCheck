@@ -519,6 +519,10 @@ public class FeatureExtraction {
 
 		public final PQGram pqGram;
 
+		private PQGramRule() {
+			this(null, 0);
+		}
+
 		public PQGramRule(PQGram pqGram, int maxFollowers) {
 			super(maxFollowers);
 			this.pqGram = pqGram;
@@ -540,6 +544,10 @@ public class FeatureExtraction {
 	static class Disjunction extends Rule implements Comparable<Disjunction> {
 
 		private List<PQGramRule> rules = new ArrayList<>();
+
+		private Disjunction() {
+			super(0);
+		}
 
 		public Disjunction(PQGramRule startRule) {
 			super(startRule.maxFollowers);
@@ -593,6 +601,10 @@ public class FeatureExtraction {
 
 		private List<PQGramRule> rules = new ArrayList<>();
 
+		private Conjunction() {
+			super(0);
+		}
+
 		public Conjunction(PQGramRule startRule) {
 			super(startRule.maxFollowers);
 			snapshotVector = new byte[startRule.snapshotVector.length];
@@ -626,6 +638,10 @@ public class FeatureExtraction {
 
 		private final int nEmpty;
 		private final int nonEmptyP, nonEmptyQ;
+
+		private PQGram() {
+			this(0, 0, null);
+		}
 
 		private PQGram(int p, int q, String[] tokens) {
 			if (tokens.length != p + q) {
