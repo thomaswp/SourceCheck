@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -31,6 +32,8 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
+import distance.RTED_InfoTree_Opt;
+import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.dataset.Assignment;
@@ -44,12 +47,110 @@ import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
+import util.LblTree;
 
 public class FeatureExtraction {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 //		writeFeatures();
-		readFeatures();
+//		readFeatures();
+//		writeDistance();
+		readDistance();
+	}
+
+	private static void writeDistance() throws IOException {
+		Map<AssignmentAttempt, List<Node>> traceMap =
+				loadAssignments(Fall2016.Squiral, Spring2017.Squiral);
+
+		Random rand = new Random(1234);
+		List<Node> samples = new ArrayList<>();
+		for (List<Node> list : traceMap.values()) {
+			for (int i = 0; i < 5 && !list.isEmpty(); i++) {
+				samples.add(list.remove(rand.nextInt(list.size())));
+			}
+		}
+
+		int nSamples = samples.size();
+		System.out.println(nSamples);
+
+		List<LblTree> trees = samples.stream().map(Node::toTree).collect(Collectors.toList());
+
+		double[][] distances = new double[nSamples][nSamples];
+		RTED_InfoTree_Opt rted = new RTED_InfoTree_Opt(1, 1, 1);
+		PrintUpdater updater = new PrintUpdater(50, nSamples * nSamples);
+		for (int i = 0; i < nSamples; i++) {
+			LblTree treeA = trees.get(i);
+			for (int j = i + 1; j < nSamples; j++) {
+				LblTree treeB = trees.get(j);
+
+				distances[i][j] = distances[j][i] = rted.nonNormalizedTreeDist(treeA, treeB);
+				updater.addValue(2);
+			}
+		}
+		System.out.println();
+		writeMatrix(distances, CSC200.Squiral.analysisDir() + "/teds.csv");
+
+		Spreadsheet spreadsheet = new Spreadsheet();
+		for (int i = 0; i < samples.size(); i++) {
+			spreadsheet.newRow();
+			Node node = samples.get(i);
+			spreadsheet.put("id", i);
+			String json = node.toASTNode().toJSON().toString();
+			spreadsheet.put("node", json);
+		}
+		spreadsheet.write(CSC200.Squiral.analysisDir() + "/samples.csv");
+	}
+
+	private static void readDistance() throws IOException {
+		Assignment out = CSC200.Squiral;
+
+		CSVParser parser = new CSVParser(
+				new FileReader(out.analysisDir() + "/samples-clustered.csv"),
+				CSVFormat.DEFAULT.withHeader());
+
+		Map<LblTree, Integer> clusters = new HashMap<>();
+		for (CSVRecord record : parser) {
+//			int id = Integer.parseInt(record.get("id"));
+			int cluster = Integer.parseInt(record.get("cluster"));
+			String json = record.get("node");
+			ASTNode astNode = ASTNode.parse(json);
+			clusters.put(toTree(astNode), cluster);
+		}
+
+		parser.close();
+
+		Spreadsheet spreadsheet = new Spreadsheet();
+		List<AssignmentAttempt> attempts = SelectSquiralProjects.selectAttempts();
+		int nActions = attempts.stream().mapToInt(attempt -> attempt.size()).sum();
+
+		RTED_InfoTree_Opt rted = new RTED_InfoTree_Opt(1, 1, 1);
+		System.out.println("Testing features: ");
+		PrintUpdater updater = new PrintUpdater(50, nActions);
+		for (AssignmentAttempt attempt : attempts) {
+			for (AttemptAction action : attempt) {
+				updater.incrementValue();
+				if (action.snapshot == null) continue;
+				spreadsheet.newRow();
+				spreadsheet.put("traceID", attempt.id);
+				spreadsheet.put("RowID", action.id);
+				Node node = SimpleNodeBuilder.toTree(action.snapshot, true);
+
+				LblTree tree = node.toTree();
+				LblTree bestTree = clusters.keySet().stream().min(
+						Comparator.comparing(t -> rted.nonNormalizedTreeDist(tree, t))).get();
+				int cluster = clusters.get(bestTree);
+				spreadsheet.put("cluster", cluster);
+			}
+		}
+		System.out.println();
+		spreadsheet.write(out.analysisDir() + "/feature-distance.csv");
+	}
+
+	private static LblTree toTree(ASTNode node)  {
+		LblTree tree = new LblTree(node.type, 0);
+		tree.setUserObject(node);
+		for (ASTNode child : node.children()) tree.add(toTree(child));
+		return tree;
 	}
 
 	private static void readFeatures() throws IOException {

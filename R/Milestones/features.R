@@ -5,6 +5,7 @@ library(rlist)
 oldAnalysis <- function() {
   library(cluster)
   library(tsne)
+  library(factoextra)
   
   jaccMat <- as.matrix(read_csv("../../data/csc200/all/analysis/squiralHW/feature-jaccard.csv", col_names = FALSE))
   jaccMat <- 1 - jaccMat
@@ -17,12 +18,18 @@ oldAnalysis <- function() {
   # disMat <- (jaccMat + orderMat) / 2
   disMat <- jaccMat
   
+  disMat <- as.matrix(read_csv("../../data/csc200/all/analysis/squiralHW/teds.csv", col_names = FALSE))
+  
+  samples <-read_csv("../../data/csc200/all/analysis/squiralHW/samples.csv")
+  
   fviz_nbclust(disMat, pam, "gap")
   
   embed <- tsne(disMat, k=2, max_iter = 1000, epoch=500)
   embed1d <- tsne(disMat, k=1, max_iter = 1000, epoch=500)
   
-  clusters <- pam(disMat, 7)
+  clusters <- pam(disMat, 40)
+  samples$cluster <- as.factor(clusters$clustering)
+  write.csv(samples, "../../data/csc200/all/analysis/squiralHW/samples-clustered.csv")
   
   features$x <- embed[,1]
   features$y <- embed[,2]

@@ -55,11 +55,17 @@ compareMatsI <- function(auto, tutor, i) {
   compareMats(tutor$state[tutor$traceID == traceID], auto$state[auto$traceID == traceID])
 }
 
-confMat <- function(statesTut, statesAuto) {
-  mat1 <- equalsMatrix(statesAuto)
+confMatRand <- function(statesTut) {
+  size <- length(statesTut)
+  mat1 <- matrix(nrow=size, ncol=size)
+  for (i in 1:size) {
+    for (j in 1:size) {
+      mat1[i,j] <- round(runif(1))
+    }
+  }
   mat2 <- equalsMatrix(statesTut)
-  mat3 <- (mat1 * 2) + mat2
-  conf <- table(mat3)
+  mat3 <- mat1 * 2 + mat2
+  conf <- sapply(0:3, function(i) sum(mat3==i))
   conf <- conf / sum(conf)
   names(conf) <- c("TN", "FN", "FP", "TP")
   frame <- data.frame(tn=conf["TN"], fn=conf["FN"], fp=conf["FP"], tp=conf["TP"])
@@ -67,24 +73,24 @@ confMat <- function(statesTut, statesAuto) {
   frame
 }
 
-confMatI <- function(auto, tutor, i) {
+confMat <- function(statesTut, statesAuto) {
+  mat1 <- equalsMatrix(statesAuto)
+  mat2 <- equalsMatrix(statesTut)
+  mat3 <- (mat1 * 2) + mat2
+  conf <- sapply(0:3, function(i) sum(mat3==i))
+  conf <- conf / sum(conf)
+  names(conf) <- c("TN", "FN", "FP", "TP")
+  frame <- data.frame(tn=conf["TN"], fn=conf["FN"], fp=conf["FP"], tp=conf["TP"])
+  rownames(frame) <- c()
+  frame
+}
+
+confMatI <- function(tutor, auto, i) {
   traceID <- unique(auto$traceID)[i]
   confMat(tutor$state[tutor$traceID == traceID], auto$state[auto$traceID == traceID])
 }
 
-run <- function() {
-  auto <- read_csv("../../data/csc200/all/analysis/squiralHW/feature-test.csv")
-  tutor <- read_csv("../../data/csc200/all/analysis/squiralHW/feature-human.csv")
-  
-  auto <- filterFeatures(auto)
-  tutor <- filterFeatures(tutor)
-  
-  auto$traceID <- substr(auto$traceID, 1, 8)
-  tutor$traceID <- substr(tutor$traceID, 1, 8)
-  
-  auto$state <- getStates(auto)
-  tutor$state <- getStates(tutor)
-  
+getStats <- function(tutor, auto) {
   stats <- data.frame(tn=numeric(0), fn=numeric(0), fp=numeric(0), tp=numeric(0))
   for (traceID in unique(auto$traceID)) {
     row <- confMat(tutor$state[tutor$traceID == traceID], auto$state[auto$traceID == traceID])
@@ -94,8 +100,44 @@ run <- function() {
   stats$rec <- stats$tp / (stats$tp + stats$fn)
   stats$f1 <- 2 / (1/stats$prec + 1/stats$rec)
   stats
+}
+
+getStatsRand <- function(tutor) {
+  stats <- data.frame(tn=numeric(0), fn=numeric(0), fp=numeric(0), tp=numeric(0))
+  for (traceID in unique(auto$traceID)) {
+    row <- confMatRand(tutor$state[tutor$traceID == traceID])
+    stats <- rbind(stats, row)
+  }
+  stats$prec <- stats$tp / (stats$tp + stats$fp)
+  stats$rec <- stats$tp / (stats$tp + stats$fn)
+  stats$f1 <- 2 / (1/stats$prec + 1/stats$rec)
+  stats
+}
+
+fixData <- function(data) {
+  data <- filterFeatures(data)
+  data$traceID <- substr(data$traceID, 1, 8)
+  data$state <- getStates(data)
+  data
+}
+
+run <- function() {
+  shapes <- fixData(read_csv("../../data/csc200/all/analysis/squiralHW/feature-test.csv"))
+  distance <- fixData(read_csv("../../data/csc200/all/analysis/squiralHW/feature-distance.csv"))
+  tutor <- fixData(read_csv("../../data/csc200/all/analysis/squiralHW/feature-human.csv"))
   
-  mean(stats$f1)
-  mean(stats$prec)
-  mean(stats$rec)
+  statsShapes <- getStats(tutor, shapes)
+  mean(statsShapes$f1)
+  mean(statsShapes$prec)
+  mean(statsShapes$rec)
+  
+  statsDis <- getStats(tutor, distance)
+  mean(statsDis$f1)
+  mean(statsDis$prec)
+  mean(statsDis$rec)
+  
+  statsRand <- getStatsRand(tutor)
+  mean(statsRand$f1)
+  mean(statsRand$prec)
+  mean(statsRand$rec)
 }
