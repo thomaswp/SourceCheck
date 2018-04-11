@@ -40,6 +40,7 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.datasets.Fall2016;
+import edu.isnap.datasets.Spring2016;
 import edu.isnap.datasets.Spring2017;
 import edu.isnap.datasets.aggregate.CSC200;
 import edu.isnap.eval.util.PrintUpdater;
@@ -53,9 +54,9 @@ public class FeatureExtraction {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 //		writeFeatures();
-//		readFeatures();
+		readFeatures();
 //		writeDistance();
-		readDistance();
+//		readDistance();
 	}
 
 	private static void writeDistance() throws IOException {
@@ -65,7 +66,7 @@ public class FeatureExtraction {
 		Random rand = new Random(1234);
 		List<Node> samples = new ArrayList<>();
 		for (List<Node> list : traceMap.values()) {
-			for (int i = 0; i < 5 && !list.isEmpty(); i++) {
+			for (int i = 0; i < 25 && !list.isEmpty(); i++) {
 				samples.add(list.remove(rand.nextInt(list.size())));
 			}
 		}
@@ -112,6 +113,9 @@ public class FeatureExtraction {
 		for (CSVRecord record : parser) {
 //			int id = Integer.parseInt(record.get("id"));
 			int cluster = Integer.parseInt(record.get("cluster"));
+			String isMedoid = record.get("medoid");
+			// Use only the medoids for speed
+			if (!isMedoid.equals("TRUE")) continue;
 			String json = record.get("node");
 			ASTNode astNode = ASTNode.parse(json);
 			clusters.put(toTree(astNode), cluster);
@@ -220,7 +224,8 @@ public class FeatureExtraction {
 		Map<AssignmentAttempt, List<Node>>  traceMap = loadAssignments(
 //				CSC200.Squiral);
 //				Fall2017.Squiral);
-				Fall2016.Squiral, Spring2017.Squiral);
+//				Spring2016.Squiral);
+				Spring2016.Squiral, Fall2016.Squiral, Spring2017.Squiral);
 
 		List<List<Node>> correctTraces = traceMap.keySet().stream()
 				.filter(attempt -> attempt.grade != null && attempt.grade.average() == 1)
@@ -231,7 +236,7 @@ public class FeatureExtraction {
 				.map(trace -> trace.get(trace.size() - 1))
 				.collect(Collectors.toList());
 
-//		correctSubmissions.forEacach(node -> System.out.println(node.prettyPrint()));
+//		correctSubmissions.forEach(node -> System.out.println(node.id + "\n" + node.prettyPrint()));
 
 		int n = correctSubmissions.size();
 		System.out.println(n);
@@ -256,7 +261,7 @@ public class FeatureExtraction {
 		calculateSnapshotVectors(pqRulesMap, allTraces);
 		pqRules.forEach(rule -> rule.calculateSnapshotCount());
 		removeDuplicateRules(pqRules, 0.95, 0.975);
-//		pqRules.forEach(System.out::println);
+		pqRules.forEach(System.out::println);
 
 
 		List<Disjunction> decisions = extractDecisions(pqRules);

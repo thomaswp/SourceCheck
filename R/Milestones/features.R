@@ -7,37 +7,27 @@ oldAnalysis <- function() {
   library(tsne)
   library(factoextra)
   
-  jaccMat <- as.matrix(read_csv("../../data/csc200/all/analysis/squiralHW/feature-jaccard.csv", col_names = FALSE))
-  jaccMat <- 1 - jaccMat
-  
-  domMat <- as.matrix(read_csv("../../data/csc200/all/analysis/squiralHW/feature-dominate.csv", col_names = FALSE))
-  
-  orderMat <- as.matrix(read_csv("../../data/csc200/all/analysis/squiralHW/feature-order.csv", col_names = FALSE))
-  orderMat <- abs(orderMat)
-  
-  # disMat <- (jaccMat + orderMat) / 2
-  disMat <- jaccMat
-  
   disMat <- as.matrix(read_csv("../../data/csc200/all/analysis/squiralHW/teds.csv", col_names = FALSE))
   
   samples <-read_csv("../../data/csc200/all/analysis/squiralHW/samples.csv")
   
-  fviz_nbclust(disMat, pam, "gap")
+  pamD <- function(...) {
+    args <- list(...)
+    args["diss"] = T
+    do.call(pam, args)
+  }
+  fviz_nbclust(disMat, pamD, k.max=50)
   
-  embed <- tsne(disMat, k=2, max_iter = 1000, epoch=500)
-  embed1d <- tsne(disMat, k=1, max_iter = 1000, epoch=500)
-  
-  clusters <- pam(disMat, 40)
+  clusters <- pam(disMat, 41, diss=T)
   samples$cluster <- as.factor(clusters$clustering)
+  samples$name <- paste0("X", samples$id + 1)
+  samples$medoid <- samples$name %in% clusters$medoids
   write.csv(samples, "../../data/csc200/all/analysis/squiralHW/samples-clustered.csv")
   
-  features$x <- embed[,1]
-  features$y <- embed[,2]
-  features$cluster <- as.factor(clusters$clustering)
-  ggplot(features, aes(x=x, y=y, color=cluster)) + geom_point(size=3)
-  
-  features$z <- embed1d
-  ggplot(features, aes(x=z, y=0, color=cluster)) + geom_point(size=3)
+  embed <- tsne(disMat, k=2, max_iter = 200, epoch=100)
+  samples$x <- embed[,1]
+  samples$y <- embed[,2]
+  ggplot(samples, aes(x=x, y=y, color=cluster, shape=medoid)) + geom_point(size=3)
 }
 
 jacc <- function(x, y) sum(x & y) / sum(x | y)
