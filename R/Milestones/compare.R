@@ -276,7 +276,9 @@ window <- 1000
 run <- function() {
   shapes11 <- fixData(read.csv("../../data/csc200/all/analysis/squiralHW/feature-shapes-S16S17-11.csv"))
   shapes1 <- fixData(read.csv("../../data/csc200/all/analysis/squiralHW/feature-shapes-S16S17-01.csv"))
+  shapes4 <- fixData(read.csv("../../data/csc200/all/analysis/squiralHW/feature-shapes-S16S17-04.csv"))
   shapesAll <- fixData(read.csv("../../data/csc200/all/analysis/squiralHW/feature-shapes-S16S17-45.csv"))
+  shapesND9 <- fixData(read.csv("../../data/csc200/all/analysis/squiralHW/feature-shapes-S16S17-09-ND.csv"))
   distance41 <- fixData(read.csv("../../data/csc200/all/analysis/squiralHW/feature-distance-S16S17-41.csv"))
   distance20 <- fixData(read.csv("../../data/csc200/all/analysis/squiralHW/feature-distance-S16S17-20.csv"))
   tutor <- fixData(read.csv("../../data/csc200/all/analysis/squiralHW/feature-human.csv"))

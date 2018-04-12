@@ -52,10 +52,10 @@ import util.LblTree;
 public class FeatureExtraction {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
-//		writeFeatures();
-//		readFeatures();
+//		writeFeatures(true);
+		readFeatures();
 //		writeDistance();
-		readDistance();
+//		readDistance();
 	}
 
 	private static Assignment out = CSC200.Squiral;
@@ -193,11 +193,13 @@ public class FeatureExtraction {
 
 		Map<Integer, Feature> features = new TreeMap<>();
 
+		boolean disjunct = false;
 		for (CSVRecord record : parser) {
 			int id = Integer.parseInt(record.get("id"));
 			int cluster = Integer.parseInt(record.get("cluster"));
 			String name = record.get("name");
 			Rule rule = allRules.get(id);
+			disjunct |= rule instanceof Disjunction;
 			if (rule.index != id || !rule.toString().replaceAll("\\s", "")
 					.equals(name.replaceAll("\\s", ""))) {
 				parser.close();
@@ -235,11 +237,12 @@ public class FeatureExtraction {
 			}
 		}
 		System.out.println();
-		spreadsheet.write(String.format("%s/feature-shapes-%s-%02d.csv",
-				out.analysisDir(), dataName(), features.size()));
+		spreadsheet.write(String.format("%s/feature-shapes-%s-%02d%s.csv",
+				out.analysisDir(), dataName(), features.size(),
+				disjunct ? "" : "-ND"));
 	}
 
-	private static void writeFeatures() throws IOException {
+	private static void writeFeatures(boolean disjunct) throws IOException {
 		Map<AssignmentAttempt, List<Node>> traceMap = loadTrainingData();
 
 		List<List<Node>> correctTraces = traceMap.keySet().stream()
@@ -279,12 +282,15 @@ public class FeatureExtraction {
 		pqRules.forEach(System.out::println);
 
 
-		List<Disjunction> decisions = extractDecisions(pqRules);
-		Collections.sort(decisions);
-		removeDuplicateRules(decisions, 0.85, 0.90);
+		List<Disjunction> decisions = new ArrayList<>();
+		if (disjunct) {
+			decisions.addAll(extractDecisions(pqRules));
+			Collections.sort(decisions);
+			removeDuplicateRules(decisions, 0.85, 0.90);
 
-		// Wait until after decisions are extracted to remove low-support rules
-		decisions.removeIf(rule -> rule.support() < 0.95);
+			// Wait until after decisions are extracted to remove low-support rules
+			decisions.removeIf(rule -> rule.support() < 0.95);
+		}
 		pqRules.removeIf(rule -> rule.support() < 0.90);
 
 		List<Rule> allRules = new ArrayList<>();
