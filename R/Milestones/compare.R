@@ -221,6 +221,7 @@ fixData <- function(data, filter=T) {
   if (filter) data <- filterFeaturesWindow(data)
   data$traceID <- substr(data$traceID, 1, 8)
   data$state <- getStates(data)
+  data <- data[order(data$traceID, data$RowID),]
   data
 }
 
@@ -315,6 +316,26 @@ evalRandomPairs <- function(pairs, auto) {
   cor(pairs$distance, pairs$predDis)
 }
 
+featureMat <- function(tutor, auto) {
+  mat <- matrix(nrow=ncol(tutor) - 3, ncol=ncol(auto) - 3)
+  for (i in 3:(ncol(tutor) - 1)){
+    for (j in 3:(ncol(auto) - 1)){
+      mat[i-2,j-2] <- jacc(tutor[,i], auto[,j])
+    } 
+  }
+  mat
+}
+
+dependMat <- function(tutor, auto) {
+  mat <- matrix(nrow=ncol(tutor) - 3, ncol=ncol(auto) - 3)
+  for (i in 3:(ncol(tutor) - 1)){
+    for (j in 3:(ncol(auto) - 1)){
+      mat[i-2,j-2] <- sum(tutor[,i] & auto[,j]) / sum(tutor[,i])
+    } 
+  }
+  mat
+}
+
 window <- 1000
 
 run <- function() {
@@ -361,4 +382,6 @@ run <- function() {
   rPairsDis <- read.csv("../../data/csc200/all/analysis/squiralHW/rpairs-dis.csv")
   cor(rPairsDis$distance, rPairsDis$predDisTED)
   cor(rPairsDis$distance, rPairsDis$predDisSED)
+  
+  shapes11F <- fixData(read.csv("../../data/csc200/all/analysis/squiralHW/feature-shapes-F16-11.csv"))
 }

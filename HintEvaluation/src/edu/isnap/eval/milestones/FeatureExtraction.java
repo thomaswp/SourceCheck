@@ -41,8 +41,6 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.datasets.Fall2016;
-import edu.isnap.datasets.Spring2016;
-import edu.isnap.datasets.Spring2017;
 import edu.isnap.datasets.aggregate.CSC200;
 import edu.isnap.eval.util.PrintUpdater;
 import edu.isnap.hint.util.SimpleNodeBuilder;
@@ -55,18 +53,18 @@ public class FeatureExtraction {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 //		writeFeatures(true);
-//		readFeatures();
+		readFeatures();
 //		writeDistance();
 //		readDistance();
-		testRPairs();
+//		testRPairs();
 	}
 
 	private static Assignment out = CSC200.Squiral;
 	private static Assignment[] trainingData = new Assignment[] {
 			// Use not-Fall2016 data so training and test are separate (duh :P)
-			Spring2016.Squiral, Spring2017.Squiral,
+//			Spring2016.Squiral, Spring2017.Squiral,
 			// But also test with same training/test data for training accuracy
-//			Fall2016.Squiral,
+			Fall2016.Squiral,
 	};
 
 	private static Map<AssignmentAttempt, List<Node>> loadTrainingData() {
