@@ -35,10 +35,12 @@ import com.esotericsoftware.kryo.io.Output;
 import distance.RTED_InfoTree_Opt;
 import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.graph.Node;
+import edu.isnap.ctd.util.Alignment;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
+import edu.isnap.datasets.Fall2016;
 import edu.isnap.datasets.Spring2016;
 import edu.isnap.datasets.Spring2017;
 import edu.isnap.datasets.aggregate.CSC200;
@@ -53,9 +55,10 @@ public class FeatureExtraction {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 //		writeFeatures(true);
-		readFeatures();
+//		readFeatures();
 //		writeDistance();
 //		readDistance();
+		testRPairs();
 	}
 
 	private static Assignment out = CSC200.Squiral;
@@ -76,6 +79,56 @@ public class FeatureExtraction {
 					.map(name -> name.substring(0, 1) +
 							name.substring(name.length() - 2, name.length()))
 					.collect(Collectors.joining());
+	}
+
+	private static void testRPairs() throws FileNotFoundException, IOException {
+		CSVParser parser = new CSVParser(new FileReader(out.analysisDir() + "/rpairs.csv"),
+				CSVFormat.DEFAULT.withHeader());
+
+		HashMap<String, Node> rows = new HashMap<>();
+		for (CSVRecord record : parser) {
+			rows.put(record.get("rowA"), null);
+			rows.put(record.get("rowB"), null);
+		}
+		parser.close();
+
+		Map<String, AssignmentAttempt> load = Fall2016.Squiral.load(Mode.Use, false);
+		for (AssignmentAttempt attempt : load.values()) {
+			for (AttemptAction action : attempt.rows) {
+				if (action.snapshot == null) continue;
+				String rowID = String.valueOf(action.id);
+				if (rows.containsKey(rowID)) {
+					Node node = SimpleNodeBuilder.toTree(action.snapshot, true);
+					rows.put(rowID, node);
+				}
+			}
+		}
+
+		parser = new CSVParser(new FileReader(out.analysisDir() + "/rpairs.csv"),
+				CSVFormat.DEFAULT.withHeader());
+		Spreadsheet spreadsheet = new Spreadsheet();
+		RTED_InfoTree_Opt rted = new RTED_InfoTree_Opt(1, 1, 1);
+		for (CSVRecord record : parser) {
+			String rowA = record.get("rowA");
+			String rowB = record.get("rowB");
+			Node nodeA = rows.get(rowA);
+			Node nodeB = rows.get(rowB);
+
+			double distance = Double.parseDouble(record.get("distance"));
+			double predDisTED = rted.nonNormalizedTreeDist(nodeA.toTree(), nodeB.toTree());
+
+			double predDisSED = Alignment.alignCost(nodeA.depthFirstIteration(),
+					nodeB.depthFirstIteration());
+
+			spreadsheet.newRow();
+			spreadsheet.put("rowA", rowA);
+			spreadsheet.put("rowB", rowB);
+			spreadsheet.put("distance", distance);
+			spreadsheet.put("predDisTED", predDisTED);
+			spreadsheet.put("predDisSED", predDisSED);
+		}
+		parser.close();
+		spreadsheet.write(out.analysisDir() + "/rpairs-dis.csv");
 	}
 
 	private static void writeDistance() throws IOException {

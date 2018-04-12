@@ -217,8 +217,8 @@ getStatsUnif <- function(tutor) {
   })
 }
 
-fixData <- function(data) {
-  data <- filterFeaturesWindow(data)
+fixData <- function(data, filter=T) {
+  if (filter) data <- filterFeaturesWindow(data)
   data$traceID <- substr(data$traceID, 1, 8)
   data$state <- getStates(data)
   data
@@ -271,6 +271,50 @@ evalPairs <- function(pairs, auto) {
   addStats(conf)
 }
 
+extractRandomPairs <- function(tutor) {
+  set.seed(1234)
+  pairs <- data.frame(rowA=numeric(0), rowB=numeric(0), distance=numeric(0))
+  traces <- unique(tutor$traceID)
+  for (i in 1:(length(traces)-1)) {
+    rowsA <- tutor[tutor$traceID==traces[[i]],]
+    nRowsA <- nrow(rowsA)
+    for (j in (i+1):length(traces)) {
+      rowsB <- tutor[tutor$traceID==traces[[j]],]
+      nRowsB <- nrow(rowsB)
+      
+      nComb <- nRowsA * nRowsB
+      combos <- sample(nComb, 25, F)
+      
+      for (combo in combos) {
+        # Deal with 1-based-indexing
+        ia <- (combo-1) %% nRowsA + 1
+        ib <- (combo-1) %/% nRowsA + 1
+        
+        rowA <- rowsA$RowID[ia]
+        stateA <- rowsA$state[ia]
+        rowB <- rowsB$RowID[ib]
+        stateB <- rowsB$state[ib]
+        
+        distance <- mean(strsplit(stateA, "")[[1]] != strsplit(stateB, "")[[1]])
+        pairs <- rbind(pairs, data.frame(rowA=rowA, rowB=rowB, distance=distance))
+      }
+    }
+  }
+  pairs
+}
+
+evalRandomPairs <- function(pairs, auto) {
+  pairs$predDis <- sapply(1:nrow(pairs), function(i) {
+    rowA <- pairs$rowA[i]
+    rowB <- pairs$rowB[i]
+    stateA <- auto$state[auto$RowID==rowA]
+    stateB <- auto$state[auto$RowID==rowB]
+    mean(strsplit(stateA, "")[[1]] != strsplit(stateB, "")[[1]])
+  })
+  pairs
+  cor(pairs$distance, pairs$predDis)
+}
+
 window <- 1000
 
 run <- function() {
@@ -300,5 +344,21 @@ run <- function() {
   round(colwise(mean)(statsUnif), 3)
   
   pairs <- extractPairs(tutor)
+  evalPairs(pairs, shapes11)
+  evalPairs(pairs, shapesAll)
+  evalPairs(pairs, distance20)
+  evalPairs(pairs, distance40)
   
+  rPairs <- extractRandomPairs(tutor)
+  evalRandomPairs(rPairs, shapes11)
+  evalRandomPairs(rPairs, shapes1)
+  evalRandomPairs(rPairs, shapesAll)
+  
+  tutorNoFilter <- fixData(read.csv("../../data/csc200/all/analysis/squiralHW/feature-human.csv"), F)
+  rPairsNF <- extractRandomPairs(tutorNoFilter)
+  write.csv(rPairsNF, "../../data/csc200/all/analysis/squiralHW/rpairs.csv")
+  # Run java 
+  rPairsDis <- read.csv("../../data/csc200/all/analysis/squiralHW/rpairs-dis.csv")
+  cor(rPairsDis$distance, rPairsDis$predDisTED)
+  cor(rPairsDis$distance, rPairsDis$predDisSED)
 }
