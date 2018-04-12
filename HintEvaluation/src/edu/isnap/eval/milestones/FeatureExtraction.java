@@ -53,21 +53,29 @@ public class FeatureExtraction {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 //		writeFeatures();
-		readFeatures();
+//		readFeatures();
 //		writeDistance();
-//		readDistance();
+		readDistance();
 	}
 
 	private static Assignment out = CSC200.Squiral;
+	private static Assignment[] trainingData = new Assignment[] {
+			// Use not-Fall2016 data so training and test are separate (duh :P)
+			Spring2016.Squiral, Spring2017.Squiral,
+			// But also test with same training/test data for training accuracy
+//			Fall2016.Squiral,
+	};
 
 	private static Map<AssignmentAttempt, List<Node>> loadTrainingData() {
-		return loadAssignments(
-				// Use not-Fall2016 data so training and test are separate (duh :P)
-				Spring2016.Squiral, Spring2017.Squiral);
-//				CSC200.Squiral);
-//				Fall2017.Squiral);
-//				Spring2016.Squiral);
-//				Spring2016.Squiral, Fall2016.Squiral, Spring2017.Squiral);
+		return loadAssignments(trainingData);
+	}
+
+	private static String dataName() {
+		return Arrays.stream(trainingData)
+					.map(assignment -> assignment.dataset.getName())
+					.map(name -> name.substring(0, 1) +
+							name.substring(name.length() - 2, name.length()))
+					.collect(Collectors.joining());
 	}
 
 	private static void writeDistance() throws IOException {
@@ -157,7 +165,8 @@ public class FeatureExtraction {
 			}
 		}
 		System.out.println();
-		spreadsheet.write(out.analysisDir() + "/feature-distance.csv");
+		spreadsheet.write(String.format("%s/feature-distance-%s-%02d.csv",
+				out.analysisDir(), dataName(), clusters.size()));
 	}
 
 	private static LblTree toTree(ASTNode node)  {
@@ -226,7 +235,8 @@ public class FeatureExtraction {
 			}
 		}
 		System.out.println();
-		spreadsheet.write(out.analysisDir() + "/feature-test.csv");
+		spreadsheet.write(String.format("%s/feature-shapes-%s-%02d.csv",
+				out.analysisDir(), dataName(), features.size()));
 	}
 
 	private static void writeFeatures() throws IOException {

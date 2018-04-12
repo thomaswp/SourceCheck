@@ -35,10 +35,10 @@ filterFeaturesWindow <- function(data, windowSize = 5) {
     for (f in 3:length(trace)) {
       # For each feature
       i <- 1
-      
-      while(i < (nrow(trace) - windowSize -1)) {
+      while(i < (nrow(trace) - windowSize)) {
         value <- trace[,f][i]
         idx <- i
+        # Find the changed row
         while (idx <= nrow(trace) && value == trace[,f][idx]) {
           idx <- idx + 1
         }
@@ -49,31 +49,33 @@ filterFeaturesWindow <- function(data, windowSize = 5) {
         isConsistent <- FALSE
         while (consistentIdx < nrow(trace) && !isConsistent) {
           # look forward windowSize - 1 rows
+          cntRows <- 0
           for (j in 1:(windowSize - 1)) {
-            if (consistentIdx+j <= nrow(trace)) {
-              # Unstable rows detected, set new Idx and move on
-              if (trace[,f][consistentIdx+j] != value) {
-                value <- trace[,f][consistentIdx+j]
-                consistentIdx <- consistentIdx + j
-                isConsistent <- FALSE
-                if (consistentIdx == nrow(trace)) {
-                  # Reach the last line
-                  isConsistent = TRUE
-                }
-                break
-              }
+            # Reach the last line
+            if (consistentIdx + j == nrow(trace)) {
+              value <- trace[,f][nrow(trace)]
+              consistentIdx <- nrow(trace)
+              isConsistent <- TRUE
+              break
+            }
+            # Unstable rows detected, set new Idx and move on
+            if (trace[,f][consistentIdx + j] != value) {
+              value <- trace[,f][consistentIdx + j]
+              consistentIdx <- consistentIdx + j
+              isConsistent <- FALSE
+              break
+            } else {
+              cntRows <- cntRows + 1
             }
           }
           # Stable rows are found
-          if (j == windowSize - 1) {
-            consistentIdx = consistentIdx + j
-            if (consistentIdx > nrow(trace)) {
-              consistentIdx = nrow(trace)
-            }
+          if (cntRows == windowSize - 1) {
+            consistentIdx = consistentIdx + cntRows
             isConsistent = TRUE
-            break
           }
         }
+        
+        # Overwrite the values
         if (isConsistent) {
           for (k in startChangeIdx:consistentIdx) {
             trace[,f][k] <- value
@@ -95,7 +97,7 @@ equalsMatrix <- function(states) {
   size <- length(states)
   mat <- matrix(nrow=size, ncol=size)
   for (i in 1:size) {
-    for (j in max(1,i-10):min(size,i+10)) {
+    for (j in max(1,i-window):min(size,i+window)) {
       mat[i,j] <- states[i] == states[j]    
     }
   }
@@ -126,7 +128,7 @@ confMatRand <- function(statesTut) {
   size <- length(statesTut)
   mat1 <- matrix(nrow=size, ncol=size)
   for (i in 1:size) {
-    for (j in max(1,i-10):min(size,i+10)) {
+    for (j in max(1,i-window):min(size,i+window)) {
       mat1[i,j] <- round(runif(1))
     }
   }
@@ -168,40 +170,43 @@ confMatI <- function(tutor, auto, i) {
   confMat(tutor$state[tutor$traceID == traceID], auto$state[auto$traceID == traceID])
 }
 
-getStats <- function(tutor, auto) {
+getStats <- function(tutor, f) {
+  traceIDs <- unique(tutor$traceID)
   stats <- data.frame(tn=numeric(0), fn=numeric(0), fp=numeric(0), tp=numeric(0))
-  for (traceID in unique(auto$traceID)) {
-    row <- confMat(tutor$state[tutor$traceID == traceID], auto$state[auto$traceID == traceID])
+  for (traceID in traceIDs) {
+    row <- f(traceID)
     stats <- rbind(stats, row)
   }
   stats$prec <- stats$tp / (stats$tp + stats$fp)
   stats$rec <- stats$tp / (stats$tp + stats$fn)
   stats$f1 <- 2 / (1/stats$prec + 1/stats$rec)
+  stats$acc <- stats$tp + stats$tn
+  stats$v0 <- stats$tn + stats$fn
+  stats$v1 <- stats$tp + stats$fp
+  h0 <- stats$tn + stats$fp
+  h1 <- stats$tp + stats$fn
+  stats$chance <- stats$v0 * h0 + stats$v1 * h1
+  stats$kappa <- (stats$acc - stats$chance) / (1 - stats$chance)
   stats
 }
 
+getStatsComp <- function(tutor, auto) {
+  getStats(tutor, function(traceID) {
+    confMat(tutor$state[tutor$traceID == traceID], auto$state[auto$traceID == traceID])
+  })
+}
+
 getStatsRand <- function(tutor) {
-  stats <- data.frame(tn=numeric(0), fn=numeric(0), fp=numeric(0), tp=numeric(0))
-  for (traceID in unique(tutor$traceID)) {
-    row <- confMatRand(tutor$state[tutor$traceID == traceID])
-    stats <- rbind(stats, row)
-  }
-  stats$prec <- stats$tp / (stats$tp + stats$fp)
-  stats$rec <- stats$tp / (stats$tp + stats$fn)
-  stats$f1 <- 2 / (1/stats$prec + 1/stats$rec)
-  stats
+  getStats(tutor, function(traceID) {
+    confMatRand(tutor$state[tutor$traceID == traceID])
+  })
 }
 
 getStatsUnif <- function(tutor) {
   stats <- data.frame(tn=numeric(0), fn=numeric(0), fp=numeric(0), tp=numeric(0))
-  for (traceID in unique(tutor$traceID)) {
-    row <- confMatUnif(tutor$state[tutor$traceID == traceID])
-    stats <- rbind(stats, row)
-  }
-  stats$prec <- stats$tp / (stats$tp + stats$fp)
-  stats$rec <- stats$tp / (stats$tp + stats$fn)
-  stats$f1 <- 2 / (1/stats$prec + 1/stats$rec)
-  stats
+  getStats(tutor, function(traceID) {
+    confMatUnif(tutor$state[tutor$traceID == traceID])
+  })
 }
 
 fixData <- function(data) {
@@ -211,28 +216,29 @@ fixData <- function(data) {
   data
 }
 
+window <- 1000
+
 run <- function() {
-  shapes <- fixData(read.csv("../../data/csc200/all/analysis/squiralHW/feature-test.csv"))
-  distance <- fixData(read.csv("../../data/csc200/all/analysis/squiralHW/feature-distance.csv"))
+  shapes11 <- fixData(read.csv("../../data/csc200/all/analysis/squiralHW/feature-shapes-S16S17-11.csv"))
+  shapes1 <- fixData(read.csv("../../data/csc200/all/analysis/squiralHW/feature-shapes-S16S17-01.csv"))
+  shapesAll <- fixData(read.csv("../../data/csc200/all/analysis/squiralHW/feature-shapes-S16S17-45.csv"))
+  distance41 <- fixData(read.csv("../../data/csc200/all/analysis/squiralHW/feature-distance-S16S17-41.csv"))
+  distance20 <- fixData(read.csv("../../data/csc200/all/analysis/squiralHW/feature-distance-S16S17-20.csv"))
   tutor <- fixData(read.csv("../../data/csc200/all/analysis/squiralHW/feature-human.csv"))
   
-  statsShapes <- getStats(tutor, shapes)
-  mean(statsShapes$f1)
-  mean(statsShapes$prec)
-  mean(statsShapes$rec)
+  statsShapes <- getStatsComp(tutor, shapes11)
+  round(colwise(mean)(statsShapes), 3)
   
-  statsDis <- getStats(tutor, distance)
-  mean(statsDis$f1)
-  mean(statsDis$prec)
-  mean(statsDis$rec)
+  round(colwise(mean)(getStatsComp(tutor, shapes1)), 3)
+  round(colwise(mean)(getStatsComp(tutor, shapesAll)), 3)
+  
+  statsDis <- getStatsComp(tutor, distance20)
+  round(colwise(mean)(statsDis), 3)
+  round(colwise(mean)(getStatsComp(tutor, distance41)), 3)
   
   statsRand <- getStatsRand(tutor)
-  mean(statsRand$f1)
-  mean(statsRand$prec)
-  mean(statsRand$rec)
+  round(colwise(mean)(statsRand), 3)
   
   statsUnif <- getStatsUnif(tutor)
-  mean(statsUnif$f1)
-  mean(statsUnif$prec)
-  mean(statsUnif$rec)
+  round(colwise(mean)(statsUnif), 3)
 }

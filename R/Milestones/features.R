@@ -1,10 +1,10 @@
 library(readr)
 library(ggplot2)
 library(rlist)
+library(cluster)
+library(tsne)
 
 oldAnalysis <- function() {
-  library(cluster)
-  library(tsne)
   library(factoextra)
   
   disMat <- as.matrix(read_csv("../../data/csc200/all/analysis/squiralHW/teds.csv", col_names = FALSE))
@@ -18,7 +18,7 @@ oldAnalysis <- function() {
   }
   fviz_nbclust(disMat, pamD, k.max=50)
   
-  clusters <- pam(disMat, 41, diss=T)
+  clusters <- pam(disMat, 20, diss=T)
   samples$cluster <- as.factor(clusters$clustering)
   samples$name <- paste0("X", samples$id + 1)
   samples$medoid <- samples$name %in% clusters$medoids
