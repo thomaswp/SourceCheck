@@ -39,7 +39,6 @@ import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
-import edu.isnap.datasets.Fall2016;
 import edu.isnap.datasets.Spring2016;
 import edu.isnap.datasets.Spring2017;
 import edu.isnap.datasets.aggregate.CSC200;
@@ -59,9 +58,20 @@ public class FeatureExtraction {
 //		readDistance();
 	}
 
+	private static Assignment out = CSC200.Squiral;
+
+	private static Map<AssignmentAttempt, List<Node>> loadTrainingData() {
+		return loadAssignments(
+				// Use not-Fall2016 data so training and test are separate (duh :P)
+				Spring2016.Squiral, Spring2017.Squiral);
+//				CSC200.Squiral);
+//				Fall2017.Squiral);
+//				Spring2016.Squiral);
+//				Spring2016.Squiral, Fall2016.Squiral, Spring2017.Squiral);
+	}
+
 	private static void writeDistance() throws IOException {
-		Map<AssignmentAttempt, List<Node>> traceMap =
-				loadAssignments(Fall2016.Squiral, Spring2017.Squiral);
+		Map<AssignmentAttempt, List<Node>> traceMap = loadTrainingData();
 
 		Random rand = new Random(1234);
 		List<Node> samples = new ArrayList<>();
@@ -220,12 +230,7 @@ public class FeatureExtraction {
 	}
 
 	private static void writeFeatures() throws IOException {
-		Assignment out = CSC200.Squiral;
-		Map<AssignmentAttempt, List<Node>>  traceMap = loadAssignments(
-//				CSC200.Squiral);
-//				Fall2017.Squiral);
-//				Spring2016.Squiral);
-				Spring2016.Squiral, Fall2016.Squiral, Spring2017.Squiral);
+		Map<AssignmentAttempt, List<Node>> traceMap = loadTrainingData();
 
 		List<List<Node>> correctTraces = traceMap.keySet().stream()
 				.filter(attempt -> attempt.grade != null && attempt.grade.average() == 1)

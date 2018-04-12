@@ -27,31 +27,6 @@ filterFeature <- function(v) {
   v
 }
 
-filterFeatures <- function(data) {
-  for (traceID in unique(data$traceID)) {
-    subset <- data[data$traceID == traceID,]
-    for (i in 3:ncol(subset)) {
-      data[data$traceID == traceID,i] <- filterFeature(subset[,i])
-    }
-  }
-  data
-}
-
-filterFeature <- function(v) {
-  x <- c(v, 0) != c(0, v)
-  x <- x[-length(x)]
-  # print(as.numeric(x))
-  for (i in 2:(length(x)-1)) {
-    if (x[i] && x[i+1]) {
-      x[i] <- F
-      x[i + 1] <- F
-      v[i] <- v[i-1]
-    }
-  }
-  v
-}
-
-
 filterFeaturesWindow <- function(data, windowSize = 5) {
   for (traceID in unique(data$traceID)) {
     # For each trace
@@ -61,7 +36,7 @@ filterFeaturesWindow <- function(data, windowSize = 5) {
       # For each feature
       i <- 1
       
-      while(i < (nrow(trace) - windowSize)) {
+      while(i < (nrow(trace) - windowSize -1)) {
         value <- trace[,f][i]
         idx <- i
         while (idx <= nrow(trace) && value == trace[,f][idx]) {
@@ -92,6 +67,9 @@ filterFeaturesWindow <- function(data, windowSize = 5) {
           # Stable rows are found
           if (j == windowSize - 1) {
             consistentIdx = consistentIdx + j
+            if (consistentIdx > nrow(trace)) {
+              consistentIdx = nrow(trace)
+            }
             isConsistent = TRUE
             break
           }
@@ -103,7 +81,6 @@ filterFeaturesWindow <- function(data, windowSize = 5) {
         }
         i <- consistentIdx
       }
-      
     }
     data[data$traceID == traceID,] <- trace
   }
@@ -111,14 +88,14 @@ filterFeaturesWindow <- function(data, windowSize = 5) {
 }
 
 getStates <- function(data) {
-  sapply(1:nrow(data), function(i) do.call(paste0, data[i, c(-1,-2)]))
+  sapply(1:nrow(data), function(i) do.call(paste0, as.list(data[i, c(-1,-2)])))
 }
 
 equalsMatrix <- function(states) {
   size <- length(states)
   mat <- matrix(nrow=size, ncol=size)
   for (i in 1:size) {
-    for (j in 1:size) {
+    for (j in max(1,i-10):min(size,i+10)) {
       mat[i,j] <- states[i] == states[j]    
     }
   }
@@ -129,12 +106,19 @@ compareMats <- function(statesTut, statesAuto) {
   mat1 <- equalsMatrix(statesAuto)
   mat2 <- equalsMatrix(statesTut)
   mat3 <- mat1 * 2 + mat2
-  ggplot(melt(mat3), aes(x=Var1, y=Var2, color=as.factor(value))) + geom_point() + 
-    scale_color_manual(labels=c("TN", "FN", "FP", "TP"), values=c("#ffffff", "#ff0000", "#0000ff", "#ff00ff"))
+  plotMat(mat3)
 }
 
-compareMatsI <- function(auto, tutor, i) {
-  traceID <- unique(auto$traceID)[i]
+plotMat <- function(mat) {
+  melted <- melt(mat)
+  melted <- melted[!is.na(melted$value),]
+  melted$value <- factor(melted$value, levels=c("0", "1", "2", "3"))
+  ggplot(melted, aes(x=Var1, y=Var2, color=value)) + geom_point() + 
+    scale_color_manual(labels=c("0"="TN", "1"="FN", "2"="FP", "3"="TP"), values=c("0"="#ffffff", "1"="#ff0000", "2"="#0000ff", "3"="#ff00ff"))
+}
+
+compareMatsI <- function(tutor, auto, i) {
+  traceID <- unique(tutor$traceID)[i]
   compareMats(tutor$state[tutor$traceID == traceID], auto$state[auto$traceID == traceID])
 }
 
@@ -142,13 +126,24 @@ confMatRand <- function(statesTut) {
   size <- length(statesTut)
   mat1 <- matrix(nrow=size, ncol=size)
   for (i in 1:size) {
-    for (j in 1:size) {
+    for (j in max(1,i-10):min(size,i+10)) {
       mat1[i,j] <- round(runif(1))
     }
   }
   mat2 <- equalsMatrix(statesTut)
   mat3 <- mat1 * 2 + mat2
-  conf <- sapply(0:3, function(i) sum(mat3==i))
+  conf <- sapply(0:3, function(i) sum(mat3==i, na.rm=T))
+  conf <- conf / sum(conf)
+  names(conf) <- c("TN", "FN", "FP", "TP")
+  frame <- data.frame(tn=conf["TN"], fn=conf["FN"], fp=conf["FP"], tp=conf["TP"])
+  rownames(frame) <- c()
+  frame
+}
+
+confMatUnif <- function(statesTut) {
+  mat2 <- equalsMatrix(statesTut)
+  mat3 <- 2 + mat2
+  conf <- sapply(0:3, function(i) sum(mat3==i, na.rm=T))
   conf <- conf / sum(conf)
   names(conf) <- c("TN", "FN", "FP", "TP")
   frame <- data.frame(tn=conf["TN"], fn=conf["FN"], fp=conf["FP"], tp=conf["TP"])
@@ -160,7 +155,7 @@ confMat <- function(statesTut, statesAuto) {
   mat1 <- equalsMatrix(statesAuto)
   mat2 <- equalsMatrix(statesTut)
   mat3 <- (mat1 * 2) + mat2
-  conf <- sapply(0:3, function(i) sum(mat3==i))
+  conf <- sapply(0:3, function(i) sum(mat3==i, na.rm=T))
   conf <- conf / sum(conf)
   names(conf) <- c("TN", "FN", "FP", "TP")
   frame <- data.frame(tn=conf["TN"], fn=conf["FN"], fp=conf["FP"], tp=conf["TP"])
@@ -169,7 +164,7 @@ confMat <- function(statesTut, statesAuto) {
 }
 
 confMatI <- function(tutor, auto, i) {
-  traceID <- unique(auto$traceID)[i]
+  traceID <- unique(tutor$traceID)[i]
   confMat(tutor$state[tutor$traceID == traceID], auto$state[auto$traceID == traceID])
 }
 
@@ -189,6 +184,18 @@ getStatsRand <- function(tutor) {
   stats <- data.frame(tn=numeric(0), fn=numeric(0), fp=numeric(0), tp=numeric(0))
   for (traceID in unique(tutor$traceID)) {
     row <- confMatRand(tutor$state[tutor$traceID == traceID])
+    stats <- rbind(stats, row)
+  }
+  stats$prec <- stats$tp / (stats$tp + stats$fp)
+  stats$rec <- stats$tp / (stats$tp + stats$fn)
+  stats$f1 <- 2 / (1/stats$prec + 1/stats$rec)
+  stats
+}
+
+getStatsUnif <- function(tutor) {
+  stats <- data.frame(tn=numeric(0), fn=numeric(0), fp=numeric(0), tp=numeric(0))
+  for (traceID in unique(tutor$traceID)) {
+    row <- confMatUnif(tutor$state[tutor$traceID == traceID])
     stats <- rbind(stats, row)
   }
   stats$prec <- stats$tp / (stats$tp + stats$fp)
@@ -223,4 +230,9 @@ run <- function() {
   mean(statsRand$f1)
   mean(statsRand$prec)
   mean(statsRand$rec)
+  
+  statsUnif <- getStatsUnif(tutor)
+  mean(statsUnif$f1)
+  mean(statsUnif$prec)
+  mean(statsUnif$rec)
 }
