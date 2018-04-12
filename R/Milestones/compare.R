@@ -157,7 +157,11 @@ confMat <- function(statesTut, statesAuto) {
   mat1 <- equalsMatrix(statesAuto)
   mat2 <- equalsMatrix(statesTut)
   mat3 <- (mat1 * 2) + mat2
-  conf <- sapply(0:3, function(i) sum(mat3==i, na.rm=T))
+  confMatFromOutcomes(mat3)
+}
+
+confMatFromOutcomes <- function(outcomes) {
+  conf <- sapply(0:3, function(i) sum(outcomes==i, na.rm=T))
   conf <- conf / sum(conf)
   names(conf) <- c("TN", "FN", "FP", "TP")
   frame <- data.frame(tn=conf["TN"], fn=conf["FN"], fp=conf["FP"], tp=conf["TP"])
@@ -177,6 +181,10 @@ getStats <- function(tutor, f) {
     row <- f(traceID)
     stats <- rbind(stats, row)
   }
+  addStats(stats)
+}
+
+addStats <- function(stats) {
   stats$prec <- stats$tp / (stats$tp + stats$fp)
   stats$rec <- stats$tp / (stats$tp + stats$fn)
   stats$f1 <- 2 / (1/stats$prec + 1/stats$rec)
@@ -216,6 +224,53 @@ fixData <- function(data) {
   data
 }
 
+extractPairs <- function(tutor) {
+  set.seed(1234)
+  pairs <- data.frame(rowA=numeric(0), rowB=numeric(0), same=logical(0), state=character(0))
+  sample1 <- function(x) if (length(x) == 1) x else sample(x, 1)
+  for (state in unique(tutor$state)) {
+    hasState <- tutor[tutor$state == state,]
+    hasntState <- tutor[tutor$state != state,]
+    traces <- unique(hasState$traceID)
+    tracePairs <- data.frame(traceA=character(0), traceB=character(0))
+    for (traceA in traces) {
+      for (traceB in traces) {
+        tracePairs <- rbind(tracePairs, data.frame(traceA=traceA, traceB=traceB))
+      }
+    }
+    maxRows <- 10
+    if (nrow(tracePairs) > maxRows) {
+      tracePairs <- tracePairs[sample(nrow(tracePairs), maxRows, F),] 
+    }
+    for (i in 1:nrow(tracePairs)) {
+      traceA <- tracePairs$traceA[i]
+      traceB <- tracePairs$traceB[i]
+      
+      rowA <- sample1(hasState$RowID[hasState$traceID == traceA])
+      rowB <- sample1(hasState$RowID[hasState$traceID == traceB])
+      pairs <- rbind(pairs, data.frame("rowA"=rowA, "rowB"=rowB, "same"=T, "state"=state))
+      
+      rowA <- sample1(hasntState$RowID[hasntState$traceID == traceA])
+      rowB <- sample1(hasntState$RowID[hasntState$traceID == traceB])
+      pairs <- rbind(pairs, data.frame("rowA"=rowA, "rowB"=rowB, "same"=F, "state"=state))
+    }
+  }  
+  pairs
+}
+
+evalPairs <- function(pairs, auto) {
+  pairs$pred <- sapply(1:nrow(pairs), function(i) {
+    rowA <- pairs$rowA[i]
+    rowB <- pairs$rowB[i]
+    eq <- auto$state[auto$RowID==rowA] == auto$state[auto$RowID==rowB]
+    if (length(eq) != 1) print(paste(length(eq), rowA, rowB))
+    eq[1]
+  })
+  pairs$outcome <- pairs$same + 2 * pairs$pred
+  conf <- confMatFromOutcomes(pairs$outcome)
+  addStats(conf)
+}
+
 window <- 1000
 
 run <- function() {
@@ -241,4 +296,7 @@ run <- function() {
   
   statsUnif <- getStatsUnif(tutor)
   round(colwise(mean)(statsUnif), 3)
+  
+  pairs <- extractPairs(tutor)
+  
 }
