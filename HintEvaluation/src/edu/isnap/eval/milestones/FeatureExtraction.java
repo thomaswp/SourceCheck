@@ -134,11 +134,17 @@ public class FeatureExtraction {
 
 		Random rand = new Random(1234);
 		List<Node> samples = new ArrayList<>();
+		List<Integer> sizes = new ArrayList<>();
 		for (List<Node> list : traceMap.values()) {
-			for (int i = 0; i < 25 && !list.isEmpty(); i++) {
+			sizes.add(list.size());
+			// Half of 2nd quartile size
+			for (int i = 0; i < 33 && !list.isEmpty(); i++) {
 				samples.add(list.remove(rand.nextInt(list.size())));
 			}
 		}
+		Collections.sort(sizes);
+		System.out.println("Median size: " + sizes.get(sizes.size() / 2));
+		System.out.println("2nd quarile size: " + sizes.get(sizes.size() / 4));
 
 		int nSamples = samples.size();
 		System.out.println(nSamples);

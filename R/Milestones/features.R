@@ -16,9 +16,10 @@ oldAnalysis <- function() {
     args["diss"] = T
     do.call(pam, args)
   }
-  fviz_nbclust(disMat, pamD, k.max=50)
+  smallDisMat <- disMat[sample(nrow(samples), 250, F), sample(nrow(samples), 250, F)]
+  fviz_nbclust(smallDisMat, pamD, k.max=50)
   
-  clusters <- pam(disMat, 20, diss=T)
+  clusters <- pam(disMat, 41, diss=T)
   samples$cluster <- as.factor(clusters$clustering)
   samples$name <- paste0("X", samples$id + 1)
   samples$medoid <- samples$name %in% clusters$medoids
