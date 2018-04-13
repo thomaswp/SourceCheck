@@ -5,21 +5,16 @@ library(cluster)
 library(tsne)
 
 oldAnalysis <- function() {
-  library(factoextra)
   
   disMat <- as.matrix(read_csv("../../data/csc200/all/analysis/squiralHW/teds.csv", col_names = FALSE))
-  
   samples <-read_csv("../../data/csc200/all/analysis/squiralHW/samples.csv")
   
-  pamD <- function(...) {
-    args <- list(...)
-    args["diss"] = T
-    do.call(pam, args)
-  }
   smallDisMat <- disMat[sample(nrow(samples), 250, F), sample(nrow(samples), 250, F)]
-  fviz_nbclust(smallDisMat, pamD, k.max=50)
+  sil <- sapply(2:50, function(i) pam(disMat, i, diss=T)$silinfo$avg.width)
+  plot(unlist(sil))
   
-  clusters <- pam(disMat, 41, diss=T)
+  # 38 expert-authored states
+  clusters <- pam(disMat, 38, diss=T)
   samples$cluster <- as.factor(clusters$clustering)
   samples$name <- paste0("X", samples$id + 1)
   samples$medoid <- samples$name %in% clusters$medoids

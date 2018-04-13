@@ -41,6 +41,8 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.datasets.Fall2016;
+import edu.isnap.datasets.Spring2016;
+import edu.isnap.datasets.Spring2017;
 import edu.isnap.datasets.aggregate.CSC200;
 import edu.isnap.eval.util.PrintUpdater;
 import edu.isnap.hint.util.SimpleNodeBuilder;
@@ -53,22 +55,25 @@ public class FeatureExtraction {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 //		writeFeatures(true);
-		readFeatures();
+//		readFeatures();
 //		writeDistance();
-//		readDistance();
+		readDistance();
 //		testRPairs();
+//		extractNodeAndEdges();
 	}
 
 	private static Assignment out = CSC200.Squiral;
 	private static Assignment[] trainingData = new Assignment[] {
 			// Use not-Fall2016 data so training and test are separate (duh :P)
-//			Spring2016.Squiral, Spring2017.Squiral,
+			Spring2016.Squiral, Spring2017.Squiral,
 			// But also test with same training/test data for training accuracy
-			Fall2016.Squiral,
+//			Fall2016.Squiral,
 	};
 
 	private static Map<AssignmentAttempt, List<Node>> loadTrainingData() {
-		return loadAssignments(trainingData);
+		Map<AssignmentAttempt, List<Node>> data = loadAssignments(trainingData);
+		System.out.println("Training data size: " + data.size());
+		return data;
 	}
 
 	private static String dataName() {
@@ -77,6 +82,28 @@ public class FeatureExtraction {
 					.map(name -> name.substring(0, 1) +
 							name.substring(name.length() - 2, name.length()))
 					.collect(Collectors.joining());
+	}
+
+	private static void extractNodeAndEdges() throws FileNotFoundException, IOException {
+		Assignment out = CSC200.Squiral;
+
+		Spreadsheet spreadsheet = new Spreadsheet();
+		List<AssignmentAttempt> attempts = SelectSquiralProjects.selectAttempts();
+
+		int nActions = attempts.stream().mapToInt(attempt -> attempt.size()).sum();
+		PrintUpdater updater = new PrintUpdater(50, nActions);
+		for (AssignmentAttempt attempt : attempts) {
+			for (AttemptAction action : attempt) {
+				updater.incrementValue();
+				if (action.snapshot == null) continue;
+				spreadsheet.newRow();
+				spreadsheet.put("traceID", attempt.id);
+				spreadsheet.put("RowID", action.id);
+				Node node = SimpleNodeBuilder.toTree(action.snapshot, true);
+				spreadsheet.put("codestate", node.toString().hashCode());
+			}
+		}
+		spreadsheet.write(String.format("%s/feature-codestates.csv", out.analysisDir()));
 	}
 
 	private static void testRPairs() throws FileNotFoundException, IOException {
@@ -327,15 +354,18 @@ public class FeatureExtraction {
 			}
 		}
 
+
 		pqRulesMap.keySet().removeIf(gram -> pqRulesMap.get(gram).followers.size() < n * 0.1);
 		List<PQGramRule> pqRules = new ArrayList<>(pqRulesMap.values());
 		Collections.sort(pqRules);
+		System.out.println("Initial code shapes: " + pqRulesMap.size());
 
 		List<List<Node>> allTraces = new ArrayList<>(traceMap.values());
 
 		calculateSnapshotVectors(pqRulesMap, allTraces);
 		pqRules.forEach(rule -> rule.calculateSnapshotCount());
 		removeDuplicateRules(pqRules, 0.95, 0.975);
+		System.out.println("Distinct code shapes: " + pqRules.size());
 		pqRules.forEach(System.out::println);
 
 
@@ -344,6 +374,7 @@ public class FeatureExtraction {
 			decisions.addAll(extractDecisions(pqRules));
 			Collections.sort(decisions);
 			removeDuplicateRules(decisions, 0.85, 0.90);
+			System.out.println("Distinct decision shapes: " + decisions.size());
 
 			// Wait until after decisions are extracted to remove low-support rules
 			decisions.removeIf(rule -> rule.support() < 0.95);

@@ -97,8 +97,8 @@ equalsMatrix <- function(states) {
   size <- length(states)
   mat <- matrix(nrow=size, ncol=size)
   for (i in 1:size) {
-    for (j in max(1,i-window):min(size,i+window)) {
-      mat[i,j] <- states[i] == states[j]    
+    for (j in max(1,i-win):min(size,i+win)) {
+      if (i != j) mat[i,j] <- states[i] == states[j]    
     }
   }
   mat
@@ -128,7 +128,7 @@ confMatRand <- function(statesTut) {
   size <- length(statesTut)
   mat1 <- matrix(nrow=size, ncol=size)
   for (i in 1:size) {
-    for (j in max(1,i-window):min(size,i+window)) {
+    for (j in max(1,i-win):min(size,i+win)) {
       mat1[i,j] <- round(runif(1))
     }
   }
@@ -313,7 +313,7 @@ evalRandomPairs <- function(pairs, auto) {
     mean(strsplit(stateA, "")[[1]] != strsplit(stateB, "")[[1]])
   })
   pairs
-  cor(pairs$distance, pairs$predDis)
+  cor(pairs$distance, pairs$predDis, method="spearman")
 }
 
 featureMat <- function(tutor, auto) {
@@ -336,27 +336,43 @@ dependMat <- function(tutor, auto) {
   mat
 }
 
-window <- 1000
+win <- 25
 
 run <- function() {
   shapes11 <- fixData(read.csv("../../data/csc200/all/analysis/squiralHW/feature-shapes-S16S17-11.csv"))
   shapes1 <- fixData(read.csv("../../data/csc200/all/analysis/squiralHW/feature-shapes-S16S17-01.csv"))
   shapes4 <- fixData(read.csv("../../data/csc200/all/analysis/squiralHW/feature-shapes-S16S17-04.csv"))
   shapesAll <- fixData(read.csv("../../data/csc200/all/analysis/squiralHW/feature-shapes-S16S17-45.csv"))
-  shapesND9 <- fixData(read.csv("../../data/csc200/all/analysis/squiralHW/feature-shapes-S16S17-09-ND.csv"))
+  # shapesND9 <- fixData(read.csv("../../data/csc200/all/analysis/squiralHW/feature-shapes-S16S17-09-ND.csv"))
   distance41 <- fixData(read.csv("../../data/csc200/all/analysis/squiralHW/feature-distance-S16S17-41.csv"))
+  distance38 <- fixData(read.csv("../../data/csc200/all/analysis/squiralHW/feature-distance-S16S17-38.csv"))
   distance20 <- fixData(read.csv("../../data/csc200/all/analysis/squiralHW/feature-distance-S16S17-20.csv"))
   tutor <- fixData(read.csv("../../data/csc200/all/analysis/squiralHW/feature-human.csv"))
   
   statsShapes <- getStatsComp(tutor, shapes11)
+  round(colwise(median)(statsShapes), 3)
   round(colwise(mean)(statsShapes), 3)
+  round(colwise(IQR)(statsShapes), 3)
   
   round(colwise(mean)(getStatsComp(tutor, shapes1)), 3)
   round(colwise(mean)(getStatsComp(tutor, shapesAll)), 3)
   
-  statsDis <- getStatsComp(tutor, distance20)
+  statsDis <- getStatsComp(tutor, distance38)
+  round(colwise(median)(statsDis), 3)
   round(colwise(mean)(statsDis), 3)
-  round(colwise(mean)(getStatsComp(tutor, distance41)), 3)
+  round(colwise(IQR)(statsDis), 3)
+  round(colwise(mean)(getStatsComp(tutor, distance20)), 3)
+  
+  for (i in c(5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 200, 500)) {
+    v <- win
+    win <<- i
+    statsShapes <- getStatsComp(tutor, shapes11)
+    statsDis <- getStatsComp(tutor, distance38)
+    print(paste(i, median(statsShapes$kappa) - median(statsDis$kappa), median(statsShapes$kappa), median(statsDis$kappa)))
+    win <<- v
+  }
+  
+  wilcox.test(statsShapes$kappa, statsDis$kappa, pair=T)
   
   statsRand <- getStatsRand(tutor)
   round(colwise(mean)(statsRand), 3)
