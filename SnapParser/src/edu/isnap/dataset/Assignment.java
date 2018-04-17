@@ -62,6 +62,10 @@ public class Assignment {
 		return dir("grades") + ".csv";
 	}
 
+	public String featuresFile() {
+		return dataDir + "/" + name + "-features.cached";
+	}
+
 	public String parsedDir() {
 		return dir("parsed");
 	}

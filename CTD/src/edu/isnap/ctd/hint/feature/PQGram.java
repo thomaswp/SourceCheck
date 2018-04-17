@@ -132,6 +132,16 @@ public class PQGram implements Comparable<PQGram> {
 		return node.type();
 	}
 
+	public static Set<PQGram> extractAllFromNode(Node node) {
+		Set<PQGram> pqGrams = new HashSet<>();
+		for (int p = 3; p > 0; p--) {
+			for (int q = 4; q > 0; q--) {
+				pqGrams.addAll(extractFromNode(node, p, q));
+			}
+		}
+		return pqGrams;
+	}
+
 	public static Set<PQGram> extractFromNode(Node node, int p, int q) {
 		Set<PQGram> set = new HashSet<>();
 		extractFromNode(node, p, q, set);

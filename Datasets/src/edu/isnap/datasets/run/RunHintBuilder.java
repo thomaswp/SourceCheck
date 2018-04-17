@@ -1,13 +1,25 @@
 package edu.isnap.datasets.run;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+
+import edu.isnap.ctd.hint.HintConfig;
+import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.hint.HintMapBuilder;
+import edu.isnap.ctd.hint.feature.Feature;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.datasets.Fall2016;
+import edu.isnap.hint.Configurable;
 import edu.isnap.hint.SnapHintBuilder;
+import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.parser.Store.Mode;
 
 /**
@@ -42,10 +54,23 @@ public class RunHintBuilder {
 	 * Builds and caches a {@link HintMapBuilder} for the given assignment, using only data with
 	 * the supplied minGrade.
 	 */
+	@SuppressWarnings("unchecked")
 	public static void buildHints(Assignment assignment, double minGrade)
 			throws FileNotFoundException {
 		System.out.println("Loading: " + assignment.name);
-		SnapHintBuilder subtree = new SnapHintBuilder(assignment);
+		HintConfig config = assignment instanceof Configurable ?
+				((Configurable) assignment).getConfig() : new SnapHintConfig();
+
+		File featuresFile = new File(assignment.featuresFile());
+		List<Feature> features = null;
+		if (featuresFile.exists()) {
+			Kryo kryo = new Kryo();
+			Input input = new Input(new FileInputStream(featuresFile));
+			features = kryo.readObject(input, ArrayList.class);
+			input.close();
+		}
+
+		SnapHintBuilder subtree = new SnapHintBuilder(assignment, new HintMap(config, features));
 		// Load the nodeMap so as no to throw off timing
 		subtree.nodeMap();
 		System.out.print("Building subtree: ");

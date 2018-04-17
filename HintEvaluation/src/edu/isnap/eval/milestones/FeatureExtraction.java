@@ -12,7 +12,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -263,7 +262,7 @@ public class FeatureExtraction {
 
 	private static void exportFeatures(Assignment out) throws IOException {
 		List<Feature> features = readClusters();
-		String path = out.dataDir + "/" + out.name + "-features.cached";
+		String path = out.featuresFile();
 		Kryo kryo = new Kryo();
 		Output output = new Output(new FileOutputStream(path));
 		kryo.writeObject(output, features);
@@ -337,7 +336,7 @@ public class FeatureExtraction {
 				spreadsheet.put("traceID", attempt.id);
 				spreadsheet.put("RowID", action.id);
 				Node node = SimpleNodeBuilder.toTree(action.snapshot, true);
-				Set<PQGram> pqGrams = extractPQGrams(node);
+				Set<PQGram> pqGrams = PQGram.extractAllFromNode(node);
 				for (Feature feature : features) {
 					spreadsheet.put("F" + feature.id, feature.isSatisfied(pqGrams) ? 1 : 0);
 				}
@@ -368,7 +367,7 @@ public class FeatureExtraction {
 
 		Map<PQGram, PQGramRule> pqRulesMap = new HashMap<>();
 		for (Node node : correctSubmissions) {
-			for (PQGram gram : extractPQGrams(node)) {
+			for (PQGram gram : PQGram.extractAllFromNode(node)) {
 				PQGramRule rule = pqRulesMap.get(gram);
 				if (rule == null) {
 					pqRulesMap.put(gram, rule = new PQGramRule(gram, n));
@@ -426,7 +425,7 @@ public class FeatureExtraction {
 			byte[] lastState = new byte[allRules.size()];
 			for (Node snapshot : trace) {
 				byte[] state = new byte[allRules.size()];
-				for (PQGram gram : extractPQGrams(snapshot)) {
+				for (PQGram gram : PQGram.extractAllFromNode(snapshot)) {
 					List<CodeShapeRule> rules = rulesMap.get(gram);
 					if (rules == null) continue;
 					rules.forEach(rule -> state[rule.index] = 1);
@@ -496,7 +495,7 @@ public class FeatureExtraction {
 		int snapshotIndex = 0;
 		for (List<Node> trace : allTraces) {
 			for (Node snapshot : trace) {
-				for (PQGram gram : extractPQGrams(snapshot)) {
+				for (PQGram gram : PQGram.extractAllFromNode(snapshot)) {
 					PQGramRule rule = pqRulesMap.get(gram);
 					if (rule == null) continue;
 					rule.snapshotVector[snapshotIndex] = 1;
@@ -556,7 +555,7 @@ public class FeatureExtraction {
 			List<Integer> indices = new ArrayList<>();
 			int[][] tOrders = orders[i];
 			for (Node node : trace) {
-				Set<PQGram> grams = extractPQGrams(node);
+				Set<PQGram> grams = PQGram.extractAllFromNode(node);
 				for (PQGram gram : grams) {
 					Integer index = ruleIndexMap.get(gram);
 					if (indices.contains(index)) continue;
@@ -649,16 +648,6 @@ public class FeatureExtraction {
 			printer.println(out);
 		}
 		printer.close();
-	}
-
-	private static Set<PQGram> extractPQGrams(Node node) {
-		Set<PQGram> pqGrams = new HashSet<>();
-		for (int p = 3; p > 0; p--) {
-			for (int q = 4; q > 0; q--) {
-				pqGrams.addAll(PQGram.extractFromNode(node, p, q));
-			}
-		}
-		return pqGrams;
 	}
 
 	private static double[][] removeDuplicateRules(List<? extends CodeShapeRule> rules, double maxSupport,

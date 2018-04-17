@@ -17,6 +17,8 @@ import edu.isnap.ctd.graph.vector.IndexedVectorState;
 import edu.isnap.ctd.graph.vector.VectorGraph;
 import edu.isnap.ctd.graph.vector.VectorState;
 import edu.isnap.ctd.hint.Ordering.OrderMatrix;
+import edu.isnap.ctd.hint.feature.Feature;
+import edu.isnap.ctd.hint.feature.FeatureGraph;
 
 /**
  * Class for handling the core logic of the CTD algorithm.
@@ -29,6 +31,7 @@ public class HintMap {
 	public final Map<Node, Map<String, Double>> nodePlacementTimes = new IdentityHashMap<>();
 	private final Map<Node, Ordering> nodeOrderings = new IdentityHashMap<>();
 	public OrderMatrix orderMatrix;
+	public final FeatureGraph featureGraph;
 
 	RuleSet ruleSet;
 	final HintConfig config;
@@ -51,7 +54,12 @@ public class HintMap {
 	}
 
 	public HintMap(HintConfig config) {
+		this(config, null);
+	}
+
+	public HintMap(HintConfig config, List<Feature> features) {
 		this.config = config;
+		this.featureGraph = features == null ? null : new FeatureGraph(features);
 	}
 
 	/**
@@ -81,6 +89,7 @@ public class HintMap {
 		// Don't include loops
 		if (fromState.equals(toState)) return;
 		getGraph(to, true).addEdge(fromState, toState);
+		if (featureGraph != null) featureGraph.addEdge(from, to);
 	}
 
 	public void addVertex(Node node, double perc) {
@@ -119,7 +128,7 @@ public class HintMap {
 	}
 
 	public HintMap instance() {
-		return new HintMap(config);
+		return new HintMap(config, featureGraph == null ? null : featureGraph.features);
 	}
 
 	public void setSolution(Node solution) {
@@ -162,6 +171,7 @@ public class HintMap {
 		// Then save the current node creation percs, using the final solution as a key
 		nodePlacementTimes.put(solution, currentNodeCreationPercs);
 		nodeOrderings.put(solution, new Ordering(currentHistory));
+		if (featureGraph != null) featureGraph.addSolution(solution);
 	}
 
 	public IndexedVectorState getContext(Node item) {
@@ -231,6 +241,9 @@ public class HintMap {
 		solutions.addAll(hintMap.solutions);
 		nodePlacementTimes.putAll(hintMap.nodePlacementTimes);
 		nodeOrderings.putAll(hintMap.nodeOrderings);
+		if (featureGraph != null && hintMap.featureGraph != null) {
+			featureGraph.addGraph(hintMap.featureGraph);
+		}
 	}
 
 	/**

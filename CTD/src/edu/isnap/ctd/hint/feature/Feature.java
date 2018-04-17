@@ -9,6 +9,11 @@ public class Feature {
 	public final List<CodeShapeRule> rules = new ArrayList<>();
 	public final int id;
 
+	@SuppressWarnings("unused")
+	private Feature() {
+		this(null, 0);
+	}
+
 	public Feature(CodeShapeRule startRule, int id) {
 		this.id = id;
 		addRule(startRule);
