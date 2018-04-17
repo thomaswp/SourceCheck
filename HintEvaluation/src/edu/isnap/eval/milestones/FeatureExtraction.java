@@ -19,14 +19,10 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.commons.lang3.builder.EqualsBuilder;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
@@ -35,14 +31,17 @@ import com.esotericsoftware.kryo.io.Output;
 import distance.RTED_InfoTree_Opt;
 import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.graph.Node;
+import edu.isnap.ctd.hint.feature.CodeShapeRule;
+import edu.isnap.ctd.hint.feature.DisjunctionRule;
+import edu.isnap.ctd.hint.feature.Feature;
+import edu.isnap.ctd.hint.feature.PQGram;
+import edu.isnap.ctd.hint.feature.PQGramRule;
 import edu.isnap.ctd.util.Alignment;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.datasets.Fall2016;
-import edu.isnap.datasets.Spring2016;
-import edu.isnap.datasets.Spring2017;
 import edu.isnap.datasets.aggregate.CSC200;
 import edu.isnap.eval.util.PrintUpdater;
 import edu.isnap.hint.util.SimpleNodeBuilder;
@@ -54,20 +53,22 @@ import util.LblTree;
 public class FeatureExtraction {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
-//		writeFeatures(true);
+		writeFeatures(true);
 //		readFeatures();
 //		writeDistance();
-		readDistance();
+//		readDistance();
 //		testRPairs();
 //		extractNodeAndEdges();
+		exportFeatures(Fall2016.Squiral);
 	}
 
 	private static Assignment out = CSC200.Squiral;
 	private static Assignment[] trainingData = new Assignment[] {
 			// Use not-Fall2016 data so training and test are separate (duh :P)
-			Spring2016.Squiral, Spring2017.Squiral,
+//			Spring2016.Squiral, Spring2017.Squiral,
 			// But also test with same training/test data for training accuracy
-//			Fall2016.Squiral,
+			Fall2016.Squiral,
+//			Spring2016.Squiral, Spring2017.Squiral, Fall2016.Squiral,
 	};
 
 	private static Map<AssignmentAttempt, List<Node>> loadTrainingData() {
@@ -260,13 +261,27 @@ public class FeatureExtraction {
 		return tree;
 	}
 
-	private static void readFeatures() throws IOException {
-		Assignment out = CSC200.Squiral;
+	private static void exportFeatures(Assignment out) throws IOException {
+		List<Feature> features = readClusters();
+		String path = out.dataDir + "/" + out.name + "-features.cached";
+		Kryo kryo = new Kryo();
+		Output output = new Output(new FileOutputStream(path));
+		kryo.writeObject(output, features);
+		output.close();
+	}
 
+	// TODO: Import R to Java
+	private static void go(List<CodeShapeRule> rules, List<State> states) {
+		rules.stream().map(rule -> new Feature(rule, rule.index)).collect(Collectors.toList());
+
+	}
+
+
+	private static List<Feature> readClusters() throws IOException {
 		Kryo kryo = new Kryo();
 		Input input = new Input(new FileInputStream(out.analysisDir() + "/features.cached"));
 		@SuppressWarnings("unchecked")
-		ArrayList<Rule> allRules = kryo.readObject(input, ArrayList.class);
+		ArrayList<CodeShapeRule> allRules = kryo.readObject(input, ArrayList.class);
 		input.close();
 
 		allRules.sort(Comparator.comparing(rule -> rule.index));
@@ -277,13 +292,11 @@ public class FeatureExtraction {
 
 		Map<Integer, Feature> features = new TreeMap<>();
 
-		boolean disjunct = false;
 		for (CSVRecord record : parser) {
 			int id = Integer.parseInt(record.get("id"));
 			int cluster = Integer.parseInt(record.get("cluster"));
 			String name = record.get("name");
-			Rule rule = allRules.get(id);
-			disjunct |= rule instanceof Disjunction;
+			CodeShapeRule rule = allRules.get(id);
 			if (rule.index != id || !rule.toString().replaceAll("\\s", "")
 					.equals(name.replaceAll("\\s", ""))) {
 				parser.close();
@@ -295,10 +308,20 @@ public class FeatureExtraction {
 			if (feature == null) features.put(cluster, feature = new Feature(rule, cluster));
 			else feature.addRule(rule);
 		}
-
 		parser.close();
 
 		features.values().forEach(System.out::println);
+		ArrayList<Feature> list = new ArrayList<>(features.values());
+		list.sort(Comparator.comparing(f -> f.id));
+		return list;
+	}
+
+	private static void readFeatures() throws IOException {
+		Assignment out = CSC200.Squiral;
+
+		List<Feature> features = readClusters();
+		boolean disjunct = features.stream()
+				.anyMatch(f -> f.rules.stream().anyMatch(r -> r instanceof DisjunctionRule));
 
 		Spreadsheet spreadsheet = new Spreadsheet();
 		List<AssignmentAttempt> attempts = SelectSquiralProjects.selectAttempts();
@@ -315,7 +338,7 @@ public class FeatureExtraction {
 				spreadsheet.put("RowID", action.id);
 				Node node = SimpleNodeBuilder.toTree(action.snapshot, true);
 				Set<PQGram> pqGrams = extractPQGrams(node);
-				for (Feature feature : features.values()) {
+				for (Feature feature : features) {
 					spreadsheet.put("F" + feature.id, feature.isSatisfied(pqGrams) ? 1 : 0);
 				}
 			}
@@ -369,7 +392,7 @@ public class FeatureExtraction {
 		pqRules.forEach(System.out::println);
 
 
-		List<Disjunction> decisions = new ArrayList<>();
+		List<DisjunctionRule> decisions = new ArrayList<>();
 		if (disjunct) {
 			decisions.addAll(extractDecisions(pqRules));
 			Collections.sort(decisions);
@@ -381,18 +404,18 @@ public class FeatureExtraction {
 		}
 		pqRules.removeIf(rule -> rule.support() < 0.90);
 
-		List<Rule> allRules = new ArrayList<>();
+		List<CodeShapeRule> allRules = new ArrayList<>();
 		allRules.addAll(decisions);
 		allRules.addAll(pqRules);
 		removeDuplicateRules(allRules, 0.95, 0.975);
 
 		for (int i = 0; i < allRules.size(); i++) allRules.get(i).index = i;
 
-		ListMap<PQGram, Rule> rulesMap = new ListMap<>();
+		ListMap<PQGram, CodeShapeRule> rulesMap = new ListMap<>();
 		for (PQGramRule pqRule : pqRules) {
 			rulesMap.add(pqRule.pqGram, pqRule);
 		}
-		for (Disjunction decision : decisions) {
+		for (DisjunctionRule decision : decisions) {
 			for (PQGramRule pqRule : decision.rules) {
 				rulesMap.add(pqRule.pqGram, decision);
 			}
@@ -404,7 +427,7 @@ public class FeatureExtraction {
 			for (Node snapshot : trace) {
 				byte[] state = new byte[allRules.size()];
 				for (PQGram gram : extractPQGrams(snapshot)) {
-					List<Rule> rules = rulesMap.get(gram);
+					List<CodeShapeRule> rules = rulesMap.get(gram);
 					if (rules == null) continue;
 					rules.forEach(rule -> state[rule.index] = 1);
 				}
@@ -445,7 +468,7 @@ public class FeatureExtraction {
 		System.out.println("All Rules: ");
 		for (int o = 0; o < allRules.size(); o++) {
 			int i = o; //order.get(o);
-			Rule rule = allRules.get(i);
+			CodeShapeRule rule = allRules.get(i);
 			System.out.printf("%02d: %s\n", rule.index, rule);
 			spreadsheet.newRow();
 			spreadsheet.put("name", rule.toString());
@@ -638,15 +661,15 @@ public class FeatureExtraction {
 		return pqGrams;
 	}
 
-	private static double[][] removeDuplicateRules(List<? extends Rule> rules, double maxSupport,
+	private static double[][] removeDuplicateRules(List<? extends CodeShapeRule> rules, double maxSupport,
 			double maxJaccard) {
 		int maxFollowers = rules.get(0).snapshotVector.length;
 		int nRules = rules.size();
 
 		double[][] jaccardMatrix = createJaccardMatrix(rules);
-		List<Rule> toRemove = new ArrayList<>();
+		List<CodeShapeRule> toRemove = new ArrayList<>();
 		for (int i = 0; i < nRules; i++) {
-			Rule deleteCandidate = rules.get(i);
+			CodeShapeRule deleteCandidate = rules.get(i);
 
 			// Remove any rule with a very high support, since these will be trivially true
 			if (deleteCandidate.snapshotCount >= maxFollowers * maxSupport) {
@@ -657,7 +680,7 @@ public class FeatureExtraction {
 			}
 
 			for (int j = nRules - 1; j > i; j--) {
-				Rule supercedeCandidate = rules.get(j);
+				CodeShapeRule supercedeCandidate = rules.get(j);
 				if (jaccardMatrix[i][j] >= maxJaccard) {
 //					System.out.println("- " + deleteCandidate + "\n+ " + supercedeCandidate);
 //					System.out.println();
@@ -674,16 +697,16 @@ public class FeatureExtraction {
 	}
 
 
-	private static double[][] createDominateMatrix(List<Rule> rules) {
+	private static double[][] createDominateMatrix(List<CodeShapeRule> rules) {
 		int maxFollowers = rules.get(0).snapshotVector.length;
 		int nRules = rules.size();
 
 		double[][] dominateMatrix = new double[nRules][nRules];
 		for (int i = 0; i < nRules; i++) {
-			Rule ruleA = rules.get(i);
+			CodeShapeRule ruleA = rules.get(i);
 			byte[] fA = ruleA.snapshotVector;
 			for (int j = i + 1; j < nRules; j++) {
-				Rule ruleB = rules.get(j);
+				CodeShapeRule ruleB = rules.get(j);
 				byte[] fB = ruleB.snapshotVector;
 				int intersect = 0;
 				for (int k = 0; k < maxFollowers; k++) {
@@ -696,7 +719,7 @@ public class FeatureExtraction {
 		return dominateMatrix;
 	}
 
-	private static double[][] createJaccardMatrix(List<? extends Rule> rules) {
+	private static double[][] createJaccardMatrix(List<? extends CodeShapeRule> rules) {
 		int nRules = rules.size();
 
 		System.out.printf("Creating jaccard matrix %dx%d:\n", nRules, nRules);
@@ -704,10 +727,10 @@ public class FeatureExtraction {
 
 		double[][] jaccardMatrix = new double[nRules][nRules];
 		for (int i = 0; i < nRules; i++) {
-			Rule ruleA = rules.get(i);
+			CodeShapeRule ruleA = rules.get(i);
 			for (int j = i + 1; j < nRules; j++) {
-				Rule ruleB = rules.get(j);
-				double value = jaccardDistance(ruleA, ruleB);
+				CodeShapeRule ruleB = rules.get(j);
+				double value = CodeShapeRule.jaccardDistance(ruleA, ruleB);
 				jaccardMatrix[i][j] = jaccardMatrix[j][i] = value;
 				updater.incrementValue();
 			}
@@ -716,23 +739,11 @@ public class FeatureExtraction {
 		return jaccardMatrix;
 	}
 
-	private static double jaccardDistance(Rule ruleA, Rule ruleB) {
-		byte[] fA = ruleA.snapshotVector;
-		byte[] fB = ruleB.snapshotVector;
-		int intersect = 0;
-		for (int k = 0; k < fA.length; k++) {
-			if (fA[k] == 1 && fB[k] == 1) intersect++;
-		}
-		double value = (double)intersect /
-				(ruleA.snapshotCount + ruleB.snapshotCount - intersect);
-		return value;
-	}
-
-	private static List<Disjunction> extractDecisions(List<PQGramRule> sortedRules) {
-		List<Disjunction> decisions = new ArrayList<>();
+	private static List<DisjunctionRule> extractDecisions(List<PQGramRule> sortedRules) {
+		List<DisjunctionRule> decisions = new ArrayList<>();
 		for (int i = sortedRules.size() - 1; i >= 0; i--) {
 			PQGramRule startRule = sortedRules.get(i);
-			Disjunction disjunction = new Disjunction(startRule);
+			DisjunctionRule disjunction = new DisjunctionRule(startRule);
 
 
 			while (disjunction.support() < 1) {
@@ -763,335 +774,6 @@ public class FeatureExtraction {
 			}
 		}
 		return decisions;
-	}
-
-	public static abstract class Rule {
-		public int index;
-		public double orderSD;
-		public final Set<String> followers = new HashSet<>();
-		public final int maxFollowers;
-
-		protected final List<Rule> duplicateRules = new ArrayList<>();
-
-		protected transient byte[] snapshotVector;
-		protected transient int snapshotCount;
-
-		public abstract boolean isSatisfied(Set<PQGram> pqGrams);
-
-		public Rule(int maxFollowers) {
-			this.maxFollowers = maxFollowers;
-		}
-
-		public void calculateSnapshotCount() {
-			int count = 0;
-			for (int j = 0; j < snapshotVector.length; j++) {
-				count += snapshotVector[j];
-			}
-			snapshotCount = count;
-		}
-
-		public int followCount() {
-			return followers.size();
-		}
-
-		public double support() {
-			return (double) followers.size() / maxFollowers;
-		}
-
-		public int countIntersect(PQGramRule rule) {
-			return (int) followers.stream().filter(rule.followers::contains).count();
-		}
-
-		public int countUnion(PQGramRule rule) {
-			return (int) Stream.concat(followers.stream(), rule.followers.stream())
-					.distinct().count();
-		}
-
-		public double jaccardDistance(PQGramRule rule) {
-			int intersect = countIntersect(rule);
-			return (double)intersect / (followCount() + rule.followCount() - intersect);
-		}
-
-	}
-
-	public static class PQGramRule extends Rule implements Comparable<PQGramRule> {
-
-		public final PQGram pqGram;
-
-		@SuppressWarnings("unused")
-		private PQGramRule() {
-			this(null, 0);
-		}
-
-		public PQGramRule(PQGram pqGram, int maxFollowers) {
-			super(maxFollowers);
-			this.pqGram = pqGram;
-		}
-
-		@Override
-		public String toString() {
-			return String.format("%.02f: %s", support(), pqGram);
-		}
-
-		@Override
-		public int compareTo(PQGramRule o) {
-			int fc = Integer.compare(followCount(), o.followCount());
-			if (fc != 0) return fc;
-			return pqGram.compareTo(o.pqGram);
-		}
-
-		@Override
-		public boolean isSatisfied(Set<PQGram> pqGrams) {
-			return pqGrams.contains(pqGram);
-		}
-	}
-
-	static class Disjunction extends Rule implements Comparable<Disjunction> {
-
-		private List<PQGramRule> rules = new ArrayList<>();
-
-		private Disjunction() {
-			super(0);
-		}
-
-		public Disjunction(PQGramRule startRule) {
-			super(startRule.maxFollowers);
-			snapshotVector = new byte[startRule.snapshotVector.length];
-			addRule(startRule);
-		}
-
-		private double meanJaccard() {
-			int n = rules.size();
-			double totalJacc = 0;
-			int count = 1;
-			for (int i = 0; i < n; i++) {
-				PQGramRule ruleA = rules.get(i);
-				for (int j = i + 1; j < n; j++) {
-					totalJacc += FeatureExtraction.jaccardDistance(ruleA, rules.get(j));
-					count++;
-				}
-			}
-			return totalJacc / count;
-		}
-
-		public void addRule(PQGramRule rule) {
-			rules.add(rule);
-			followers.addAll(rule.followers);
-			for (int i = 0; i < snapshotVector.length; i++) {
-				if (rule.snapshotVector[i] == 1) snapshotVector[i] = 1;
-			}
-			calculateSnapshotCount();
-		}
-
-		@Override
-		public String toString() {
-			return String.format("%.02f:\t%s", support(), String.join(" OR\n\t\t\t\t",
-					rules.stream().map(r -> (CharSequence) r.toString())::iterator));
-		}
-
-		@Override
-		public int compareTo(Disjunction o) {
-			int fc = Integer.compare(followCount(), o.followCount());
-			if (fc != 0) return fc;
-
-			int cr = -Integer.compare(rules.size(), o.rules.size());
-			if (cr != 0) return cr;
-
-			return rules.stream().max(PQGramRule::compareTo).get().compareTo(
-					o.rules.stream().max(PQGramRule::compareTo).get());
-		}
-
-		@Override
-		public boolean isSatisfied(Set<PQGram> pqGrams) {
-			return rules.stream().anyMatch(rule -> rule.isSatisfied(pqGrams));
-		}
-	}
-
-	static class Feature {
-
-		private final List<Rule> rules = new ArrayList<>();
-		private final int id;
-
-		public Feature(Rule startRule, int id) {
-			this.id = id;
-			addRule(startRule);
-		}
-
-		public void addRule(Rule rule) {
-			rules.add(rule);
-		}
-
-		@Override
-		public String toString() {
-			return String.format("%02d:\t%s", id, String.join(" AND\n\t",
-					rules.stream()
-					.map(r -> (CharSequence) r.toString().replaceAll("\\s+", " "))::iterator));
-		}
-
-		public boolean isSatisfied(Set<PQGram> pqGrams) {
-			return rules.stream().allMatch(rule -> rule.isSatisfied(pqGrams));
-		}
-	}
-
-	public static class PQGram implements Comparable<PQGram> {
-
-		public final static String EMPTY = "*";
-
-		public final String[] tokens;
-		public final int p, q;
-		public int count = 1;
-
-		private final int nEmpty;
-		private final int nonEmptyP, nonEmptyQ;
-
-		private PQGram() {
-			this(0, 0, new String[0]);
-		}
-
-		private PQGram(int p, int q, String[] tokens) {
-			if (tokens.length != p + q) {
-				throw new IllegalArgumentException("p + q must equal tokens.length");
-			}
-
-			this.p = p;
-			this.q = q;
-			this.tokens = tokens;
-
-			nEmpty = (int) Arrays.stream(tokens).filter(EMPTY::equals).count();
-			int pr = 0, qr = 0;
-			for (int i = 0 ; i < tokens.length; i++) {
-				if (EMPTY.equals(tokens[i])) continue;
-				if (i < p) pr++;
-				else if (i > p) qr++;
-			}
-			this.nonEmptyP = pr;
-			this.nonEmptyQ = qr;
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if (obj == null) return false;
-			if (obj == this) return true;
-			if (obj.getClass() != getClass()) return false;
-			PQGram rhs = (PQGram) obj;
-			return new EqualsBuilder()
-					.append(p, rhs.p)
-					.append(q, rhs.q)
-					.append(count, rhs.count)
-					.append(tokens, rhs.tokens)
-					.isEquals();
-		}
-
-		@Override
-		public int hashCode() {
-			// Could just cache this;
-			return new HashCodeBuilder(5, 17)
-					.append(p)
-					.append(q)
-					.append(count)
-					.append(tokens)
-					.toHashCode();
-		}
-
-		@Override
-		public String toString() {
-			String[] out = Arrays.copyOf(tokens, tokens.length);
-			out[p - 1] = "{" + out[p - 1]  + "}";
-			return Arrays.toString(out) + (count > 1 ? (" x" + count) : "");
-		}
-
-		private final static Comparator<PQGram> comparator =
-				Comparator.comparing((PQGram gram) -> gram.nonEmptyQ)
-				.thenComparing(gram -> gram.nonEmptyP)
-				.thenComparing(gram -> gram.count)
-				.thenComparing(gram -> -gram.nEmpty)
-				.thenComparing(gram -> gram.tokens[gram.p - 1]);
-
-		@Override
-		public int compareTo(PQGram o) {
-			return comparator.compare(this, o);
-		}
-
-		// Not currently in use...
-		public boolean contains(PQGram o) {
-			if (o.q > q) return false;
-			if (o.p > p + 1) return false;
-			if (o.p > p && o.q > 1) return false;
-
-			if (o.q == 1) {
-				// If the the other is a path, check if it is a subsequence of our p
-				if (containsSubsequece(tokens, 0, p, o.tokens, 0, o.tokens.length)) return true;
-			}
-
-			// Next make sure that other's p is a subset of ours
-			for (int i = 0; i < p && i < o.p; i++) {
-				if (!StringUtils.equals(tokens[p - i - 1], o.tokens[o.p - i - 1])) return false;
-			}
-
-			// Then make sure the other's q is a subsequence of ours
-			return containsSubsequece(tokens, p, q, o.tokens, o.p, o.q);
-		}
-
-		private static boolean containsSubsequece(String[] a, int startA, int lengthA,
-				String[] b, int startB, int lengthB) {
-			if (lengthB > lengthA) return false;
-
-			for (int offset = 0; offset <= lengthA - lengthB; offset++) {
-				boolean eq = true;
-				for (int i = 0; i < lengthB; i++) {
-					if (!StringUtils.equals(a[startA + i + offset], b[startB + i])) {
-						eq = false;
-						break;
-					}
-				}
-				if (eq) return true;
-			}
-			return false;
-		}
-
-		public static String labelForNode(Node node) {
-			if (node == null) return EMPTY;
-			return node.type();
-		}
-
-		public static Set<PQGram> extractFromNode(Node node, int p, int q) {
-			Set<PQGram> set = new HashSet<>();
-			extractFromNode(node, p, q, set);
-			return set;
-		}
-
-		private static void extractFromNode(Node node, int p, int q, Set<PQGram> set) {
-			String[] tokens = new String[p + q];
-			Arrays.fill(tokens, EMPTY);
-
-			Node parent = node;
-			for (int i = p - 1; i >= 0; i--) {
-				tokens[i] = labelForNode(parent);
-				if (parent != null) parent = parent.parent;
-			}
-
-			if (node.children.size() == 0) {
-				set.add(new PQGram(p, q, tokens));
-				return;
-			}
-
-			for (int offset = 1 - q; offset <= node.children.size() - 1; offset++) {
-				tokens = Arrays.copyOf(tokens, tokens.length);
-				for (int i = 0; i < q; i++) {
-					int tokenIndex = i + p;
-					int childIndex = i + offset;
-					Node child = childIndex >= 0 && childIndex < node.children.size() ?
-							node.children.get(childIndex) : null;
-					tokens[tokenIndex] = labelForNode(child);
-				}
-				PQGram pqGram = new PQGram(p, q, tokens);
-				while (!set.add(pqGram)) pqGram.count++;
-			}
-
-			for (Node child : node.children) {
-				extractFromNode(child, p, q, set);
-			}
-		}
 	}
 
 }
