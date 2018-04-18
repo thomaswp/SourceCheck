@@ -52,13 +52,13 @@ import util.LblTree;
 public class FeatureExtraction {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
-		writeFeatures(true);
-//		readFeatures();
+//		writeFeatures(true);
+		readFeatures();
 //		writeDistance();
 //		readDistance();
 //		testRPairs();
 //		extractNodeAndEdges();
-		exportFeatures(Fall2016.Squiral);
+//		exportFeatures(Fall2016.Squiral);
 	}
 
 	private static Assignment out = CSC200.Squiral;
@@ -69,6 +69,7 @@ public class FeatureExtraction {
 			Fall2016.Squiral,
 //			Spring2016.Squiral, Spring2017.Squiral, Fall2016.Squiral,
 	};
+	private static Assignment testData = CSC200.Squiral;
 
 	private static Map<AssignmentAttempt, List<Node>> loadTrainingData() {
 		Map<AssignmentAttempt, List<Node>> data = loadAssignments(trainingData);
@@ -88,7 +89,7 @@ public class FeatureExtraction {
 		Assignment out = CSC200.Squiral;
 
 		Spreadsheet spreadsheet = new Spreadsheet();
-		List<AssignmentAttempt> attempts = SelectSquiralProjects.selectAttempts();
+		List<AssignmentAttempt> attempts = SelectProjects.selectAttempts(testData);
 
 		int nActions = attempts.stream().mapToInt(attempt -> attempt.size()).sum();
 		PrintUpdater updater = new PrintUpdater(50, nActions);
@@ -226,7 +227,7 @@ public class FeatureExtraction {
 		parser.close();
 
 		Spreadsheet spreadsheet = new Spreadsheet();
-		List<AssignmentAttempt> attempts = SelectSquiralProjects.selectAttempts();
+		List<AssignmentAttempt> attempts = SelectProjects.selectAttempts(testData);
 		int nActions = attempts.stream().mapToInt(attempt -> attempt.size()).sum();
 
 		RTED_InfoTree_Opt rted = new RTED_InfoTree_Opt(1, 1, 1);
@@ -323,7 +324,7 @@ public class FeatureExtraction {
 				.anyMatch(f -> f.rules.stream().anyMatch(r -> r instanceof DisjunctionRule));
 
 		Spreadsheet spreadsheet = new Spreadsheet();
-		List<AssignmentAttempt> attempts = SelectSquiralProjects.selectAttempts();
+		List<AssignmentAttempt> attempts = SelectProjects.selectAttempts(testData);
 		int nActions = attempts.stream().mapToInt(attempt -> attempt.size()).sum();
 
 		System.out.println("Testing features: ");

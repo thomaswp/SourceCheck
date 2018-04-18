@@ -9,24 +9,25 @@ import java.util.Map;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
-import edu.isnap.datasets.Fall2016;
+import edu.isnap.datasets.aggregate.CSC200;
 import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
 
-public class SelectSquiralProjects {
+public class SelectProjects {
 
-	public final static Assignment Assignment = Fall2016.Squiral;
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
-		writeDataSpreadsheet();
-		writeRatingIDs();
+		Assignment assignment = CSC200.Squiral;
+		writeDataSpreadsheet(assignment);
+		writeRatingIDs(assignment);
 	}
 
-	public static void writeDataSpreadsheet() throws FileNotFoundException, IOException {
+	public static void writeDataSpreadsheet(Assignment assignment)
+			throws FileNotFoundException, IOException {
 		String baseURL = "http://arena.csc.ncsu.edu/history/fall2016/logging/view/display.php";
 		Spreadsheet spreadsheet = new Spreadsheet();
-		List<AssignmentAttempt> attempts = selectAttempts();
+		List<AssignmentAttempt> attempts = selectAttempts(assignment);
 		for (AssignmentAttempt attempt : attempts) {
 			spreadsheet.newRow();
 			spreadsheet.put("id", String.format(
@@ -37,11 +38,11 @@ public class SelectSquiralProjects {
 			spreadsheet.put("activeTime", attempt.totalActiveTime);
 		}
 
-		spreadsheet.write(Assignment.exportDir() + "/feature-tagging.csv");
+		spreadsheet.write(assignment.exportDir() + "/feature-tagging.csv");
 	}
 
-	public static List<AssignmentAttempt> selectAttempts() {
-		Map<String, AssignmentAttempt> attempts = Assignment.load(Mode.Use, false, true,
+	public static List<AssignmentAttempt> selectAttempts(Assignment assignment) {
+		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, false, true,
 				new SnapParser.SubmittedOnly());
 		List<AssignmentAttempt> selected = new ArrayList<>();
 		for (AssignmentAttempt attempt : attempts.values()) {
@@ -58,8 +59,8 @@ public class SelectSquiralProjects {
 		return selected;
 	}
 
-	public static void writeRatingIDs() {
-		List<AssignmentAttempt> attempts = selectAttempts();
+	public static void writeRatingIDs(Assignment assignment) {
+		List<AssignmentAttempt> attempts = selectAttempts(assignment);
 		for (AssignmentAttempt attempt : attempts) {
 			System.out.println(attempt.id);
 			for (AttemptAction action : attempt) {
