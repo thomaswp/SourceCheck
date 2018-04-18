@@ -2,6 +2,8 @@ library(readr)
 library(plyr)
 library(reshape2)
 
+first <- function(x) head(x, 1)
+
 filterFeatures <- function(data) {
   for (traceID in unique(data$traceID)) {
     subset <- data[data$traceID == traceID,]
@@ -334,6 +336,16 @@ dependMat <- function(tutor, auto) {
     } 
   }
   mat
+}
+
+featureProbs <- function(rows, f) {
+  changes <- ddply(shapes11F, "traceID", summarize, changeIdx=first(which(F2==1)), changeRow = RowID[changeIdx], changeState=state[changeIdx])
+  preMat <- (do.call("rbind", strsplit(changes$changeState, "")) == "1") + 0
+  weights <- (colSums(preMat) / nrow(preMat)) ^ 2
+  weights <- weights / sum(weights)
+  weights
+  scores <- 1 - (1 - preMat) %*% weights
+  cbind(preMat, scores)
 }
 
 win <- 25
