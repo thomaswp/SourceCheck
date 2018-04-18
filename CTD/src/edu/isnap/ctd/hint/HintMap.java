@@ -89,11 +89,11 @@ public class HintMap {
 		// Don't include loops
 		if (fromState.equals(toState)) return;
 		getGraph(to, true).addEdge(fromState, toState);
-		if (featureGraph != null) featureGraph.addEdge(from, to);
 	}
 
 	public void addVertex(Node node, double perc) {
 		currentHistory.add(node);
+		featureGraph.addNode(node);
 	}
 
 	public VectorGraph getGraph(Node node) {
@@ -263,16 +263,23 @@ public class HintMap {
 			Node child = node;
 			String dir = rootDir;
 			while (child.children.size() > 0) {
-				dir += child.type() + "/";
+				dir += child.type().replaceAll("\\W+", "_") + "/";
 				child = child.children.get(0);
 			}
 			new File(dir).mkdirs();
-			File file = new File(dir, child.type());
+			File file = new File(dir, child.type().replaceAll("\\W+", "_"));
 
 			graph.export(new PrintStream(new FileOutputStream(file + ".graphml")), true,
-					0, false, true);
+					0, false, true, false);
 			graph.exportGoals(new PrintStream(file + ".txt"));
 		}
+		featureGraph.graph.bellmanBackup(config.pruneGoals);
+		featureGraph.graph.export(new PrintStream(
+				new FileOutputStream(rootDir + "features.graphml")),
+				false, 0, false, true, false);
+		featureGraph.graph.export(new PrintStream(
+				new FileOutputStream(rootDir + "features-p3.graphml")),
+				false, 3, false, true, false);
 	}
 
 }
