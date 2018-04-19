@@ -287,4 +287,16 @@ public class ASTNode implements INode {
 	public String toString() {
 		return prettyPrint(false, node -> false);
 	}
+
+	public ASTSnapshot toSnapshot() {
+		return toSnapshot(false, null);
+	}
+
+	public ASTSnapshot toSnapshot(boolean isCorrect, String source) {
+		ASTSnapshot snapshot = new ASTSnapshot(type, value, id, isCorrect, source);
+		for (int i = 0; i < children.size(); i++) {
+			snapshot.addChild(childRelations.get(i), children.get(i));
+		}
+		return snapshot;
+	}
 }

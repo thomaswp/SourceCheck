@@ -8,12 +8,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.function.Function;
-import java.util.function.Predicate;
 
 import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.ASTNode;
+import edu.isnap.ctd.graph.ASTSnapshot;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.NodeConstructor;
 import edu.isnap.dataset.Assignment;
@@ -32,6 +31,8 @@ import edu.isnap.parser.elements.LiteralBlock.Type;
 import edu.isnap.parser.elements.Snapshot;
 import edu.isnap.parser.elements.util.Canonicalization;
 import edu.isnap.parser.elements.util.IHasID;
+import edu.isnap.rating.Trace;
+import edu.isnap.rating.TraceDataset;
 
 public class JsonAST {
 
@@ -94,40 +95,35 @@ public class JsonAST {
 
 	public static void exportAllAssignmentTraces(Assignment assignment, boolean canon)
 			throws FileNotFoundException {
-		exportAssignmentTraces(assignment, canon, "all-traces" + (canon ? "-canon" : ""),
-				a -> true, a -> action -> true, a -> a.id);
-	}
-
-	public static void exportAssignmentTraces(Assignment assignment, boolean canon, String folder,
-			Predicate<AssignmentAttempt> attemptFilter,
-			Function<AssignmentAttempt, Predicate<AttemptAction>> actionFilter,
-			Function<AssignmentAttempt, String> namer)
-			throws FileNotFoundException {
-		System.out.println(assignment.name + ": " + folder);
+		TraceDataset dataset = new TraceDataset("all-traces");
 		for (AssignmentAttempt attempt : assignment.load(
 				Mode.Use, false, true, new SnapParser.LikelySubmittedOnly()).values()) {
-			if (!attemptFilter.test(attempt)) continue;
-			String lastJSON = "";
 			System.out.println(attempt.id);
-//			String last = "";
-			int order = 0;
-			Snapshot lastSnapshot = null;
-			for (AttemptAction action : attempt) {
-				if (!actionFilter.apply(attempt).test(action)) continue;
-				if (lastSnapshot == action.lastSnapshot) continue;
-				lastSnapshot = action.lastSnapshot;
-				String json = toJSON(action.lastSnapshot, canon).toString(2);
-				if (json.equals(lastJSON)) continue;
-				lastJSON = json;
-				write(String.format("%s/%s/%05d-%05d.json",
-						assignment.dir("export/" + folder),
-						namer.apply(attempt), order++, action.id), json);
-//				System.out.println(action.id);
-//				System.out.println(Diff.diff(last,
-//						last = SimpleNodeBuilder.toTree(action.snapshot, true).prettyPrint(), 1));
-			}
-//			System.out.println(SimpleNodeBuilder.toTree(attempt.submittedSnapshot, true).prettyPrint());
+			Trace trace = createTrace(attempt, assignment.name, canon, null);
+			dataset.addTrace(trace);
 		}
+		String dir = assignment.dir("export/all-traces" + (canon ? "-canon" : "") + "/");
+		dataset.writeToFolder(dir);
+	}
+
+	public static Trace createTrace(AssignmentAttempt attempt, String assignmentID, boolean canon,
+			Integer stopID) {
+		Snapshot lastSnapshot = null;
+		ASTSnapshot lastNode = null;
+		boolean attemptCorrect = attempt.grade != null && attempt.grade.average() == 1;
+		String id = stopID == null ? attempt.id : String.valueOf(stopID);
+		Trace trace = new Trace(id, assignmentID);
+		for (AttemptAction action : attempt) {
+			if (stopID != null && action.id > stopID) break;
+			if (lastSnapshot == action.lastSnapshot) continue;
+			lastSnapshot = action.lastSnapshot;
+			boolean correct = attemptCorrect && action.id == attempt.submittedActionID;
+			ASTSnapshot node = JsonAST.toAST(action.lastSnapshot, canon).toSnapshot(correct, null);
+			if (node.equals(lastNode)) continue;
+			lastNode = node;
+			trace.add(node);
+		}
+		return trace;
 	}
 
 	protected static void exportAssignmentSolutions(Assignment assignment, boolean canon)

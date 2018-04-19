@@ -14,6 +14,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.ASTNode;
+import edu.isnap.ctd.graph.ASTSnapshot;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.edit.EditHint;
@@ -159,5 +160,8 @@ public class PythonImport {
 			return typeHasBody(type);
 		}
 
+		public ASTSnapshot toASTSnapshot() {
+			return super.toASTSnapshot(correct.orElse(false), source);
+		}
 	}
 }

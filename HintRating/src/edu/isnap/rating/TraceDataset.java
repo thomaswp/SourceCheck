@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.util.Collection;
 import java.util.Collections;
@@ -18,12 +19,15 @@ import java.util.zip.GZIPOutputStream;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.ASTNode;
+import edu.isnap.ctd.graph.ASTSnapshot;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.hint.util.Spreadsheet;
 
-public abstract class TraceDataset {
+public class TraceDataset {
 
 	protected final ListMap<String, Trace> traceMap = new ListMap<>();
 
@@ -45,8 +49,13 @@ public abstract class TraceDataset {
 		traceMap.values().forEach(Collections::sort);
 	}
 
+	public void addTrace(Trace trace) {
+		traceMap.add(trace.assignmentID, trace);
+	}
+
 	@Deprecated
 	protected void addDirectory(String directory) throws IOException{
+//		long time = System.currentTimeMillis();
 		File dirFile = new File(directory);
 		if (!dirFile.exists()) {
 			throw new FileNotFoundException("Directory does not exist: " +
@@ -56,6 +65,7 @@ public abstract class TraceDataset {
 			addAssignment(assignmentDir);
 		}
 		sort();
+//		System.out.println("Read directory in: " + (System.currentTimeMillis() - time));
 	}
 
 	private void addAssignment(File directory) throws IOException {
@@ -68,7 +78,7 @@ public abstract class TraceDataset {
 					continue;
 				}
 				String source = new String(Files.readAllBytes(snapshotFile.toPath()));
-				ASTNode node = ASTNode.parse(source);
+				ASTSnapshot node = ASTSnapshot.parse(source);
 				trace.add(node);
 			}
 			traceMap.add(assignmentID, trace);
@@ -76,6 +86,7 @@ public abstract class TraceDataset {
 	}
 
 	protected void addSpreadsheet(String path) throws IOException {
+//		long time = System.currentTimeMillis();
 		String lcPath = path.toLowerCase();
 		boolean zip = lcPath.endsWith(".gz") || lcPath.endsWith(".gzip");
 		InputStream in = new FileInputStream(path);
@@ -92,11 +103,41 @@ public abstract class TraceDataset {
 			}
 
 			String json = record.get("code");
-			ASTNode node = ASTNode.parse(json);
-			trace.add(node);
+			trace.add(ASTSnapshot.parse(json));
 		}
 		parser.close();
 		sort();
+//		System.out.println("Read spreadsheet in: " + (System.currentTimeMillis() - time));
+	}
+
+	public void writeToFolder(String rootDir) throws FileNotFoundException, JSONException {
+		if (!rootDir.endsWith(File.separator)) rootDir += File.separator;
+		for (String assignmentID : traceMap.keySet()) {
+			for (Trace trace : traceMap.get(assignmentID)) {
+				String shortID = trace.id;
+				int order = 0;
+				if (shortID.length() > 8) shortID = shortID.substring(0, 8);
+				for (ASTNode snapshot : trace) {
+					JSONObject json = snapshot.toJSON();
+					write(
+						String.format("%s%s/%s/%05d-%s.json",
+							rootDir,
+							assignmentID,
+							trace.id,
+							order++,
+							shortID),
+						json.toString(2));
+				}
+			}
+		}
+	}
+
+	private static void write(String path, String text) throws FileNotFoundException {
+		File file = new File(path);
+		file.getParentFile().mkdirs();
+		PrintWriter writer = new PrintWriter(file);
+		writer.println(text);
+		writer.close();
 	}
 
 	public void writeToSpreadsheet(String path, boolean zip) throws IOException {
@@ -114,6 +155,16 @@ public abstract class TraceDataset {
 					spreadsheet.put("assignmentID", trace.assignmentID);
 					spreadsheet.put("traceID", trace.id);
 					spreadsheet.put("index", i++);
+
+					boolean isCorrect = false;
+					String source = "";
+					if (node instanceof ASTSnapshot) {
+						isCorrect = ((ASTSnapshot) node).isCorrect;
+						source = ((ASTSnapshot) node).source;
+					}
+
+					spreadsheet.put("isCorrect", isCorrect);
+					spreadsheet.put("source", source);
 					spreadsheet.put("code", node.toJSON().toString());
 				}
 			}

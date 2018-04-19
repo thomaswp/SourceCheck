@@ -42,7 +42,7 @@ public abstract class HighlightHintSet extends HintMapHintSet {
 		for (String assignmentID : standard.getAssignmentIDs()) {
 			for (String requestID : standard.getRequestIDs(assignmentID)) {
 				Trace trace = new Trace(requestID, assignmentID);
-				trace.add(standard.getHintRequestNode(assignmentID, requestID));
+				trace.add(standard.getHintRequestNode(assignmentID, requestID).toSnapshot());
 				requests.add(new HintRequest(trace));
 			}
 		}

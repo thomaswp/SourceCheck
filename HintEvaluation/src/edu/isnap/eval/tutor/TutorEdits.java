@@ -12,8 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.apache.commons.csv.CSVFormat;
@@ -21,7 +19,6 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.graph.Node;
@@ -47,12 +44,15 @@ import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.hint.util.SnapNode;
 import edu.isnap.hint.util.Spreadsheet;
+import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.Snapshot;
 import edu.isnap.rating.GoldStandard;
 import edu.isnap.rating.HintSet;
 import edu.isnap.rating.RateHints;
 import edu.isnap.rating.RatingConfig;
+import edu.isnap.rating.Trace;
+import edu.isnap.rating.TraceDataset;
 import edu.isnap.rating.TutorHint;
 import edu.isnap.rating.TutorHint.Priority;
 import edu.isnap.rating.TutorHint.Validity;
@@ -87,10 +87,10 @@ public class TutorEdits {
 //		spreadsheet.write(trainingDataset.analysisDir() + "/highlight-hints.csv");
 //	}
 
-	public static void exportRatingDatasetSnap(Dataset dataset, String path,
-			String folder, Assignment... assignments)
+	public static void buildSnapDatasets(Dataset dataset, String consensusPath,
+			TraceDataset training, TraceDataset requests, Assignment... assignments)
 			throws FileNotFoundException, IOException {
-		CSVParser parser = new CSVParser(new FileReader(dataset.dataDir + "/" + path),
+		CSVParser parser = new CSVParser(new FileReader(dataset.dataDir + "/" + consensusPath),
 				CSVFormat.DEFAULT.withHeader());
 		Set<Integer> ids = new HashSet<>();
 		for (CSVRecord record : parser) {
@@ -103,41 +103,39 @@ public class TutorEdits {
 			if (assignment.dataset != dataset) {
 				throw new RuntimeException("Assignment must be from given dataset!");
 			}
-			Set<String> stopped = new HashSet<>();
-			Function<AssignmentAttempt, Predicate<AttemptAction>> actionFilter =
-					attempt -> action -> {
-				if (ids.contains(action.id)) {
-					stopped.add(attempt.id);
-					collectedIDs.add(action.id);
-					return true;
+			for (AssignmentAttempt attempt : assignment.load(
+					Mode.Use, false, true, new SnapParser.LikelySubmittedOnly()).values()) {
+				System.out.println(attempt.id);
+				List<Integer> requestIDs = attempt.rows.rows.stream()
+						.filter(a -> ids.contains(a.id))
+						.map(a -> a.id)
+						.collect(Collectors.toList());
+				collectedIDs.addAll(requestIDs);
+
+				if (requestIDs.size() == 0) {
+					if (assignment.wasLoggingUnstable(attempt.id) ||
+							attempt.grade == null || attempt.grade.average() != 1) continue;
+					Trace trace = JsonAST.createTrace(attempt, assignment.name, true, null);
+					training.addTrace(trace);
+				} else {
+					for (Integer requestID : requestIDs) {
+						requests.addTrace(
+								JsonAST.createTrace(attempt, assignment.name, true, requestID));
+					}
 				}
-				return !stopped.contains(attempt.id);
-			};
-			JsonAST.exportAssignmentTraces(assignment, true, folder + "/requests",
-					attempt -> attempt.rows.rows.stream().anyMatch(a -> ids.contains(a.id)),
-					actionFilter,
-					attempt -> attempt.rows.rows.stream()
-									.filter(a -> ids.contains(a.id))
-									.map(a -> String.valueOf(a.id))
-									.findAny().orElse(attempt.id));
-			JsonAST.exportAssignmentTraces(assignment, true, folder + "/training",
-					attempt -> !stopped.contains(attempt.id) &&
-						!assignment.wasLoggingUnstable(attempt.id) &&
-						attempt.grade != null && attempt.grade.average() == 1,
-					attempt -> action -> true,
-					attempt -> attempt.id);
+
+			}
 		}
 
 		if (collectedIDs.size() != ids.size()) {
 			ids.removeAll(collectedIDs);
 			throw new RuntimeException("Missing row IDs: " + ids);
 		}
-		JsonAST.write(dataset.dataDir + "/export/" + folder + "/values.txt",
-				JsonAST.flushWrittenValues());
 	}
 
-	public static void exportRatingDatasetPython(String jsonDir, String editsDir, String outputDir)
-			throws IOException {
+	public static void buildPythonDatasets(String jsonDir, String editsDir,
+			TraceDataset training, TraceDataset requests) throws IOException {
+
 		Map<String, ListMap<String, PythonNode>> nodeMap =
 				PythonImport.loadAllAssignments(jsonDir);
 		ListMap<String, PrintableTutorHint> tutorHint =
@@ -161,11 +159,11 @@ public class TutorEdits {
 					while (!snapshots.get(snapshots.size() - 1).correct.orElse(false)) {
 						snapshots.remove(snapshots.size() - 1);
 					}
-					exportHistory(outputDir, assignmentID, snapshots, null);
+					training.addTrace(createTrace(assignmentID, snapshots, null));
 				} else {
 					for (PythonNode request : hintRequestNodes) {
 						hintRequestIDs.remove(request.id);
-						exportHistory(outputDir, assignmentID, snapshots, request);
+						requests.addTrace(createTrace(assignmentID, snapshots, request));
 					}
 				}
 			}
@@ -177,29 +175,18 @@ public class TutorEdits {
 		}
 	}
 
-	private static void exportHistory(String rootDir, String assignmentID,
-			List<PythonNode> snapshots, PythonNode requestNode)
-					throws FileNotFoundException, JSONException {
+	private static Trace createTrace(String assignmentID, List<PythonNode> snapshots,
+			PythonNode requestNode) throws FileNotFoundException, JSONException {
+		if (snapshots.size() == 0) return null;
+		String id = requestNode == null ? snapshots.get(0).id : requestNode.id;
+		Trace trace = new Trace(id, assignmentID);
 		PythonNode lastNode = null;
-		int order = 0;
-		boolean isTraining = requestNode == null;
 		for (PythonNode snapshot : snapshots) {
 			if (snapshot.equals(lastNode)) continue;
-			JSONObject json = snapshot.toASTNode().toJSON();
-			json.put("isCorrect", snapshot.correct.orElse(false));
-			json.put("source", snapshot.source);
-			String id = snapshot.id;
-			if (id.length() > 8) id = id.substring(0, 8);
-			JsonAST.write(
-					String.format("%s/%s/%s/%s/%05d-%s.json",
-						rootDir,
-						isTraining ? "training" : "requests",
-						assignmentID,
-						isTraining ? snapshot.student : requestNode.id,
-						order++, id),
-					json.toString(2));
+			trace.add(snapshot.toASTSnapshot());
 			if (snapshot == requestNode) break;
 		}
+		return trace;
 	}
 
 	public static void verifyHints(Dataset dataset) throws FileNotFoundException, IOException {

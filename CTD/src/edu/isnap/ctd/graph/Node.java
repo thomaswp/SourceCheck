@@ -601,6 +601,12 @@ public abstract class Node extends StringHashable implements INode {
 		Node constructNode(Node parent, String type, String value, String id);
 	}
 
+	public ASTSnapshot toASTSnapshot(boolean isCorrect, String source) {
+		ASTSnapshot node = new ASTSnapshot(type, value, id, isCorrect, source);
+		children.forEach(child -> node.addChild(child == null ? null : child.toASTNode()));
+		return node;
+	}
+
 	public ASTNode toASTNode() {
 		ASTNode node = new ASTNode(type, value, id);
 		children.forEach(child -> node.addChild(child == null ? null : child.toASTNode()));

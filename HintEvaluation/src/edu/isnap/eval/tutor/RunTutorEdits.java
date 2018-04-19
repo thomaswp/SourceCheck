@@ -26,6 +26,7 @@ import edu.isnap.rating.HintSet;
 import edu.isnap.rating.RateHints;
 import edu.isnap.rating.RateHints.HintRatingSet;
 import edu.isnap.rating.RatingConfig;
+import edu.isnap.rating.TraceDataset;
 import edu.isnap.rating.TrainingDataset;
 import edu.isnap.rating.TutorHint;
 import edu.isnap.rating.TutorHint.Validity;
@@ -51,12 +52,12 @@ public class RunTutorEdits extends TutorEdits {
 
 		// Exporting things (Note: this may require some copy and paste)
 //		dataset.writeGoldStandard();
-//		dataset.exportTrainingAndTestData(true);
+		dataset.exportTrainingAndTestData(false);
 //		dataset.writeHintSet(algorithm, source);
 
-		dataset.verifyGoldStandard();
+//		dataset.verifyGoldStandard();
 
-		dataset.runHintRating(algorithm, source, debug, writeHints);
+//		dataset.runHintRating(algorithm, source, debug, writeHints);
 
 //		dataset.testKValues(algorithm, source, debug, writeHints, 1, 20);
 //		dataset.writeColdStart(algorithm, 200, 1);
@@ -130,27 +131,16 @@ public class RunTutorEdits extends TutorEdits {
 		}
 
 		@Override
-		void exportTrainingAndTestData(boolean toSpreadsheet)
-				throws FileNotFoundException, IOException {
-			if (toSpreadsheet) {
-				// TODO: Make an actual method for this
-				getRequestDataset().writeToSpreadsheet(
-						getDataDir() + RateHints.REQUEST_FILE, true);
-				getTrainingDataset().writeToSpreadsheet(
-						getDataDir() + RateHints.TRAINING_FILE, true);
-				return;
-			}
+		void addTrainingAndTestData(TraceDataset training, TraceDataset requests)
+				throws IOException {
 			Dataset[] datasets = getDatasets();
 			for (int i = 0; i < datasets.length; i++) {
 				Map<String, Assignment> assignmentMap = datasets[i].getAssignmentMap();
 				Assignment guessingGame = assignmentMap.get("guess1Lab");
 				Assignment squiral = assignmentMap.get("squiralHW");
-				exportRatingDatasetSnap(datasets[i], CONSENSUS_GG_SQ, "hint-eval",
+				buildSnapDatasets(datasets[i], CONSENSUS_GG_SQ, training, requests,
 						guessingGame, squiral);
 			}
-			System.out.println();
-			System.out.println("Data exported to respective assignment/export folders.");
-			System.out.println("Please copy to hint-rating directory if desired");
 		}
 	}
 
@@ -179,14 +169,11 @@ public class RunTutorEdits extends TutorEdits {
 			return "../data/itap/" + dir + "templates";
 		}
 
+
 		@Override
-		void exportTrainingAndTestData(boolean toSpreadsheet) throws IOException {
-			if (toSpreadsheet) {
-				// TODO: Make an actual method for this
-				return;
-			}
-			exportRatingDatasetPython("../../PythonAST/data", "../data/itap",
-					RateHints.ITAP_S16_DATA_DIR);
+		void addTrainingAndTestData(TraceDataset training, TraceDataset requests)
+				throws IOException {
+			buildPythonDatasets("../../PythonAST/data", "../data/itap", training, requests);
 		}
 	};
 
@@ -198,7 +185,22 @@ public class RunTutorEdits extends TutorEdits {
 		abstract HintConfig createHintConfig();
 		abstract String getDataDir();
 		abstract String getTemplateDir(Source source);
-		abstract void exportTrainingAndTestData(boolean toSpreadsheet) throws IOException;
+		abstract void addTrainingAndTestData(TraceDataset training, TraceDataset requests)
+				throws IOException;
+
+		void exportTrainingAndTestData(boolean toSpreadsheet) throws IOException {
+			TraceDataset training = new TraceDataset("training");
+			TraceDataset requests = new TraceDataset("requests");
+			addTrainingAndTestData(training, requests);
+			String dataDir = getDataDir();
+			if (toSpreadsheet) {
+				training.writeToSpreadsheet(dataDir + RateHints.TRAINING_FILE, true);
+				requests.writeToSpreadsheet(dataDir + RateHints.REQUEST_FILE, true);
+			} else {
+				training.writeToFolder(dataDir + "training");
+				requests.writeToFolder(dataDir + "requests");
+			}
+		}
 
 		public GoldStandard readGoldStandard() throws FileNotFoundException, IOException {
 			return GoldStandard.parseSpreadsheet(getDataDir() + RateHints.GS_SPREADSHEET);
