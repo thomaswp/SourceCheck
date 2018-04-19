@@ -10,8 +10,8 @@ import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.hint.HintMapBuilder;
 import edu.isnap.rating.HintRequest;
+import edu.isnap.rating.Trace;
 import edu.isnap.rating.TrainingDataset;
-import edu.isnap.rating.TrainingDataset.Trace;
 
 public class ImportHighlightHintSet extends HighlightHintSet {
 

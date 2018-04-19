@@ -5,7 +5,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.util.Diff;
@@ -26,6 +25,7 @@ import edu.isnap.rating.HintSet;
 import edu.isnap.rating.RateHints;
 import edu.isnap.rating.RateHints.HintRatingSet;
 import edu.isnap.rating.RatingConfig;
+import edu.isnap.rating.HintRequestDataset;
 import edu.isnap.rating.TrainingDataset;
 import edu.isnap.rating.TutorHint;
 import edu.isnap.rating.TutorHint.Validity;
@@ -200,7 +200,7 @@ public class RunTutorEdits extends TutorEdits {
 			} else {
 				hintSet = algorithm.getHintSetFromTemplate(hintConfig, getTemplateDir(source));
 			}
-			hintSet.addHints(standard);
+			hintSet.addHints(getRequestDataset());
 			return hintSet;
 		}
 
@@ -283,28 +283,24 @@ public class RunTutorEdits extends TutorEdits {
 					getDataDir() + RateHints.TRAINING_DIR);
 		}
 
+		private HintRequestDataset getRequestDataset() throws IOException {
+			return HintRequestDataset.fromDirectory("",
+					getDataDir() + RateHints.REQUEST_DIR);
+		}
+
 		private ColdStart getColdStart(HintAlgorithm algorithm)
 				throws FileNotFoundException, IOException {
 			GoldStandard standard = readGoldStandard();
 			TrainingDataset dataset = getTrainingDataset();
+			HintRequestDataset requests = getRequestDataset();
 			HintGenerator hintGenerator = algorithm.getHintGenerator(hintConfig);
-			ColdStart coldStart = new ColdStart(standard, dataset, hintGenerator);
+			ColdStart coldStart = new ColdStart(standard, dataset, requests, hintGenerator);
 			return coldStart;
 		}
 
 		private void verifyGoldStandard() throws FileNotFoundException, IOException {
 			GoldStandard gs1 = readGoldStandard();
 			GoldStandard gs2 = generateGoldStandard();
-
-			List<String> rqs1 =
-					gs1.getHintRequests().stream().map(r -> r.id).collect(Collectors.toList());
-			List<String> rqs2 =
-					gs2.getHintRequests().stream().map(r -> r.id).collect(Collectors.toList());
-
-			if (!rqs1.equals(rqs2)) {
-				System.out.println("Read: " + rqs1);
-				System.out.println("Gen:  " + rqs2);
-			}
 
 			for (String assignmentID : gs1.getAssignmentIDs()) {
 				for (String requestID : gs1.getRequestIDs(assignmentID)) {
@@ -425,7 +421,7 @@ public class RunTutorEdits extends TutorEdits {
 			throws FileNotFoundException, IOException {
 		String trainingDirectory = new File(dataDirectory, RateHints.TRAINING_DIR).getPath();
 		HighlightHintSet hintSet = new ImportHighlightHintSet(name, hintConfig, trainingDirectory);
-		hintSet.addHints(standard.getHintRequests());
+		hintSet.addHints(standard);
 		hintSet.writeToFolder(new File(
 				dataDirectory, RateHints.ALGORITHMS_DIR + File.separator + name).getPath(), true);
 	}
@@ -434,7 +430,7 @@ public class RunTutorEdits extends TutorEdits {
 			throws FileNotFoundException, IOException {
 		HighlightHintSet hintSet = new DatasetHighlightHintSet(
 			trainingDataset.getName(), new SnapHintConfig(), trainingDataset)
-				.addHints(standard.getHintRequests());
+				.addHints(standard);
 		return RateHints.rate(standard, hintSet);
 //		hintSet.toTutorEdits().forEach(e -> System.out.println(
 //				e.toSQLInsert("handmade_hints", "highlight", 20000, false, true)));

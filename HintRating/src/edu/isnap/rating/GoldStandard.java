@@ -3,11 +3,7 @@ package edu.isnap.rating;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -26,14 +22,9 @@ import edu.isnap.rating.TutorHint.Validity;
 public class GoldStandard {
 
 	private final HashMap<String, ListMap<String, TutorHint>> map = new HashMap<>();
-	private final List<HintRequest> hintRequests = new ArrayList<>();
 
 	public Set<String> getAssignmentIDs() {
 		return map.keySet();
-	}
-
-	public List<HintRequest> getHintRequests() {
-		return Collections.unmodifiableList(hintRequests);
 	}
 
 	public Set<String> getRequestIDs(String assignmentID) {
@@ -57,15 +48,6 @@ public class GoldStandard {
 			list.forEach(hint -> hintMap.add(hint.requestID, hint));
 //			testEditExtraction(list);
 			map.put(assignment, hintMap);
-
-			Set<String> addedIDs = new HashSet<>();
-			list.forEach(edit -> {
-				if (addedIDs.add(edit.requestID)) {
-					hintRequests.add(new HintRequest(edit.requestID, assignment, edit.from));
-				}
-			});
-			hintRequests.sort(Comparator.comparing((HintRequest req) -> req.assignmentID)
-					.thenComparing(Comparator.comparing(req -> req.id)));
 		}
 	}
 

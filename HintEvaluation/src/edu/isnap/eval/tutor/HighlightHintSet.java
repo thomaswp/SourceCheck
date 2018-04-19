@@ -23,8 +23,10 @@ import edu.isnap.ctd.util.Tuple;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.eval.tutor.TutorEdits.PrintableTutorHint;
+import edu.isnap.rating.GoldStandard;
 import edu.isnap.rating.HintOutcome;
 import edu.isnap.rating.HintRequest;
+import edu.isnap.rating.Trace;
 
 public abstract class HighlightHintSet extends HintMapHintSet {
 
@@ -32,6 +34,19 @@ public abstract class HighlightHintSet extends HintMapHintSet {
 
 	public HighlightHintSet(String name, HintConfig hintConfig) {
 		super(name, hintConfig);
+	}
+
+	/** Legacy method to support loading single-snapshot hint requests from a GoldStandard */
+	public HighlightHintSet addHints(GoldStandard standard) {
+		List<HintRequest> requests = new ArrayList<>();
+		for (String assignmentID : standard.getAssignmentIDs()) {
+			for (String requestID : standard.getRequestIDs(assignmentID)) {
+				Trace trace = new Trace(requestID, assignmentID);
+				trace.add(standard.getHintRequestNode(assignmentID, requestID));
+				requests.add(new HintRequest(trace));
+			}
+		}
+		return addHints(requests);
 	}
 
 	@Override

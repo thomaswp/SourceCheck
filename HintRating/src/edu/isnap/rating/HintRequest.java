@@ -3,13 +3,17 @@ package edu.isnap.rating;
 import edu.isnap.ctd.graph.ASTNode;
 
 public class HintRequest {
+
 	public final String id;
 	public final String assignmentID;
 	public final ASTNode code;
+	public final Trace history;
 
-	public HintRequest(String id, String assignmentID, ASTNode code) {
-		this.id = id;
-		this.assignmentID = assignmentID;
-		this.code = code;
+	public HintRequest(Trace trace) {
+		this.id = trace.id;
+		this.assignmentID = trace.assignmentID;
+		this.code = trace.getFinalSnapshot();
+		this.history = trace;
 	}
+
 }

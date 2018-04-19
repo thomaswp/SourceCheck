@@ -24,8 +24,8 @@ import edu.isnap.rating.HintRequest;
 import edu.isnap.rating.HintSet;
 import edu.isnap.rating.RateHints;
 import edu.isnap.rating.RatingConfig;
+import edu.isnap.rating.Trace;
 import edu.isnap.rating.TrainingDataset;
-import edu.isnap.rating.TrainingDataset.Trace;
 
 public class HighlightHintGenerator implements ColdStart.HintGenerator {
 
@@ -94,7 +94,7 @@ public class HighlightHintGenerator implements ColdStart.HintGenerator {
 		for (String assignmentID : dataset.getAssignmentIDs()) {
 			List<Trace> allTraces = new ArrayList<>(dataset.getTraces(assignmentID));
 			for (Trace trace : allTraces) {
-				Node toNode = JsonAST.toNode(trace.getSolution(), hintConfig.getNodeConstructor());
+				Node toNode = JsonAST.toNode(trace.getFinalSnapshot(), hintConfig.getNodeConstructor());
 				for (String requestID : standard.getRequestIDs(assignmentID)) {
 					ASTNode from = standard.getHintRequestNode(assignmentID, requestID);
 					if (from == null) continue;
@@ -103,7 +103,7 @@ public class HighlightHintGenerator implements ColdStart.HintGenerator {
 							.calculateMapping(distanceMeasure);
 
 					spreadsheet.newRow();
-					spreadsheet.put("traceID", trace.name);
+					spreadsheet.put("traceID", trace.id);
 					spreadsheet.put("requestID", requestID);
 					spreadsheet.put("cost", mapping.cost());
 				}

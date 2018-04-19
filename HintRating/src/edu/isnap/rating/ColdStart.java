@@ -8,19 +8,21 @@ import java.util.Random;
 
 import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.rating.RateHints.HintRatingSet;
-import edu.isnap.rating.TrainingDataset.Trace;
 
 public class ColdStart {
 
 	private static final long DEFAULT_SEED = 1234;
 
 	private final GoldStandard standard;
-	private final TrainingDataset dataset;
+	private final HintRequestDataset requestDataset;
+	private final TrainingDataset trainingDataset;
 	private final HintGenerator hintGenerator;
 
-	public ColdStart(GoldStandard standard, TrainingDataset dataset, HintGenerator hintGenerator) {
+	public ColdStart(GoldStandard standard, TrainingDataset dataset, HintRequestDataset requests,
+			HintGenerator hintGenerator) {
 		this.standard = standard;
-		this.dataset = dataset;
+		this.trainingDataset = dataset;
+		this.requestDataset = requests;
 		this.hintGenerator = hintGenerator;
 	}
 
@@ -49,8 +51,8 @@ public class ColdStart {
 	private void testRound(Spreadsheet spreadsheet, int round, int seed, int step) {
 		Random rand = new Random(seed);
 
-		for (String assignmentID : dataset.getAssignmentIDs()) {
-			List<Trace> allTraces = new ArrayList<>(dataset.getTraces(assignmentID));
+		for (String assignmentID : trainingDataset.getAssignmentIDs()) {
+			List<Trace> allTraces = new ArrayList<>(trainingDataset.getTraces(assignmentID));
 			GoldStandard assignmentStandard = standard.filterForAssignment(assignmentID);
 			int n = allTraces.size();
 			int count = 0;
@@ -62,8 +64,7 @@ public class ColdStart {
 				}
 				String name = String.format("Round: %02d, Count: %03d/%03d, Seed: 0x%08X",
 						round, count, n, seed);
-				HintSet hintSet = hintGenerator.generateHints(name,
-						assignmentStandard.getHintRequests());
+				HintSet hintSet = hintGenerator.generateHints(name, requestDataset.getAllRequests());
 				System.out.println("==== " + name + " ===");
 				HintRatingSet ratings = RateHints.rate(assignmentStandard, hintSet);
 
@@ -76,18 +77,18 @@ public class ColdStart {
 
 	public Spreadsheet testSingleTraces() {
 		Spreadsheet spreadsheet = new Spreadsheet();
-		for (String assignmentID : dataset.getAssignmentIDs()) {
-			List<Trace> allTraces = new ArrayList<>(dataset.getTraces(assignmentID));
+		for (String assignmentID : trainingDataset.getAssignmentIDs()) {
+			List<Trace> allTraces = new ArrayList<>(trainingDataset.getTraces(assignmentID));
 			GoldStandard assignmentStandard = standard.filterForAssignment(assignmentID);
 			for (Trace trace : allTraces) {
 				hintGenerator.clearTraces();
 				hintGenerator.addTrace(trace);
-				HintSet hintSet = hintGenerator.generateHints(trace.name,
-						assignmentStandard.getHintRequests());
-				System.out.println("==== " + trace.name + " ===");
+				HintSet hintSet = hintGenerator.generateHints(trace.id,
+						requestDataset.getAllRequests());
+				System.out.println("==== " + trace.id + " ===");
 				HintRatingSet ratings = RateHints.rate(assignmentStandard, hintSet);
 
-				spreadsheet.setHeader("traceID", trace.name);
+				spreadsheet.setHeader("traceID", trace.id);
 				ratings.writeAllRatings(spreadsheet);
 			}
 		}

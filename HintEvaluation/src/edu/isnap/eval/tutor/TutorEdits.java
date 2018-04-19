@@ -28,7 +28,6 @@ import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.HintJSON;
-import edu.isnap.ctd.hint.RuleSet;
 import edu.isnap.ctd.hint.edit.EditHint;
 import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.Diff.ColorStyle;
@@ -60,33 +59,33 @@ import edu.isnap.rating.TutorHint.Validity;
 
 public class TutorEdits {
 
-	protected static void highlightSQL(Dataset trainingDataset, GoldStandard standard)
-			throws FileNotFoundException, IOException {
-		RuleSet.trace = NullStream.instance;
-		HintConfig config = new SnapHintConfig();
-
-		int offset = 20000;
-
-		Spreadsheet spreadsheet = new Spreadsheet();
-		HighlightHintSet hintSet = new DatasetHighlightHintSet(
-				trainingDataset.getName(), config, trainingDataset)
-				.addHints(standard.getHintRequests());
-		hintSet.toTutorEdits().forEach(edit -> {
-			System.out.println(edit.toSQLInsert(
-					"handmade_hints", "highlight", offset, false, true));
-
-			spreadsheet.newRow();
-			spreadsheet.put("Assignment ID", edit.assignmentID);
-			spreadsheet.put("Row ID", edit.requestID);
-			spreadsheet.put("Hint ID", edit.hintID + offset);
-
-			spreadsheet.put("Valid (0-1)", null);
-			spreadsheet.put("Priority (1-3)", null);
-
-			spreadsheet.put("Hint", edit.editsString(false));
-		});
-		spreadsheet.write(trainingDataset.analysisDir() + "/highlight-hints.csv");
-	}
+//	protected static void highlightSQL(Dataset trainingDataset, GoldStandard standard)
+//			throws FileNotFoundException, IOException {
+//		RuleSet.trace = NullStream.instance;
+//		HintConfig config = new SnapHintConfig();
+//
+//		int offset = 20000;
+//
+//		Spreadsheet spreadsheet = new Spreadsheet();
+//		HighlightHintSet hintSet = new DatasetHighlightHintSet(
+//				trainingDataset.getName(), config, trainingDataset)
+//				.addHints(standard.getHintRequests());
+//		hintSet.toTutorEdits().forEach(edit -> {
+//			System.out.println(edit.toSQLInsert(
+//					"handmade_hints", "highlight", offset, false, true));
+//
+//			spreadsheet.newRow();
+//			spreadsheet.put("Assignment ID", edit.assignmentID);
+//			spreadsheet.put("Row ID", edit.requestID);
+//			spreadsheet.put("Hint ID", edit.hintID + offset);
+//
+//			spreadsheet.put("Valid (0-1)", null);
+//			spreadsheet.put("Priority (1-3)", null);
+//
+//			spreadsheet.put("Hint", edit.editsString(false));
+//		});
+//		spreadsheet.write(trainingDataset.analysisDir() + "/highlight-hints.csv");
+//	}
 
 	public static void exportRatingDatasetSnap(Dataset dataset, String path,
 			String folder, Assignment... assignments)

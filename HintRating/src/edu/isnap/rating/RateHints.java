@@ -24,6 +24,7 @@ public class RateHints {
 	public final static String GS_SPREADSHEET = "gold-standard.csv";
 	public final static String ALGORITHMS_DIR = "algorithms";
 	public final static String TRAINING_DIR = "training";
+	public static final String REQUEST_DIR = "requests";
 
 	public final static String DATA_ROOT_DIR = "../data/hint-rating/";
 	public final static String ISNAP_F16_S17_DATA_DIR = DATA_ROOT_DIR + "isnapF16-S17/";

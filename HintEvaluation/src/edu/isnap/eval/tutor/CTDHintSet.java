@@ -14,8 +14,8 @@ import edu.isnap.ctd.hint.VectorHint;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.rating.HintOutcome;
 import edu.isnap.rating.HintRequest;
+import edu.isnap.rating.Trace;
 import edu.isnap.rating.TrainingDataset;
-import edu.isnap.rating.TrainingDataset.Trace;
 
 public class CTDHintSet extends HintMapHintSet{
 
