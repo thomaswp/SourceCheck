@@ -18,7 +18,6 @@ import edu.isnap.ctd.graph.vector.VectorGraph;
 import edu.isnap.ctd.graph.vector.VectorState;
 import edu.isnap.ctd.hint.Ordering.OrderMatrix;
 import edu.isnap.ctd.hint.feature.Feature;
-import edu.isnap.ctd.hint.feature.FeatureGraph;
 
 /**
  * Class for handling the core logic of the CTD algorithm.
@@ -31,7 +30,7 @@ public class HintMap {
 	public final Map<Node, Map<String, Double>> nodePlacementTimes = new IdentityHashMap<>();
 	private final Map<Node, Ordering> nodeOrderings = new IdentityHashMap<>();
 	public OrderMatrix orderMatrix;
-	public final FeatureGraph featureGraph;
+	public final List<Feature> features;
 
 	RuleSet ruleSet;
 	final HintConfig config;
@@ -59,7 +58,7 @@ public class HintMap {
 
 	public HintMap(HintConfig config, List<Feature> features) {
 		this.config = config;
-		this.featureGraph = features == null ? null : new FeatureGraph(features);
+		this.features = features;
 	}
 
 	/**
@@ -93,7 +92,6 @@ public class HintMap {
 
 	public void addVertex(Node node, double perc) {
 		currentHistory.add(node);
-		featureGraph.addNode(node);
 	}
 
 	public VectorGraph getGraph(Node node) {
@@ -128,7 +126,7 @@ public class HintMap {
 	}
 
 	public HintMap instance() {
-		return new HintMap(config, featureGraph == null ? null : featureGraph.features);
+		return new HintMap(config, features);
 	}
 
 	public void setSolution(Node solution) {
@@ -171,7 +169,6 @@ public class HintMap {
 		// Then save the current node creation percs, using the final solution as a key
 		nodePlacementTimes.put(solution, currentNodeCreationPercs);
 		nodeOrderings.put(solution, new Ordering(currentHistory));
-		if (featureGraph != null) featureGraph.addSolution(solution);
 	}
 
 	public IndexedVectorState getContext(Node item) {
@@ -241,9 +238,6 @@ public class HintMap {
 		solutions.addAll(hintMap.solutions);
 		nodePlacementTimes.putAll(hintMap.nodePlacementTimes);
 		nodeOrderings.putAll(hintMap.nodeOrderings);
-		if (featureGraph != null && hintMap.featureGraph != null) {
-			featureGraph.addGraph(hintMap.featureGraph);
-		}
 	}
 
 	/**
@@ -273,13 +267,6 @@ public class HintMap {
 					0, false, true, false);
 			graph.exportGoals(new PrintStream(file + ".txt"));
 		}
-		featureGraph.graph.bellmanBackup(config.pruneGoals);
-		featureGraph.graph.export(new PrintStream(
-				new FileOutputStream(rootDir + "features.graphml")),
-				false, 0, false, true, false);
-		featureGraph.graph.export(new PrintStream(
-				new FileOutputStream(rootDir + "features-p3.graphml")),
-				false, 3, false, true, false);
 	}
 
 }
