@@ -31,8 +31,8 @@ public class HighlightHintGenerator implements ColdStart.HintGenerator {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
-		TrainingDataset dataset = TrainingDataset.fromDirectory("itap",
-				RunTutorEdits.ITAPS16.getDataDir() + RateHints.TRAINING_DIR);
+		TrainingDataset dataset = TrainingDataset.fromSpreadsheet("itap",
+				RunTutorEdits.ITAPS16.getDataDir() + RateHints.TRAINING_FILE);
 		for (String assignmentID : dataset.getAssignmentIDs()) {
 			System.out.println(" ============= " + assignmentID + " ============= ");
 			dataset.printAllSolutions(assignmentID, RatingConfig.Python, true);

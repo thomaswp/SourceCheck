@@ -21,9 +21,9 @@ public class CTDHintSet extends HintMapHintSet{
 
 	private final Map<String, HintGenerator> generators = new HashMap<>();
 
-	public CTDHintSet(String name, HintConfig hintConfig, String directory)
+	public CTDHintSet(String name, HintConfig hintConfig, String path)
 			throws IOException {
-		this(name, hintConfig, TrainingDataset.fromDirectory(name, directory));
+		this(name, hintConfig, TrainingDataset.fromSpreadsheet(name, path));
 	}
 
 	public CTDHintSet(String name, HintConfig hintConfig, TrainingDataset dataset) {

@@ -7,12 +7,21 @@ import edu.isnap.ctd.util.map.CountMap;
 
 public class TrainingDataset extends TraceDataset {
 
-	private TrainingDataset() { }
+	private TrainingDataset(String name) {
+		super(name);
+	}
 
+	@Deprecated
 	public static TrainingDataset fromDirectory(String name, String directory) throws IOException {
-		TrainingDataset trainingDataset = new TrainingDataset();
-		addDirectory(trainingDataset, name, directory);
-		return trainingDataset;
+		TrainingDataset dataset = new TrainingDataset(name);
+		dataset.addDirectory(directory);
+		return dataset;
+	}
+
+	public static TrainingDataset fromSpreadsheet(String name, String path) throws IOException {
+		TrainingDataset dataset = new TrainingDataset(name);
+		dataset.addSpreadsheet(path);
+		return dataset;
 	}
 
 	public void printAllSolutions(String assignmentID, RatingConfig config, boolean group) {

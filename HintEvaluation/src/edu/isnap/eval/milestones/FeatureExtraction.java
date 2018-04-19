@@ -49,6 +49,7 @@ import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
 import util.LblTree;
 
+@SuppressWarnings("unused")
 public class FeatureExtraction {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {

@@ -21,11 +21,11 @@ import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.rating.ColdStart;
 import edu.isnap.rating.ColdStart.HintGenerator;
 import edu.isnap.rating.GoldStandard;
+import edu.isnap.rating.HintRequestDataset;
 import edu.isnap.rating.HintSet;
 import edu.isnap.rating.RateHints;
 import edu.isnap.rating.RateHints.HintRatingSet;
 import edu.isnap.rating.RatingConfig;
-import edu.isnap.rating.HintRequestDataset;
 import edu.isnap.rating.TrainingDataset;
 import edu.isnap.rating.TutorHint;
 import edu.isnap.rating.TutorHint.Validity;
@@ -51,7 +51,7 @@ public class RunTutorEdits extends TutorEdits {
 
 		// Exporting things (Note: this may require some copy and paste)
 //		dataset.writeGoldStandard();
-//		dataset.exportTrainingAndTestData();
+//		dataset.exportTrainingAndTestData(true);
 //		dataset.writeHintSet(algorithm, source);
 
 		dataset.verifyGoldStandard();
@@ -130,7 +130,16 @@ public class RunTutorEdits extends TutorEdits {
 		}
 
 		@Override
-		void exportTrainingAndTestData() throws FileNotFoundException, IOException {
+		void exportTrainingAndTestData(boolean toSpreadsheet)
+				throws FileNotFoundException, IOException {
+			if (toSpreadsheet) {
+				// TODO: Make an actual method for this
+				getRequestDataset().writeToSpreadsheet(
+						getDataDir() + RateHints.REQUEST_FILE, true);
+				getTrainingDataset().writeToSpreadsheet(
+						getDataDir() + RateHints.TRAINING_FILE, true);
+				return;
+			}
 			Dataset[] datasets = getDatasets();
 			for (int i = 0; i < datasets.length; i++) {
 				Map<String, Assignment> assignmentMap = datasets[i].getAssignmentMap();
@@ -171,7 +180,11 @@ public class RunTutorEdits extends TutorEdits {
 		}
 
 		@Override
-		void exportTrainingAndTestData() throws IOException {
+		void exportTrainingAndTestData(boolean toSpreadsheet) throws IOException {
+			if (toSpreadsheet) {
+				// TODO: Make an actual method for this
+				return;
+			}
 			exportRatingDatasetPython("../../PythonAST/data", "../data/itap",
 					RateHints.ITAP_S16_DATA_DIR);
 		}
@@ -185,7 +198,7 @@ public class RunTutorEdits extends TutorEdits {
 		abstract HintConfig createHintConfig();
 		abstract String getDataDir();
 		abstract String getTemplateDir(Source source);
-		abstract void exportTrainingAndTestData() throws IOException;
+		abstract void exportTrainingAndTestData(boolean toSpreadsheet) throws IOException;
 
 		public GoldStandard readGoldStandard() throws FileNotFoundException, IOException {
 			return GoldStandard.parseSpreadsheet(getDataDir() + RateHints.GS_SPREADSHEET);
@@ -196,7 +209,7 @@ public class RunTutorEdits extends TutorEdits {
 			HintMapHintSet hintSet;
 			if (source == Source.StudentData) {
 				hintSet = algorithm.getHintSetFromTrainingDataset(
-						hintConfig, getDataDir() + RateHints.TRAINING_DIR);
+						hintConfig, getDataDir() + RateHints.TRAINING_FILE);
 			} else {
 				hintSet = algorithm.getHintSetFromTemplate(hintConfig, getTemplateDir(source));
 			}
@@ -278,14 +291,16 @@ public class RunTutorEdits extends TutorEdits {
 			.write(getDataDir() + "analysis/distances.csv");
 		}
 
-		private TrainingDataset getTrainingDataset() throws IOException {
-			return TrainingDataset.fromDirectory("",
-					getDataDir() + RateHints.TRAINING_DIR);
+		// Unclear whether this should exist, or whether everything should be done through an
+		// Algorithm's getHintSetFromTrainingDataset method
+		protected TrainingDataset getTrainingDataset() throws IOException {
+			return TrainingDataset.fromSpreadsheet("",
+					getDataDir() + RateHints.TRAINING_FILE);
 		}
 
-		private HintRequestDataset getRequestDataset() throws IOException {
-			return HintRequestDataset.fromDirectory("",
-					getDataDir() + RateHints.REQUEST_DIR);
+		protected HintRequestDataset getRequestDataset() throws IOException {
+			return HintRequestDataset.fromSpreadsheet("",
+					getDataDir() + RateHints.REQUEST_FILE);
 		}
 
 		private ColdStart getColdStart(HintAlgorithm algorithm)
@@ -419,8 +434,8 @@ public class RunTutorEdits extends TutorEdits {
 	protected static void writeHighlight(String dataDirectory, String name, GoldStandard standard,
 			HintConfig hintConfig)
 			throws FileNotFoundException, IOException {
-		String trainingDirectory = new File(dataDirectory, RateHints.TRAINING_DIR).getPath();
-		HighlightHintSet hintSet = new ImportHighlightHintSet(name, hintConfig, trainingDirectory);
+		String trainingFile = new File(dataDirectory, RateHints.TRAINING_FILE).getPath();
+		HighlightHintSet hintSet = new ImportHighlightHintSet(name, hintConfig, trainingFile);
 		hintSet.addHints(standard);
 		hintSet.writeToFolder(new File(
 				dataDirectory, RateHints.ALGORITHMS_DIR + File.separator + name).getPath(), true);

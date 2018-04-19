@@ -17,9 +17,9 @@ public class ImportHighlightHintSet extends HighlightHintSet {
 
 	private final Map<String, HintHighlighter> highlighters = new HashMap<>();
 
-	public ImportHighlightHintSet(String name, HintConfig hintConfig, String directory)
+	public ImportHighlightHintSet(String name, HintConfig hintConfig, String path)
 			throws IOException {
-		this(name, hintConfig, TrainingDataset.fromDirectory(name, directory));
+		this(name, hintConfig, TrainingDataset.fromSpreadsheet(name, path));
 	}
 
 	public ImportHighlightHintSet(String name, HintConfig hintConfig, TrainingDataset dataset) {

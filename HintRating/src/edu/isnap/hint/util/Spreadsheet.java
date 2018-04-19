@@ -2,7 +2,9 @@ package edu.isnap.hint.util;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -47,11 +49,15 @@ public class Spreadsheet {
 	}
 
 	public void beginWrite(String path) throws IOException {
-		if (isWriting()) throw new RuntimeException("Already writing");
 		File file = new File(path);
 		File parent = file.getParentFile();
 		if (parent != null) parent.mkdirs();
-		printStream = new PrintStream(file);
+		beginWrite(new FileOutputStream(file));
+	}
+
+	public void beginWrite(OutputStream printStream) throws IOException {
+		if (isWriting()) throw new RuntimeException("Already writing");
+		this.printStream = new PrintStream(printStream);
 		writeRows();
 	}
 
@@ -79,6 +85,12 @@ public class Spreadsheet {
 	public void write(String path) throws FileNotFoundException, IOException {
 		if (rows.size() == 0) return;
 		beginWrite(path);
+		endWrite();
+	}
+
+	public void write(OutputStream stream) throws FileNotFoundException, IOException {
+		if (rows.size() == 0) return;
+		beginWrite(stream);
 		endWrite();
 	}
 
