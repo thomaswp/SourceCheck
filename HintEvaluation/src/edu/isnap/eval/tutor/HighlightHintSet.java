@@ -26,6 +26,7 @@ import edu.isnap.eval.tutor.TutorEdits.PrintableTutorHint;
 import edu.isnap.rating.GoldStandard;
 import edu.isnap.rating.HintOutcome;
 import edu.isnap.rating.HintRequest;
+import edu.isnap.rating.RatingConfig;
 import edu.isnap.rating.Trace;
 
 public abstract class HighlightHintSet extends HintMapHintSet {
@@ -167,10 +168,10 @@ public abstract class HighlightHintSet extends HintMapHintSet {
 		}
 
 		@Override
-		public String resultString() {
+		public String resultString(ASTNode from, RatingConfig config) {
 			return (editHint.priority == null ? "" : (editHint.priority.toString() + "\n")) +
 					editHint.toString() + ":\n" +
-					ASTNode.diff(from, result, config, 1);
+					super.resultString(from, config);
 		}
 
 		@Override

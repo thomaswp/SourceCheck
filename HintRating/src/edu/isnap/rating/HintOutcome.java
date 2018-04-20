@@ -37,8 +37,8 @@ public class HintOutcome implements Comparable<HintOutcome> {
 		}
 	}
 
-	public String resultString() {
-		return result.toString();
+	public String resultString(ASTNode from, RatingConfig config) {
+		return ASTNode.diff(from, result, config, 1);
 	}
 
 	@Override

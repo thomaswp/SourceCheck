@@ -9,6 +9,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang.ObjectUtils;
@@ -45,7 +46,9 @@ public class EditExtractor {
 		@Override
 		public float ren(Node<ASTNode> nodeA, Node<ASTNode> nodeB) {
 			if (nodeA.getNodeData().shallowEquals(nodeB.getNodeData(), false)) return 0;
-			if (StringUtils.equals(nodeA.getNodeData().id, nodeB.getNodeData().id)) return 0.1f;
+			// This was useful when comparing the ID-based and TED-based methods, but if we're using
+			// TED, the IDs aren't reliable, so they certainly shouldn't be used here
+//			if (StringUtils.equals(nodeA.getNodeData().id, nodeB.getNodeData().id)) return 0.1f;
 			return 2.1f;
 		}
 
@@ -83,9 +86,9 @@ public class EditExtractor {
 
 	public static void printEditsComparison(Set<Edit> editsA, Set<Edit> editsB,
 			String nameA, String nameB) {
-		Set<Edit> a = new HashSet<>(editsA),
-				b = new HashSet<>(editsB),
-				both = new HashSet<>(editsB);
+		Set<Edit> a = new TreeSet<>(editsA),
+				b = new TreeSet<>(editsB),
+				both = new TreeSet<>(editsB);
 		a.removeAll(editsB);
 		b.removeAll(editsA);
 		both.retainAll(editsA);
@@ -105,12 +108,22 @@ public class EditExtractor {
 		LinkedList<int[]> editMapping = apted.computeEditMapping();
 		List<ASTNode> fromChildren = postOrderList(from.getNodeData(), new ArrayList<>());
 		List<ASTNode> toChildren = postOrderList(to.getNodeData(), new ArrayList<>());
-		Set<Edit> edits = new HashSet<>();
+		Set<Edit> edits = new TreeSet<>();
+		BiMap<ASTNode, ASTNode> mapping = new BiMap<>(IdentityHashMap::new);
+		for (int[] pair : editMapping) {
+			ASTNode fromPair = readPair(fromChildren, pair[0]);
+			ASTNode toPair = readPair(toChildren, pair[1]);
+			if (fromPair != null && toPair != null) mapping.put(fromPair, toPair);
+		}
+		List<ASTNode> inserted = new ArrayList<>();
+		// First go through every pair and insert the new ones, delete the missing ones and do both
+		// for the relabeled ones
 		for (int[] pair : editMapping) {
 			ASTNode fromPair = readPair(fromChildren, pair[0]);
 			ASTNode toPair = readPair(toChildren, pair[1]);
 			if (fromPair == null) {
 				edits.add(new Insertion(getReferenceAsChildren(toPair)));
+				inserted.add(toPair);
 			} else if (toPair == null) {
 				edits.add(new Deletion(getReferenceAsChildren(fromPair)));
 			} else if (!fromPair.shallowEquals(toPair, false)) {
@@ -118,6 +131,24 @@ public class EditExtractor {
 				edits.add(new Insertion(getReferenceAsChildren(toPair)));
 			}
 		}
+		// Next for through the children of any inserted node and mark them as inserted (and any
+		// pair as deleted). This will only effect nodes inserted in between two nodes, as TED
+		// insertions can do. Since AST edits rarely ever do this, we assume these matched children
+		// are not actually matched, and treat them as insertions/deletions, the same way we treat
+		// moves as insertions/deletions in the ID-based code below. The only danger here is that
+		// a deletion can match an insertion partially, but that is always a danger with partial
+		// matching.
+//		for (ASTNode toNode : inserted) {
+//			if (toNode.children().isEmpty()) continue;
+//			toNode.recurse((child) -> {
+//				if (child == toNode) return;
+//				edits.add(new Insertion(getReferenceAsChildren(child)));
+//				ASTNode fromChild = mapping.getTo(child);
+//				if (fromChild != null) {
+//					edits.add(new Deletion(getReferenceAsChildren(fromChild)));
+//				}
+//			});
+//		}
 		return edits;
 	}
 
@@ -319,7 +350,7 @@ public class EditExtractor {
 		return new ChildNodeReference(toNode, getReferenceInPair(toNode.parent(), mapping));
 	}
 
-	protected static abstract class Edit {
+	protected static abstract class Edit implements Comparable<Edit> {
 		final NodeReference node;
 
 		Edit(NodeReference node) {
@@ -338,6 +369,11 @@ public class EditExtractor {
 		@Override
 		public int hashCode() {
 			return node.hashCode() * 13 + getClass().hashCode();
+		}
+
+		@Override
+		public int compareTo(Edit o) {
+			return toString().compareTo(o.toString());
 		}
 	}
 
