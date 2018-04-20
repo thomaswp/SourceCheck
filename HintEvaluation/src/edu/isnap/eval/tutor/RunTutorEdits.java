@@ -44,7 +44,7 @@ public class RunTutorEdits extends TutorEdits {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
-		RatingDataset dataset = iSnapF16F17;
+		RatingDataset dataset = ITAPS16;
 		Source source = Source.StudentData;
 		HintAlgorithm algorithm = SourceCheck;
 		boolean debug = false;
@@ -52,12 +52,13 @@ public class RunTutorEdits extends TutorEdits {
 
 		// Exporting things (Note: this may require some copy and paste)
 //		dataset.writeGoldStandard();
-		dataset.exportTrainingAndTestData(true);
+//		dataset.exportTrainingAndTestData(false);
 //		dataset.writeHintSet(algorithm, source);
 
 //		dataset.verifyGoldStandard();
+//		dataset.printData();
 
-//		dataset.runHintRating(algorithm, source, debug, writeHints);
+		dataset.runHintRating(algorithm, source, debug, writeHints);
 
 //		dataset.testKValues(algorithm, source, debug, writeHints, 1, 20);
 //		dataset.writeColdStart(algorithm, 200, 1);
@@ -211,7 +212,7 @@ public class RunTutorEdits extends TutorEdits {
 			HintMapHintSet hintSet;
 			if (source == Source.StudentData) {
 				hintSet = algorithm.getHintSetFromTrainingDataset(
-						hintConfig, getDataDir() + RateHints.TRAINING_FILE);
+						hintConfig, getTrainingDataset());
 			} else {
 				hintSet = algorithm.getHintSetFromTemplate(hintConfig, getTemplateDir(source));
 			}
@@ -293,15 +294,15 @@ public class RunTutorEdits extends TutorEdits {
 			.write(getDataDir() + "analysis/distances.csv");
 		}
 
-		// Unclear whether this should exist, or whether everything should be done through an
-		// Algorithm's getHintSetFromTrainingDataset method
 		protected TrainingDataset getTrainingDataset() throws IOException {
-			return TrainingDataset.fromSpreadsheet("",
+			return TrainingDataset.fromSpreadsheet("training",
 					getDataDir() + RateHints.TRAINING_FILE);
+//			return TrainingDataset.fromDirectory("training",
+//					getDataDir() + "training/");
 		}
 
 		protected HintRequestDataset getRequestDataset() throws IOException {
-			return HintRequestDataset.fromSpreadsheet("",
+			return HintRequestDataset.fromSpreadsheet("requests",
 					getDataDir() + RateHints.REQUEST_FILE);
 		}
 
@@ -338,14 +339,20 @@ public class RunTutorEdits extends TutorEdits {
 				}
 			}
 		}
+
+		public void printData() throws IOException {
+			RatingConfig config = HighlightHintSet.getRatingConfig(createHintConfig());
+			getTrainingDataset().print(config);
+			getRequestDataset().print(config);
+		}
 	}
 
 	private static HintAlgorithm SourceCheck = new HintAlgorithm() {
 
 		@Override
-		public HintMapHintSet getHintSetFromTrainingDataset(HintConfig config, String directory)
-				throws IOException {
-			return new ImportHighlightHintSet("SourceCheck", config, directory);
+		public HintMapHintSet getHintSetFromTrainingDataset(HintConfig config,
+				TrainingDataset dataset) throws IOException {
+			return new ImportHighlightHintSet("SourceCheck", config, dataset);
 		}
 
 		@Override
@@ -362,9 +369,9 @@ public class RunTutorEdits extends TutorEdits {
 	private static HintAlgorithm CTD = new HintAlgorithm() {
 
 		@Override
-		public HintMapHintSet getHintSetFromTrainingDataset(HintConfig config, String directory)
-				throws IOException {
-			return new CTDHintSet("CTD", config, directory);
+		public HintMapHintSet getHintSetFromTrainingDataset(HintConfig config,
+				TrainingDataset dataset) throws IOException {
+			return new CTDHintSet("CTD", config, dataset);
 		}
 
 		@Override
@@ -382,9 +389,9 @@ public class RunTutorEdits extends TutorEdits {
 	private static HintAlgorithm PQGram = new HintAlgorithm() {
 
 		@Override
-		public HintMapHintSet getHintSetFromTrainingDataset(HintConfig config, String directory)
-				throws IOException {
-			return new PQGramHintSet("PQGram", config, directory);
+		public HintMapHintSet getHintSetFromTrainingDataset(HintConfig config,
+				TrainingDataset dataset) throws IOException {
+			return new PQGramHintSet("PQGram", config, dataset);
 		}
 
 		@Override
@@ -400,7 +407,7 @@ public class RunTutorEdits extends TutorEdits {
 	};
 
 	private static interface HintAlgorithm {
-		HintMapHintSet getHintSetFromTrainingDataset(HintConfig config, String directory)
+		HintMapHintSet getHintSetFromTrainingDataset(HintConfig config, TrainingDataset dataset)
 				throws IOException;
 		HintMapHintSet getHintSetFromTemplate(HintConfig config, String directory);
 		HintGenerator getHintGenerator(HintConfig config);
@@ -436,8 +443,9 @@ public class RunTutorEdits extends TutorEdits {
 	protected static void writeHighlight(String dataDirectory, String name, GoldStandard standard,
 			HintConfig hintConfig)
 			throws FileNotFoundException, IOException {
-		String trainingFile = new File(dataDirectory, RateHints.TRAINING_FILE).getPath();
-		HighlightHintSet hintSet = new ImportHighlightHintSet(name, hintConfig, trainingFile);
+		TrainingDataset dataset = TrainingDataset.fromSpreadsheet("",
+				new File(dataDirectory, RateHints.TRAINING_FILE).getPath());
+		HighlightHintSet hintSet = new ImportHighlightHintSet(name, hintConfig, dataset);
 		hintSet.addHints(standard);
 		hintSet.writeToFolder(new File(
 				dataDirectory, RateHints.ALGORITHMS_DIR + File.separator + name).getPath(), true);

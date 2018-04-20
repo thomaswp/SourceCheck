@@ -55,6 +55,19 @@ public class TraceDataset {
 		sort();
 	}
 
+	public void print(RatingConfig config) {
+		System.out.println("#### " + name + " ####");
+		for (String assignmentID : traceMap.keySet()) {
+			System.out.println("------ " + assignmentID + " ------");
+			for (Trace trace : traceMap.get(assignmentID)) {
+				System.out.println("+++ " + trace.id + " +++");
+				for (ASTSnapshot snapshot : trace) {
+					System.out.println(snapshot.prettyPrint(true, config));
+				}
+			}
+		}
+	}
+
 	@Deprecated
 	protected void addDirectory(String directory) throws IOException{
 //		long time = System.currentTimeMillis();

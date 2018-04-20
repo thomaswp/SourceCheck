@@ -1,6 +1,5 @@
 package edu.isnap.eval.tutor;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,11 +15,6 @@ import edu.isnap.rating.TrainingDataset;
 public class ImportHighlightHintSet extends HighlightHintSet {
 
 	private final Map<String, HintHighlighter> highlighters = new HashMap<>();
-
-	public ImportHighlightHintSet(String name, HintConfig hintConfig, String path)
-			throws IOException {
-		this(name, hintConfig, TrainingDataset.fromSpreadsheet(name, path));
-	}
 
 	public ImportHighlightHintSet(String name, HintConfig hintConfig, TrainingDataset dataset) {
 		super(name, hintConfig);

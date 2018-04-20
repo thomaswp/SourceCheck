@@ -1,6 +1,5 @@
 package edu.isnap.eval.tutor;
 
-import java.io.IOException;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
@@ -30,11 +29,6 @@ public class PQGramHintSet extends HintMapHintSet {
 
 	private final Map<String, List<Tree>> solutionsMap = new HashMap<>();
 	private final HashMap<String, Integer> labelMap = new HashMap<>();
-
-	public PQGramHintSet(String name, HintConfig hintConfig, String path)
-			throws IOException {
-		this(name, hintConfig, TrainingDataset.fromSpreadsheet(name, path));
-	}
 
 	public PQGramHintSet(String name, HintConfig hintConfig, TrainingDataset dataset) {
 		super(name, hintConfig);

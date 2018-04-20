@@ -238,7 +238,7 @@ public class TutorEdits {
 						RateHints.normalizeNewValuesTo(e.from, e.to, config), e));
 
 				ASTNode from = givers.values().stream().findFirst().get().get(0).from;
-				String fromPP = from.prettyPrint(true, config::nodeTypeHasBody);
+				String fromPP = from.prettyPrint(true, config);
 				System.out.println(fromPP);
 
 				List<ASTNode> keys = new ArrayList<>(givers.keySet());
@@ -248,7 +248,7 @@ public class TutorEdits {
 						givers.get(n1).get(0).hintID, givers.get(n2).get(0).hintID));
 				for (ASTNode to : keys) {
 					System.out.println(Diff.diff(fromPP,
-							to.prettyPrint(true, config::nodeTypeHasBody), 1));
+							to.prettyPrint(true, config), 1));
 					List<PrintableTutorHint> tutorEdits = givers.get(to);
 					PrintableTutorHint firstEdit = tutorEdits.get(0);
 					String editsString = firstEdit.editsString(true);
@@ -272,8 +272,8 @@ public class TutorEdits {
 								.collect(Collectors.toMap(e -> e.tutor, e -> e));
 					} catch (Exception e) {
 						System.out.println("Duplicate hints from one tutor:");
-						System.out.println(from.prettyPrint(true, config::nodeTypeHasBody));
-						System.out.println(to.prettyPrint(true, config::nodeTypeHasBody));
+						System.out.println(from.prettyPrint(true, config));
+						System.out.println(to.prettyPrint(true, config));
 						tutorEdits.forEach(System.out::println);
 						throw e;
 					}

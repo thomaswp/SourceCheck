@@ -132,7 +132,7 @@ public class ASTNode implements INode {
 		return prettyPrint(showValues, config::nodeTypeHasBody);
 	}
 
-	public String prettyPrint(boolean showValues, Predicate<String> isBodyType) {
+	private String prettyPrint(boolean showValues, Predicate<String> isBodyType) {
 		Params params = new Params();
 		params.showValues = showValues;
 		params.isBodyType = isBodyType;

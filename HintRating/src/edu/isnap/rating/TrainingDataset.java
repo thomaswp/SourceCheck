@@ -45,6 +45,4 @@ public class TrainingDataset extends TraceDataset {
 			System.out.println("----------------");
 		}
 	}
-
-
 }
