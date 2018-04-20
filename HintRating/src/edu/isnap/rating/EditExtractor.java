@@ -45,10 +45,22 @@ public class EditExtractor {
 	private static CostModel<ASTNode> costModel = new CostModel<ASTNode>() {
 		@Override
 		public float ren(Node<ASTNode> nodeA, Node<ASTNode> nodeB) {
-			if (nodeA.getNodeData().shallowEquals(nodeB.getNodeData(), false)) return 0;
+			// If the nodes are equal, there is no cost to "rename"
+			if (nodeA.getNodeData().shallowEquals(nodeB.getNodeData(), false)) {
+				return 1;
+			}
+
+			// If the Nodes are not equal but of the same type, they should always be renamed, but
+			// it is not completely free
+			if (StringUtils.equals(nodeA.getNodeData().type(), nodeB.getNodeData().type())) {
+				return 0.1f;
+			}
+
 			// This was useful when comparing the ID-based and TED-based methods, but if we're using
 			// TED, the IDs aren't reliable, so they certainly shouldn't be used here
 //			if (StringUtils.equals(nodeA.getNodeData().id, nodeB.getNodeData().id)) return 0.1f;
+
+			// Otherwise, renaming should be more expensive than insertion/deletion
 			return 2.1f;
 		}
 
@@ -116,6 +128,7 @@ public class EditExtractor {
 			if (fromPair != null && toPair != null) mapping.put(fromPair, toPair);
 		}
 		List<ASTNode> inserted = new ArrayList<>();
+		List<ASTNode> deleted = new ArrayList<>();
 		// First go through every pair and insert the new ones, delete the missing ones and do both
 		// for the relabeled ones
 		for (int[] pair : editMapping) {
@@ -126,6 +139,7 @@ public class EditExtractor {
 				inserted.add(toPair);
 			} else if (toPair == null) {
 				edits.add(new Deletion(getReferenceAsChildren(fromPair)));
+				deleted.add(fromPair);
 			} else if (!fromPair.shallowEquals(toPair, false)) {
 				edits.add(new Deletion(getReferenceAsChildren(fromPair)));
 				edits.add(new Insertion(getReferenceAsChildren(toPair)));
@@ -138,17 +152,29 @@ public class EditExtractor {
 		// moves as insertions/deletions in the ID-based code below. The only danger here is that
 		// a deletion can match an insertion partially, but that is always a danger with partial
 		// matching.
-//		for (ASTNode toNode : inserted) {
-//			if (toNode.children().isEmpty()) continue;
-//			toNode.recurse((child) -> {
-//				if (child == toNode) return;
-//				edits.add(new Insertion(getReferenceAsChildren(child)));
-//				ASTNode fromChild = mapping.getTo(child);
-//				if (fromChild != null) {
-//					edits.add(new Deletion(getReferenceAsChildren(fromChild)));
-//				}
-//			});
-//		}
+		for (ASTNode toNode : inserted) {
+			if (toNode.children().isEmpty()) continue;
+			toNode.recurse((child) -> {
+				if (child == toNode) return;
+				edits.add(new Insertion(getReferenceAsChildren(child)));
+				ASTNode fromChild = mapping.getTo(child);
+				if (fromChild != null) {
+					edits.add(new Deletion(getReferenceAsChildren(fromChild)));
+				}
+			});
+		}
+		// Similarly, the children of any deleted nodes should be considered deleted as well.
+		for (ASTNode fromNode : deleted) {
+			if (fromNode.children().isEmpty()) continue;
+			fromNode.recurse((child) -> {
+				if (child == fromNode) return;
+				edits.add(new Deletion(getReferenceAsChildren(child)));
+				ASTNode toChild = mapping.getFrom(child);
+				if (toChild != null) {
+					edits.add(new Insertion(getReferenceAsChildren(toChild)));
+				}
+			});
+		}
 		return edits;
 	}
 

@@ -13,7 +13,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import edu.isnap.ctd.graph.ASTNode;
-import edu.isnap.ctd.util.Diff;
 import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.rating.EditExtractor.Edit;
 import edu.isnap.rating.EditExtractor.NodeReference;
@@ -218,6 +217,18 @@ public class RateHints {
 		if (outcomeEdits.size() == 0) return new HintRating(outcome);
 		Set<Edit> bestOverlap = new HashSet<>();
 		TutorHint bestHint = null;
+
+		// TODO: This needs to be worked to address three separate situations:
+		// 1) The algorithm matches the hint perfectly in essence, but it misses some required
+		//    elements of the AST. This should be pretty rare, and we address it in Snap with
+		//    literal removal, etc.
+		// 2) The algorithm creates 2 hints that together cover 100% of a tutor hint
+		// 3) The algorithm matches part of the tutor hint (e.g. deleting something), but is
+		//    missing possibly vital other part of the hints.
+		// The first two scenarios should probably by considered a fully correct match. The third
+		// is interesting, but definitely in a different category. Currently all 3 are treated as
+		// partial matches, creating quite high levels of partial matching.
+
 		// TODO: sort by validity and priority first
 //		Collections.sort(validHints);
 		for (TutorHint tutorHint : validHints) {
@@ -230,7 +241,12 @@ public class RateHints {
 			overlap.retainAll(outcomeEdits);
 			if (overlap.size() == outcomeEdits.size()) {
 				if (overlap.size() == tutorEdits.size()) {
-					System.out.println(ASTNode.diff(tutorHint.to, outcome.result, config));
+					System.out.println("Tutor hint: ");
+					System.out.println(ASTNode.diff(tutorHint.from, tutorHint.to, config));
+					System.out.println("Alg hint: ");
+					System.out.println(ASTNode.diff(tutorHint.from, outcome.result, config));
+					EditExtractor.printEditsComparison(
+							tutorEdits, outcomeEdits, "Tutor Hint", "Alg Hint");
 					throw new RuntimeException("Edits should not match if hint outcomes did not!");
 				}
 				bestOverlap = overlap;
@@ -239,18 +255,18 @@ public class RateHints {
 			}
 		}
 		if (!bestOverlap.isEmpty()) {
-			ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, bestHint.to, config);
-			System.out.println("Tutor Hint:");
-			System.out.println(Diff.diff(
-					fromNode.prettyPrint(true, config),
-					tutorOutcomeNode.prettyPrint(true, config)));
-			System.out.println("Alg Hint:");
-			System.out.println(Diff.diff(
-					fromNode.prettyPrint(true, config),
-					outcomeNode.prettyPrint(true, config), 2));
-			Set<Edit> tutorEdits = extractor.getEdits(bestHint.from, tutorOutcomeNode);
-			EditExtractor.printEditsComparison(tutorEdits, outcomeEdits, "Tutor Hint", "Alg Hint");
-			System.out.println("-------------------");
+//			ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, bestHint.to, config);
+//			System.out.println("Tutor Hint:");
+//			System.out.println(Diff.diff(
+//					fromNode.prettyPrint(true, config),
+//					tutorOutcomeNode.prettyPrint(true, config)));
+//			System.out.println("Alg Hint:");
+//			System.out.println(Diff.diff(
+//					fromNode.prettyPrint(true, config),
+//					outcomeNode.prettyPrint(true, config), 2));
+//			Set<Edit> tutorEdits = extractor.getEdits(bestHint.from, tutorOutcomeNode);
+//			EditExtractor.printEditsComparison(tutorEdits, outcomeEdits, "Tutor Hint", "Alg Hint");
+//			System.out.println("-------------------");
 
 			return new HintRating(outcome, bestHint, MatchType.Partial);
 		}

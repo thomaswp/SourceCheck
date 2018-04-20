@@ -47,7 +47,7 @@ public class RunTutorEdits extends TutorEdits {
 		RatingDataset dataset = ITAPS16;
 		Source source = Source.StudentData;
 		HintAlgorithm algorithm = SourceCheck;
-		boolean debug = true;
+		boolean debug = false;
 		boolean writeHints = false;
 
 		// Exporting things (Note: this may require some copy and paste)
