@@ -52,7 +52,7 @@ public class RunTutorEdits extends TutorEdits {
 
 		// Exporting things (Note: this may require some copy and paste)
 //		dataset.writeGoldStandard();
-		dataset.exportTrainingAndTestData(false);
+		dataset.exportTrainingAndTestData(true);
 //		dataset.writeHintSet(algorithm, source);
 
 //		dataset.verifyGoldStandard();

@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.TreeMap;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -29,7 +30,7 @@ import edu.isnap.hint.util.Spreadsheet;
 
 public class TraceDataset {
 
-	protected final ListMap<String, Trace> traceMap = new ListMap<>();
+	protected final ListMap<String, Trace> traceMap = new ListMap<>(TreeMap::new);
 
 	public final String name;
 
@@ -51,6 +52,7 @@ public class TraceDataset {
 
 	public void addTrace(Trace trace) {
 		traceMap.add(trace.assignmentID, trace);
+		sort();
 	}
 
 	@Deprecated

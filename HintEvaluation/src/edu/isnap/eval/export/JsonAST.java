@@ -2,7 +2,6 @@ package edu.isnap.eval.export;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -19,7 +18,6 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
-import edu.isnap.datasets.Fall2016;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
@@ -56,7 +54,7 @@ public class JsonAST {
 		valueReplacements.put("Sabrina", "name");
 	}
 
-	public static void main(String[] args) throws IOException {
+//	public static void main(String[] args) throws IOException {
 //		Collection<AssignmentAttempt> attempts =
 //				Fall2016.GuessingGame1.load(Mode.Use, false, true,
 //						new SnapParser.LikelySubmittedOnly()).values();
@@ -67,14 +65,14 @@ public class JsonAST {
 //			break;
 //		}
 
-		exportDataset(Fall2016.instance, true, false, Fall2016.LightsCameraAction);
+//		exportDataset(Fall2016.instance, true, false, Fall2016.LightsCameraAction);
 //		exportAssignment(Fall2016.PolygonMaker);
 
 //		for (Assignment assignment : BJCSolutions2017.All) {
 //			Snapshot snapshot = Snapshot.parse(new File(assignment.templateFileBase() + ".xml"));
 //			exportSnapshot(assignment, snapshot);
 //		}
-	}
+//	}
 
 	protected static void exportDataset(Dataset dataset, boolean canon, boolean solutionsOnly,
 			Assignment... exclude) throws FileNotFoundException {
@@ -113,13 +111,16 @@ public class JsonAST {
 		boolean attemptCorrect = attempt.grade != null && attempt.grade.average() == 1;
 		String id = stopID == null ? attempt.id : String.valueOf(stopID);
 		Trace trace = new Trace(id, assignmentID);
+		boolean stop = false;
 		for (AttemptAction action : attempt) {
-			if (stopID != null && action.id > stopID) break;
+			// Set the stop flag when we see the stopID, but only break on the next snapshot
+			if (stopID != null && action.id == stopID) stop = true;
+			if (stop && action.id != stopID) break;
 			if (lastSnapshot == action.lastSnapshot) continue;
 			lastSnapshot = action.lastSnapshot;
 			boolean correct = attemptCorrect && action.id == attempt.submittedActionID;
 			ASTSnapshot node = JsonAST.toAST(action.lastSnapshot, canon).toSnapshot(correct, null);
-			if (node.equals(lastNode)) continue;
+			if (node.equals(lastNode, true, true)) continue;
 			lastNode = node;
 			trace.add(node);
 		}

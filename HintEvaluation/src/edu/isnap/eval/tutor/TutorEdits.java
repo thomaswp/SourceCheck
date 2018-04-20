@@ -105,7 +105,6 @@ public class TutorEdits {
 			}
 			for (AssignmentAttempt attempt : assignment.load(
 					Mode.Use, false, true, new SnapParser.LikelySubmittedOnly()).values()) {
-				System.out.println(attempt.id);
 				List<Integer> requestIDs = attempt.rows.rows.stream()
 						.filter(a -> ids.contains(a.id))
 						.map(a -> a.id)
