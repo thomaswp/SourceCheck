@@ -2,7 +2,6 @@ package edu.isnap.rating;
 
 import java.util.ArrayList;
 
-import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.graph.ASTSnapshot;
 
 @SuppressWarnings("serial")
@@ -10,7 +9,7 @@ public class Trace extends ArrayList<ASTSnapshot> implements Comparable<Trace> {
 	public final String id;
 	public final String assignmentID;
 
-	public ASTNode getFinalSnapshot() {
+	public ASTSnapshot getFinalSnapshot() {
 		if (isEmpty()) return null;
 		return get(size() - 1);
 	}

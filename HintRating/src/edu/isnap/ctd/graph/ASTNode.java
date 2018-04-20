@@ -266,7 +266,7 @@ public class ASTNode implements INode {
 				return false;
 			}
 		}
-		if (!childRelations.equals(rhs.childRelations)) return false;
+		if (compareChildRelations && !childRelations.equals(rhs.childRelations)) return false;
 		return true;
 	}
 

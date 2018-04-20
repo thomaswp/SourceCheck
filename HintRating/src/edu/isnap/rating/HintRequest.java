@@ -1,12 +1,12 @@
 package edu.isnap.rating;
 
-import edu.isnap.ctd.graph.ASTNode;
+import edu.isnap.ctd.graph.ASTSnapshot;
 
 public class HintRequest {
 
 	public final String id;
 	public final String assignmentID;
-	public final ASTNode code;
+	public final ASTSnapshot code;
 	public final Trace history;
 
 	public HintRequest(Trace trace) {

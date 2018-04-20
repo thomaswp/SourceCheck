@@ -229,6 +229,7 @@ public class RateHints {
 			overlap.retainAll(outcomeEdits);
 			if (overlap.size() == outcomeEdits.size()) {
 				if (overlap.size() == tutorEdits.size()) {
+					System.out.println(ASTNode.diff(tutorHint.to, outcome.result, config));
 					throw new RuntimeException("Edits should not match if hint outcomes did not!");
 				}
 				bestOverlap = overlap;
