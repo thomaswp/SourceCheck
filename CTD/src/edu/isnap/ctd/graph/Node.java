@@ -307,6 +307,10 @@ public abstract class Node extends StringHashable implements INode {
 		return a.equals(b);
 	}
 
+	public String parentType() {
+		return parent == null ? null : parent.type;
+	}
+
 	public boolean parentHasType(String... types) {
 		return parent != null && parent.hasType(types);
 	}

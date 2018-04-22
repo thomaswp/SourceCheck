@@ -7,6 +7,7 @@ import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.NodeConstructor;
 import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.hint.util.SnapNode;
+import edu.isnap.rating.RatingConfig;
 
 public class SnapHintConfig extends HintConfig {
 	private static final long serialVersionUID = 1L;
@@ -39,21 +40,9 @@ public class SnapHintConfig extends HintConfig {
 		return Script.equals(type);
 	}
 
-	public final HashSet<String> haveFlexibleChildren = new HashSet<>(Arrays.asList(
-			new String[] {
-					// Note: we exclude list and reify blocks here, since (for now) we want to treat
-					// them as having fixed children
-					"snapshot",
-					"stage",
-					"sprite",
-					"script",
-					"customBlock",
-			}
-	));
-
 	@Override
 	public boolean hasFixedChildren(Node node) {
-		return node != null && !haveFlexibleChildren.contains(node.type());
+		return node != null && RatingConfig.Snap.hasFixedChildren(node.type(), node.parentType());
 	}
 
 	@Override

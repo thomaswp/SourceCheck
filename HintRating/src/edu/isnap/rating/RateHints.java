@@ -52,7 +52,7 @@ public class RateHints {
 
 	public static HintRatingSet rate(GoldStandard standard, HintSet hintSet, boolean debug) {
 		HintRatingSet ratingSet = new HintRatingSet(hintSet.name);
-		EditExtractor extractor = new EditExtractor(hintSet.config.areNodeIDsConsistent());
+		EditExtractor extractor = new EditExtractor(hintSet.config);
 		for (String assignmentID : standard.getAssignmentIDs()) {
 			System.out.println("----- " + assignmentID + " -----");
 
@@ -118,6 +118,7 @@ public class RateHints {
 			}
 		}
 
+		// TODO: make this work for python
 		// If node IDs are consistent, we can identify new nodes and prune their children.
 		// Note that we could theoretically do this even if they aren't, using the EditExtractor's
 		// TED algorithm, but currently only Snap needs this feature, and it has consistent IDs.
