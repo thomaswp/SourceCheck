@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang.ObjectUtils;
@@ -20,6 +21,8 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 import costmodel.CostModel;
 import distance.APTED;
 import edu.isnap.ctd.graph.ASTNode;
+import edu.isnap.ctd.graph.CodeAlignment;
+import edu.isnap.ctd.graph.CodeAlignment.NodePairs;
 import edu.isnap.ctd.util.map.BiMap;
 import node.Node;
 
@@ -36,8 +39,12 @@ public class EditExtractor {
 	public Set<Edit> getEdits(ASTNode from, ASTNode to) {
 		Set<Edit> edits = cache.get(to);
 		if (edits == null) {
-			edits = useIDs ? extractEditsUsingIDs(from, to) : extractEditsUsingTED(from, to);
+//			edits = useIDs ? extractEditsUsingIDs(from, to) : extractEditsUsingTED(from, to);
+			edits = extractEditsUsingCodeAlign(from, to);
 			cache.put(to, edits);
+		} else {
+//			System.out.println("CACHE");
+			// TODO: The cache is not working, since we clone the nodes and it works on identity
 		}
 		return edits;
 	}
@@ -111,6 +118,74 @@ public class EditExtractor {
 		a.forEach(System.out::println);
 		System.out.println(nameB + "Only:");
 		b.forEach(System.out::println);
+	}
+
+	public static Set<Edit> extractEditsUsingCodeAlign(ASTNode from, ASTNode to) {
+//		System.out.println(ASTNode.diff(from, to, RatingConfig.Snap));
+//		System.out.println(from.treeSize() + " vs " + to.treeSize());
+
+		// Make renames as expensive as an insert/delete to require at least 1 child match
+		// before it will be cheaper to rename.
+		NodePairs pairs = new CodeAlignment(1, 2).align(from, to);
+
+		Set<Edit> edits = new TreeSet<>();
+
+		List<ASTNode> added = new ArrayList<>();
+		List<ASTNode> removed = new ArrayList<>();
+		List<ASTNode> ignoreForIndexing = new ArrayList<>();
+
+		// Run the algorithm again, but allow for easier relabelings, so we know when nodes were
+		// replaced. These should not be ignored when recording the insertion index, since they
+		// represent an insertion/deletion pair
+		NodePairs matchPairs = new CodeAlignment(10, 1).align(from, to);
+
+		from.recurse(n -> {
+			if (!pairs.containsFrom(n)) {
+				removed.add(n);
+			}
+		});
+		AtomicInteger b = new AtomicInteger(0);
+		to.recurse(n -> {
+			if (!pairs.containsTo(n)) {
+				added.add(n);
+				// TODO: Not sure if this is a good idea. Messes up something with 131257
+				if (!matchPairs.containsTo(n)) {
+					ignoreForIndexing.add(n);
+				}
+				else {
+					System.out.println(matchPairs.getTo(n) + " -> " + n);
+					b.set(1);
+				}
+			}
+		});
+		if (b.get() == 1) System.out.println("--");
+
+
+
+		removed.forEach(node -> edits.add(new Deletion(getReferenceAsChildren(node))));
+		// The recorded index of an inserted node shouldn't be affected by other nodes that have
+		// also been inserted, e.g. so that +(a, b) could match +(b), since both nodes will be
+		// inserted at index 0.
+		// TODO: This is problematic because we lose insert order (e.g. +(a, b) == +(b, a)) and
+		// because we now get duplicate edits (e.g. +(a, a) == +(a)), both of which allow the
+		// possibility of an exact match of edits without actually matching. The latter still
+		// constitutes a partial match, but not the former. How can we make +(a, b) match +(b)
+		// but not +(a, b) == +(b, a)?
+		// TODO: This should also add to the index for any deleted nodes, so that (-a, +b)
+		// can match (a, +b) at index 1
+		added.forEach(node -> edits.add(new Insertion(getReferenceAsChildren(node,
+				ignoreForIndexing))));
+
+		// Handle renames later, since these shouldn't be ignored for indexing;
+		from.recurse(n -> {
+			ASTNode pair = pairs.getFrom(n);
+			if (pair != null && !n.shallowEquals(pair, false)) {
+				edits.add(new Deletion(getReferenceAsChildren(n)));
+				edits.add(new Insertion(getReferenceAsChildren(pair, ignoreForIndexing)));
+			}
+		});
+
+		return edits;
 	}
 
 	public static Set<Edit> extractEditsUsingTED(ASTNode fromAST, ASTNode toAST) {
@@ -359,8 +434,14 @@ public class EditExtractor {
 	}
 
 	public static NodeReference getReferenceAsChildren(ASTNode node) {
+		return getReferenceAsChildren(node, null);
+	}
+
+	public static NodeReference getReferenceAsChildren(ASTNode node,
+			List<ASTNode> ignoreForIndexing) {
 		if (node.parent() == null) return new RootNodeReference(node);
-		return new ChildNodeReference(node, getReferenceAsChildren(node.parent()));
+		return new ChildNodeReference(node, ignoreForIndexing,
+				getReferenceAsChildren(node.parent(), ignoreForIndexing));
 	}
 
 	private static NodeReference getReferenceInPair(ASTNode toNode,
@@ -399,7 +480,9 @@ public class EditExtractor {
 
 		@Override
 		public int compareTo(Edit o) {
-			return toString().compareTo(o.toString());
+			int c0 = toString().compareTo(o.toString());
+			if (c0 != 0) return c0;
+			return Integer.compare(hashCode(), o.hashCode());
 		}
 	}
 
@@ -525,10 +608,28 @@ public class EditExtractor {
 		final int index;
 
 		ChildNodeReference(ASTNode node, NodeReference parent) {
+			this(node, null, parent);
+		}
+
+		public ChildNodeReference(ASTNode node, List<ASTNode> ignoreForIndexing,
+				NodeReference parent) {
 			super(node);
 			if (parent == null) throw new IllegalArgumentException("Parent ref cannot be null");
-			this.index = node.index();
+			int index = 0;
+			for (ASTNode child : node.parent().children()) {
+				if (child == node) break;
+				if (ignoreForIndexing != null && containsExactly(ignoreForIndexing, child)) {
+					continue;
+				}
+				index++;
+			}
+			this.index = index;
 			this.parent = parent;
+		}
+
+		private <T> boolean containsExactly(List<T> list, T item) {
+			for (T t : list) if (t == item) return true;
+			return false;
 		}
 
 		@Override

@@ -167,10 +167,9 @@ public class RateHints {
 					} catch (NumberFormatException e) { }
 				}
 				if (normalize) {
-					// If so, we replace its value with a standard value, so all new values appear
-					// the same
+					// If so, we replace its value with null, so all new values appear the same
 					ASTNode parent = node.parent();
-					ASTNode replacement = new ASTNode(node.type, "[NEW_VALUE]", node.id);
+					ASTNode replacement = new ASTNode(node.type, null, node.id);
 					int index = node.index();
 					parent.removeChild(index);
 					parent.addChild(index, replacement);
@@ -212,6 +211,7 @@ public class RateHints {
 			}
 		}
 
+		// Run again to get a version that's unpruned
 		outcomeNode = normalizeNewValuesTo(fromNode, outcome.result, config);
 		Set<Edit> outcomeEdits = extractor.getEdits(fromNode, outcomeNode);
 		if (outcomeEdits.size() == 0) return new HintRating(outcome);
@@ -239,12 +239,13 @@ public class RateHints {
 			if (tutorEdits.size() == 0) continue;
 			Set<Edit> overlap = new HashSet<>(tutorEdits);
 			overlap.retainAll(outcomeEdits);
+//			if (overlap.size() > bestOverlap.size()) {
 			if (overlap.size() == outcomeEdits.size()) {
 				if (overlap.size() == tutorEdits.size()) {
 					System.out.println("Tutor hint: ");
-					System.out.println(ASTNode.diff(tutorHint.from, tutorHint.to, config));
+					System.out.println(ASTNode.diff(fromNode, tutorOutcomeNode, config));
 					System.out.println("Alg hint: ");
-					System.out.println(ASTNode.diff(tutorHint.from, outcome.result, config));
+					System.out.println(ASTNode.diff(fromNode, outcomeNode, config));
 					EditExtractor.printEditsComparison(
 							tutorEdits, outcomeEdits, "Tutor Hint", "Alg Hint");
 					throw new RuntimeException("Edits should not match if hint outcomes did not!");
