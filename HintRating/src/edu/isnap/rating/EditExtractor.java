@@ -123,34 +123,27 @@ public class EditExtractor {
 	public Set<Edit> extractEditsUsingCodeAlign(ASTNode from, ASTNode to) {
 		// Make renames as expensive as an insert/delete to require at least 1 child match
 		// before it will be cheaper to rename.
+		// TODO: There are some tradeoffs with using 1 or 2 in the second value
 		NodePairs pairs = new CodeAlignment(1, 2).align(from, to);
 
 		Set<Edit> edits = new TreeSet<>();
 
-		List<ASTNode> added = new ArrayList<>();
-		List<ASTNode> removed = new ArrayList<>();
-
 		from.recurse(n -> {
 			if (!pairs.containsFrom(n)) {
-				removed.add(n);
+				edits.add(new Deletion(getReferenceAsChildren(n)));
 			}
 		});
 		to.recurse(n -> {
 			if (!pairs.containsTo(n)) {
-				added.add(n);
+				edits.add(new Insertion(getInsertReference(n, pairs)));
 			}
 		});
 		from.recurse(n -> {
 			ASTNode pair = pairs.getFrom(n);
 			if (pair != null && !n.shallowEquals(pair, false)) {
-				removed.add(n);
-				added.add(pair);
+				edits.add(new Relabel(getReferenceAsChildren(n), pair.type, pair.value));
 			}
 		});
-
-
-		removed.forEach(node -> edits.add(new Deletion(getReferenceAsChildren(node))));
-		added.forEach(node -> edits.add(new Insertion(getInsertReference(node, pairs))));
 
 		return edits;
 	}
@@ -412,11 +405,11 @@ public class EditExtractor {
 	// constitutes a partial match, but not the former. How can we make +(a, b) match +(b)
 	// but not +(a, b) == +(b, a)?
 	private NodeReference getInsertReference(ASTNode node, BiMap<ASTNode, ASTNode> map) {
-		if (node.parent() == null) return new RootNodeReference(node);
+		if (node.parent() == null) throw new RuntimeException("Root nodes cannot be inserted :/");
+		ASTNode parentPair = map.getTo(node.parent());
 		int index = node.index();
-		String parentType = node.parent() == null ? null : node.parent().type;
-		if (map != null && !config.hasFixedChildren(node.type, parentType) &&
-				map.containsTo(node.parent())) {
+		if (map != null && parentPair != null &&
+				!config.hasFixedChildren(node.type, parentPair.type)) {
 			// If the node has a parent with a from-match, we look through its earlier siblings and
 			// find the first one with a match (not inserted or deleted) and we mark the node as
 			// inserted right after it
@@ -433,7 +426,13 @@ public class EditExtractor {
 		} else {
 			index = node.index();
 		}
-		return new ChildNodeReference(node, getInsertReference(node.parent(), map), index);
+
+		// If possible, reference the parent pair in the from-AST; otherwise, continue to walk up
+		// the to-AST
+		NodeReference parentReference = parentPair != null ?
+					getReferenceAsChildren(parentPair) :
+					getInsertReference(node.parent(), map);
+		return new ChildNodeReference(node, parentReference, index);
 	}
 
 	private static NodeReference getReferenceInPair(ASTNode toNode,
@@ -502,6 +501,48 @@ public class EditExtractor {
 		public String toString() {
 			return "D: " + node.toString();
 		}
+	}
+
+	static class Relabel extends Edit {
+		public final String type, value;
+
+		Relabel(NodeReference node, String type, String value) {
+			super(node);
+			this.type = type;
+			this.value = value;
+		}
+
+		@Override
+		public String toString() {
+			if (node.value == null && value == null) {
+				return String.format("R: %s: [%s => %s]",
+						node, node.type, type);
+			}
+			return String.format("R: %s: [%s(%s) => %s(%s)]",
+					node, node.type, node.value, type, value);
+		}
+
+		@Override
+		public int hashCode() {
+			HashCodeBuilder builder = new HashCodeBuilder(17, 3);
+			builder.appendSuper(super.hashCode());
+			builder.append(type);
+			builder.append(value);
+			return builder.toHashCode();
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (obj == null) return false;
+			if (obj == this) return true;
+			if (obj.getClass() != getClass()) return false;
+			Relabel rhs = (Relabel) obj;
+			EqualsBuilder builder = new EqualsBuilder();
+			builder.appendSuper(super.equals(rhs));
+			builder.append(type, rhs.type);
+			builder.append(value, rhs.value);
+			return builder.isEquals();
+		};
 	}
 
 	static class Move extends Edit {

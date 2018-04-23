@@ -13,6 +13,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import edu.isnap.ctd.graph.ASTNode;
+import edu.isnap.ctd.util.Diff;
 import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.rating.EditExtractor.Edit;
 import edu.isnap.rating.EditExtractor.NodeReference;
@@ -257,18 +258,21 @@ public class RateHints {
 			}
 		}
 		if (!bestOverlap.isEmpty()) {
-//			ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, bestHint.to, config);
-//			System.out.println("Tutor Hint:");
-//			System.out.println(Diff.diff(
-//					fromNode.prettyPrint(true, config),
-//					tutorOutcomeNode.prettyPrint(true, config)));
-//			System.out.println("Alg Hint:");
-//			System.out.println(Diff.diff(
-//					fromNode.prettyPrint(true, config),
-//					outcomeNode.prettyPrint(true, config), 2));
-//			Set<Edit> tutorEdits = extractor.getEdits(bestHint.from, tutorOutcomeNode);
-//			EditExtractor.printEditsComparison(tutorEdits, outcomeEdits, "Tutor Hint", "Alg Hint");
-//			System.out.println("-------------------");
+			Set<Edit> tutorEdits = new HashSet<>();
+			if (bestHint != null) {
+				System.out.println("Tutor Hint:");
+				ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, bestHint.to, config);
+				System.out.println(Diff.diff(
+						fromNode.prettyPrint(true, config),
+						tutorOutcomeNode.prettyPrint(true, config)));
+				tutorEdits = extractor.getEdits(bestHint.from, tutorOutcomeNode);
+			}
+			System.out.println("Alg Hint:");
+			System.out.println(Diff.diff(
+					fromNode.prettyPrint(true, config),
+					outcomeNode.prettyPrint(true, config), 2));
+			EditExtractor.printEditsComparison(tutorEdits, outcomeEdits, "Tutor Hint", "Alg Hint");
+			System.out.println("-------------------");
 
 			return new HintRating(outcome, bestHint, MatchType.Partial);
 		}
