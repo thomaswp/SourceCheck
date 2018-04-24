@@ -60,10 +60,16 @@ public class RateHints {
 				RequestRating requestRating = new RequestRating(requestID, assignmentID);
 
 				List<TutorHint> validHints = standard.getValidHints(assignmentID, requestID);
-				if (validHints.size() == 0) continue;
-				List<HintOutcome> hints = hintSet.getOutcomes(requestID);
 
-				// TODO: Stop if consensus hints is 0 (but only if consensus exists...)
+				// Make sure there is at least one hint with the required validity; otherwise,
+				// assume there are no valid tutor hints and we should continue
+				Validity requiredValidity = hintSet.config.highestRequiredValidity();
+				if (!validHints.stream()
+						.anyMatch(hint -> hint.validity.isAtLeast(requiredValidity))) {
+					continue;
+				}
+
+				List<HintOutcome> hints = hintSet.getOutcomes(requestID);
 				if (hints.isEmpty()) {
 					System.err.printf("No hints generated for request %s/%s.\n",
 							assignmentID, requestID);
@@ -234,8 +240,6 @@ public class RateHints {
 //		Collections.sort(validHints);
 		for (TutorHint tutorHint : validHints) {
 			ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, tutorHint.to, config);
-			// TODO: Figure out what to do if nodes don't have IDs (i.e. Python)
-			// TODO: Also figure confirm if this is over-generous with Python
 			Set<Edit> tutorEdits = extractor.getEdits(fromNode, tutorOutcomeNode);
 			if (tutorEdits.size() == 0) continue;
 			Set<Edit> overlap = new HashSet<>(tutorEdits);
@@ -402,7 +406,6 @@ public class RateHints {
 
 		protected double getPriorityScore() {
 			if (isEmpty()) return 0;
-			// TODO: figure out whether to count invalid items
 			return stream()
 					.filter(r -> r.priority() != null)
 					.mapToDouble(r -> r.hint.weight() * r.priority().points())

@@ -4,6 +4,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import edu.isnap.rating.TutorHint.Validity;
+
 public interface RatingConfig {
 
 	/**
@@ -40,6 +42,16 @@ public interface RatingConfig {
 	 *  lines. Note: this method should only be used for printing.
 	 */
 	public boolean nodeTypeHasBody(String type);
+
+	/**
+	 * Should return the highest {@link Validity} of {@link TutorHint} that should be assumed
+	 * present for any {@link HintRequest}. Any HintRequest with out a TutorHint with at least this
+	 * validity is assumed to have no valid hints (e.g. the code is correct), and it will be skipped
+	 * in hint rating analysis.
+	 */
+	public default Validity highestRequiredValidity() {
+		return Validity.MultipleTutors;
+	}
 
 	public final static RatingConfig Default = new RatingConfig() {
 
@@ -143,6 +155,11 @@ public interface RatingConfig {
 		@Override
 		public boolean hasFixedChildren(String type, String parentType) {
 			return !haveFlexibleChildren.contains(type);
+		}
+
+		@Override
+		public Validity highestRequiredValidity() {
+			return Validity.Consensus;
 		}
 	};
 
