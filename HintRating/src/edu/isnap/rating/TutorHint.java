@@ -50,18 +50,20 @@ public class TutorHint {
 
 	public final int hintID;
 	public final String requestID;
+	public final String year;
 	public final String tutor, assignmentID;
 	public final ASTNode from, to;
 
 	public Validity validity;
 	public Priority priority;
 
-	public TutorHint(int hintID, String requestID, String tutor, String assignmentID, ASTNode from,
-			ASTNode to) {
+	public TutorHint(int hintID, String requestID, String tutor, String assignmentID, String year,
+			ASTNode from, ASTNode to) {
 		this.hintID = hintID;
 		this.requestID = requestID;
 		this.tutor = tutor;
 		this.assignmentID = assignmentID;
+		this.year = year;
 		this.from = from;
 		this.to = to;
 	}

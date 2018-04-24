@@ -20,7 +20,7 @@ public class TutorHintSet extends HintSet {
 
 	public static TutorHintSet fromFile(String tutor, RatingConfig config, String filePath)
 			throws FileNotFoundException, IOException {
-		ListMap<String, PrintableTutorHint> edits = TutorEdits.readTutorEditsPython(filePath);
+		ListMap<String, PrintableTutorHint> edits = TutorEdits.readTutorEditsPython(filePath, null);
 		List<TutorHint> hints = edits.values().stream()
 				.flatMap(list -> list.stream())
 				.filter(edit -> tutor.equals(edit.tutor))

@@ -198,7 +198,7 @@ public abstract class HighlightHintSet extends HintMapHintSet {
 				String from = outcome.from.prettyPrint(true, config);
 				String to = outcome.result.prettyPrint(true, config);
 				edits.add(new PrintableTutorHint(hintID++, requestID, null,
-						outcome.assignmentID, outcome.from,
+						outcome.assignmentID, null, outcome.from,
 						outcome.result, Diff.diff(from, to)));
 			}
 		}

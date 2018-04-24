@@ -150,7 +150,7 @@ public class RunTutorEdits extends TutorEdits {
 
 		@Override
 		GoldStandard generateGoldStandard() throws FileNotFoundException, IOException {
-			GoldStandard standard = readConsensusPython("../data/itap");
+			GoldStandard standard = readConsensusPython("../data/itap", "spring2016");
 			return standard;
 		}
 

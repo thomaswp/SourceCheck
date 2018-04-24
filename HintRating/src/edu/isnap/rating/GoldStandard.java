@@ -86,6 +86,7 @@ public class GoldStandard {
 					spreadsheet.newRow();
 					spreadsheet.put("assignmentID", assignmentID);
 					spreadsheet.put("requestID", requestID);
+					spreadsheet.put("year", hint.year);
 					spreadsheet.put("hintID", hint.hintID);
 					spreadsheet.put("validity", hint.validity.value);
 					spreadsheet.put("priority", hint.priority == null ? "" : hint.priority.value);
@@ -105,6 +106,7 @@ public class GoldStandard {
 		for (CSVRecord record : parser) {
 			String assignmentID = record.get("assignmentID");
 			String requestID = record.get("requestID");
+			String year = record.get("year");
 			int hintID = Integer.parseInt(record.get("hintID"));
 			Validity validity = Validity.fromInt(Integer.parseInt(record.get("validity")));
 			String priorityString = record.get("priority");
@@ -118,7 +120,7 @@ public class GoldStandard {
 			ASTNode to = ASTNode.parse(record.get("to"));
 
 			TutorHint hint = new TutorHint(
-					hintID, requestID, "consensus", assignmentID, lastFrom, to);
+					hintID, requestID, "consensus", assignmentID, year, lastFrom, to);
 			hint.validity = validity;
 			hint.priority = priority;
 			hints.add(assignmentID, hint);
