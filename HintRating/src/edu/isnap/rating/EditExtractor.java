@@ -120,6 +120,7 @@ public class EditExtractor {
 		b.forEach(System.out::println);
 	}
 
+	// TODO: Still not sure this is ideal for Python
 	public Set<Edit> extractEditsUsingCodeAlign(ASTNode from, ASTNode to) {
 		// Make renames as expensive as an insert/delete to require at least 1 child match
 		// before it will be cheaper to rename.
