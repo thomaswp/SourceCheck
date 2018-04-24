@@ -1,7 +1,6 @@
 
 library(readr)
 library(plyr)
-library(R.oo)
 
 loadRatings <- function(names) {
   allRatings <- NULL
@@ -27,11 +26,33 @@ selectHintsForManualRating <- function(ratings, maxPerType=50) {
     count <- sum(samples$type == type)
     samples$priority[samples$type == type] <- sample(count, count)
   }
-  samples[,-4]
+  samples <- subset(samples, select = -c(idx))
+  samples <- samples[order(samples$assignmentID, samples$year, samples$requestID, (samples$priority-1) %/% 25, samples$hintID),]
+  samples
+}
+
+# TODO: Be careful - this doesn't escape the diff
+writeSQL <- function(ratings, path) {
+  sink(path)
+  for (year in unique(ratings$year)) {
+    rows <- ratings[ratings$year==year,]
+    cat(paste0("use snap_", year, ";\n"))
+    for (i in 1:nrow(rows)) {
+      line = sprintf("INSERT INTO `handmade_hints` (`hid`, `userID`, `rowID`, `trueAssignmentID`, `hintCode`) VALUES ('%s', '%s', '%s', '%s', '%s');\n",
+                     rows[i, "hintID"], "algorithms", rows[i, "requestID"], rows[i, "assignmentID"], rows[i, "diff"])
+      cat(line)
+    }
+  }
+  sink()
 }
 
 runMe <- function() {
   ratings <- loadRatings(c("SourceCheck", "CTD", "PQGram", "chf_with_past"))
   samples <- selectHintsForManualRating(ratings)
-  first75 <- samples[samples$priority <= 75 / 3,]
+  
+  write.csv(subset(samples, select=c(assignmentID, year, requestID, hintID, priority)), "C:/Users/Thomas/Desktop/samples.csv", row.names = F)
+  first75 <- samples[samples$priority <= 25,]
+  second75 <- samples[samples$priority > 25 & samples$priority <= 50,]
+  writeSQL(first75, "C:/Users/Thomas/Desktop/samples.sql")
+  writeSQL(second75, "C:/Users/Thomas/Desktop/samples2.sql")
 }
