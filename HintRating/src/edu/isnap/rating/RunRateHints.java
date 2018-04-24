@@ -7,8 +7,8 @@ import java.io.IOException;
 public class RunRateHints {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
-		RateHints.rateDir(RateHints.ISNAP_F16_F17_DATA_DIR, RatingConfig.Snap);
-//		RateHints.rateDir(RateHints.ITAP_S16_DATA_DIR, RatingConfig.Python);
+		RateHints.rateDir(RateHints.ISNAP_F16_F17_DATA_DIR, RatingConfig.Snap, true);
+//		RateHints.rateDir(RateHints.ITAP_S16_DATA_DIR, RatingConfig.Python, true);
 
 //		printHints(RateHints.ISNAP_F16_F17_DATA_DIR, "chf_with_past", RatingConfig.Snap);
 //		printHints(RateHints.ISNAP_F16_F17_DATA_DIR, "chf_without_past", RatingConfig.Snap);

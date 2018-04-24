@@ -13,6 +13,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import edu.isnap.ctd.graph.ASTNode;
+import edu.isnap.ctd.util.Diff;
+import edu.isnap.ctd.util.Diff.ColorStyle;
 import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.rating.EditExtractor.Edit;
 import edu.isnap.rating.EditExtractor.NodeReference;
@@ -31,7 +33,7 @@ public class RateHints {
 	public final static String ISNAP_F16_F17_DATA_DIR = DATA_ROOT_DIR + "isnapF16-F17/";
 	public final static String ITAP_S16_DATA_DIR = DATA_ROOT_DIR + "itapS16/";
 
-	public static void rateDir(String path, RatingConfig config)
+	public static void rateDir(String path, RatingConfig config, boolean write)
 			throws FileNotFoundException, IOException {
 		GoldStandard standard = GoldStandard.parseSpreadsheet(path + GS_SPREADSHEET);
 		File algorithmsFolder = new File(path, ALGORITHMS_DIR);
@@ -42,7 +44,9 @@ public class RateHints {
 			HintSet hintSet = HintSet.fromFolder(algorithmFolder.getName(), config,
 					algorithmFolder.getPath());
 			System.out.println(hintSet.name);
-			rate(standard, hintSet);
+			HintRatingSet ratings = rate(standard, hintSet);
+			ratings.writeAllHints(path + "/" + RateHints.ALGORITHMS_DIR + "/" +
+					algorithmFolder.getName() + ".csv");
 		}
 	}
 
@@ -51,23 +55,26 @@ public class RateHints {
 	}
 
 	public static HintRatingSet rate(GoldStandard standard, HintSet hintSet, boolean debug) {
+		RatingConfig config = hintSet.config;
 		HintRatingSet ratingSet = new HintRatingSet(hintSet.name);
-		EditExtractor extractor = new EditExtractor(hintSet.config);
+		EditExtractor extractor = new EditExtractor(config);
 		for (String assignmentID : standard.getAssignmentIDs()) {
 			System.out.println("----- " + assignmentID + " -----");
 
 			for (String requestID : standard.getRequestIDs(assignmentID)) {
-				RequestRating requestRating = new RequestRating(requestID, assignmentID);
 
 				List<TutorHint> validHints = standard.getValidHints(assignmentID, requestID);
 
 				// Make sure there is at least one hint with the required validity; otherwise,
 				// assume there are no valid tutor hints and we should continue
-				Validity requiredValidity = hintSet.config.highestRequiredValidity();
+				Validity requiredValidity = config.highestRequiredValidity();
 				if (!validHints.stream()
 						.anyMatch(hint -> hint.validity.isAtLeast(requiredValidity))) {
 					continue;
 				}
+
+				RequestRating requestRating = new RequestRating(requestID, assignmentID,
+						validHints.get(0).from, config);
 
 				List<HintOutcome> hints = hintSet.getOutcomes(requestID);
 				if (hints.isEmpty()) {
@@ -76,12 +83,11 @@ public class RateHints {
 				}
 
 				for (HintOutcome hint : hints) {
-					HintRating rating = findMatchingEdit(validHints, hint, hintSet.config,
-							extractor);
+					HintRating rating = findMatchingEdit(validHints, hint, config, extractor);
 					requestRating.add(rating);
 				}
 				if (debug) {
-					requestRating.printRatings(validHints.get(0).from, hintSet.config, validHints);
+					requestRating.printRatings(validHints.get(0).from, config, validHints);
 				}
 				ratingSet.add(requestRating);
 				requestRating.printSummary();
@@ -342,14 +348,21 @@ public class RateHints {
 	public static class RequestRating extends ArrayList<HintRating> {
 		public final String requestID;
 		public final String assignmentID;
+		public final ASTNode requestNode;
+		private final RatingConfig config;
 
-		public RequestRating(String requestID, String assignmentID) {
+		public RequestRating(String requestID, String assignmentID, ASTNode requestNode,
+				RatingConfig config) {
 			this.requestID = requestID;
 			this.assignmentID = assignmentID;
+			this.requestNode = requestNode;
+			this.config = config;
 		}
 
 		public void writeAllHints(Spreadsheet spreadsheet) {
-			forEach(rating -> rating.addToSpreadsheet(spreadsheet));
+			for (int i = 0; i < size(); i++) {
+				get(i).addToSpreadsheet(spreadsheet, i, requestNode, config);
+			}
 		}
 
 		public void writeRating(Spreadsheet spreadsheet) {
@@ -451,6 +464,7 @@ public class RateHints {
 						String label = tooSoon ? "Too Soon" : type.toString();
 						System.out.println("               === " + label + " ===");
 						for (HintRating rating : matching) {
+							System.out.println("Hint ID: " + rating.hint.id);
 							System.out.println("Weight: " + rating.hint.weight());
 							System.out.println(rating.hint.resultString(from, config));
 							System.out.println("-------");
@@ -496,10 +510,13 @@ public class RateHints {
 			this.matchType = matchType;
 		}
 
-		public void addToSpreadsheet(Spreadsheet spreadsheet) {
+		public void addToSpreadsheet(Spreadsheet spreadsheet, int order, ASTNode requestNode,
+				RatingConfig config) {
 			spreadsheet.newRow();
 			spreadsheet.put("assignmentID", hint.assignmentID);
 			spreadsheet.put("requestID", hint.requestID);
+			spreadsheet.put("hintID", hint.id);
+			spreadsheet.put("order", order);
 			spreadsheet.put("weight", hint.weight());
 			Integer matchID = null, validity = null, priority = null;
 			if (match != null) {
@@ -511,6 +528,11 @@ public class RateHints {
 			spreadsheet.put("validity", validity);
 			spreadsheet.put("priority", priority);
 			spreadsheet.put("type", matchType.toString());
+			spreadsheet.put("outcome", hint.result.toJSON().toString());
+			ColorStyle oldStyle = Diff.colorStyle;
+			Diff.colorStyle = ColorStyle.HTML;
+			spreadsheet.put("diff", ASTNode.diff(requestNode, hint.result, config));
+			Diff.colorStyle = oldStyle;
 			Map<String, String> properties = hint.getDebuggingProperties();
 			for (String key : properties.keySet()) {
 				spreadsheet.put("p_" + key, properties.get(key));

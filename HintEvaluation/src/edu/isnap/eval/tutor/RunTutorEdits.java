@@ -53,12 +53,12 @@ public class RunTutorEdits extends TutorEdits {
 		// Exporting things (Note: this may require some copy and paste)
 //		dataset.writeGoldStandard();
 //		dataset.exportTrainingAndTestData(true);
-//		dataset.writeHintSet(algorithm, source);
+		dataset.writeHintSet(algorithm, source);
 
 //		dataset.verifyGoldStandard();
 //		dataset.printData();
 
-		dataset.runHintRating(algorithm, source, debug, writeHints);
+//		dataset.runHintRating(algorithm, source, debug, writeHints);
 
 //		dataset.testKValues(algorithm, source, debug, writeHints, 1, 20);
 //		dataset.writeColdStart(algorithm, 200, 1);
@@ -226,7 +226,7 @@ public class RunTutorEdits extends TutorEdits {
 			HintMapHintSet hintSet = getHintSet(algorithm, source, standard);
 			HintRatingSet rate = RateHints.rate(standard, hintSet, debug);
 			if (write) {
-				String name = getSourceName(source) + ".csv";
+				String name = getSourceName(algorithm, source) + ".csv";
 				rate.writeAllHints(getDataDir() + RateHints.ALGORITHMS_DIR + "/" + name);
 				Spreadsheet spreadsheet = new Spreadsheet();
 				rate.writeAllRatings(spreadsheet);
@@ -249,13 +249,13 @@ public class RunTutorEdits extends TutorEdits {
 				}
 			}
 			if (write) {
-				String name = getSourceName(source) + ".csv";
+				String name = getSourceName(algorithm, source) + ".csv";
 				spreadsheet.write(getDataDir() + "analysis/k-test-" + name);
 			}
 		}
 
-		public static String getSourceName(Source source) {
-			String name = "sourcecheck";
+		public static String getSourceName(HintAlgorithm algorithm, Source source) {
+			String name = algorithm.getName();
 			if (source == Source.Template) name += "-template";
 			if (source == Source.SingleExpert) name += "-expert1";
 			return name;
@@ -265,9 +265,9 @@ public class RunTutorEdits extends TutorEdits {
 				throws FileNotFoundException, IOException {
 			GoldStandard standard = readGoldStandard();
 			HintMapHintSet hintSet = getHintSet(algorithm, source, standard);
-			String name = getSourceName(source);
-			hintSet.writeToFolder(new File(getDataDir(),
-					RateHints.ALGORITHMS_DIR + getSourceName(source)).getPath(), true);
+			String name = getSourceName(algorithm, source);
+			hintSet.writeToFolder(new File(getDataDir() + RateHints.ALGORITHMS_DIR,
+					getSourceName(algorithm, source)).getPath(), true);
 		}
 
 		public void writeGoldStandard() throws FileNotFoundException, IOException {
@@ -352,17 +352,22 @@ public class RunTutorEdits extends TutorEdits {
 		@Override
 		public HintMapHintSet getHintSetFromTrainingDataset(HintConfig config,
 				TrainingDataset dataset) throws IOException {
-			return new ImportHighlightHintSet("SourceCheck", config, dataset);
+			return new ImportHighlightHintSet(getName(), config, dataset);
 		}
 
 		@Override
 		public HintMapHintSet getHintSetFromTemplate(HintConfig config, String directory) {
-			return new TemplateHighlightHintSet("SourceCheck", config, directory);
+			return new TemplateHighlightHintSet(getName(), config, directory);
 		}
 
 		@Override
 		public HintGenerator getHintGenerator(HintConfig config) {
 			return new HighlightHintGenerator(config);
+		}
+
+		@Override
+		public String getName() {
+			return "SourceCheck";
 		}
 	};
 
@@ -371,7 +376,7 @@ public class RunTutorEdits extends TutorEdits {
 		@Override
 		public HintMapHintSet getHintSetFromTrainingDataset(HintConfig config,
 				TrainingDataset dataset) throws IOException {
-			return new CTDHintSet("CTD", config, dataset);
+			return new CTDHintSet(getName(), config, dataset);
 		}
 
 		@Override
@@ -384,6 +389,11 @@ public class RunTutorEdits extends TutorEdits {
 			// TODO: refactor HighlightHintGenerator to support both algorithms
 			throw new UnsupportedOperationException();
 		}
+
+		@Override
+		public String getName() {
+			return "CTD";
+		}
 	};
 
 	private static HintAlgorithm PQGram = new HintAlgorithm() {
@@ -391,7 +401,7 @@ public class RunTutorEdits extends TutorEdits {
 		@Override
 		public HintMapHintSet getHintSetFromTrainingDataset(HintConfig config,
 				TrainingDataset dataset) throws IOException {
-			return new PQGramHintSet("PQGram", config, dataset);
+			return new PQGramHintSet(getName(), config, dataset);
 		}
 
 		@Override
@@ -404,6 +414,11 @@ public class RunTutorEdits extends TutorEdits {
 			// TODO: refactor HighlightHintGenerator to support both algorithms
 			throw new UnsupportedOperationException();
 		}
+
+		@Override
+		public String getName() {
+			return "PQGram";
+		}
 	};
 
 	private static interface HintAlgorithm {
@@ -411,6 +426,7 @@ public class RunTutorEdits extends TutorEdits {
 				throws IOException;
 		HintMapHintSet getHintSetFromTemplate(HintConfig config, String directory);
 		HintGenerator getHintGenerator(HintConfig config);
+		String getName();
 	}
 
 	private static void printTutorInternalRatings(Dataset dataset)
