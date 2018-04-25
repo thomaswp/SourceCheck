@@ -18,6 +18,7 @@ loadRatings <- function(names) {
 }
 
 selectHintsForManualRating <- function(ratings, maxPerType=50) {
+  #TODO: This treats any match as a match, even if it's to a V1 hints :(
   set.seed(1234)
   dedup <- ddply(ratings, c("assignmentID", "year", "requestID", "outcome", "type", "validity", "priority", "diff"), summarize, idx=sample.int(length(source), 1), source=source[[idx]], weight=weight[[idx]], hintID=hintID[[idx]])
   samples <- ddply(dedup, c("assignmentID", "year", "requestID", "source", "type"), summarize, idx=sample(which(weight == max(weight)), 1), diff=diff[[idx]], hintID=hintID[[idx]])
@@ -52,8 +53,14 @@ runMe <- function() {
   samples <- selectHintsForManualRating(ratings)
   
   write.csv(subset(samples, select=c(assignmentID, year, requestID, hintID, priority)), "C:/Users/Thomas/Desktop/samples.csv", row.names = F)
-  first75 <- samples[samples$priority <= 25,]
-  first150 <- samples[samples$priority <= 50,]
-  writeSQL(first75, "C:/Users/Thomas/Desktop/samples.sql")
-  writeSQL(first150, "C:/Users/Thomas/Desktop/samples2.sql")
+  write.csv(samples, "C:/Users/Thomas/Desktop/samples-full.csv", row.names = F)
+  writeSQL(samples[samples$priority <= 25,], "C:/Users/Thomas/Desktop/samples75.sql")
+  writeSQL(samples[samples$priority <= 50,], "C:/Users/Thomas/Desktop/samples150.sql")
+  writeSQL(samples[samples$priority <= 84,], "C:/Users/Thomas/Desktop/samples252.sql")
+  
+  test <- merge(samples, ratings, by.x=c("hintID", "source", "requestID", "year", "diff", "type"), by.y=c("hintID", "source", "requestID", "year", "diff", "type"))
+  
+  # wait to sort until after sampling, just to keep it consistent with the original run
+  ratings <- ratings[order(ratings$assignmentID, ratings$year, ratings$requestID, ratings$source, ratings$order),]
+  ratings$score <- ratings$weightNorm * ifelse(ratings$type=="Full")
 }

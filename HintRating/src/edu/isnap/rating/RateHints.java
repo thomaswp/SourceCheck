@@ -361,7 +361,7 @@ public class RateHints {
 
 		public void writeAllHints(Spreadsheet spreadsheet) {
 			for (int i = 0; i < size(); i++) {
-				get(i).addToSpreadsheet(spreadsheet, i, requestNode, config);
+				get(i).addToSpreadsheet(spreadsheet, i, getTotalWeight(), requestNode, config);
 			}
 		}
 
@@ -510,14 +510,15 @@ public class RateHints {
 			this.matchType = matchType;
 		}
 
-		public void addToSpreadsheet(Spreadsheet spreadsheet, int order, ASTNode requestNode,
-				RatingConfig config) {
+		public void addToSpreadsheet(Spreadsheet spreadsheet, int order, double totalWeight,
+				ASTNode requestNode, RatingConfig config) {
 			spreadsheet.newRow();
 			spreadsheet.put("assignmentID", hint.assignmentID);
 			spreadsheet.put("requestID", hint.requestID);
 			spreadsheet.put("hintID", hint.id);
 			spreadsheet.put("order", order);
 			spreadsheet.put("weight", hint.weight());
+			spreadsheet.put("weightNorm", hint.weight() / totalWeight);
 			Integer matchID = null, validity = null, priority = null;
 			if (match != null) {
 				matchID = match.hintID;
