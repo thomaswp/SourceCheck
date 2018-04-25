@@ -37,6 +37,7 @@ writeSQL <- function(ratings, path) {
   for (year in unique(ratings$year)) {
     rows <- ratings[ratings$year==year,]
     cat(paste0("use snap_", year, ";\n"))
+    cat("DELETE FROM handmade_hints WHERE userID='algorithms';\n")
     for (i in 1:nrow(rows)) {
       line = sprintf("INSERT INTO `handmade_hints` (`hid`, `userID`, `rowID`, `trueAssignmentID`, `hintCode`) VALUES ('%s', '%s', '%s', '%s', '%s');\n",
                      rows[i, "hintID"], "algorithms", rows[i, "requestID"], rows[i, "assignmentID"], rows[i, "diff"])
@@ -52,7 +53,7 @@ runMe <- function() {
   
   write.csv(subset(samples, select=c(assignmentID, year, requestID, hintID, priority)), "C:/Users/Thomas/Desktop/samples.csv", row.names = F)
   first75 <- samples[samples$priority <= 25,]
-  second75 <- samples[samples$priority > 25 & samples$priority <= 50,]
+  first150 <- samples[samples$priority <= 50,]
   writeSQL(first75, "C:/Users/Thomas/Desktop/samples.sql")
-  writeSQL(second75, "C:/Users/Thomas/Desktop/samples2.sql")
+  writeSQL(first150, "C:/Users/Thomas/Desktop/samples2.sql")
 }

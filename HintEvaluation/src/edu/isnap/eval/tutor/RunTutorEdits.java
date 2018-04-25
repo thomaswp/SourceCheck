@@ -47,18 +47,18 @@ public class RunTutorEdits extends TutorEdits {
 		RatingDataset dataset = iSnapF16F17;
 		Source source = Source.StudentData;
 		HintAlgorithm algorithm = SourceCheck;
-		boolean debug = false;
+		boolean debug = true;
 		boolean writeHints = false;
 
 		// Exporting things (Note: this may require some copy and paste)
 //		dataset.writeGoldStandard();
 //		dataset.exportTrainingAndTestData(true);
-		dataset.writeHintSet(algorithm, source);
+//		dataset.writeHintSet(algorithm, source);
 
 //		dataset.verifyGoldStandard();
 //		dataset.printData();
 
-//		dataset.runHintRating(algorithm, source, debug, writeHints);
+		dataset.runHintRating(algorithm, source, debug, writeHints);
 
 //		dataset.testKValues(algorithm, source, debug, writeHints, 1, 20);
 //		dataset.writeColdStart(algorithm, 200, 1);

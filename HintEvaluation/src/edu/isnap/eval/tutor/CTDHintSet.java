@@ -36,7 +36,6 @@ public class CTDHintSet extends HintMapHintSet{
 			Node code = JsonAST.toNode(request.code, hintConfig.getNodeConstructor());
 			code = config.areNodeIDsConsistent() ? code.copy() : copyWithIDs(code);
 
-			// TODO: should get rid of redundant deletions
 			List<VectorHint> hints = generator.getHints(code);
 			for (VectorHint hint : hints) {
 				Node to = hint.outcome().root();
