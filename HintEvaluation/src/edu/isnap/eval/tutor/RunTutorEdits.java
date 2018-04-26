@@ -46,7 +46,7 @@ public class RunTutorEdits extends TutorEdits {
 
 		RatingDataset dataset = ITAPS16;
 		Source source = Source.StudentData;
-		HintAlgorithm algorithm = ITAP_History;
+		HintAlgorithm algorithm = SourceCheck;
 		boolean debug = false;
 		boolean writeHints = false;
 
@@ -58,7 +58,7 @@ public class RunTutorEdits extends TutorEdits {
 //		dataset.verifyGoldStandard();
 //		dataset.printData();
 
-//		dataset.runHintRating(algorithm, source, debug, writeHints);
+		dataset.runHintRating(algorithm, source, debug, writeHints);
 
 //		dataset.testKValues(algorithm, source, debug, writeHints, 1, 20);
 //		dataset.writeColdStart(algorithm, 200, 1);
@@ -72,7 +72,7 @@ public class RunTutorEdits extends TutorEdits {
 		// Test with Fall 2017 preliminary tutor hints
 //		testFall2017Pelim();
 
-		dataset.writeAllInAlgorithmsFolder();
+//		dataset.writeAllInAlgorithmsFolder();
 	}
 
 	public static RatingDataset iSnapF16F17 = new SnapRatingDataset() {
