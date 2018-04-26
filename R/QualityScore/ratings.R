@@ -68,7 +68,7 @@ getSamples <- function() {
 compare <- function() {
   isnap <- loadRatings("isnapF16-F17", c("SourceCheck", "CTD", "PQGram", "chf_with_past", "chf_without_past"))
   isnap$dataset <- "isnap"
-  itap <- loadRatings("itapS16", c("SourceCheck", "CTD", "PQGram", "chf_with_past", "chf_without_past"))
+  itap <- loadRatings("itapS16", c("SourceCheck", "CTD", "PQGram", "chf_with_past", "chf_without_past", "ITAP"))
   itap$dataset <- "itap"
   ratings <- rbind(isnap, itap)
   ratings <- ratings[order(ratings$dataset, ratings$assignmentID, ratings$year, ratings$requestID, ratings$source, ratings$order),]
@@ -76,14 +76,20 @@ compare <- function() {
   ratings$scorePartial <- ratings$weightNorm * ifelse(ratings$type!="None" & ratings$validity >= 2, 1, 0)
   requests <- ddply(ratings, c("dataset", "source", "assignmentID", "requestID"), summarize, scoreFull=sum(scoreFull), scorePartial=sum(scorePartial))
   
-  ggplot(requests[requests$dataset=="isnap",], aes(x=source, y=scorePartial)) + geom_boxplot() + 
+  ggplot(requests[requests$dataset=="isnap",], aes(x=source, y=scoreFull)) + geom_boxplot() + 
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) + facet_wrap(~assignmentID)
-  ggplot(requests[requests$dataset=="itap",], aes(x=source, y=scorePartial)) + geom_boxplot() + 
+  ggplot(requests[requests$dataset=="itap",], aes(x=source, y=scoreFull)) + geom_boxplot() + 
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) + facet_wrap(~assignmentID)
-  
-  averaged <- ddply(requests, c("dataset", "source"), summarize, scoreFull=mean(scoreFull), scorePartial=mean(scorePartial))
   ggplot(requests, aes(x=source, y=scorePartial)) + geom_boxplot() + 
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) + facet_wrap(~dataset)
   
-  ddply(requests, c("source", "assignmentID"), summarize, mScore=mean(score), sdScore=sd(score), medScore=median(score))
+  comp(requests, T, "itap", "SourceCheck", "chf_with_past")
+}
+
+comp <- function(requests, partial, dataset, source1, source2) {
+  column <- if (partial) "scorePartial" else "scoreFull"
+  left <- requests[requests$source==source1 & requests$dataset==dataset, column]
+  right <- requests[requests$source==source2 & requests$dataset==dataset, column]
+  print(paste(mean(left > right), " vs ", mean(left < right)))
+  wilcox.test(left, right, paired=T)
 }
