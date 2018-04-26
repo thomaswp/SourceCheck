@@ -46,14 +46,14 @@ public class RunTutorEdits extends TutorEdits {
 
 		RatingDataset dataset = ITAPS16;
 		Source source = Source.StudentData;
-		HintAlgorithm algorithm = PQGram;
+		HintAlgorithm algorithm = ITAP_History;
 		boolean debug = false;
 		boolean writeHints = false;
 
 		// Exporting things (Note: this may require some copy and paste)
 //		dataset.writeGoldStandard();
 //		dataset.exportTrainingAndTestData(true);
-		dataset.writeHintSet(algorithm, source);
+//		dataset.writeHintSet(algorithm, source);
 
 //		dataset.verifyGoldStandard();
 //		dataset.printData();
@@ -71,6 +71,8 @@ public class RunTutorEdits extends TutorEdits {
 
 		// Test with Fall 2017 preliminary tutor hints
 //		testFall2017Pelim();
+
+		dataset.writeAllInAlgorithmsFolder();
 	}
 
 	public static RatingDataset iSnapF16F17 = new SnapRatingDataset() {
@@ -203,27 +205,29 @@ public class RunTutorEdits extends TutorEdits {
 			}
 		}
 
-		public GoldStandard readGoldStandard() throws FileNotFoundException, IOException {
+		public GoldStandard readGoldStandard() throws IOException {
 			return GoldStandard.parseSpreadsheet(getDataDir() + RateHints.GS_SPREADSHEET);
 		}
 
-		public HintMapHintSet getHintSet(HintAlgorithm algorithm, Source source,
+		public HintSet getHintSet(HintAlgorithm algorithm, Source source,
 				GoldStandard standard) throws IOException {
-			HintMapHintSet hintSet;
+			HintSet hintSet;
 			if (source == Source.StudentData) {
 				hintSet = algorithm.getHintSetFromTrainingDataset(
 						hintConfig, getTrainingDataset());
 			} else {
 				hintSet = algorithm.getHintSetFromTemplate(hintConfig, getTemplateDir(source));
 			}
-			hintSet.addHints(getRequestDataset());
+			if (hintSet instanceof HintMapHintSet) {
+				((HintMapHintSet) hintSet).addHints(getRequestDataset());
+			}
 			return hintSet;
 		}
 
 		public void runHintRating(HintAlgorithm algorithm, Source source, boolean debug,
 				boolean write) throws FileNotFoundException, IOException {
 			GoldStandard standard = readGoldStandard();
-			HintMapHintSet hintSet = getHintSet(algorithm, source, standard);
+			HintSet hintSet = getHintSet(algorithm, source, standard);
 			HintRatingSet rate = RateHints.rate(standard, hintSet, debug);
 			if (write) {
 				String name = getSourceName(algorithm, source) + ".csv";
@@ -241,7 +245,7 @@ public class RunTutorEdits extends TutorEdits {
 			for (int k = minK; k <= maxK; k++) {
 				System.out.println("------ k = " + k + " ------");
 				hintConfig.votingK = k;
-				HintMapHintSet hintSet = getHintSet(algorithm, source, standard);
+				HintSet hintSet = getHintSet(algorithm, source, standard);
 				HintRatingSet rate = RateHints.rate(standard, hintSet, debug);
 				if (write) {
 					spreadsheet.setHeader("k", k);
@@ -264,7 +268,7 @@ public class RunTutorEdits extends TutorEdits {
 		public void writeHintSet(HintAlgorithm algorithm, Source source)
 				throws FileNotFoundException, IOException {
 			GoldStandard standard = readGoldStandard();
-			HintMapHintSet hintSet = getHintSet(algorithm, source, standard);
+			HintSet hintSet = getHintSet(algorithm, source, standard);
 			String name = getSourceName(algorithm, source);
 			hintSet.writeToFolder(new File(getDataDir() + RateHints.ALGORITHMS_DIR,
 					getSourceName(algorithm, source)).getPath(), true);
@@ -287,7 +291,7 @@ public class RunTutorEdits extends TutorEdits {
 			coldStart.testSingleTraces().write(getDataDir() + "analysis/traces.csv");
 		}
 
-		public void writeCostsSpreadsheet() throws FileNotFoundException, IOException {
+		public void writeCostsSpreadsheet() throws IOException {
 			GoldStandard standard = readGoldStandard();
 			TrainingDataset dataset = getTrainingDataset();
 			HighlightHintGenerator.getCostsSpreadsheet(dataset, standard, hintConfig)
@@ -316,7 +320,7 @@ public class RunTutorEdits extends TutorEdits {
 			return coldStart;
 		}
 
-		private void verifyGoldStandard() throws FileNotFoundException, IOException {
+		private void verifyGoldStandard() throws IOException {
 			GoldStandard gs1 = readGoldStandard();
 			GoldStandard gs2 = generateGoldStandard();
 
@@ -341,9 +345,13 @@ public class RunTutorEdits extends TutorEdits {
 		}
 
 		public void printData() throws IOException {
-			RatingConfig config = HighlightHintSet.getRatingConfig(createHintConfig());
+			RatingConfig config = HighlightHintSet.getRatingConfig(hintConfig);
 			getTrainingDataset().print(config);
 			getRequestDataset().print(config);
+		}
+
+		public void writeAllInAlgorithmsFolder() throws IOException {
+			RateHints.rateDir(getDataDir(), HighlightHintSet.getRatingConfig(hintConfig), true);
 		}
 	}
 
@@ -421,10 +429,42 @@ public class RunTutorEdits extends TutorEdits {
 		}
 	};
 
+	private static HintAlgorithm ITAP_History = new HintAlgorithm() {
+
+		@Override
+		public HintSet getHintSetFromTrainingDataset(HintConfig config,
+				TrainingDataset dataset) throws IOException {
+			ListMap<String, PrintableTutorHint> tutorEdits =
+					readTutorEditsPython("../data/itap/handmade_hints_itap_ast.csv", null);
+			HintSet hintSet = new HintSet(getName(), HintMapHintSet.getRatingConfig(config));
+			for (String assignmentID : tutorEdits.keySet()) {
+				for (PrintableTutorHint edit : tutorEdits.get(assignmentID)) {
+					hintSet.add(edit.toOutcome());
+				}
+			}
+			return hintSet;
+		}
+
+		@Override
+		public HintMapHintSet getHintSetFromTemplate(HintConfig config, String directory) {
+			throw new UnsupportedOperationException("ITAP does not support templates.");
+		}
+
+		@Override
+		public HintGenerator getHintGenerator(HintConfig config) {
+			throw new UnsupportedOperationException("ITAP does not a hint generator.");
+		}
+
+		@Override
+		public String getName() {
+			return "ITAP";
+		}
+	};
+
 	private static interface HintAlgorithm {
-		HintMapHintSet getHintSetFromTrainingDataset(HintConfig config, TrainingDataset dataset)
+		HintSet getHintSetFromTrainingDataset(HintConfig config, TrainingDataset dataset)
 				throws IOException;
-		HintMapHintSet getHintSetFromTemplate(HintConfig config, String directory);
+		HintSet getHintSetFromTemplate(HintConfig config, String directory);
 		HintGenerator getHintGenerator(HintConfig config);
 		String getName();
 	}

@@ -72,13 +72,18 @@ compare <- function() {
   itap$dataset <- "itap"
   ratings <- rbind(isnap, itap)
   ratings <- ratings[order(ratings$dataset, ratings$assignmentID, ratings$year, ratings$requestID, ratings$source, ratings$order),]
-  ratings$score <- ratings$weightNorm * ifelse(ratings$type=="Full" & ratings$validity >= 2, 1, 0)
-  requests <- ddply(ratings, c("dataset", "source", "assignmentID", "requestID"), summarize, score=sum(score))
+  ratings$scoreFull <- ratings$weightNorm * ifelse(ratings$type=="Full" & ratings$validity >= 2, 1, 0)
+  ratings$scorePartial <- ratings$weightNorm * ifelse(ratings$type!="None" & ratings$validity >= 2, 1, 0)
+  requests <- ddply(ratings, c("dataset", "source", "assignmentID", "requestID"), summarize, scoreFull=sum(scoreFull), scorePartial=sum(scorePartial))
   
-  ggplot(requests[requests$dataset=="isnap",], aes(x=source, y=score)) + geom_boxplot() + 
+  ggplot(requests[requests$dataset=="isnap",], aes(x=source, y=scorePartial)) + geom_boxplot() + 
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) + facet_wrap(~assignmentID)
-  ggplot(requests[requests$dataset=="itap",], aes(x=source, y=score)) + geom_boxplot() + 
+  ggplot(requests[requests$dataset=="itap",], aes(x=source, y=scorePartial)) + geom_boxplot() + 
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) + facet_wrap(~assignmentID)
+  
+  averaged <- ddply(requests, c("dataset", "source"), summarize, scoreFull=mean(scoreFull), scorePartial=mean(scorePartial))
+  ggplot(requests, aes(x=source, y=scorePartial)) + geom_boxplot() + 
+    stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) + facet_wrap(~dataset)
   
   ddply(requests, c("source", "assignmentID"), summarize, mScore=mean(score), sdScore=sd(score), medScore=median(score))
 }
