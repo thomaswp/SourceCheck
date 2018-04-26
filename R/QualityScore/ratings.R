@@ -1,27 +1,32 @@
 
 library(readr)
 library(plyr)
+library(ggplot2)
 
-loadRatings <- function(names) {
+loadRatings <- function(dataset, names) {
   allRatings <- NULL
   for (name in names) {
-    ratings <- read_csv(paste0("../../data/hint-rating/isnapF16-F17/algorithms/", name, ".csv"))
+    ratings <- read_csv(paste0("../../data/hint-rating/", dataset, "/algorithms/", name, ".csv"))
     ratings$source <- name
     if (is.null(allRatings)) allRatings <- ratings
     else allRatings <- rbind(allRatings, ratings)
   }
-  standard <- read_csv("../../data/hint-rating/isnapF16-F17/gold-standard.csv")
+  standard <- read_csv(paste0("../../data/hint-rating/", dataset, "/gold-standard.csv"))
   years <- ddply(standard, c("requestID"), summarize, year=head(year, 1))
   allRatings <- merge(allRatings, years)
   allRatings$validity[is.na(allRatings$validity)] <- 0
+  allRatings$dataset <- dataset
   allRatings
 }
 
 selectHintsForManualRating <- function(ratings, maxPerType=50) {
-  #TODO: This treats any match as a match, even if it's to a V1 hints :(
   set.seed(1234)
-  dedup <- ddply(ratings, c("assignmentID", "year", "requestID", "outcome", "type", "validity", "priority", "diff"), summarize, idx=sample.int(length(source), 1), source=source[[idx]], weight=weight[[idx]], hintID=hintID[[idx]])
-  samples <- ddply(dedup, c("assignmentID", "year", "requestID", "source", "type"), summarize, idx=sample(which(weight == max(weight)), 1), diff=diff[[idx]], hintID=hintID[[idx]])
+  # NOTE: This method does not take the validity of the matched TutorHint into account, since the purpose is to
+  # determine the best level of tutor accord to use
+  dedup <- ddply(ratings, c("assignmentID", "year", "requestID", "outcome", "type", "validity", "priority", "diff"), summarize,
+                 idx=sample.int(length(source), 1), source=source[[idx]], weight=weight[[idx]], hintID=hintID[[idx]])
+  samples <- ddply(dedup, c("assignmentID", "year", "requestID", "source", "type"), summarize,
+                   idx=sample(which(weight == max(weight)), 1), diff=diff[[idx]], hintID=hintID[[idx]])
   samples$priority <- 0
   for (type in unique(samples$type)) {
     count <- sum(samples$type == type)
@@ -48,8 +53,9 @@ writeSQL <- function(ratings, path) {
   sink()
 }
 
-runMe <- function() {
-  ratings <- loadRatings(c("SourceCheck", "CTD", "PQGram", "chf_with_past"))
+getSamples <- function() {
+  # Don't include both hint factories
+  ratings <- loadRatings("isnapF16-F17", c("SourceCheck", "CTD", "PQGram", "chf_with_past"))
   samples <- selectHintsForManualRating(ratings)
   
   write.csv(subset(samples, select=c(assignmentID, year, requestID, hintID, priority)), "C:/Users/Thomas/Desktop/samples.csv", row.names = F)
@@ -57,10 +63,22 @@ runMe <- function() {
   writeSQL(samples[samples$priority <= 25,], "C:/Users/Thomas/Desktop/samples75.sql")
   writeSQL(samples[samples$priority <= 50,], "C:/Users/Thomas/Desktop/samples150.sql")
   writeSQL(samples[samples$priority <= 84,], "C:/Users/Thomas/Desktop/samples252.sql")
+}
+
+compare <- function() {
+  isnap <- loadRatings("isnapF16-F17", c("SourceCheck", "CTD", "PQGram", "chf_with_past", "chf_without_past"))
+  isnap$dataset <- "isnap"
+  itap <- loadRatings("itapS16", c("SourceCheck", "CTD", "PQGram", "chf_with_past", "chf_without_past"))
+  itap$dataset <- "itap"
+  ratings <- rbind(isnap, itap)
+  ratings <- ratings[order(ratings$dataset, ratings$assignmentID, ratings$year, ratings$requestID, ratings$source, ratings$order),]
+  ratings$score <- ratings$weightNorm * ifelse(ratings$type=="Full" & ratings$validity >= 2, 1, 0)
+  requests <- ddply(ratings, c("dataset", "source", "assignmentID", "requestID"), summarize, score=sum(score))
   
-  test <- merge(samples, ratings, by.x=c("hintID", "source", "requestID", "year", "diff", "type"), by.y=c("hintID", "source", "requestID", "year", "diff", "type"))
+  ggplot(requests[requests$dataset=="isnap",], aes(x=source, y=score)) + geom_boxplot() + 
+    stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) + facet_wrap(~assignmentID)
+  ggplot(requests[requests$dataset=="itap",], aes(x=source, y=score)) + geom_boxplot() + 
+    stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) + facet_wrap(~assignmentID)
   
-  # wait to sort until after sampling, just to keep it consistent with the original run
-  ratings <- ratings[order(ratings$assignmentID, ratings$year, ratings$requestID, ratings$source, ratings$order),]
-  ratings$score <- ratings$weightNorm * ifelse(ratings$type=="Full")
+  ddply(requests, c("source", "assignmentID"), summarize, mScore=mean(score), sdScore=sd(score), medScore=median(score))
 }

@@ -40,7 +40,7 @@ public class HintOutcome implements Comparable<HintOutcome> {
 		builder.append(requestID);
 		builder.append(weight);
 		// Force the ID to be positive
-		id = builder.toHashCode() & 0x7FFFFFFF;
+		id = result == null ? 0 : builder.toHashCode() & 0x7FFFFFFF;
 		if (weight <= 0 || Double.isNaN(weight)) {
 			throw new IllegalArgumentException("All weights must be positive: " + weight);
 		}

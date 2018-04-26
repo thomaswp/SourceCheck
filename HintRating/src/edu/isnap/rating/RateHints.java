@@ -363,6 +363,10 @@ public class RateHints {
 			for (int i = 0; i < size(); i++) {
 				get(i).addToSpreadsheet(spreadsheet, i, getTotalWeight(), requestNode, config);
 			}
+			if (isEmpty()) {
+				HintOutcome noOutcome = new HintOutcome(null, assignmentID, requestID, 1);
+				new HintRating(noOutcome).addToSpreadsheet(spreadsheet, 0, 1, requestNode, config);
+			}
 		}
 
 		public void writeRating(Spreadsheet spreadsheet) {
@@ -529,10 +533,11 @@ public class RateHints {
 			spreadsheet.put("validity", validity);
 			spreadsheet.put("priority", priority);
 			spreadsheet.put("type", matchType.toString());
-			spreadsheet.put("outcome", hint.result.toJSON().toString());
+			spreadsheet.put("outcome", hint.result == null ? "" : hint.result.toJSON().toString());
 			ColorStyle oldStyle = Diff.colorStyle;
 			Diff.colorStyle = ColorStyle.HTML;
-			spreadsheet.put("diff", ASTNode.diff(requestNode, hint.result, config));
+			spreadsheet.put("diff", hint.result == null ?
+					"" : ASTNode.diff(requestNode, hint.result, config));
 			Diff.colorStyle = oldStyle;
 			Map<String, String> properties = hint.getDebuggingProperties();
 			for (String key : properties.keySet()) {
