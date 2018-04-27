@@ -1,9 +1,11 @@
 package edu.isnap.rating;
 
+import java.util.Comparator;
+
 import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.util.Diff;
 
-public class TutorHint {
+public class TutorHint implements Comparable<TutorHint> {
 
 	public enum Validity {
 		NoTutors(0), OneTutor(1), MultipleTutors(2), Consensus(3);
@@ -80,5 +82,17 @@ public class TutorHint {
 	public HintOutcome toOutcome() {
 		return new HintOutcome(to, assignmentID, requestID,
 				priority == null ? 1 : (1.0 / priority.value));
+	}
+
+	private static Comparator<TutorHint> comparator =
+			Comparator.comparing((TutorHint hint) -> hint.assignmentID)
+			.thenComparing(hint -> hint.year == null ? "" : hint.year)
+			.thenComparing(hint -> hint.requestID)
+			.thenComparing(hint -> hint.validity)
+			.thenComparing(hint -> hint.priority == null ? 0 : hint.priority.value);
+
+	@Override
+	public int compareTo(TutorHint o) {
+		return comparator.compare(this, o);
 	}
 }

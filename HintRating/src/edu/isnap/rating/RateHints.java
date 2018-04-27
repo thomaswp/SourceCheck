@@ -263,7 +263,10 @@ public class RateHints {
 			outcomeEditMap.put(hint, edits);
 		}
 
-		// TODO: Sort by priority first, just like below
+		// Sort but then reverse, so highest priority hints come first
+		Collections.sort(validHints);
+		Collections.reverse(validHints);
+
 		for (TutorHint tutorHint : validHints) {
 			Set<Edit> tutorEdits = tutorEditMap.get(tutorHint);
 			// First filter out only hints that are subsets of the given tutor hint
@@ -277,15 +280,16 @@ public class RateHints {
 			List<HintOutcome> matchingOutcomes =
 					findPartialMatches(possible, tutorEdits, config);
 			if (matchingOutcomes == null) continue;
-			System.out.println("Partial match: ");
-			System.out.println("Tutor hint: ");
-			System.out.println(ASTNode.diff(fromNode, tutorHint.to, config));
-			System.out.println("Alg hints: ");
-			for (HintOutcome outcome : matchingOutcomes) {
-				System.out.println(ASTNode.diff(fromNode, outcome.result, config));
-			}
-			System.out.println("Edits:");
-			tutorEdits.forEach(System.out::println);
+			// TODO: Create a hint outcome
+//			System.out.println("Partial match: ");
+//			System.out.println("Tutor hint: ");
+//			System.out.println(ASTNode.diff(fromNode, tutorHint.to, config));
+//			System.out.println("Alg hints: ");
+//			for (HintOutcome outcome : matchingOutcomes) {
+//				System.out.println(ASTNode.diff(fromNode, outcome.result, config));
+//			}
+//			System.out.println("Edits:");
+//			tutorEdits.forEach(System.out::println);
 		}
 
 		return ratings;
@@ -334,8 +338,10 @@ public class RateHints {
 		// is interesting, but definitely in a different category. Currently all 3 are treated as
 		// partial matches, creating quite high levels of partial matching.
 
-		// TODO: sort by validity and priority first
-//		Collections.sort(validHints);
+		// Sort but then reverse, so highest priority hints come first
+		Collections.sort(validHints);
+		Collections.reverse(validHints);
+
 		for (TutorHint tutorHint : validHints) {
 			ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, tutorHint.to, config);
 			Set<Edit> tutorEdits = extractor.getEdits(fromNode, tutorOutcomeNode);

@@ -46,7 +46,6 @@ public class GoldStandard {
 			List<? extends TutorHint> list = hints.get(assignment);
 			ListMap<String, TutorHint> hintMap = new ListMap<>(MapFactory.TreeMapFactory);
 			list.forEach(hint -> hintMap.add(hint.requestID, hint));
-//			testEditExtraction(list);
 			map.put(assignment, hintMap);
 		}
 	}
