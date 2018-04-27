@@ -425,11 +425,15 @@ public class RateHints {
 			}
 			int nSnapshots = ratings.size();
 			for (int i = 0; i < validityArrayMean.length; i++) validityArrayMean[i] /= nSnapshots;
-			double priorityMean = stream()
-					.mapToDouble(RequestRating::getPriorityScore)
+			double priorityMeanFull = stream()
+					.mapToDouble(rating -> rating.getPriorityScore(false))
 					.average().getAsDouble();
-			System.out.printf("TOTAL: %s / %.03fp\n",
-					RequestRating.validityArrayToString(validityArrayMean, 3), priorityMean);
+			double priorityMeanPartial = stream()
+					.mapToDouble(rating -> rating.getPriorityScore(true))
+					.average().getAsDouble();
+			System.out.printf("TOTAL: %s / %.03f (%.03f)p\n",
+					RequestRating.validityArrayToString(validityArrayMean, 3),
+					priorityMeanFull, priorityMeanPartial);
 		}
 
 		public void writeAllHints(String path) throws FileNotFoundException, IOException {
@@ -528,18 +532,20 @@ public class RateHints {
 			return validityArray;
 		}
 
-		protected double getPriorityScore() {
+		protected double getPriorityScore(boolean countPartial) {
 			if (isEmpty()) return 0;
 			return stream()
-					.filter(r -> r.priority() != null)
+					.filter(r -> r.priority() != null &&
+							(countPartial || r.matchType == MatchType.Full))
 					.mapToDouble(r -> r.hint.weight() * r.priority().points())
 					.sum() / getTotalWeight();
 		}
 
 		public void printSummary() {
 			double[] validityArray = getValidityArray();
-			System.out.printf("%s: %s / %.02fp\n",
-					requestID, validityArrayToString(validityArray, 2), getPriorityScore());
+			System.out.printf("%s: %s / %.02f (%.02f)p\n",
+					requestID, validityArrayToString(validityArray, 2),
+					getPriorityScore(false), getPriorityScore(true));
 		}
 
 		private static String validityArrayToString(double[] array, int digits) {
