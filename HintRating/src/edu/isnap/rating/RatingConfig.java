@@ -176,12 +176,12 @@ public interface RatingConfig {
 
 		@Override
 		public boolean trimIfParentIsAdded(String type) {
-			return false;
+			return "null".equals(type);
 		}
 
 		@Override
 		public boolean trimIfChildless(String type) {
-			return false;
+			return "list".equals(type);
 		}
 
 		@Override

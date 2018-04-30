@@ -14,7 +14,7 @@ public abstract class HintConfig implements Serializable {
 	 */
 	public abstract NodeConstructor getNodeConstructor();
 	/**
-	 * Should return true if children of this type have no meaningful order
+	 * Should return true if children with this type have no meaningful order
 	 */
 	public abstract boolean isOrderInvariant(String type);
 

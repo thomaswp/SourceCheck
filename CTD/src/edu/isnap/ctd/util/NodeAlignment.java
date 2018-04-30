@@ -296,7 +296,7 @@ public class NodeAlignment {
 			List<Node> toNodes = toMap.get(key);
 
 			if (toNodes == null) {
-				// Continue if we have to toNodes to match
+				// Continue if we have no toNodes to match
 				continue;
 			}
 

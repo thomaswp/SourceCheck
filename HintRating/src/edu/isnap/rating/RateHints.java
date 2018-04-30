@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -17,6 +18,7 @@ import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.Diff.ColorStyle;
 import edu.isnap.hint.util.Spreadsheet;
+import edu.isnap.rating.EditExtractor.Deletion;
 import edu.isnap.rating.EditExtractor.Edit;
 import edu.isnap.rating.EditExtractor.NodeReference;
 import edu.isnap.rating.TutorHint.Priority;
@@ -92,9 +94,6 @@ public class RateHints {
 						unmatchedHints.remove(i--);
 					}
 				}
-				// Then find any groups of hints that together comprise a tutor edit
-				requestRating.addAll(findMatchingEditGroups(
-						validHints, unmatchedHints, config, extractor));
 				// Then find any partial matches in the remaining hints
 				for (HintOutcome hint : unmatchedHints) {
 					HintRating rating = findPartiallyMatchingEdit(
@@ -242,7 +241,8 @@ public class RateHints {
 		return null;
 	}
 
-	public static List<HintRating> findMatchingEditGroups(List<TutorHint> validHints,
+	@Deprecated
+	protected static List<HintRating> findMatchingEditGroups(List<TutorHint> validHints,
 			List<HintOutcome> unmatchedHints, RatingConfig config, EditExtractor extractor) {
 		List<HintRating> ratings = new ArrayList<>();
 
@@ -277,36 +277,65 @@ public class RateHints {
 					possible.put(outcome, outcomeEdits);
 				}
 			}
-			List<HintOutcome> matchingOutcomes =
-					findPartialMatches(possible, tutorEdits, config);
-			if (matchingOutcomes == null) continue;
-			// TODO: Create a hint outcome
-//			System.out.println("Partial match: ");
-//			System.out.println("Tutor hint: ");
-//			System.out.println(ASTNode.diff(fromNode, tutorHint.to, config));
-//			System.out.println("Alg hints: ");
-//			for (HintOutcome outcome : matchingOutcomes) {
-//				System.out.println(ASTNode.diff(fromNode, outcome.result, config));
-//			}
-//			System.out.println("Edits:");
-//			tutorEdits.forEach(System.out::println);
+			if (possible.size() == 0) continue;
+
+			List<HintOutcome> possibleOutcomes = new ArrayList<>(possible.keySet());
+			possibleOutcomes.sort(Comparator.comparing(o -> -possible.get(o).size()));
+
+			Set<Edit> matchingEdits = new HashSet<>();
+			List<HintOutcome> matchingOutcomes = new ArrayList<>();
+			for (HintOutcome outcome : possibleOutcomes) {
+				Set<Edit> outcomeEdits = possible.get(outcome);
+				if (matchingEdits.containsAll(outcomeEdits)) continue;
+				matchingOutcomes.add(outcome);
+				matchingEdits.addAll(outcomeEdits);
+			}
+
+			if (matchingEdits.stream().allMatch(e -> e instanceof Deletion) &&
+					!tutorEdits.stream().allMatch(e -> e instanceof Deletion)) {
+				continue;
+			}
+
+//			List<HintOutcome> matchingOutcomes =
+//					findPartialMatches(possible, tutorEdits, new HashSet<>(), config);
+//			if (matchingOutcomes == null) continue;
+
+			matchingOutcomes.forEach(outcome -> outcomeEditMap.remove(outcome));
+
+			if (!tutorHint.validity.isAtLeast(Validity.MultipleTutors)) continue;
+			if (matchingOutcomes.size() == 1) continue;
+			System.out.println("Partial match: ");
+			System.out.println("Tutor hint: ");
+			System.out.println(ASTNode.diff(fromNode, tutorHint.to, config));
+			System.out.println("Alg hints: ");
+			for (HintOutcome outcome : matchingOutcomes) {
+				System.out.println(ASTNode.diff(fromNode, outcome.result, config));
+			}
+			System.out.println("Edits:");
+			EditExtractor.printEditsComparison(
+					tutorEdits, matchingEdits, "Tutor Hint", "Alg Hints");
+
 		}
 
 		return ratings;
 	}
 
-	private static List<HintOutcome> findPartialMatches(Map<HintOutcome, Set<Edit>> outcomeEditMap,
-			Set<Edit> toMatch, RatingConfig config) {
+	@Deprecated
+	protected static List<HintOutcome> findPartialMatches(Map<HintOutcome, Set<Edit>> outcomeEditMap,
+			Set<Edit> toMatch, Set<Edit> matched, RatingConfig config) {
 		for (HintOutcome outcome : outcomeEditMap.keySet()) {
 			Set<Edit> missing = new HashSet<>(toMatch);
-			missing.removeAll(outcomeEditMap.get(outcome));
+			Set<Edit> outcomeEdits = outcomeEditMap.get(outcome);
+			missing.removeAll(outcomeEdits);
 			if (missing.size() == toMatch.size()) continue;
+			matched = new HashSet<>(matched);
+			matched.addAll(outcomeEdits);
 			if (missing.stream().allMatch(e -> config.trimIfParentIsAdded(e.node.type))) {
 				List<HintOutcome> list = new ArrayList<>();
 				list.add(outcome);
 				return list;
 			}
-			List<HintOutcome> list = findPartialMatches(outcomeEditMap, missing, config);
+			List<HintOutcome> list = findPartialMatches(outcomeEditMap, missing, matched, config);
 			if (list != null) {
 				list.add(outcome);
 				return list;
@@ -324,24 +353,27 @@ public class RateHints {
 		ASTNode outcomeNode = normalizeNewValuesTo(fromNode, outcome.result, config);
 		Set<Edit> outcomeEdits = extractor.getEdits(fromNode, outcomeNode);
 		if (outcomeEdits.size() == 0) return new HintRating(outcome);
-		Set<Edit> bestOverlap = new HashSet<>();
-		TutorHint bestHint = null;
 
-		// TODO: This needs to be worked to address three separate situations:
+		// There are three types of partial matches, only the last of which is detected here:
 		// 1) The algorithm matches the hint perfectly in essence, but it misses some required
-		//    elements of the AST. This should be pretty rare, and we address it in Snap with
-		//    literal removal, etc.
-		// 2) The algorithm creates 2 hints that together cover 100% of a tutor hint
-		// 3) The algorithm matches part of the tutor hint (e.g. deleting something), but is
-		//    missing possibly vital other part of the hints.
-		// The first two scenarios should probably by considered a fully correct match. The third
-		// is interesting, but definitely in a different category. Currently all 3 are treated as
-		// partial matches, creating quite high levels of partial matching.
+		//    elements of the AST. We treat these as exact matches, and attempt to detect them
+		//    by pruning away less meaningful parts of the AST in findMatchingEdit().
+		// 2) The algorithm creates 2 hints that together cover most of a tutor hint. We choose not
+		//    to treat this as a special case, since all hints should be evaluated independently.
+		//    However, with some hint interfaces (e.g. iSnap) they may not in fact be presented
+		//    independently, so this is not a perfect solution.
+		// 3) The algorithm matches part of the tutor hint (e.g. inserting something), but is
+		//    missing other edits needed to make the hints complete, clear and not confusing.
+		//    As long as the algorithm conveys a meaningful part of the tutor's hint, we call these
+		//    partial matches. We define meaningful here as "not only deletions," but of course this
+		//    is an imperfect definition.
 
 		// Sort but then reverse, so highest priority hints come first
 		Collections.sort(validHints);
 		Collections.reverse(validHints);
 
+		Set<Edit> bestOverlap = new HashSet<>();
+		TutorHint bestHint = null;
 		for (TutorHint tutorHint : validHints) {
 			ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, tutorHint.to, config);
 			Set<Edit> tutorEdits = extractor.getEdits(fromNode, tutorOutcomeNode);
@@ -365,30 +397,36 @@ public class RateHints {
 			}
 		}
 		if (!bestOverlap.isEmpty()) {
-//			if (bestOverlap.stream().allMatch(e -> e instanceof Deletion)) {
-				if (bestHint.validity.isAtLeast(Validity.MultipleTutors)) {
-//					Set<Edit> tutorEdits = new HashSet<>();
-//					if (bestHint != null) {
-//						System.out.println("Tutor Hint:");
-//						ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, bestHint.to, config);
-//						System.out.println(Diff.diff(
-//								fromNode.prettyPrint(true, config),
-//								tutorOutcomeNode.prettyPrint(true, config)));
-//						tutorEdits = extractor.getEdits(bestHint.from, tutorOutcomeNode);
-//					}
-//					System.out.println("Alg Hint:");
-//					System.out.println(Diff.diff(
-//							fromNode.prettyPrint(true, config),
-//							outcomeNode.prettyPrint(true, config), 2));
-//					EditExtractor.printEditsComparison(
-//							tutorEdits, outcomeEdits, "Tutor Hint", "Alg Hint");
-//					System.out.println("-------------------");
-				}
-//			} else {
+			// If the overlap is only deletions, we do not count this as a partial match
+			if (!bestOverlap.stream().allMatch(e -> e instanceof Deletion)) {
 				return new HintRating(outcome, bestHint, MatchType.Partial);
-//			}
+			} else {
+//				printPartialMatch(config, extractor, fromNode, outcomeNode, outcomeEdits, bestHint);
+			}
 		}
 		return new HintRating(outcome);
+	}
+
+	protected static void printPartialMatch(RatingConfig config, EditExtractor extractor,
+			ASTNode fromNode, ASTNode outcomeNode, Set<Edit> outcomeEdits, TutorHint bestHint) {
+		if (bestHint.validity.isAtLeast(Validity.MultipleTutors)) {
+			Set<Edit> tutorEdits = new HashSet<>();
+			if (bestHint != null) {
+				System.out.println("Tutor Hint:");
+				ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, bestHint.to, config);
+				System.out.println(Diff.diff(
+						fromNode.prettyPrint(true, config),
+						tutorOutcomeNode.prettyPrint(true, config)));
+				tutorEdits = extractor.getEdits(bestHint.from, tutorOutcomeNode);
+			}
+			System.out.println("Alg Hint:");
+			System.out.println(Diff.diff(
+					fromNode.prettyPrint(true, config),
+					outcomeNode.prettyPrint(true, config), 2));
+			EditExtractor.printEditsComparison(
+					tutorEdits, outcomeEdits, "Tutor Hint", "Alg Hint");
+			System.out.println("-------------------");
+		}
 	}
 
 	public static enum MatchType {
