@@ -343,7 +343,7 @@ public class HintHighlighter {
 		// If any insert into a script should contain the children of the existing node at that
 		// index, we want to express that as a replacement
 		for (Insertion insertion : extractInsertions(edits)) {
-			addScriptReplacement(insertion, mapping, edits, colors);
+			inferReplacements(insertion, mapping, edits, colors);
 		}
 
 		extractSubedits(edits);
@@ -430,14 +430,11 @@ public class HintHighlighter {
 		return insertions;
 	}
 
-	@SuppressWarnings("deprecation")
-	// TODO: Make not snap-specific
-	private void addScriptReplacement(Insertion insertion, BiMap<Node, Node> mapping,
+	private void inferReplacements(Insertion insertion, BiMap<Node, Node> mapping,
 			List<EditHint> edits, Map<Node, Highlight> colors) {
-
 		// To be eligible for a script replacement, an insertion must have no replacement and have a
 		// script parent with a child at the insertion index
-		if (insertion.replaced != null || !config.isScript(insertion.parent.type()) ||
+		if (insertion.replaced != null || config.hasFixedChildren(insertion.parent) ||
 				insertion.parent.children.size() <= insertion.index) return;
 
 		// Additionally the at the index of insert must be marked for deletion and be of a different
@@ -446,39 +443,38 @@ public class HintHighlighter {
 		if (colors.get(deleted) != Highlight.Delete) return;
 		if (deleted.type().equals(insertion.type)) return;
 
-		// Lastly, there must be at least one child node that is paired to a child of the pair node
-		// that is the cause for the insertion
-		List<Node> nodeChildren = deleted.allChildren();
-		List<Node> pairChildren = insertion.pair.allChildren();
-		// Because we're replacing in a script, we may want to keep the original node's children
-		// when we replace it, but it depends on where we find our matches
-		// TODO: This isn't a very comprehensive solution: we really need to deal with children of
-		// moved blocks in a more thorough manner
+
+		// We have a fairly loose standard for children matching. We see if they share any immediate
+		// children with the same type, and if so we match them. (Note that this is a
+		boolean match = false;
 		boolean keepChildren = false;
-		int matches = 0;
-		for (Node n1 : nodeChildren) {
-			// Don't match literals
-			// TODO: This produces empty hints when working with lists or literals
-			if (config.isValueless(n1.type())) continue;
-			for (Node n2 : pairChildren) {
-				if (mapping.getFrom(n1) == n2) {
-					matches++;
-					if (n2.parent == insertion.pair ||
-							(n2.parent != null && config.isScript(n2.parent.type()))) {
-						// If the match comes from a direct child of the pair (or a script that is)
-						// we want to keep the children.
-						keepChildren = true;
-					}
-				}
+		for (Node n1 : deleted.children) {
+			String type1 = n1.type();
+			if (config.isValueless(type1)) continue;
+			for (Node n2 : insertion.pair.children) {
+				if (!n2.hasType(type1)) continue;
+				match = true;
+				keepChildren = true;
+				break;
 			}
 		}
-		if (matches == 0) {
-			return;
+
+		// If all children of the deleted node's parent should be deleted and that parent only
+		// has one child in the selected solution, we treat this as a replacement, under the notion
+		// that this will be more semantically meaningful than a separate insertion and deletion
+		List<Node> deletedSiblings = deleted.parent.children;
+		if (!match && insertion.pair.parent.children.size() == 1 &&
+				mapping.getFrom(deleted.parent) == insertion.pair.parent &&
+				deletedSiblings.stream().allMatch(sib -> colors.get(sib) == Highlight.Delete)) {
+			match = true;
 		}
+
+		if (!match) return;
 
 		// In this case, we set the replacement, change the deleted node to replaced and remove the
 		// deletion
 		insertion.replaced = deleted;
+		// For now, we always keep the children, though this may not always be the best choice
 		insertion.keepChildrenInReplacement = keepChildren;
 		colors.put(deleted, Highlight.Replaced);
 
