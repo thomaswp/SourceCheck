@@ -20,7 +20,6 @@ import edu.isnap.ctd.util.Diff.ColorStyle;
 import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.rating.EditExtractor.Deletion;
 import edu.isnap.rating.EditExtractor.Edit;
-import edu.isnap.rating.EditExtractor.NodeReference;
 import edu.isnap.rating.TutorHint.Priority;
 import edu.isnap.rating.TutorHint.Validity;
 
@@ -145,27 +144,16 @@ public class RateHints {
 			}
 		}
 
-		// TODO: make this work for python
-		// If node IDs are consistent, we can identify new nodes and prune their children.
-		// Note that we could theoretically do this even if they aren't, using the EditExtractor's
-		// TED algorithm, but currently only Snap needs this feature, and it has consistent IDs.
-		if (config.areNodeIDsConsistent()) {
-			// Get a list of node reference in the original AST, so we can see which have been added
-			Set<NodeReference> fromRefs = new HashSet<>();
-			from.recurse(node -> fromRefs.add(EditExtractor.getReferenceAsChild(node)));
-
-			for (ASTNode node : toNodes) {
-				if (node.parent() == null) continue;
-
-				// If this node was created in the hint, prune its immediate children for nodes
-				// that are added automatically, according to the config, e.g. literal nodes in Snap
-				// We get a reference that includes at least the node's parent, so we can prune
-				// moved nodes as well.
-				NodeReference toRef = EditExtractor.getReferenceAsChild(node);
-				if (!fromRefs.contains(toRef)) {
-					pruneImmediateChildren(node, config::trimIfParentIsAdded);
-				}
-			}
+		// Identify new nodes and prune their children.
+		List<ASTNode> addedNodes = EditExtractor.getInsertedAndRenamedNodes(from, to);
+		// Reverse sort by depth to prune children first
+		addedNodes.sort(Comparator.comparing(node -> -node.depth()));
+		for (ASTNode node : addedNodes) {
+			if (node.parent() == null) continue;
+			// If this node was created/changed in the hint, prune its immediate children for
+			// nodes that are added automatically, according to the config, e.g. literal nodes
+			// in Snap.
+			pruneImmediateChildren(node, config::trimIfParentIsAdded);
 		}
 	}
 

@@ -122,10 +122,7 @@ public class EditExtractor {
 
 	// TODO: Still not sure this is ideal for Python
 	public Set<Edit> extractEditsUsingCodeAlign(ASTNode from, ASTNode to) {
-		// Make renames as expensive as an insert/delete to require at least 1 child match
-		// before it will be cheaper to rename.
-		// TODO: There are some tradeoffs with using 1 or 2 in the second value
-		NodePairs pairs = new CodeAlignment(1, 2).align(from, to);
+		NodePairs pairs = getPairs(from, to);
 
 		Set<Edit> edits = new TreeSet<>();
 
@@ -147,6 +144,27 @@ public class EditExtractor {
 		});
 
 		return edits;
+	}
+
+	private static NodePairs getPairs(ASTNode from, ASTNode to) {
+		// Make renames as expensive as an insert/delete to require at least 1 child match
+		// before it will be cheaper to rename.
+		// TODO: There are some tradeoffs with using 1 or 2 in the second value
+		NodePairs pairs = new CodeAlignment(1, 2).align(from, to);
+		return pairs;
+	}
+
+	public static List<ASTNode> getInsertedAndRenamedNodes(ASTNode from, ASTNode to) {
+		NodePairs pairs = getPairs(from, to);
+
+		List<ASTNode> inserted = new ArrayList<>();
+		to.recurse(n -> {
+			if (!pairs.containsTo(n) || !n.shallowEquals(pairs.getTo(n), false)) {
+				inserted.add(n);
+			}
+		});
+
+		return inserted;
 	}
 
 	public static Set<Edit> extractEditsUsingTED(ASTNode fromAST, ASTNode toAST) {
