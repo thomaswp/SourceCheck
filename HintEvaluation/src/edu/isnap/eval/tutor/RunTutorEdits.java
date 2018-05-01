@@ -50,6 +50,8 @@ public class RunTutorEdits extends TutorEdits {
 		boolean debug = false;
 		boolean writeHints = false;
 
+		writeAllHintSets(iSnapF16F17, ITAPS16);
+
 		// Exporting things (Note: this may require some copy and paste)
 //		dataset.writeGoldStandard();
 //		dataset.exportTrainingAndTestData(true);
@@ -58,7 +60,7 @@ public class RunTutorEdits extends TutorEdits {
 //		dataset.verifyGoldStandard();
 //		dataset.printData();
 
-		dataset.runHintRating(algorithm, source, debug, writeHints);
+//		dataset.runHintRating(algorithm, source, debug, writeHints);
 
 //		dataset.testKValues(algorithm, source, debug, writeHints, 1, 20);
 //		dataset.writeColdStart(algorithm, 200, 1);
@@ -75,7 +77,19 @@ public class RunTutorEdits extends TutorEdits {
 //		dataset.writeAllInAlgorithmsFolder();
 	}
 
-	public static RatingDataset iSnapF16F17 = new SnapRatingDataset() {
+	public static void writeAllHintSets(RatingDataset... datasets) throws IOException {
+		System.err.println("Don't forget to delete hint folders!");
+		for (RatingDataset dataset : datasets) {
+			System.out.println("Writing " + dataset.getDataDir() + ":");
+			for (HintAlgorithm algorithm : dataset.validHintAlgorithms()) {
+				System.out.println("\t" + algorithm.getName());
+				dataset.writeHintSet(algorithm, Source.StudentData);
+			}
+			dataset.writeAllInAlgorithmsFolder();
+		}
+	}
+
+	public final static RatingDataset iSnapF16F17 = new SnapRatingDataset() {
 
 		private final Dataset[] datasets = new Dataset[] {
 				Fall2016.instance, Spring2017.instance, Fall2017.instance
@@ -92,7 +106,7 @@ public class RunTutorEdits extends TutorEdits {
 		}
 	};
 
-	public static RatingDataset iSnapF16S17 = new SnapRatingDataset() {
+	public final static RatingDataset iSnapF16S17 = new SnapRatingDataset() {
 
 		private final Dataset[] datasets = new Dataset[] {
 				Fall2016.instance, Spring2017.instance
@@ -145,9 +159,18 @@ public class RunTutorEdits extends TutorEdits {
 						guessingGame, squiral);
 			}
 		}
+
+		@Override
+		HintAlgorithm[] validHintAlgorithms() {
+			return new HintAlgorithm[] {
+				SourceCheck,
+				CTD,
+				PQGram,
+			};
+		}
 	}
 
-	public static RatingDataset ITAPS16 = new RatingDataset() {
+	public final static RatingDataset ITAPS16 = new RatingDataset() {
 
 
 		@Override
@@ -178,6 +201,16 @@ public class RunTutorEdits extends TutorEdits {
 				throws IOException {
 			buildPythonDatasets("../../PythonAST/data", "../data/itap", training, requests);
 		}
+
+		@Override
+		HintAlgorithm[] validHintAlgorithms() {
+			return new HintAlgorithm[] {
+				SourceCheck,
+				CTD,
+				PQGram,
+				ITAP_History,
+			};
+		}
 	};
 
 	public static abstract class RatingDataset {
@@ -190,6 +223,7 @@ public class RunTutorEdits extends TutorEdits {
 		abstract String getTemplateDir(Source source);
 		abstract void addTrainingAndTestData(TraceDataset training, TraceDataset requests)
 				throws IOException;
+		abstract HintAlgorithm[] validHintAlgorithms();
 
 		void exportTrainingAndTestData(boolean toSpreadsheet) throws IOException {
 			TraceDataset training = new TraceDataset("training");
