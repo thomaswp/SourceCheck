@@ -116,6 +116,12 @@ compare <- function() {
   comp(requests, F, "isnap", "SourceCheck", "CTD")
   # Sig p < 0.001
   comp(requests, F, "isnap", "SourceCheck", "chf_with_past")
+  
+  # NS  p = 0.121
+  comp(requests[requests$assignmentID=="guess1Lab",], F, "isnap", "SourceCheck", "CTD")
+  # NS  p = 0.648 - As many do better as worse
+  comp(requests[requests$assignmentID=="squiralHW",], F, "isnap", "SourceCheck", "CTD")
+  
   # NS  p = 0.065
   comp(requests, F, "itap", "ITAP", "SourceCheck")
   # Sig p = 0.008
@@ -126,7 +132,10 @@ compare <- function() {
   comp(requests, T, "itap", "SourceCheck", "CTD")
   
   kruskal.test(scoreFull ~ source, requests[requests$dataset=="isnap",])
-  summary(aov(scoreFull ~ source, requests[requests$dataset=="isnap",]))
+  summary(aov(scoreFull ~ source + assignmentID + source * assignmentID, requests[requests$dataset=="isnap",]))
+  
+  kruskal.test(scoreFull ~ source, requests[requests$dataset=="itap",])
+  summary(aov(scoreFull ~ source + assignmentID + source * assignmentID, requests[requests$dataset=="itap",]))
 }
 
 plotComparison <- function(assignments, dataset) {
