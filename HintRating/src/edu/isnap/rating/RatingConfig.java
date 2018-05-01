@@ -176,9 +176,18 @@ public interface RatingConfig {
 			return false;
 		}
 
+		private final Set<String> Prunable = new HashSet<>(Arrays.asList(
+				new String[] {
+						ASTNode.EMPTY_TYPE,
+						"Load",
+						"Store",
+						"Del",
+				}
+			));
+
 		@Override
 		public boolean trimIfParentIsAdded(String type) {
-			return ASTNode.EMPTY_TYPE.equals(type);
+			return Prunable.contains(type);
 		}
 
 		@Override
