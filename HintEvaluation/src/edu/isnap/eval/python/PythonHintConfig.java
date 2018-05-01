@@ -39,6 +39,8 @@ public class PythonHintConfig extends HintConfig {
 					"Bytes",
 					"Ellipsis",
 					"NamedConstant",
+//					"Load",
+//					"Store",
 			}
 	));
 

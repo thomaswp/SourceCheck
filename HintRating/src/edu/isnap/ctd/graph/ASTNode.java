@@ -26,7 +26,7 @@ public class ASTNode implements INode {
 	 * type held in this constant (and no value or id). This is different than an node actually
 	 * representing null/nil/None in the AST, which would presumably have a different type.
 	 * We chose not to ignore these nodes completely, since often they are placeholders for other
-	 * nodes that could exist but where non currently exists, and the index ordering is meaningful.
+	 * nodes that could exist but where none currently exists, and the index ordering is meaningful.
 	 */
 	public final static String EMPTY_TYPE = "null";
 

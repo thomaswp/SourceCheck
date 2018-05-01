@@ -324,10 +324,6 @@ public class HintHighlighter {
 					// It's useful to list these insertions anyway, since it allows us to mark nodes
 					// as Move instead of Delete when they're used in not-yet-added parents
 
-					// This really only makes sense for code blocks
-					if (!config.canMove(pair)) return;
-
-
 					Insertion insertion = new Insertion(pair.parent, pair, pair.index(),
 							mapping.getMappedValue(pair, false), true);
 					edits.add(insertion);

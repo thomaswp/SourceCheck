@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.rating.TutorHint.Validity;
 
 public interface RatingConfig {
@@ -107,6 +108,7 @@ public interface RatingConfig {
 
 		private final Set<String> Prunable = new HashSet<>(Arrays.asList(
 			new String[] {
+					ASTNode.EMPTY_TYPE,
 					"literal",
 					"script",
 					"list",
@@ -176,7 +178,7 @@ public interface RatingConfig {
 
 		@Override
 		public boolean trimIfParentIsAdded(String type) {
-			return "null".equals(type);
+			return ASTNode.EMPTY_TYPE.equals(type);
 		}
 
 		@Override
