@@ -1,6 +1,7 @@
 package edu.isnap.rating;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -31,8 +32,11 @@ public class EditExtractor {
 
 	private final RatingConfig config;
 
-	public EditExtractor(RatingConfig config) {
+	private final Set<String> ignoreTypes = new HashSet<>();
+
+	public EditExtractor(RatingConfig config, String... ignoreTypes) {
 		this.config = config;
+		Arrays.stream(ignoreTypes).forEach(this.ignoreTypes::add);
 	}
 
 	public Set<Edit> getEdits(ASTNode from, ASTNode to) {
@@ -142,6 +146,8 @@ public class EditExtractor {
 				edits.add(new Relabel(getReferenceAsChildren(n), pair.type, pair.value));
 			}
 		});
+
+		edits.removeIf(edit -> ignoreTypes.contains(edit.node.type));
 
 		return edits;
 	}

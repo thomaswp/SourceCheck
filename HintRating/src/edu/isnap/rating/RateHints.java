@@ -59,7 +59,7 @@ public class RateHints {
 	public static HintRatingSet rate(GoldStandard standard, HintSet hintSet, boolean debug) {
 		RatingConfig config = hintSet.config;
 		HintRatingSet ratingSet = new HintRatingSet(hintSet.name);
-		EditExtractor extractor = new EditExtractor(config);
+		EditExtractor extractor = new EditExtractor(config, ASTNode.EMPTY_TYPE);
 		for (String assignmentID : standard.getAssignmentIDs()) {
 			System.out.println("----- " + assignmentID + " -----");
 
@@ -368,9 +368,8 @@ public class RateHints {
 			if (tutorEdits.size() == 0) continue;
 			Set<Edit> overlap = new HashSet<>(tutorEdits);
 			overlap.retainAll(outcomeEdits);
-//			if (overlap.size() > bestOverlap.size()) {
-			if (overlap.size() == outcomeEdits.size()) {
-				if (overlap.size() == tutorEdits.size()) {
+			if (overlap.size() > bestOverlap.size()) {
+				if (overlap.size() == tutorEdits.size() && overlap.size() == outcomeEdits.size()) {
 					System.out.println("Tutor hint: ");
 					System.out.println(ASTNode.diff(fromNode, tutorOutcomeNode, config));
 					System.out.println("Alg hint: ");
@@ -381,33 +380,38 @@ public class RateHints {
 				}
 				bestOverlap = overlap;
 				bestHint = tutorHint;
-				break;
 			}
 		}
-		if (!bestOverlap.isEmpty()) {
+		if (bestOverlap.size() == outcomeEdits.size()) {
 			// If the overlap is only deletions, we do not count this as a partial match
 			if (!bestOverlap.stream().allMatch(e -> e instanceof Deletion)) {
 				return new HintRating(outcome, bestHint, MatchType.Partial);
 			} else {
-//				printPartialMatch(config, extractor, fromNode, outcomeNode, outcomeEdits, bestHint);
+//				printPartialMatch(config, extractor, fromNode, outcomeNode, outcomeEdits, bestHint,
+//						outcome);
 			}
 		}
+//		else if (bestOverlap.size() > 1 && bestOverlap.size() + 1 == outcomeEdits.size()) {
+//			printPartialMatch(config, extractor, fromNode, outcomeNode, outcomeEdits, bestHint,
+//					outcome);
+//		}
 		return new HintRating(outcome);
 	}
 
 	protected static void printPartialMatch(RatingConfig config, EditExtractor extractor,
-			ASTNode fromNode, ASTNode outcomeNode, Set<Edit> outcomeEdits, TutorHint bestHint) {
+			ASTNode fromNode, ASTNode outcomeNode, Set<Edit> outcomeEdits, TutorHint bestHint,
+			HintOutcome outcome) {
 		if (bestHint.validity.isAtLeast(Validity.MultipleTutors)) {
 			Set<Edit> tutorEdits = new HashSet<>();
 			if (bestHint != null) {
-				System.out.println("Tutor Hint:");
+				System.out.printf("Tutor Hint (%s):\n", bestHint.hintID);
 				ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, bestHint.to, config);
 				System.out.println(Diff.diff(
 						fromNode.prettyPrint(true, config),
 						tutorOutcomeNode.prettyPrint(true, config)));
 				tutorEdits = extractor.getEdits(bestHint.from, tutorOutcomeNode);
 			}
-			System.out.println("Alg Hint:");
+			System.out.printf("Alg Hint (%s):\n", outcome.id);
 			System.out.println(Diff.diff(
 					fromNode.prettyPrint(true, config),
 					outcomeNode.prettyPrint(true, config), 2));
