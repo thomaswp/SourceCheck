@@ -391,10 +391,6 @@ public class RateHints {
 //						outcome);
 			}
 		}
-//		else if (bestOverlap.size() > 1 && bestOverlap.size() + 1 == outcomeEdits.size()) {
-//			printPartialMatch(config, extractor, fromNode, outcomeNode, outcomeEdits, bestHint,
-//					outcome);
-//		}
 		return new HintRating(outcome);
 	}
 
