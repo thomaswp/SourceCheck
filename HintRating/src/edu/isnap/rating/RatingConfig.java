@@ -26,9 +26,10 @@ public interface RatingConfig {
 
 	/**
 	 * Should return true if this node can be safely pruned if its parent is newly added, e.g. in
-	 * Snap, some nodes are added automatically to parents and be safely ignored.
+	 * Snap, some nodes are added automatically to parents and be safely ignored. This only occurs
+	 * if all children of the node in question can also be trimmed.
 	 */
-	public boolean trimIfParentIsAdded(String type);
+	public boolean trimIfParentIsAdded(String type, String value);
 
 	/**
 	 * Should return true if nodes of this type have a fixed number of children as opposed to a
@@ -78,7 +79,7 @@ public interface RatingConfig {
 		}
 
 		@Override
-		public boolean trimIfParentIsAdded(String type) {
+		public boolean trimIfParentIsAdded(String type, String value) {
 			return false;
 		}
 
@@ -132,7 +133,7 @@ public interface RatingConfig {
 		}
 
 		@Override
-		public boolean trimIfParentIsAdded(String type) {
+		public boolean trimIfParentIsAdded(String type, String value) {
 			return Prunable.contains(type);
 		}
 
@@ -176,18 +177,30 @@ public interface RatingConfig {
 			return false;
 		}
 
+		// These nodes are added automatically (i.e. if you add a FunctionDef, arguments are added),
+		// and they have no meaning if they have no children that aren't on this list
 		private final Set<String> Prunable = new HashSet<>(Arrays.asList(
 				new String[] {
 						ASTNode.EMPTY_TYPE,
 						"Load",
 						"Store",
 						"Del",
+						"list",
+						"alias",
+						"arguments",
+						"arg",
+						"Expr",
 				}
 			));
 
 		@Override
-		public boolean trimIfParentIsAdded(String type) {
-			return Prunable.contains(type);
+		public boolean trimIfParentIsAdded(String type, String value) {
+			return Prunable.contains(type) ||
+					// Names without a value area newly created identifier not previously present.
+					// Since there was no way in Python to create a variable assignment without
+					// specifying a variable, these should not be required for exact matching,
+					// similar to other nodes that are automatically inserted as children
+					("Name".equals(type) && value == null);
 		}
 
 		@Override

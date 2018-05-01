@@ -11,7 +11,6 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import edu.isnap.ctd.graph.ASTNode;
@@ -112,10 +111,10 @@ public class RateHints {
 		return ratingSet;
 	}
 
-	private static ASTNode pruneImmediateChildren(ASTNode node, Predicate<String> condition) {
+	private static ASTNode pruneAddedParent(ASTNode node, RatingConfig config) {
 		for (int i = 0; i < node.children().size(); i++) {
 			ASTNode child = node.children().get(i);
-			if (condition.test(child.type) && child.children().isEmpty()) {
+			if (config.trimIfParentIsAdded(child.type, child.value) && child.children().isEmpty()) {
 				node.removeChild(i--);
 			}
 		}
@@ -153,7 +152,7 @@ public class RateHints {
 			// If this node was created/changed in the hint, prune its immediate children for
 			// nodes that are added automatically, according to the config, e.g. literal nodes
 			// in Snap.
-			pruneImmediateChildren(node, config::trimIfParentIsAdded);
+			pruneAddedParent(node, config);
 		}
 	}
 
@@ -318,7 +317,8 @@ public class RateHints {
 			if (missing.size() == toMatch.size()) continue;
 			matched = new HashSet<>(matched);
 			matched.addAll(outcomeEdits);
-			if (missing.stream().allMatch(e -> config.trimIfParentIsAdded(e.node.type))) {
+			if (missing.stream().allMatch(
+					e -> config.trimIfParentIsAdded(e.node.type, e.node.value))) {
 				List<HintOutcome> list = new ArrayList<>();
 				list.add(outcome);
 				return list;
@@ -385,8 +385,8 @@ public class RateHints {
 		if (bestOverlap.size() == outcomeEdits.size()) {
 			// If the overlap is only deletions, we do not count this as a partial match
 			if (!bestOverlap.stream().allMatch(e -> e instanceof Deletion)) {
-//				printPartialMatch(config, extractor, fromNode, outcomeNode, outcomeEdits, bestHint,
-//						outcome);
+				printPartialMatch(config, extractor, fromNode, outcomeNode, outcomeEdits, bestHint,
+						outcome);
 				return new HintRating(outcome, bestHint, MatchType.Partial);
 			}
 		}

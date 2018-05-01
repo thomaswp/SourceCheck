@@ -74,6 +74,7 @@ public class PythonHintConfig extends HintConfig {
 				(parent.hasType("UnaryOp") && index == 0) ||
 				(parent.hasType("BoolOp") && index == 0) ||
 				(parent.hasType("Compare") && index == 1) ||
+//				TODO: (parent.hasType("Call") && index == 0) ||
 				// Children of auto-added lists (e.g. in compare) should also be auto-added
 				(parent.hasType("list") && shouldAutoAdd(parent)) ||
 				node.hasType("Load", "Store", "Del");
