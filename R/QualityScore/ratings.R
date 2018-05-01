@@ -2,6 +2,9 @@
 library(readr)
 library(plyr)
 library(ggplot2)
+library(reshape)
+
+se <- function(x) ifelse(length(x) == 0, 0, sqrt(var(x, na.rm=T)/sum(!is.na(x))))
 
 loadRatings <- function(dataset, names) {
   allRatings <- NULL
@@ -80,8 +83,20 @@ compare <- function() {
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) + facet_wrap(~assignmentID)
   ggplot(requests[requests$dataset=="itap",], aes(x=source, y=scoreFull)) + geom_boxplot() + 
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) + facet_wrap(~assignmentID)
+  ggplot(requests[requests$dataset=="itap",], aes(x=source, y=scorePartial)) + geom_boxplot() + 
+    stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) + facet_wrap(~assignmentID)
+  ggplot(requests, aes(x=source, y=scoreFull)) + geom_boxplot() + 
+    stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) + facet_wrap(~dataset)
   ggplot(requests, aes(x=source, y=scorePartial)) + geom_boxplot() + 
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) + facet_wrap(~dataset)
+  
+  assignments <- ddply(requests, c("dataset", "source", "assignmentID"), summarize, mScoreFull=mean(scoreFull), mScorePartial=mean(scorePartial),
+                                                                                    seFull=se(scoreFull), sePartial=se(scorePartial))
+  assignments$mScorePartialPlus <- assignments$mScorePartial - assignments$mScoreFull
+  
+  ggplot(melt(assignments[assignments$dataset=="isnap",-c(5, 6, 7)], id=c("dataset", "source", "assignmentID")), 
+         aes(x=source, y=value, fill=factor(variable, levels=c("mScorePartialPlus","mScoreFull")))) +
+    geom_bar(stat="identity") + facet_wrap(~assignmentID)
   
   comp(requests, T, "itap", "SourceCheck", "chf_with_past")
 }
