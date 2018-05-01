@@ -112,10 +112,21 @@ compare <- function() {
   plotComparisonTogetherStacked(requests)
   
   
+  # NS  p = 0.149
   comp(requests, F, "isnap", "SourceCheck", "CTD")
+  # Sig p < 0.001
   comp(requests, F, "isnap", "SourceCheck", "chf_with_past")
+  # NS  p = 0.065
+  comp(requests, F, "itap", "ITAP", "SourceCheck")
+  # Sig p = 0.008
   comp(requests, T, "itap", "ITAP", "SourceCheck")
+  # Sig p = 0.012
+  comp(requests, F, "itap", "SourceCheck", "chf_with_past")
+  # Sig p = 0.014
   comp(requests, T, "itap", "SourceCheck", "CTD")
+  
+  kruskal.test(scoreFull ~ source, requests[requests$dataset=="isnap",])
+  summary(aov(scoreFull ~ source, requests[requests$dataset=="isnap",]))
 }
 
 plotComparison <- function(assignments, dataset) {
@@ -166,8 +177,10 @@ plotComparisonTogetherStacked <- function(requests) {
 
 comp <- function(requests, partial, dataset, source1, source2) {
   column <- if (partial) "scorePartial" else "scoreFull"
-  left <- requests[requests$source==source1 & requests$dataset==dataset, column]
-  right <- requests[requests$source==source2 & requests$dataset==dataset, column]
+  left <- requests[requests$source==source1 & requests$dataset==dataset,]
+  right <- requests[requests$source==source2 & requests$dataset==dataset,]
+  left <- left[order(left$requestID),column]
+  right <- right[order(right$requestID),column]
   print(paste(mean(left > right), " vs ", mean(left < right)))
   wilcox.test(left, right, paired=T)
 }
