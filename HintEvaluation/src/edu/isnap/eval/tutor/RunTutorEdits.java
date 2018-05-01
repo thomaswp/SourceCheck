@@ -50,7 +50,7 @@ public class RunTutorEdits extends TutorEdits {
 		boolean debug = false;
 		boolean writeHints = false;
 
-		writeAllHintSets(iSnapF16F17, ITAPS16);
+//		writeAllHintSets(iSnapF16F17, ITAPS16);
 
 		// Exporting things (Note: this may require some copy and paste)
 //		dataset.writeGoldStandard();
@@ -60,7 +60,7 @@ public class RunTutorEdits extends TutorEdits {
 //		dataset.verifyGoldStandard();
 //		dataset.printData();
 
-//		dataset.runHintRating(algorithm, source, debug, writeHints);
+		dataset.runHintRating(algorithm, source, debug, writeHints);
 
 //		dataset.testKValues(algorithm, source, debug, writeHints, 1, 20);
 //		dataset.writeColdStart(algorithm, 200, 1);
@@ -78,7 +78,6 @@ public class RunTutorEdits extends TutorEdits {
 	}
 
 	public static void writeAllHintSets(RatingDataset... datasets) throws IOException {
-		System.err.println("Don't forget to delete hint folders!");
 		for (RatingDataset dataset : datasets) {
 			System.out.println("Writing " + dataset.getDataDir() + ":");
 			for (HintAlgorithm algorithm : dataset.validHintAlgorithms()) {
@@ -217,6 +216,9 @@ public class RunTutorEdits extends TutorEdits {
 
 		protected HintConfig hintConfig = createHintConfig();
 
+		private GoldStandard goldStandard;
+		private TrainingDataset trainingDataset;
+
 		abstract GoldStandard generateGoldStandard() throws FileNotFoundException, IOException;
 		abstract HintConfig createHintConfig();
 		abstract String getDataDir();
@@ -239,8 +241,12 @@ public class RunTutorEdits extends TutorEdits {
 			}
 		}
 
-		public GoldStandard readGoldStandard() throws IOException {
-			return GoldStandard.parseSpreadsheet(getDataDir() + RateHints.GS_SPREADSHEET);
+		public GoldStandard getGoldStandard() throws IOException {
+			if (goldStandard == null) {
+				goldStandard = GoldStandard.parseSpreadsheet(
+						getDataDir() + RateHints.GS_SPREADSHEET);
+			}
+			return goldStandard;
 		}
 
 		public HintSet getHintSet(HintAlgorithm algorithm, Source source,
@@ -260,7 +266,7 @@ public class RunTutorEdits extends TutorEdits {
 
 		public void runHintRating(HintAlgorithm algorithm, Source source, boolean debug,
 				boolean write) throws FileNotFoundException, IOException {
-			GoldStandard standard = readGoldStandard();
+			GoldStandard standard = getGoldStandard();
 			HintSet hintSet = getHintSet(algorithm, source, standard);
 			HintRatingSet rate = RateHints.rate(standard, hintSet, debug);
 			if (write) {
@@ -274,7 +280,7 @@ public class RunTutorEdits extends TutorEdits {
 
 		public void testKValues(HintAlgorithm algorithm, Source source, boolean debug,
 				boolean write, int minK, int maxK) throws FileNotFoundException, IOException {
-			GoldStandard standard = readGoldStandard();
+			GoldStandard standard = getGoldStandard();
 			Spreadsheet spreadsheet = new Spreadsheet();
 			for (int k = minK; k <= maxK; k++) {
 				System.out.println("------ k = " + k + " ------");
@@ -301,7 +307,7 @@ public class RunTutorEdits extends TutorEdits {
 
 		public void writeHintSet(HintAlgorithm algorithm, Source source)
 				throws FileNotFoundException, IOException {
-			GoldStandard standard = readGoldStandard();
+			GoldStandard standard = getGoldStandard();
 			HintSet hintSet = getHintSet(algorithm, source, standard);
 			String name = getSourceName(algorithm, source);
 			hintSet.writeToFolder(new File(getDataDir() + RateHints.ALGORITHMS_DIR,
@@ -326,17 +332,20 @@ public class RunTutorEdits extends TutorEdits {
 		}
 
 		public void writeCostsSpreadsheet() throws IOException {
-			GoldStandard standard = readGoldStandard();
+			GoldStandard standard = getGoldStandard();
 			TrainingDataset dataset = getTrainingDataset();
 			HighlightHintGenerator.getCostsSpreadsheet(dataset, standard, hintConfig)
 			.write(getDataDir() + "analysis/distances.csv");
 		}
 
 		protected TrainingDataset getTrainingDataset() throws IOException {
-			return TrainingDataset.fromSpreadsheet("training",
-					getDataDir() + RateHints.TRAINING_FILE);
-//			return TrainingDataset.fromDirectory("training",
+			if (trainingDataset == null) {
+				trainingDataset = TrainingDataset.fromSpreadsheet("training",
+						getDataDir() + RateHints.TRAINING_FILE);
+//				trainingDataset = TrainingDataset.fromDirectory("training",
 //					getDataDir() + "training/");
+			}
+			return trainingDataset;
 		}
 
 		protected HintRequestDataset getRequestDataset() throws IOException {
@@ -346,7 +355,7 @@ public class RunTutorEdits extends TutorEdits {
 
 		private ColdStart getColdStart(HintAlgorithm algorithm)
 				throws FileNotFoundException, IOException {
-			GoldStandard standard = readGoldStandard();
+			GoldStandard standard = getGoldStandard();
 			TrainingDataset dataset = getTrainingDataset();
 			HintRequestDataset requests = getRequestDataset();
 			HintGenerator hintGenerator = algorithm.getHintGenerator(hintConfig);
@@ -355,7 +364,7 @@ public class RunTutorEdits extends TutorEdits {
 		}
 
 		private void verifyGoldStandard() throws IOException {
-			GoldStandard gs1 = readGoldStandard();
+			GoldStandard gs1 = getGoldStandard();
 			GoldStandard gs2 = generateGoldStandard();
 
 			for (String assignmentID : gs1.getAssignmentIDs()) {

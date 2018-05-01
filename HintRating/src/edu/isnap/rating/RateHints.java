@@ -385,10 +385,9 @@ public class RateHints {
 		if (bestOverlap.size() == outcomeEdits.size()) {
 			// If the overlap is only deletions, we do not count this as a partial match
 			if (!bestOverlap.stream().allMatch(e -> e instanceof Deletion)) {
-				return new HintRating(outcome, bestHint, MatchType.Partial);
-			} else {
 //				printPartialMatch(config, extractor, fromNode, outcomeNode, outcomeEdits, bestHint,
 //						outcome);
+				return new HintRating(outcome, bestHint, MatchType.Partial);
 			}
 		}
 		return new HintRating(outcome);

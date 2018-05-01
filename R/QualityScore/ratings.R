@@ -2,7 +2,7 @@
 library(readr)
 library(plyr)
 library(ggplot2)
-library(reshape)
+library(reshape2)
 
 se <- function(x) ifelse(length(x) == 0, 0, sqrt(var(x, na.rm=T)/sum(!is.na(x))))
 
@@ -77,6 +77,8 @@ compare <- function() {
   ratings <- ratings[order(ratings$dataset, ratings$assignmentID, ratings$year, ratings$requestID, ratings$source, ratings$order),]
   ratings$scoreFull <- ratings$weightNorm * ifelse(ratings$type=="Full" & ratings$validity >= 2, 1, 0)
   ratings$scorePartial <- ratings$weightNorm * ifelse(ratings$type!="None" & ratings$validity >= 2, 1, 0)
+  ratings$source <- factor(ratings$source, c("PQGram", "chf_without_past", "chf_with_past", "CTD", "SourceCheck", "ITAP"))
+  ratings$assignmentID <- factor(ratings$assignmentID, c("squiralHW", "guess1Lab", "helloWorld", "firstAndLast", "isPunctuation", "kthDigit", "oneToN"))
   requests <- ddply(ratings, c("dataset", "source", "assignmentID", "requestID"), summarize, scoreFull=sum(scoreFull), scorePartial=sum(scorePartial))
   
   ggplot(requests[requests$dataset=="isnap",], aes(x=source, y=scoreFull)) + geom_boxplot() + 
@@ -92,13 +94,41 @@ compare <- function() {
   
   assignments <- ddply(requests, c("dataset", "source", "assignmentID"), summarize, mScoreFull=mean(scoreFull), mScorePartial=mean(scorePartial),
                                                                                     seFull=se(scoreFull), sePartial=se(scorePartial))
-  assignments$mScorePartialPlus <- assignments$mScorePartial - assignments$mScoreFull
   
-  ggplot(melt(assignments[assignments$dataset=="isnap",-c(5, 6, 7)], id=c("dataset", "source", "assignmentID")), 
-         aes(x=source, y=value, fill=factor(variable, levels=c("mScorePartialPlus","mScoreFull")))) +
-    geom_bar(stat="identity") + facet_wrap(~assignmentID)
+  plotComparison(assignments, "isnap")
+  plotComparison(assignments, "itap")
+  plotComparisonTogether(requests)
   
   comp(requests, T, "itap", "SourceCheck", "chf_with_past")
+}
+
+plotComparison <- function(assignments, dataset) {
+  assignments <- assignments[assignments$dataset == dataset,]
+  means <- melt(assignments, id=c("dataset", "source", "assignmentID"), measure.vars=c("mScoreFull", "mScorePartial"), variable.name="type", value.name="mean")
+  means$type <- ifelse(means$type == "mScoreFull", "full", "partial")
+  ses <- melt(assignments, id=c("dataset", "source", "assignmentID"), measure.vars=c("seFull", "sePartial"), variable.name="type", value.name="se")
+  ses$type <- ifelse(ses$type == "seFull", "full", "partial")
+  all <- merge(means, ses)
+  
+  ggplot(all,aes(x=source, y=mean, fill=type)) + geom_bar(stat="identity", position="dodge") + 
+    geom_errorbar(aes(ymax=mean+se, ymin=mean-se), position=position_dodge(width=0.9), width=0.5) + 
+    facet_wrap(~assignmentID)
+    #scale_fill_discrete(name="Match", labels=c("Partial", "Full"))
+}
+
+plotComparisonTogether <- function(requests) {
+  together <- ddply(requests, c("dataset", "source"), summarize, mScoreFull=mean(scoreFull), mScorePartial=mean(scorePartial),
+                       seFull=se(scoreFull), sePartial=se(scorePartial))
+  means <- melt(together, id=c("dataset", "source"), measure.vars=c("mScoreFull", "mScorePartial"), variable.name="type", value.name="mean")
+  means$type <- ifelse(means$type == "mScoreFull", "full", "partial")
+  ses <- melt(together, id=c("dataset", "source"), measure.vars=c("seFull", "sePartial"), variable.name="type", value.name="se")
+  ses$type <- ifelse(ses$type == "seFull", "full", "partial")
+  all <- merge(means, ses)
+  
+  ggplot(all,aes(x=source, y=mean, fill=type)) + geom_bar(stat="identity", position="dodge") + 
+    geom_errorbar(aes(ymax=mean+se, ymin=mean-se), position=position_dodge(width=0.9), width=0.5) + 
+    facet_wrap(~dataset, scales = "free_x")
+  #scale_fill_discrete(name="Match", labels=c("Partial", "Full"))
 }
 
 comp <- function(requests, partial, dataset, source1, source2) {
