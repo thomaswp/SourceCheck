@@ -99,6 +99,10 @@ compare <- function() {
   plotComparison(assignments, "itap")
   plotComparisonTogether(requests)
   
+  plotComparisonStacked(assignments, "isnap")
+  plotComparisonStacked(assignments, "itap")
+  plotComparisonTogetherStacked(requests)
+  
   comp(requests, T, "itap", "SourceCheck", "chf_with_past")
 }
 
@@ -116,6 +120,15 @@ plotComparison <- function(assignments, dataset) {
     #scale_fill_discrete(name="Match", labels=c("Partial", "Full"))
 }
 
+plotComparisonStacked <- function(assignments, dataset) {
+  assignments <- assignments[assignments$dataset == dataset,]
+  assignments$mScorePartialPlus <- assignments$mScorePartial - assignments$mScoreFull
+  melted <- melt(assignments[,c("dataset", "source", "assignmentID", "mScorePartialPlus", "mScoreFull")], id=c("dataset", "source", "assignmentID"))
+  ggplot(melted,aes(x=source, y=value, fill=variable)) + geom_bar(stat="identity") +
+    facet_wrap(~assignmentID, scales = "free_x")
+  #scale_fill_discrete(name="Match", labels=c("Partial", "Full"))
+}
+
 plotComparisonTogether <- function(requests) {
   together <- ddply(requests, c("dataset", "source"), summarize, mScoreFull=mean(scoreFull), mScorePartial=mean(scorePartial),
                        seFull=se(scoreFull), sePartial=se(scorePartial))
@@ -127,6 +140,14 @@ plotComparisonTogether <- function(requests) {
   
   ggplot(all,aes(x=source, y=mean, fill=type)) + geom_bar(stat="identity", position="dodge") + 
     geom_errorbar(aes(ymax=mean+se, ymin=mean-se), position=position_dodge(width=0.9), width=0.5) + 
+    facet_wrap(~dataset, scales = "free_x")
+  #scale_fill_discrete(name="Match", labels=c("Partial", "Full"))
+}
+
+plotComparisonTogetherStacked <- function(requests) {
+  together <- ddply(requests, c("dataset", "source"), summarize, mScorePartialPlus=mean(scorePartial)-mean(scoreFull), mScoreFull=mean(scoreFull))
+  
+  ggplot(melt(together, id=c("dataset", "source")),aes(x=source, y=value, fill=variable)) + geom_bar(stat="identity") +
     facet_wrap(~dataset, scales = "free_x")
   #scale_fill_discrete(name="Match", labels=c("Partial", "Full"))
 }
