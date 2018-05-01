@@ -33,7 +33,6 @@ public class PythonHintConfig extends HintConfig {
 					"null",
 					"list",
 					"Num",
-					"Str",
 					"FormattedValue",
 					"JoinedStr",
 					"Bytes",

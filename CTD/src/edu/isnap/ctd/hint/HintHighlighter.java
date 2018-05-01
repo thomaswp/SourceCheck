@@ -394,9 +394,6 @@ public class HintHighlighter {
 	private void extractSubedits(final List<EditHint> edits) {
 		if (!config.createSubedits) return;
 
-		// TODO: If an insertion replaces a node, any descendant of that node can be moved to a
-		// child of the replacing node as a subedit
-
 		// Find any insertion that has a missing parent which will be inserted by another insertion.
 		// Mark that as a subedit of the parent, so it will only be executed afterwards
 		List<Insertion> insertions = extractInsertions(edits);
