@@ -111,7 +111,11 @@ compare <- function() {
   plotComparisonStacked(assignments, "itap")
   plotComparisonTogetherStacked(requests)
   
-  comp(requests, T, "itap", "SourceCheck", "chf_with_past")
+  
+  comp(requests, F, "isnap", "SourceCheck", "CTD")
+  comp(requests, F, "isnap", "SourceCheck", "chf_with_past")
+  comp(requests, T, "itap", "ITAP", "SourceCheck")
+  comp(requests, T, "itap", "SourceCheck", "CTD")
 }
 
 plotComparison <- function(assignments, dataset) {
