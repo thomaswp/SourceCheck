@@ -103,7 +103,7 @@ public class ASTNode implements INode {
 	public boolean addChild(int index, ASTNode child) {
 		int i = children.size();
 		while (childRelations.contains(String.valueOf(i))) i++;
-		return addChild(String.valueOf(i), child);
+		return addChild(index, String.valueOf(i), child);
 	}
 
 	public boolean addChild(int index, String relation, ASTNode child) {

@@ -57,7 +57,7 @@ public class RunTutorEdits extends TutorEdits {
 //		dataset.exportTrainingAndTestData(true);
 //		dataset.writeHintSet(algorithm, source);
 
-//		dataset.verifyGoldStandard();
+		dataset.verifyGoldStandard();
 //		dataset.printData();
 
 		dataset.runHintRating(algorithm, source, debug, writeHints);
