@@ -5,6 +5,7 @@ library(ggplot2)
 library(reshape2)
 
 se <- function(x) ifelse(length(x) == 0, 0, sqrt(var(x, na.rm=T)/sum(!is.na(x))))
+ifNA <- function(x, other) ifelse(is.na(x), other, x)
 
 loadRatings <- function(dataset, names) {
   allRatings <- NULL
@@ -77,9 +78,14 @@ compare <- function() {
   ratings <- ratings[order(ratings$dataset, ratings$assignmentID, ratings$year, ratings$requestID, ratings$source, ratings$order),]
   ratings$scoreFull <- ratings$weightNorm * ifelse(ratings$type=="Full" & ratings$validity >= 2, 1, 0)
   ratings$scorePartial <- ratings$weightNorm * ifelse(ratings$type!="None" & ratings$validity >= 2, 1, 0)
+  # TODO: Priority doesn't match with Java output, but we don't have it for non-consensus hints, so maybe not a priority
+  ratings$priorityFull <- ifNA(4 - ratings$priority, 0) * ratings$scoreFull
+  ratings$priorityPartial <- ifNA(4 - ratings$priority, 0) * ratings$scorePartial
   ratings$source <- factor(ratings$source, c("PQGram", "chf_without_past", "chf_with_past", "CTD", "SourceCheck", "ITAP"))
   ratings$assignmentID <- factor(ratings$assignmentID, c("squiralHW", "guess1Lab", "helloWorld", "firstAndLast", "isPunctuation", "kthDigit", "oneToN"))
-  requests <- ddply(ratings, c("dataset", "source", "assignmentID", "requestID"), summarize, scoreFull=sum(scoreFull), scorePartial=sum(scorePartial))
+  requests <- ddply(ratings, c("dataset", "source", "assignmentID", "requestID"), summarize, 
+                    scoreFull=sum(scoreFull), scorePartial=sum(scorePartial),
+                    priorityFull=sum(priorityFull), priorityPartial=sum(priorityPartial))
   
   ggplot(requests[requests$dataset=="isnap",], aes(x=source, y=scoreFull)) + geom_boxplot() + 
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) + facet_wrap(~assignmentID)
@@ -92,8 +98,10 @@ compare <- function() {
   ggplot(requests, aes(x=source, y=scorePartial)) + geom_boxplot() + 
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) + facet_wrap(~dataset)
   
-  assignments <- ddply(requests, c("dataset", "source", "assignmentID"), summarize, mScoreFull=mean(scoreFull), mScorePartial=mean(scorePartial),
-                                                                                    seFull=se(scoreFull), sePartial=se(scorePartial))
+  assignments <- ddply(requests, c("dataset", "source", "assignmentID"), summarize, 
+                       mScoreFull=mean(scoreFull), mScorePartial=mean(scorePartial),
+                       seFull=se(scoreFull), sePartial=se(scorePartial),
+                       mPriorityFull=mean(priorityFull), mPriorityPartial=mean(priorityPartial))
   
   plotComparison(assignments, "isnap")
   plotComparison(assignments, "itap")
