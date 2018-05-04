@@ -48,7 +48,6 @@ import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.Snapshot;
 import edu.isnap.rating.GoldStandard;
-import edu.isnap.rating.HintSet;
 import edu.isnap.rating.RateHints;
 import edu.isnap.rating.RatingConfig;
 import edu.isnap.rating.Trace;
@@ -307,23 +306,29 @@ public class TutorEdits {
 		JsonAST.write(writeDir + "consensus.sql", sql.toString());
 	}
 
-	public static Map<String, HintSet> readTutorHintSets(Dataset dataset)
+	public static Map<String, TutorHintSet> readTutorHintSetsSnap(Dataset dataset)
 			throws FileNotFoundException, IOException {
-		Map<String, HintSet> hintSets = new HashMap<>();
 		ListMap<String, PrintableTutorHint> allEdits = readTutorEditsSnap(dataset);
-		for (List<PrintableTutorHint> list : allEdits.values()) {
-			for (TutorHint edit : list) {
-				if (edit.tutor.equals("consensus")) continue;
-				HintSet set = hintSets.get(edit.tutor);
-				if (set == null) {
-					hintSets.put(edit.tutor,
-							set = new HintSet(edit.tutor, RatingConfig.Snap));
-				}
-				set.add(edit.toOutcome());
-			}
-		}
-		hintSets.values().forEach(s -> s.finish());
-		return hintSets;
+		return createTutorHintSets(allEdits, RatingConfig.Snap);
+	}
+
+	public static Map<String, TutorHintSet> readTutorHintSetsPython(String filePath, String year)
+			throws FileNotFoundException, IOException {
+		ListMap<String, PrintableTutorHint> allEdits = readTutorEditsPython(
+				filePath + "handmade_hints_ast.csv", year);
+		return createTutorHintSets(allEdits, RatingConfig.Python);
+	}
+
+	private static Map<String, TutorHintSet> createTutorHintSets(
+			ListMap<String, PrintableTutorHint> allEdits, RatingConfig config) {
+		ListMap<String, TutorHint> hintMap = new ListMap<>();
+		allEdits.values().stream()
+		.flatMap(list -> list.stream())
+		.filter(edit -> !edit.tutor.equals("consensus"))
+		.forEach(hint -> hintMap.add(hint.tutor, hint));
+		return hintMap.keySet().stream().collect(Collectors.toMap(
+				tutor -> tutor,
+				tutor -> new TutorHintSet(tutor, config, hintMap.get(tutor))));
 	}
 
 	protected static GoldStandard readConsensusSnap(Dataset dataset, String consensusPath)

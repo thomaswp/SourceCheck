@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.util.Diff;
@@ -34,7 +35,8 @@ import edu.isnap.rating.TutorHint.Validity;
 @SuppressWarnings("unused")
 public class RunTutorEdits extends TutorEdits {
 
-	final static String CONSENSUS_GG_SQ = "consensus-gg-sq.csv";
+	public final static String CONSENSUS_GG_SQ = "consensus-gg-sq.csv";
+	public static final String ITAP_DIR = "../data/itap/";
 
 	private enum Source {
 		StudentData,
@@ -57,10 +59,12 @@ public class RunTutorEdits extends TutorEdits {
 //		dataset.exportTrainingAndTestData(true);
 //		dataset.writeHintSet(algorithm, source);
 
+		// Leave this on for a while, until you've rewritten it for all local repos
 		dataset.verifyGoldStandard();
 //		dataset.printData();
 
-		dataset.runHintRating(algorithm, source, debug, writeHints);
+//		dataset.runHintRating(algorithm, source, debug, writeHints);
+		dataset.runTutorHintBenchmarks(debug);
 
 //		dataset.testKValues(algorithm, source, debug, writeHints, 1, 20);
 //		dataset.writeColdStart(algorithm, 200, 1);
@@ -69,7 +73,7 @@ public class RunTutorEdits extends TutorEdits {
 //		compareHintsSnap(Fall2016.instance, 10000);
 //		compareHintsSnap(Spring2017.instance, 10000);
 //		compareHintsSnap(Fall2017.instance, 30000);
-//		compareHintsPython("../data/itap", 10000);
+//		compareHintsPython(ITAP_DIR, 10000);
 
 		// Test with Fall 2017 preliminary tutor hints
 //		testFall2017Pelim();
@@ -167,6 +171,23 @@ public class RunTutorEdits extends TutorEdits {
 				PQGram,
 			};
 		}
+
+		@Override
+		Map<String, TutorHintSet> getTutorHintSets() throws IOException {
+			Dataset[] datasets = getDatasets();
+			ListMap<String, TutorHintSet> hintSets = new ListMap<>();
+			for (int i = 0; i < datasets.length; i++) {
+				Map<String, TutorHintSet> hintSetMap = readTutorHintSetsSnap(datasets[i]);
+				for (String tutor : hintSetMap.keySet()) hintSets.add(tutor, hintSetMap.get(tutor));
+			}
+			if (!hintSets.values().stream().allMatch(list -> list.size() == datasets.length)) {
+				throw new RuntimeException("Not all tutors present in all datasets");
+			}
+			return hintSets.keySet().stream().collect(Collectors.toMap(
+					tutor -> tutor,
+					tutor -> TutorHintSet.combine(tutor,
+							hintSets.get(tutor).toArray(new TutorHintSet[datasets.length]))));
+		}
 	}
 
 	public final static RatingDataset ITAPS16 = new RatingDataset() {
@@ -174,7 +195,7 @@ public class RunTutorEdits extends TutorEdits {
 
 		@Override
 		GoldStandard generateGoldStandard() throws FileNotFoundException, IOException {
-			GoldStandard standard = readConsensusPython("../data/itap", "spring2016");
+			GoldStandard standard = readConsensusPython(ITAP_DIR, "spring2016");
 			return standard;
 		}
 
@@ -191,14 +212,14 @@ public class RunTutorEdits extends TutorEdits {
 		@Override
 		String getTemplateDir(Source source) {
 			String dir = source == Source.Template ? "" : "single/";
-			return "../data/itap/" + dir + "templates";
+			return ITAP_DIR + dir + "templates";
 		}
 
 
 		@Override
 		void addTrainingAndTestData(TraceDataset training, TraceDataset requests)
 				throws IOException {
-			buildPythonDatasets("../../PythonAST/data", "../data/itap", training, requests);
+			buildPythonDatasets("../../PythonAST/data", ITAP_DIR, training, requests);
 		}
 
 		@Override
@@ -209,6 +230,11 @@ public class RunTutorEdits extends TutorEdits {
 				PQGram,
 				ITAP_History,
 			};
+		}
+
+		@Override
+		Map<String, TutorHintSet> getTutorHintSets() throws IOException {
+			return readTutorHintSetsPython(ITAP_DIR, "spring2016");
 		}
 	};
 
@@ -226,6 +252,7 @@ public class RunTutorEdits extends TutorEdits {
 		abstract void addTrainingAndTestData(TraceDataset training, TraceDataset requests)
 				throws IOException;
 		abstract HintAlgorithm[] validHintAlgorithms();
+		abstract Map<String, TutorHintSet> getTutorHintSets() throws IOException;
 
 		void exportTrainingAndTestData(boolean toSpreadsheet) throws IOException {
 			TraceDataset training = new TraceDataset("training");
@@ -396,6 +423,15 @@ public class RunTutorEdits extends TutorEdits {
 		public void writeAllInAlgorithmsFolder() throws IOException {
 			RateHints.rateDir(getDataDir(), HighlightHintSet.getRatingConfig(hintConfig), true);
 		}
+
+		public void runTutorHintBenchmarks(boolean debug) throws IOException {
+			Map<String, TutorHintSet> tutorHintSets = getTutorHintSets();
+			GoldStandard standard = getGoldStandard();
+			for (String tutor : tutorHintSets.keySet()) {
+				System.out.println("#### " + tutor + " ####");
+				RateHints.rate(standard, tutorHintSets.get(tutor), debug);
+			}
+		}
 	}
 
 	private static HintAlgorithm SourceCheck = new HintAlgorithm() {
@@ -478,7 +514,7 @@ public class RunTutorEdits extends TutorEdits {
 		public HintSet getHintSetFromTrainingDataset(HintConfig config,
 				TrainingDataset dataset) throws IOException {
 			ListMap<String, PrintableTutorHint> tutorEdits =
-					readTutorEditsPython("../data/itap/handmade_hints_itap_ast.csv", null);
+					readTutorEditsPython(ITAP_DIR + "handmade_hints_itap_ast.csv", null);
 			HintSet hintSet = new HintSet(getName(), HintMapHintSet.getRatingConfig(config));
 			for (String assignmentID : tutorEdits.keySet()) {
 				for (PrintableTutorHint edit : tutorEdits.get(assignmentID)) {
@@ -516,7 +552,7 @@ public class RunTutorEdits extends TutorEdits {
 			throws FileNotFoundException, IOException {
 		GoldStandard standard = readConsensusSnap(dataset, CONSENSUS_GG_SQ);
 		// Compare tutor hints to each other
-		Map<String, HintSet> hintSets = readTutorHintSets(dataset);
+		Map<String, TutorHintSet> hintSets = readTutorHintSetsSnap(dataset);
 		for (HintSet hintSet : hintSets.values()) {
 			System.out.println("------------ " + hintSet.name + " --------------");
 			RateHints.rate(standard, hintSet);

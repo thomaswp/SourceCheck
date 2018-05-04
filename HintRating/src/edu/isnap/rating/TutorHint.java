@@ -81,7 +81,7 @@ public class TutorHint implements Comparable<TutorHint> {
 
 	public HintOutcome toOutcome() {
 		return new HintOutcome(to, assignmentID, requestID,
-				priority == null ? 1 : (1.0 / priority.value));
+				priority == null ? 1 : priority.points());
 	}
 
 	private static Comparator<TutorHint> comparator =
