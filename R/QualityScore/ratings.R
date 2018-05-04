@@ -50,7 +50,7 @@ writeSQL <- function(ratings, path) {
     cat("DELETE FROM handmade_hints WHERE userID='algorithms';\n")
     for (i in 1:nrow(rows)) {
       line = sprintf("INSERT INTO `handmade_hints` (`hid`, `userID`, `rowID`, `trueAssignmentID`, `hintCode`) VALUES ('%s', '%s', '%s', '%s', '%s');\n",
-                     rows[i, "hintID"], "algorithms", rows[i, "requestID"], rows[i, "assignmentID"], rows[i, "diff"])
+                     rows[i, "hintID"], "algorithms", rows[i, "requestID"], rows[i, "assignmentID"], gsub("'", "\\'", rows[i, "diff"], fixed =T))
       cat(line)
     }
   }
