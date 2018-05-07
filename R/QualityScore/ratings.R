@@ -7,10 +7,11 @@ library(reshape2)
 se <- function(x) ifelse(length(x) == 0, 0, sqrt(var(x, na.rm=T)/sum(!is.na(x))))
 ifNA <- function(x, other) ifelse(is.na(x), other, x)
 
-loadRatings <- function(dataset, names) {
+loadRatings <- function(dataset, names, dir="") {
   allRatings <- NULL
+  if (dir != "") dir <- paste0(dir, "/")
   for (name in names) {
-    ratings <- read_csv(paste0("../../data/hint-rating/", dataset, "/algorithms/", name, ".csv"))
+    ratings <- read_csv(paste0("../../data/hint-rating/", dataset, "/algorithms/", dir, name, ".csv"))
     ratings$source <- name
     if (is.null(allRatings)) allRatings <- ratings
     else allRatings <- rbind(allRatings, ratings)
@@ -59,14 +60,19 @@ writeSQL <- function(ratings, path) {
 
 getSamples <- function() {
   # Don't include both hint factories
-  ratings <- loadRatings("isnapF16-F17", c("SourceCheck", "CTD", "PQGram", "chf_with_past"))
-  samples <- selectHintsForManualRating(ratings)
+  sampleRatings <- loadRatings("isnapF16-F17", c("SourceCheck", "CTD", "PQGram", "chf_with_past"), "sampling")
+  samples <- selectHintsForManualRating(sampleRatings)
   
   write.csv(subset(samples, select=c(assignmentID, year, requestID, hintID, priority)), "C:/Users/Thomas/Desktop/samples.csv", row.names = F)
   write.csv(samples, "C:/Users/Thomas/Desktop/samples-full.csv", row.names = F)
   writeSQL(samples[samples$priority <= 25,], "C:/Users/Thomas/Desktop/samples75.sql")
   writeSQL(samples[samples$priority <= 50,], "C:/Users/Thomas/Desktop/samples150.sql")
   writeSQL(samples[samples$priority <= 84,], "C:/Users/Thomas/Desktop/samples252.sql")
+  
+  newRatings <- loadRatings("isnapF16-F17", c("SourceCheck_sampling", "CTD", "PQGram", "chf_with_past"))
+  newRatings[newRatings$source == "SourceCheck_sampling","source"] <- "SourceCheck"
+  # TODO: Something weird happens to produce duplicate rows here...
+  test <- merge(newRatings, samples[,c("requestID", "source", "hintID")])
 }
 
 verifyRaings <- function() {
