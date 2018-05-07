@@ -69,6 +69,15 @@ getSamples <- function() {
   writeSQL(samples[samples$priority <= 84,], "C:/Users/Thomas/Desktop/samples252.sql")
 }
 
+verifyRaings <- function() {
+  manual <- read_csv("data/manual.csv")
+  manual <- merge(manual[,c("hintID", "consensus")], samples)
+  manual$consensus <- as.integer(manual$consensus)
+  manual <- manual[!is.na(manual$consensus),]
+  # TODO: This doesn't consider the validity of the match :{
+  table(manual$consensus, manual$type)
+}
+
 compare <- function() {
   isnap <- loadRatings("isnapF16-F17", c("SourceCheck", "CTD", "PQGram", "chf_with_past", "chf_without_past", "AllTutors"))
   isnap$dataset <- "isnap"
