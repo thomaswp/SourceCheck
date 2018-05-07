@@ -70,9 +70,9 @@ getSamples <- function() {
 }
 
 compare <- function() {
-  isnap <- loadRatings("isnapF16-F17", c("SourceCheck", "CTD", "PQGram", "chf_with_past", "chf_without_past"))
+  isnap <- loadRatings("isnapF16-F17", c("SourceCheck", "CTD", "PQGram", "chf_with_past", "chf_without_past", "AllTutors"))
   isnap$dataset <- "isnap"
-  itap <- loadRatings("itapS16", c("SourceCheck", "CTD", "PQGram", "chf_with_past", "chf_without_past", "ITAP"))
+  itap <- loadRatings("itapS16", c("SourceCheck", "CTD", "PQGram", "chf_with_past", "chf_without_past", "ITAP", "AllTutors"))
   itap$dataset <- "itap"
   ratings <- rbind(isnap, itap)
   ratings <- ratings[order(ratings$dataset, ratings$assignmentID, ratings$year, ratings$requestID, ratings$source, ratings$order),]
@@ -81,7 +81,7 @@ compare <- function() {
   # TODO: Priority doesn't match with Java output, but we don't have it for non-consensus hints, so maybe not a priority
   ratings$priorityFull <- ifNA(4 - ratings$priority, 0) * ratings$scoreFull
   ratings$priorityPartial <- ifNA(4 - ratings$priority, 0) * ratings$scorePartial
-  ratings$source <- factor(ratings$source, c("PQGram", "chf_without_past", "chf_with_past", "CTD", "SourceCheck", "ITAP"))
+  ratings$source <- factor(ratings$source, c("PQGram", "chf_without_past", "chf_with_past", "CTD", "SourceCheck", "ITAP", "AllTutors"))
   ratings$assignmentID <- factor(ratings$assignmentID, c("squiralHW", "guess1Lab", "helloWorld", "firstAndLast", "isPunctuation", "kthDigit", "oneToN"))
   requests <- ddply(ratings, c("dataset", "source", "assignmentID", "requestID"), summarize, 
                     scoreFull=sum(scoreFull), scorePartial=sum(scorePartial),

@@ -54,7 +54,6 @@ public class RunTutorEdits extends TutorEdits {
 
 //		writeAllHintSets(iSnapF16F17, ITAPS16);
 
-		// Exporting things (Note: this may require some copy and paste)
 //		dataset.writeGoldStandard();
 //		dataset.exportTrainingAndTestData(true);
 //		dataset.writeHintSet(algorithm, source);
@@ -65,6 +64,7 @@ public class RunTutorEdits extends TutorEdits {
 
 //		dataset.runHintRating(algorithm, source, debug, writeHints);
 		dataset.runTutorHintBenchmarks(debug);
+		dataset.writeTutorHintBenchmark();
 
 //		dataset.testKValues(algorithm, source, debug, writeHints, 1, 20);
 //		dataset.writeColdStart(algorithm, 200, 1);
@@ -88,6 +88,7 @@ public class RunTutorEdits extends TutorEdits {
 				System.out.println("\t" + algorithm.getName());
 				dataset.writeHintSet(algorithm, Source.StudentData);
 			}
+			dataset.writeTutorHintBenchmark();
 			dataset.writeAllInAlgorithmsFolder();
 		}
 	}
@@ -431,6 +432,21 @@ public class RunTutorEdits extends TutorEdits {
 				System.out.println("#### " + tutor + " ####");
 				RateHints.rate(standard, tutorHintSets.get(tutor), debug);
 			}
+			TutorHintSet allTutors = createAllTutorsHintSet(tutorHintSets);
+			RateHints.rate(standard, allTutors, debug);
+		}
+
+		public void writeTutorHintBenchmark() throws IOException {
+			Map<String, TutorHintSet> tutorHintSets = getTutorHintSets();
+			TutorHintSet allTutors = createAllTutorsHintSet(tutorHintSets);
+			allTutors.writeToFolder(new File(getDataDir() + RateHints.ALGORITHMS_DIR,
+					allTutors.name).getPath(), true);
+		}
+
+		private TutorHintSet createAllTutorsHintSet(Map<String, TutorHintSet> tutorHintSets) {
+			TutorHintSet[] sets = tutorHintSets.values().stream().toArray(l -> new TutorHintSet[l]);
+			TutorHintSet allTutors = TutorHintSet.combine("AllTutors", sets);
+			return allTutors;
 		}
 	}
 
