@@ -83,6 +83,11 @@ verifyRatings <- function(manual, samples, ratings) {
   printVerify("One", withManual$consensus, withManual$tOne)
   printVerify("Multiple", withManual$consensus, withManual$tMultiple)
   printVerify("Consensus", withManual$consensus, withManual$tConsensus)
+  
+  cat("Invalid hints rated valid:\n")
+  print(withManual[withManual$consensus == 0 & withManual$tConsensus == "Full", c("requestID", "hintID")])
+  cat("Valid hints rated invalid:\n")
+  print(withManual[withManual$consensus == 2 & withManual$tConsensus == "None", c("requestID", "hintID")])
 }
 
 printVerify <- function(name, truth, rating) {
