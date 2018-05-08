@@ -3,6 +3,7 @@ library(readr)
 library(plyr)
 library(ggplot2)
 library(reshape2)
+library(psych)
 
 se <- function(x) ifelse(length(x) == 0, 0, sqrt(var(x, na.rm=T)/sum(!is.na(x))))
 ifNA <- function(x, other) ifelse(is.na(x), other, x)
@@ -69,19 +70,48 @@ getSamples <- function() {
   writeSQL(samples[samples$priority <= 50,], "C:/Users/Thomas/Desktop/samples150.sql")
   writeSQL(samples[samples$priority <= 84,], "C:/Users/Thomas/Desktop/samples252.sql")
   
+  manual <- read_csv("data/manual.csv")
+  verifyRatings(manual, samples, sampleRatings)
+  
   newRatings <- loadRatings("isnapF16-F17", c("SourceCheck_sampling", "CTD", "PQGram", "chf_with_past"))
-  newRatings[newRatings$source == "SourceCheck_sampling","source"] <- "SourceCheck"
-  # TODO: Something weird happens to produce duplicate rows here...
-  test <- merge(newRatings, samples[,c("requestID", "source", "hintID")])
+  verifyRatings(manual, samples, newRatings)
 }
 
-verifyRaings <- function() {
-  manual <- read_csv("data/manual.csv")
+verifyRatings <- function(manual, samples, ratings) {
+  withSamples <- getSampleRatings(samples, ratings)
+  withManual <- mergeManual(manual, withSamples)
+  printVerify("One", withManual$consensus, withManual$tOne)
+  printVerify("Multiple", withManual$consensus, withManual$tMultiple)
+  printVerify("Consensus", withManual$consensus, withManual$tConsensus)
+}
+
+printVerify <- function(name, truth, rating) {
+  print(name)
+  cat(paste0("Accuracy: ", mean(truth + 1 == as.numeric(rating))), "\n")
+  cat(paste0("Accuracy (0): ", mean(truth[truth==0] + 1 == as.numeric(rating[truth==0]))), "\n")
+  cat(paste0("Accuracy (1): ", mean(truth[truth==1] + 1 == as.numeric(rating[truth==1]))), "\n")
+  cat(paste0("Accuracy (2): ", mean(truth[truth==2] + 1 == as.numeric(rating[truth==2]))), "\n")
+  print(table(truth, rating))
+  print(cohen.kappa(cbind(truth + 1, as.numeric(rating))))
+  cat("\n")
+}
+
+getSampleRatings <- function(samples, ratings) {
+  ratings[ratings$source == "SourceCheck_sampling","source"] <- "SourceCheck"
+  merged <- merge(ratings, samples[,c("requestID", "source", "hintID", "diff")])
+  merged <- merged[!duplicated(merged[,c("requestID", "source", "hintID", "diff")]),]
+  merged$type <- ordered(merged$type, c("None", "Partial", "Full"))
+  merged
+}
+
+mergeManual <- function(manual, samples) {
   manual <- merge(manual[,c("hintID", "consensus")], samples)
-  manual$consensus <- as.integer(manual$consensus)
+  manual$consensus <- suppressWarnings(as.integer(manual$consensus))
   manual <- manual[!is.na(manual$consensus),]
-  # TODO: This doesn't consider the validity of the match :{
-  table(manual$consensus, manual$type)
+  manual$tOne <- manual$type
+  manual$tMultiple <- ordered(ifelse(manual$validity > 1, as.character(manual$type), "None"), c("None", "Partial", "Full"))
+  manual$tConsensus <- ordered(ifelse(manual$validity == 3, as.character(manual$type), "None"), c("None", "Partial", "Full"))
+  manual
 }
 
 compare <- function() {
