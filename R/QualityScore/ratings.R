@@ -84,10 +84,13 @@ verifyRatings <- function(manual, samples, ratings) {
   printVerify("Multiple", withManual$consensus, withManual$tMultiple)
   printVerify("Consensus", withManual$consensus, withManual$tConsensus)
   
+  columns <- c("year", "requestID", "hintID", "matchID", "source")
   cat("Invalid hints rated valid:\n")
-  print(withManual[withManual$consensus == 0 & withManual$tConsensus == "Full", c("requestID", "hintID")])
+  print(withManual[withManual$consensus == 0 & withManual$tConsensus == "Full", columns])
   cat("Valid hints rated invalid:\n")
-  print(withManual[withManual$consensus == 2 & withManual$tConsensus == "None", c("requestID", "hintID")])
+  print(withManual[withManual$consensus == 2 & withManual$tConsensus == "None", columns])
+  cat("Valid hints rated partially valid:\n")
+  print(withManual[withManual$consensus == 2 & withManual$tConsensus == "Partial", columns])
 }
 
 printVerify <- function(name, truth, rating) {
@@ -103,14 +106,16 @@ printVerify <- function(name, truth, rating) {
 
 getSampleRatings <- function(samples, ratings) {
   ratings[ratings$source == "SourceCheck_sampling","source"] <- "SourceCheck"
-  merged <- merge(ratings, samples[,c("requestID", "source", "hintID", "diff")])
+  names(samples)[names(samples) == 'priority'] <- 'ratePriority'
+  merged <- merge(ratings, samples[,c("requestID", "source", "hintID", "diff", "ratePriority")])
   merged <- merged[!duplicated(merged[,c("requestID", "source", "hintID", "diff")]),]
   merged$type <- ordered(merged$type, c("None", "Partial", "Full"))
   merged
 }
 
 mergeManual <- function(manual, samples) {
-  manual <- merge(manual[,c("hintID", "consensus")], samples)
+  names(manual)[names(manual) == 'priority'] <- 'ratePriority'
+  manual <- merge(manual[,c("hintID", "consensus", "ratePriority")], samples)
   manual$consensus <- suppressWarnings(as.integer(manual$consensus))
   manual <- manual[!is.na(manual$consensus),]
   manual$tOne <- manual$type
