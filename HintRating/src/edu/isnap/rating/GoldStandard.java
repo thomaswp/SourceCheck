@@ -15,7 +15,6 @@ import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.ctd.util.map.MapFactory;
 import edu.isnap.hint.util.Spreadsheet;
-import edu.isnap.rating.EditExtractor.Edit;
 import edu.isnap.rating.TutorHint.Priority;
 import edu.isnap.rating.TutorHint.Validity;
 
@@ -48,18 +47,6 @@ public class GoldStandard {
 			list.forEach(hint -> hintMap.add(hint.requestID, hint));
 			map.put(assignment, hintMap);
 		}
-	}
-
-	protected void testEditExtraction(List<? extends TutorHint> list) {
-		list.forEach(hint -> {
-			Set<Edit> editsTED = EditExtractor.extractEditsUsingTED(hint.from, hint.to);
-			Set<Edit> editsIDs = EditExtractor.extractEditsUsingIDs(hint.from, hint.to);
-			if (!editsTED.equals(editsIDs)) {
-				System.out.println(hint.toDiff(RatingConfig.Snap));
-				EditExtractor.printEditsComparison(editsTED, editsIDs, "TED", "IDs");
-				System.out.println("------------");
-			}
-		});
 	}
 
 	public static GoldStandard merge(GoldStandard... standards) {

@@ -13,6 +13,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.Bag;
+import org.apache.commons.collections4.bag.TreeBag;
+
 import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.Diff.ColorStyle;
@@ -248,16 +251,16 @@ public class RateHints {
 		if (validHints.isEmpty()) return ratings;
 		ASTNode fromNode = validHints.get(0).from;
 
-		Map<TutorHint, Set<Edit>> tutorEditMap = new IdentityHashMap<>();
+		Map<TutorHint, Bag<Edit>> tutorEditMap = new IdentityHashMap<>();
 		for (TutorHint hint : validHints) {
-			Set<Edit> edits = extractor.getEdits(fromNode,
+			Bag<Edit> edits = extractor.getEdits(fromNode,
 					normalizeNewValuesTo(fromNode, hint.to, config));
 			tutorEditMap.put(hint, edits);
 		}
 
-		Map<HintOutcome, Set<Edit>> outcomeEditMap = new IdentityHashMap<>();
+		Map<HintOutcome, Bag<Edit>> outcomeEditMap = new IdentityHashMap<>();
 		for (HintOutcome hint : unmatchedHints) {
-			Set<Edit> edits = extractor.getEdits(fromNode,
+			Bag<Edit> edits = extractor.getEdits(fromNode,
 					normalizeNewValuesTo(fromNode, hint.result, config));
 			outcomeEditMap.put(hint, edits);
 		}
@@ -267,11 +270,11 @@ public class RateHints {
 		Collections.reverse(validHints);
 
 		for (TutorHint tutorHint : validHints) {
-			Set<Edit> tutorEdits = tutorEditMap.get(tutorHint);
+			Bag<Edit> tutorEdits = tutorEditMap.get(tutorHint);
 			// First filter out only hints that are subsets of the given tutor hint
-			Map<HintOutcome, Set<Edit>> possible = new IdentityHashMap<>();
+			Map<HintOutcome, Bag<Edit>> possible = new IdentityHashMap<>();
 			for (HintOutcome outcome : outcomeEditMap.keySet()) {
-				Set<Edit> outcomeEdits = outcomeEditMap.get(outcome);
+				Bag<Edit> outcomeEdits = outcomeEditMap.get(outcome);
 				if (tutorEdits.containsAll(outcomeEdits)) {
 					possible.put(outcome, outcomeEdits);
 				}
@@ -281,10 +284,10 @@ public class RateHints {
 			List<HintOutcome> possibleOutcomes = new ArrayList<>(possible.keySet());
 			possibleOutcomes.sort(Comparator.comparing(o -> -possible.get(o).size()));
 
-			Set<Edit> matchingEdits = new HashSet<>();
+			Bag<Edit> matchingEdits = new TreeBag<>();
 			List<HintOutcome> matchingOutcomes = new ArrayList<>();
 			for (HintOutcome outcome : possibleOutcomes) {
-				Set<Edit> outcomeEdits = possible.get(outcome);
+				Bag<Edit> outcomeEdits = possible.get(outcome);
 				if (matchingEdits.containsAll(outcomeEdits)) continue;
 				matchingOutcomes.add(outcome);
 				matchingEdits.addAll(outcomeEdits);
@@ -320,14 +323,14 @@ public class RateHints {
 	}
 
 	@Deprecated
-	protected static List<HintOutcome> findPartialMatches(Map<HintOutcome, Set<Edit>> outcomeEditMap,
-			Set<Edit> toMatch, Set<Edit> matched, RatingConfig config) {
+	protected static List<HintOutcome> findPartialMatches(Map<HintOutcome, Bag<Edit>> outcomeEditMap,
+			Bag<Edit> toMatch, Bag<Edit> matched, RatingConfig config) {
 		for (HintOutcome outcome : outcomeEditMap.keySet()) {
-			Set<Edit> missing = new HashSet<>(toMatch);
-			Set<Edit> outcomeEdits = outcomeEditMap.get(outcome);
+			Bag<Edit> missing = new TreeBag<>(toMatch);
+			Bag<Edit> outcomeEdits = outcomeEditMap.get(outcome);
 			missing.removeAll(outcomeEdits);
 			if (missing.size() == toMatch.size()) continue;
-			matched = new HashSet<>(matched);
+			matched = new TreeBag<>(matched);
 			matched.addAll(outcomeEdits);
 			if (missing.stream().allMatch(
 					e -> config.trimIfParentIsAdded(e.node.type, e.node.value))) {
@@ -351,7 +354,7 @@ public class RateHints {
 
 		// Run again to get a version that's unpruned
 		ASTNode outcomeNode = normalizeNewValuesTo(fromNode, outcome.result, config);
-		Set<Edit> outcomeEdits = extractor.getEdits(fromNode, outcomeNode);
+		Bag<Edit> outcomeEdits = extractor.getEdits(fromNode, outcomeNode);
 		if (outcomeEdits.size() == 0) return new HintRating(outcome);
 
 		// There are three types of partial matches, only the last of which is detected here:
@@ -372,13 +375,16 @@ public class RateHints {
 		Collections.sort(validHints);
 		Collections.reverse(validHints);
 
-		Set<Edit> bestOverlap = new HashSet<>();
+		Bag<Edit> bestOverlap = new TreeBag<>();
 		TutorHint bestHint = null;
 		for (TutorHint tutorHint : validHints) {
 			ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, tutorHint.to, config);
-			Set<Edit> tutorEdits = extractor.getEdits(fromNode, tutorOutcomeNode);
+			Bag<Edit> tutorEdits = extractor.getEdits(fromNode, tutorOutcomeNode);
+//			if (outcome.id == 1009666696 && tutorHint.hintID == 10164) {
+//				printPartialMatch(config, extractor, tutorHint.from, outcomeNode, outcomeEdits, tutorHint, outcome);
+//			}
 			if (tutorEdits.size() == 0) continue;
-			Set<Edit> overlap = new HashSet<>(tutorEdits);
+			Bag<Edit> overlap = new TreeBag<>(tutorEdits);
 			overlap.retainAll(outcomeEdits);
 			if (overlap.size() > bestOverlap.size()) {
 				if (overlap.size() == tutorEdits.size() && overlap.size() == outcomeEdits.size()) {
@@ -406,10 +412,10 @@ public class RateHints {
 	}
 
 	protected static void printPartialMatch(RatingConfig config, EditExtractor extractor,
-			ASTNode fromNode, ASTNode outcomeNode, Set<Edit> outcomeEdits, TutorHint bestHint,
+			ASTNode fromNode, ASTNode outcomeNode, Bag<Edit> outcomeEdits, TutorHint bestHint,
 			HintOutcome outcome) {
 //		if (!bestHint.validity.isAtLeast(Validity.MultipleTutors)) return;
-		Set<Edit> tutorEdits = new HashSet<>();
+		Bag<Edit> tutorEdits = new TreeBag<>();
 		if (bestHint != null) {
 			System.out.printf("Tutor Hint (%s):\n", bestHint.hintID);
 			ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, bestHint.to, config);

@@ -13,6 +13,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.Bag;
+import org.apache.commons.collections4.bag.TreeBag;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
@@ -28,7 +30,7 @@ import node.Node;
 
 public class EditExtractor {
 
-	private final Map<ASTNode, Set<Edit>> cache = new IdentityHashMap<>();
+	private final Map<ASTNode, Bag<Edit>> cache = new IdentityHashMap<>();
 
 	private final RatingConfig config;
 
@@ -39,8 +41,8 @@ public class EditExtractor {
 		Arrays.stream(ignoreTypes).forEach(this.ignoreTypes::add);
 	}
 
-	public Set<Edit> getEdits(ASTNode from, ASTNode to) {
-		Set<Edit> edits = cache.get(to);
+	public Bag<Edit> getEdits(ASTNode from, ASTNode to) {
+		Bag<Edit> edits = cache.get(to);
 		if (edits == null) {
 //			edits = config.areNodeIDsConsistent() ?
 //					extractEditsUsingIDs(from, to) : extractEditsUsingTED(from, to);
@@ -107,11 +109,11 @@ public class EditExtractor {
 		return list.get(index - 1);
 	}
 
-	public static void printEditsComparison(Set<Edit> editsA, Set<Edit> editsB,
+	public static void printEditsComparison(Bag<Edit> editsA, Bag<Edit> editsB,
 			String nameA, String nameB) {
-		Set<Edit> a = new TreeSet<>(editsA),
-				b = new TreeSet<>(editsB),
-				both = new TreeSet<>(editsB);
+		Bag<Edit> a = new TreeBag<>(editsA),
+				b = new TreeBag<>(editsB),
+				both = new TreeBag<>(editsB);
 		a.removeAll(editsB);
 		b.removeAll(editsA);
 		both.retainAll(editsA);
@@ -125,10 +127,10 @@ public class EditExtractor {
 	}
 
 	// TODO: Still not sure this is ideal for Python
-	public Set<Edit> extractEditsUsingCodeAlign(ASTNode from, ASTNode to) {
+	public Bag<Edit> extractEditsUsingCodeAlign(ASTNode from, ASTNode to) {
 		NodePairs pairs = getPairs(from, to);
 
-		Set<Edit> edits = new TreeSet<>();
+		Bag<Edit> edits = new TreeBag<>();
 
 		from.recurse(n -> {
 			if (!pairs.containsFrom(n)) {
@@ -424,11 +426,9 @@ public class EditExtractor {
 
 	}
 
-	// TODO: This is problematic because we lose insert order (e.g. +(a, b) == +(b, a)) and
-	// because we now get duplicate edits (e.g. +(a, a) == +(a)), both of which allow the
-	// possibility of an exact match of edits without actually matching. The latter still
-	// constitutes a partial match, but not the former. How can we make +(a, b) match +(b)
-	// but not +(a, b) == +(b, a)?
+	// TODO: This is problematic because we lose insert order (e.g. +(a, b) == +(b, a)) which
+	// allows the possibility of an exact match of edits without actually matching. This still
+	// constitutes a partial match. How can we make +(a, b) match +(b) but not +(a, b) == +(b, a)?
 	private NodeReference getInsertReference(ASTNode node, BiMap<ASTNode, ASTNode> map) {
 		if (node.parent() == null) throw new RuntimeException("Root nodes cannot be inserted :/");
 		ASTNode parentPair = map.getTo(node.parent());
