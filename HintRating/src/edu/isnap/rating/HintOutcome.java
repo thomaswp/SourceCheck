@@ -17,6 +17,10 @@ public class HintOutcome implements Comparable<HintOutcome> {
 	public final ASTNode result;
 	public final String assignmentID;
 	public final String requestID;
+	/**
+	 * Distinguishable ID for this hint outcome.
+	 * This ID is a hash code and not guaranteed to be collision-free
+	 * */
 	public final int id;
 
 	private final double weight;

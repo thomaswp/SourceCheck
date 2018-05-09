@@ -42,12 +42,24 @@ public class RateHints {
 			throw new RuntimeException("Missing algorithms folder");
 		}
 		for (File algorithmFolder : algorithmsFolder.listFiles(file -> file.isDirectory())) {
-			HintSet hintSet = HintSet.fromFolder(algorithmFolder.getName(), config,
-					algorithmFolder.getPath());
-			System.out.println(hintSet.name);
-			HintRatingSet ratings = rate(standard, hintSet);
-			ratings.writeAllHints(path + "/" + RateHints.ALGORITHMS_DIR + "/" +
-					algorithmFolder.getName() + ".csv");
+			rateOneDir(path, algorithmFolder.getName(), config, write, standard);
+		}
+	}
+
+	public static void rateOneDir(String parentDir, String dir, RatingConfig config,
+			boolean write) throws IOException, FileNotFoundException {
+		GoldStandard standard = GoldStandard.parseSpreadsheet(parentDir + GS_SPREADSHEET);
+		rateOneDir(parentDir, dir, config, write, standard);
+	}
+
+	public static void rateOneDir(String parentDir, String dir, RatingConfig config,
+			boolean write, GoldStandard standard) throws IOException, FileNotFoundException {
+		HintSet hintSet = HintSet.fromFolder(dir, config,
+				String.format("%s/%s/%s", parentDir, ALGORITHMS_DIR, dir));
+		System.out.println(hintSet.name);
+		HintRatingSet ratings = rate(standard, hintSet);
+		if (write) {
+			ratings.writeAllHints(parentDir + "/" + RateHints.ALGORITHMS_DIR + "/" + dir + ".csv");
 		}
 	}
 
@@ -202,7 +214,6 @@ public class RateHints {
 	public static HintRating findMatchingEdit(List<TutorHint> validHints, HintOutcome outcome,
 			RatingConfig config) {
 		if (validHints.isEmpty()) return new HintRating(outcome);
-
 		ASTNode fromNode = validHints.get(0).from;
 		ASTNode outcomeNode = normalizeNewValuesTo(fromNode, outcome.result, config);
 		pruneNewNodesTo(fromNode, outcomeNode, config);
@@ -214,9 +225,10 @@ public class RateHints {
 			}
 
 			if (outcome.result.equals(tutorHint.to)) {
-				System.out.println("Matching hint:");
+				System.out.printf("Matching outcome hint (%d):\n", outcome.id);
 				System.out.println(ASTNode.diff(tutorHint.from, outcome.result, config));
-				System.out.println("Difference in normalized nodes:");
+				System.out.printf("Difference in normalized nodes (%d vs %d):\n",
+						outcome.id, tutorHint.hintID);
 				System.out.println(ASTNode.diff(tutorOutcomeNode, outcomeNode, config, 2));
 				System.out.println("Tutor normalizing:");
 				System.out.println(ASTNode.diff(tutorHint.to, tutorOutcomeNode, config, 2));
@@ -396,24 +408,23 @@ public class RateHints {
 	protected static void printPartialMatch(RatingConfig config, EditExtractor extractor,
 			ASTNode fromNode, ASTNode outcomeNode, Set<Edit> outcomeEdits, TutorHint bestHint,
 			HintOutcome outcome) {
-		if (bestHint.validity.isAtLeast(Validity.MultipleTutors)) {
-			Set<Edit> tutorEdits = new HashSet<>();
-			if (bestHint != null) {
-				System.out.printf("Tutor Hint (%s):\n", bestHint.hintID);
-				ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, bestHint.to, config);
-				System.out.println(Diff.diff(
-						fromNode.prettyPrint(true, config),
-						tutorOutcomeNode.prettyPrint(true, config)));
-				tutorEdits = extractor.getEdits(bestHint.from, tutorOutcomeNode);
-			}
-			System.out.printf("Alg Hint (%s):\n", outcome.id);
+//		if (!bestHint.validity.isAtLeast(Validity.MultipleTutors)) return;
+		Set<Edit> tutorEdits = new HashSet<>();
+		if (bestHint != null) {
+			System.out.printf("Tutor Hint (%s):\n", bestHint.hintID);
+			ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, bestHint.to, config);
 			System.out.println(Diff.diff(
 					fromNode.prettyPrint(true, config),
-					outcomeNode.prettyPrint(true, config), 2));
-			EditExtractor.printEditsComparison(
-					tutorEdits, outcomeEdits, "Tutor Hint", "Alg Hint");
-			System.out.println("-------------------");
+					tutorOutcomeNode.prettyPrint(true, config)));
+			tutorEdits = extractor.getEdits(bestHint.from, tutorOutcomeNode);
 		}
+		System.out.printf("Alg Hint (%s):\n", outcome.id);
+		System.out.println(Diff.diff(
+				fromNode.prettyPrint(true, config),
+				outcomeNode.prettyPrint(true, config), 2));
+		EditExtractor.printEditsComparison(
+				tutorEdits, outcomeEdits, "Tutor Hint", "Alg Hint");
+		System.out.println("-------------------");
 	}
 
 	public static enum MatchType {

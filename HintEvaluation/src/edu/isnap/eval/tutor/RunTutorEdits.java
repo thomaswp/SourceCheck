@@ -62,9 +62,9 @@ public class RunTutorEdits extends TutorEdits {
 		dataset.verifyGoldStandard();
 //		dataset.printData();
 
-//		dataset.runHintRating(algorithm, source, debug, writeHints);
-		dataset.runTutorHintBenchmarks(debug);
-		dataset.writeTutorHintBenchmark();
+		dataset.runHintRating(algorithm, source, debug, writeHints);
+//		dataset.runTutorHintBenchmarks(debug);
+//		dataset.writeTutorHintBenchmark();
 
 //		dataset.testKValues(algorithm, source, debug, writeHints, 1, 20);
 //		dataset.writeColdStart(algorithm, 200, 1);

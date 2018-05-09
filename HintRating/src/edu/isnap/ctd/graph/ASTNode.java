@@ -233,6 +233,10 @@ public class ASTNode implements INode {
 		return parent.depth() + 1;
 	}
 
+	public String parentType() {
+		return parent == null ? null : parent.type;
+	}
+
 	public ASTNode copy() {
 		ASTNode copy = shallowCopy();
 		for (int i = 0; i < children.size(); i++) {

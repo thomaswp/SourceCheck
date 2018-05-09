@@ -434,7 +434,7 @@ public class EditExtractor {
 		ASTNode parentPair = map.getTo(node.parent());
 		int index = node.index();
 		if (map != null && parentPair != null &&
-				!config.hasFixedChildren(node.type, parentPair.type)) {
+				!config.hasFixedChildren(parentPair.type, parentPair.parentType())) {
 			// If the node has a parent with a from-match, we look through its earlier siblings and
 			// find the first one with a match (not inserted or deleted) and we mark the node as
 			// inserted right after it

@@ -84,7 +84,7 @@ verifyRatings <- function(manual, samples, ratings) {
   printVerify("Multiple", withManual$consensus, withManual$tMultiple)
   printVerify("Consensus", withManual$consensus, withManual$tConsensus)
   
-  columns <- c("year", "requestID", "hintID", "matchID", "source")
+  columns <- c("year", "requestID", "hintID", "matchID", "type", "source")
   cat("Invalid hints rated valid:\n")
   print(withManual[withManual$consensus == 0 & withManual$tConsensus == "Full", columns])
   cat("Valid hints rated invalid:\n")
