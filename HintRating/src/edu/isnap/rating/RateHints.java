@@ -198,15 +198,7 @@ public class RateHints {
 				}
 				if (normalize) {
 					// If so, we replace its value with null, so all new values appear the same
-					ASTNode parent = node.parent();
-					ASTNode replacement = new ASTNode(node.type, null, node.id);
-					int index = node.index();
-					parent.removeChild(index);
-					parent.addChild(index, replacement);
-					for (ASTNode child : node.children()) {
-						replacement.addChild(child);
-					}
-					node.clearChildren();
+					node.replaceWith(new ASTNode(node.type, null, node.id));
 				}
 			}
 		}

@@ -478,9 +478,42 @@ public class TutorEdits {
 				return null;
 			}
 
+			fixNewCustomBlockValues(from, to);
+
 			return new PrintableTutorHint(hintID, requestID, tutor, assignmentID, year,
 					from, to, toSource);
 		});
+	}
+
+	/**
+	 * Fixes an issue with newly-added custom block calls, where an un-applied custom block may
+	 * have a different name than the call block the tutor used. Since a hint algorithm will only
+	 * see the current version of the custom block name, this is problematic, so we search for the
+	 * match and change the value to the most recent custom block name.
+	 */
+	private static void fixNewCustomBlockValues(ASTNode from, ASTNode to) {
+		Map<String, ASTNode> added = new HashMap<>();
+		Map<String, ASTNode> customBlocks = new HashMap<>();
+		to.recurse(node -> {
+			if (node.id != null) added.put(node.id, node);
+			if (node.hasType("customBlock")) customBlocks.put(node.value, node);
+		});
+		from.recurse(node -> added.remove(node.id));
+		for (ASTNode node : added.values()) {
+			if (node.hasType("evaluateCustomBlock")) {
+				if (!customBlocks.containsKey(node.value)) {
+					List<String> matches = customBlocks.keySet().stream()
+						.filter(name -> name.contains(node.value) || node.value.contains(name))
+						.collect(Collectors.toList());
+					if (matches.size() != 1) {
+						System.err.println("No matching custom block: " + node.value);
+						System.err.println(ASTNode.diff(from, to, RatingConfig.Snap));
+						continue;
+					}
+					node.replaceWith(new ASTNode(node.type, matches.get(0), node.id));
+				}
+			}
+		}
 	}
 
 	private static ASTNode toPrunedPythonNode(String json) {

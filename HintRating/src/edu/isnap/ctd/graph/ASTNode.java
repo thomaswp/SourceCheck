@@ -237,6 +237,26 @@ public class ASTNode implements INode {
 		return parent == null ? null : parent.type;
 	}
 
+	/**
+	 * Replaces this node with the given node in the root AST. Removes this node from its parent and
+	 * adds the given node at the same index. Additionally removes all of this node's children and
+	 * adds them to the given node. Parents will be appropriately set to reflect the replacement.
+	 * Note after replacement, this node will have no parent or children, effectively removed from
+	 * the root AST.
+	 */
+	public void replaceWith(ASTNode node) {
+		if (parent != null) {
+			int index = index();
+			ASTNode parent = this.parent;
+			parent.removeChild(index);
+			parent.addChild(index, node);
+		}
+		for (int i = 0; i < children.size(); i++) {
+			node.addChild(childRelations.get(i), children.get(i));
+		}
+		clearChildren();
+	}
+
 	public ASTNode copy() {
 		ASTNode copy = shallowCopy();
 		for (int i = 0; i < children.size(); i++) {
