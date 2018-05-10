@@ -491,7 +491,7 @@ public class TutorEdits {
 	 * see the current version of the custom block name, this is problematic, so we search for the
 	 * match and change the value to the most recent custom block name.
 	 */
-	private static void fixNewCustomBlockValues(ASTNode from, ASTNode to) {
+	private static boolean fixNewCustomBlockValues(ASTNode from, ASTNode to) {
 		Map<String, ASTNode> added = new HashMap<>();
 		Map<String, ASTNode> customBlocks = new HashMap<>();
 		to.recurse(node -> {
@@ -499,6 +499,7 @@ public class TutorEdits {
 			if (node.hasType("customBlock")) customBlocks.put(node.value, node);
 		});
 		from.recurse(node -> added.remove(node.id));
+		boolean fixed = true;
 		for (ASTNode node : added.values()) {
 			if (node.hasType("evaluateCustomBlock")) {
 				if (!customBlocks.containsKey(node.value)) {
@@ -511,9 +512,11 @@ public class TutorEdits {
 						continue;
 					}
 					node.replaceWith(new ASTNode(node.type, matches.get(0), node.id));
+					fixed = true;
 				}
 			}
 		}
+		return fixed;
 	}
 
 	private static ASTNode toPrunedPythonNode(String json) {
