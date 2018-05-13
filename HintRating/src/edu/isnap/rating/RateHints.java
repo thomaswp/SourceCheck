@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.Bag;
 import org.apache.commons.collections4.bag.TreeBag;
+import org.apache.commons.lang.StringUtils;
 
 import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.util.Diff;
@@ -171,13 +172,32 @@ public class RateHints {
 		}
 	}
 
-	public static ASTNode normalizeNewValuesTo(ASTNode from, ASTNode to, RatingConfig config) {
-		to = to.copy();
+	public static ASTNode normalizeNodeValues(ASTNode root, RatingConfig config) {
+		root = root.copy();
+
+		// Create a list of nodes before iteration, since we'll be modifying children
+		List<ASTNode> nodes = new ArrayList<>();
+		root.recurse(node -> nodes.add(node));
+
+		// First check if any node values should be normalized, as specified in the config
+		for (ASTNode node : nodes) {
+			String normalizedValue = config.normalizeNodeValue(node.type, node.value);
+			if (!StringUtils.equals(node.value, normalizedValue)) {
+				// If so, replace the node's value with the normalized one
+				node.replaceWith(new ASTNode(node.type, normalizedValue, node.id));
+			}
+		}
+
+		return root;
+	}
+
+	public static ASTNode normalizeNewValuesTo(ASTNode normFrom, ASTNode to, RatingConfig config) {
+		to = normalizeNodeValues(to, config);
 
 		// Get a set of all the node values used in the original AST. We don't differentiate values
 		// by type, since multiple types can share values (e.g. varDecs and vars)
 		Set<String> usedValues = new HashSet<>();
-		from.recurse(node -> usedValues.add(node.value));
+		normFrom.recurse(node -> usedValues.add(node.value));
 
 		// Create a list of nodes before iteration, since we'll be modifying children
 		List<ASTNode> toNodes = new ArrayList<>();
@@ -209,7 +229,7 @@ public class RateHints {
 	public static HintRating findMatchingEdit(List<TutorHint> validHints, HintOutcome outcome,
 			RatingConfig config) {
 		if (validHints.isEmpty()) return new HintRating(outcome);
-		ASTNode fromNode = validHints.get(0).from;
+		ASTNode fromNode = normalizeNodeValues(validHints.get(0).from, config);
 		ASTNode outcomeNode = normalizeNewValuesTo(fromNode, outcome.result, config);
 		pruneNewNodesTo(fromNode, outcomeNode, config);
 		for (TutorHint tutorHint : validHints) {
@@ -221,7 +241,7 @@ public class RateHints {
 
 			if (outcome.result.equals(tutorHint.to)) {
 				System.out.printf("Matching outcome hint (%d):\n", outcome.id);
-				System.out.println(ASTNode.diff(tutorHint.from, outcome.result, config));
+				System.out.println(ASTNode.diff(fromNode, outcome.result, config));
 				System.out.printf("Difference in normalized nodes (%d vs %d):\n",
 						outcome.id, tutorHint.hintID);
 				System.out.println(ASTNode.diff(tutorOutcomeNode, outcomeNode, config, 2));
@@ -241,7 +261,7 @@ public class RateHints {
 		List<HintRating> ratings = new ArrayList<>();
 
 		if (validHints.isEmpty()) return ratings;
-		ASTNode fromNode = validHints.get(0).from;
+		ASTNode fromNode = normalizeNodeValues(validHints.get(0).from, config);
 
 		Map<TutorHint, Bag<Edit>> tutorEditMap = new IdentityHashMap<>();
 		for (TutorHint hint : validHints) {
@@ -342,7 +362,7 @@ public class RateHints {
 	public static HintRating findPartiallyMatchingEdit(List<TutorHint> validHints,
 			HintOutcome outcome, RatingConfig config, EditExtractor extractor) {
 		if (validHints.isEmpty()) return new HintRating(outcome);
-		ASTNode fromNode = validHints.get(0).from;
+		ASTNode fromNode = normalizeNodeValues(validHints.get(0).from, config);
 
 		// Run again to get a version that's unpruned
 		ASTNode outcomeNode = normalizeNewValuesTo(fromNode, outcome.result, config);
@@ -372,8 +392,8 @@ public class RateHints {
 		for (TutorHint tutorHint : validHints) {
 			ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, tutorHint.to, config);
 			Bag<Edit> tutorEdits = extractor.getEdits(fromNode, tutorOutcomeNode);
-//			if (outcome.id == 1009666696 && tutorHint.hintID == 10164) {
-//				printPartialMatch(config, extractor, tutorHint.from, outcomeNode, outcomeEdits, tutorHint, outcome);
+//			if (outcome.id == 1086841727 && tutorHint.hintID == 10198) {
+//				printPartialMatch(config, extractor, fromNode, outcomeNode, outcomeEdits, tutorHint, outcome);
 //			}
 			if (tutorEdits.size() == 0) continue;
 			Bag<Edit> overlap = new TreeBag<>(tutorEdits);
@@ -414,7 +434,7 @@ public class RateHints {
 			System.out.println(Diff.diff(
 					fromNode.prettyPrint(true, config),
 					tutorOutcomeNode.prettyPrint(true, config)));
-			tutorEdits = extractor.getEdits(bestHint.from, tutorOutcomeNode);
+			tutorEdits = extractor.getEdits(fromNode, tutorOutcomeNode);
 		}
 		System.out.printf("Alg Hint (%s):\n", outcome.id);
 		System.out.println(Diff.diff(

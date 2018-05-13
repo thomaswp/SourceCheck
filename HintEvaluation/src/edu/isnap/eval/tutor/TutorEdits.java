@@ -234,7 +234,9 @@ public class TutorEdits {
 				edits.stream()
 				.filter(e -> e.requestID.equals(requestID))
 				.forEach(e -> givers.add(
-						RateHints.normalizeNewValuesTo(e.from, e.to, config), e));
+						RateHints.normalizeNewValuesTo(
+								RateHints.normalizeNodeValues(e.from, config),
+								e.to, config), e));
 
 				ASTNode from = givers.values().stream().findFirst().get().get(0).from;
 				String fromPP = from.prettyPrint(true, config);

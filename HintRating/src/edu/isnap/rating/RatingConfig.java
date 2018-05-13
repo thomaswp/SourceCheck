@@ -46,6 +46,13 @@ public interface RatingConfig {
 	public boolean nodeTypeHasBody(String type);
 
 	/**
+	 * If a node with the given type should have its value normalized in some way (e.g. rounding
+	 * numbers or modifying procedure names) before comparison, this method should return that
+	 * normalized value. Otherwise, it should return the given value.
+	 */
+	public String normalizeNodeValue(String type, String value);
+
+	/**
 	 * Should return the highest {@link Validity} of {@link TutorHint} that should be assumed
 	 * present for any {@link HintRequest}. Any HintRequest with out a TutorHint with at least this
 	 * validity is assumed to have no valid hints (e.g. the code is correct), and it will be skipped
@@ -91,6 +98,11 @@ public interface RatingConfig {
 		@Override
 		public boolean hasFixedChildren(String type, String parentType) {
 			return false;
+		}
+
+		@Override
+		public String normalizeNodeValue(String type, String value) {
+			return value;
 		}
 	};
 
@@ -164,6 +176,17 @@ public interface RatingConfig {
 		public Validity highestRequiredValidity() {
 			return Validity.Consensus;
 		}
+
+		@Override
+		public String normalizeNodeValue(String type, String value) {
+			if (value == null) return value;
+			if ("customBlock".equals(type) || "evaluateCustomBlock".equals(type)) {
+				// Custom block names shouldn't change with the number of parameters, since this
+				// is just a reflection of other code changes, which will be compared elsewhere
+				return value.replace(" %s", "");
+			}
+			return value;
+		}
 	};
 
 	public static RatingConfig Python = new RatingConfig() {
@@ -228,6 +251,11 @@ public interface RatingConfig {
 			// In Python, only the list type has flexible children, and even some of those are
 			// almost always fixed (at least for simple student programs)
 			return !"list".equals(type) || usuallySingleListParents.contains(parentType);
+		}
+
+		@Override
+		public String normalizeNodeValue(String type, String value) {
+			return value;
 		}
 	};
 }
