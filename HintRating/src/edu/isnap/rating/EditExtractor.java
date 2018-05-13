@@ -139,7 +139,19 @@ public class EditExtractor {
 		});
 		to.recurse(n -> {
 			if (!pairs.containsTo(n)) {
-				edits.add(new Insertion(getInsertReference(n, pairs)));
+				NodeReference reference = getInsertReference(n, pairs);
+				if (reference instanceof ChildNodeReference && reference.value != null) {
+					// If this insertion has a non-null value, we split it into two insertions,
+					// one for the type and one for the value. The latter can only match if the
+					// former does, but this makes it possible to have a partially matching hint
+					// that inserts a node with the correct type, but either specifies a new
+					// value or specifies no value
+					NodeValueReference valueRef = ((ChildNodeReference) reference).decompose();
+					edits.add(new Insertion(valueRef.parent));
+					edits.add(new Insertion(valueRef));
+				} else {
+					edits.add(new Insertion(reference));
+				}
 			}
 		});
 		from.recurse(n -> {
@@ -596,14 +608,16 @@ public class EditExtractor {
 	}
 
 	static abstract class NodeReference {
-		final ASTNode node;
 		final String type;
 		final String value;
 
 		NodeReference(ASTNode node) {
-			this.node = node;
-			this.type = node.type();
-			this.value = node.value();
+			this(node.type, node.value);
+		}
+
+		private NodeReference(String type, String value) {
+			this.type = type;
+			this.value = value;
 		}
 
 		@Override
@@ -665,15 +679,21 @@ public class EditExtractor {
 		final NodeReference parent;
 		final int index;
 
-		ChildNodeReference(ASTNode node, NodeReference parent) {
+		public ChildNodeReference(ASTNode node, NodeReference parent) {
 			this(node, parent, node.index());
 		}
 
 		public ChildNodeReference(ASTNode node, NodeReference parent, int index) {
 			super(node);
 			if (parent == null) throw new IllegalArgumentException("Parent ref cannot be null");
-			this.index = index;
 			this.parent = parent;
+			this.index = index;
+		}
+
+		private ChildNodeReference(String type, NodeReference parent, int index) {
+			super(type, null);
+			this.parent = parent;
+			this.index = index;
 		}
 
 		@Override
@@ -694,6 +714,44 @@ public class EditExtractor {
 		public String toString() {
 			return String.format("%s->{%s#%02d}", parent.toString(), type, index);
 		}
+
+		NodeValueReference decompose() {
+			ChildNodeReference withoutValue = new ChildNodeReference(type, parent, index);
+			return new NodeValueReference(withoutValue, value);
+		}
+	}
+
+	static class NodeValueReference extends NodeReference {
+
+		final NodeReference parent;
+
+		NodeValueReference(NodeReference parent, String value) {
+			super(null, value);
+			if (parent.value != null) {
+				// If the parent has a value, using a node value reference is pointless, since
+				// it can only match other references if the parents match
+				throw new IllegalArgumentException("Parent reference must not have a value");
+			}
+			this.parent = parent;
+		}
+
+		@Override
+		protected void addEqualsFields(NodeReference rhs, EqualsBuilder builder) {
+			super.addEqualsFields(rhs, builder);
+			builder.append(parent, ((NodeValueReference) rhs).parent);
+		}
+
+		@Override
+		protected void addHashCodeFields(HashCodeBuilder builder) {
+			super.addHashCodeFields(builder);
+			builder.append(parent);
+		}
+
+		@Override
+		public String toString() {
+			return String.format("%s->{'%s'}", parent.toString(), value);
+		}
+
 	}
 
 	static class RootNodeReference extends NodeReference {

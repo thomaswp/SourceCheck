@@ -38,6 +38,8 @@ public class RateHints {
 	public final static String ISNAP_F16_F17_DATA_DIR = DATA_ROOT_DIR + "isnapF16-F17/";
 	public final static String ITAP_S16_DATA_DIR = DATA_ROOT_DIR + "itapS16/";
 
+	private final static String PARTIAL_UNSEEN_VALUE = "NEW_VALUE";
+
 	public static void rateDir(String path, RatingConfig config, boolean write)
 			throws FileNotFoundException, IOException {
 		GoldStandard standard = GoldStandard.parseSpreadsheet(path + GS_SPREADSHEET);
@@ -191,7 +193,8 @@ public class RateHints {
 		return root;
 	}
 
-	public static ASTNode normalizeNewValuesTo(ASTNode normFrom, ASTNode to, RatingConfig config) {
+	public static ASTNode normalizeNewValuesTo(ASTNode normFrom, ASTNode to, RatingConfig config,
+			String newValue) {
 		to = normalizeNodeValues(to, config);
 
 		// Get a set of all the node values used in the original AST. We don't differentiate values
@@ -218,7 +221,7 @@ public class RateHints {
 				}
 				if (normalize) {
 					// If so, we replace its value with null, so all new values appear the same
-					node.replaceWith(new ASTNode(node.type, null, node.id));
+					node.replaceWith(new ASTNode(node.type, newValue, node.id));
 				}
 			}
 		}
@@ -230,10 +233,10 @@ public class RateHints {
 			RatingConfig config) {
 		if (validHints.isEmpty()) return new HintRating(outcome);
 		ASTNode fromNode = normalizeNodeValues(validHints.get(0).from, config);
-		ASTNode outcomeNode = normalizeNewValuesTo(fromNode, outcome.result, config);
+		ASTNode outcomeNode = normalizeNewValuesTo(fromNode, outcome.result, config, null);
 		pruneNewNodesTo(fromNode, outcomeNode, config);
 		for (TutorHint tutorHint : validHints) {
-			ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, tutorHint.to, config);
+			ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, tutorHint.to, config, null);
 			pruneNewNodesTo(fromNode, tutorOutcomeNode, config);
 			if (outcomeNode.equals(tutorOutcomeNode)) {
 				return new HintRating(outcome, tutorHint, MatchType.Full);
@@ -266,14 +269,14 @@ public class RateHints {
 		Map<TutorHint, Bag<Edit>> tutorEditMap = new IdentityHashMap<>();
 		for (TutorHint hint : validHints) {
 			Bag<Edit> edits = extractor.getEdits(fromNode,
-					normalizeNewValuesTo(fromNode, hint.to, config));
+					normalizeNewValuesTo(fromNode, hint.to, config, PARTIAL_UNSEEN_VALUE));
 			tutorEditMap.put(hint, edits);
 		}
 
 		Map<HintOutcome, Bag<Edit>> outcomeEditMap = new IdentityHashMap<>();
 		for (HintOutcome hint : unmatchedHints) {
 			Bag<Edit> edits = extractor.getEdits(fromNode,
-					normalizeNewValuesTo(fromNode, hint.result, config));
+					normalizeNewValuesTo(fromNode, hint.result, config, PARTIAL_UNSEEN_VALUE));
 			outcomeEditMap.put(hint, edits);
 		}
 
@@ -365,7 +368,8 @@ public class RateHints {
 		ASTNode fromNode = normalizeNodeValues(validHints.get(0).from, config);
 
 		// Run again to get a version that's unpruned
-		ASTNode outcomeNode = normalizeNewValuesTo(fromNode, outcome.result, config);
+		ASTNode outcomeNode = normalizeNewValuesTo(
+				fromNode, outcome.result, config, PARTIAL_UNSEEN_VALUE);
 		Bag<Edit> outcomeEdits = extractor.getEdits(fromNode, outcomeNode);
 		if (outcomeEdits.size() == 0) return new HintRating(outcome);
 
@@ -390,9 +394,10 @@ public class RateHints {
 		Bag<Edit> bestOverlap = new TreeBag<>();
 		TutorHint bestHint = null;
 		for (TutorHint tutorHint : validHints) {
-			ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, tutorHint.to, config);
+			ASTNode tutorOutcomeNode = normalizeNewValuesTo(
+					fromNode, tutorHint.to, config, PARTIAL_UNSEEN_VALUE);
 			Bag<Edit> tutorEdits = extractor.getEdits(fromNode, tutorOutcomeNode);
-//			if (outcome.id == 1086841727 && tutorHint.hintID == 10198) {
+//			if (outcome.id == 524813201 && tutorHint.hintID == 10005) {
 //				printPartialMatch(config, extractor, fromNode, outcomeNode, outcomeEdits, tutorHint, outcome);
 //			}
 			if (tutorEdits.size() == 0) continue;
@@ -430,7 +435,8 @@ public class RateHints {
 		Bag<Edit> tutorEdits = new TreeBag<>();
 		if (bestHint != null) {
 			System.out.printf("Tutor Hint (%s):\n", bestHint.hintID);
-			ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, bestHint.to, config);
+			ASTNode tutorOutcomeNode = normalizeNewValuesTo(
+					fromNode, bestHint.to, config, PARTIAL_UNSEEN_VALUE);
 			System.out.println(Diff.diff(
 					fromNode.prettyPrint(true, config),
 					tutorOutcomeNode.prettyPrint(true, config)));

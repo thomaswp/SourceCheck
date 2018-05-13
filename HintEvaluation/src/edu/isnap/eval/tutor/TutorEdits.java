@@ -236,7 +236,7 @@ public class TutorEdits {
 				.forEach(e -> givers.add(
 						RateHints.normalizeNewValuesTo(
 								RateHints.normalizeNodeValues(e.from, config),
-								e.to, config), e));
+								e.to, config, null), e));
 
 				ASTNode from = givers.values().stream().findFirst().get().get(0).from;
 				String fromPP = from.prettyPrint(true, config);
