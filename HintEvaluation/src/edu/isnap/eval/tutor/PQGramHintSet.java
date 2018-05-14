@@ -108,6 +108,7 @@ public class PQGramHintSet extends HintMapHintSet {
 		}
 	}
 
+	// TODO: should we have a flag for using the values somehow?
 	private Tree treeToNode(Node node) {
 		Tree tree = Convert.nodeToTree(node);
 		tree.makeLabelsUnique(labelMap);
