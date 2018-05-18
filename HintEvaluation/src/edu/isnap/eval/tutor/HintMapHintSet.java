@@ -13,9 +13,9 @@ import edu.isnap.eval.python.PythonHintConfig;
 import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.hint.util.SnapNode;
 import edu.isnap.rating.HintRequest;
+import edu.isnap.rating.HintRequestDataset;
 import edu.isnap.rating.HintSet;
 import edu.isnap.rating.RatingConfig;
-import edu.isnap.rating.HintRequestDataset;
 import edu.isnap.rating.Trace;
 
 public abstract class HintMapHintSet extends HintSet {

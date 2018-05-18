@@ -118,7 +118,9 @@ public class JsonAST {
 			if (stop && action.id != stopID) break;
 			if (lastSnapshot == action.lastSnapshot) continue;
 			lastSnapshot = action.lastSnapshot;
-			boolean correct = attemptCorrect && action.id == attempt.submittedActionID;
+			// TODO: This is not always true for the last snapshots of correct traces.
+			// Fix before sharing the dataset!
+			boolean correct = attemptCorrect && lastSnapshot == attempt.submittedSnapshot;
 			ASTSnapshot node = JsonAST.toAST(action.lastSnapshot, canon).toSnapshot(correct, null);
 			if (node.equals(lastNode, true, true)) continue;
 			lastNode = node;
