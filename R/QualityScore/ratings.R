@@ -4,6 +4,7 @@ library(plyr)
 library(ggplot2)
 library(reshape2)
 library(psych)
+library(irr)
 
 se <- function(x) ifelse(length(x) == 0, 0, sqrt(var(x, na.rm=T)/sum(!is.na(x))))
 ifNA <- function(x, other) ifelse(is.na(x), other, x)
@@ -71,10 +72,32 @@ getSamples <- function() {
   writeSQL(samples[samples$priority <= 84,], "C:/Users/Thomas/Desktop/samples252.sql")
   
   manual <- read_csv("data/manual.csv")
+  manual$consensus <- suppressWarnings(as.integer(manual$consensus))
+  manual <- manual[!is.na(manual$consensus),]
+  
   verifyRatings(manual, samples, sampleRatings)
   
   newRatings <- loadRatings("isnapF16-F17", c("SourceCheck_sampling", "CTD", "PQGram", "chf_with_past"))
+  # 0.70 0.77 0.85 (Multiple tutors)
   verifyRatings(manual, samples, newRatings)
+  
+  manualT1 <- read_csv("data/manual-thomas.csv")
+  manualT2 <- read_csv("data/manual-rui.csv")
+  manualT3 <- read_csv("data/manual-yihuan.csv")
+  manual$t1 <- manualT1$validity
+  manual$t2 <- manualT2$validity
+  manual$t3 <- manualT3$validity
+  # alpha = 0.673
+  kripp.alpha(t(manual[,c("t1", "t2", "t3")]), method="ordinal")
+  # Perfect agreement on 166/252 (65.9%) of them
+  mean(manual$t1 == manual$t2 & manual$t2 == manual$t3)
+  
+  # 0.80 0.86 0.92
+  cohen.kappa(cbind(manual$consensus, manual$t1))
+  # 0.69 0.77 0.80
+  cohen.kappa(cbind(manual$consensus, manual$t2))
+  # 0.72 0.79 0.86
+  cohen.kappa(cbind(manual$consensus, manual$t3))
 }
 
 verifyRatings <- function(manual, samples, ratings) {
@@ -116,8 +139,6 @@ getSampleRatings <- function(samples, ratings) {
 mergeManual <- function(manual, samples) {
   names(manual)[names(manual) == 'priority'] <- 'ratePriority'
   manual <- merge(manual[,c("hintID", "consensus", "ratePriority")], samples)
-  manual$consensus <- suppressWarnings(as.integer(manual$consensus))
-  manual <- manual[!is.na(manual$consensus),]
   manual$tOne <- manual$type
   manual$tMultiple <- ordered(ifelse(manual$validity > 1, as.character(manual$type), "None"), c("None", "Partial", "Full"))
   manual$tConsensus <- ordered(ifelse(manual$validity == 3, as.character(manual$type), "None"), c("None", "Partial", "Full"))
