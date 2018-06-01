@@ -154,6 +154,24 @@ mergeManual <- function(manual, samples) {
   manual
 }
 
+findInterestingRequests <- function(requests) {
+  algRequests <- requests[requests$source != "AllTutors",]
+  scores <- ddply(algRequests, c("dataset", "assignmentID", "requestID"), summarize, n0=sum(scoreFull==0), n1=sum(scoreFull==1), n05=sum(scoreFull > 0.5))
+  table(scores$dataset, scores$n0)
+  table(scores$dataset, scores$n05)
+  table(scores$dataset, scores$n1)
+  
+  byRequest <- ddply(algRequests, c("dataset", "assignmentID", "requestID"), summarize, 
+                      PQGram=scoreFull[source=="PQGram"],
+                      chf_without_past=scoreFull[source=="chf_without_past"],
+                      chf_with_past=scoreFull[source=="chf_with_past"],
+                      CTD=scoreFull[source=="CTD"],
+                      SourceCheck=scoreFull[source=="SourceCheck"],
+                      ITAP=(if (sum(source=="ITAP") == 0) NA else scoreFull[source=="ITAP"]))
+  cor(byRequest[byRequest$dataset=="isnap",4:8])
+  cor(byRequest[byRequest$dataset=="itap",4:9])
+}
+
 compare <- function() {
   isnap <- loadRatings("isnapF16-F17", c("SourceCheck", "CTD", "PQGram", "chf_with_past", "chf_without_past", "AllTutors"))
   isnap$dataset <- "isnap"
