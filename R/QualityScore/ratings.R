@@ -85,8 +85,8 @@ getSamples <- function() {
   
   newRatings <- loadRatings("isnapF16-F17", c("SourceCheck_sampling", "CTD", "PQGram", "chf_with_past"))
   # 0.83 0.83 0.83 (One tutor)
-  # 0.76 0.78 0.80 (Multiple tutors)
-  # 0.79 0.79 0.79 (Consensus)
+  # 0.78 0.80 0.81 (Multiple tutors)
+  # 0.81 0.81 0.81 (Consensus)
   # Note: to get perfect results for OneTutor or Consensus validity thresholds, you have to
   # re-rate hints with the RatingConfig's highestRequiredValidity set to the right value.
   verifyRatings(manual, samples, newRatings)
@@ -113,10 +113,14 @@ verifyRatings <- function(manual, samples, ratings) {
   printVerify("Consensus", withManual$consensus, withManual$tConsensus)
   
   columns <- c("year", "requestID", "hintID", "matchID", "type", "source")
-  cat("Invalid hints rated valid:\n")
+  cat("Invalid hints rated valid (consensus):\n")
   print(withManual[withManual$consensus == 0 & withManual$tConsensus == "Full", columns])
-  cat("Valid hints rated invalid:\n")
-  print(withManual[withManual$consensus == 2 & withManual$tConsensus == "None", columns])
+  cat("Invalid hints rated valid (+multiple tutors):\n")
+  print(withManual[withManual$consensus == 0 & withManual$tMultiple == "Full" & !withManual$tConsensus == "Full", columns])
+  cat("Valid hints rated invalid (multiple tutors):\n")
+  print(withManual[withManual$consensus == 2 & withManual$tMultiple == "None", columns])
+  cat("Valid hints rated invalid (+consensus):\n")
+  print(withManual[withManual$consensus == 2 & withManual$tConsensus == "None" & !withManual$tMultiple == "None", columns])
   cat("Valid hints rated partially valid:\n")
   print(withManual[withManual$consensus == 2 & withManual$tConsensus == "Partial", columns])
 }
