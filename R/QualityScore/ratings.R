@@ -154,22 +154,64 @@ mergeManual <- function(manual, samples) {
   manual
 }
 
-findInterestingRequests <- function(requests) {
+findInterestingRequests <- function(requests, ratings) {
   algRequests <- requests[requests$source != "AllTutors",]
-  scores <- ddply(algRequests, c("dataset", "assignmentID", "requestID"), summarize, n0=sum(scoreFull==0), n1=sum(scoreFull==1), n05=sum(scoreFull > 0.5))
+  algRequests$year <- sapply(1:nrow(algRequests), function(i) head(ratings$year[ratings$requestID == algRequests[i,"requestID"]], 1))
+  
+  byRequest <- ddply(algRequests, c("dataset", "assignmentID", "year", "requestID"), summarize, 
+                      PQGram=scorePartial[source=="PQGram"],
+                      chf_without_past=scorePartial[source=="chf_without_past"],
+                      chf_with_past=scorePartial[source=="chf_with_past"],
+                      CTD=scorePartial[source=="CTD"],
+                      SourceCheck=scorePartial[source=="SourceCheck"],
+                      ITAP=(if (sum(source=="ITAP") == 0) NA else scorePartial[source=="ITAP"]))
+  cor(byRequest[byRequest$dataset=="isnap",5:9])
+  cor(byRequest[byRequest$dataset=="itap",5:10])
+  
+  onlyOne <- function (x) if (length(x) == 1) x else NA
+  scores <- ddply(algRequests, c("dataset", "assignmentID", "year", "requestID"), summarize, 
+                  maxScore = max(scorePartial),
+                  best = onlyOne(source[which(scorePartial==maxScore)]),
+                  n0=sum(scorePartial==0), n1=sum(scorePartial==1), 
+                  n05=sum(scorePartial > 0.5), n01=sum(scorePartial > 0.1), n025=sum(scorePartial > 0.25))
+  table(scores$dataset, scores$best)
   table(scores$dataset, scores$n0)
+  table(scores$dataset, scores$n01)
+  
+  byRequest[byRequest$requestID %in% scores[scores$dataset == "isnap" & scores$n01 == 0,"requestID"],]
+  scores[scores$dataset == "isnap" & scores$n01 == 0,2:5]
+  
+  byRequest[byRequest$requestID %in% scores[scores$dataset == "isnap" & scores$n025 == 0,"requestID"],]
+  scores[scores$dataset == "isnap" & scores$n025 == 0,2:5]
+  
+  byRequest[byRequest$requestID %in% scores[scores$dataset == "isnap" & scores$n01 == 1,"requestID"],]
+  scores[scores$dataset == "isnap" & scores$n01 == 1,2:6]
+  # TODO: refactor!
+  test <- merge(scores, ratings, by.x = c("dataset", "assignmentID", "year", "requestID", "best"), by.y = c("dataset", "assignmentID", "year", "requestID", "source"))
+  test2 <- test[test$requestID %in% scores[scores$dataset == "isnap" & scores$n01 == 1,"requestID"],]
+  test2 <- test2[test2$scorePartial > 0.1,c("dataset", "assignmentID", "year", "requestID", "best", "maxScore", "diff")]
+  for (i in 1:nrow(test2)) {
+    print(test2[i,1:6])
+    cat(test2[i,"diff"])
+    cat("\n")
+  }
+  
+  byRequest[byRequest$requestID %in% scores[scores$dataset == "itap" & scores$n05 == 0,"requestID"],]
+  scores[scores$dataset == "itap" & scores$n05 == 0,2:5]
+  
+  byRequest[byRequest$requestID %in% scores[scores$dataset == "itap" & scores$n01 == 1,"requestID"],]
+  scores[scores$dataset == "itap" & scores$n01 == 1,2:5]
+  test <- merge(scores, ratings, by.x = c("dataset", "assignmentID", "year", "requestID", "best"), by.y = c("dataset", "assignmentID", "year", "requestID", "source"))
+  test2 <- test[test$requestID %in% scores[scores$dataset == "itap" & scores$n01 == 1,"requestID"],]
+  test2 <- test2[test2$scorePartial > 0.1,c("dataset", "assignmentID", "year", "requestID", "best", "maxScore", "diff")]
+  for (i in 1:nrow(test2)) {
+    print(test2[i,1:6])
+    cat(test2[i,"diff"])
+    cat("\n")
+  }
+  
   table(scores$dataset, scores$n05)
   table(scores$dataset, scores$n1)
-  
-  byRequest <- ddply(algRequests, c("dataset", "assignmentID", "requestID"), summarize, 
-                      PQGram=scoreFull[source=="PQGram"],
-                      chf_without_past=scoreFull[source=="chf_without_past"],
-                      chf_with_past=scoreFull[source=="chf_with_past"],
-                      CTD=scoreFull[source=="CTD"],
-                      SourceCheck=scoreFull[source=="SourceCheck"],
-                      ITAP=(if (sum(source=="ITAP") == 0) NA else scoreFull[source=="ITAP"]))
-  cor(byRequest[byRequest$dataset=="isnap",4:8])
-  cor(byRequest[byRequest$dataset=="itap",4:9])
 }
 
 compare <- function() {
