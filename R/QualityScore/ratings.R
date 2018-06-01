@@ -197,23 +197,25 @@ compare <- function() {
   plotComparisonTogetherStacked(requests)
   
   
-  # NS  p = 0.149
+  # Sig p = 0.048
   comp(requests, F, "isnap", "SourceCheck", "CTD")
+  # NS  p = 0.819 - big difference between partial and full
+  comp(requests, T, "isnap", "SourceCheck", "CTD")
   # Sig p < 0.001
   comp(requests, F, "isnap", "SourceCheck", "chf_with_past")
   
   # NS  p = 0.121
   comp(requests[requests$assignmentID=="guess1Lab",], F, "isnap", "SourceCheck", "CTD")
-  # NS  p = 0.648 - As many do better as worse
+  # NS  p = 0.264 - As many do better as worse
   comp(requests[requests$assignmentID=="squiralHW",], F, "isnap", "SourceCheck", "CTD")
   
   # NS  p = 0.065
   comp(requests, F, "itap", "ITAP", "SourceCheck")
-  # Sig p = 0.008
+  # Sig p = 0.024
   comp(requests, T, "itap", "ITAP", "SourceCheck")
-  # Sig p = 0.012
+  # Sig p = 0.016
   comp(requests, F, "itap", "SourceCheck", "chf_with_past")
-  # Sig p = 0.014
+  # NS  p = 0.188
   comp(requests, T, "itap", "SourceCheck", "CTD")
   
   kruskal.test(scoreFull ~ source, requests[requests$dataset=="isnap",])
