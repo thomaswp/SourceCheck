@@ -73,30 +73,35 @@ getSamples <- function() {
   
   manual <- read_csv("data/manual.csv")
   manual$consensus <- suppressWarnings(as.integer(manual$consensus))
-  manual <- manual[!is.na(manual$consensus),]
-  
-  verifyRatings(manual, samples, sampleRatings)
-  
-  newRatings <- loadRatings("isnapF16-F17", c("SourceCheck_sampling", "CTD", "PQGram", "chf_with_past"))
-  # 0.70 0.77 0.85 (Multiple tutors)
-  verifyRatings(manual, samples, newRatings)
-  
   manualT1 <- read_csv("data/manual-thomas.csv")
   manualT2 <- read_csv("data/manual-rui.csv")
   manualT3 <- read_csv("data/manual-yihuan.csv")
   manual$t1 <- manualT1$validity
   manual$t2 <- manualT2$validity
   manual$t3 <- manualT3$validity
+  manual <- manual[!is.na(manual$consensus),]
+  
+  verifyRatings(manual, samples, sampleRatings)
+  
+  newRatings <- loadRatings("isnapF16-F17", c("SourceCheck_sampling", "CTD", "PQGram", "chf_with_past"))
+  # 0.83 0.83 0.83 (One tutor)
+  # 0.76 0.78 0.80 (Multiple tutors)
+  # 0.79 0.79 0.79 (Consensus)
+  # Note: to get perfect results for OneTutor or Consensus validity thresholds, you have to
+  # re-rate hints with the RatingConfig's highestRequiredValidity set to the right value.
+  verifyRatings(manual, samples, newRatings)
+  
+  
   # alpha = 0.673
   kripp.alpha(t(manual[,c("t1", "t2", "t3")]), method="ordinal")
   # Perfect agreement on 166/252 (65.9%) of them
   mean(manual$t1 == manual$t2 & manual$t2 == manual$t3)
   
-  # 0.80 0.86 0.92
+  # 0.85 0.85 0.85
   cohen.kappa(cbind(manual$consensus, manual$t1))
-  # 0.69 0.77 0.80
+  # 0.74 0.76 0.78
   cohen.kappa(cbind(manual$consensus, manual$t2))
-  # 0.72 0.79 0.86
+  # 0.76 0.78 0.80
   cohen.kappa(cbind(manual$consensus, manual$t3))
 }
 
