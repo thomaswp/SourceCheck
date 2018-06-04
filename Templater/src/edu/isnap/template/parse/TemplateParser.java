@@ -26,7 +26,6 @@ import edu.isnap.ctd.util.Diff;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.hint.ConfigurableAssignment;
 import edu.isnap.hint.SnapHintBuilder;
-import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.elements.CallBlock;
 import edu.isnap.parser.elements.Snapshot;
@@ -40,8 +39,7 @@ public class TemplateParser {
 
 	public static void parseSnapTemplate(Assignment assignment) throws IOException {
 		String baseFile = assignment.templateFileBase();
-		HintConfig config = assignment instanceof ConfigurableAssignment ?
-				((ConfigurableAssignment) assignment).getConfig() : new SnapHintConfig();
+		HintConfig config = ConfigurableAssignment.getConfig(assignment);
 		Node sample = SimpleNodeBuilder.toTree(Snapshot.parse(new File(baseFile + ".xml")), true);
 		HintMap hintMap = parseTemplate(baseFile, sample, config);
 

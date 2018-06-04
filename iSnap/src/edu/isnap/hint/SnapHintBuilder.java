@@ -62,8 +62,7 @@ public class SnapHintBuilder {
 	 * @param assignment
 	 */
 	public SnapHintBuilder(Assignment assignment) {
-		this(assignment, new HintMap(assignment instanceof Configurable ?
-				((Configurable) assignment).getConfig() : new SnapHintConfig()));
+		this(assignment, new HintMap(ConfigurableAssignment.getConfig(assignment)));
 	}
 
 	public SnapHintBuilder(Assignment assignment, SnapHintConfig config) {
@@ -189,7 +188,7 @@ public class SnapHintBuilder {
 				System.err.println("No grade for: " + attemptID);
 			}
 
-			LoadedAttempt nodes = new LoadedAttempt(attempt.hasIDs, attempt.grade);
+			LoadedAttempt nodes = new LoadedAttempt(assignment.hasIDs, attempt.grade);
 			for (AttemptAction row : attempt) {
 				Node node = SimpleNodeBuilder.toTree(row.snapshot, true);
 				nodes.add(node);

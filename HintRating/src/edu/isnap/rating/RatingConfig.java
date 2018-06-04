@@ -15,9 +15,6 @@ public interface RatingConfig {
 	 */
 	public boolean useSpecificNumericLiterals();
 
-	@Deprecated
-	public boolean areNodeIDsConsistent();
-
 	/**
 	 * Should return true if this node can be safely pruned if it has no children, e.g. scripts with
 	 * no body.
@@ -69,11 +66,6 @@ public interface RatingConfig {
 
 		@Override
 		public boolean useSpecificNumericLiterals() {
-			return false;
-		}
-
-		@Override
-		public boolean areNodeIDsConsistent() {
 			return false;
 		}
 
@@ -138,11 +130,6 @@ public interface RatingConfig {
 		}
 
 		@Override
-		public boolean areNodeIDsConsistent() {
-			return true;
-		}
-
-		@Override
 		public boolean trimIfChildless(String type) {
 			return "script".equals(type);
 		}
@@ -191,11 +178,6 @@ public interface RatingConfig {
 		@Override
 		public boolean useSpecificNumericLiterals() {
 			return true;
-		}
-
-		@Override
-		public boolean areNodeIDsConsistent() {
-			return false;
 		}
 
 		// These nodes are added automatically (i.e. if you add a FunctionDef, arguments are added),

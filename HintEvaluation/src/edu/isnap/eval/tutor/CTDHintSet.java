@@ -34,7 +34,8 @@ public class CTDHintSet extends HintMapHintSet{
 		for (HintRequest request : requests) {
 			HintGenerator generator = generators.get(request.assignmentID);
 			Node code = JsonAST.toNode(request.code, hintConfig.getNodeConstructor());
-			code = config.areNodeIDsConsistent() ? code.copy() : copyWithIDs(code);
+
+			code = hintConfig.areNodeIDsConsistent() ? code.copy() : copyWithIDs(code);
 
 			List<VectorHint> hints = generator.getHints(code);
 			for (VectorHint hint : hints) {

@@ -59,7 +59,7 @@ public abstract class HighlightHintSet extends HintMapHintSet {
 			Node code = JsonAST.toNode(request.code, hintConfig.getNodeConstructor());
 			// Applying edits requires nodes to have meaningful IDs, so if they don't by default, we
 			// generate them. We don't otherwise, since the generated IDs won't be consistent.
-			code = config.areNodeIDsConsistent() ? code.copy() : copyWithIDs(code);
+			code = hintConfig.areNodeIDsConsistent() ? code.copy() : copyWithIDs(code);
 			List<EditHint> allHints = hintConfig.usePriority ?
 					highlighter.highlightWithPriorities(code) :
 						highlighter.highlight(code);

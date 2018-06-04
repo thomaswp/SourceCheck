@@ -48,7 +48,7 @@ public class PQGramHintSet extends HintMapHintSet {
 		for (HintRequest request : requests) {
 			List<Tree> solutions = this.solutionsMap.get(request.assignmentID);
 			Node code = JsonAST.toNode(request.code, hintConfig.getNodeConstructor());
-			code = config.areNodeIDsConsistent() ? code.copy() : copyWithIDs(code);
+			code = hintConfig.areNodeIDsConsistent() ? code.copy() : copyWithIDs(code);
 
 			Tree fromTree = treeToNode(code);
 

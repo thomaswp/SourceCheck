@@ -17,9 +17,8 @@ import edu.isnap.ctd.hint.HintMapBuilder;
 import edu.isnap.ctd.hint.feature.Feature;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.datasets.aggregate.CSC200;
-import edu.isnap.hint.Configurable;
+import edu.isnap.hint.ConfigurableAssignment;
 import edu.isnap.hint.SnapHintBuilder;
-import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.parser.Store.Mode;
 
 /**
@@ -58,8 +57,7 @@ public class RunHintBuilder {
 	public static void buildHints(Assignment assignment, double minGrade)
 			throws FileNotFoundException {
 		System.out.println("Loading: " + assignment.name);
-		HintConfig config = assignment instanceof Configurable ?
-				((Configurable) assignment).getConfig() : new SnapHintConfig();
+		HintConfig config = ConfigurableAssignment.getConfig(assignment);
 
 		File featuresFile = new File(assignment.featuresFile());
 		List<Feature> features = null;

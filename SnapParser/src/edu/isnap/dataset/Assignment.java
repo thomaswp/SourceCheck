@@ -22,8 +22,7 @@ public class Assignment {
 	public final boolean graded;
 	public final Assignment prequel;
 	public final Assignment None;
-
-	private final boolean hasIDs;
+	public final boolean hasIDs;
 
 	public Assignment(Dataset dataset, String name, Date end, boolean hasNodeIDs) {
 		this(dataset, name, end, hasNodeIDs, false, null);
@@ -150,7 +149,6 @@ public class Assignment {
 			boolean addMetadata, Filter... filters) {
 		Map<String, AssignmentAttempt> attempts =
 				new SnapParser(this, mode).parseAssignment(snapshotsOnly, addMetadata, filters);
-		for (AssignmentAttempt attempt : attempts.values()) attempt.hasIDs = hasIDs;
 		return attempts;
 	}
 

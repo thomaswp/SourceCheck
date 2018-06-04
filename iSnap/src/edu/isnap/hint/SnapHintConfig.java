@@ -10,6 +10,8 @@ import edu.isnap.hint.util.SnapNode;
 import edu.isnap.rating.RatingConfig;
 
 public class SnapHintConfig extends HintConfig {
+	public boolean hasIDs = true;
+
 	private static final long serialVersionUID = 1L;
 
 	private final static String Script = "script";
@@ -151,5 +153,10 @@ public class SnapHintConfig extends HintConfig {
 	@Deprecated
 	public boolean shouldGoStraightToGoal(String type) {
 		return straightToGoal.contains(type);
+	}
+
+	@Override
+	public boolean areNodeIDsConsistent() {
+		return hasIDs;
 	}
 }

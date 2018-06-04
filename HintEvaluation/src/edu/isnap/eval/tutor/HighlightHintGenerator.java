@@ -40,7 +40,6 @@ public class HighlightHintGenerator implements ColdStart.HintGenerator {
 //		standard.printAllRequestNodes(hintGenerator.ratingConfig);
 	}
 
-	private final RatingConfig ratingConfig;
 	private final HintConfig hintConfig;
 
 	private HintMapBuilder builder;
@@ -49,7 +48,6 @@ public class HighlightHintGenerator implements ColdStart.HintGenerator {
 
 	public HighlightHintGenerator(HintConfig config) {
 		this.hintConfig = config;
-		this.ratingConfig = HighlightHintSet.getRatingConfig(config);
 		clearTraces();
 	}
 
@@ -72,7 +70,7 @@ public class HighlightHintGenerator implements ColdStart.HintGenerator {
 		List<Node> nodes = trace.stream()
 				.map(node -> JsonAST.toNode(node, SnapNode::new))
 				.collect(Collectors.toList());
-		builder.addAttempt(nodes, ratingConfig.areNodeIDsConsistent());
+		builder.addAttempt(nodes, hintConfig.areNodeIDsConsistent());
 		highlighter = null;
 	}
 

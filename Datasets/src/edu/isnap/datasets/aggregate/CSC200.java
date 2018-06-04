@@ -1,12 +1,12 @@
 package edu.isnap.datasets.aggregate;
 
-import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.datasets.Fall2015;
 import edu.isnap.datasets.Fall2016;
 import edu.isnap.datasets.Fall2017;
 import edu.isnap.datasets.Spring2016;
 import edu.isnap.datasets.Spring2017;
+import edu.isnap.hint.SnapHintConfig;
 
 public class CSC200 extends AggregateDataset {
 
@@ -20,8 +20,8 @@ public class CSC200 extends AggregateDataset {
 	}
 
 	@Override
-	protected HintConfig getDefaultHintConfig() {
-		HintConfig config = super.getDefaultHintConfig();
+	protected SnapHintConfig getDefaultHintConfig() {
+		SnapHintConfig config = super.getDefaultHintConfig();
 		config.requireGrade = true;
 		return config;
 	}

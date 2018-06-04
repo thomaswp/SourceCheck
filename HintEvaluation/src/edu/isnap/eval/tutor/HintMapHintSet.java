@@ -60,7 +60,7 @@ public abstract class HintMapHintSet extends HintSet {
 			List<Node> nodes = trace.stream()
 					.map(node -> JsonAST.toNode(node, SnapNode::new))
 					.collect(Collectors.toList());
-			builder.addAttempt(nodes, config.areNodeIDsConsistent());
+			builder.addAttempt(nodes, hintConfig.areNodeIDsConsistent());
 		}
 		builder.finishedAdding();
 		return builder;

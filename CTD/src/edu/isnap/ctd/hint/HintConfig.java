@@ -10,6 +10,14 @@ public abstract class HintConfig implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	/**
+	 * Should return true if the hint generator can expect traces to keep consistent node IDs
+	 * between snapshots, i.e. a node with ID 1 in two snapshots is the same node. If false, AST
+	 * diffs will be used to try to infer which nodes are the same between snapshots, which is more
+	 * expensive and less accurate.
+	 */
+	public abstract boolean areNodeIDsConsistent();
+
+	/**
 	 * Should return a constructor for the Node to be used with this config.
 	 */
 	public abstract NodeConstructor getNodeConstructor();
@@ -264,6 +272,11 @@ public abstract class HintConfig implements Serializable {
 		@Override
 		public NodeConstructor getNodeConstructor() {
 			return SimpleNode::new;
+		}
+
+		@Override
+		public boolean areNodeIDsConsistent() {
+			return false;
 		}
 
 	}

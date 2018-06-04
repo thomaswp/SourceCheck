@@ -83,4 +83,9 @@ public class PythonHintConfig extends HintConfig {
 	public NodeConstructor getNodeConstructor() {
 		return PythonNode::new;
 	}
+
+	@Override
+	public boolean areNodeIDsConsistent() {
+		return false;
+	}
 }
