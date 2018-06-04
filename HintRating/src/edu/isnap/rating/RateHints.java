@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -48,22 +49,23 @@ public class RateHints {
 			throw new RuntimeException("Missing algorithms folder");
 		}
 		for (File algorithmFolder : algorithmsFolder.listFiles(file -> file.isDirectory())) {
-			rateOneDir(path, algorithmFolder.getName(), config, write, standard);
+			rateOneDir(path, algorithmFolder.getName(), config, write, standard, false);
 		}
 	}
 
 	public static void rateOneDir(String parentDir, String dir, RatingConfig config,
-			boolean write) throws IOException, FileNotFoundException {
+			boolean write, boolean debug) throws IOException, FileNotFoundException {
 		GoldStandard standard = GoldStandard.parseSpreadsheet(parentDir + GS_SPREADSHEET);
-		rateOneDir(parentDir, dir, config, write, standard);
+		rateOneDir(parentDir, dir, config, write, standard, debug);
 	}
 
 	public static void rateOneDir(String parentDir, String dir, RatingConfig config,
-			boolean write, GoldStandard standard) throws IOException, FileNotFoundException {
+			boolean write, GoldStandard standard, boolean debug)
+					throws IOException, FileNotFoundException {
 		HintSet hintSet = HintSet.fromFolder(dir, config,
 				String.format("%s/%s/%s", parentDir, ALGORITHMS_DIR, dir));
 		System.out.println(hintSet.name);
-		HintRatingSet ratings = rate(standard, hintSet);
+		HintRatingSet ratings = rate(standard, hintSet, debug);
 		if (write) {
 			ratings.writeAllHints(parentDir + "/" + RateHints.ALGORITHMS_DIR + "/" + dir + ".csv");
 		}
@@ -86,7 +88,7 @@ public class RateHints {
 
 				// Make sure there is at least one hint with the required validity; otherwise,
 				// assume there are no valid tutor hints and we should continue
-				Validity requiredValidity = config.highestRequiredValidity();
+				Validity requiredValidity = config.validityThreshold();
 				if (!validHints.stream()
 						.anyMatch(hint -> hint.validity.isAtLeast(requiredValidity))) {
 					continue;
@@ -102,20 +104,49 @@ public class RateHints {
 							assignmentID, requestID);
 				}
 
+				Map<HintOutcome, HintRating> overwritableRatings = new HashMap<>();
 				// First find full matches and remove any hints that match
 				for (int i = 0; i < unmatchedHints.size(); i++) {
-					HintRating rating = findMatchingEdit(validHints, unmatchedHints.get(i), config);
+					HintOutcome hint = unmatchedHints.get(i);
+					HintRating rating = findMatchingEdit(validHints, hint, config);
 					if (rating != null) {
-						requestRating.add(rating);
+						if (rating.validity().isAtLeast(config.validityThreshold())) {
+							// Full-match ratings that are at least the minimum required validity
+							// cannot be overwritten by partial-match hints of a higher validity
+							requestRating.add(rating);
+						} else {
+							// But lower validity full-matches can
+							overwritableRatings.put(hint, rating);
+						}
 						unmatchedHints.remove(i--);
 					}
 				}
 				// Then find any partial matches in the remaining hints
 				for (HintOutcome hint : unmatchedHints) {
-					HintRating rating = findPartiallyMatchingEdit(
-							validHints, hint, config, extractor);
-					requestRating.add(rating);
+					HintRating partialRating = findPartiallyMatchingEdit(
+							validHints, hint, config, extractor, true);
+					requestRating.add(partialRating);
 				}
+				// Now check each overwritable rating...
+				for (HintOutcome hint : overwritableRatings.keySet()) {
+					 // Check if there's a higher-validity partial match
+					HintRating partialRating = findPartiallyMatchingEdit(
+							validHints, hint, config, extractor, false);
+					if (partialRating.validity().isAtLeast(config.validityThreshold())) {
+						// If so, add that instead
+						requestRating.add(partialRating);
+					} else {
+						// Else, add the original full-match rating
+						requestRating.add(overwritableRatings.get(hint));
+					}
+					// Note: This method will produce slightly inaccurate results for thresholds
+					// other than the RatingConfig's highestRequiredValidity. For example, if we
+					// target MultipleTutors, a hint that fully matches a OneTutor hint and
+					// partially matches a MultipleTutors hint will be rated using the later. This
+					// is not the correct rating if we use the OneTutor threshold. However, these
+					// should be rare cases.
+				}
+
 				requestRating.sort();
 				if (debug) {
 					requestRating.printRatings(validHints.get(0).from, config, validHints);
@@ -363,7 +394,8 @@ public class RateHints {
 	}
 
 	public static HintRating findPartiallyMatchingEdit(List<TutorHint> validHints,
-			HintOutcome outcome, RatingConfig config, EditExtractor extractor) {
+			HintOutcome outcome, RatingConfig config, EditExtractor extractor,
+			boolean errorOnFullMatch) {
 		if (validHints.isEmpty()) return new HintRating(outcome);
 		ASTNode fromNode = normalizeNodeValues(validHints.get(0).from, config);
 
@@ -404,7 +436,8 @@ public class RateHints {
 			Bag<Edit> overlap = new TreeBag<>(tutorEdits);
 			overlap.retainAll(outcomeEdits);
 			if (overlap.size() > bestOverlap.size()) {
-				if (overlap.size() == tutorEdits.size() && overlap.size() == outcomeEdits.size()) {
+				if (errorOnFullMatch && overlap.size() == tutorEdits.size() &&
+						overlap.size() == outcomeEdits.size()) {
 					System.out.println("Tutor hint: ");
 					System.out.println(ASTNode.diff(fromNode, tutorOutcomeNode, config));
 					System.out.println("Alg hint: ");
@@ -625,8 +658,9 @@ public class RateHints {
 			HintOutcome firstOutcome = get(0).hint;
 			System.out.println("+====+ " + firstOutcome.assignmentID + " / " +
 					firstOutcome.requestID + " +====+");
+			Validity validityThreshold = config.validityThreshold();
 			Set<TutorHint> valid = validHints.stream()
-					.filter(hint -> hint.validity.isAtLeast(Validity.MultipleTutors) &&
+					.filter(hint -> hint.validity.isAtLeast(validityThreshold) &&
 							(hint.priority == null || hint.priority != Priority.TooSoon))
 					.collect(Collectors.toSet());
 			System.out.println(from.prettyPrint(true, config));
@@ -635,7 +669,11 @@ public class RateHints {
 					boolean tooSoon = tooSoonRound == 1;
 					List<HintRating> matching = stream()
 							.filter(rating -> tooSoon ? rating.isTooSoon() :
-								(rating.matchType == type && !rating.isTooSoon()))
+								(!rating.isTooSoon() &&
+									(!rating.validity().isAtLeast(validityThreshold) ==
+										(type == MatchType.None)) &&
+									(rating.matchType == type ||
+										type == MatchType.None)))
 							.collect(Collectors.toList());
 					if (!matching.isEmpty()) {
 						String label = tooSoon ? "Too Soon" : type.toString();

@@ -73,30 +73,35 @@ getSamples <- function() {
   
   manual <- read_csv("data/manual.csv")
   manual$consensus <- suppressWarnings(as.integer(manual$consensus))
-  manual <- manual[!is.na(manual$consensus),]
-  
-  verifyRatings(manual, samples, sampleRatings)
-  
-  newRatings <- loadRatings("isnapF16-F17", c("SourceCheck_sampling", "CTD", "PQGram", "chf_with_past"))
-  # 0.70 0.77 0.85 (Multiple tutors)
-  verifyRatings(manual, samples, newRatings)
-  
   manualT1 <- read_csv("data/manual-thomas.csv")
   manualT2 <- read_csv("data/manual-rui.csv")
   manualT3 <- read_csv("data/manual-yihuan.csv")
   manual$t1 <- manualT1$validity
   manual$t2 <- manualT2$validity
   manual$t3 <- manualT3$validity
+  manual <- manual[!is.na(manual$consensus),]
+  
+  verifyRatings(manual, samples, sampleRatings)
+  
+  newRatings <- loadRatings("isnapF16-F17", c("SourceCheck_sampling", "CTD", "PQGram", "chf_with_past"))
+  # 0.83 0.83 0.83 (One tutor)
+  # 0.78 0.80 0.81 (Multiple tutors)
+  # 0.81 0.81 0.81 (Consensus)
+  # Note: to get perfect results for OneTutor or Consensus validity thresholds, you have to
+  # re-rate hints with the RatingConfig's highestRequiredValidity set to the right value.
+  verifyRatings(manual, samples, newRatings)
+  
+  
   # alpha = 0.673
   kripp.alpha(t(manual[,c("t1", "t2", "t3")]), method="ordinal")
   # Perfect agreement on 166/252 (65.9%) of them
   mean(manual$t1 == manual$t2 & manual$t2 == manual$t3)
   
-  # 0.80 0.86 0.92
+  # 0.85 0.85 0.85
   cohen.kappa(cbind(manual$consensus, manual$t1))
-  # 0.69 0.77 0.80
+  # 0.74 0.76 0.78
   cohen.kappa(cbind(manual$consensus, manual$t2))
-  # 0.72 0.79 0.86
+  # 0.76 0.78 0.80
   cohen.kappa(cbind(manual$consensus, manual$t3))
 }
 
@@ -108,10 +113,14 @@ verifyRatings <- function(manual, samples, ratings) {
   printVerify("Consensus", withManual$consensus, withManual$tConsensus)
   
   columns <- c("year", "requestID", "hintID", "matchID", "type", "source")
-  cat("Invalid hints rated valid:\n")
+  cat("Invalid hints rated valid (consensus):\n")
   print(withManual[withManual$consensus == 0 & withManual$tConsensus == "Full", columns])
-  cat("Valid hints rated invalid:\n")
-  print(withManual[withManual$consensus == 2 & withManual$tConsensus == "None", columns])
+  cat("Invalid hints rated valid (+multiple tutors):\n")
+  print(withManual[withManual$consensus == 0 & withManual$tMultiple == "Full" & !withManual$tConsensus == "Full", columns])
+  cat("Valid hints rated invalid (multiple tutors):\n")
+  print(withManual[withManual$consensus == 2 & withManual$tMultiple == "None", columns])
+  cat("Valid hints rated invalid (+consensus):\n")
+  print(withManual[withManual$consensus == 2 & withManual$tConsensus == "None" & !withManual$tMultiple == "None", columns])
   cat("Valid hints rated partially valid:\n")
   print(withManual[withManual$consensus == 2 & withManual$tConsensus == "Partial", columns])
 }
@@ -143,6 +152,66 @@ mergeManual <- function(manual, samples) {
   manual$tMultiple <- ordered(ifelse(manual$validity > 1, as.character(manual$type), "None"), c("None", "Partial", "Full"))
   manual$tConsensus <- ordered(ifelse(manual$validity == 3, as.character(manual$type), "None"), c("None", "Partial", "Full"))
   manual
+}
+
+findInterestingRequests <- function(requests, ratings) {
+  algRequests <- requests[requests$source != "AllTutors",]
+  algRequests$year <- sapply(1:nrow(algRequests), function(i) head(ratings$year[ratings$requestID == algRequests[i,"requestID"]], 1))
+  
+  byRequest <- ddply(algRequests, c("dataset", "assignmentID", "year", "requestID"), summarize, 
+                      PQGram=scorePartial[source=="PQGram"],
+                      chf_without_past=scorePartial[source=="chf_without_past"],
+                      chf_with_past=scorePartial[source=="chf_with_past"],
+                      CTD=scorePartial[source=="CTD"],
+                      SourceCheck=scorePartial[source=="SourceCheck"],
+                      ITAP=(if (sum(source=="ITAP") == 0) NA else scorePartial[source=="ITAP"]))
+  cor(byRequest[byRequest$dataset=="isnap",5:9])
+  cor(byRequest[byRequest$dataset=="itap",5:10])
+  
+  onlyOne <- function (x) if (length(x) == 1) x else NA
+  scores <- ddply(algRequests, c("dataset", "assignmentID", "year", "requestID"), summarize, 
+                  maxScore = max(scorePartial),
+                  best = onlyOne(source[which(scorePartial==maxScore)]),
+                  n0=sum(scorePartial==0), n1=sum(scorePartial==1), 
+                  n05=sum(scorePartial > 0.5), n01=sum(scorePartial > 0.1), n025=sum(scorePartial > 0.25))
+  table(scores$dataset, scores$best)
+  table(scores$dataset, scores$n0)
+  table(scores$dataset, scores$n01)
+  
+  byRequest[byRequest$requestID %in% scores[scores$dataset == "isnap" & scores$n01 == 0,"requestID"],]
+  scores[scores$dataset == "isnap" & scores$n01 == 0,2:5]
+  
+  byRequest[byRequest$requestID %in% scores[scores$dataset == "isnap" & scores$n025 == 0,"requestID"],]
+  scores[scores$dataset == "isnap" & scores$n025 == 0,2:5]
+  
+  byRequest[byRequest$requestID %in% scores[scores$dataset == "isnap" & scores$n01 == 1,"requestID"],]
+  scores[scores$dataset == "isnap" & scores$n01 == 1,2:6]
+  # TODO: refactor!
+  test <- merge(scores, ratings, by.x = c("dataset", "assignmentID", "year", "requestID", "best"), by.y = c("dataset", "assignmentID", "year", "requestID", "source"))
+  test2 <- test[test$requestID %in% scores[scores$dataset == "isnap" & scores$n01 == 1,"requestID"],]
+  test2 <- test2[test2$scorePartial > 0.1,c("dataset", "assignmentID", "year", "requestID", "best", "maxScore", "diff")]
+  for (i in 1:nrow(test2)) {
+    print(test2[i,1:6])
+    cat(test2[i,"diff"])
+    cat("\n")
+  }
+  
+  byRequest[byRequest$requestID %in% scores[scores$dataset == "itap" & scores$n05 == 0,"requestID"],]
+  scores[scores$dataset == "itap" & scores$n05 == 0,2:5]
+  
+  byRequest[byRequest$requestID %in% scores[scores$dataset == "itap" & scores$n01 == 1,"requestID"],]
+  scores[scores$dataset == "itap" & scores$n01 == 1,2:5]
+  test <- merge(scores, ratings, by.x = c("dataset", "assignmentID", "year", "requestID", "best"), by.y = c("dataset", "assignmentID", "year", "requestID", "source"))
+  test2 <- test[test$requestID %in% scores[scores$dataset == "itap" & scores$n01 == 1,"requestID"],]
+  test2 <- test2[test2$scorePartial > 0.1,c("dataset", "assignmentID", "year", "requestID", "best", "maxScore", "diff")]
+  for (i in 1:nrow(test2)) {
+    print(test2[i,1:6])
+    cat(test2[i,"diff"])
+    cat("\n")
+  }
+  
+  table(scores$dataset, scores$n05)
+  table(scores$dataset, scores$n1)
 }
 
 compare <- function() {
@@ -188,23 +257,25 @@ compare <- function() {
   plotComparisonTogetherStacked(requests)
   
   
-  # NS  p = 0.149
+  # Sig p = 0.048
   comp(requests, F, "isnap", "SourceCheck", "CTD")
+  # NS  p = 0.819 - big difference between partial and full
+  comp(requests, T, "isnap", "SourceCheck", "CTD")
   # Sig p < 0.001
   comp(requests, F, "isnap", "SourceCheck", "chf_with_past")
   
   # NS  p = 0.121
   comp(requests[requests$assignmentID=="guess1Lab",], F, "isnap", "SourceCheck", "CTD")
-  # NS  p = 0.648 - As many do better as worse
+  # NS  p = 0.264 - As many do better as worse
   comp(requests[requests$assignmentID=="squiralHW",], F, "isnap", "SourceCheck", "CTD")
   
   # NS  p = 0.065
   comp(requests, F, "itap", "ITAP", "SourceCheck")
-  # Sig p = 0.008
+  # Sig p = 0.024
   comp(requests, T, "itap", "ITAP", "SourceCheck")
-  # Sig p = 0.012
+  # Sig p = 0.016
   comp(requests, F, "itap", "SourceCheck", "chf_with_past")
-  # Sig p = 0.014
+  # NS  p = 0.188
   comp(requests, T, "itap", "SourceCheck", "CTD")
   
   kruskal.test(scoreFull ~ source, requests[requests$dataset=="isnap",])
