@@ -260,7 +260,7 @@ compare <- function() {
   
   # Sig p = 0.048
   comp(requests, F, "isnap", "SourceCheck", "CTD")
-  # NS  p = 0.817 - big difference between partial and full
+  # NS  p = 0.817 or 0.818? - big difference between partial and full
   comp(requests, T, "isnap", "SourceCheck", "CTD")
   # Sig p < 0.001
   comp(requests, F, "isnap", "SourceCheck", "chf_with_past")
@@ -280,7 +280,7 @@ compare <- function() {
   comp(requests, F, "itap", "SourceCheck", "CTD")
   # Sig p = 0.002
   comp(requests, T, "itap", "SourceCheck", "chf_with_past")
-  # Sig p = 0.012
+  # Sig p = 0.012 or 0.116?
   comp(requests, F, "itap", "SourceCheck", "chf_with_past")
   
   kruskal.test(scoreFull ~ source, requests[requests$dataset=="isnap",])
