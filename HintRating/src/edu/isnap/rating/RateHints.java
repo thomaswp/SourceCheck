@@ -252,6 +252,9 @@ public class RateHints {
 				}
 				if (normalize) {
 					// If so, we replace its value with null, so all new values appear the same
+					// NOTE: When considering partial matches, we replace the value with the
+					// PARTIAL_UNSEEN_VALUE constant instead, but for full matching, it is important
+					// the unspecified values can match new values.
 					node.replaceWith(new ASTNode(node.type, newValue, node.id));
 				}
 			}
