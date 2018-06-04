@@ -215,9 +215,9 @@ findInterestingRequests <- function(requests, ratings) {
 }
 
 compare <- function() {
-  isnap <- loadRatings("isnapF16-F17", c("SourceCheck", "CTD", "PQGram", "chf_with_past", "chf_without_past", "AllTutors"))
+  isnap <- loadRatings("isnapF16-F17", c("SourceCheck", "CTD", "PQGram", "chf_with_past", "chf_without_past", "gross", "AllTutors"))
   isnap$dataset <- "isnap"
-  itap <- loadRatings("itapS16", c("SourceCheck", "CTD", "PQGram", "chf_with_past", "chf_without_past", "ITAP", "AllTutors"))
+  itap <- loadRatings("itapS16", c("SourceCheck", "CTD", "PQGram", "chf_with_past", "chf_without_past", "gross", "ITAP", "AllTutors"))
   itap$dataset <- "itap"
   ratings <- rbind(isnap, itap)
   ratings <- ratings[order(ratings$dataset, ratings$assignmentID, ratings$year, ratings$requestID, ratings$source, ratings$order),]
@@ -226,7 +226,7 @@ compare <- function() {
   # TODO: Priority doesn't match with Java output, but we don't have it for non-consensus hints, so maybe not a priority
   ratings$priorityFull <- ifNA(4 - ratings$priority, 0) * ratings$scoreFull
   ratings$priorityPartial <- ifNA(4 - ratings$priority, 0) * ratings$scorePartial
-  ratings$source <- factor(ratings$source, c("PQGram", "chf_without_past", "chf_with_past", "CTD", "SourceCheck", "ITAP", "AllTutors"))
+  ratings$source <- factor(ratings$source, c("PQGram", "gross", "chf_without_past", "chf_with_past", "CTD", "SourceCheck", "ITAP", "AllTutors"))
   ratings$assignmentID <- factor(ratings$assignmentID, c("squiralHW", "guess1Lab", "helloWorld", "firstAndLast", "isPunctuation", "kthDigit", "oneToN"))
   requests <- ddply(ratings, c("dataset", "source", "assignmentID", "requestID"), summarize, 
                     scoreFull=sum(scoreFull), scorePartial=sum(scorePartial),
@@ -256,10 +256,11 @@ compare <- function() {
   plotComparisonStacked(assignments, "itap")
   plotComparisonTogetherStacked(requests)
   
+  # Getting slightly inconsistent results for these on different machines:
   
   # Sig p = 0.048
   comp(requests, F, "isnap", "SourceCheck", "CTD")
-  # NS  p = 0.819 - big difference between partial and full
+  # NS  p = 0.817 - big difference between partial and full
   comp(requests, T, "isnap", "SourceCheck", "CTD")
   # Sig p < 0.001
   comp(requests, F, "isnap", "SourceCheck", "chf_with_past")
@@ -273,10 +274,14 @@ compare <- function() {
   comp(requests, F, "itap", "ITAP", "SourceCheck")
   # Sig p = 0.024
   comp(requests, T, "itap", "ITAP", "SourceCheck")
-  # Sig p = 0.016
-  comp(requests, F, "itap", "SourceCheck", "chf_with_past")
   # NS  p = 0.188
   comp(requests, T, "itap", "SourceCheck", "CTD")
+  # Sig p < 0.001
+  comp(requests, F, "itap", "SourceCheck", "CTD")
+  # Sig p = 0.002
+  comp(requests, T, "itap", "SourceCheck", "chf_with_past")
+  # Sig p = 0.012
+  comp(requests, F, "itap", "SourceCheck", "chf_with_past")
   
   kruskal.test(scoreFull ~ source, requests[requests$dataset=="isnap",])
   summary(aov(scoreFull ~ source + assignmentID + source * assignmentID, requests[requests$dataset=="isnap",]))
@@ -327,7 +332,9 @@ plotComparisonTogetherStacked <- function(requests) {
   together <- ddply(requests, c("dataset", "source"), summarize, mScorePartialPlus=mean(scorePartial)-mean(scoreFull), mScoreFull=mean(scoreFull))
   
   ggplot(melt(together, id=c("dataset", "source")),aes(x=source, y=value, fill=variable)) + geom_bar(stat="identity") +
-    facet_wrap(~dataset, scales = "free_x")
+    scale_fill_discrete(labels=c("Full", "Partial")) + 
+    labs(fill="Match Type", x="Algorithm", y="QualityScore") +
+    coord_flip() + facet_wrap(~dataset, scales = "free_y") 
   #scale_fill_discrete(name="Match", labels=c("Partial", "Full"))
 }
 
