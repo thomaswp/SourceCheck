@@ -95,13 +95,10 @@ getSamples <- function() {
   newRatingsConsensus <- loadRatings("isnapF16-F17", "Consensus", c("SourceCheck_sampling", "CTD", "PQGram", "chf_with_past"))
   # 0.83 0.83 0.83 (One tutor)
   verifyRatings(manual, samples, newRatingsOne)
-  # 0.78 0.80 0.81 (Multiple tutors)
+  # 0.75 0.78 0.80 (Multiple tutors)
   verifyRatings(manual, samples, newRatingsMT)
   # 0.81 0.81 0.81 (Consensus)
   verifyRatings(manual, samples, newRatingsConsensus)
-  # Note: to get perfect results for OneTutor or Consensus validity thresholds, you have to
-  # re-rate hints with the RatingConfig's highestRequiredValidity set to the right value.
-  
   
   # alpha = 0.673
   kripp.alpha(t(manual[,c("t1", "t2", "t3")]), method="ordinal")
@@ -122,6 +119,14 @@ verifyRatings <- function(manual, samples, ratings) {
   names(withManual)[names(withManual) == 'priority'] <- 'ratePriority'
   withManual <- merge(withManual[,c("hintID", "consensus", "ratePriority")], withSamples)
   printVerify("", withManual$consensus, withManual$type)
+  
+  columns <- c("year", "requestID", "hintID", "matchID", "type", "source")
+  cat("Invalid hints rated valid:\n")
+  print(withManual[withManual$consensus == 0 & withManual$type == "Full", columns])
+  cat("Valid hints rated invalid:\n")
+  print(withManual[withManual$consensus == 2 & withManual$type == "None", columns])
+  cat("Valid hints rated partially valid:\n")
+  print(withManual[withManual$consensus == 2 & withManual$type == "Partial", columns])
 }
 
 verifyRatingsOld <- function(manual, samples, ratings) {
