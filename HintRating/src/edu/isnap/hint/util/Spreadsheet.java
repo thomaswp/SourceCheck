@@ -16,6 +16,8 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
 public class Spreadsheet {
+	public final static String TRUE = "TRUE", FALSE = "FALSE";
+
 	private List<Map<String, Object>> rows = new LinkedList<>();
 	private Map<String, Object> header = new LinkedHashMap<>();
 	private Map<String,Object> row;
@@ -45,7 +47,7 @@ public class Spreadsheet {
 	}
 
 	public void put(String key, boolean value) {
-		put(key, value ? "TRUE" : "FALSE");
+		put(key, value ? TRUE : FALSE);
 	}
 
 	public void beginWrite(String path) throws IOException {

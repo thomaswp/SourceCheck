@@ -3,6 +3,8 @@ package edu.isnap.rating;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -31,7 +33,7 @@ public class GoldStandard {
 	}
 
 	public List<TutorHint> getValidHints(String assignmentID, String requestID) {
-		return map.get(assignmentID).getList(requestID);
+		return new ArrayList<>(map.get(assignmentID).getList(requestID));
 	}
 
 	public ASTNode getHintRequestNode(String assignment, String requestID) {
@@ -74,7 +76,9 @@ public class GoldStandard {
 					spreadsheet.put("requestID", requestID);
 					spreadsheet.put("year", hint.year);
 					spreadsheet.put("hintID", hint.hintID);
-					spreadsheet.put("validity", hint.validity.value);
+					for (Validity v : Validity.values()) {
+						spreadsheet.put(v.name(), hint.validity.contains(v));
+					}
 					spreadsheet.put("priority", hint.priority == null ? "" : hint.priority.value);
 					spreadsheet.put("from", fromJSON);
 					spreadsheet.put("to", hint.to.toJSON().toString());
@@ -94,7 +98,6 @@ public class GoldStandard {
 			String requestID = record.get("requestID");
 			String year = record.get("year");
 			int hintID = Integer.parseInt(record.get("hintID"));
-			Validity validity = Validity.fromInt(Integer.parseInt(record.get("validity")));
 			String priorityString = record.get("priority");
 			Priority priority = priorityString.isEmpty() ?
 					null : Priority.fromInt(Integer.parseInt(priorityString));
@@ -104,6 +107,11 @@ public class GoldStandard {
 				lastFrom = ASTNode.parse(fromSource);
 			}
 			ASTNode to = ASTNode.parse(record.get("to"));
+
+			EnumSet<Validity> validity = EnumSet.noneOf(Validity.class);
+			for (Validity v : Validity.values()) {
+				if (Spreadsheet.TRUE.equals(record.get(v.name()))) validity.add(v);
+			}
 
 			TutorHint hint = new TutorHint(
 					hintID, requestID, "consensus", assignmentID, year, lastFrom, to);

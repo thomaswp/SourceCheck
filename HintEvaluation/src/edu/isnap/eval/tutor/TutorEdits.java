@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -335,7 +336,7 @@ public class TutorEdits {
 
 	protected static GoldStandard readConsensusSnap(Dataset dataset, String consensusPath)
 			throws FileNotFoundException, IOException {
-		Map<Integer, Tuple<Validity, Priority>> consensus =
+		Map<Integer, Tuple<EnumSet<Validity>, Priority>> consensus =
 				readConsensusSpreadsheet(new File(dataset.dataDir, consensusPath).getPath(), true);
 		ListMap<String, PrintableTutorHint> allEdits = readTutorEditsSnap(dataset);
 		return readConsensus(consensus, allEdits);
@@ -343,14 +344,15 @@ public class TutorEdits {
 
 	protected static GoldStandard readConsensusPython(String dir, String year)
 			throws FileNotFoundException, IOException {
-		Map<Integer, Tuple<Validity, Priority>> consensus =
+		Map<Integer, Tuple<EnumSet<Validity>, Priority>> consensus =
 				readConsensusSpreadsheet(new File(dir, "consensus.csv").getPath(), false);
 		ListMap<String, PrintableTutorHint> allEdits =
 				readTutorEditsPython(dir + "/handmade_hints_ast.csv", year);
 		return readConsensus(consensus, allEdits);
 	}
 
-	private static GoldStandard readConsensus(Map<Integer, Tuple<Validity, Priority>> consensus,
+	private static GoldStandard readConsensus(Map<Integer,
+			Tuple<EnumSet<Validity>, Priority>> consensus,
 			ListMap<String, PrintableTutorHint> allEdits) {
 		ListMap<String, PrintableTutorHint> consensusEdits = new ListMap<>();
 		for (String assignmentID : allEdits.keySet()) {
@@ -358,11 +360,11 @@ public class TutorEdits {
 			List<PrintableTutorHint> keeps = new ArrayList<>();
 			for (PrintableTutorHint hint : list) {
 				if (!hint.tutor.equals("consensus")) continue;
-				Tuple<Validity, Priority> ratings = consensus.get(hint.hintID);
+				Tuple<EnumSet<Validity>, Priority> ratings = consensus.get(hint.hintID);
 				if (ratings == null) {
 					throw new RuntimeException("No consensus rating for: " + hint.hintID);
 				}
-				if (ratings.x == Validity.NoTutors) continue;
+				if (ratings.x.isEmpty()) continue;
 				hint.validity = ratings.x;
 				hint.priority = ratings.y;
 				keeps.add(hint);
@@ -372,10 +374,10 @@ public class TutorEdits {
 		return new GoldStandard(consensusEdits);
 	}
 
-	private static Map<Integer, Tuple<Validity, Priority>> readConsensusSpreadsheet(String path,
+	private static Map<Integer, Tuple<EnumSet<Validity>, Priority>> readConsensusSpreadsheet(String path,
 			boolean failIfNoConsensus)
 			throws FileNotFoundException, IOException {
-		Map<Integer, Tuple<Validity, Priority>> map = new HashMap<>();
+		Map<Integer, Tuple<EnumSet<Validity>, Priority>> map = new HashMap<>();
 		CSVParser parser = new CSVParser(new FileReader(path), CSVFormat.DEFAULT.withHeader());
 		for (CSVRecord row : parser) {
 			int id = Integer.parseInt(row.get("Hint ID"));
@@ -420,15 +422,16 @@ public class TutorEdits {
 				v1 -= tooSoonCount;
 			}
 
-			Validity validity;
+			EnumSet<Validity> validity = EnumSet.noneOf(Validity.class);
+
 			if (consensusValid) {
-				validity = Validity.Consensus;
-			} else if (v1 > 1) {
-				validity = Validity.MultipleTutors;
-			} else if (v1 > 0) {
-				validity = Validity.OneTutor;
-			} else {
-				validity = Validity.NoTutors;
+				validity.add(Validity.Consensus);
+			}
+			if (v1 > 1) {
+				validity.add(Validity.MultipleTutors);
+			}
+			if (v1 > 0) {
+				validity.add(Validity.OneTutor);
 			}
 			map.put(id, new Tuple<>(validity, Priority.fromInt(priority)));
 		}

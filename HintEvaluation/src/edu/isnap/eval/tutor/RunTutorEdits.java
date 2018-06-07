@@ -3,6 +3,7 @@ package edu.isnap.eval.tutor;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -54,7 +55,7 @@ public class RunTutorEdits extends TutorEdits {
 
 //		writeAllHintSets(iSnapF16F17, ITAPS16);
 
-//		dataset.writeGoldStandard();
+		dataset.writeGoldStandard();
 //		dataset.exportTrainingAndTestData(true);
 //		dataset.writeHintSet(algorithm, source);
 
@@ -579,7 +580,8 @@ public class RunTutorEdits extends TutorEdits {
 
 		ListMap<String,PrintableTutorHint> fall2017 =
 				readTutorEditsSnap(Fall2017.instance);
-		fall2017.values().forEach(list -> list.forEach(hint -> hint.validity = Validity.OneTutor));
+		fall2017.values().forEach(list -> list.forEach(
+				hint -> hint.validity = EnumSet.of(Validity.OneTutor)));
 //		fall2017.remove("guess1Lab");
 		GoldStandard standard = new GoldStandard(fall2017);
 		HighlightHintSet hintSet = new TemplateHighlightHintSet(

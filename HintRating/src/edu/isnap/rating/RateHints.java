@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -86,13 +85,13 @@ public class RateHints {
 
 				List<TutorHint> validHints = standard.getValidHints(assignmentID, requestID);
 
+				Validity requiredValidity = config.targetValidity();
+				// Remove any hints that don't match the required validity
+				validHints.removeIf(hint -> !hint.validity.contains(requiredValidity));
+
 				// Make sure there is at least one hint with the required validity; otherwise,
 				// assume there are no valid tutor hints and we should continue
-				Validity requiredValidity = config.validityThreshold();
-				if (!validHints.stream()
-						.anyMatch(hint -> hint.validity.isAtLeast(requiredValidity))) {
-					continue;
-				}
+				if (validHints.isEmpty()) continue;
 
 				RequestRating requestRating = new RequestRating(requestID, assignmentID,
 						validHints.get(0).from, config);
@@ -104,20 +103,12 @@ public class RateHints {
 							assignmentID, requestID);
 				}
 
-				Map<HintOutcome, HintRating> overwritableRatings = new HashMap<>();
 				// First find full matches and remove any hints that match
 				for (int i = 0; i < unmatchedHints.size(); i++) {
 					HintOutcome hint = unmatchedHints.get(i);
 					HintRating rating = findMatchingEdit(validHints, hint, config);
 					if (rating != null) {
-						if (rating.validity().isAtLeast(config.validityThreshold())) {
-							// Full-match ratings that are at least the minimum required validity
-							// cannot be overwritten by partial-match hints of a higher validity
-							requestRating.add(rating);
-						} else {
-							// But lower validity full-matches can
-							overwritableRatings.put(hint, rating);
-						}
+						requestRating.add(rating);
 						unmatchedHints.remove(i--);
 					}
 				}
@@ -126,25 +117,6 @@ public class RateHints {
 					HintRating partialRating = findPartiallyMatchingEdit(
 							validHints, hint, config, extractor, true);
 					requestRating.add(partialRating);
-				}
-				// Now check each overwritable rating...
-				for (HintOutcome hint : overwritableRatings.keySet()) {
-					 // Check if there's a higher-validity partial match
-					HintRating partialRating = findPartiallyMatchingEdit(
-							validHints, hint, config, extractor, false);
-					if (partialRating.validity().isAtLeast(config.validityThreshold())) {
-						// If so, add that instead
-						requestRating.add(partialRating);
-					} else {
-						// Else, add the original full-match rating
-						requestRating.add(overwritableRatings.get(hint));
-					}
-					// Note: This method will produce slightly inaccurate results for thresholds
-					// other than the RatingConfig's highestRequiredValidity. For example, if we
-					// target MultipleTutors, a hint that fully matches a OneTutor hint and
-					// partially matches a MultipleTutors hint will be rated using the later. This
-					// is not the correct rating if we use the OneTutor threshold. However, these
-					// should be rare cases.
 				}
 
 				requestRating.sort();
@@ -353,7 +325,6 @@ public class RateHints {
 
 			matchingOutcomes.forEach(outcome -> outcomeEditMap.remove(outcome));
 
-			if (!tutorHint.validity.isAtLeast(Validity.MultipleTutors)) continue;
 			if (matchingOutcomes.size() == 1) continue;
 			System.out.println("Partial match: ");
 			System.out.println("Tutor hint: ");
@@ -508,27 +479,24 @@ public class RateHints {
 					.filter(rating -> rating.assignmentID.equals(assignmentID))
 					.collect(Collectors.toList());
 			if (ratings.size() == 0) return;
-			double[] validityArrayMean = null;
+			double qualityScoreFull = 0;
+			double qualityScorePartial = 0;
 			for (RequestRating rating : ratings) {
-				double[] ratingArray = rating.getValidityArray();
-				if (validityArrayMean == null) {
-					validityArrayMean = ratingArray;
-				} else {
-					for (int i = 0; i < validityArrayMean.length; i++) {
-						validityArrayMean[i] += ratingArray[i];
-					}
-				}
+				qualityScoreFull += rating.qualityScore(MatchType.Full);
+				qualityScorePartial += rating.qualityScore(MatchType.Partial);
 			}
-			int nSnapshots = ratings.size();
-			for (int i = 0; i < validityArrayMean.length; i++) validityArrayMean[i] /= nSnapshots;
+			int nRatings = ratings.size();
+			qualityScoreFull /= nRatings;
+			qualityScorePartial /= nRatings;
+
 			double priorityMeanFull = stream()
-					.mapToDouble(rating -> rating.getPriorityScore(false))
+					.mapToDouble(rating -> rating.priorityScore(false))
 					.average().getAsDouble();
 			double priorityMeanPartial = stream()
-					.mapToDouble(rating -> rating.getPriorityScore(true))
+					.mapToDouble(rating -> rating.priorityScore(true))
 					.average().getAsDouble();
-			System.out.printf("TOTAL: %s / %.03f (%.03f)p\n",
-					RequestRating.validityArrayToString(validityArrayMean, 3),
+			System.out.printf("TOTAL: %.03f (%.03f)v / %.03f (%.03f)p\n",
+					qualityScoreFull, qualityScorePartial,
 					priorityMeanFull, priorityMeanPartial);
 		}
 
@@ -581,54 +549,35 @@ public class RateHints {
 			spreadsheet.put("assignmentID", assignmentID);
 			spreadsheet.put("requestID", requestID);
 			double weight = getTotalWeight();
-			for (Validity validity : Validity.values()) {
-				if (validity == Validity.NoTutors) continue;
-				for (MatchType type : MatchType.values()) {
-					if (type == MatchType.None) continue;
-					double validityValue = weight == 0 ? 0 :
-						(validityWeight(type, validity, true) / weight);
-					spreadsheet.put(validity + "_" + type, validityValue);
-					spreadsheet.put(validity + "_" + type + "_validWeight",
-							validityWeight(type, validity, true));
-					spreadsheet.put(validity + "_" + type  + "_validCount",
-							validityWeight(type, validity, false));
-				}
+			for (MatchType type : MatchType.values()) {
+				if (type == MatchType.None) continue;
+				double validityValue = weight == 0 ? 0 :
+					(validWeight(type, true) / weight);
+				spreadsheet.put("Valid_" + type, validityValue);
+				spreadsheet.put("Valid_" + type + "_validWeight", validWeight(type, true));
+				spreadsheet.put("Valid_" + type  + "_validCount", validWeight(type, false));
 			}
 			spreadsheet.put("totalWeight", weight);
 			spreadsheet.put("totalCount", size());
 		}
 
-		public double validityWeight(MatchType minMatchType, Validity minValidity,
-				boolean useWeights) {
+		public double validWeight(MatchType minMatchType, boolean useWeights) {
 			return stream()
 					.mapToDouble(rating -> rating.matchType.isAtLeast(minMatchType)
-							&& rating.validity().isAtLeast(minValidity) && !rating.isTooSoon()
+							&& rating.isValid() && !rating.isTooSoon()
 							? (useWeights ? rating.hint.weight() : 1) : 0)
 					.sum();
+		}
+
+		public double qualityScore(MatchType minMatchType) {
+			return validWeight(minMatchType, true) / getTotalWeight();
 		}
 
 		private double getTotalWeight() {
 			return stream().mapToDouble(r -> r.hint.weight()).sum();
 		}
 
-		protected double[] getValidityArray() {
-			int nValues = Validity.values().length - 1;
-			double[] validityArray = new double[nValues * 2];
-			if (isEmpty()) return validityArray;
-			for (int i = 0; i < nValues; i++) {
-				validityArray[i * 2] =
-						validityWeight(MatchType.Full, Validity.fromInt(i + 1), true);
-				validityArray[i * 2 + 1] =
-						validityWeight(MatchType.Partial, Validity.fromInt(i + 1), true);
-			}
-			double totalWeight = getTotalWeight();;
-			for (int i = 0; i < validityArray.length; i++) {
-				validityArray[i] /= totalWeight;
-			}
-			return validityArray;
-		}
-
-		protected double getPriorityScore(boolean countPartial) {
+		protected double priorityScore(boolean countPartial) {
 			if (isEmpty()) return 0;
 			return stream()
 					.filter(r -> r.priority() != null &&
@@ -638,22 +587,10 @@ public class RateHints {
 		}
 
 		public void printSummary() {
-			double[] validityArray = getValidityArray();
-			System.out.printf("%s: %s / %.02f (%.02f)p\n",
-					requestID, validityArrayToString(validityArray, 2),
-					getPriorityScore(false), getPriorityScore(true));
-		}
-
-		private static String validityArrayToString(double[] array, int digits) {
-			String format = "%.0" + digits + "f (%.0" + digits + "f)";
-			StringBuilder sb = new StringBuilder();
-			sb.append("[");
-			for (int i = 0; i < array.length / 2; i++) {
-				if (i > 0) sb.append(", ");
-				sb.append(String.format(format, array[i * 2], array[i * 2 + 1]));
-			}
-			sb.append("]v");
-			return sb.toString();
+			System.out.printf("%s: %.02f (%.02f)v / %.02f (%.02f)p\n",
+					requestID,
+					qualityScore(MatchType.Full), qualityScore(MatchType.Partial),
+					priorityScore(false), priorityScore(true));
 		}
 
 		private void printRatings(ASTNode from, RatingConfig config, List<TutorHint> validHints) {
@@ -661,10 +598,8 @@ public class RateHints {
 			HintOutcome firstOutcome = get(0).hint;
 			System.out.println("+====+ " + firstOutcome.assignmentID + " / " +
 					firstOutcome.requestID + " +====+");
-			Validity validityThreshold = config.validityThreshold();
 			Set<TutorHint> valid = validHints.stream()
-					.filter(hint -> hint.validity.isAtLeast(validityThreshold) &&
-							(hint.priority == null || hint.priority != Priority.TooSoon))
+					.filter(hint -> hint.priority == null || hint.priority != Priority.TooSoon)
 					.collect(Collectors.toSet());
 			System.out.println(from.prettyPrint(true, config));
 			for (int tooSoonRound = 0; tooSoonRound < 2; tooSoonRound++) {
@@ -672,11 +607,7 @@ public class RateHints {
 					boolean tooSoon = tooSoonRound == 1;
 					List<HintRating> matching = stream()
 							.filter(rating -> tooSoon ? rating.isTooSoon() :
-								(!rating.isTooSoon() &&
-									(!rating.validity().isAtLeast(validityThreshold) ==
-										(type == MatchType.None)) &&
-									(rating.matchType == type ||
-										type == MatchType.None)))
+								(!rating.isTooSoon() && rating.matchType == type))
 							.collect(Collectors.toList());
 					if (!matching.isEmpty()) {
 						String label = tooSoon ? "Too Soon" : type.toString();
@@ -706,8 +637,8 @@ public class RateHints {
 		public final TutorHint match;
 		public final MatchType matchType;
 
-		public Validity validity() {
-			return match == null ? Validity.NoTutors : match.validity;
+		public boolean isValid() {
+			return match != null;
 		}
 
 		public boolean isTooSoon() {
@@ -737,14 +668,13 @@ public class RateHints {
 			spreadsheet.put("order", order);
 			spreadsheet.put("weight", hint.weight());
 			spreadsheet.put("weightNorm", hint.weight() / totalWeight);
-			Integer matchID = null, validity = null, priority = null;
+			Integer matchID = null, priority = null;
 			if (match != null) {
 				matchID = match.hintID;
-				validity = match.validity.value;
 				priority = match.priority == null ? null : match.priority.value;
 			}
 			spreadsheet.put("matchID", matchID);
-			spreadsheet.put("validity", validity);
+			spreadsheet.put("valid", isValid());
 			spreadsheet.put("priority", priority);
 			spreadsheet.put("type", matchType.toString());
 			spreadsheet.put("outcome", hint.result == null ? "" : hint.result.toJSON().toString());

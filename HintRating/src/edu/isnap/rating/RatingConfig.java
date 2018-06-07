@@ -50,15 +50,12 @@ public interface RatingConfig {
 	public String normalizeNodeValue(String type, String value);
 
 	/**
-	 * Should return the target {@link Validity} validity threshold for hint rating. Only those
-	 * {@link TutorHint}s with at least this validity will be actively used in the
-	 * {@link GoldStandard} during rating. Matches with Lower-validity TutorHints will still be
-	 * calculated, but this may be somewhat inaccurate, since higher-validity partial matches will
-	 * be preferenced over lower-validity full matches. Any HintRequest without a TutorHint with at
-	 * least this validity is assumed to have no valid hints (e.g. the code is correct), and it will
-	 * be skipped in hint rating analysis.
+	 * Should return the target {@link Validity} validity for hint rating. Only those
+	 * {@link TutorHint}s which meet this validity will be included in the
+	 * {@link GoldStandard} during rating. Any HintRequest without a TutorHint with this
+	 * validity will be skipped in hint rating analysis.
 	 */
-	public default Validity validityThreshold() {
+	public default Validity targetValidity() {
 		return Validity.MultipleTutors;
 	}
 

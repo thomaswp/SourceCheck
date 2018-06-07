@@ -1,6 +1,7 @@
 package edu.isnap.rating;
 
 import java.util.Comparator;
+import java.util.EnumSet;
 
 import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.util.Diff;
@@ -8,23 +9,12 @@ import edu.isnap.ctd.util.Diff;
 public class TutorHint implements Comparable<TutorHint> {
 
 	public enum Validity {
-		NoTutors(0), OneTutor(1), MultipleTutors(2), Consensus(3);
+		OneTutor(1), MultipleTutors(2), Consensus(3);
 
 		public final int value;
 
 		Validity(int value) {
 			this.value = value;
-		}
-
-		public static Validity fromInt(int value) {
-			for (Validity validity : Validity.values()) {
-				if (validity.value == value) return validity;
-			}
-			return null;
-		}
-
-		public boolean isAtLeast(Validity minValidity) {
-			return value >= minValidity.value;
 		}
 	}
 
@@ -56,8 +46,15 @@ public class TutorHint implements Comparable<TutorHint> {
 	public final String tutor, assignmentID;
 	public final ASTNode from, to;
 
-	public Validity validity;
+	// We use an EnumSet for validity, since they do no have a strict ordering. A hint may have
+	// only 1 initial tutor vote but then be included in consensus (so Consensus, but not
+	// MultipleTutors).
+	public EnumSet<Validity> validity;
 	public Priority priority;
+
+	private Validity highestValidity() {
+		return validity.stream().max(Comparator.comparing(v -> v.value)).orElseGet(() -> null);
+	}
 
 	public TutorHint(int hintID, String requestID, String tutor, String assignmentID, String year,
 			ASTNode from, ASTNode to) {
@@ -88,7 +85,7 @@ public class TutorHint implements Comparable<TutorHint> {
 			Comparator.comparing((TutorHint hint) -> hint.assignmentID)
 			.thenComparing(hint -> hint.year == null ? "" : hint.year)
 			.thenComparing(hint -> hint.requestID)
-			.thenComparing(hint -> hint.validity)
+			.thenComparing(hint -> hint.highestValidity())
 			.thenComparing(hint -> hint.priority == null ? 0 : hint.priority.value);
 
 	@Override
