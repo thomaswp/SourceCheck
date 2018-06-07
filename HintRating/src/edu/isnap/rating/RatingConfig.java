@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import edu.isnap.ctd.graph.ASTNode;
-import edu.isnap.rating.TutorHint.Validity;
 
 public interface RatingConfig {
 
@@ -48,16 +47,6 @@ public interface RatingConfig {
 	 * normalized value. Otherwise, it should return the given value.
 	 */
 	public String normalizeNodeValue(String type, String value);
-
-	/**
-	 * Should return the target {@link Validity} validity for hint rating. Only those
-	 * {@link TutorHint}s which meet this validity will be included in the
-	 * {@link GoldStandard} during rating. Any HintRequest without a TutorHint with this
-	 * validity will be skipped in hint rating analysis.
-	 */
-	public default Validity targetValidity() {
-		return Validity.MultipleTutors;
-	}
 
 	public final static RatingConfig Default = new RatingConfig() {
 

@@ -3,17 +3,21 @@ package edu.isnap.rating;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
+import edu.isnap.rating.TutorHint.Validity;
+
 @SuppressWarnings("unused")
 public class RunRateHints {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
-		RateHints.rateOneDir(RateHints.ISNAP_F16_F17_DATA_DIR, "SourceCheck", RatingConfig.Snap,
-				false, false);
-//		RateHints.rateOneDir(RateHints.ITAP_S16_DATA_DIR, "gross", RatingConfig.Snap,
-//				true, false);
+		Validity validity = Validity.MultipleTutors;
 
-//		RateHints.rateDir(RateHints.ISNAP_F16_F17_DATA_DIR, RatingConfig.Snap, true);
-//		RateHints.rateDir(RateHints.ITAP_S16_DATA_DIR, RatingConfig.Python, true);
+//		RateHints.rateOneDir(RateHints.ISNAP_F16_F17_DATA_DIR, "SourceCheck", RatingConfig.Snap,
+//				validity, false, false);
+//		RateHints.rateOneDir(RateHints.ITAP_S16_DATA_DIR, "gross", RatingConfig.Snap,
+//				validity, true, false);
+
+		RateHints.rateDir(RateHints.ISNAP_F16_F17_DATA_DIR, RatingConfig.Snap, validity, true);
+		RateHints.rateDir(RateHints.ITAP_S16_DATA_DIR, RatingConfig.Python, validity, true);
 
 //		printHints(RateHints.ISNAP_F16_F17_DATA_DIR, "chf_with_past", RatingConfig.Snap);
 //		printHints(RateHints.ISNAP_F16_F17_DATA_DIR, "chf_without_past", RatingConfig.Snap);

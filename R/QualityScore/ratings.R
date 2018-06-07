@@ -9,11 +9,11 @@ library(irr)
 se <- function(x) ifelse(length(x) == 0, 0, sqrt(var(x, na.rm=T)/sum(!is.na(x))))
 ifNA <- function(x, other) ifelse(is.na(x), other, x)
 
-loadRatings <- function(dataset, names, dir="") {
+loadRatings <- function(dataset, threshold, names, dir="") {
   allRatings <- NULL
   if (dir != "") dir <- paste0(dir, "/")
   for (name in names) {
-    ratings <- read_csv(paste0("../../data/hint-rating/", dataset, "/algorithms/", dir, name, ".csv"))
+    ratings <- read_csv(paste0("../../data/hint-rating/", dataset, "/ratings/", threshold, "/", dir, name, ".csv"))
     ratings$source <- name
     if (is.null(allRatings)) allRatings <- ratings
     else allRatings <- rbind(allRatings, ratings)
@@ -21,7 +21,7 @@ loadRatings <- function(dataset, names, dir="") {
   standard <- read_csv(paste0("../../data/hint-rating/", dataset, "/gold-standard.csv"))
   years <- ddply(standard, c("requestID"), summarize, year=head(year, 1))
   allRatings <- merge(allRatings, years)
-  allRatings$validity[is.na(allRatings$validity)] <- 0
+  if ("validity" %in% names(allRatings)) allRatings$validity[is.na(allRatings$validity)] <- 0
   allRatings$dataset <- dataset
   allRatings
 }
@@ -60,16 +60,23 @@ writeSQL <- function(ratings, path) {
   sink()
 }
 
-getSamples <- function() {
+writeSamples <- function() {
+  # This will not work as expected with the new ratings output and directory
+  # It could be fixed, but for now it's easier to just read from the file
+  
   # Don't include both hint factories
   sampleRatings <- loadRatings("isnapF16-F17", c("SourceCheck", "CTD", "PQGram", "chf_with_past"), "sampling")
   samples <- selectHintsForManualRating(sampleRatings)
   
   write.csv(subset(samples, select=c(assignmentID, year, requestID, hintID, priority)), "C:/Users/Thomas/Desktop/samples.csv", row.names = F)
-  write.csv(samples, "C:/Users/Thomas/Desktop/samples-full.csv", row.names = F)
+  write.csv(samples, "data/samples-full.csv", row.names = F)
   writeSQL(samples[samples$priority <= 25,], "C:/Users/Thomas/Desktop/samples75.sql")
   writeSQL(samples[samples$priority <= 50,], "C:/Users/Thomas/Desktop/samples150.sql")
   writeSQL(samples[samples$priority <= 84,], "C:/Users/Thomas/Desktop/samples252.sql")
+}
+
+getSamples <- function() {
+  samples <- read_csv("data/samples-full.csv")
   
   manual <- read_csv("data/manual.csv")
   manual$consensus <- suppressWarnings(as.integer(manual$consensus))
@@ -81,15 +88,19 @@ getSamples <- function() {
   manual$t3 <- manualT3$validity
   manual <- manual[!is.na(manual$consensus),]
   
-  verifyRatings(manual, samples, sampleRatings)
+  verifyRatingsOld(manual, samples, sampleRatings)
   
-  newRatings <- loadRatings("isnapF16-F17", c("SourceCheck_sampling", "CTD", "PQGram", "chf_with_past"))
+  newRatingsOne <- loadRatings("isnapF16-F17", "OneTutor", c("SourceCheck_sampling", "CTD", "PQGram", "chf_with_past"))
+  newRatingsMT <- loadRatings("isnapF16-F17", "MultipleTutors", c("SourceCheck_sampling", "CTD", "PQGram", "chf_with_past"))
+  newRatingsConsensus <- loadRatings("isnapF16-F17", "Consensus", c("SourceCheck_sampling", "CTD", "PQGram", "chf_with_past"))
   # 0.83 0.83 0.83 (One tutor)
+  verifyRatings(manual, samples, newRatingsOne)
   # 0.78 0.80 0.81 (Multiple tutors)
+  verifyRatings(manual, samples, newRatingsMT)
   # 0.81 0.81 0.81 (Consensus)
+  verifyRatings(manual, samples, newRatingsConsensus)
   # Note: to get perfect results for OneTutor or Consensus validity thresholds, you have to
   # re-rate hints with the RatingConfig's highestRequiredValidity set to the right value.
-  verifyRatings(manual, samples, newRatings)
   
   
   # alpha = 0.673
@@ -106,6 +117,14 @@ getSamples <- function() {
 }
 
 verifyRatings <- function(manual, samples, ratings) {
+  withSamples <- getSampleRatings(samples, ratings)
+  withManual <- manual
+  names(withManual)[names(withManual) == 'priority'] <- 'ratePriority'
+  withManual <- merge(withManual[,c("hintID", "consensus", "ratePriority")], withSamples)
+  printVerify("", withManual$consensus, withManual$type)
+}
+
+verifyRatingsOld <- function(manual, samples, ratings) {
   withSamples <- getSampleRatings(samples, ratings)
   withManual <- mergeManual(manual, withSamples)
   printVerify("One", withManual$consensus, withManual$tOne)
@@ -215,14 +234,14 @@ findInterestingRequests <- function(requests, ratings) {
 }
 
 compare <- function() {
-  isnap <- loadRatings("isnapF16-F17", c("SourceCheck", "CTD", "PQGram", "chf_with_past", "chf_without_past", "gross", "AllTutors"))
+  isnap <- loadRatings("isnapF16-F17", "MultipleTutors", c("SourceCheck", "CTD", "PQGram", "chf_with_past", "chf_without_past", "gross", "AllTutors"))
   isnap$dataset <- "isnap"
-  itap <- loadRatings("itapS16", c("SourceCheck", "CTD", "PQGram", "chf_with_past", "chf_without_past", "gross", "ITAP", "AllTutors"))
+  itap <- loadRatings("itapS16", "MultipleTutors", c("SourceCheck", "CTD", "PQGram", "chf_with_past", "chf_without_past", "gross", "ITAP", "AllTutors"))
   itap$dataset <- "itap"
   ratings <- rbind(isnap, itap)
   ratings <- ratings[order(ratings$dataset, ratings$assignmentID, ratings$year, ratings$requestID, ratings$source, ratings$order),]
-  ratings$scoreFull <- ratings$weightNorm * ifelse(ratings$type=="Full" & ratings$validity >= 2, 1, 0)
-  ratings$scorePartial <- ratings$weightNorm * ifelse(ratings$type!="None" & ratings$validity >= 2, 1, 0)
+  ratings$scoreFull <- ratings$weightNorm * ifelse(ratings$type=="Full" & ratings$valid, 1, 0)
+  ratings$scorePartial <- ratings$weightNorm * ifelse(ratings$type!="None" & ratings$valid, 1, 0)
   # TODO: Priority doesn't match with Java output, but we don't have it for non-consensus hints, so maybe not a priority
   ratings$priorityFull <- ifNA(4 - ratings$priority, 0) * ratings$scoreFull
   ratings$priorityPartial <- ifNA(4 - ratings$priority, 0) * ratings$scorePartial

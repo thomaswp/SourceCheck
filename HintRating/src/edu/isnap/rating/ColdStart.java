@@ -8,6 +8,7 @@ import java.util.Random;
 
 import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.rating.RateHints.HintRatingSet;
+import edu.isnap.rating.TutorHint.Validity;
 
 public class ColdStart {
 
@@ -17,13 +18,15 @@ public class ColdStart {
 	private final HintRequestDataset requestDataset;
 	private final TrainingDataset trainingDataset;
 	private final HintGenerator hintGenerator;
+	private final Validity targetValidity;
 
 	public ColdStart(GoldStandard standard, TrainingDataset dataset, HintRequestDataset requests,
-			HintGenerator hintGenerator) {
+			HintGenerator hintGenerator, Validity targetValidity) {
 		this.standard = standard;
 		this.trainingDataset = dataset;
 		this.requestDataset = requests;
 		this.hintGenerator = hintGenerator;
+		this.targetValidity = targetValidity;
 	}
 
 	public Spreadsheet test(int rounds, int step) {
@@ -66,7 +69,7 @@ public class ColdStart {
 						round, count, n, seed);
 				HintSet hintSet = hintGenerator.generateHints(name, requestDataset.getAllRequests());
 				System.out.println("==== " + name + " ===");
-				HintRatingSet ratings = RateHints.rate(assignmentStandard, hintSet);
+				HintRatingSet ratings = RateHints.rate(assignmentStandard, hintSet, targetValidity);
 
 				spreadsheet.setHeader("count", count);
 				spreadsheet.setHeader("total", n);
@@ -86,7 +89,7 @@ public class ColdStart {
 				HintSet hintSet = hintGenerator.generateHints(trace.id,
 						requestDataset.getAllRequests());
 				System.out.println("==== " + trace.id + " ===");
-				HintRatingSet ratings = RateHints.rate(assignmentStandard, hintSet);
+				HintRatingSet ratings = RateHints.rate(assignmentStandard, hintSet, targetValidity);
 
 				spreadsheet.setHeader("traceID", trace.id);
 				ratings.writeAllRatings(spreadsheet);

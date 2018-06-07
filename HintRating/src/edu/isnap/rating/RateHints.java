@@ -30,6 +30,7 @@ public class RateHints {
 
 	public final static String GS_SPREADSHEET = "gold-standard.csv";
 	public final static String ALGORITHMS_DIR = "algorithms";
+	public final static String OUTPUT_DIR = "ratings";
 	public final static String TRAINING_FILE = "training.csv.gz";
 	public static final String REQUEST_FILE = "requests.csv.gz";
 
@@ -40,41 +41,46 @@ public class RateHints {
 
 	private final static String PARTIAL_UNSEEN_VALUE = "NEW_VALUE";
 
-	public static void rateDir(String path, RatingConfig config, boolean write)
-			throws FileNotFoundException, IOException {
+	public static void rateDir(String path, RatingConfig config, Validity targetValidity,
+			boolean write) throws FileNotFoundException, IOException {
 		GoldStandard standard = GoldStandard.parseSpreadsheet(path + GS_SPREADSHEET);
 		File algorithmsFolder = new File(path, ALGORITHMS_DIR);
 		if (!algorithmsFolder.exists() || !algorithmsFolder.isDirectory()) {
 			throw new RuntimeException("Missing algorithms folder");
 		}
 		for (File algorithmFolder : algorithmsFolder.listFiles(file -> file.isDirectory())) {
-			rateOneDir(path, algorithmFolder.getName(), config, write, standard, false);
+			rateOneDir(path, algorithmFolder.getName(), config, standard, targetValidity, write,
+					false);
 		}
 	}
 
 	public static void rateOneDir(String parentDir, String dir, RatingConfig config,
-			boolean write, boolean debug) throws IOException, FileNotFoundException {
+			Validity targetValidity, boolean write, boolean debug)
+					throws IOException, FileNotFoundException {
 		GoldStandard standard = GoldStandard.parseSpreadsheet(parentDir + GS_SPREADSHEET);
-		rateOneDir(parentDir, dir, config, write, standard, debug);
+		rateOneDir(parentDir, dir, config, standard, targetValidity, write, debug);
 	}
 
 	public static void rateOneDir(String parentDir, String dir, RatingConfig config,
-			boolean write, GoldStandard standard, boolean debug)
+			GoldStandard standard, Validity targetValidity, boolean write, boolean debug)
 					throws IOException, FileNotFoundException {
 		HintSet hintSet = HintSet.fromFolder(dir, config,
 				String.format("%s/%s/%s", parentDir, ALGORITHMS_DIR, dir));
 		System.out.println(hintSet.name);
-		HintRatingSet ratings = rate(standard, hintSet, debug);
+		HintRatingSet ratings = rate(standard, hintSet, targetValidity, debug);
 		if (write) {
-			ratings.writeAllHints(parentDir + "/" + RateHints.ALGORITHMS_DIR + "/" + dir + ".csv");
+			ratings.writeAllHints(String.format("%s/%s/%s/%s.csv",
+					parentDir, RateHints.OUTPUT_DIR, targetValidity, dir));
 		}
 	}
 
-	public static HintRatingSet rate(GoldStandard standard, HintSet hintSet) {
-		return rate(standard, hintSet, false);
+	public static HintRatingSet rate(GoldStandard standard, HintSet hintSet,
+			Validity targetValidity) {
+		return rate(standard, hintSet, targetValidity, false);
 	}
 
-	public static HintRatingSet rate(GoldStandard standard, HintSet hintSet, boolean debug) {
+	public static HintRatingSet rate(GoldStandard standard, HintSet hintSet,
+			Validity targetValidity, boolean debug) {
 		RatingConfig config = hintSet.config;
 		HintRatingSet ratingSet = new HintRatingSet(hintSet.name);
 		EditExtractor extractor = new EditExtractor(config, ASTNode.EMPTY_TYPE);
@@ -85,9 +91,8 @@ public class RateHints {
 
 				List<TutorHint> validHints = standard.getValidHints(assignmentID, requestID);
 
-				Validity requiredValidity = config.targetValidity();
 				// Remove any hints that don't match the required validity
-				validHints.removeIf(hint -> !hint.validity.contains(requiredValidity));
+				validHints.removeIf(hint -> !hint.validity.contains(targetValidity));
 
 				// Make sure there is at least one hint with the required validity; otherwise,
 				// assume there are no valid tutor hints and we should continue
