@@ -333,8 +333,9 @@ plotComparisonStacked <- function(assignments, dataset) {
   assignments$mScorePartialPlus <- assignments$mScorePartial - assignments$mScoreFull
   melted <- melt(assignments[,c("dataset", "source", "assignmentID", "mScorePartialPlus", "mScoreFull")], id=c("dataset", "source", "assignmentID"))
   ggplot(melted,aes(x=source, y=value, fill=variable)) + geom_bar(stat="identity") +
-    facet_wrap(~assignmentID, scales = "free_x")
-  #scale_fill_discrete(name="Match", labels=c("Partial", "Full"))
+    scale_fill_discrete(name="Match", labels=c("Partial", "Full")) +
+    scale_y_discrete(labels=c("Tutors", "SourceCheck", "CTD", "CHF", "NSNLS", "PQGram"))
+    facet_wrap(~assignmentID) + coord_flip()
 }
 
 plotComparisonTogether <- function(requests) {
@@ -353,12 +354,14 @@ plotComparisonTogether <- function(requests) {
 }
 
 plotComparisonTogetherStacked <- function(requests) {
+  requests <- requests[requests$source != "chf_without_past",]
   together <- ddply(requests, c("dataset", "source"), summarize, mScorePartialPlus=mean(scorePartial)-mean(scoreFull), mScoreFull=mean(scoreFull))
   
   ggplot(melt(together, id=c("dataset", "source")),aes(x=source, y=value, fill=variable)) + geom_bar(stat="identity") +
     scale_fill_discrete(labels=c("Full", "Partial")) + 
+    scale_x_discrete(labels=rev(c("Tutors", "ITAP", "SourceCheck", "CTD", "CHF", "NSNLS", "PQGram"))) +
     labs(fill="Match Type", x="Algorithm", y="QualityScore") +
-    coord_flip() + facet_wrap(~dataset, scales = "free_y") 
+    coord_flip() + facet_wrap(~dataset) 
   #scale_fill_discrete(name="Match", labels=c("Partial", "Full"))
 }
 
