@@ -88,6 +88,7 @@ getSamples <- function() {
   manual$t3 <- manualT3$validity
   manual <- manual[!is.na(manual$consensus),]
   
+  # TODO: Loading sample ratings does not currently work
   verifyRatingsOld(manual, samples, sampleRatings)
   
   newRatingsOne <- loadRatings("isnapF16-F17", "OneTutor", c("SourceCheck_sampling", "CTD", "PQGram", "chf_with_past"))
@@ -193,8 +194,10 @@ findInterestingRequests <- function(requests, ratings) {
   cor(byRequest[byRequest$dataset=="itap",5:10])
   
   onlyOne <- function (x) if (length(x) == 1) x else NA
+  secondBest <- function(x) sort(x)[length(x) - 1]
   scores <- ddply(algRequests, c("dataset", "assignmentID", "year", "requestID"), summarize, 
                   maxScore = max(scorePartial),
+                  difficulty = 1 - secondBest(scorePartial),
                   best = onlyOne(source[which(scorePartial==maxScore)]),
                   n0=sum(scorePartial==0), n1=sum(scorePartial==1), 
                   n05=sum(scorePartial > 0.5), n01=sum(scorePartial > 0.1), n025=sum(scorePartial > 0.25))
@@ -236,6 +239,25 @@ findInterestingRequests <- function(requests, ratings) {
   
   table(scores$dataset, scores$n05)
   table(scores$dataset, scores$n1)
+  
+  goldStandardiSnap <- read_csv("../../data/hint-rating/isnapF16-F17/gold-standard.csv")
+  goldStandardiSnap$dataset <- "isnap"
+  goldStandardITAP <- read_csv("../../data/hint-rating/itapS16/gold-standard.csv")
+  goldStandardITAP$dataset <- "itap"
+  goldStandard <- rbind(goldStandardiSnap, goldStandardITAP)
+  gsRequests <- ddply(goldStandard, c("dataset", "assignmentID", "year", "requestID"), summarize, 
+                      nHints = sum(MultipleTutors),
+                      nHP = sum(priority < 3, na.rm=T))
+  
+  scores <- merge(scores, gsRequests)
+  ggplot(scores, aes(x=difficulty>0.75,y=nHints)) + geom_boxplot()
+  ggplot(scores, aes(x=difficulty>0.75,y=nHints)) + geom_boxplot() + facet_wrap(~ dataset)
+  wilcox.test(scores$nHints[scores$dataset=="isnap" & scores$difficulty > 0.75], 
+              scores$nHints[scores$dataset=="isnap" & scores$difficulty <= 0.75])
+  
+  ggplot(scores[scores$dataset == "isnap",], aes(x=difficulty>0.75,y=nHP)) + geom_boxplot()
+  wilcox.test(scores$nHP[scores$dataset=="isnap" & scores$difficulty > 0.75], 
+              scores$nHP[scores$dataset=="isnap" & scores$difficulty <= 0.75])
 }
 
 compare <- function() {
@@ -276,15 +298,16 @@ compare <- function() {
   plotComparison(assignments, "itap")
   plotComparisonTogether(requests)
   
+  # Broken?
   plotComparisonStacked(assignments, "isnap")
   plotComparisonStacked(assignments, "itap")
   plotComparisonTogetherStacked(requests)
   
   # Getting slightly inconsistent results for these on different machines:
   
-  # Sig p = 0.048
+  # Sig p = 0.032
   comp(requests, F, "isnap", "SourceCheck", "CTD")
-  # NS  p = 0.817 or 0.818? - big difference between partial and full
+  # NS  p = 0.945 - big difference between partial and full
   comp(requests, T, "isnap", "SourceCheck", "CTD")
   # Sig p < 0.001
   comp(requests, F, "isnap", "SourceCheck", "chf_with_past")
