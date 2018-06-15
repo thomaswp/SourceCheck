@@ -354,11 +354,21 @@ plotComparison <- function(assignments, dataset) {
 plotComparisonStacked <- function(assignments, dataset) {
   assignments <- assignments[assignments$dataset == dataset,]
   assignments$mScorePartialPlus <- assignments$mScorePartial - assignments$mScoreFull
+  ylabs <- c("Tutors", "ITAP", "SourceCheck", "CTD", "CHF", "NSNLS", "Zimmerman")
+  fillLabs <- if (dataset == "isnap") c(`squiralHW` = "Squiral", `guess1Lab` = "GuessingGame") else c("")
+  title <- paste("QualityScore Ratings -", if (dataset == "isnap") "iSnap" else "ITAP")
+  assignments <- assignments[assignments$source != "chf_without_past",]
+  if (dataset == "isnap") ylabs <- ylabs[ylabs != "ITAP"]
   melted <- melt(assignments[,c("dataset", "source", "assignmentID", "mScorePartialPlus", "mScoreFull")], id=c("dataset", "source", "assignmentID"))
   ggplot(melted,aes(x=source, y=value, fill=variable)) + geom_bar(stat="identity") +
-    scale_fill_discrete(name="Match", labels=c("Partial", "Full")) +
-    scale_y_discrete(labels=c("Tutors", "SourceCheck", "CTD", "CHF", "NSNLS", "PQGram"))
-    facet_wrap(~assignmentID) + coord_flip()
+    suppressWarnings(geom_text(aes(x=source, y=mScoreFull+mScorePartialPlus+0.15, label = sprintf("%.02f (%.02f)", mScoreFull, mScoreFull+mScorePartialPlus), fill=NULL), data = assignments)) +
+    scale_fill_discrete(labels=c("Partial", "Full")) +
+    scale_x_discrete(labels=rev(ylabs)) +
+    scale_y_continuous(limits=c(0, 1.1), breaks = c(0, 0.25, 0.5, 0.75, 1.0)) +
+    labs(fill="Match", x="Algorithm", y="QualityScore", title=title) +
+    theme_bw(base_size = 17) +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    coord_flip() + facet_wrap(~assignmentID, labeller = as_labeller(fillLabs)) 
 }
 
 plotComparisonTogether <- function(requests) {
@@ -377,15 +387,20 @@ plotComparisonTogether <- function(requests) {
 }
 
 plotComparisonTogetherStacked <- function(requests) {
+  niSnap <- length(unique(requests$requestID[requests$dataset=="isnap"]))
+  nITAP <- length(unique(requests$requestID[requests$dataset=="itap"]))
   requests <- requests[requests$source != "chf_without_past",]
   together <- ddply(requests, c("dataset", "source"), summarize, mScorePartialPlus=mean(scorePartial)-mean(scoreFull), mScoreFull=mean(scoreFull))
   
   ggplot(melt(together, id=c("dataset", "source")),aes(x=source, y=value, fill=variable)) + geom_bar(stat="identity") +
+    suppressWarnings(geom_text(aes(x=source, y=mScoreFull+mScorePartialPlus+0.15, label = sprintf("%.02f (%.02f)", mScoreFull, mScoreFull+mScorePartialPlus), fill=NULL), data = together)) +
     scale_fill_discrete(labels=c("Full", "Partial")) + 
-    scale_x_discrete(labels=rev(c("Tutors", "ITAP", "SourceCheck", "CTD", "CHF", "NSNLS", "PQGram"))) +
-    labs(fill="Match Type", x="Algorithm", y="QualityScore") +
-    coord_flip() + facet_wrap(~dataset) 
-  #scale_fill_discrete(name="Match", labels=c("Partial", "Full"))
+    scale_x_discrete(labels=rev(c("Tutors", "ITAP", "SourceCheck", "CTD", "CHF", "NSNLS", "Zimmerman"))) +
+    scale_y_continuous(limits=c(0, 1.15), breaks = c(0, 0.25, 0.5, 0.75, 1.0)) +
+    labs(fill="Match", x="Algorithm", y="QualityScore", title="QualityScore Ratings") +
+    theme_bw(base_size = 17) +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    coord_flip() + facet_wrap(~dataset, labeller = as_labeller(c(`isnap` = paste0("iSnap (n=", niSnap, ")"), `itap` = paste0("ITAP (n=", nITAP, ")")))) 
 }
 
 comp <- function(requests, partial, dataset, source1, source2) {
