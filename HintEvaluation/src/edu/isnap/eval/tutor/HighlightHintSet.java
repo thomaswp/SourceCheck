@@ -100,7 +100,7 @@ public abstract class HighlightHintSet extends HintMapHintSet {
 
 	private static double getDefaultWeight(EditHint hint) {
 		// Could probably filter out deletions of blocks not in the main script
-//		if (hint instanceof Deletion) return 0.25f;
+		if (hint instanceof Deletion) return 0.25f;
 		return 1;
 	}
 

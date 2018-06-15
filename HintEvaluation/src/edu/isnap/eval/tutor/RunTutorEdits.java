@@ -49,17 +49,17 @@ public class RunTutorEdits extends TutorEdits {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
-		RatingDataset dataset = iSnapF16F17;
+		RatingDataset dataset = ITAPS16;
 		Source source = Source.StudentData;
 		HintAlgorithm algorithm = SourceCheck;
 		boolean debug = false;
-		boolean writeHints = false;
+		boolean writeHints = true;
 
 //		writeAllHintSets(iSnapF16F17, ITAPS16);
 
-		dataset.writeGoldStandard();
+//		dataset.writeGoldStandard();
 //		dataset.exportTrainingAndTestData(true);
-//		dataset.writeHintSet(algorithm, source);
+		dataset.writeHintSet(algorithm, source);
 
 		// Leave this on for a while, until you've rewritten it for all local repos
 //		dataset.verifyGoldStandard();
