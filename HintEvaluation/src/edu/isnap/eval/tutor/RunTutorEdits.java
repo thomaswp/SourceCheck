@@ -53,7 +53,7 @@ public class RunTutorEdits extends TutorEdits {
 		Source source = Source.StudentData;
 		HintAlgorithm algorithm = SourceCheck;
 		boolean debug = false;
-		boolean writeHints = true;
+		boolean writeHints = false;
 
 //		writeAllHintSets(iSnapF16F17, ITAPS16);
 

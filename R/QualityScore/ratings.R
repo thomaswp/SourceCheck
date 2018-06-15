@@ -261,7 +261,7 @@ findInterestingRequests <- function(requests, ratings) {
               scores$nHP[scores$dataset=="isnap" & scores$difficulty <= 0.75])
 }
 
-compare <- function() {
+loadRequests <- function() {
   isnap <- loadRatings("isnapF16-F17", "MultipleTutors", c("SourceCheck", "CTD", "PQGram", "chf_with_past", "chf_without_past", "gross", "AllTutors"))
   isnap$dataset <- "isnap"
   itap <- loadRatings("itapS16", "MultipleTutors", c("SourceCheck", "CTD", "PQGram", "chf_with_past", "chf_without_past", "gross", "ITAP", "AllTutors"))
@@ -278,6 +278,11 @@ compare <- function() {
   requests <- ddply(ratings, c("dataset", "source", "assignmentID", "requestID"), summarize, 
                     scoreFull=sum(scoreFull), scorePartial=sum(scorePartial),
                     priorityFull=sum(priorityFull), priorityPartial=sum(priorityPartial))
+  requests
+}
+
+compare <- function() {
+  requests <- loadRequests()
   
   ggplot(requests[requests$dataset=="isnap",], aes(x=source, y=scoreFull)) + geom_boxplot() + 
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) + facet_wrap(~assignmentID)

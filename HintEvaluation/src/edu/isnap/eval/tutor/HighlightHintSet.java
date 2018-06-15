@@ -13,10 +13,8 @@ import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.HintMap;
-import edu.isnap.ctd.hint.edit.Deletion;
 import edu.isnap.ctd.hint.edit.EditHint;
 import edu.isnap.ctd.hint.edit.Insertion;
-import edu.isnap.ctd.hint.edit.Reorder;
 import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.Diff.ColorStyle;
 import edu.isnap.ctd.util.Tuple;
@@ -84,8 +82,7 @@ public abstract class HighlightHintSet extends HintMapHintSet {
 				if (outcomeNode.hasType("snapshot")) outcomeNode.type = "Snap!shot";
 				double weight;
 				if (hintConfig.usePriority) {
-					weight = hint.priority.consensus() * getDefaultWeight(hint);
-//					if (priority < 0.25) continue;
+					weight = hint.priority.consensus();
 				} else {
 					weight = 1;
 				}
@@ -96,12 +93,6 @@ public abstract class HighlightHintSet extends HintMapHintSet {
 		}
 		finish();
 		return this;
-	}
-
-	private static double getDefaultWeight(EditHint hint) {
-		// Could probably filter out deletions of blocks not in the main script
-		if (hint instanceof Deletion) return 0.25f;
-		return 1;
 	}
 
 	// Filter out hints that wouldn't be shown in iSnap anyway
@@ -134,15 +125,11 @@ public abstract class HighlightHintSet extends HintMapHintSet {
 			}
 		}
 
-		Set<EditHint> hintSet = hints.stream()
-				.filter(h -> !(h instanceof Insertion))
-				// Maybe? Last study showed these are not generally created by people
-				.filter(h -> !(h instanceof Reorder))
-				// Maybe? Technically we do show this, but it's just highlighting, and probably
-				// should go away
-				.filter(h -> !(h instanceof Deletion && ((Deletion) h).node.hasType("script")))
+		// Empirically, we know that almost all hints take the form of moves or insertions
+		Set<EditHint> hintSet = insertions.stream()
+				.map(i -> (EditHint)i)
 				.collect(Collectors.toSet());
-		hintSet.addAll(insertions);
+
 		return hintSet;
 	}
 

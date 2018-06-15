@@ -614,6 +614,7 @@ public class RateHints {
 							.filter(rating -> tooSoon ? rating.isTooSoon() :
 								(!rating.isTooSoon() && rating.matchType == type))
 							.collect(Collectors.toList());
+					if (type == MatchType.None) continue;
 					if (!matching.isEmpty()) {
 						String label = tooSoon ? "Too Soon" : type.toString();
 						System.out.println("               === " + label + " ===");
