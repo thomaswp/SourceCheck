@@ -278,11 +278,18 @@ loadRequests <- function() {
   requests <- ddply(ratings, c("dataset", "source", "assignmentID", "requestID"), summarize, 
                     scoreFull=sum(scoreFull), scorePartial=sum(scorePartial),
                     priorityFull=sum(priorityFull), priorityPartial=sum(priorityPartial))
+  requests <- requests[requests$source != "chf_without_past",]
   requests
 }
 
 compare <- function() {
   requests <- loadRequests()
+  algRequests <-  requests[requests$source != "AllTutors",]
+  
+  assignments <- ddply(requests, c("dataset", "source", "assignmentID"), summarize, 
+                       mScoreFull=mean(scoreFull), mScorePartial=mean(scorePartial),
+                       seFull=se(scoreFull), sePartial=se(scorePartial),
+                       mPriorityFull=mean(priorityFull), mPriorityPartial=mean(priorityPartial))
   
   ggplot(requests[requests$dataset=="isnap",], aes(x=source, y=scoreFull)) + geom_boxplot() + 
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) + facet_wrap(~assignmentID)
@@ -295,11 +302,6 @@ compare <- function() {
   ggplot(requests, aes(x=source, y=scorePartial)) + geom_boxplot() + 
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) + facet_wrap(~dataset)
   
-  assignments <- ddply(requests, c("dataset", "source", "assignmentID"), summarize, 
-                       mScoreFull=mean(scoreFull), mScorePartial=mean(scorePartial),
-                       seFull=se(scoreFull), sePartial=se(scorePartial),
-                       mPriorityFull=mean(priorityFull), mPriorityPartial=mean(priorityPartial))
-  
   plotComparison(assignments, "isnap")
   plotComparison(assignments, "itap")
   plotComparisonTogether(requests)
@@ -310,36 +312,17 @@ compare <- function() {
   
   # Getting slightly inconsistent results for these on different machines:
   
-  # Sig p = 0.032
-  comp(requests, F, "isnap", "SourceCheck", "CTD")
-  # NS  p = 0.945 - big difference between partial and full
-  comp(requests, T, "isnap", "SourceCheck", "CTD")
-  # Sig p < 0.001
-  comp(requests, F, "isnap", "SourceCheck", "chf_with_past")
+  kruskal.test(scoreFull ~ source, algRequests[algRequests$dataset=="isnap",])
+  summary(aov(scoreFull ~ source + assignmentID + source * assignmentID, algRequests[algRequests$dataset=="isnap",]))
   
-  # NS  p = 0.121
-  comp(requests[requests$assignmentID=="guess1Lab",], F, "isnap", "SourceCheck", "CTD")
-  # NS  p = 0.264 - As many do better as worse
-  comp(requests[requests$assignmentID=="squiralHW",], F, "isnap", "SourceCheck", "CTD")
+  allComps(requests, F, "isnap")
+  allComps(requests, T, "isnap")
   
-  # NS  p = 0.065
-  comp(requests, F, "itap", "ITAP", "SourceCheck")
-  # Sig p = 0.024
-  comp(requests, T, "itap", "ITAP", "SourceCheck")
-  # NS  p = 0.188
-  comp(requests, T, "itap", "SourceCheck", "CTD")
-  # Sig p < 0.001
-  comp(requests, F, "itap", "SourceCheck", "CTD")
-  # Sig p = 0.002
-  comp(requests, T, "itap", "SourceCheck", "chf_with_past")
-  # Sig p = 0.012 or 0.116?
-  comp(requests, F, "itap", "SourceCheck", "chf_with_past")
+  kruskal.test(scoreFull ~ source, algRequests[algRequests$dataset=="itap",])
+  summary(aov(scoreFull ~ source + assignmentID + source * assignmentID, algRequests[algRequests$dataset=="itap",]))
   
-  kruskal.test(scoreFull ~ source, requests[requests$dataset=="isnap",])
-  summary(aov(scoreFull ~ source + assignmentID + source * assignmentID, requests[requests$dataset=="isnap",]))
-  
-  kruskal.test(scoreFull ~ source, requests[requests$dataset=="itap",])
-  summary(aov(scoreFull ~ source + assignmentID + source * assignmentID, requests[requests$dataset=="itap",]))
+  allComps(requests, F, "itap")
+  allComps(requests, T, "itap")
 }
 
 plotComparison <- function(assignments, dataset) {
@@ -429,4 +412,22 @@ comp <- function(requests, partial, dataset, source1, source2) {
   right <- right[order(right$requestID),column]
   print(paste(mean(left > right), " vs ", mean(left < right)))
   wilcox.test(left, right, paired=T)
+}
+
+allComps <- function(requests, partial, dataset) {
+  fRequests <- requests[requests$dataset == dataset,]
+  fRequests <- fRequests[fRequests$source != "chf_without_past",]
+  fRequests$score <- if (partial) fRequests$scorePartial else fRequests$scoreFull
+  best <- ddply(fRequests, "source", summarize, mScore=mean(score))
+  best <- best[order(best$mScore),]
+  for (i in 1:(nrow(best)-1)) {
+    worse <- best$source[i]
+    better <- best$source[i+1]
+    left <- fRequests[fRequests$source==worse,]
+    right <- fRequests[fRequests$source==better,]
+    left <- left[order(left$requestID),"score"]
+    right <- right[order(right$requestID),"score"]
+    test <- suppressWarnings(wilcox.test(left, right, paired=T))
+    print(sprintf("%s vs %s: $W = %s$; $p = %.03f$", worse, better, as.character(test$statistic), test$p.value))
+  }
 }
