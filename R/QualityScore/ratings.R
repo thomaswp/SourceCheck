@@ -8,6 +8,7 @@ library(irr)
 
 se <- function(x) ifelse(length(x) == 0, 0, sqrt(var(x, na.rm=T)/sum(!is.na(x))))
 ifNA <- function(x, other) ifelse(is.na(x), other, x)
+twoColors <- c("#a1d99b","#2c7fb8")
 
 loadRatings <- function(dataset, threshold, names, dir="") {
   allRatings <- NULL
@@ -298,7 +299,6 @@ compare <- function() {
   plotComparison(assignments, "itap")
   plotComparisonTogether(requests)
   
-  # Broken?
   plotComparisonStacked(assignments, "isnap")
   plotComparisonStacked(assignments, "itap")
   plotComparisonTogetherStacked(requests)
@@ -352,23 +352,36 @@ plotComparison <- function(assignments, dataset) {
 }
 
 plotComparisonStacked <- function(assignments, dataset) {
-  assignments <- assignments[assignments$dataset == dataset,]
-  assignments$mScorePartialPlus <- assignments$mScorePartial - assignments$mScoreFull
+  isnap <- dataset == "isnap"
+  
+  fillLabs <- 
+    if (isnap) c(`squiralHW` = "Squiral", `guess1Lab` = "GuessingGame") 
+    else c(`helloWorld`="HelloWorld", `firstAndLast`="FirstAndLast", `isPunctuation`="IsPunctuation", `kthDigit`="KthDigit", `oneToN`="OneToN")
+  title <- paste("QualityScore Ratings -", if (isnap) "iSnap" else "ITAP")
+  textOffsetX <- if (isnap) 0.15 else 0.16
+  yMax <- if (isnap) 1.1 else 1.25
   ylabs <- c("Tutors", "ITAP", "SourceCheck", "CTD", "CHF", "NSNLS", "Zimmerman")
-  fillLabs <- if (dataset == "isnap") c(`squiralHW` = "Squiral", `guess1Lab` = "GuessingGame") else c("")
-  title <- paste("QualityScore Ratings -", if (dataset == "isnap") "iSnap" else "ITAP")
+  if (isnap) ylabs <- ylabs[ylabs != "ITAP"]
+  
+  assignments <- assignments[assignments$dataset == dataset,]
+  p <- plotComparisonStackedDS(assignments, ylabs, fillLabs, title, yMax, textOffsetX)
+  if (!isnap) p <- p + theme(legend.position = c(0.75, 0.15))
+  p
+}
+
+plotComparisonStackedDS <- function(assignments, ylabs, fillLabs, title, yMax, textOffsetX) {
+  assignments$mScorePartialPlus <- assignments$mScorePartial - assignments$mScoreFull
   assignments <- assignments[assignments$source != "chf_without_past",]
-  if (dataset == "isnap") ylabs <- ylabs[ylabs != "ITAP"]
   melted <- melt(assignments[,c("dataset", "source", "assignmentID", "mScorePartialPlus", "mScoreFull")], id=c("dataset", "source", "assignmentID"))
   ggplot(melted,aes(x=source, y=value, fill=variable)) + geom_bar(stat="identity") +
-    suppressWarnings(geom_text(aes(x=source, y=mScoreFull+mScorePartialPlus+0.15, label = sprintf("%.02f (%.02f)", mScoreFull, mScoreFull+mScorePartialPlus), fill=NULL), data = assignments)) +
-    scale_fill_discrete(labels=c("Partial", "Full")) +
+    suppressWarnings(geom_text(aes(x=source, y=mScoreFull+mScorePartialPlus+textOffsetX, label = sprintf("%.02f (%.02f)", mScoreFull, mScoreFull+mScorePartialPlus), fill=NULL), data = assignments)) +
+    scale_fill_manual(labels=c("Partial", "Full"), values=twoColors) + 
     scale_x_discrete(labels=rev(ylabs)) +
-    scale_y_continuous(limits=c(0, 1.1), breaks = c(0, 0.25, 0.5, 0.75, 1.0)) +
+    scale_y_continuous(limits=c(0, yMax), breaks = c(0, 0.25, 0.5, 0.75, 1.0)) +
     labs(fill="Match", x="Algorithm", y="QualityScore", title=title) +
     theme_bw(base_size = 17) +
     theme(plot.title = element_text(hjust = 0.5)) +
-    coord_flip() + facet_wrap(~assignmentID, labeller = as_labeller(fillLabs)) 
+    coord_flip() + facet_wrap(~assignmentID, labeller = as_labeller(fillLabs), ncol=2)
 }
 
 plotComparisonTogether <- function(requests) {
@@ -394,7 +407,7 @@ plotComparisonTogetherStacked <- function(requests) {
   
   ggplot(melt(together, id=c("dataset", "source")),aes(x=source, y=value, fill=variable)) + geom_bar(stat="identity") +
     suppressWarnings(geom_text(aes(x=source, y=mScoreFull+mScorePartialPlus+0.15, label = sprintf("%.02f (%.02f)", mScoreFull, mScoreFull+mScorePartialPlus), fill=NULL), data = together)) +
-    scale_fill_discrete(labels=c("Full", "Partial")) + 
+    scale_fill_manual(labels=c("Partial", "Full"), values=twoColors) + 
     scale_x_discrete(labels=rev(c("Tutors", "ITAP", "SourceCheck", "CTD", "CHF", "NSNLS", "Zimmerman"))) +
     scale_y_continuous(limits=c(0, 1.15), breaks = c(0, 0.25, 0.5, 0.75, 1.0)) +
     labs(fill="Match", x="Algorithm", y="QualityScore", title="QualityScore Ratings") +
