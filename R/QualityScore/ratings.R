@@ -273,12 +273,27 @@ findInterestingRequests <- function(algRequests, ratings) {
   plot(jitter(scoresITAP$nHints), jitter(scoresITAP$difficulty))
   cor.test(scoresITAP$nHints, scoresITAP$difficulty, method="spearman")
   
-  # Non-deletions do _much_ better than delete-only hints
   algRatings <- ratings[ratings$source != "AllTutors" & ratings$source != "chf_without_past",]
-  algRatings$delOnly <- algRatings$nInsertions>0 | algRatings$nRelabels>0
-  ggplot(algRatings, aes(y=scoreFull, x=nInsertions>0|nRelabels>0)) + geom_boxplot()
-  ggplot(algRatings, aes(y=scoreFull, x=nInsertions>0|nRelabels>0)) + geom_boxplot() + facet_grid(dataset ~ source)
-  # How to test this statistically with independent samples?
+  algRatings$matched <- algRatings$type == "Full"
+  
+  # Non-deletions do _much_ better than delete-only hints
+  algRatings$delOnly <- algRatings$nInsertions==0 & algRatings$nRelabels==0
+  table(algRatings$delOnly, algRatings$type, algRatings$dataset)
+  # There's an issue here with the fact that hints are not at all independent
+  # Could some algorithsm be better (e.g. with insertions), but also happen to have fewer deletions
+  # Should really test within an algorithm, within a hint request
+  fisher.test(algRatings$delOnly[algRatings$dataset=="isnap"], algRatings$matched[algRatings$dataset=="isnap"])
+  fisher.test(algRatings$delOnly[algRatings$dataset=="itap"], algRatings$matched[algRatings$dataset=="itap"])
+  
+  # Larger hints (+2 edits) do better for iSnap and worse for ITAP
+  algRatings$nEdits <- algRatings$nInsertions + algRatings$nDeletions + algRatings$nRelabels
+  algRatings$moreEdits <- algRatings$nEdits > 2
+  ggplot(algRatings, aes(x=matched, y=nEdits)) + geom_boxplot() + facet_grid(~dataset)
+  table(algRatings$moreEdits, algRatings$type, algRatings$dataset)
+  # Same problem here of non-independence
+  fisher.test(algRatings$moreEdits[algRatings$dataset=="isnap"], algRatings$matched[algRatings$dataset=="isnap"])
+  fisher.test(algRatings$moreEdits[algRatings$dataset=="itap"], algRatings$matched[algRatings$dataset=="itap"])
+  
   
   # Medium positive correlation between tree size and difficulty
   plot(jitter(scores$difficulty), jitter(scores$treeSize))

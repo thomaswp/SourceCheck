@@ -99,8 +99,9 @@ public class RateHints {
 				// assume there are no valid tutor hints and we should continue
 				if (validHints.isEmpty()) continue;
 
+				ASTNode fromNode = validHints.get(0).from;
 				RequestRating requestRating = new RequestRating(requestID, assignmentID,
-						validHints.get(0).from, config);
+						fromNode, config);
 
 				// Create an initial list of hints that are not matched to a tutor hint
 				List<HintOutcome> unmatchedHints = new ArrayList<>(hintSet.getOutcomes(requestID));
@@ -125,6 +126,8 @@ public class RateHints {
 					requestRating.add(partialRating);
 				}
 
+
+				requestRating.forEach(rating -> rating.addEdits(fromNode, extractor, config));
 				requestRating.sort();
 				if (debug) {
 					requestRating.printRatings(validHints.get(0).from, config, validHints);
@@ -251,8 +254,7 @@ public class RateHints {
 			ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, tutorHint.to, config, null);
 			pruneNewNodesTo(fromNode, tutorOutcomeNode, config);
 			if (outcomeNode.equals(tutorOutcomeNode)) {
-				return new HintRating(outcome, tutorHint, MatchType.Full,
-						extractor.getEdits(fromNode, outcomeNode));
+				return new HintRating(outcome, tutorHint, MatchType.Full);
 			}
 
 			if (outcome.result.equals(tutorHint.to)) {
@@ -333,7 +335,7 @@ public class RateHints {
 			if (!bestOverlap.stream().allMatch(e -> e instanceof Deletion)) {
 //				printPartialMatch(config, extractor, fromNode, outcomeNode, outcomeEdits, bestHint,
 //						outcome);
-				return new HintRating(outcome, bestHint, MatchType.Partial, outcomeEdits);
+				return new HintRating(outcome, bestHint, MatchType.Partial);
 			}
 		}
 		return new HintRating(outcome);
@@ -444,7 +446,8 @@ public class RateHints {
 			}
 			if (isEmpty()) {
 				HintOutcome noOutcome = new HintOutcome(null, assignmentID, requestID, 1);
-				new HintRating(noOutcome).addToSpreadsheet(spreadsheet, 0, 1, requestNode, config);
+				new HintRating(noOutcome)
+				.addToSpreadsheet(spreadsheet, 0, 1, requestNode, config);
 			}
 		}
 
@@ -539,9 +542,9 @@ public class RateHints {
 
 	public static class HintRating {
 		public final HintOutcome hint;
+		public final Bag<Edit> edits = new TreeBag<>();
 		public final TutorHint match;
 		public final MatchType matchType;
-		public final Bag<Edit> edits;
 
 		public boolean isValid() {
 			return match != null;
@@ -556,14 +559,21 @@ public class RateHints {
 		}
 
 		public HintRating(HintOutcome hint) {
-			this(hint, null, MatchType.None, new TreeBag<>());
+			this(hint, null, MatchType.None);
 		}
 
-		public HintRating(HintOutcome hint, TutorHint match, MatchType matchType, Bag<Edit> edits) {
+		public HintRating(HintOutcome hint, TutorHint match, MatchType matchType) {
 			this.hint = hint;
 			this.match = match;
 			this.matchType = matchType;
-			this.edits = edits;
+		}
+
+		public void addEdits(ASTNode requestNode, EditExtractor extractor, RatingConfig config) {
+			if (hint.result == null) return;
+			requestNode = normalizeNodeValues(requestNode, config);
+			ASTNode outcomeNode = normalizeNodeValues(hint.result, config);
+			edits.clear();
+			edits.addAll(extractor.extractEditsUsingCodeAlign(requestNode, outcomeNode));
 		}
 
 		public void addToSpreadsheet(Spreadsheet spreadsheet, int order, double totalWeight,
