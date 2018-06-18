@@ -275,24 +275,38 @@ findInterestingRequests <- function(algRequests, ratings) {
   
   algRatings <- ratings[ratings$source != "AllTutors" & ratings$source != "chf_without_past",]
   algRatings$matched <- algRatings$type == "Full"
+  algRatings$nEdits <- algRatings$nInsertions + algRatings$nDeletions + algRatings$nRelabels
+  algRatings$delOnly <- algRatings$nInsertions==0 & algRatings$nRelabels==0
+  
+  ddply(algRatings, c("dataset", "source"), summarize, 
+        successDel=mean(matched[delOnly]), 
+        successNotDel=mean(matched[!delOnly]),
+        oddsRatio=successDel/successNotDel)
   
   # Non-deletions do _much_ better than delete-only hints
-  algRatings$delOnly <- algRatings$nInsertions==0 & algRatings$nRelabels==0
   table(algRatings$delOnly, algRatings$type, algRatings$dataset)
   # There's an issue here with the fact that hints are not at all independent
   # Could some algorithsm be better (e.g. with insertions), but also happen to have fewer deletions
   # Should really test within an algorithm, within a hint request
   fisher.test(algRatings$delOnly[algRatings$dataset=="isnap"], algRatings$matched[algRatings$dataset=="isnap"])
   fisher.test(algRatings$delOnly[algRatings$dataset=="itap"], algRatings$matched[algRatings$dataset=="itap"])
+  ggplot(algRatings, aes(x=delOnly, y=normScore)) + geom_boxplot() + facet_grid(~dataset)
+  median(algRatings$normScore[algRatings$dataset=="isnap" & algRatings$delOnly])
   
   # Larger hints (+2 edits) do better for iSnap and worse for ITAP
-  algRatings$nEdits <- algRatings$nInsertions + algRatings$nDeletions + algRatings$nRelabels
-  algRatings$moreEdits <- algRatings$nEdits > 2
-  ggplot(algRatings, aes(x=matched, y=nEdits)) + geom_boxplot() + facet_grid(~dataset)
-  table(algRatings$moreEdits, algRatings$type, algRatings$dataset)
+  nonDeletes <- algRatings[!algRatings$delOnly,]
+  medEditsiSnap <- median(nonDeletes$nEdits[nonDeletes$dataset=="isnap"]) # 3
+  medEditsITAP <- median(nonDeletes$nEdits[nonDeletes$dataset=="itap"]) # 3
+  algRatings$moreEdits <- F
+  algRatings$moreEdits[algRatings$nEdits > medEditsiSnap & algRatings$dataset=="isnap"] <- T
+  algRatings$moreEdits[algRatings$nEdits > medEditsITAP & algRatings$dataset=="itap"] <- T
+  table(nonDeletes$moreEdits, nonDeletes$type, nonDeletes$dataset)
   # Same problem here of non-independence
-  fisher.test(algRatings$moreEdits[algRatings$dataset=="isnap"], algRatings$matched[algRatings$dataset=="isnap"])
-  fisher.test(algRatings$moreEdits[algRatings$dataset=="itap"], algRatings$matched[algRatings$dataset=="itap"])
+  fisher.test(nonDeletes$moreEdits[nonDeletes$dataset=="isnap"], nonDeletes$matched[nonDeletes$dataset=="isnap"])
+  fisher.test(nonDeletes$moreEdits[nonDeletes$dataset=="itap"], nonDeletes$matched[nonDeletes$dataset=="itap"])
+  # Looks like the ITAP trend is not just attributable to the ITAP algorithm's large, successful hints
+  fisher.test(nonDeletes$moreEdits[nonDeletes$dataset=="itap" & nonDeletes$source != "ITAP"], 
+              nonDeletes$matched[nonDeletes$dataset=="itap" & nonDeletes$source != "ITAP"])
   
   
   # Medium positive correlation between tree size and difficulty
