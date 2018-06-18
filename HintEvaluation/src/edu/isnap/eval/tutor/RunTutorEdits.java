@@ -49,15 +49,15 @@ public class RunTutorEdits extends TutorEdits {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
-		RatingDataset dataset = ITAPS16;
+		RatingDataset dataset = iSnapF16F17;
 		Source source = Source.StudentData;
 		HintAlgorithm algorithm = SourceCheck;
 		boolean debug = false;
 		boolean writeHints = false;
 
-		writeAllHintSets(iSnapF16F17, ITAPS16);
+//		writeAllHintSets(iSnapF16F17, ITAPS16);
 
-//		dataset.writeGoldStandard();
+		dataset.writeGoldStandard();
 //		dataset.exportTrainingAndTestData(true);
 //		dataset.writeHintSet(algorithm, source);
 
@@ -346,7 +346,8 @@ public class RunTutorEdits extends TutorEdits {
 		}
 
 		public void writeGoldStandard() throws FileNotFoundException, IOException {
-			generateGoldStandard().writeSpreadsheet(getDataDir() + RateHints.GS_SPREADSHEET);
+			generateGoldStandard().writeSpreadsheet(getDataDir() + RateHints.GS_SPREADSHEET,
+					HighlightHintSet.getRatingConfig(hintConfig));
 		}
 
 		public void writeColdStart(HintAlgorithm algorithm, int rounds, int step)

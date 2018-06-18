@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.collections4.Bag;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -17,6 +18,10 @@ import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.ctd.util.map.MapFactory;
 import edu.isnap.hint.util.Spreadsheet;
+import edu.isnap.rating.EditExtractor.Deletion;
+import edu.isnap.rating.EditExtractor.Edit;
+import edu.isnap.rating.EditExtractor.Insertion;
+import edu.isnap.rating.EditExtractor.Relabel;
 import edu.isnap.rating.TutorHint.Priority;
 import edu.isnap.rating.TutorHint.Validity;
 
@@ -62,7 +67,9 @@ public class GoldStandard {
 		return new GoldStandard(allHints);
 	}
 
-	public void writeSpreadsheet(String path) throws FileNotFoundException, IOException {
+	public void writeSpreadsheet(String path, RatingConfig config)
+			throws FileNotFoundException, IOException {
+		EditExtractor extractor = new EditExtractor(config, ASTNode.EMPTY_TYPE);
 		Spreadsheet spreadsheet = new Spreadsheet();
 		for (String assignmentID : map.keySet()) {
 			ListMap<String, TutorHint> hintMap = map.get(assignmentID);
@@ -82,10 +89,25 @@ public class GoldStandard {
 					spreadsheet.put("priority", hint.priority == null ? "" : hint.priority.value);
 					spreadsheet.put("from", fromJSON);
 					spreadsheet.put("to", hint.to.toJSON().toString());
+
+					Bag<Edit> edits = extractor.getEdits(hint.from, hint.to);
+					addEditInfo(spreadsheet, edits);
 				}
 			}
 		}
 		spreadsheet.write(path);
+	}
+
+	public static void addEditInfo(Spreadsheet spreadsheet, Bag<Edit> edits) {
+		int nInsertions = 0, nDeletions = 0, nRelabels = 0;
+		for (Edit edit : edits) {
+			if (edit instanceof Insertion) nInsertions++;
+			else if (edit instanceof Deletion) nDeletions++;
+			else if (edit instanceof Relabel) nRelabels++;
+		}
+		spreadsheet.put("nInsertions", nInsertions);
+		spreadsheet.put("nDeletions", nDeletions);
+		spreadsheet.put("nRelabels", nRelabels);
 	}
 
 	public static GoldStandard parseSpreadsheet(String path)

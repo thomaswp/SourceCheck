@@ -22,8 +22,6 @@ import edu.isnap.ctd.util.Diff.ColorStyle;
 import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.rating.EditExtractor.Deletion;
 import edu.isnap.rating.EditExtractor.Edit;
-import edu.isnap.rating.EditExtractor.Insertion;
-import edu.isnap.rating.EditExtractor.Relabel;
 import edu.isnap.rating.TutorHint.Priority;
 import edu.isnap.rating.TutorHint.Validity;
 
@@ -602,15 +600,7 @@ public class RateHints {
 			Diff.colorStyle = oldStyle;
 
 			spreadsheet.put("requestTreeSize", requestNode.treeSize());
-			int nInsertions = 0, nDeletions = 0, nRelabels = 0;
-			for (Edit edit : edits) {
-				if (edit instanceof Insertion) nInsertions++;
-				else if (edit instanceof Deletion) nDeletions++;
-				else if (edit instanceof Relabel) nRelabels++;
-			}
-			spreadsheet.put("nInsertions", nInsertions);
-			spreadsheet.put("nDeletions", nDeletions);
-			spreadsheet.put("nRelabels", nRelabels);
+			GoldStandard.addEditInfo(spreadsheet, edits);
 
 			Map<String, String> properties = hint.getDebuggingProperties(requestNode);
 			for (String key : properties.keySet()) {
