@@ -189,13 +189,22 @@ findInterestingRequests <- function(algRequests, ratings) {
                       SourceCheck=scorePartial[source=="SourceCheck"],
                       ITAP=(if (sum(source=="ITAP") == 0) NA else scorePartial[source=="ITAP"]))
   cor(byRequest[byRequest$dataset=="isnap",5:8])
+  KMO(cor(byRequest[byRequest$dataset=="isnap",5:8]))
   cor(byRequest[byRequest$dataset=="itap",5:9])
+  KMO(cor(byRequest[byRequest$dataset=="itap",5:9]))
+  
+  algScores <- ddply(algRequests, c("dataset", "source"), summarize, expectedScore=mean(scoreFull), sdScore=sd(scoreFull))
+  algRequests <- merge(algRequests, algScores)
+  algRequests$normScoreFull <- (algRequests$scoreFull - algRequests$expectedScore)
   
   onlyOne <- function (x) if (length(x) == 1) x else NA
   secondBest <- function(x) sort(x)[length(x) - 1]
   scores <- ddply(algRequests, c("dataset", "assignmentID", "year", "requestID"), summarize, 
                   maxScore = max(scorePartial),
+                  # TODO: Reconcile that this is partial
                   difficulty = 1 - secondBest(scorePartial),
+                  normDifficulty = -median(normScoreFull),
+                  medScore = median(scorePartial),
                   best = onlyOne(source[which(scorePartial==maxScore)]),
                   treeSize = mean(treeSize),
                   n0=sum(scorePartial==0), n1=sum(scorePartial==1), 
@@ -244,44 +253,41 @@ findInterestingRequests <- function(algRequests, ratings) {
   goldStandardITAP <- read_csv("../../data/hint-rating/itapS16/gold-standard.csv")
   goldStandardITAP$dataset <- "itap"
   goldStandard <- rbind(goldStandardiSnap, goldStandardITAP)
+  goldStandard
   gsRequests <- ddply(goldStandard, c("dataset", "assignmentID", "year", "requestID"), summarize, 
                       nHints = sum(MultipleTutors),
                       nHP = sum(priority < 3, na.rm=T))
-  
-  goldStandard$nMatches <- sapply(goldStandard$hintID, function(hintID) sum(algRatings$matchID==hintID, na.rm=T))
-  goldStandard$onlyMatch <- sapply(goldStandard$hintID, function(hintID) onlyOne(algRatings$source[!is.na(algRatings$matchID) & algRatings$matchID==hintID]))
+
   
   scores <- merge(scores, gsRequests)
   ggplot(scores, aes(x=difficulty>0.75,y=nHints)) + geom_boxplot()
   ggplot(scores, aes(x=difficulty>0.75,y=nHints)) + geom_boxplot() + facet_wrap(~ dataset)
   ggplot(scores, aes(x=as.ordered(nHints),y=difficulty)) + geom_boxplot() + facet_wrap(~ dataset, scales = "free_x")
-  ggplot(scoresiSnap, aes(x=as.ordered(nHP),y=difficulty)) + geom_boxplot()
-  
+  ggplot(scores, aes(x=as.ordered(nHints),y=normDifficulty)) + geom_boxplot() + facet_wrap(~ dataset, scales = "free_x")
+  # These are very different results. This suggests the things the "best" algorithms need to
+  # improve on vs the "average" may be different
+  cor.test(scores$nHints, scores$difficulty, method="spearman")
+  cor.test(scores$nHints, scores$normDifficulty, method="spearman")
   scoresiSnap <- scores[scores$dataset == "isnap",]
-  wilcox.test(scoresiSnap$nHints[scoresiSnap$difficulty > 0.75], 
-              scoresiSnap$nHints[scoresiSnap$difficulty <= 0.75])
-  plot(jitter(scoresiSnap$nHints), jitter(scoresiSnap$difficulty))
   cor.test(scoresiSnap$nHints, scoresiSnap$difficulty, method="spearman")
-  wilcox.test(scoresiSnap$nHP[scoresiSnap$difficulty > 0.75], 
-              scoresiSnap$nHP[scoresiSnap$difficulty <= 0.75])
-  plot(jitter(scoresiSnap$nHP), jitter(scoresiSnap$difficulty))
-  cor.test(scoresiSnap$nHP, scoresiSnap$difficulty, method="spearman")
-  
+  cor.test(scoresiSnap$nHints, scoresiSnap$normDifficulty, method="spearman")
   scoresITAP <- scores[scores$dataset == "itap",]
-  wilcox.test(scoresITAP$nHints[scoresITAP$difficulty > 0.75], 
-              scoresITAP$nHints[scoresITAP$difficulty <= 0.75])
   plot(jitter(scoresITAP$nHints), jitter(scoresITAP$difficulty))
   cor.test(scoresITAP$nHints, scoresITAP$difficulty, method="spearman")
+  cor.test(scoresITAP$nHints, scoresITAP$medScore, method="spearman")
   
   algRatings <- ratings[ratings$source != "AllTutors" & ratings$source != "chf_without_past",]
   algRatings$matched <- algRatings$type == "Full"
   algRatings$nEdits <- algRatings$nInsertions + algRatings$nDeletions + algRatings$nRelabels
   algRatings$delOnly <- algRatings$nInsertions==0 & algRatings$nRelabels==0
+  allSame <- function(x) if (length(unique(x)) == 1) head(x, 1) else NA
+  matchedHints <- ddply(algRatings[algRatings$matched,], c("dataset", "matchID"), summarize, 
+                        n=length(nEdits), delOnly=allSame(delOnly), nEdits=mean(nEdits))
   
-  ddply(algRatings, c("dataset", "source"), summarize, 
-        successDel=mean(matched[delOnly]), 
-        successNotDel=mean(matched[!delOnly]),
-        oddsRatio=successDel/successNotDel)
+  goldStandard$nEdits <- goldStandard$nInsertions + goldStandard$nDeletions + goldStandard$nRelabels
+  goldStandard$nMatches <- sapply(goldStandard$hintID, function(hintID) sum(algRatings$matchID==hintID, na.rm=T))
+  goldStandard$matched <- goldStandard$nMatches > 0
+  goldStandard$onlyMatch <- sapply(goldStandard$hintID, function(hintID) allSame(algRatings$source[!is.na(algRatings$matchID) & algRatings$matchID==hintID]))
   
   # Non-deletions do _much_ better than delete-only hints
   table(algRatings$delOnly, algRatings$type, algRatings$dataset)
@@ -290,17 +296,32 @@ findInterestingRequests <- function(algRequests, ratings) {
   # Should really test within an algorithm, within a hint request
   fisher.test(algRatings$delOnly[algRatings$dataset=="isnap"], algRatings$matched[algRatings$dataset=="isnap"])
   fisher.test(algRatings$delOnly[algRatings$dataset=="itap"], algRatings$matched[algRatings$dataset=="itap"])
-  ggplot(algRatings, aes(x=delOnly, y=normScore)) + geom_boxplot() + facet_grid(~dataset)
-  median(algRatings$normScore[algRatings$dataset=="isnap" & algRatings$delOnly])
+  # For ITAP we actually see that the poor-performing algorithms have more successful deletes, perhaps because there are so few
+  ddply(algRatings, c("dataset", "source"), summarize, 
+        successDel=mean(matched[delOnly]), 
+        successNotDel=mean(matched[!delOnly]),
+        oddsRatio=successDel/successNotDel)
+  # However, we see that only 2.2 and 4.1% of matching hints are deletions
+  table(matchedHints$dataset, matchedHints$delOnly)
+  ddply(matchedHints, "dataset", summarize, p=mean(delOnly))
+  # Compared to 17.7 and 18.0 for general hints
+  table(algRatings$dataset, algRatings$delOnly)
+  ddply(algRatings, "dataset", summarize, p=mean(delOnly))
   
   # Larger hints (+2 edits) do better for iSnap and worse for ITAP
+  ddply(goldStandard, c("dataset", "matched"), summarize, medEdits=median(nEdits))
+  ggplot(goldStandard, aes(x=matched, y=nEdits)) + geom_boxplot() + facet_grid(~dataset)
+  ddply(algRatings, c("dataset", "matched"), summarize, medEdits=median(nEdits))
+  
   nonDeletes <- algRatings[!algRatings$delOnly,]
-  medEditsiSnap <- median(nonDeletes$nEdits[nonDeletes$dataset=="isnap"]) # 3
+  medEditsiSnap <- median(nonDeletes$nEdits[nonDeletes$dataset=="isnap"]) # 2
   medEditsITAP <- median(nonDeletes$nEdits[nonDeletes$dataset=="itap"]) # 3
-  algRatings$moreEdits <- F
-  algRatings$moreEdits[algRatings$nEdits > medEditsiSnap & algRatings$dataset=="isnap"] <- T
-  algRatings$moreEdits[algRatings$nEdits > medEditsITAP & algRatings$dataset=="itap"] <- T
-  table(nonDeletes$moreEdits, nonDeletes$type, nonDeletes$dataset)
+  matchedHints$moreEdits <- F
+  matchedHints$moreEdits[matchedHints$nEdits > medEditsiSnap & matchedHints$dataset=="isnap"] <- T
+  matchedHints$moreEdits[matchedHints$nEdits > medEditsITAP & matchedHints$dataset=="itap"] <- T
+  table(matchedHints$dataset, matchedHints$moreEdits)
+  
+  table(matchedHints$moreEdits, nonDeletes$type, nonDeletes$dataset)
   # Same problem here of non-independence
   fisher.test(nonDeletes$moreEdits[nonDeletes$dataset=="isnap"], nonDeletes$matched[nonDeletes$dataset=="isnap"])
   fisher.test(nonDeletes$moreEdits[nonDeletes$dataset=="itap"], nonDeletes$matched[nonDeletes$dataset=="itap"])
