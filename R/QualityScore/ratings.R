@@ -180,19 +180,16 @@ mergeManual <- function(manual, samples) {
   manual
 }
 
-findInterestingRequests <- function(requests, ratings) {
-  algRequests <- requests[requests$source != "AllTutors",]
-  algRequests$year <- sapply(1:nrow(algRequests), function(i) head(ratings$year[ratings$requestID == algRequests[i,"requestID"]], 1))
-  
+findInterestingRequests <- function(algRequests, ratings) {
   byRequest <- ddply(algRequests, c("dataset", "assignmentID", "year", "requestID"), summarize, 
                       PQGram=scorePartial[source=="PQGram"],
-                      chf_without_past=scorePartial[source=="chf_without_past"],
+                      # chf_without_past=scorePartial[source=="chf_without_past"],
                       chf_with_past=scorePartial[source=="chf_with_past"],
                       CTD=scorePartial[source=="CTD"],
                       SourceCheck=scorePartial[source=="SourceCheck"],
                       ITAP=(if (sum(source=="ITAP") == 0) NA else scorePartial[source=="ITAP"]))
-  cor(byRequest[byRequest$dataset=="isnap",5:9])
-  cor(byRequest[byRequest$dataset=="itap",5:10])
+  cor(byRequest[byRequest$dataset=="isnap",5:8])
+  cor(byRequest[byRequest$dataset=="itap",5:9])
   
   onlyOne <- function (x) if (length(x) == 1) x else NA
   secondBest <- function(x) sort(x)[length(x) - 1]
@@ -200,6 +197,7 @@ findInterestingRequests <- function(requests, ratings) {
                   maxScore = max(scorePartial),
                   difficulty = 1 - secondBest(scorePartial),
                   best = onlyOne(source[which(scorePartial==maxScore)]),
+                  treeSize = mean(treeSize),
                   n0=sum(scorePartial==0), n1=sum(scorePartial==1), 
                   n05=sum(scorePartial > 0.5), n01=sum(scorePartial > 0.1), n025=sum(scorePartial > 0.25))
   table(scores$dataset, scores$best)
@@ -250,18 +248,53 @@ findInterestingRequests <- function(requests, ratings) {
                       nHints = sum(MultipleTutors),
                       nHP = sum(priority < 3, na.rm=T))
   
+  goldStandard$nMatches <- sapply(goldStandard$hintID, function(hintID) sum(algRatings$matchID==hintID, na.rm=T))
+  goldStandard$onlyMatch <- sapply(goldStandard$hintID, function(hintID) onlyOne(algRatings$source[!is.na(algRatings$matchID) & algRatings$matchID==hintID]))
+  
   scores <- merge(scores, gsRequests)
   ggplot(scores, aes(x=difficulty>0.75,y=nHints)) + geom_boxplot()
   ggplot(scores, aes(x=difficulty>0.75,y=nHints)) + geom_boxplot() + facet_wrap(~ dataset)
-  wilcox.test(scores$nHints[scores$dataset=="isnap" & scores$difficulty > 0.75], 
-              scores$nHints[scores$dataset=="isnap" & scores$difficulty <= 0.75])
+  ggplot(scores, aes(x=as.ordered(nHints),y=difficulty)) + geom_boxplot() + facet_wrap(~ dataset, scales = "free_x")
+  ggplot(scoresiSnap, aes(x=as.ordered(nHP),y=difficulty)) + geom_boxplot()
   
-  ggplot(scores[scores$dataset == "isnap",], aes(x=difficulty>0.75,y=nHP)) + geom_boxplot()
-  wilcox.test(scores$nHP[scores$dataset=="isnap" & scores$difficulty > 0.75], 
-              scores$nHP[scores$dataset=="isnap" & scores$difficulty <= 0.75])
+  scoresiSnap <- scores[scores$dataset == "isnap",]
+  wilcox.test(scoresiSnap$nHints[scoresiSnap$difficulty > 0.75], 
+              scoresiSnap$nHints[scoresiSnap$difficulty <= 0.75])
+  plot(jitter(scoresiSnap$nHints), jitter(scoresiSnap$difficulty))
+  cor.test(scoresiSnap$nHints, scoresiSnap$difficulty, method="spearman")
+  wilcox.test(scoresiSnap$nHP[scoresiSnap$difficulty > 0.75], 
+              scoresiSnap$nHP[scoresiSnap$difficulty <= 0.75])
+  plot(jitter(scoresiSnap$nHP), jitter(scoresiSnap$difficulty))
+  cor.test(scoresiSnap$nHP, scoresiSnap$difficulty, method="spearman")
+  
+  scoresITAP <- scores[scores$dataset == "itap",]
+  wilcox.test(scoresITAP$nHints[scoresITAP$difficulty > 0.75], 
+              scoresITAP$nHints[scoresITAP$difficulty <= 0.75])
+  plot(jitter(scoresITAP$nHints), jitter(scoresITAP$difficulty))
+  cor.test(scoresITAP$nHints, scoresITAP$difficulty, method="spearman")
+  
+  # Non-deletions do _much_ better than delete-only hints
+  algRatings <- ratings[ratings$source != "AllTutors" & ratings$source != "chf_without_past",]
+  algRatings$delOnly <- algRatings$nInsertions>0 | algRatings$nRelabels>0
+  ggplot(algRatings, aes(y=scoreFull, x=nInsertions>0|nRelabels>0)) + geom_boxplot()
+  ggplot(algRatings, aes(y=scoreFull, x=nInsertions>0|nRelabels>0)) + geom_boxplot() + facet_grid(dataset ~ source)
+  # How to test this statistically with independent samples?
+  
+  # Medium positive correlation between tree size and difficulty
+  plot(jitter(scores$difficulty), jitter(scores$treeSize))
+  cor.test(scores$difficulty, scores$treeSize, method="spearman")
+  ggplot(scores, aes(x=difficulty > 0.75, y=treeSize)) + geom_boxplot() + facet_grid(~dataset)
+  wilcox.test(scoresiSnap$treeSize[scoresiSnap$difficulty > 0.75], 
+              scoresiSnap$treeSize[scoresiSnap$difficulty <= 0.75])
+  wilcox.test(scoresITAP$treeSize[scoresITAP$difficulty > 0.75], 
+              scoresITAP$treeSize[scoresITAP$difficulty <= 0.75])
+  
+  noMatch <- goldStandard[goldStandard$nMatches==0 & goldStandard$MultipleTutors,c("dataset", "year", "hintID")]
+  noMatch <- noMatch[order(noMatch$dataset, noMatch$year, noMatch$hintID),]
+  write.csv(noMatch, "data/noMatch.csv")
 }
 
-loadRequests <- function() {
+loadAllRatings <- function() {
   isnap <- loadRatings("isnapF16-F17", "MultipleTutors", c("SourceCheck", "CTD", "PQGram", "chf_with_past", "chf_without_past", "gross", "AllTutors"))
   isnap$dataset <- "isnap"
   itap <- loadRatings("itapS16", "MultipleTutors", c("SourceCheck", "CTD", "PQGram", "chf_with_past", "chf_without_past", "gross", "ITAP", "AllTutors"))
@@ -275,7 +308,12 @@ loadRequests <- function() {
   ratings$priorityPartial <- ifNA(4 - ratings$priority, 0) * ratings$scorePartial
   ratings$source <- factor(ratings$source, c("PQGram", "gross", "chf_without_past", "chf_with_past", "CTD", "SourceCheck", "ITAP", "AllTutors"))
   ratings$assignmentID <- factor(ratings$assignmentID, c("squiralHW", "guess1Lab", "helloWorld", "firstAndLast", "isPunctuation", "kthDigit", "oneToN"))
-  requests <- ddply(ratings, c("dataset", "source", "assignmentID", "requestID"), summarize, 
+  ratings
+}
+  
+loadRequests <- function(ratings) {
+  requests <- ddply(ratings, c("dataset", "year", "source", "assignmentID", "requestID"), summarize, 
+                    treeSize=mean(requestTreeSize),
                     scoreFull=sum(scoreFull), scorePartial=sum(scorePartial),
                     priorityFull=sum(priorityFull), priorityPartial=sum(priorityPartial))
   requests <- requests[requests$source != "chf_without_past",]
@@ -283,7 +321,8 @@ loadRequests <- function() {
 }
 
 compare <- function() {
-  requests <- loadRequests()
+  ratings <- loadAllRatings()
+  requests <- loadRequests(ratings)
   algRequests <-  requests[requests$source != "AllTutors",]
   
   assignments <- ddply(requests, c("dataset", "source", "assignmentID"), summarize, 
