@@ -111,7 +111,7 @@ public class HintOutcome implements Comparable<HintOutcome> {
 		}
 	}
 
-	public Map<String, String> getDebuggingProperties() {
+	public Map<String, String> getDebuggingProperties(ASTNode requestNode) {
 		return new HashMap<>();
 	}
 }

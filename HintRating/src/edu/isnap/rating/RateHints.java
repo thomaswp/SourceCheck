@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -23,6 +22,8 @@ import edu.isnap.ctd.util.Diff.ColorStyle;
 import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.rating.EditExtractor.Deletion;
 import edu.isnap.rating.EditExtractor.Edit;
+import edu.isnap.rating.EditExtractor.Insertion;
+import edu.isnap.rating.EditExtractor.Relabel;
 import edu.isnap.rating.TutorHint.Priority;
 import edu.isnap.rating.TutorHint.Validity;
 
@@ -111,7 +112,7 @@ public class RateHints {
 				// First find full matches and remove any hints that match
 				for (int i = 0; i < unmatchedHints.size(); i++) {
 					HintOutcome hint = unmatchedHints.get(i);
-					HintRating rating = findMatchingEdit(validHints, hint, config);
+					HintRating rating = findMatchingEdit(validHints, hint, extractor, config);
 					if (rating != null) {
 						requestRating.add(rating);
 						unmatchedHints.remove(i--);
@@ -241,7 +242,7 @@ public class RateHints {
 	}
 
 	public static HintRating findMatchingEdit(List<TutorHint> validHints, HintOutcome outcome,
-			RatingConfig config) {
+			EditExtractor extractor, RatingConfig config) {
 		if (validHints.isEmpty()) return new HintRating(outcome);
 		ASTNode fromNode = normalizeNodeValues(validHints.get(0).from, config);
 		ASTNode outcomeNode = normalizeNewValuesTo(fromNode, outcome.result, config, null);
@@ -250,7 +251,8 @@ public class RateHints {
 			ASTNode tutorOutcomeNode = normalizeNewValuesTo(fromNode, tutorHint.to, config, null);
 			pruneNewNodesTo(fromNode, tutorOutcomeNode, config);
 			if (outcomeNode.equals(tutorOutcomeNode)) {
-				return new HintRating(outcome, tutorHint, MatchType.Full);
+				return new HintRating(outcome, tutorHint, MatchType.Full,
+						extractor.getEdits(fromNode, outcomeNode));
 			}
 
 			if (outcome.result.equals(tutorHint.to)) {
@@ -264,109 +266,6 @@ public class RateHints {
 				System.out.println("Outcome normalizing:");
 				System.out.println(ASTNode.diff(outcome.result, outcomeNode, config, 2));
 				throw new RuntimeException("Normalized nodes should be equal if nodes are equal!");
-			}
-		}
-		return null;
-	}
-
-	@Deprecated
-	protected static List<HintRating> findMatchingEditGroups(List<TutorHint> validHints,
-			List<HintOutcome> unmatchedHints, RatingConfig config, EditExtractor extractor) {
-		List<HintRating> ratings = new ArrayList<>();
-
-		if (validHints.isEmpty()) return ratings;
-		ASTNode fromNode = normalizeNodeValues(validHints.get(0).from, config);
-
-		Map<TutorHint, Bag<Edit>> tutorEditMap = new IdentityHashMap<>();
-		for (TutorHint hint : validHints) {
-			Bag<Edit> edits = extractor.getEdits(fromNode,
-					normalizeNewValuesTo(fromNode, hint.to, config, PARTIAL_UNSEEN_VALUE));
-			tutorEditMap.put(hint, edits);
-		}
-
-		Map<HintOutcome, Bag<Edit>> outcomeEditMap = new IdentityHashMap<>();
-		for (HintOutcome hint : unmatchedHints) {
-			Bag<Edit> edits = extractor.getEdits(fromNode,
-					normalizeNewValuesTo(fromNode, hint.result, config, PARTIAL_UNSEEN_VALUE));
-			outcomeEditMap.put(hint, edits);
-		}
-
-		// Sort but then reverse, so highest priority hints come first
-		Collections.sort(validHints);
-		Collections.reverse(validHints);
-
-		for (TutorHint tutorHint : validHints) {
-			Bag<Edit> tutorEdits = tutorEditMap.get(tutorHint);
-			// First filter out only hints that are subsets of the given tutor hint
-			Map<HintOutcome, Bag<Edit>> possible = new IdentityHashMap<>();
-			for (HintOutcome outcome : outcomeEditMap.keySet()) {
-				Bag<Edit> outcomeEdits = outcomeEditMap.get(outcome);
-				if (tutorEdits.containsAll(outcomeEdits)) {
-					possible.put(outcome, outcomeEdits);
-				}
-			}
-			if (possible.size() == 0) continue;
-
-			List<HintOutcome> possibleOutcomes = new ArrayList<>(possible.keySet());
-			possibleOutcomes.sort(Comparator.comparing(o -> -possible.get(o).size()));
-
-			Bag<Edit> matchingEdits = new TreeBag<>();
-			List<HintOutcome> matchingOutcomes = new ArrayList<>();
-			for (HintOutcome outcome : possibleOutcomes) {
-				Bag<Edit> outcomeEdits = possible.get(outcome);
-				if (matchingEdits.containsAll(outcomeEdits)) continue;
-				matchingOutcomes.add(outcome);
-				matchingEdits.addAll(outcomeEdits);
-			}
-
-			if (matchingEdits.stream().allMatch(e -> e instanceof Deletion) &&
-					!tutorEdits.stream().allMatch(e -> e instanceof Deletion)) {
-				continue;
-			}
-
-//			List<HintOutcome> matchingOutcomes =
-//					findPartialMatches(possible, tutorEdits, new HashSet<>(), config);
-//			if (matchingOutcomes == null) continue;
-
-			matchingOutcomes.forEach(outcome -> outcomeEditMap.remove(outcome));
-
-			if (matchingOutcomes.size() == 1) continue;
-			System.out.println("Partial match: ");
-			System.out.println("Tutor hint: ");
-			System.out.println(ASTNode.diff(fromNode, tutorHint.to, config));
-			System.out.println("Alg hints: ");
-			for (HintOutcome outcome : matchingOutcomes) {
-				System.out.println(ASTNode.diff(fromNode, outcome.result, config));
-			}
-			System.out.println("Edits:");
-			EditExtractor.printEditsComparison(
-					tutorEdits, matchingEdits, "Tutor Hint", "Alg Hints");
-
-		}
-
-		return ratings;
-	}
-
-	@Deprecated
-	protected static List<HintOutcome> findPartialMatches(Map<HintOutcome, Bag<Edit>> outcomeEditMap,
-			Bag<Edit> toMatch, Bag<Edit> matched, RatingConfig config) {
-		for (HintOutcome outcome : outcomeEditMap.keySet()) {
-			Bag<Edit> missing = new TreeBag<>(toMatch);
-			Bag<Edit> outcomeEdits = outcomeEditMap.get(outcome);
-			missing.removeAll(outcomeEdits);
-			if (missing.size() == toMatch.size()) continue;
-			matched = new TreeBag<>(matched);
-			matched.addAll(outcomeEdits);
-			if (missing.stream().allMatch(
-					e -> config.trimIfParentIsAdded(e.node.type, e.node.value))) {
-				List<HintOutcome> list = new ArrayList<>();
-				list.add(outcome);
-				return list;
-			}
-			List<HintOutcome> list = findPartialMatches(outcomeEditMap, missing, matched, config);
-			if (list != null) {
-				list.add(outcome);
-				return list;
 			}
 		}
 		return null;
@@ -434,7 +333,7 @@ public class RateHints {
 			if (!bestOverlap.stream().allMatch(e -> e instanceof Deletion)) {
 //				printPartialMatch(config, extractor, fromNode, outcomeNode, outcomeEdits, bestHint,
 //						outcome);
-				return new HintRating(outcome, bestHint, MatchType.Partial);
+				return new HintRating(outcome, bestHint, MatchType.Partial, outcomeEdits);
 			}
 		}
 		return new HintRating(outcome);
@@ -642,6 +541,7 @@ public class RateHints {
 		public final HintOutcome hint;
 		public final TutorHint match;
 		public final MatchType matchType;
+		public final Bag<Edit> edits;
 
 		public boolean isValid() {
 			return match != null;
@@ -656,13 +556,14 @@ public class RateHints {
 		}
 
 		public HintRating(HintOutcome hint) {
-			this(hint, null, MatchType.None);
+			this(hint, null, MatchType.None, new TreeBag<>());
 		}
 
-		public HintRating(HintOutcome hint, TutorHint match, MatchType matchType) {
+		public HintRating(HintOutcome hint, TutorHint match, MatchType matchType, Bag<Edit> edits) {
 			this.hint = hint;
 			this.match = match;
 			this.matchType = matchType;
+			this.edits = edits;
 		}
 
 		public void addToSpreadsheet(Spreadsheet spreadsheet, int order, double totalWeight,
@@ -689,7 +590,19 @@ public class RateHints {
 			spreadsheet.put("diff", hint.result == null ?
 					"" : ASTNode.diff(requestNode, hint.result, config));
 			Diff.colorStyle = oldStyle;
-			Map<String, String> properties = hint.getDebuggingProperties();
+
+			spreadsheet.put("requestTreeSize", requestNode.treeSize());
+			int nInsertions = 0, nDeletions = 0, nRelabels = 0;
+			for (Edit edit : edits) {
+				if (edit instanceof Insertion) nInsertions++;
+				else if (edit instanceof Deletion) nDeletions++;
+				else if (edit instanceof Relabel) nRelabels++;
+			}
+			spreadsheet.put("nInsertions", nInsertions);
+			spreadsheet.put("nDeletions", nDeletions);
+			spreadsheet.put("nRelabels", nRelabels);
+
+			Map<String, String> properties = hint.getDebuggingProperties(requestNode);
 			for (String key : properties.keySet()) {
 				spreadsheet.put("p_" + key, properties.get(key));
 			}
