@@ -30,7 +30,8 @@ public class ASTSnapshot extends ASTNode {
 	}
 
 	public static ASTSnapshot parse(JSONObject json, String sourceOverride) {
-		boolean isCorrect = json.optBoolean("isCorrect");
+		// Older versions used "correct"
+		boolean isCorrect = json.optBoolean("isCorrect") || json.optBoolean("correct");
 		String source = sourceOverride;
 		ASTNode node = ASTNode.parse(json);
 		return node.toSnapshot(isCorrect, source);

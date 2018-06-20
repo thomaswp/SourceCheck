@@ -112,19 +112,22 @@ public class JsonAST {
 		String id = stopID == null ? attempt.id : String.valueOf(stopID);
 		Trace trace = new Trace(id, assignmentID);
 		boolean stop = false;
+		ASTNode correct = null;
+		if (attemptCorrect && attempt.submittedSnapshot != null) {
+			correct = JsonAST.toAST(attempt.submittedSnapshot, canon);
+		}
 		for (AttemptAction action : attempt) {
 			// Set the stop flag when we see the stopID, but only break on the next snapshot
 			if (stopID != null && action.id == stopID) stop = true;
 			if (stop && action.id != stopID) break;
 			if (lastSnapshot == action.lastSnapshot) continue;
 			lastSnapshot = action.lastSnapshot;
-			// TODO: This is not always true for the last snapshots of correct traces.
-			// Fix before sharing the dataset!
-			boolean correct = attemptCorrect && lastSnapshot == attempt.submittedSnapshot;
-			ASTSnapshot node = JsonAST.toAST(action.lastSnapshot, canon).toSnapshot(correct, null);
-			if (node.equals(lastNode, true, true)) continue;
-			lastNode = node;
-			trace.add(node);
+			ASTNode astNode = JsonAST.toAST(action.lastSnapshot, canon);
+			boolean isCorrect = correct != null && astNode.equals(correct);
+			ASTSnapshot snapshot = astNode.toSnapshot(isCorrect, null);
+			if (snapshot.equals(lastNode, true, true)) continue;
+			lastNode = snapshot;
+			trace.add(snapshot);
 		}
 		return trace;
 	}
