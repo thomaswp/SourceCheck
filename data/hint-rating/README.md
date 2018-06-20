@@ -1,26 +1,40 @@
 # Hint Rating Data
 
-This folder contains
+This is a specification for the hint rating data used to benchmark and compare the quality of data-driven hints. This data is used as input for the QualityScore procedure defined in [1]. The datasets include training data that can be used to create data-driven programming hints, real student hint requests on which to test data-driven hints, and gold standard expert hints, against which to compare these hints. Possible uses for this data include:
+* When developing a new hint generation algorithm, test it on new datasets in different programming languages.
+* Evaluate the quality of data-driven hints using the gold standard hints.
+* Compare the quality of one or more data-driven hint algorithms.
+* Evaluate how factors such as the quantity of training data impact the quality of data-driven hints (e.g. [1]).
+* Test a new feature for a hint generation algorithm and see if it improves hint quality (though beware of overfitting to this dataset).
 
-the QualityScore procedure defined in [1]
-
-## Use Cases
+For the most up-to-date information, please see go.ncsu.edu/hint-quality-data. When source code for the QualityScore procedure is released, a link will be provided there.
 
 ## Datasets
 
-There are currently 3 datasets, collected from two learning environments for introductory programming that offer data-driven hints: iSnap [2], a block-based programming environment and ITAP [3], an intelligent tutoring system (ITS) for Python programming. Both datasets consist of log data collected from students working on multiple programming problems, including complete traces of their code and records of hints they requested.   Both datasets are available from the PSLC Datashop (pslcdatashop.org) \cite{Koedinger2010}.
+There are currently 3 datasets, collected from two learning environments for introductory programming that offer data-driven hints: iSnap [2], a block-based programming environment and ITAP [3], an intelligent tutoring system (ITS) for Python programming. Both datasets consist of log data collected from students working on multiple programming problems, including complete traces of their code and records of hints they requested.
 
-* **isnapF16-F17**: This  dataset was collected from an introductory programming course for non-majors during the Fall 2016, Spring 2017 and Fall 2017 semesters, with 171 total students completing 6 programming problems, or which only 2 are included in this dataset.
-* **isnapF16-S17**: A subset of the isnapF16-F17 dataset that only includes the Fall 2016 and Spring 2017 semesters. This dataset was used in [1]. It consists of data from 120 total students.
-* **itapF16-F17**: This dataset was collected from two introductory programming courses in Spring 2016, with 89 total students completing up to 40 Python problems, of which only 5 are included in this dataset (see [4] for details).
+* **isnapF16-F17**: This  dataset was collected from an introductory programming course for non-majors during the Fall 2016, Spring 2017 and Fall 2017 semesters, with 171 total students and 61 hint requests over 2 assignments.
+* **isnapF16-S17**: A subset of the isnapF16-F17 dataset that only includes the Fall 2016 and Spring 2017 semesters. This dataset was used in [1]. It consists of data from 120 total students and 47 hint requests over 2 assignments.
+* **itapF16-F17**: This dataset was collected from two introductory programming courses in Spring 2016, with 89 total students and 51 hint requests over 5 assignments. (see [4] for details).
 
 Each dataset contains the follow files, which are explained in the following sections:
 
 * gold-standard.csv
-* training-data.csv
+* training.csv
+* requests.csv
 * [snap | python]-grammar.json
 
 ## Training and Request Data
+
+Each dataset contains a set of real student hint requests (requests.csv) and training data (training.csv) for use in generating hints. The iSnap datasets contains one randomly sampled hint request per problem (see the Problems section) from each student who used hints. This ensured that no student was overrepresented in the set of hint requests. The ITAP dataset contains up to two randomly sampled, unique hint requests from each student who used hints per problem, since there were fewer students who requested hints than in the iSnap dataset. This only includes hint requests where the student's Python code could be parsed, since this is required to generate an AST. Both datasets also include a set of training data, consisting of the traces of each student who submitted a correct solution and did not request hints.
+
+In the training.csv spreadsheet, each row corresponds to one snapshot of code from the trace of a student who successfully completed the assignment. In the requests.csv spreadsheet, each row corresponds to one snapshot of code from the trace of a student who requested a hint. This includes all snapshots up until and including the hint requests, such that the final snapshot represents that state of the student's code at the time of the hint request. The columns of both spreadsheets are as follows:
+* assignmentID: The ID of the assignment being worked on in this trace.
+* traceID: A unique ID for the trace that this snapshot belongs to.
+* index: The index of this snapshot within its trace.
+* isCorrect: TRUE if the given snapshot is known to be correct. Note that in the Snap dataset, only submitted snapshots are graded (manually), so intermediate snapshots may be correct but still have this value as FALSE.
+* source: For the ITAP dataset, this contains the Python source code used to generate the abstract syntax tree for this snapshot.
+* code: The abstract JSON abstract syntax tree representing this snapshot (see the Abstract Syntax Tree Format section).
 
 ## Gold Standard Data
 
