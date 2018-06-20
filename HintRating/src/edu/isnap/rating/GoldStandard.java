@@ -69,7 +69,7 @@ public class GoldStandard {
 
 	public void writeSpreadsheet(String path, RatingConfig config)
 			throws FileNotFoundException, IOException {
-		EditExtractor extractor = new EditExtractor(config, ASTNode.EMPTY_TYPE);
+//		EditExtractor extractor = new EditExtractor(config, ASTNode.EMPTY_TYPE);
 		Spreadsheet spreadsheet = new Spreadsheet();
 		for (String assignmentID : map.keySet()) {
 			ListMap<String, TutorHint> hintMap = map.get(assignmentID);
@@ -90,8 +90,9 @@ public class GoldStandard {
 					spreadsheet.put("from", fromJSON);
 					spreadsheet.put("to", hint.to.toJSON().toString());
 
-					Bag<Edit> edits = extractor.getEdits(hint.from, hint.to);
-					addEditInfo(spreadsheet, edits);
+					// TODO: Put this into another analysis method
+//					Bag<Edit> edits = extractor.getEdits(hint.from, hint.to);
+//					addEditInfo(spreadsheet, edits);
 				}
 			}
 		}

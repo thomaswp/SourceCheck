@@ -22,6 +22,7 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.json.JSONException;
 
 import edu.isnap.ctd.graph.ASTNode;
+import edu.isnap.ctd.graph.ASTSnapshot;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.HintHighlighter;
@@ -182,7 +183,10 @@ public class TutorEdits {
 		PythonNode lastNode = null;
 		for (PythonNode snapshot : snapshots) {
 			if (snapshot.equals(lastNode)) continue;
-			trace.add(snapshot.toASTSnapshot());
+			if (snapshot.tag == null || !(snapshot.tag instanceof ASTSnapshot)) {
+				throw new RuntimeException("PythonNode missing ASTSnapshot tag");
+			}
+			trace.add((ASTSnapshot) snapshot.tag);
 			if (snapshot == requestNode) break;
 		}
 		return trace;
@@ -383,14 +387,12 @@ public class TutorEdits {
 			int id = Integer.parseInt(row.get("Hint ID"));
 			String priorityString = row.get("Consensus (Priority)");
 			boolean consensusValid = false;
-			boolean hasConsensus = false;
 			int priority = 0;
 			try {
 				consensusValid = Double.parseDouble(row.get("Consensus (Validity)")) == 1;
 				if (consensusValid) {
 					priority = Integer.parseInt(priorityString);
 				}
-				hasConsensus = true;
 			} catch (NumberFormatException e) {
 				if (failIfNoConsensus) {
 					parser.close();
@@ -400,10 +402,10 @@ public class TutorEdits {
 
 			int v1 = Integer.parseInt(row.get("V1"));
 
-			if (!hasConsensus) {
+			{
+				// This is a fix to ensure that "Too Soon" votes are not counted as valid votes:
 				// Count the validity using the number of P1-P3 votes, since P4 votes (which are
 				// counted in V1) should not count as votes for validity unless there is consensus.
-				// If there is consensus, none of it matters, since we will use that validity value.
 				int validPriorityCount = 0;
 				for (int i = 1; i <= 3; i++) {
 					String key = "P" + i;

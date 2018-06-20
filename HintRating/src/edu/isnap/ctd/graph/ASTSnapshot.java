@@ -22,9 +22,16 @@ public class ASTSnapshot extends ASTNode {
 	}
 
 	public static ASTSnapshot parse(String jsonSource) {
-		JSONObject json = new JSONObject(jsonSource);
+		return parse(new JSONObject(jsonSource));
+	}
+
+	public static ASTSnapshot parse(JSONObject json) {
+		return parse(json, json.optString("source"));
+	}
+
+	public static ASTSnapshot parse(JSONObject json, String sourceOverride) {
 		boolean isCorrect = json.optBoolean("isCorrect");
-		String source = json.optString("source");
+		String source = sourceOverride;
 		ASTNode node = ASTNode.parse(json);
 		return node.toSnapshot(isCorrect, source);
 	}

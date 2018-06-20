@@ -30,8 +30,8 @@ public class RateHints {
 	public final static String GS_SPREADSHEET = "gold-standard.csv";
 	public final static String ALGORITHMS_DIR = "algorithms";
 	public final static String OUTPUT_DIR = "ratings";
-	public final static String TRAINING_FILE = "training.csv.gz";
-	public static final String REQUEST_FILE = "requests.csv.gz";
+	public final static String TRAINING_FILE = "training.csv";
+	public static final String REQUEST_FILE = "requests.csv";
 
 	public final static String DATA_ROOT_DIR = "../data/hint-rating/";
 	public final static String ISNAP_F16_S17_DATA_DIR = DATA_ROOT_DIR + "isnapF16-S17/";
@@ -468,9 +468,9 @@ public class RateHints {
 
 		public double validWeight(MatchType minMatchType, boolean useWeights) {
 			return stream()
-					.mapToDouble(rating -> rating.matchType.isAtLeast(minMatchType)
-							&& rating.isValid() && !rating.isTooSoon()
-							? (useWeights ? rating.hint.weight() : 1) : 0)
+					.mapToDouble(rating ->
+							rating.matchType.isAtLeast(minMatchType) && rating.isValid() ?
+									(useWeights ? rating.hint.weight() : 1) : 0)
 					.sum();
 		}
 
@@ -503,30 +503,23 @@ public class RateHints {
 			HintOutcome firstOutcome = get(0).hint;
 			System.out.println("+====+ " + firstOutcome.assignmentID + " / " +
 					firstOutcome.requestID + " +====+");
-			Set<TutorHint> valid = validHints.stream()
-					.filter(hint -> hint.priority == null || hint.priority != Priority.TooSoon)
-					.collect(Collectors.toSet());
+			Set<TutorHint> valid = validHints.stream().collect(Collectors.toSet());
 			System.out.println(from.prettyPrint(true, config));
-			for (int tooSoonRound = 0; tooSoonRound < 2; tooSoonRound++) {
-				for (MatchType type : MatchType.values()) {
-					boolean tooSoon = tooSoonRound == 1;
-					List<HintRating> matching = stream()
-							.filter(rating -> tooSoon ? rating.isTooSoon() :
-								(!rating.isTooSoon() && rating.matchType == type))
-							.collect(Collectors.toList());
-					if (type == MatchType.None) continue;
-					if (!matching.isEmpty()) {
-						String label = tooSoon ? "Too Soon" : type.toString();
-						System.out.println("               === " + label + " ===");
-						for (HintRating rating : matching) {
-							System.out.println("Hint ID: " + rating.hint.id);
-							System.out.println("Weight: " + rating.hint.weight());
-							System.out.println(rating.hint.resultString(from, config));
-							System.out.println("-------");
-							valid.remove(rating.match);
-						}
+			for (MatchType type : MatchType.values()) {
+				List<HintRating> matching = stream()
+						.filter(rating -> rating.matchType == type)
+						.collect(Collectors.toList());
+				if (type == MatchType.None) continue;
+				if (!matching.isEmpty()) {
+					String label = type.toString();
+					System.out.println("               === " + label + " ===");
+					for (HintRating rating : matching) {
+						System.out.println("Hint ID: " + rating.hint.id);
+						System.out.println("Weight: " + rating.hint.weight());
+						System.out.println(rating.hint.resultString(from, config));
+						System.out.println("-------");
+						valid.remove(rating.match);
 					}
-					if (tooSoon) break;
 				}
 			}
 //			if (!valid.isEmpty()) System.out.println("               === Missed ===");
@@ -546,10 +539,6 @@ public class RateHints {
 
 		public boolean isValid() {
 			return match != null;
-		}
-
-		public boolean isTooSoon() {
-			return match != null && match.priority == Priority.TooSoon;
 		}
 
 		public Priority priority() {

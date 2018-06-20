@@ -19,8 +19,7 @@ public class TutorHint implements Comparable<TutorHint> {
 	}
 
 	public enum Priority {
-		// TODO: Remove TooSoon for release
-		Highest(1), High(2), Normal(3), TooSoon(4);
+		Highest(1), High(2), Normal(3);
 
 		public final int value;
 

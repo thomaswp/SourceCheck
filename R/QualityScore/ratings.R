@@ -285,7 +285,8 @@ findInterestingRequests <- function(algRequests, ratings) {
                         n=length(nEdits), delOnly=allSame(delOnly), nEdits=mean(nEdits))
   
   goldStandard$nEdits <- goldStandard$nInsertions + goldStandard$nDeletions + goldStandard$nRelabels
-  goldStandard$nMatches <- sapply(goldStandard$hintID, function(hintID) sum(algRatings$matchID==hintID, na.rm=T))
+  # TODO: double-check this!
+  goldStandard$nMatches <- sapply(nrow(goldStandard), function(i) sum(algRatings$matchID==goldStandard$hintID[i] & algRatings$year==goldStandard$year[i], na.rm=T))
   goldStandard$matched <- goldStandard$nMatches > 0
   goldStandard$onlyMatch <- sapply(goldStandard$hintID, function(hintID) allSame(algRatings$source[!is.na(algRatings$matchID) & algRatings$matchID==hintID]))
   

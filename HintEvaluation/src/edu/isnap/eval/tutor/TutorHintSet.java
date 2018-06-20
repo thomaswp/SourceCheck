@@ -7,7 +7,6 @@ import java.util.stream.Collectors;
 import edu.isnap.rating.HintSet;
 import edu.isnap.rating.RatingConfig;
 import edu.isnap.rating.TutorHint;
-import edu.isnap.rating.TutorHint.Priority;
 
 public class TutorHintSet extends HintSet {
 
@@ -16,10 +15,7 @@ public class TutorHintSet extends HintSet {
 	public TutorHintSet(String name, RatingConfig config, List<? extends TutorHint> hints) {
 		super(name, config);
 		this.tutorHints = hints.stream().map(e -> (TutorHint) e).collect(Collectors.toList());
-		hints.stream()
-		// No TooSoon hints
-		.filter(hint -> hint.priority != Priority.TooSoon)
-		.forEach(hint -> add(hint.toOutcome()));
+		hints.forEach(hint -> add(hint.toOutcome()));
 	}
 
 	public static TutorHintSet combine(String name, TutorHintSet... hintSets) {

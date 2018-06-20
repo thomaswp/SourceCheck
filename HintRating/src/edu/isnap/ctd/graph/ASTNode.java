@@ -164,9 +164,6 @@ public class ASTNode implements INode {
 		String value = object.has("value") ? object.getString("value") : null;
 		String id = object.has("id") ? object.getString("id") : null;
 
-		// TODO: Remove IDs from the data and remove this line!
-		if ("script".equals(type)) id = null;
-
 		ASTNode node = new ASTNode(type, value, id);
 
 		JSONObject children = object.optJSONObject("children");

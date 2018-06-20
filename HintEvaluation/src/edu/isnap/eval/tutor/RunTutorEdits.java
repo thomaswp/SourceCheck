@@ -50,6 +50,7 @@ public class RunTutorEdits extends TutorEdits {
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
 		RatingDataset dataset = iSnapF16F17;
+//		dataset = ITAPS16;
 		Source source = Source.StudentData;
 		HintAlgorithm algorithm = SourceCheck;
 		boolean debug = false;
@@ -264,8 +265,10 @@ public class RunTutorEdits extends TutorEdits {
 			addTrainingAndTestData(training, requests);
 			String dataDir = getDataDir();
 			if (toSpreadsheet) {
-				training.writeToSpreadsheet(dataDir + RateHints.TRAINING_FILE, true);
-				requests.writeToSpreadsheet(dataDir + RateHints.REQUEST_FILE, true);
+				training.writeToSpreadsheet(dataDir + RateHints.TRAINING_FILE,
+						RateHints.TRAINING_FILE.endsWith(".gz"));
+				requests.writeToSpreadsheet(dataDir + RateHints.REQUEST_FILE,
+						RateHints.REQUEST_FILE.endsWith(".gz"));
 			} else {
 				training.writeToFolder(dataDir + "training");
 				requests.writeToFolder(dataDir + "requests");

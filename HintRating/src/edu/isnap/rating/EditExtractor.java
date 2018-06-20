@@ -126,7 +126,6 @@ public class EditExtractor {
 		b.forEach(System.out::println);
 	}
 
-	// TODO: Still not sure this is ideal for Python
 	public Bag<Edit> extractEditsUsingCodeAlign(ASTNode from, ASTNode to) {
 		NodePairs pairs = getPairs(from, to);
 
@@ -383,7 +382,6 @@ public class EditExtractor {
 			ChildNodeReference toRef = new ChildNodeReference(toNode,
 					getReferenceInPair(toNode.parent(), mapping));
 			if (StringUtils.equals(toNode.type, fromMatch.type)) {
-				// TODO: See if there's a big difference if we treat moves as insert/delete pairs
 				edits.add(new Move(fromRef, toRef));
 			} else {
 				// For consistency, we represent relabels as insertions + deletions, rather than
