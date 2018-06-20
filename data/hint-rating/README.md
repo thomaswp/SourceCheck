@@ -1,11 +1,11 @@
 # Hint Rating Data
 
-This is a specification for the hint rating data used to benchmark and compare the quality of data-driven hints. This data is used as input for the QualityScore procedure defined in [1]. The datasets include training data that can be used to create data-driven programming hints, real student hint requests on which to test data-driven hints, and gold standard expert hints, against which to compare these hints. Possible uses for this data include:
-* When developing a new hint generation algorithm, test it on new datasets in different programming languages.
-* Evaluate the quality of data-driven hints using the gold standard hints.
-* Compare the quality of one or more data-driven hint algorithms.
-* Evaluate how factors such as the quantity of training data impact the quality of data-driven hints (e.g. [1]).
-* Test a new feature for a hint generation algorithm and see if it improves hint quality (though beware of overfitting to this dataset).
+This is a specification for hint rating data used to benchmark and compare the quality of data-driven hints. This data is used as input for the QualityScore procedure defined in [1]. The datasets include 1) training data that can be used to create data-driven programming hints; 2) real student hint requests on which to test data-driven hints; and 3) gold standard expert hints, against which to compare these hints. Possible uses for this data include:
+* Testing a newly developed data-driven hint generation algorithm on new datasets in different programming languages.
+* Evaluating the quality of data-driven hints against the gold standard hints.
+* Comparing the quality of one or more data-driven hint algorithms.
+* Evaluating how factors such as the quantity of training data impact the quality of data-driven hints (e.g. [1]).
+* Testing a new feature for a hint generation algorithm and seeing if it improves hint quality (though beware of overfitting to this dataset).
 
 For the most up-to-date information, please see go.ncsu.edu/hint-quality-data. When source code for the QualityScore procedure is released, a link will be provided there.
 
@@ -33,8 +33,8 @@ In the training.csv spreadsheet, each row corresponds to one snapshot of code fr
 * traceID: A unique ID for the trace that this snapshot belongs to.
 * index: The index of this snapshot within its trace.
 * isCorrect: TRUE if the given snapshot is known to be correct. Note that in the Snap dataset, only submitted snapshots are graded (manually), so intermediate snapshots may be correct but still have this value as FALSE.
-* source: For the ITAP dataset, this contains the Python source code used to generate the abstract syntax tree for this snapshot.
-* code: The abstract JSON abstract syntax tree representing this snapshot (see the Abstract Syntax Tree Format section).
+* source: For the ITAP dataset, this contains the Python source code used to generate the abstract syntax tree for this snapshot. The last snapshot in each trace of the training dataset is always correct.
+* code: The JSON abstract syntax tree representing this snapshot (see the Abstract Syntax Tree Format section).
 
 ## Gold Standard Data
 
@@ -52,7 +52,7 @@ Each row of the spreadsheet corresponds to one hint authored by the tutors. The 
 * OneTutor: TRUE if at least one tutor believed this was a valid hint after Phase 2.
 * MultipleTutors: TRUE if at least *two* tutors believed this hint was valid after Phase 2.
 * Consensus [*Meaningful only for the iSnap dataset*]: TRUE if all tutors agreed that this was a valid hint after Phase 3.
-* priority [*Meaningful only for the iSnap dataset*]: For hints where Consensus is TRUE, tutors also came to consensus on the priority of the hint: 1 (highest), 2 (high) and 3 (normal).
+* priority [*Meaningful only for the iSnap dataset*]: For hints where Consensus is TRUE, tutors also came to consensus on the priority of the hint: 1 (highest), 2 (high) or 3 (normal).
 * from: A JSON abstract syntax tree for the student's code at the time of the hint request (see the next section for a description of the JSON AST format).
 * to: A JSON abstract syntax tree for the student's code after applying the tutor's recommended hint.
 
