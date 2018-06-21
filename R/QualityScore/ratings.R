@@ -189,9 +189,12 @@ findInterestingRequests <- function(algRequests, ratings) {
                       SourceCheck=scorePartial[source=="SourceCheck"],
                       ITAP=(if (sum(source=="ITAP") == 0) NA else scorePartial[source=="ITAP"]))
   cor(byRequest[byRequest$dataset=="isnap",5:8])
+  mean(cor(byRequest[byRequest$dataset=="isnap",5:8]))
   KMO(cor(byRequest[byRequest$dataset=="isnap",5:8]))
+  icc(t(byRequest[byRequest$dataset=="isnap",5:8]), model="twoway", type="agreement")
   cor(byRequest[byRequest$dataset=="itap",5:9])
   KMO(cor(byRequest[byRequest$dataset=="itap",5:9]))
+  icc(t(byRequest[byRequest$dataset=="itap",5:9]), model="twoway", type="agreement")
   
   algScores <- ddply(algRequests, c("dataset", "source"), summarize, expectedScore=mean(scoreFull), sdScore=sd(scoreFull))
   algRequests <- merge(algRequests, algScores)
@@ -255,7 +258,7 @@ investigateHypotheses <- function() {
   goldStandardITAP <- read_csv("../../data/hint-rating/itapS16/analysis/gold-standard-analysis.csv")
   goldStandardITAP$dataset <- "itap"
   goldStandard <- rbind(goldStandardiSnap, goldStandardITAP)
-  goldStandard$nEdits <- goldStandard$nInsertions + goldStandard$nDeletions + goldStandard$nRelabels
+  goldStandard$nEdits <- goldStandard$nInsertions + goldStandard$nDeletions + goldStandard$nRelabels - goldStandard$nValueInsertions
   goldStandard$delOnly <- goldStandard$nDeletions == goldStandard$nEdits
   goldStandard$nMatches <- sapply(1:nrow(goldStandard), function(i) {
     length(unique(algRatings$source[
@@ -282,11 +285,23 @@ investigateHypotheses <- function() {
   
   algRatings <- ratings[ratings$source != "AllTutors" & ratings$source != "chf_without_past",]
   algRatings$matched <- algRatings$type == "Full"
-  algRatings$nEdits <- algRatings$nInsertions + algRatings$nDeletions + algRatings$nRelabels
-  algRatings$delOnly <- algRatings$nInsertions==0 & algRatings$nRelabels==0
+  algRatings$nEdits <- algRatings$nInsertions + algRatings$nDeletions + algRatings$nRelabels - algRatings$nValueInsertions
+  algRatings$delOnly <- algRatings$nDeletions == algRatings$nEdits
   allSame <- function(x) if (length(unique(x)) == 1) head(x, 1) else NA
   matchedHints <- ddply(algRatings[algRatings$matched,], c("dataset", "matchID"), summarize, 
                         n=length(nEdits), delOnly=allSame(delOnly), nEdits=mean(nEdits))
+
+### Hint Request Relationships
+  
+  # Unsurprisingly, later snapshots get bigger
+  dsSpear(scores, "requestTreeSize", "traceLength")
+  # But they aren't necessarily harder for iSnap; they seem to be for ITAP
+  # Not sure how meaningful traceLength is, though...
+  dsSpear(scores, "difficulty", "traceLength")
+  # It's possible the size and deviance are the same idea
+  dsSpear(scores, "requestTreeSize", "medTED")
+  # Linear model suggests independent effects (I think?)
+  summary(lm(difficulty ~ requestTreeSize + medTED + dataset, data=scores))
   
 ### Too Much Code
   
@@ -297,14 +312,10 @@ investigateHypotheses <- function() {
   
   # Most algorithms do have a positive correlation between hint count and the number of hints requested
   algHintCounts <- ddply(algRatings, c("dataset", "source", "requestID", "requestTreeSize"), summarize, hintCount=length(requestTreeSize))
+  # But importantly, not the best ones
   ddply(algHintCounts, c("dataset", "source"), summarize, cor(requestTreeSize, hintCount, method="spearman"))
   algHintCounts <- ddply(algRatings, c("dataset", "requestID", "requestTreeSize"), summarize, hintCount=length(requestTreeSize))
   dsSpear(algHintCounts, "requestTreeSize", "hintCount")
-  
-  # Unsurprisingly, later snapshots get bigger
-  dsSpear(scores, "requestTreeSize", "traceLength")
-  # But they aren't necessarily harder for iSnap; they seem to be for ITAP
-  dsSpear(scores, "difficulty", "traceLength")
   
 ### Too Few Correct Hints
   
@@ -350,6 +361,26 @@ investigateHypotheses <- function() {
   # 8 hints were matched by 5/6 algorithms for itap
   table(goldStandard$nMatches[goldStandard$dataset=="itap"])
   
+  # (not really used):
+  # Non-deletions do _much_ better than delete-only hints
+  table(algRatings$delOnly, algRatings$type, algRatings$dataset)
+  # There's an issue here with the fact that hints are not at all independent
+  # Could some algorithms be better (e.g. with insertions), but also happen to have fewer deletions
+  # Should really test within an algorithm, within a hint request
+  fisher.test(algRatings$delOnly[algRatings$dataset=="isnap"], algRatings$matched[algRatings$dataset=="isnap"])
+  fisher.test(algRatings$delOnly[algRatings$dataset=="itap"], algRatings$matched[algRatings$dataset=="itap"])
+  # For ITAP we actually see that the poor-performing algorithms have more successful deletes, perhaps because there are so few
+  ddply(algRatings, c("dataset", "source"), summarize, 
+        successDel=mean(matched[delOnly]), 
+        successNotDel=mean(matched[!delOnly]),
+        oddsRatio=successDel/successNotDel)
+  # However, we see that only 2.2 and 4.1% of matching hints are deletions
+  table(matchedHints$dataset, matchedHints$delOnly)
+  ddply(matchedHints, "dataset", summarize, p=mean(delOnly))
+  # Compared to 17.7 and 18.0 for general hints
+  table(algRatings$dataset, algRatings$delOnly)
+  ddply(algRatings, "dataset", summarize, p=mean(delOnly))
+  
   
 ### Reading Student Intent
   
@@ -389,26 +420,6 @@ investigateHypotheses <- function() {
   # Looks like the ITAP trend is not just attributable to the ITAP algorithm's large, successful hints
   fisher.test(nonDeletes$moreEdits[nonDeletes$dataset=="itap" & nonDeletes$source != "ITAP"], 
               nonDeletes$matched[nonDeletes$dataset=="itap" & nonDeletes$source != "ITAP"])
-  
-  # Non-deletions do _much_ better than delete-only hints
-  table(algRatings$delOnly, algRatings$type, algRatings$dataset)
-  # There's an issue here with the fact that hints are not at all independent
-  # Could some algorithms be better (e.g. with insertions), but also happen to have fewer deletions
-  # Should really test within an algorithm, within a hint request
-  fisher.test(algRatings$delOnly[algRatings$dataset=="isnap"], algRatings$matched[algRatings$dataset=="isnap"])
-  fisher.test(algRatings$delOnly[algRatings$dataset=="itap"], algRatings$matched[algRatings$dataset=="itap"])
-  # For ITAP we actually see that the poor-performing algorithms have more successful deletes, perhaps because there are so few
-  ddply(algRatings, c("dataset", "source"), summarize, 
-        successDel=mean(matched[delOnly]), 
-        successNotDel=mean(matched[!delOnly]),
-        oddsRatio=successDel/successNotDel)
-  # However, we see that only 2.2 and 4.1% of matching hints are deletions
-  table(matchedHints$dataset, matchedHints$delOnly)
-  ddply(matchedHints, "dataset", summarize, p=mean(delOnly))
-  # Compared to 17.7 and 18.0 for general hints
-  table(algRatings$dataset, algRatings$delOnly)
-  ddply(algRatings, "dataset", summarize, p=mean(delOnly))
-  
   
   # Medium positive correlation between tree size and difficulty
   plot(jitter(scores$difficulty), jitter(scores$treeSize))
