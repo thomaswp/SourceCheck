@@ -191,10 +191,10 @@ findInterestingRequests <- function(algRequests, ratings) {
   cor(byRequest[byRequest$dataset=="isnap",5:8])
   mean(cor(byRequest[byRequest$dataset=="isnap",5:8]))
   KMO(cor(byRequest[byRequest$dataset=="isnap",5:8]))
-  icc(t(byRequest[byRequest$dataset=="isnap",5:8]), model="twoway", type="agreement")
+  icc(t(byRequest[byRequest$dataset=="isnap",5:8]), type="agreement")
   cor(byRequest[byRequest$dataset=="itap",5:9])
   KMO(cor(byRequest[byRequest$dataset=="itap",5:9]))
-  icc(t(byRequest[byRequest$dataset=="itap",5:9]), model="twoway", type="agreement")
+  icc(t(byRequest[byRequest$dataset=="itap",5:9]), type="agreement")
   
   algScores <- ddply(algRequests, c("dataset", "source"), summarize, expectedScore=mean(scoreFull), sdScore=sd(scoreFull))
   algRequests <- merge(algRequests, algScores)
