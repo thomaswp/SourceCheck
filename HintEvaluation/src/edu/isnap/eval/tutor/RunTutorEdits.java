@@ -38,6 +38,7 @@ public class RunTutorEdits extends TutorEdits {
 
 	public final static String CONSENSUS_GG_SQ = "consensus-gg-sq.csv";
 	public static final String ITAP_DIR = "../data/itap/";
+	public static final String ANALYSIS_DIR = "analysis";
 
 	private final static Validity targetValidity = Validity.MultipleTutors;
 
@@ -58,7 +59,8 @@ public class RunTutorEdits extends TutorEdits {
 
 //		writeAllHintSets(iSnapF16F17, ITAPS16);
 
-		dataset.writeGoldStandard();
+//		dataset.writeGoldStandard();
+		dataset.analyzeGoldStandard();
 //		dataset.exportTrainingAndTestData(true);
 //		dataset.writeHintSet(algorithm, source);
 
@@ -259,6 +261,10 @@ public class RunTutorEdits extends TutorEdits {
 		abstract HintAlgorithm[] validHintAlgorithms();
 		abstract Map<String, TutorHintSet> getTutorHintSets() throws IOException;
 
+		private String getAnalysisDir() {
+			return getDataDir() + ANALYSIS_DIR + "/";
+		}
+
 		void exportTrainingAndTestData(boolean toSpreadsheet) throws IOException {
 			TraceDataset training = new TraceDataset("training");
 			TraceDataset requests = new TraceDataset("requests");
@@ -308,7 +314,7 @@ public class RunTutorEdits extends TutorEdits {
 				rate.writeAllHints(getDataDir() + RateHints.ALGORITHMS_DIR + "/" + name);
 				Spreadsheet spreadsheet = new Spreadsheet();
 				rate.writeAllRatings(spreadsheet);
-				spreadsheet.write(getDataDir() + "analysis/ratings-" + name);
+				spreadsheet.write(getAnalysisDir() + "ratings-" + name);
 			}
 		}
 
@@ -328,7 +334,7 @@ public class RunTutorEdits extends TutorEdits {
 			}
 			if (write) {
 				String name = getSourceName(algorithm, source) + ".csv";
-				spreadsheet.write(getDataDir() + "analysis/k-test-" + name);
+				spreadsheet.write(getAnalysisDir() + "k-test-" + name);
 			}
 		}
 
@@ -349,28 +355,33 @@ public class RunTutorEdits extends TutorEdits {
 		}
 
 		public void writeGoldStandard() throws FileNotFoundException, IOException {
-			generateGoldStandard().writeSpreadsheet(getDataDir() + RateHints.GS_SPREADSHEET,
+			generateGoldStandard().writeSpreadsheet(getDataDir() + RateHints.GS_SPREADSHEET);
+		}
+
+		public void analyzeGoldStandard() throws IOException {
+			GSAnalysis.writeAnalysis(getAnalysisDir() + "gold-standard-analysis.csv",
+					getGoldStandard(), getTrainingDataset(),
 					HighlightHintSet.getRatingConfig(hintConfig));
 		}
 
 		public void writeColdStart(HintAlgorithm algorithm, int rounds, int step)
 				throws IOException {
 			ColdStart coldStart = getColdStart(algorithm);
-			coldStart.writeTest(String.format("%sanalysis/cold-start-%03d-%d.csv",
-					getDataDir(), rounds, step), rounds, step);
+			coldStart.writeTest(String.format("%scold-start-%03d-%d.csv",
+					getAnalysisDir(), rounds, step), rounds, step);
 		}
 
 		public void writeSingleTraces(HintAlgorithm algorithm)
 				throws FileNotFoundException, IOException {
 			ColdStart coldStart = getColdStart(algorithm);
-			coldStart.testSingleTraces().write(getDataDir() + "analysis/traces.csv");
+			coldStart.testSingleTraces().write(getAnalysisDir() + "traces.csv");
 		}
 
 		public void writeCostsSpreadsheet() throws IOException {
 			GoldStandard standard = getGoldStandard();
 			TrainingDataset dataset = getTrainingDataset();
 			HighlightHintGenerator.getCostsSpreadsheet(dataset, standard, hintConfig)
-			.write(getDataDir() + "analysis/distances.csv");
+			.write(getAnalysisDir() + "distances.csv");
 		}
 
 		protected TrainingDataset getTrainingDataset() throws IOException {

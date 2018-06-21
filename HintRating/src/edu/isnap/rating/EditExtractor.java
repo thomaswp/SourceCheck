@@ -26,6 +26,7 @@ import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.graph.CodeAlignment;
 import edu.isnap.ctd.graph.CodeAlignment.NodePairs;
 import edu.isnap.ctd.util.map.BiMap;
+import edu.isnap.hint.util.Spreadsheet;
 import node.Node;
 
 public class EditExtractor {
@@ -60,7 +61,7 @@ public class EditExtractor {
 		public float ren(Node<ASTNode> nodeA, Node<ASTNode> nodeB) {
 			// If the nodes are equal, there is no cost to "rename"
 			if (nodeA.getNodeData().shallowEquals(nodeB.getNodeData(), false)) {
-				return 1;
+				return 0;
 			}
 
 			// If the Nodes are not equal but of the same type, they should always be renamed, but
@@ -88,7 +89,7 @@ public class EditExtractor {
 		}
 	};
 
-	private static Node<ASTNode> toNode(ASTNode astNode) {
+	public static Node<ASTNode> toNode(ASTNode astNode) {
 		Node<ASTNode> node = new Node<>(astNode);
 		if (astNode != null) {
 			for (ASTNode child : astNode.children()) {
@@ -186,6 +187,7 @@ public class EditExtractor {
 		return inserted;
 	}
 
+	// TODO: Remove APTED, etc.
 	public static Set<Edit> extractEditsUsingTED(ASTNode fromAST, ASTNode toAST) {
 		Node<ASTNode> from = toNode(fromAST), to = toNode(toAST);
 		APTED<CostModel<ASTNode>, ASTNode> apted = new APTED<>(costModel);
@@ -483,7 +485,7 @@ public class EditExtractor {
 		return new ChildNodeReference(toNode, getReferenceInPair(toNode.parent(), mapping));
 	}
 
-	protected static abstract class Edit implements Comparable<Edit> {
+	public static abstract class Edit implements Comparable<Edit> {
 		final NodeReference node;
 
 		Edit(NodeReference node) {
@@ -761,5 +763,21 @@ public class EditExtractor {
 		public String toString() {
 			return "root";
 		}
+	}
+
+	public static void addEditInfo(Spreadsheet spreadsheet, Bag<Edit> edits) {
+		int nInsertions = 0, nDeletions = 0, nRelabels = 0, nValueInsertions = 0;
+		for (Edit edit : edits) {
+			if (edit instanceof Insertion) {
+				nInsertions++;
+				if (edit.node instanceof NodeValueReference) nValueInsertions++;
+			}
+			else if (edit instanceof Deletion) nDeletions++;
+			else if (edit instanceof Relabel) nRelabels++;
+		}
+		spreadsheet.put("nInsertions", nInsertions);
+		spreadsheet.put("nDeletions", nDeletions);
+		spreadsheet.put("nRelabels", nRelabels);
+		spreadsheet.put("nValueInsertions", nValueInsertions);
 	}
 }

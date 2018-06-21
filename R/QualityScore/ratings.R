@@ -248,18 +248,21 @@ findInterestingRequests <- function(algRequests, ratings) {
   table(scores$dataset, scores$n05)
   table(scores$dataset, scores$n1)
   
-  goldStandardiSnap <- read_csv("../../data/hint-rating/isnapF16-F17/gold-standard.csv")
+  goldStandardiSnap <- read_csv("../../data/hint-rating/isnapF16-F17/analysis/gold-standard-analysis.csv")
   goldStandardiSnap$dataset <- "isnap"
-  goldStandardITAP <- read_csv("../../data/hint-rating/itapS16/gold-standard.csv")
+  goldStandardITAP <- read_csv("../../data/hint-rating/itapS16/analysis/gold-standard-analysis.csv")
   goldStandardITAP$dataset <- "itap"
   goldStandard <- rbind(goldStandardiSnap, goldStandardITAP)
-  goldStandard
   gsRequests <- ddply(goldStandard, c("dataset", "assignmentID", "year", "requestID"), summarize, 
                       nHints = sum(MultipleTutors),
-                      nHP = sum(priority < 3, na.rm=T))
-
+                      nHP = sum(priority < 3, na.rm=T),
+                      minEdits=mean(minEdits), medEdits=mean(medEdits),
+                      minTED=mean(minAPTED), medTED=mean(medAPTED))
   
   scores <- merge(scores, gsRequests)
+  scoresiSnap <- scores[scores$dataset == "isnap",]
+  scoresITAP <- scores[scores$dataset == "itap",]
+  
   ggplot(scores, aes(x=difficulty>0.75,y=nHints)) + geom_boxplot()
   ggplot(scores, aes(x=difficulty>0.75,y=nHints)) + geom_boxplot() + facet_wrap(~ dataset)
   ggplot(scores, aes(x=as.ordered(nHints),y=difficulty)) + geom_boxplot() + facet_wrap(~ dataset, scales = "free_x")
@@ -268,13 +271,22 @@ findInterestingRequests <- function(algRequests, ratings) {
   # improve on vs the "average" may be different
   cor.test(scores$nHints, scores$difficulty, method="spearman")
   cor.test(scores$nHints, scores$normDifficulty, method="spearman")
-  scoresiSnap <- scores[scores$dataset == "isnap",]
   cor.test(scoresiSnap$nHints, scoresiSnap$difficulty, method="spearman")
   cor.test(scoresiSnap$nHints, scoresiSnap$normDifficulty, method="spearman")
-  scoresITAP <- scores[scores$dataset == "itap",]
   plot(jitter(scoresITAP$nHints), jitter(scoresITAP$difficulty))
   cor.test(scoresITAP$nHints, scoresITAP$difficulty, method="spearman")
-  cor.test(scoresITAP$nHints, scoresITAP$medScore, method="spearman")
+  cor.test(scoresITAP$nHints, scoresITAP$normDifficulty, method="spearman")
+  
+  # Robust evidence that the median distance of a hint request to a known solution impact difficulty
+  cor.test(scoresiSnap$medTED, scoresiSnap$difficulty, method="spearman")
+  plot(jitter(scoresiSnap$medTED), jitter(scoresiSnap$difficulty))
+  cor.test(scoresiSnap$medTED, scoresiSnap$normDifficulty, method="spearman")
+  plot(jitter(scoresiSnap$medTED), jitter(scoresiSnap$normDifficulty))
+  # Consistent for ITAP dataset as well
+  cor.test(scoresITAP$medTED, scoresITAP$difficulty, method="spearman")
+  plot(jitter(scoresITAP$medTED), jitter(scoresITAP$difficulty))
+  cor.test(scoresITAP$medTED, scoresITAP$normDifficulty, method="spearman")
+  plot(jitter(scoresITAP$medTED), jitter(scoresITAP$normDifficulty))
   
   algRatings <- ratings[ratings$source != "AllTutors" & ratings$source != "chf_without_past",]
   algRatings$matched <- algRatings$type == "Full"
@@ -285,10 +297,41 @@ findInterestingRequests <- function(algRequests, ratings) {
                         n=length(nEdits), delOnly=allSame(delOnly), nEdits=mean(nEdits))
   
   goldStandard$nEdits <- goldStandard$nInsertions + goldStandard$nDeletions + goldStandard$nRelabels
-  # TODO: double-check this!
-  goldStandard$nMatches <- sapply(nrow(goldStandard), function(i) sum(algRatings$matchID==goldStandard$hintID[i] & algRatings$year==goldStandard$year[i], na.rm=T))
+  goldStandard$nMatches <- sapply(1:nrow(goldStandard), function(i) {
+    length(unique(algRatings$source[
+        !is.na(algRatings$matchID) & 
+        algRatings$matchID==goldStandard$hintID[i] & 
+        algRatings$year==goldStandard$year[i]]))
+  })
   goldStandard$matched <- goldStandard$nMatches > 0
-  goldStandard$onlyMatch <- sapply(goldStandard$hintID, function(hintID) allSame(algRatings$source[!is.na(algRatings$matchID) & algRatings$matchID==hintID]))
+  goldStandard$pValue <- goldStandard$nValueInsertions / goldStandard$minEdits
+  
+  # About half of GS hints were matched by an algorithm on both datasets
+  ddply(goldStandard, "dataset", summarize, mean(matched))
+  # The median matched hint had 2 matching algorithms on both datasets
+  ddply(goldStandard, "dataset", summarize, median(goldStandard$nMatches[goldStandard$nMatches>0]))
+  # 7 hints were matched by 5/5 algorithms for isnap
+  table(goldStandard$nMatches[goldStandard$dataset=="isnap"])
+  # 8 hints were matched by 5/6 algorithms for itap
+  table(goldStandard$nMatches[goldStandard$dataset=="itap"])
+  
+  # No apparent relationship between adding nodes with values and how many matched
+  ddply(goldStandard, c("dataset", "matched"), summarize, n=length(pValue), mp=median(pValue))
+  ddply(goldStandard, c("dataset"), summarize, cor(nMatches, pValue, method="spearman"))
+  ggplot(goldStandard, aes(x=as.ordered(nMatches), y=pValue)) + geom_boxplot() + facet_grid(~dataset)
+  
+  ddply(goldStandard, c("dataset", "matched"), summarize, n=length(nEdits), mEdits=median(nEdits))
+  ggplot(goldStandard, aes(x=matched, y=nEdits)) + geom_boxplot() + facet_grid(~dataset)
+  # Significantly fewer edits for matched GS hints in iSnap
+  wilcox.test(goldStandard$nEdits[goldStandard$dataset=="isnap" & goldStandard$matched], 
+              goldStandard$nEdits[goldStandard$dataset=="isnap" & !goldStandard$matched])
+  # but not ITAP
+  wilcox.test(goldStandard$nEdits[goldStandard$dataset=="itap" & goldStandard$matched], 
+              goldStandard$nEdits[goldStandard$dataset=="itap" & !goldStandard$matched])
+  ddply(goldStandard, c("dataset"), summarize, cor(nMatches, nEdits, method="spearman"))
+  # Similarly, significant negative correlation between GS hint size and how many algorithms matched it, for iSnap only
+  cor.test(goldStandard$nMatches[goldStandard$dataset=="isnap"], goldStandard$nEdits[goldStandard$dataset=="isnap"], method="spearman")
+  cor.test(goldStandard$nMatches[goldStandard$dataset=="itap"], goldStandard$nEdits[goldStandard$dataset=="itap"], method="spearman")
   
   # Non-deletions do _much_ better than delete-only hints
   table(algRatings$delOnly, algRatings$type, algRatings$dataset)

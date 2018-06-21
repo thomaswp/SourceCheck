@@ -589,7 +589,7 @@ public class RateHints {
 			Diff.colorStyle = oldStyle;
 
 			spreadsheet.put("requestTreeSize", requestNode.treeSize());
-			GoldStandard.addEditInfo(spreadsheet, edits);
+			EditExtractor.addEditInfo(spreadsheet, edits);
 
 			Map<String, String> properties = hint.getDebuggingProperties(requestNode);
 			for (String key : properties.keySet()) {

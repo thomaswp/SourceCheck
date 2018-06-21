@@ -378,8 +378,8 @@ public class TutorEdits {
 		return new GoldStandard(consensusEdits);
 	}
 
-	private static Map<Integer, Tuple<EnumSet<Validity>, Priority>> readConsensusSpreadsheet(String path,
-			boolean failIfNoConsensus)
+	private static Map<Integer, Tuple<EnumSet<Validity>, Priority>>
+			readConsensusSpreadsheet(String path, boolean failIfNoConsensus)
 			throws FileNotFoundException, IOException {
 		Map<Integer, Tuple<EnumSet<Validity>, Priority>> map = new HashMap<>();
 		CSVParser parser = new CSVParser(new FileReader(path), CSVFormat.DEFAULT.withHeader());
@@ -402,7 +402,7 @@ public class TutorEdits {
 
 			int v1 = Integer.parseInt(row.get("V1"));
 
-			{
+			if (parser.getHeaderMap().containsKey("P4")) {
 				// This is a fix to ensure that "Too Soon" votes are not counted as valid votes:
 				// Count the validity using the number of P1-P3 votes, since P4 votes (which are
 				// counted in V1) should not count as votes for validity unless there is consensus.
@@ -411,10 +411,7 @@ public class TutorEdits {
 					String key = "P" + i;
 					validPriorityCount += Integer.parseInt(row.get(key));
 				}
-				int tooSoonCount = 0;
-				if (parser.getHeaderMap().containsKey("P4")) {
-					tooSoonCount = Integer.parseInt(row.get("P4"));
-				}
+				int tooSoonCount = Integer.parseInt(row.get("P4"));
 				if (v1 > validPriorityCount + tooSoonCount) {
 					parser.close();
 					System.err.printf("ID: %d, V1: %d > (P1-3: %d) + (P4: %d)\n",
