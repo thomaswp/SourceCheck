@@ -360,7 +360,7 @@ public class RunTutorEdits extends TutorEdits {
 
 		public void analyzeGoldStandard() throws IOException {
 			GSAnalysis.writeAnalysis(getAnalysisDir() + "gold-standard-analysis.csv",
-					getGoldStandard(), getTrainingDataset(),
+					getGoldStandard(), getTrainingDataset(), getRequestDataset(),
 					HighlightHintSet.getRatingConfig(hintConfig));
 		}
 

@@ -247,21 +247,66 @@ findInterestingRequests <- function(algRequests, ratings) {
   
   table(scores$dataset, scores$n05)
   table(scores$dataset, scores$n1)
-  
+}
+ 
+investigateHypotheses <- function() { 
   goldStandardiSnap <- read_csv("../../data/hint-rating/isnapF16-F17/analysis/gold-standard-analysis.csv")
   goldStandardiSnap$dataset <- "isnap"
   goldStandardITAP <- read_csv("../../data/hint-rating/itapS16/analysis/gold-standard-analysis.csv")
   goldStandardITAP$dataset <- "itap"
   goldStandard <- rbind(goldStandardiSnap, goldStandardITAP)
+  goldStandard$nEdits <- goldStandard$nInsertions + goldStandard$nDeletions + goldStandard$nRelabels
+  goldStandard$delOnly <- goldStandard$nDeletions == goldStandard$nEdits
+  goldStandard$nMatches <- sapply(1:nrow(goldStandard), function(i) {
+    length(unique(algRatings$source[
+      !is.na(algRatings$matchID) & 
+        algRatings$matchID==goldStandard$hintID[i] & 
+        algRatings$year==goldStandard$year[i]]))
+  })
+  goldStandard$matched <- goldStandard$nMatches > 0
+  goldStandard$pValue <- goldStandard$nValueInsertions / goldStandard$minEdits
+  
   gsRequests <- ddply(goldStandard, c("dataset", "assignmentID", "year", "requestID"), summarize, 
+                      traceLength=mean(traceLength),
+                      requestTreeSize=mean(requestTreeSize),
                       nHints = sum(MultipleTutors),
                       nHP = sum(priority < 3, na.rm=T),
+                      # Min and median distance from the request to another correct solution (not the hint itself)
                       minEdits=mean(minEdits), medEdits=mean(medEdits),
                       minTED=mean(minAPTED), medTED=mean(medAPTED))
   
   scores <- merge(scores, gsRequests)
   scoresiSnap <- scores[scores$dataset == "isnap",]
   scoresITAP <- scores[scores$dataset == "itap",]
+  
+  
+  algRatings <- ratings[ratings$source != "AllTutors" & ratings$source != "chf_without_past",]
+  algRatings$matched <- algRatings$type == "Full"
+  algRatings$nEdits <- algRatings$nInsertions + algRatings$nDeletions + algRatings$nRelabels
+  algRatings$delOnly <- algRatings$nInsertions==0 & algRatings$nRelabels==0
+  allSame <- function(x) if (length(unique(x)) == 1) head(x, 1) else NA
+  matchedHints <- ddply(algRatings[algRatings$matched,], c("dataset", "matchID"), summarize, 
+                        n=length(nEdits), delOnly=allSame(delOnly), nEdits=mean(nEdits))
+  
+### Too Much Code
+  
+  # No correlation between the number of GS hints for a request and its tree size
+  dsSpear(gsRequests, "requestTreeSize", "nHints")
+  cor.test(gsRequests$requestTreeSize[gsRequests$dataset=="itap"], gsRequests$nHints[gsRequests$dataset=="itap"], method="spearman")
+  cor.test(gsRequests$requestTreeSize, gsRequests$nHints, method="spearman")
+  
+  # Most algorithms do have a positive correlation between hint count and the number of hints requested
+  algHintCounts <- ddply(algRatings, c("dataset", "source", "requestID", "requestTreeSize"), summarize, hintCount=length(requestTreeSize))
+  ddply(algHintCounts, c("dataset", "source"), summarize, cor(requestTreeSize, hintCount, method="spearman"))
+  algHintCounts <- ddply(algRatings, c("dataset", "requestID", "requestTreeSize"), summarize, hintCount=length(requestTreeSize))
+  dsSpear(algHintCounts, "requestTreeSize", "hintCount")
+  
+  # Unsurprisingly, later snapshots get bigger
+  dsSpear(scores, "requestTreeSize", "traceLength")
+  # But they aren't necessarily harder for iSnap; they seem to be for ITAP
+  dsSpear(scores, "difficulty", "traceLength")
+  
+### Too Few Correct Hints
   
   ggplot(scores, aes(x=difficulty>0.75,y=nHints)) + geom_boxplot()
   ggplot(scores, aes(x=difficulty>0.75,y=nHints)) + geom_boxplot() + facet_wrap(~ dataset)
@@ -277,7 +322,10 @@ findInterestingRequests <- function(algRequests, ratings) {
   cor.test(scoresITAP$nHints, scoresITAP$difficulty, method="spearman")
   cor.test(scoresITAP$nHints, scoresITAP$normDifficulty, method="spearman")
   
+### Deviant Code
+  
   # Robust evidence that the median distance of a hint request to a known solution impact difficulty
+  dsSpear(scores, "medTED", "difficulty")
   cor.test(scoresiSnap$medTED, scoresiSnap$difficulty, method="spearman")
   plot(jitter(scoresiSnap$medTED), jitter(scoresiSnap$difficulty))
   cor.test(scoresiSnap$medTED, scoresiSnap$normDifficulty, method="spearman")
@@ -288,23 +336,10 @@ findInterestingRequests <- function(algRequests, ratings) {
   cor.test(scoresITAP$medTED, scoresITAP$normDifficulty, method="spearman")
   plot(jitter(scoresITAP$medTED), jitter(scoresITAP$normDifficulty))
   
-  algRatings <- ratings[ratings$source != "AllTutors" & ratings$source != "chf_without_past",]
-  algRatings$matched <- algRatings$type == "Full"
-  algRatings$nEdits <- algRatings$nInsertions + algRatings$nDeletions + algRatings$nRelabels
-  algRatings$delOnly <- algRatings$nInsertions==0 & algRatings$nRelabels==0
-  allSame <- function(x) if (length(unique(x)) == 1) head(x, 1) else NA
-  matchedHints <- ddply(algRatings[algRatings$matched,], c("dataset", "matchID"), summarize, 
-                        n=length(nEdits), delOnly=allSame(delOnly), nEdits=mean(nEdits))
+### Unhelpful Deletions
   
-  goldStandard$nEdits <- goldStandard$nInsertions + goldStandard$nDeletions + goldStandard$nRelabels
-  goldStandard$nMatches <- sapply(1:nrow(goldStandard), function(i) {
-    length(unique(algRatings$source[
-        !is.na(algRatings$matchID) & 
-        algRatings$matchID==goldStandard$hintID[i] & 
-        algRatings$year==goldStandard$year[i]]))
-  })
-  goldStandard$matched <- goldStandard$nMatches > 0
-  goldStandard$pValue <- goldStandard$nValueInsertions / goldStandard$minEdits
+  # GS deletions were rare and ~3x less likely to be matched than non-deletions
+  table(goldStandard$delOnly, goldStandard$matched, goldStandard$dataset)
   
   # About half of GS hints were matched by an algorithm on both datasets
   ddply(goldStandard, "dataset", summarize, mean(matched))
@@ -315,10 +350,15 @@ findInterestingRequests <- function(algRequests, ratings) {
   # 8 hints were matched by 5/6 algorithms for itap
   table(goldStandard$nMatches[goldStandard$dataset=="itap"])
   
+  
+### Reading Student Intent
+  
   # No apparent relationship between adding nodes with values and how many matched
   ddply(goldStandard, c("dataset", "matched"), summarize, n=length(pValue), mp=median(pValue))
   ddply(goldStandard, c("dataset"), summarize, cor(nMatches, pValue, method="spearman"))
   ggplot(goldStandard, aes(x=as.ordered(nMatches), y=pValue)) + geom_boxplot() + facet_grid(~dataset)
+  
+### Hint Granulariy 
   
   ddply(goldStandard, c("dataset", "matched"), summarize, n=length(nEdits), mEdits=median(nEdits))
   ggplot(goldStandard, aes(x=matched, y=nEdits)) + geom_boxplot() + facet_grid(~dataset)
@@ -330,13 +370,30 @@ findInterestingRequests <- function(algRequests, ratings) {
               goldStandard$nEdits[goldStandard$dataset=="itap" & !goldStandard$matched])
   ddply(goldStandard, c("dataset"), summarize, cor(nMatches, nEdits, method="spearman"))
   # Similarly, significant negative correlation between GS hint size and how many algorithms matched it, for iSnap only
-  cor.test(goldStandard$nMatches[goldStandard$dataset=="isnap"], goldStandard$nEdits[goldStandard$dataset=="isnap"], method="spearman")
-  cor.test(goldStandard$nMatches[goldStandard$dataset=="itap"], goldStandard$nEdits[goldStandard$dataset=="itap"], method="spearman")
+  dsSpear(goldStandard, "nMatches", "nEdits")
+  
+  # Larger hints do better for iSnap and worse for ITAP
+  ddply(algRatings, c("dataset", "matched"), summarize, medEdits=median(nEdits))
+  
+  nonDeletes <- algRatings[!algRatings$delOnly,]
+  medEditsiSnap <- median(nonDeletes$nEdits[nonDeletes$dataset=="isnap"]) # 2
+  medEditsITAP <- median(nonDeletes$nEdits[nonDeletes$dataset=="itap"]) # 3
+  nonDeletes$moreEdits <- F
+  nonDeletes$moreEdits[nonDeletes$nEdits > medEditsiSnap & nonDeletes$dataset=="isnap"] <- T
+  nonDeletes$moreEdits[nonDeletes$nEdits > medEditsITAP & nonDeletes$dataset=="itap"] <- T
+  
+  table(nonDeletes$moreEdits, nonDeletes$type, nonDeletes$dataset)
+  # Same problem here of non-independence
+  fisher.test(nonDeletes$moreEdits[nonDeletes$dataset=="isnap"], nonDeletes$matched[nonDeletes$dataset=="isnap"])
+  fisher.test(nonDeletes$moreEdits[nonDeletes$dataset=="itap"], nonDeletes$matched[nonDeletes$dataset=="itap"])
+  # Looks like the ITAP trend is not just attributable to the ITAP algorithm's large, successful hints
+  fisher.test(nonDeletes$moreEdits[nonDeletes$dataset=="itap" & nonDeletes$source != "ITAP"], 
+              nonDeletes$matched[nonDeletes$dataset=="itap" & nonDeletes$source != "ITAP"])
   
   # Non-deletions do _much_ better than delete-only hints
   table(algRatings$delOnly, algRatings$type, algRatings$dataset)
   # There's an issue here with the fact that hints are not at all independent
-  # Could some algorithsm be better (e.g. with insertions), but also happen to have fewer deletions
+  # Could some algorithms be better (e.g. with insertions), but also happen to have fewer deletions
   # Should really test within an algorithm, within a hint request
   fisher.test(algRatings$delOnly[algRatings$dataset=="isnap"], algRatings$matched[algRatings$dataset=="isnap"])
   fisher.test(algRatings$delOnly[algRatings$dataset=="itap"], algRatings$matched[algRatings$dataset=="itap"])
@@ -352,31 +409,14 @@ findInterestingRequests <- function(algRequests, ratings) {
   table(algRatings$dataset, algRatings$delOnly)
   ddply(algRatings, "dataset", summarize, p=mean(delOnly))
   
-  # Larger hints (+2 edits) do better for iSnap and worse for ITAP
-  ddply(goldStandard, c("dataset", "matched"), summarize, medEdits=median(nEdits))
-  ggplot(goldStandard, aes(x=matched, y=nEdits)) + geom_boxplot() + facet_grid(~dataset)
-  ddply(algRatings, c("dataset", "matched"), summarize, medEdits=median(nEdits))
-  
-  nonDeletes <- algRatings[!algRatings$delOnly,]
-  medEditsiSnap <- median(nonDeletes$nEdits[nonDeletes$dataset=="isnap"]) # 2
-  medEditsITAP <- median(nonDeletes$nEdits[nonDeletes$dataset=="itap"]) # 3
-  matchedHints$moreEdits <- F
-  matchedHints$moreEdits[matchedHints$nEdits > medEditsiSnap & matchedHints$dataset=="isnap"] <- T
-  matchedHints$moreEdits[matchedHints$nEdits > medEditsITAP & matchedHints$dataset=="itap"] <- T
-  table(matchedHints$dataset, matchedHints$moreEdits)
-  
-  table(matchedHints$moreEdits, nonDeletes$type, nonDeletes$dataset)
-  # Same problem here of non-independence
-  fisher.test(nonDeletes$moreEdits[nonDeletes$dataset=="isnap"], nonDeletes$matched[nonDeletes$dataset=="isnap"])
-  fisher.test(nonDeletes$moreEdits[nonDeletes$dataset=="itap"], nonDeletes$matched[nonDeletes$dataset=="itap"])
-  # Looks like the ITAP trend is not just attributable to the ITAP algorithm's large, successful hints
-  fisher.test(nonDeletes$moreEdits[nonDeletes$dataset=="itap" & nonDeletes$source != "ITAP"], 
-              nonDeletes$matched[nonDeletes$dataset=="itap" & nonDeletes$source != "ITAP"])
-  
   
   # Medium positive correlation between tree size and difficulty
   plot(jitter(scores$difficulty), jitter(scores$treeSize))
   cor.test(scores$difficulty, scores$treeSize, method="spearman")
+  cor.test(scores$difficulty[scores$dataset=="isnap"], scores$treeSize[scores$dataset=="isnap"], method="spearman")
+  cor.test(scores$difficulty[scores$dataset=="itap"], scores$treeSize[scores$dataset=="itap"], method="spearman")
+  cor.test(scores$normDifficulty[scores$dataset=="isnap"], scores$treeSize[scores$dataset=="isnap"], method="spearman")
+  cor.test(scores$normDifficulty[scores$dataset=="itap"], scores$treeSize[scores$dataset=="itap"], method="spearman")
   ggplot(scores, aes(x=difficulty > 0.75, y=treeSize)) + geom_boxplot() + facet_grid(~dataset)
   wilcox.test(scoresiSnap$treeSize[scoresiSnap$difficulty > 0.75], 
               scoresiSnap$treeSize[scoresiSnap$difficulty <= 0.75])
@@ -404,7 +444,15 @@ loadAllRatings <- function() {
   ratings$assignmentID <- factor(ratings$assignmentID, c("squiralHW", "guess1Lab", "helloWorld", "firstAndLast", "isPunctuation", "kthDigit", "oneToN"))
   ratings
 }
-  
+
+dsSpear <- function(dataset, c1, c2) {
+  print(isnapTest <- cor.test(dataset[dataset$dataset == "isnap",][[c1]], dataset[dataset$dataset == "isnap",][[c2]], method = "spearman"))
+  print(itapTest <- cor.test(dataset[dataset$dataset == "itap",][[c1]], dataset[dataset$dataset == "itap",][[c2]], method = "spearman"))
+  cat(sprintf("\\isnap ($\\rho = %.03f$; $p = %.03f$) and \\itap ($\\rho = %.03f$; $p = %.03f$) datasets\n", 
+          isnapTest$estimate, isnapTest$p.value,
+          itapTest$estimate, itapTest$p.value))
+}
+
 loadRequests <- function(ratings) {
   requests <- ddply(ratings, c("dataset", "year", "source", "assignmentID", "requestID"), summarize, 
                     treeSize=mean(requestTreeSize),

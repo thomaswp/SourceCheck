@@ -18,6 +18,7 @@ import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.rating.EditExtractor;
 import edu.isnap.rating.EditExtractor.Edit;
 import edu.isnap.rating.GoldStandard;
+import edu.isnap.rating.HintRequestDataset;
 import edu.isnap.rating.RatingConfig;
 import edu.isnap.rating.Trace;
 import edu.isnap.rating.TrainingDataset;
@@ -27,13 +28,19 @@ import node.Node;
 public class GSAnalysis {
 
 	public static void writeAnalysis(String path, GoldStandard goldStandard,
-			TrainingDataset training, RatingConfig config)
+			TrainingDataset training, HintRequestDataset requests, RatingConfig config)
 			throws FileNotFoundException, IOException {
 		EditExtractor extractor = new EditExtractor(config, ASTNode.EMPTY_TYPE);
 		FromStats fromStats = new FromStats(extractor, training);
 
+		Map<String, Integer> traceLengths = requests.getAllRequests().stream()
+			.collect(Collectors.toMap(
+					request -> request.id,
+					request -> request.history.size()));
+
 		goldStandard.createHintsSpreadsheet((hint, spreadsheet) -> {
 			spreadsheet.put("requestTreeSize", hint.from.treeSize());
+			spreadsheet.put("traceLength", traceLengths.get(hint.requestID));
 			Bag<Edit> edits = extractor.getEdits(hint.from, hint.to);
 			EditExtractor.addEditInfo(spreadsheet, edits);
 			fromStats.addToSpreadsheet(hint, spreadsheet);
@@ -116,9 +123,6 @@ public class GSAnalysis {
 					(apteds[apteds.length / 2] + apteds[apteds.length / 2 + 1]) / 2 :
 					apteds[apteds.length / 2];
 			minAPTED = apteds[0];
-
-			System.out.printf("%.01f, %.01f, %.01f, %.01f\n",
-					minEdits, medEdits, minAPTED, medAPTED);
 		}
 	}
 }
