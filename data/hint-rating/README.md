@@ -63,6 +63,7 @@ All code in these datasets are represented as abstract syntax trees (ASTs), stor
 * `value` [optional]: This contains any user-defined value for the node, such as the identifier for a variable or function, the value of a literal, or the name of an imported module These are things the student names, and they could take any value. **Note**: In the Snap datasets, string literal values have been removed to anonymize the dataset; however, these values are generally not relevant for hint generation.
 * `children` [optional]: A map of this node's children, if any. In Python, the keys of the map indicate the relationship of the parent/child (e.g. a while loop might have a "condition" child). In the Snap dataset, they are simply numbers indicating the ordering of the children (e.g. arguments "0", "1" and "2"). The values are objects representing the children.
 * `children-order` [optional]: The order of this node's children, represented as an array of keys from the `children` map. This is necessary because JSON maps have no ordering, though the order of the children in the map should correspond to the correct order.
+* `id` [optional]: A trace-unqiue ID for the node that will be kept constant across ASTs in this trace. This is useful in block-based languages, for example, to identify a given block, even if it moves within the AST.
 
 ## Grammar Files
 
