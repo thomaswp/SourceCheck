@@ -16,6 +16,8 @@ public class RunRateHints {
 //		RateHints.rateOneDir(RateHints.ITAP_S16_DATA_DIR, "SourceCheck", RatingConfig.Snap,
 //				validity, true, false);
 
+		// TODO: SourceCheck (possible others as well) gets different ratings with this method
+		// and the above. Just on ITAP dataset it seems.
 		RateHints.rateDir(RateHints.ISNAP_F16_F17_DATA_DIR, RatingConfig.Snap, validity, true);
 		RateHints.rateDir(RateHints.ITAP_S16_DATA_DIR, RatingConfig.Python, validity, true);
 

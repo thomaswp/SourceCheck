@@ -59,10 +59,10 @@ public class RunTutorEdits extends TutorEdits {
 
 //		writeAllHintSets(iSnapF16F17, ITAPS16);
 
-//		dataset.writeGoldStandard();
-		dataset.analyzeGoldStandard();
 //		dataset.exportTrainingAndTestData(true);
-//		dataset.writeHintSet(algorithm, source);
+//		dataset.writeGoldStandard();
+//		dataset.analyzeGoldStandard();
+		dataset.writeHintSet(algorithm, source);
 
 		// Leave this on for a while, until you've rewritten it for all local repos
 //		dataset.verifyGoldStandard();
