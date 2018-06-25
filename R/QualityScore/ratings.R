@@ -180,6 +180,31 @@ mergeManual <- function(manual, samples) {
   manual
 }
 
+onlyOne <- function (x) if (length(x) == 1) x else NA
+secondBest <- function(x) sort(x)[length(x) - 1]
+
+getScores <- function(algRequests) {
+  algScores <- ddply(algRequests, c("dataset", "source"), summarize, expectedScore=mean(scoreFull), sdScore=sd(scoreFull))
+  algRequests <- merge(algRequests, algScores)
+  algRequests$normScoreFull <- (algRequests$scoreFull - algRequests$expectedScore)
+  
+  scores <- ddply(algRequests, c("dataset", "assignmentID", "year", "requestID"), summarize, 
+                  maxScore = max(scorePartial),
+                  # TODO: Reconcile that this is partial
+                  difficulty = 1 - secondBest(scorePartial),
+                  normDifficulty = -median(normScoreFull),
+                  medScore = median(scorePartial),
+                  best = onlyOne(source[which(scorePartial==maxScore)]),
+                  treeSize = mean(treeSize),
+                  n0=sum(scorePartial==0), n1=sum(scorePartial==1), 
+                  n05=sum(scorePartial > 0.5), n01=sum(scorePartial > 0.1), n025=sum(scorePartial > 0.25))
+  table(scores$dataset, scores$best)
+  table(scores$dataset, scores$n0)
+  table(scores$dataset, scores$n01)
+  
+  scores
+}
+
 findInterestingRequests <- function(algRequests, ratings) {
   byRequest <- ddply(algRequests, c("dataset", "assignmentID", "year", "requestID"), summarize, 
                       PQGram=scorePartial[source=="PQGram"],
@@ -196,25 +221,8 @@ findInterestingRequests <- function(algRequests, ratings) {
   KMO(cor(byRequest[byRequest$dataset=="itap",5:9]))
   icc(t(byRequest[byRequest$dataset=="itap",5:9]), type="agreement")
   
-  algScores <- ddply(algRequests, c("dataset", "source"), summarize, expectedScore=mean(scoreFull), sdScore=sd(scoreFull))
-  algRequests <- merge(algRequests, algScores)
-  algRequests$normScoreFull <- (algRequests$scoreFull - algRequests$expectedScore)
   
-  onlyOne <- function (x) if (length(x) == 1) x else NA
-  secondBest <- function(x) sort(x)[length(x) - 1]
-  scores <- ddply(algRequests, c("dataset", "assignmentID", "year", "requestID"), summarize, 
-                  maxScore = max(scorePartial),
-                  # TODO: Reconcile that this is partial
-                  difficulty = 1 - secondBest(scorePartial),
-                  normDifficulty = -median(normScoreFull),
-                  medScore = median(scorePartial),
-                  best = onlyOne(source[which(scorePartial==maxScore)]),
-                  treeSize = mean(treeSize),
-                  n0=sum(scorePartial==0), n1=sum(scorePartial==1), 
-                  n05=sum(scorePartial > 0.5), n01=sum(scorePartial > 0.1), n025=sum(scorePartial > 0.25))
-  table(scores$dataset, scores$best)
-  table(scores$dataset, scores$n0)
-  table(scores$dataset, scores$n01)
+  scores <- getScores(algRequests)
   
   byRequest[byRequest$requestID %in% scores[scores$dataset == "isnap" & scores$n01 == 0,"requestID"],]
   scores[scores$dataset == "isnap" & scores$n01 == 0,2:5]
@@ -253,6 +261,14 @@ findInterestingRequests <- function(algRequests, ratings) {
 }
  
 investigateHypotheses <- function() { 
+  algRatings <- ratings[ratings$source != "AllTutors" & ratings$source != "chf_without_past",]
+  algRatings$matched <- algRatings$type == "Full"
+  algRatings$nEdits <- algRatings$nInsertions + algRatings$nDeletions + algRatings$nRelabels - algRatings$nValueInsertions
+  algRatings$delOnly <- algRatings$nDeletions == algRatings$nEdits
+  allSame <- function(x) if (length(unique(x)) == 1) head(x, 1) else NA
+  matchedHints <- ddply(algRatings[algRatings$matched,], c("dataset", "matchID"), summarize, 
+                        n=length(nEdits), delOnly=allSame(delOnly), nEdits=mean(nEdits))
+  
   goldStandardiSnap <- read_csv("../../data/hint-rating/isnapF16-F17/analysis/gold-standard-analysis.csv")
   goldStandardiSnap$dataset <- "isnap"
   goldStandardITAP <- read_csv("../../data/hint-rating/itapS16/analysis/gold-standard-analysis.csv")
@@ -278,18 +294,14 @@ investigateHypotheses <- function() {
                       minEdits=mean(minEdits), medEdits=mean(medEdits),
                       minTED=mean(minAPTED), medTED=mean(medAPTED))
   
+  scores <- getScores(algRequests)
   scores <- merge(scores, gsRequests)
   scoresiSnap <- scores[scores$dataset == "isnap",]
   scoresITAP <- scores[scores$dataset == "itap",]
   
+  medHintCounts <- ddply(algRequests, c("dataset", "requestID"), summarize, medAlgHintCount=median(hintCount))
+  scores <- merge(scores, medHintCounts)
   
-  algRatings <- ratings[ratings$source != "AllTutors" & ratings$source != "chf_without_past",]
-  algRatings$matched <- algRatings$type == "Full"
-  algRatings$nEdits <- algRatings$nInsertions + algRatings$nDeletions + algRatings$nRelabels - algRatings$nValueInsertions
-  algRatings$delOnly <- algRatings$nDeletions == algRatings$nEdits
-  allSame <- function(x) if (length(unique(x)) == 1) head(x, 1) else NA
-  matchedHints <- ddply(algRatings[algRatings$matched,], c("dataset", "matchID"), summarize, 
-                        n=length(nEdits), delOnly=allSame(delOnly), nEdits=mean(nEdits))
 
 ### Hint Request Relationships
   
@@ -300,22 +312,25 @@ investigateHypotheses <- function() {
   dsSpear(scores, "difficulty", "traceLength")
   # It's possible the size and deviance are the same idea
   dsSpear(scores, "requestTreeSize", "medTED")
-  # Linear model suggests independent effects (I think?)
-  summary(lm(difficulty ~ requestTreeSize + medTED + dataset, data=scores))
+  # Linear model suggests independent effects from size and deviance, but not nHints (I think?)
+  summary(m <- lm(difficulty ~ requestTreeSize + medTED + nHints + dataset, data=scores))
+  shapiro.test(m$residuals)
   
 ### Too Much Code
   
-  # No correlation between the number of GS hints for a request and its tree size
-  dsSpear(gsRequests, "requestTreeSize", "nHints")
-  cor.test(gsRequests$requestTreeSize[gsRequests$dataset=="itap"], gsRequests$nHints[gsRequests$dataset=="itap"], method="spearman")
-  cor.test(gsRequests$requestTreeSize, gsRequests$nHints, method="spearman")
+  # Positive correlation between tree size and difficulty
+  dsSpear(scores, "requestTreeSize", "difficulty")
+  
+  # Some correaltion between hint request tree size and # also hints generated (esp. for ITAP)
+  dsSpear(scores, "requestTreeSize", "medAlgHintCount")
+  # But no correlation between the number of GS hints for a request and its tree size
+  dsSpear(scores, "requestTreeSize", "nHints")
+  
   
   # Most algorithms do have a positive correlation between hint count and the number of hints requested
   algHintCounts <- ddply(algRatings, c("dataset", "source", "requestID", "requestTreeSize"), summarize, hintCount=length(requestTreeSize))
   # But importantly, not the best ones
   ddply(algHintCounts, c("dataset", "source"), summarize, cor(requestTreeSize, hintCount, method="spearman"))
-  algHintCounts <- ddply(algRatings, c("dataset", "requestID", "requestTreeSize"), summarize, hintCount=length(requestTreeSize))
-  dsSpear(algHintCounts, "requestTreeSize", "hintCount")
   
 ### Too Few Correct Hints
   
@@ -323,15 +338,16 @@ investigateHypotheses <- function() {
   ggplot(scores, aes(x=difficulty>0.75,y=nHints)) + geom_boxplot() + facet_wrap(~ dataset)
   ggplot(scores, aes(x=as.ordered(nHints),y=difficulty)) + geom_boxplot() + facet_wrap(~ dataset, scales = "free_x")
   ggplot(scores, aes(x=as.ordered(nHints),y=normDifficulty)) + geom_boxplot() + facet_wrap(~ dataset, scales = "free_x")
-  # These are very different results. This suggests the things the "best" algorithms need to
-  # improve on vs the "average" may be different
-  cor.test(scores$nHints, scores$difficulty, method="spearman")
-  cor.test(scores$nHints, scores$normDifficulty, method="spearman")
-  cor.test(scoresiSnap$nHints, scoresiSnap$difficulty, method="spearman")
-  cor.test(scoresiSnap$nHints, scoresiSnap$normDifficulty, method="spearman")
-  plot(jitter(scoresITAP$nHints), jitter(scoresITAP$difficulty))
-  cor.test(scoresITAP$nHints, scoresITAP$difficulty, method="spearman")
-  cor.test(scoresITAP$nHints, scoresITAP$normDifficulty, method="spearman")
+  # No significant correlation, though there might be for iSnap with a bit more data
+  dsSpear(scores, "difficulty", "nHints")
+  # And a significant correlation between median hint count (among algorithms) and tutor hint count
+  dsSpear(merge(medHintCounts, scores[,c("dataset", "requestID", "nHints")]), "medHintCount", "nHints")
+  
+  
+# Unfiltered Hints
+  
+  dsSpear(algRequests, "hintCount", "scoreFull")
+  ddply(algRequests, c("dataset", "source"), summarize, chs=cor(hintCount, scoreFull, method="spearman"), mhc=mean(hintCount))
   
 ### Deviant Code
   
@@ -399,7 +415,6 @@ investigateHypotheses <- function() {
   # but not ITAP
   wilcox.test(goldStandard$nEdits[goldStandard$dataset=="itap" & goldStandard$matched], 
               goldStandard$nEdits[goldStandard$dataset=="itap" & !goldStandard$matched])
-  ddply(goldStandard, c("dataset"), summarize, cor(nMatches, nEdits, method="spearman"))
   # Similarly, significant negative correlation between GS hint size and how many algorithms matched it, for iSnap only
   dsSpear(goldStandard, "nMatches", "nEdits")
   
@@ -420,19 +435,6 @@ investigateHypotheses <- function() {
   # Looks like the ITAP trend is not just attributable to the ITAP algorithm's large, successful hints
   fisher.test(nonDeletes$moreEdits[nonDeletes$dataset=="itap" & nonDeletes$source != "ITAP"], 
               nonDeletes$matched[nonDeletes$dataset=="itap" & nonDeletes$source != "ITAP"])
-  
-  # Medium positive correlation between tree size and difficulty
-  plot(jitter(scores$difficulty), jitter(scores$treeSize))
-  cor.test(scores$difficulty, scores$treeSize, method="spearman")
-  cor.test(scores$difficulty[scores$dataset=="isnap"], scores$treeSize[scores$dataset=="isnap"], method="spearman")
-  cor.test(scores$difficulty[scores$dataset=="itap"], scores$treeSize[scores$dataset=="itap"], method="spearman")
-  cor.test(scores$normDifficulty[scores$dataset=="isnap"], scores$treeSize[scores$dataset=="isnap"], method="spearman")
-  cor.test(scores$normDifficulty[scores$dataset=="itap"], scores$treeSize[scores$dataset=="itap"], method="spearman")
-  ggplot(scores, aes(x=difficulty > 0.75, y=treeSize)) + geom_boxplot() + facet_grid(~dataset)
-  wilcox.test(scoresiSnap$treeSize[scoresiSnap$difficulty > 0.75], 
-              scoresiSnap$treeSize[scoresiSnap$difficulty <= 0.75])
-  wilcox.test(scoresITAP$treeSize[scoresITAP$difficulty > 0.75], 
-              scoresITAP$treeSize[scoresITAP$difficulty <= 0.75])
   
   noMatch <- goldStandard[goldStandard$nMatches==0 & goldStandard$MultipleTutors,c("dataset", "year", "hintID")]
   noMatch <- noMatch[order(noMatch$dataset, noMatch$year, noMatch$hintID),]
@@ -467,6 +469,7 @@ dsSpear <- function(dataset, c1, c2) {
 loadRequests <- function(ratings) {
   requests <- ddply(ratings, c("dataset", "year", "source", "assignmentID", "requestID"), summarize, 
                     treeSize=mean(requestTreeSize),
+                    hintCount=length(scoreFull),
                     scoreFull=sum(scoreFull), scorePartial=sum(scorePartial),
                     priorityFull=sum(priorityFull), priorityPartial=sum(priorityPartial))
   requests <- requests[requests$source != "chf_without_past",]
