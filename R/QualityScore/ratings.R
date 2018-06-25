@@ -302,6 +302,18 @@ investigateHypotheses <- function() {
   medHintCounts <- ddply(algRequests, c("dataset", "requestID"), summarize, medAlgHintCount=median(hintCount))
   scores <- merge(scores, medHintCounts)
   
+  byRequestFullNorm <- ddply(algRequests, c("dataset", "assignmentID", "year", "requestID"), summarize, 
+                         PQGram=scoreFull[source=="PQGram"],
+                         gross=scoreFull[source=="gross"],
+                         chf_with_past=scoreFull[source=="chf_with_past"],
+                         CTD=scoreFull[source=="CTD"],
+                         SourceCheck=scoreFull[source=="SourceCheck"],
+                         ITAP=(if (sum(source=="ITAP") == 0) NA else scoreFull[source=="ITAP"]))
+  (coriSnap <- cor(byRequestFullNorm[byRequestFullNorm$dataset=="isnap",5:9], method="spearman"))
+  mean(coriSnap[coriSnap!=1])
+  (corITAP <- cor(byRequestFullNorm[byRequestFullNorm$dataset=="itap",5:10], method="spearman"))
+  mean(corITAP[corITAP!=1])
+  
 
 ### Hint Request Relationships
   
