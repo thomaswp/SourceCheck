@@ -19,15 +19,6 @@ public class LiteralBlock extends Block {
 		Type(String tag) {
 			this.tag = tag;
 		}
-
-		boolean isOfType(String value) {
-			return value != null && tag != null && value.startsWith("<" + tag + ">") &&
-					value.endsWith("</" + tag + ">");
-		}
-
-		String parse(String value) {
-			return value.substring(tag.length() + 2, value.length() - tag.length() - 3);
-		}
 	}
 
 	public final String value;
@@ -56,52 +47,51 @@ public class LiteralBlock extends Block {
 
 	@SuppressWarnings("unused")
 	private LiteralBlock() {
-		this(null, null, null, false);
+		this(null, null, null, null);
 	}
 
-	public LiteralBlock(String name, String id, String value, boolean isVarRef) {
+	public LiteralBlock(String name, String id, Type type, String value) {
 		super(name, id);
-
-		Type _type = Type.Text;
-		String _value = value;
-
-		if (isVarRef) {
-			_type = Type.VarMenu;
-		} else {
-			for (Type type : Type.values()) {
-				if (type.isOfType(value)) {
-					_type = type;
-					_value = type.parse(value);
-				}
-			}
-		}
-
-		this.type = _type;
-		this.value = _value;
+		this.type = type;
+		this.value = value;
 	}
 
 	public static LiteralBlock parse(Element element) {
 		Element parent = (Element) element.getParentNode();
-		boolean isVarRef = false;
+		Type type = Type.Text;
+		String value = element.getTextContent();
 		if (parent != null) {
 			if (XML.getFirstChild(parent) == element) {
-				isVarRef = setVarBlocks.contains(parent.getAttribute("s"));
+				if (setVarBlocks.contains(parent.getAttribute("s"))) type = Type.VarMenu;
 			}
 			if ("list".equals(parent.getTagName())) {
 				Node grandparent = parent.getParentNode();
 				if (grandparent != null && grandparent instanceof Element) {
 					if (XML.getFirstChild((Element) grandparent) == parent) {
-						isVarRef = setVarInListBlocks.contains(
-								((Element) grandparent).getAttribute("s"));
+						if (setVarInListBlocks.contains(
+								((Element) grandparent).getAttribute("s"))) {
+							type = Type.VarMenu;
+						}
 					}
+				}
+			}
+		}
+		if (type != Type.VarMenu) {
+			Element child = XML.getFirstChild(element);
+			if (child != null) {
+				String tag = child.getTagName();
+				for (Type t : Type.values()) {
+					if (t.tag == null || !t.tag.equals(tag)) continue;
+					type = t;
+					value = child.getTextContent();
+					break;
 				}
 			}
 		}
 		return new LiteralBlock(
 				element.getTagName(),
 				getID(element),
-				element.getTextContent(),
-				isVarRef);
+				type, value);
 	}
 
 	@Override
