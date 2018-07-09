@@ -616,4 +616,9 @@ public abstract class Node extends StringHashable implements INode {
 		children.forEach(child -> node.addChild(child == null ? null : child.toASTNode()));
 		return node;
 	}
+
+	@Override
+	public String toString() {
+		return prettyPrint(true);
+	}
 }

@@ -1,0 +1,109 @@
+snapshot {
+    stage:Stage {
+        @anything
+    }
+    customBlock:`Move Frogger` {
+        script {
+            doForever(script {
+                doIf(reportKeyPressed(literal:`up arrow`), script {
+                    setHeading(literal:0)
+                    evaluateCustomBlock:move
+                })
+                doIf(reportKeyPressed(literal:`down arrow`), script {
+                    setHeading(literal:180)
+                    evaluateCustomBlock:move
+                })
+                doIf(reportKeyPressed(literal:`right arrow`), script {
+                    setHeading(literal:90)
+                    evaluateCustomBlock:move
+                })
+                doIf(reportKeyPressed(literal:`left arrow`), script {
+                    setHeading(literal:270)
+                    evaluateCustomBlock:move
+                })
+                doIf(reportLessThan(xPosition, literal:-240), script {
+                    setXPosition(literal:-240)
+                })
+                doIf(reportLessThan(literal:240, xPosition), script {
+                    setXPosition(literal:240)
+                })
+                doIf(reportLessThan(yPosition, literal:-180), script {
+                    setYPosition(literal:-180)
+                })
+                doIf(reportLessThan(literal:180, yPosition), script {
+                    setYPosition(literal:180)
+                })
+            })
+        }
+    }
+    customBlock:`Move Car %s` {
+        script {
+            doForever(script {
+                changeXPosition(var:speed)
+                doIf(reportLessThan(xPosition, literal:-240), script {
+                    setXPosition(literal:240)
+                })
+                doIf(reportLessThan(literal:240, xPosition), script {
+                    setXPosition(literal:-240)
+                })
+                doIf(reportTouchingObject(literal:Frogger), script {
+                    doBroadcastAndWait(literal:`Game Over`)
+                })
+            })
+        }
+        varDec:speed
+    }
+    customBlock:`Move Platform %s` {
+        script {
+            doForever(script {
+                changeXPosition(var:speed)
+                doIf(reportLessThan(literal:320, xPosition), script {
+                    setXPosition(literal:-320)
+                })
+                doIf(reportLessThan(xPosition, literal:-320), script {
+                    setXPosition(literal:320)
+                })
+                doIf(reportTouchingObject(literal:Frogger), script {
+                    doSetVar(varMenu:`platform move`, var:speed)
+                })
+            })
+        }
+        varDec:speed
+    }
+    customBlock:`Turtle Swim` {
+        script {
+            doForever(script {
+                doIf(reportTouchingObject(literal:Frogger), script {
+                    doWait(reportQuotient(literal:5, var:Difficulty))
+                    doWearNextCostume
+                    doWait(reportQuotient(literal:5, var:Difficulty))
+                    doWearNextCostume
+                    doWait(reportRandom(reportQuotient(literal:5, var:Difficulty), reportQuotient(literal:10, var:Difficulty)))
+                    doWearNextCostume
+                })
+            })
+        }
+    }
+    customBlock:`Lily Pad` {
+        script {
+            doDeclareVariables(list(varMenu:hasFrog))
+            doSwitchToCostume(literal:`empty lily`)
+            doSetVar(varMenu:Score, literal:0)
+            doSetVar(varMenu:hasFrog, literal:no)
+            doForever(script {
+                doIf(reportTouchingObject(literal:Frogger), script {
+                    doIf(reportEquals(literal:no, var:hasFrog), script {
+                        doSwitchToCostume(literal:`lily + frog`)
+                        doSetVar(varMenu:hasFrog, literal:yes)
+                        doChangeVar(varMenu:Score, literal:1)
+                        doBroadcast(literal:Point)
+                    })
+                })
+            })
+        }
+    }
+    varDec:`platform move`
+    varDec:platforms
+    varDec:Score
+    varDec:Difficulty
+}
