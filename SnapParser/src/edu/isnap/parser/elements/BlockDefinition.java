@@ -91,6 +91,14 @@ public class BlockDefinition extends Code implements IHasID {
 		this.script = script;
 	}
 
+	public static boolean isImported(String selector) {
+		return TOOLS_BLOCKS_SET.contains(selector) || XML.isImportedBlock(selector);
+	}
+
+	public static String normalizeSelector(String selector) {
+		return selector.replaceAll("%[^(\\s%)]*", "%s");
+	}
+
 	public static BlockDefinition parse(Element element) {
 		String name = element.getAttribute("s");
 		String type = element.getAttribute("type");
@@ -98,7 +106,7 @@ public class BlockDefinition extends Code implements IHasID {
 		String guid = element.getAttribute("guid");
 		Element scriptElement = XML.getFirstChildByTagName(element, "script");
 		Script script = scriptElement == null ? new Script() : Script.parse(scriptElement);
-		boolean isImported = TOOLS_BLOCKS_SET.contains(name) ||
+		boolean isImported = isImported(normalizeSelector(name)) ||
 				"true".equals(element.getAttribute("isImported"));
 		BlockDefinition def = new BlockDefinition(name, type, category, guid, isImported, script);
 		for (Element e : XML.getGrandchildrenByTagName(element, "scripts", "script")) {
@@ -137,7 +145,7 @@ public class BlockDefinition extends Code implements IHasID {
 			script.blocks.add((Block) XML.getCodeElement(blocks.get(i)));
 		}
 
-		boolean isImported = TOOLS_BLOCKS_SET.contains(name);
+		boolean isImported = isImported(name);
 		BlockDefinition def = new BlockDefinition(name, null, null, guid, isImported, script);
 
 		for (int i = 1; i < scripts.size(); i++) {
@@ -195,14 +203,9 @@ public class BlockDefinition extends Code implements IHasID {
 		return name.replace("%s", "_").replaceAll("\\s", "").replaceAll("[^A-Za-z_]", "*");
 	}
 
-	public static boolean isTool(String name) {
-		return !EVALUATE_CUSTOM_BLOCK.equals(getCustomBlockCall(name));
-	}
-
-	public static String getCustomBlockCall(String name) {
-		name = name.replaceAll("%[^\\s]*", "%s");
-		if (TOOLS_BLOCKS_SET.contains(name)) {
-			return getCustomBlockSelector(name);
+	public static String getCustomBlockCall(String name, boolean isImported) {
+		if (isImported) {
+			return getCustomBlockSelector(normalizeSelector(name));
 		}
 		return EVALUATE_CUSTOM_BLOCK;
 	}

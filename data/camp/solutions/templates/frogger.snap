@@ -7,19 +7,19 @@ snapshot {
             doForever(script {
                 doIf(reportKeyPressed(literal:`up arrow`), script {
                     setHeading(literal:0)
-                    evaluateCustomBlock:move
+                    move
                 })
                 doIf(reportKeyPressed(literal:`down arrow`), script {
                     setHeading(literal:180)
-                    evaluateCustomBlock:move
+                    move
                 })
                 doIf(reportKeyPressed(literal:`right arrow`), script {
                     setHeading(literal:90)
-                    evaluateCustomBlock:move
+                    move
                 })
                 doIf(reportKeyPressed(literal:`left arrow`), script {
                     setHeading(literal:270)
-                    evaluateCustomBlock:move
+                    move
                 })
                 doIf(reportLessThan(xPosition, literal:-240), script {
                     setXPosition(literal:-240)
