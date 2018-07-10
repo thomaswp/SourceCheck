@@ -5,34 +5,38 @@ snapshot {
     customBlock:`Move Frogger` {
         script {
             doForever(script {
-                doIf(reportKeyPressed(literal:`up arrow`), script {
-                    setHeading(literal:0)
-                    move
-                })
-                doIf(reportKeyPressed(literal:`down arrow`), script {
-                    setHeading(literal:180)
-                    move
-                })
-                doIf(reportKeyPressed(literal:`right arrow`), script {
-                    setHeading(literal:90)
-                    move
-                })
-                doIf(reportKeyPressed(literal:`left arrow`), script {
-                    setHeading(literal:270)
-                    move
-                })
-                doIf(reportLessThan(xPosition, literal:-240), script {
-                    setXPosition(literal:-240)
-                })
-                doIf(reportLessThan(literal:240, xPosition), script {
-                    setXPosition(literal:240)
-                })
-                doIf(reportLessThan(yPosition, literal:-180), script {
-                    setYPosition(literal:-180)
-                })
-                doIf(reportLessThan(literal:180, yPosition), script {
-                    setYPosition(literal:180)
-                })
+                @anyOrder {
+                    doIf(reportKeyPressed(literal:`up arrow`), script {
+                        setHeading(literal:0)
+                        move
+                    })
+                    doIf(reportKeyPressed(literal:`down arrow`), script {
+                        setHeading(literal:180)
+                        move
+                    })
+                    doIf(reportKeyPressed(literal:`right arrow`), script {
+                        setHeading(literal:90)
+                        move
+                    })
+                    doIf(reportKeyPressed(literal:`left arrow`), script {
+                        setHeading(literal:270)
+                        move
+                    })
+                }
+                @anyOrder {
+                    doIf(reportLessThan(xPosition, literal:-240), script {
+                        setXPosition(literal:-240)
+                    })
+                    doIf(reportLessThan(literal:240, xPosition), script {
+                        setXPosition(literal:240)
+                    })
+                    doIf(reportLessThan(yPosition, literal:-180), script {
+                        setYPosition(literal:-180)
+                    })
+                    doIf(reportLessThan(literal:180, yPosition), script {
+                        setYPosition(literal:180)
+                    })
+                }
             })
         }
     }
@@ -40,12 +44,14 @@ snapshot {
         script {
             doForever(script {
                 changeXPosition(var:speed)
-                doIf(reportLessThan(xPosition, literal:-240), script {
-                    setXPosition(literal:240)
-                })
-                doIf(reportLessThan(literal:240, xPosition), script {
-                    setXPosition(literal:-240)
-                })
+                @anyOrder {
+                    doIf(reportLessThan(xPosition, literal:-240), script {
+                        setXPosition(literal:240)
+                    })
+                    doIf(reportLessThan(literal:240, xPosition), script {
+                        setXPosition(literal:-240)
+                    })
+                }
                 doIf(reportTouchingObject(literal:Frogger), script {
                     doBroadcastAndWait(literal:`Game Over`)
                 })
@@ -57,12 +63,14 @@ snapshot {
         script {
             doForever(script {
                 changeXPosition(var:speed)
-                doIf(reportLessThan(literal:320, xPosition), script {
-                    setXPosition(literal:-320)
-                })
-                doIf(reportLessThan(xPosition, literal:-320), script {
-                    setXPosition(literal:320)
-                })
+                @anyOrder {
+                    doIf(reportLessThan(literal:320, xPosition), script {
+                        setXPosition(literal:-320)
+                    })
+                    doIf(reportLessThan(xPosition, literal:-320), script {
+                        setXPosition(literal:320)
+                    })
+                }
                 doIf(reportTouchingObject(literal:Frogger), script {
                     doSetVar(varMenu:`platform move`, var:speed)
                 })
