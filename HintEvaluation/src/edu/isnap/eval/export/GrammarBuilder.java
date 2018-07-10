@@ -113,8 +113,8 @@ public class GrammarBuilder {
 				if (set == null) {
 					categories.put(category, set = new HashSet<>());
 				}
-				if (BlockDefinition.isTool(type)) {
-					type = BlockDefinition.getCustomBlockCall(type);
+				if (BlockDefinition.isImported(type)) {
+					type = BlockDefinition.getCustomBlockCall(type, true);
 				}
 				set.add(type);
 			}

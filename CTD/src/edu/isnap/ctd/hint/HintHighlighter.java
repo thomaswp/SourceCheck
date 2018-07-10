@@ -603,9 +603,6 @@ public class HintHighlighter {
 
 	private void handleInsertionsAndMoves(final IdentityHashMap<Node, Highlight> colors,
 			final List<Insertion> insertions, List<EditHint> edits, Mapping mapping) {
-
-		DistanceMeasure dm = getDistanceMeasure(config);
-
 		List<Deletion> deletions = new LinkedList<>();
 		for (EditHint edit : edits) {
 			if (edit instanceof Deletion) deletions.add((Deletion) edit);
@@ -668,7 +665,7 @@ public class HintHighlighter {
 
 				// Moves are deletions that could be instead moved to perform a needed insertion
 				if (insertion.candidate == null) {
-					double cost = NodeAlignment.getSubCostEsitmate(deleted, insertion.pair, dm);
+					double cost = NodeAlignment.getSubCostEsitmate(deleted, insertion.pair, config);
 					// Ensure that insertions with missing parents are paired last, giving priority
 					// to actionable inserts when assigning candidates
 					if (insertion.missingParent) cost += Double.MAX_VALUE / 2;
