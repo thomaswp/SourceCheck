@@ -82,11 +82,17 @@ snapshot {
         script {
             doForever(script {
                 doIf(reportTouchingObject(literal:Frogger), script {
-                    wait_gametime(literal:1)
+                    @defBlock TIME {
+                        @or {
+                            literal,
+                            reportRandom(literal, literal)
+                        }
+                    }
+                    wait_gametime(@block TIME)
                     doWearNextCostume
-                    wait_gametime(literal:1)
+                    wait_gametime(@block TIME)
                     doWearNextCostume
-                    wait_gametime(reportRandom(literal:1, literal:2))
+                    wait_gametime(@block TIME)
                     doWearNextCostume
                 })
             })
@@ -95,18 +101,48 @@ snapshot {
     customBlock:`Lily Pad` {
         script {
             doDeclareVariables(list(varMenu:hasFrog))
-            doSwitchToCostume(literal:`empty lily`)
-            doSetVar(varMenu:Score, literal:0)
-            doSetVar(varMenu:hasFrog, literal:no)
+            @anyOrder {
+                doSwitchToCostume(literal:`empty lily`)
+                doSetVar(varMenu:Score, literal:0)
+                doSetVar(varMenu:hasFrog, literal:no)
+            }
             doForever(script {
-                doIf(reportTouchingObject(literal:Frogger), script {
-                    doIf(reportEquals(literal:no, var:hasFrog), script {
+                @defBlock RESET {
+                    @anyOrder {
                         doSwitchToCostume(literal:`lily + frog`)
                         doSetVar(varMenu:hasFrog, literal:yes)
                         doChangeVar(varMenu:Score, literal:1)
                         resetfrogger
-                    })
-                })
+                    }
+                }
+                @defBlock NO_FROG {
+                    @or {
+                        reportEquals(literal:no, var:hasFrog),
+                        reportNot(reportEquals(literal, var))
+                    }
+                }
+                @or {
+                    doIf(reportTouchingObject(literal:Frogger), script {
+                        doIf(@block NO_FROG, script {
+                            @block RESET
+                        })
+                    }),
+                    doIf(@block NO_FROG, script {
+                        doIf(reportTouchingObject(literal:Frogger), script {
+                            @block RESET
+                        })
+                    }),
+                    doIf(reportAnd(
+                            @anyOrder {
+                                @block NO_FROG,
+                                reportTouchingObject(literal:Frogger)
+                            }
+                        ), script {
+                            @block RESET
+                        }
+                    )
+                }
+
             })
         }
     }
