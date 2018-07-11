@@ -53,7 +53,7 @@ snapshot {
                     })
                 }
                 doIf(reportTouchingObject(literal:Frogger), script {
-                    doBroadcastAndWait(literal:`Game Over`)
+                    gameover
                 })
             })
         }
@@ -64,10 +64,10 @@ snapshot {
             doForever(script {
                 changeXPosition(var:speed)
                 @anyOrder {
-                    doIf(reportLessThan(literal:320, xPosition), script {
+                    doIf(reportLessThan(literal:321, xPosition), script {
                         setXPosition(literal:-320)
                     })
-                    doIf(reportLessThan(xPosition, literal:-320), script {
+                    doIf(reportLessThan(xPosition, literal:-321), script {
                         setXPosition(literal:320)
                     })
                 }
@@ -82,11 +82,11 @@ snapshot {
         script {
             doForever(script {
                 doIf(reportTouchingObject(literal:Frogger), script {
-                    doWait(reportQuotient(literal:5, var:Difficulty))
+                    wait_gametime(literal:1)
                     doWearNextCostume
-                    doWait(reportQuotient(literal:5, var:Difficulty))
+                    wait_gametime(literal:1)
                     doWearNextCostume
-                    doWait(reportRandom(reportQuotient(literal:5, var:Difficulty), reportQuotient(literal:10, var:Difficulty)))
+                    wait_gametime(reportRandom(literal:1, literal:2))
                     doWearNextCostume
                 })
             })
@@ -104,7 +104,7 @@ snapshot {
                         doSwitchToCostume(literal:`lily + frog`)
                         doSetVar(varMenu:hasFrog, literal:yes)
                         doChangeVar(varMenu:Score, literal:1)
-                        doBroadcast(literal:Point)
+                        resetfrogger
                     })
                 })
             })
