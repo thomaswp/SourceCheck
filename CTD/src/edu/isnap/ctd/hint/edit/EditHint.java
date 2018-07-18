@@ -90,6 +90,9 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 		data.put("from", toJSONArray(items, argsCanonSwapped));
 		editChildren(items);
 		data.put("to", toJSONArray(items, argsCanonSwapped));
+		if (priority != null) {
+			data.put("priority", priority.consensus());
+		}
 		return data;
 	}
 

@@ -88,9 +88,9 @@ snapshot {
                             reportRandom(literal, literal)
                         }
                     }
-                    wait_gametime(@block TIME)
+                    wait_gametime(literal)
                     doWearNextCostume
-                    wait_gametime(@block TIME)
+                    wait_gametime(literal)
                     doWearNextCostume
                     wait_gametime(@block TIME)
                     doWearNextCostume
