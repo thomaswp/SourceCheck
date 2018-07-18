@@ -8,19 +8,19 @@ snapshot {
                 @anyOrder {
                     doIf(reportKeyPressed(literal:`up arrow`), script {
                         setHeading(literal:0)
-                        move
+                        hop
                     })
                     doIf(reportKeyPressed(literal:`down arrow`), script {
                         setHeading(literal:180)
-                        move
+                        hop
                     })
                     doIf(reportKeyPressed(literal:`right arrow`), script {
                         setHeading(literal:90)
-                        move
+                        hop
                     })
                     doIf(reportKeyPressed(literal:`left arrow`), script {
                         setHeading(literal:270)
-                        move
+                        hop
                     })
                 }
                 @anyOrder {
