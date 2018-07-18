@@ -10,7 +10,7 @@ public class RunTemplater {
 	public static void main(String[] args) throws IOException {
 		Node.PrettyPrintSpacing = 4;
 		Node.PrettyPrintUseColon = true;
-		TemplateParser.parseSnapTemplate(CampSolutions.Frogger);
+		TemplateParser.parseSnapTemplate(CampSolutions.Practice);
 //		for (Assignment assignment : CSC200Solutions.All) {
 //			TemplateParser.parseSnapTemplate(assignment);
 //		}

@@ -28,6 +28,7 @@ public class CampSolutions extends Dataset {
 		}
 	}
 
+	public final static Solution Practice = new Solution("practice");
 	public final static Solution Frogger = new Solution("frogger");
 	public final static Solution Asteroids = new Solution("asteroids");
 
