@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.dataset.Assignment;
-import edu.isnap.datasets.CSC200Solutions;
+import edu.isnap.datasets.CampSolutions;
 import edu.isnap.template.parse.TemplateParser;
 
 public class RunTemplater {
@@ -12,7 +12,7 @@ public class RunTemplater {
 		Node.PrettyPrintSpacing = 4;
 		Node.PrettyPrintUseColon = true;
 //		TemplateParser.parseSnapTemplate(CampSolutions.Asteroids);
-		for (Assignment assignment : CSC200Solutions.All) {
+		for (Assignment assignment : CampSolutions.All) {
 			TemplateParser.parseSnapTemplate(assignment);
 		}
 	}

@@ -64,6 +64,13 @@ public class HintHighlighter {
 		this.nodePlacementTimes = hintMap == null ? null :
 			new IdentityHashMap<>(hintMap.nodePlacementTimes);
 		if (solutions.isEmpty()) throw new IllegalArgumentException("Solutions cannot be empty");
+		List<Node> solutionsCopy = new ArrayList<>();
+		synchronized (solutions) {
+			for (Node solution : solutions) {
+				solutionsCopy.add(solution.copy());
+			}
+		}
+		solutions = solutionsCopy;
 		this.solutions = config.preprocessSolutions ?
 				preprocessSolutions(solutions, config, nodePlacementTimes) : solutions;
 		this.config = config;
