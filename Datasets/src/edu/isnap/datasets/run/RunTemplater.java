@@ -11,6 +11,7 @@ public class RunTemplater {
 	public static void main(String[] args) throws IOException {
 		Node.PrettyPrintSpacing = 4;
 		Node.PrettyPrintUseColon = true;
+//		TemplateParser.parseSnapTemplate(CampSolutions.Asteroids);
 		for (Assignment assignment : CampSolutions.All) {
 			TemplateParser.parseSnapTemplate(assignment);
 		}
