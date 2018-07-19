@@ -227,6 +227,7 @@ public class HintHighlighter {
 						pairOrders.put(childPair, index);
 						Node x = toChildren.put(childPair.index(), childPair);
 						if (x != null) {
+							// TODO: This keep happening!
 							// Check for multiple nodes mapped to a single one
 							System.err.println("two: " + childPair);
 						}
