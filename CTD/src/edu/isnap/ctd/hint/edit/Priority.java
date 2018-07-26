@@ -31,21 +31,21 @@ public class Priority {
 	public String toString() {
 		String out = String.format("{Consensus: %d/%d=%.02f",
 				consensusNumerator, consensusDenominator, consensus());
-		if (prereqsDenominator > 0) {
-			out += String.format(", Prereqs: %s/%s=%.02f",
-					prereqsNumerator, prereqsDenominator, prereqs());
-		}
-		if (postreqsDenominator > 0) {
-			out += String.format(", Postreqs: %s/%s=%.02f",
-					postreqsNumerator, postreqsDenominator, postreqs());
-		}
-		if (orderingDenominator > 0) {
-			out += String.format(", Ordering: %s/%s=%.02f",
-					orderingNumerator, orderingDenominator, ordering());
-		}
-		if (creationTime.isPresent()) {
-			out += String.format(", Creation: %.02f", creationTime.getAsDouble());
-		}
+//		if (prereqsDenominator > 0) {
+//			out += String.format(", Prereqs: %s/%s=%.02f",
+//					prereqsNumerator, prereqsDenominator, prereqs());
+//		}
+//		if (postreqsDenominator > 0) {
+//			out += String.format(", Postreqs: %s/%s=%.02f",
+//					postreqsNumerator, postreqsDenominator, postreqs());
+//		}
+//		if (orderingDenominator > 0) {
+//			out += String.format(", Ordering: %s/%s=%.02f",
+//					orderingNumerator, orderingDenominator, ordering());
+//		}
+//		if (creationTime.isPresent()) {
+//			out += String.format(", Creation: %.02f", creationTime.getAsDouble());
+//		}
 		out += "}";
 		return out;
 	}
