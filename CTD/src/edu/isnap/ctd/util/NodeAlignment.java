@@ -424,12 +424,13 @@ public class NodeAlignment {
 		}
 		for (int i = 0; i < fromStates.length; i++) {
 			for (int j = 0; j < toStates.length; j++) {
+				Node from = fromNodes.get(i), to = toNodes.get(j);
 				double cost = costMatrix[i][j];
 				// Only break ties for entries
 				if (costCounts.get(cost) <= 1) continue;
 				// For any matches, break ties based on the existing mappings
-				if (toNodes.get(j).readOnlyAnnotations().matchAnyChildren) {
-					if (mapping.getFrom(fromNodes.get(i)) == toNodes.get(j)) cost -= 1;
+				if (to.readOnlyAnnotations().matchAnyChildren) {
+					if (mapping.getFrom(from) == to) cost -= 1;
 					costMatrix[i][j] = cost;
 					continue;
 				}
@@ -441,12 +442,11 @@ public class NodeAlignment {
 //							.calculateCost(distanceMeasure);
 					// Instead of using the exact cost, we use an estimated cost based on a depth-
 					// first traversal of the children, which is usually a darn good estimate
-					double subCost = getSubCostEsitmate(fromNodes.get(i), toNodes.get(j),
-							distanceMeasure);
+					double subCost = getSubCostEsitmate(from, to, config);
 					cost += subCost * 0.001;
 				}
 				// Break further ties with existing mappings from parents
-				if (mapping.getFrom(fromNodes.get(i)) == toNodes.get(j)) cost -= 0.0001;
+				if (mapping.getFrom(from) == to) cost -= 0.0001;
 				costMatrix[i][j] = cost;
 				minCost = Math.min(minCost, cost);
 			}
@@ -612,10 +612,12 @@ public class NodeAlignment {
 		return needsReorder;
 	}
 
-	public static double getSubCostEsitmate(Node a, Node b, DistanceMeasure dm) {
+	public static double getSubCostEsitmate(Node a, Node b, HintConfig config) {
 		String[] aDFI = a.depthFirstIteration();
+		for (int i = 0; i < aDFI.length; i++) if (config.isValueless(aDFI[i])) aDFI[i] = null;
 		String[] bDFI = b.depthFirstIteration();
-		return dm.measure(null, aDFI, bDFI, null);
+		for (int i = 0; i < bDFI.length; i++) if (config.isValueless(bDFI[i])) bDFI[i] = null;
+		return -Alignment.getProgress(aDFI, bDFI, 1, 0, 0);
 	}
 
 	private String[][] stateArray(List<Node> nodes, boolean isFrom) {

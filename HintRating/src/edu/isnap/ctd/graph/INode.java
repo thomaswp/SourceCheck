@@ -1,5 +1,6 @@
 package edu.isnap.ctd.graph;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -40,7 +41,9 @@ public interface INode {
 
 	public default int treeSize() {
 		int size = 1;
-		for (INode child : children()) size += child.treeSize();
+		// TODO: Why is this causing a CCModificationException when we don't copy?
+		List<INode> children = new ArrayList<>(children());
+		for (INode child : children) size += child.treeSize();
 		return size;
 	}
 

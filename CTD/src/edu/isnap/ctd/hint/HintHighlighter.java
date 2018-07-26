@@ -64,6 +64,13 @@ public class HintHighlighter {
 		this.nodePlacementTimes = hintMap == null ? null :
 			new IdentityHashMap<>(hintMap.nodePlacementTimes);
 		if (solutions.isEmpty()) throw new IllegalArgumentException("Solutions cannot be empty");
+		List<Node> solutionsCopy = new ArrayList<>();
+		synchronized (solutions) {
+			for (Node solution : solutions) {
+				solutionsCopy.add(solution.copy());
+			}
+		}
+		solutions = solutionsCopy;
 		this.solutions = config.preprocessSolutions ?
 				preprocessSolutions(solutions, config, nodePlacementTimes) : solutions;
 		this.config = config;
@@ -72,7 +79,7 @@ public class HintHighlighter {
 
 	public HintDebugInfo debugHighlight(Node node) {
 		Mapping mapping = findSolutionMapping(node);
-		List<EditHint> edits = highlight(node, mapping);
+		List<EditHint> edits = highlightWithPriorities(node, mapping);
 		return new HintDebugInfo(mapping, edits);
 	}
 
@@ -83,6 +90,10 @@ public class HintHighlighter {
 
 	public List<EditHint> highlightWithPriorities(Node node) {
 		Mapping mapping = findSolutionMapping(node);
+		return highlightWithPriorities(node, mapping);
+	}
+
+	private List<EditHint> highlightWithPriorities(Node node, Mapping mapping) {
 		List<EditHint> hints = highlight(node, mapping);
 		assignPriorities(mapping, hints);
 		return hints;
@@ -223,6 +234,7 @@ public class HintHighlighter {
 						pairOrders.put(childPair, index);
 						Node x = toChildren.put(childPair.index(), childPair);
 						if (x != null) {
+							// TODO: This keep happening!
 							// Check for multiple nodes mapped to a single one
 							System.err.println("two: " + childPair);
 						}
@@ -436,9 +448,15 @@ public class HintHighlighter {
 		// Additionally the at the index of insert must be marked for deletion and be of a different
 		// type than the inserted node
 		Node deleted = insertion.parent.children.get(insertion.index);
+		EditHint deletion = edits.stream()
+				.filter(edit -> edit instanceof Deletion && ((Deletion) edit).node == deleted)
+				.findFirst().orElse(null);
 		if (colors.get(deleted) != Highlight.Delete) return;
 		if (deleted.type().equals(insertion.type)) return;
 
+//		System.out.println(deleted + " => " + insertion);
+//		edits.stream().filter(edit -> edit.parent == insertion.parent).forEach(System.out::println);
+//		System.out.println("-----");
 
 		// We have a fairly loose standard for children matching. We see if they share any immediate
 		// children with the same type, and if so we match them. (Note that this is a
@@ -462,6 +480,15 @@ public class HintHighlighter {
 		if (!match && insertion.pair.parent.children.size() == 1 &&
 				mapping.getFrom(deleted.parent) == insertion.pair.parent &&
 				deletedSiblings.stream().allMatch(sib -> colors.get(sib) == Highlight.Delete)) {
+			match = true;
+		}
+
+		// If there are no other edits for this parent besides the insertion and deletion to be
+		// combined, this is likely a replacement
+		if (!edits.stream().anyMatch(edit ->
+				edit.parent == insertion.parent &&
+				!edit.equals(insertion) &&
+				!edit.equals(deletion))) {
 			match = true;
 		}
 
@@ -603,9 +630,6 @@ public class HintHighlighter {
 
 	private void handleInsertionsAndMoves(final IdentityHashMap<Node, Highlight> colors,
 			final List<Insertion> insertions, List<EditHint> edits, Mapping mapping) {
-
-		DistanceMeasure dm = getDistanceMeasure(config);
-
 		List<Deletion> deletions = new LinkedList<>();
 		for (EditHint edit : edits) {
 			if (edit instanceof Deletion) deletions.add((Deletion) edit);
@@ -668,7 +692,7 @@ public class HintHighlighter {
 
 				// Moves are deletions that could be instead moved to perform a needed insertion
 				if (insertion.candidate == null) {
-					double cost = NodeAlignment.getSubCostEsitmate(deleted, insertion.pair, dm);
+					double cost = NodeAlignment.getSubCostEsitmate(deleted, insertion.pair, config);
 					// Ensure that insertions with missing parents are paired last, giving priority
 					// to actionable inserts when assigning candidates
 					if (insertion.missingParent) cost += Double.MAX_VALUE / 2;

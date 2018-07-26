@@ -54,7 +54,8 @@ public class SnapHintConfig extends HintConfig {
 
 	@Override
 	public boolean isValueless(String type) {
-		return "literal".equals(type);
+		// Nodes inserted by Snap automatically are valueless
+		return "literal".equals(type) || "script".equals(type) || "list".equals(type);
 	}
 
 	public final HashSet<String> haveSideScripts = new HashSet<>(Arrays.asList(

@@ -140,7 +140,7 @@ public class HintServlet extends HttpServlet {
 					hints.addAll(info.edits);
 					array.put(info.toJSON());
 				} else {
-					hints.addAll(highlighter.highlight(node));
+					hints.addAll(highlighter.highlightWithPriorities(node));
 				}
 			} catch (Exception e) {
 				array.put(HintJSON.errorToJSON(e, true));

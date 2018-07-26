@@ -57,6 +57,7 @@ public class PrettyPrint {
 		public boolean showValues = true;
 		public Predicate<String> isBodyType = s -> false;
 		public boolean surroundValueAssignments = true;
+		public boolean backquoteValuesWithWhitespace = true;
 		public String valueAssignment = "=";
 
 		public String baseString(INode node) {
@@ -65,8 +66,11 @@ public class PrettyPrint {
 			String value = node.value();
 			if (showValues && value != null) {
 				if (surroundValueAssignments) sb.insert(0, "[");
-				sb.append(valueAssignment)
-				.append(value);
+				sb.append(valueAssignment);
+				boolean quote = backquoteValuesWithWhitespace && value.matches(".*\\s.*");
+				if (quote) sb.append("`");
+				sb.append(value);
+				if (quote) sb.append("`");
 				if (surroundValueAssignments) sb.append("]");
 			}
 			return sb.toString();
