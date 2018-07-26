@@ -24,9 +24,11 @@ public abstract class AggregateDataset extends Dataset {
 		this.datasets = datasets;
 	}
 
-	protected static AggregateAssignment createAssignment(AggregateDataset instance, String name) {
+	protected static AggregateAssignment createAssignment(AggregateDataset instance, String name,
+			Dataset... exclude) {
 		List<Assignment> assignments = new LinkedList<>();
 		for (Dataset dataset : instance.datasets) {
+			if (Arrays.stream(exclude).anyMatch(e -> e == dataset)) continue;
 			assignments.addAll(Arrays.stream(dataset.all()).filter(
 					assignment -> assignment.name.equals(name)).collect(Collectors.toList()));
 		}

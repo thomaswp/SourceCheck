@@ -6,6 +6,7 @@ import edu.isnap.datasets.Fall2016;
 import edu.isnap.datasets.Fall2017;
 import edu.isnap.datasets.Spring2016;
 import edu.isnap.datasets.Spring2017;
+import edu.isnap.datasets.Spring2018;
 import edu.isnap.hint.SnapHintConfig;
 
 public class CSC200 extends AggregateDataset {
@@ -15,8 +16,7 @@ public class CSC200 extends AggregateDataset {
 
 	public CSC200() {
 		super(dataDir, Fall2015.instance, Spring2016.instance, Fall2016.instance,
-				Spring2017.instance, Fall2017.instance);
-		// Currently not including Spring 2018 until we decide how to count the new Squiral and GG2
+				Spring2017.instance, Fall2017.instance, Spring2018.instance);
 	}
 
 	@Override
@@ -31,7 +31,7 @@ public class CSC200 extends AggregateDataset {
 	public final static Assignment PolygonMaker =
 			createAssignment(instance, "polygonMakerLab");
 	public final static Assignment Squiral =
-			createAssignment(instance, "squiralHW");
+			createAssignment(instance, "squiralHW", Spring2018.instance);
 	public final static Assignment GuessingGame1 =
 			createAssignment(instance, "guess1Lab");
 	public final static Assignment GuessingGame2 =

@@ -3,11 +3,14 @@ library(ggplot2)
 library(rlist)
 library(cluster)
 library(tsne)
+library(factoextra)
+
+folder <- "../../data/csc200/all/analysis/guess1Lab/"
 
 oldAnalysis <- function() {
   
-  disMat <- as.matrix(read_csv("../../data/csc200/all/analysis/squiralHW/teds.csv", col_names = FALSE))
-  samples <-read_csv("../../data/csc200/all/analysis/squiralHW/samples.csv")
+  disMat <- as.matrix(read_csv(paste0(folder, "teds.csv"), col_names = FALSE))
+  samples <-read_csv(paste0(folder, "samples.csv"))
   
   smallDisMat <- disMat[sample(nrow(samples), 250, F), sample(nrow(samples), 250, F)]
   sil <- sapply(2:50, function(i) pam(disMat, i, diss=T)$silinfo$avg.width)
@@ -18,12 +21,39 @@ oldAnalysis <- function() {
   samples$cluster <- as.factor(clusters$clustering)
   samples$name <- paste0("X", samples$id + 1)
   samples$medoid <- samples$name %in% clusters$medoids
-  write.csv(samples, "../../data/csc200/all/analysis/squiralHW/samples-clustered.csv")
+  write.csv(samples, paste0(folder, "samples-clustered.csv"))
   
   embed <- tsne(disMat, k=2, max_iter = 200, epoch=100)
   samples$x <- embed[,1]
   samples$y <- embed[,2]
   ggplot(samples, aes(x=x, y=y, color=cluster, shape=medoid)) + geom_point(size=3)
+}
+
+timingAnalysis <- function() {
+  timings <- as.matrix(read_csv(paste0(folder, "feature-timing.csv"), col_names = FALSE))
+  fviz_nbclust(timings, pam, method = "silhouette", k.max=nrow(timings) - 1)
+  clusters <- pam(timings, 5, diss=T)
+  
+  features <- read_csv(paste0(folder, "features.csv"), col_names = TRUE)
+  features$cluster <- clusters$clustering
+  
+  features <- features[order(features$cluster),]
+  lastCluster <- 1
+  for (i in 1:nrow(features)) {
+    cluster <- features$cluster[i]
+    if (cluster != lastCluster) cat("\n")
+    lastCluster <- cluster
+    cat(sprintf("%02d %02d: %s\n", features$cluster[i], features$id[i], features$name[i]))
+  }
+  
+  
+  features$name <- paste0("X", features$id + 1)
+  features$medoid <- features$name %in% clusters$medoids
+  
+  embed <- tsne(timings, k=2, max_iter = 1000, epoch=250)
+  features$x <- embed[,1]
+  features$y <- embed[,2]
+  ggplot(features, aes(x=x, y=y, color=as.factor(cluster), shape=medoid)) + geom_point(size=3)
 }
 
 jacc <- function(x, y) sum(x & y) / sum(x | y)
@@ -88,9 +118,9 @@ clusterIndex <- function(clusters, id) {
 }
 
 runMe <- function (nClusters) {
-  snapshots <- as.matrix(read_csv("../../data/csc200/all/analysis/squiralHW/feature-states.csv", col_names = FALSE))
+  snapshots <- as.matrix(read_csv(paste0(folder, "feature-states.csv"), col_names = FALSE))
   snapshots <- snapshots | snapshots
-  features <- read_csv("../../data/csc200/all/analysis/squiralHW/features.csv", col_names = TRUE)
+  features <- read_csv(paste0(folder, "features.csv"), col_names = TRUE)
   clusters <- go(snapshots, nClusters)
   features$cluster <- sapply(features$id, function(i) clusterIndex(clusters, i + 1))
   
@@ -103,5 +133,5 @@ runMe <- function (nClusters) {
     cat(sprintf("%02d %02d: %s\n", features$cluster[i], features$id[i], features$name[i]))
   }
   
-  write.csv(features, "../../data/csc200/all/analysis/squiralHW/feature-clusters.csv")
+  write.csv(features, paste0(folder, "feature-clusters.csv"))
 }

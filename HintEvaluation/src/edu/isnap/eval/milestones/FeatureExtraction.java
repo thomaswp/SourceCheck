@@ -53,8 +53,8 @@ import util.LblTree;
 public class FeatureExtraction {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
-//		writeFeatures(true);
-		readFeatures();
+		writeFeatures(true);
+//		readFeatures();
 //		writeDistance();
 //		readDistance();
 //		testRPairs();
@@ -62,19 +62,22 @@ public class FeatureExtraction {
 //		exportFeatures(Fall2016.Squiral);
 	}
 
-	private static Assignment out = CSC200.Squiral;
+	private static Assignment out = CSC200.GuessingGame1;
 	private static Assignment[] trainingData = new Assignment[] {
 			// Use not-Fall2016 data so training and test are separate (duh :P)
 //			Spring2016.Squiral, Spring2017.Squiral,
 			// But also test with same training/test data for training accuracy
-			Fall2016.Squiral,
+//			Fall2016.Squiral,
 //			Spring2016.Squiral, Spring2017.Squiral, Fall2016.Squiral,
+
+//			Fall2016.GuessingGame1
+			CSC200.GuessingGame1
 	};
-	private static Assignment testData = CSC200.Squiral;
+	private static Assignment testData = CSC200.GuessingGame1;
 
 	private static Map<AssignmentAttempt, List<Node>> loadTrainingData() {
 		Map<AssignmentAttempt, List<Node>> data = loadAssignments(trainingData);
-		System.out.println("Training data size: " + data.size());
+		System.out.println("Raw training data size: " + data.size());
 		return data;
 	}
 
@@ -87,7 +90,6 @@ public class FeatureExtraction {
 	}
 
 	private static void extractNodeAndEdges() throws FileNotFoundException, IOException {
-		Assignment out = CSC200.Squiral;
 
 		Spreadsheet spreadsheet = new Spreadsheet();
 		List<AssignmentAttempt> attempts = SelectProjects.selectAttempts(testData);
@@ -193,7 +195,7 @@ public class FeatureExtraction {
 			}
 		}
 		System.out.println();
-		writeMatrix(distances, CSC200.Squiral.analysisDir() + "/teds.csv");
+		writeMatrix(distances, out.analysisDir() + "/teds.csv");
 
 		Spreadsheet spreadsheet = new Spreadsheet();
 		for (int i = 0; i < samples.size(); i++) {
@@ -203,11 +205,10 @@ public class FeatureExtraction {
 			String json = node.toASTNode().toJSON().toString();
 			spreadsheet.put("node", json);
 		}
-		spreadsheet.write(CSC200.Squiral.analysisDir() + "/samples.csv");
+		spreadsheet.write(out.analysisDir() + "/samples.csv");
 	}
 
 	private static void readDistance() throws IOException {
-		Assignment out = CSC200.Squiral;
 
 		CSVParser parser = new CSVParser(
 				new FileReader(out.analysisDir() + "/samples-clustered.csv"),
@@ -318,8 +319,6 @@ public class FeatureExtraction {
 	}
 
 	private static void readFeatures() throws IOException {
-		Assignment out = CSC200.Squiral;
-
 		List<Feature> features = readClusters();
 		boolean disjunct = features.stream()
 				.anyMatch(f -> f.rules.stream().anyMatch(r -> r instanceof DisjunctionRule));
@@ -365,7 +364,7 @@ public class FeatureExtraction {
 //		correctSubmissions.forEach(node -> System.out.println(node.id + "\n" + node.prettyPrint()));
 
 		int n = correctSubmissions.size();
-		System.out.println(n);
+		System.out.println("Correct, graded solutions: " + n);
 
 		Map<PQGram, PQGramRule> pqRulesMap = new HashMap<>();
 		for (Node node : correctSubmissions) {
@@ -450,9 +449,9 @@ public class FeatureExtraction {
 		double[][] dominateMatrix = createDominateMatrix(allRules);
 		writeMatrix(dominateMatrix, out.analysisDir() + "/feature-dominate.csv");
 
-//		int[][][] featureOrdersMatrix = getFeatureOrdersMatrix(correctTraces, pqRules);
-//		double[][] meanFeautresOrderMatrix = getMeanFeautresOrderMatrix(featureOrdersMatrix);
-//		writeMatrix(meanFeautresOrderMatrix, out.analysisDir() + "/feature-order.csv");
+		double[][][] featureTimingMatrix = getFeatureTimingDiffMatrix(correctTraces, allRules);
+		double[][] meanFeautreTimingMatrix = getMeanFeautresOrderMatrix(featureTimingMatrix);
+		writeMatrix(meanFeautreTimingMatrix, out.analysisDir() + "/feature-timing.csv");
 
 //		double[] feautresOrderSD = getFeautresOrderSD(featureOrdersMatrix, meanFeautresOrderMatrix);
 //		for (int i = 0; i < allRules.size(); i++) allRules.get(i).orderSD = feautresOrderSD[i];
@@ -542,53 +541,67 @@ public class FeatureExtraction {
 		public State(byte[] array) { this.array = array; }
 	}
 
-	protected static int[][][] getFeatureOrdersMatrix(List<List<Node>> traces,
-			List<PQGramRule> rules) {
+	protected static double[][][] getFeatureTimingDiffMatrix(List<List<Node>> traces,
+			List<CodeShapeRule> rules) {
 		int nRules = rules.size();
 		int nTraces = traces.size();
 
-		Map<PQGram, Integer> ruleIndexMap = rules.stream()
-				.collect(Collectors.toMap(rule -> rule.pqGram, rule -> rules.indexOf(rule)));
-
-		int[][][] orders = new int[nTraces][nRules][nRules];
+		double[][][] diffs = new double[nTraces][nRules][nRules];
 
 		for (int i = 0; i < traces.size(); i++) {
 			List<Node> trace = traces.get(i);
-			List<Integer> indices = new ArrayList<>();
-			int[][] tOrders = orders[i];
+
+			Map<CodeShapeRule, Double> timings = new HashMap<>();
+
+			// TODO: use activeTime instead
+			double time = 0;
 			for (Node node : trace) {
 				Set<PQGram> grams = PQGram.extractAllFromNode(node);
-				for (PQGram gram : grams) {
-					Integer index = ruleIndexMap.get(gram);
-					if (indices.contains(index)) continue;
-					if (index != null) {
-						// TODO: it should be 0 if added at the same time
-						int insertIndex = indices.size();
-						for (int j = 0; j < indices.size(); j++) {
-							int previous = indices.get(j);
-							tOrders[previous][index] =
-									-(tOrders[index][previous] = insertIndex - j);
+				for (CodeShapeRule rule : rules) {
+					Double timing = timings.get(rule);
+					if (rule.isSatisfied(grams)) {
+						if (timing == null) timings.put(rule, time);
+					} else {
+						// TODO: config 3
+						if (timing != null && time - timing <= 3) {
+							timings.put(rule, null);
 						}
-						indices.add(index);
 					}
+				}
+				time++;
+			}
+
+			for (int j = 0; j < nRules; j++) {
+				Double tj = timings.get(rules.get(j));
+				for (int k = 0; k < j; k++) {
+					Double tk = timings.get(rules.get(k));
+
+					double diff = -1;
+					if (tj != null && tk != null) {
+						diff = Math.abs(tj - tk);
+					}
+					diffs[i][j][k] = diffs[i][k][j] = diff;
 				}
 			}
 		}
 
-		return orders;
+		return diffs;
 	}
 
-	protected static double[][] getMeanFeautresOrderMatrix(int[][][] orders) {
+	protected static double[][] getMeanFeautresOrderMatrix(double[][][] orders) {
 		int nRules = orders[0].length;
 
 		double[][] mat = new double[nRules][nRules];
 		for (int i = 0; i < nRules; i++) {
 			for (int j = 0; j < nRules; j++) {
-				int sum = 0;
+				int sum = 0, count = 0;
 				for (int k = 0; k < orders.length; k++) {
-					sum += orders[k][i][j];
+					double v = orders[k][i][j];
+					if (v == -1) continue;
+					sum += v;
+					count++;
 				}
-				mat[i][j] = (double) sum / orders.length;
+				mat[i][j] = (double) sum / count;
 			}
 		}
 
@@ -602,10 +615,14 @@ public class FeatureExtraction {
 		for (int i = 0; i < nRules; i++) {
 			for (int j = 0; j < nRules; j++) {
 				int sum = 0;
+				int count = 0;
 				for (int k = 0; k < orders.length; k++) {
-					sum += Math.pow(orders[k][i][j] - means[i][j], 2);
+					double v = orders[k][i][j];
+					if (v == -1) continue;
+					sum += Math.pow(v - means[i][j], 2);
+					count++;
 				}
-				mat[i] += (double) sum / orders.length;
+				mat[i] += (double) sum / count;
 			}
 			mat[i] = Math.sqrt(mat[i] / nRules);
 		}
