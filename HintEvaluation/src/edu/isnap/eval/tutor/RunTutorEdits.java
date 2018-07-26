@@ -54,7 +54,7 @@ public class RunTutorEdits extends TutorEdits {
 //		dataset = ITAPS16;
 		Source source = Source.StudentData;
 		HintAlgorithm algorithm = SourceCheck;
-		boolean debug = false;
+		boolean debug = true;
 		boolean writeHints = false;
 
 //		writeAllHintSets(iSnapF16F17, ITAPS16);
@@ -62,13 +62,13 @@ public class RunTutorEdits extends TutorEdits {
 //		dataset.exportTrainingAndTestData(true);
 //		dataset.writeGoldStandard();
 //		dataset.analyzeGoldStandard();
-		dataset.writeHintSet(algorithm, source);
+//		dataset.writeHintSet(algorithm, source);
 
 		// Leave this on for a while, until you've rewritten it for all local repos
 //		dataset.verifyGoldStandard();
 //		dataset.printData();
 
-//		dataset.runHintRating(algorithm, source, debug, writeHints);
+		dataset.runHintRating(algorithm, source, debug, writeHints);
 //		dataset.runTutorHintBenchmarks(debug);
 //		dataset.writeTutorHintBenchmark();
 

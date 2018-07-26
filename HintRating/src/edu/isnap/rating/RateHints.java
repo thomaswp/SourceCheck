@@ -509,7 +509,7 @@ public class RateHints {
 				List<HintRating> matching = stream()
 						.filter(rating -> rating.matchType == type)
 						.collect(Collectors.toList());
-				if (type == MatchType.None) continue;
+//				if (type == MatchType.None) continue;
 				if (!matching.isEmpty()) {
 					String label = type.toString();
 					System.out.println("               === " + label + " ===");

@@ -442,7 +442,7 @@ public class NodeAlignment {
 //							.calculateCost(distanceMeasure);
 					// Instead of using the exact cost, we use an estimated cost based on a depth-
 					// first traversal of the children, which is usually a darn good estimate
-					double subCost = getSubCostEsitmate(from, to, config);
+					double subCost = getSubCostEsitmate(from, to, config, distanceMeasure);
 					cost += subCost * 0.001;
 				}
 				// Break further ties with existing mappings from parents
@@ -612,12 +612,16 @@ public class NodeAlignment {
 		return needsReorder;
 	}
 
-	public static double getSubCostEsitmate(Node a, Node b, HintConfig config) {
+	public static double getSubCostEsitmate(Node a, Node b, HintConfig config, DistanceMeasure dm) {
 		String[] aDFI = a.depthFirstIteration();
-		for (int i = 0; i < aDFI.length; i++) if (config.isValueless(aDFI[i])) aDFI[i] = null;
 		String[] bDFI = b.depthFirstIteration();
-		for (int i = 0; i < bDFI.length; i++) if (config.isValueless(bDFI[i])) bDFI[i] = null;
-		return -Alignment.getProgress(aDFI, bDFI, 1, 0, 0);
+		if (config.useDeletionsInSubcost) {
+			return dm.measure(null, aDFI, bDFI, null);
+		} else {
+			for (int i = 0; i < aDFI.length; i++) if (config.isValueless(aDFI[i])) aDFI[i] = null;
+			for (int i = 0; i < bDFI.length; i++) if (config.isValueless(bDFI[i])) bDFI[i] = null;
+			return -Alignment.getProgress(aDFI, bDFI, 1, 0, 0);
+		}
 	}
 
 	private String[][] stateArray(List<Node> nodes, boolean isFrom) {

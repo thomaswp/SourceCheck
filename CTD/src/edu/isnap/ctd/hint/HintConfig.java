@@ -109,6 +109,20 @@ public abstract class HintConfig implements Serializable {
 	 */
 	public boolean createSubedits = true;
 
+	// TODO: These two are temporarily configurable and a default should probably be chosen
+	/**
+	 * If true, any single line that has a single insertion and deletion will combine those
+	 * into one replacement.
+	 */
+	public boolean createSingleLineReplacements = false;
+
+	/**
+	 * If true, the distance measure is used to determine child alignment subcost for tie breaking;
+	 * otherwise, a special measure is used which has no cost for deletions and does not count
+	 * valueless nodes.
+	 */
+	public boolean useDeletionsInSubcost = true;
+
 	/**
 	 * Determines how Node values will be used when matching and hinting nodes
 	 */

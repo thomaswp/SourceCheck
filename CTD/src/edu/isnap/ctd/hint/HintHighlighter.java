@@ -485,11 +485,13 @@ public class HintHighlighter {
 
 		// If there are no other edits for this parent besides the insertion and deletion to be
 		// combined, this is likely a replacement
-		if (!edits.stream().anyMatch(edit ->
-				edit.parent == insertion.parent &&
-				!edit.equals(insertion) &&
-				!edit.equals(deletion))) {
-			match = true;
+		if (config.createSingleLineReplacements) {
+			if (!edits.stream().anyMatch(edit ->
+					edit.parent == insertion.parent &&
+					!edit.equals(insertion) &&
+					!edit.equals(deletion))) {
+				match = true;
+			}
 		}
 
 		if (!match) return;
@@ -692,7 +694,8 @@ public class HintHighlighter {
 
 				// Moves are deletions that could be instead moved to perform a needed insertion
 				if (insertion.candidate == null) {
-					double cost = NodeAlignment.getSubCostEsitmate(deleted, insertion.pair, config);
+					double cost = NodeAlignment.getSubCostEsitmate(
+							deleted, insertion.pair, config, getDistanceMeasure(config));
 					// Ensure that insertions with missing parents are paired last, giving priority
 					// to actionable inserts when assigning candidates
 					if (insertion.missingParent) cost += Double.MAX_VALUE / 2;
