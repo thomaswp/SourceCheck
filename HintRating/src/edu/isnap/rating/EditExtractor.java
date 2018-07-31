@@ -31,8 +31,6 @@ import node.Node;
 
 public class EditExtractor {
 
-	private final Map<ASTNode, Bag<Edit>> cache = new IdentityHashMap<>();
-
 	private final RatingConfig config;
 
 	private final Set<String> ignoreTypes = new HashSet<>();
@@ -43,17 +41,8 @@ public class EditExtractor {
 	}
 
 	public Bag<Edit> getEdits(ASTNode from, ASTNode to) {
-		Bag<Edit> edits = cache.get(to);
-		if (edits == null) {
-//			edits = config.areNodeIDsConsistent() ?
-//					extractEditsUsingIDs(from, to) : extractEditsUsingTED(from, to);
-			edits = extractEditsUsingCodeAlign(from, to);
-			cache.put(to, edits);
-		} else {
-//			System.out.println("CACHE");
-			// TODO: The cache is not working, since we clone the nodes and it works on identity
-		}
-		return edits;
+		// TODO: would be good to reimplement caching
+		return extractEditsUsingCodeAlign(from, to);
 	}
 
 	private static CostModel<ASTNode> costModel = new CostModel<ASTNode>() {

@@ -103,10 +103,6 @@ public class RateHints {
 
 				// Create an initial list of hints that are not matched to a tutor hint
 				List<HintOutcome> unmatchedHints = new ArrayList<>(hintSet.getOutcomes(requestID));
-				if (unmatchedHints.isEmpty()) {
-					System.err.printf("No hints generated for request %s/%s.\n",
-							assignmentID, requestID);
-				}
 
 				// First find full matches and remove any hints that match
 				for (int i = 0; i < unmatchedHints.size(); i++) {
@@ -467,6 +463,7 @@ public class RateHints {
 		}
 
 		public double validWeight(MatchType minMatchType, boolean useWeights) {
+			if (isEmpty()) return 0;
 			return stream()
 					.mapToDouble(rating ->
 							rating.matchType.isAtLeast(minMatchType) && rating.isValid() ?
@@ -475,6 +472,7 @@ public class RateHints {
 		}
 
 		public double qualityScore(MatchType minMatchType) {
+			if (isEmpty()) return 0;
 			return validWeight(minMatchType, true) / getTotalWeight();
 		}
 
@@ -492,10 +490,11 @@ public class RateHints {
 		}
 
 		public void printSummary() {
-			System.out.printf("%s: %.02f (%.02f)v / %.02f (%.02f)p\n",
+			System.out.printf("%s: %.02f (%.02f)v / %.02f (%.02f)p [n=%02d]\n",
 					requestID,
 					qualityScore(MatchType.Full), qualityScore(MatchType.Partial),
-					priorityScore(false), priorityScore(true));
+					priorityScore(false), priorityScore(true),
+					size());
 		}
 
 		private void printRatings(ASTNode from, RatingConfig config, List<TutorHint> validHints) {
