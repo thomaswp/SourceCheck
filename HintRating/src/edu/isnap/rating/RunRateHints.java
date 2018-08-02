@@ -19,6 +19,13 @@ public class RunRateHints {
 		RateHints.rateDir(RateHints.ISNAP_F16_F17_DATA_DIR, RatingConfig.Snap, validity, true);
 		RateHints.rateDir(RateHints.ITAP_S16_DATA_DIR, RatingConfig.Python, validity, true);
 
+//		RateHints.rateDir(RateHints.ISNAP_F16_F17_DATA_DIR, RatingConfig.Snap,
+//				Validity.OneTutor, true);
+//		RateHints.rateDir(RateHints.ISNAP_F16_F17_DATA_DIR, RatingConfig.Snap,
+//				Validity.MultipleTutors, true);
+//		RateHints.rateDir(RateHints.ISNAP_F16_F17_DATA_DIR, RatingConfig.Snap,
+//				Validity.Consensus, true);
+
 //		printHints(RateHints.ISNAP_F16_F17_DATA_DIR, "chf_with_past", RatingConfig.Snap);
 //		printHints(RateHints.ISNAP_F16_F17_DATA_DIR, "chf_without_past", RatingConfig.Snap);
 //		printHints(RateHints.ITAP_S16_DATA_DIR, "chf_with_past", RatingConfig.Python);

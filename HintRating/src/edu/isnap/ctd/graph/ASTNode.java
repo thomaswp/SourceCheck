@@ -136,6 +136,7 @@ public class ASTNode implements INode {
 		Params params = new Params();
 		params.showValues = showValues;
 		params.isBodyType = isBodyType;
+		params.backquoteValuesWithWhitespace = false;
 		return PrettyPrint.toString(this, params);
 	}
 

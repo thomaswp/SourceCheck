@@ -76,7 +76,7 @@ writeSamples <- function() {
   writeSQL(samples[samples$priority <= 84,], "C:/Users/Thomas/Desktop/samples252.sql")
 }
 
-getSamples <- function() {
+testSamplesAgreement <- function() {
   samples <- read_csv("data/samples-full.csv")
   
   manual <- read_csv("data/manual.csv")
@@ -95,23 +95,29 @@ getSamples <- function() {
   newRatingsOne <- loadRatings("isnapF16-F17", "OneTutor", c("SourceCheck_sampling", "CTD", "PQGram", "chf_with_past"))
   newRatingsMT <- loadRatings("isnapF16-F17", "MultipleTutors", c("SourceCheck_sampling", "CTD", "PQGram", "chf_with_past"))
   newRatingsConsensus <- loadRatings("isnapF16-F17", "Consensus", c("SourceCheck_sampling", "CTD", "PQGram", "chf_with_past"))
-  # 0.83 0.83 0.83 (One tutor)
+  # 0.76 0.83 0.89 (One tutor)
   verifyRatings(manual, samples, newRatingsOne)
-  # 0.75 0.78 0.80 (Multiple tutors)
+  # 0.70 0.78 0.85 (Multiple tutors)
   verifyRatings(manual, samples, newRatingsMT)
-  # 0.81 0.81 0.81 (Consensus)
+  # 0.74 0.81 0.88 (Consensus)
   verifyRatings(manual, samples, newRatingsConsensus)
   
   # alpha = 0.673
   kripp.alpha(t(manual[,c("t1", "t2", "t3")]), method="ordinal")
   # Perfect agreement on 166/252 (65.9%) of them
   mean(manual$t1 == manual$t2 & manual$t2 == manual$t3)
+  # 0.69
+  cohen.kappa(cbind(manual$t1, manual$t2))
+  # 0.69
+  cohen.kappa(cbind(manual$t2, manual$t3))
+  # 0.65
+  cohen.kappa(cbind(manual$t1, manual$t3))
   
-  # 0.85 0.85 0.85
+  # 0.79 0.85 0.92
   cohen.kappa(cbind(manual$consensus, manual$t1))
-  # 0.74 0.76 0.78
+  # 0.68 0.76 0.84
   cohen.kappa(cbind(manual$consensus, manual$t2))
-  # 0.76 0.78 0.80
+  # 0.71 0.78 0.85
   cohen.kappa(cbind(manual$consensus, manual$t3))
 }
 
@@ -165,6 +171,9 @@ printVerify <- function(name, truth, rating) {
 getSampleRatings <- function(samples, ratings) {
   ratings[ratings$source == "SourceCheck_sampling","source"] <- "SourceCheck"
   names(samples)[names(samples) == 'priority'] <- 'ratePriority'
+  # Normalize line endings because apparently this changed at some point
+  ratings$diff <- gsub("\r\n", "\n", ratings$diff)
+  samples$diff <- gsub("\r\n", "\n", samples$diff)
   merged <- merge(ratings, samples[,c("requestID", "source", "hintID", "diff", "ratePriority")])
   merged <- merged[!duplicated(merged[,c("requestID", "source", "hintID", "diff")]),]
   merged$type <- ordered(merged$type, c("None", "Partial", "Full"))
@@ -526,6 +535,7 @@ compare <- function() {
   allComps(requests, T, "isnap")
   
   kruskal.test(scoreFull ~ source, algRequests[algRequests$dataset=="itap",])
+  kruskal.test(scorePartial ~ source, algRequests[algRequests$dataset=="itap",])
   summary(aov(scoreFull ~ source + assignmentID + source * assignmentID, algRequests[algRequests$dataset=="itap",]))
   
   allComps(requests, F, "itap")
@@ -550,8 +560,8 @@ plotComparisonStacked <- function(assignments, dataset) {
   isnap <- dataset == "isnap"
   
   fillLabs <- 
-    if (isnap) c(`squiralHW` = "Squiral", `guess1Lab` = "GuessingGame") 
-    else c(`helloWorld`="HelloWorld", `firstAndLast`="FirstAndLast", `isPunctuation`="IsPunctuation", `kthDigit`="KthDigit", `oneToN`="OneToN")
+    if (isnap) c(`squiralHW` = "Squiral (n=30)", `guess1Lab` = "GuessingGame (n=31)") 
+    else c(`helloWorld`="HelloWorld (n=7)", `firstAndLast`="FirstAndLast n=(7)", `isPunctuation`="IsPunctuation (n=13)", `kthDigit`="KthDigit (n=14)", `oneToN`="OneToN (n=10)")
   title <- paste("QualityScore Ratings -", if (isnap) "iSnap" else "ITAP")
   textOffsetX <- if (isnap) 0.15 else 0.16
   yMax <- if (isnap) 1.1 else 1.25
@@ -622,6 +632,30 @@ comp <- function(requests, partial, dataset, source1, source2) {
 }
 
 allComps <- function(requests, partial, dataset) {
+  fRequests <- requests[requests$dataset == dataset,]
+  fRequests <- fRequests[fRequests$source != "chf_without_past",]
+  fRequests$score <- if (partial) fRequests$scorePartial else fRequests$scoreFull
+  sources <- unique(fRequests$source)
+  comps <- NULL
+  for (i in 2:length(sources)) {
+    for (j in 1:(i-1)) {
+      a <- sources[i]
+      b <- sources[j]
+      left <- fRequests[fRequests$source==a,]
+      right <- fRequests[fRequests$source==b,]
+      left <- left[order(left$requestID),"score"]
+      right <- right[order(right$requestID),"score"]
+      test <- suppressWarnings(wilcox.test(left, right, paired=T))
+      comps <- rbind(comps, data.frame(left=a, right=b, mLeft=mean(left), mRight=mean(right), p=test$p.value, stat=test$statistic))
+    }
+  }
+  comps <- comps[order(comps$p),]
+  comps$thresh <- sapply(1:nrow(comps), function(i) i * 0.05 / nrow(comps))
+  comps$sig <- comps$p < comps$thresh
+  comps
+}
+
+allCompsOrdered <- function(requests, partial, dataset) {
   fRequests <- requests[requests$dataset == dataset,]
   fRequests <- fRequests[fRequests$source != "chf_without_past",]
   fRequests$score <- if (partial) fRequests$scorePartial else fRequests$scoreFull
