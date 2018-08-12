@@ -1,12 +1,15 @@
 package edu.isnap.template.data;
 
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.lang3.mutable.MutableInt;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.NodeConstructor;
+import edu.isnap.ctd.hint.TextHint;
 
 public class BNode {
 	public final String type;
@@ -16,6 +19,7 @@ public class BNode {
 	public BNode parent;
 	public int orderGroup;
 	public boolean anything;
+	public Set<TextHint> hints = new HashSet<>();
 
 	public BNode(String type, boolean inline, Context context) {
 		this(type, inline, context.toString());
@@ -51,6 +55,7 @@ public class BNode {
 		MutableInt id = new MutableInt();
 		Node node = createNode(constructor, null, id);
 		node.setOrderGroup(orderGroup);
+		hints.forEach(node::addTextHint);
 		for (BNode child : children) {
 			child.addToParent(node, id);
 		}
@@ -69,11 +74,13 @@ public class BNode {
 					}
 					child.orderGroup = orderGroup;
 				}
+				child.hints.addAll(hints);
 				child.addToParent(parent, id);
 			}
 		} else {
 			Node node = createNode(parent::constructNode, parent, id);
 			node.setOrderGroup(orderGroup);
+			hints.forEach(node::addTextHint);
 			parent.children.add(node);
 			for (BNode child : children) {
 				child.addToParent(node, id);
@@ -90,6 +97,7 @@ public class BNode {
 		BNode copy = new BNode(type, inline, contextSnapshot);
 		copy.orderGroup = orderGroup;
 		copy.anything = anything;
+		hints.forEach(hint -> copy.hints.add(hint.copy()));
 		for (BNode child : children) {
 			copy.children.add(child.copy());
 		}

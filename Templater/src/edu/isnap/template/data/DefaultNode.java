@@ -97,6 +97,8 @@ public class DefaultNode {
 			case "@repeat": node = new RepeatNode(); break;
 			case "@anything": node = new AnythingNode(); break;
 			case "@inline": node = new InlineNode(); break;
+			case "@defHint": node = new DefHintNode(); break;
+			case "@hint": node = new HintNode(); break;
 			default:
 				if (type.startsWith("@")) {
 					throw new RuntimeException("Unnown annotation: " + type);

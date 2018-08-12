@@ -1,28 +1,76 @@
 snapshot {
+    @defHint TEST {
+        :`Don't forget to test your code once you've made your "draw polygon" block.`
+    }
+    @defHint PEN_DOWN {
+        :`Using the #down block makes the sprite draw a trail behind it when it moves.`
+    }
+    @defHint PEN_SIZE {
+        :`The #setSize block will set the thickness of the trail drawn by the sprite when it moves.`
+    }
+    @defHint INPUTS {
+        :`Your "draw polygon" block should have three inputs, which you can add using the '+' buttons after the block name.`
+    }
+    @defHint THICKNESS_INPUT {
+        :`Your "draw polygon" block should have an input for the thickness of the polygon, which should be used to set the pen size.`
+    }
+    @defHint LENGTH_INPUT {
+        :`Your "draw polygon" block should have an input for the length of each side of the polygon, which affects how far the sprite moves.`
+    }
+    @defHint SIDES_INPUT {
+        :`Your "draw polygon" block should have an input for the number of sides of the polygon, which affects how many times your code should repeat.`
+    }
+    @defHint REPEAT {
+        :`The #doRepeat block allows you to run the same code a fixed number of times, like drawing each side of a polygon.`
+    }
+    @defHint TURN {
+        :`The #turn block makes the sprite turn clockwise some degrees, like the corner of a polygon.`
+    }
+    @defHint TURN_AMOUNT1 {
+        :`The amount the sprite should turn after drawnig each side is related to the number of sides.`
+    }
+    @defHint TURN_AMOUNT2 {
+        :`For a triangle (3 sides), the sprite should be 120 degrees. For a square (4 sides), it should be 90.`
+    }
     stage {
         sprite {
-            @anything
+            @hint TEST {
+                script {
+                    @anything
+                }
+            }
         }
     }
     customBlock {
         script {
             @anyOrder {
+                @hint PEN_DOWN
                 down
-                setSize(var:thickness)
+                @hint PEN_SIZE
+                setSize(@hint THICKNESS_INPUT var:thickness)
             }
-            doRepeat(var:sides, script {
+            @hint REPEAT doRepeat(@hint SIDES_INPUT var:sides, script {
                 @anyOrder {
-                    forward(var:length)
+                    forward(@hint LENGTH_INPUT var:length)
+                    @hint TURN
+                    @defBlock TURN {
+                        @hint TURN_AMOUNT1 @hint TURN_AMOUNT2
+                        reportQuotient(literal, var:sides)
+                    }
                     @or {
-                        turn(reportQuotient(literal, var:sides))
-                        turnLeft(reportQuotient(literal, var:sides))
+                        turn(@block TURN)
+                        turnLeft(@block TURN)
                     }
                 }
             })
             up
         }
-        varDec:length
-        varDec:sides
-        varDec:thickness
+        @anyOrder {
+            @hint INPUTS {
+                @hint LENGTH_INPUT varDec:length
+                @hint SIDES_INPUT varDec:sides
+                @hint THICKNESS_INPUT varDec:thickness
+            }
+        }
     }
 }
