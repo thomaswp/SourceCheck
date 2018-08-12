@@ -10,15 +10,19 @@ snapshot {
     }
     @defHint INPUTS {
         :`Your "draw polygon" block should have three inputs, which you can add using the '+' buttons after the block name.`
+        priority(1)
     }
     @defHint THICKNESS_INPUT {
         :`Your "draw polygon" block should have an input for the thickness of the polygon, which should be used to set the pen size.`
+        priority(2)
     }
     @defHint LENGTH_INPUT {
         :`Your "draw polygon" block should have an input for the length of each side of the polygon, which affects how far the sprite moves.`
+        priority(2)
     }
     @defHint SIDES_INPUT {
         :`Your "draw polygon" block should have an input for the number of sides of the polygon, which affects how many times your code should repeat.`
+        priority(2)
     }
     @defHint REPEAT {
         :`The #doRepeat block allows you to run the same code a fixed number of times, like drawing each side of a polygon.`
@@ -28,9 +32,11 @@ snapshot {
     }
     @defHint TURN_AMOUNT1 {
         :`The amount the sprite should turn after drawnig each side is related to the number of sides.`
+        priority(1)
     }
     @defHint TURN_AMOUNT2 {
-        :`For a triangle (3 sides), the sprite should be 120 degrees. For a square (4 sides), it should be 90.`
+        :`For a triangle (3 sides), the sprite should turn 120 degrees after each side. For a square (4 sides), it should be 90 degrees.`
+        priority(2)
     }
     stage {
         sprite {
@@ -57,6 +63,7 @@ snapshot {
                         @hint TURN_AMOUNT1 @hint TURN_AMOUNT2
                         reportQuotient(literal, var:sides)
                     }
+                    @hint TURN
                     @or {
                         turn(@block TURN)
                         turnLeft(@block TURN)

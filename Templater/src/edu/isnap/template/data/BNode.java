@@ -1,6 +1,6 @@
 package edu.isnap.template.data;
 
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -19,7 +19,7 @@ public class BNode {
 	public BNode parent;
 	public int orderGroup;
 	public boolean anything;
-	public Set<TextHint> hints = new HashSet<>();
+	public Set<TextHint> hints = new LinkedHashSet<>();
 
 	public BNode(String type, boolean inline, Context context) {
 		this(type, inline, context.toString());

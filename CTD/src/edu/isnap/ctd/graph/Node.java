@@ -111,8 +111,7 @@ public abstract class Node extends StringHashable implements INode {
 
 	public void addTextHint(TextHint hint) {
 		if (hint == null) return;
-		if (annotations.hints == null) annotations.hints = new ArrayList<>();
-		annotations.hints.add(hint);
+		annotations.getHints().add(hint);
 	}
 
 	public Node root() {
@@ -551,13 +550,18 @@ public abstract class Node extends StringHashable implements INode {
 		public boolean matchAnyChildren;
 		public int orderGroup;
 
-		public List<TextHint> hints;
+		private List<TextHint> hints;
+
+		public List<TextHint> getHints() {
+			if (hints == null) hints = new ArrayList<>();
+			return hints;
+		}
 
 		public Annotations copy() {
 			Annotations copy = new Annotations();
 			copy.orderGroup = orderGroup;
 			copy.matchAnyChildren = matchAnyChildren;
-			hints.forEach(hint -> copy.hints.add(hint.copy()));
+			if (hints != null) hints.forEach(hint -> copy.getHints().add(hint.copy()));
 			return copy;
 		}
 

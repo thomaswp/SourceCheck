@@ -1,14 +1,17 @@
 package edu.isnap.ctd.hint.edit;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Predicate;
+import edu.isnap.ctd.hint.TextHint;
 import edu.isnap.ctd.util.NodeAlignment.Mapping;
 import edu.isnap.ctd.util.map.BiMap;
 
@@ -32,6 +35,8 @@ public class Insertion extends EditHint {
 	public Node replaced;
 	/** A candidate node elsewhere that could be used to do the replacement */
 	public Node candidate;
+
+	public final List<TextHint> textHints = new ArrayList<>();
 
 	@Override
 	public String action() {
@@ -59,6 +64,9 @@ public class Insertion extends EditHint {
 		this.missingParent = missingParent;
 		this.parentPair = missingParent ? parent : null;
 		this.pair = pair;
+		if (pair != null) {
+			textHints.addAll(pair.readOnlyAnnotations().getHints());
+		}
 		if (index > parent.children.size()) {
 			storeException("Insert index out of range");
 		}
@@ -72,6 +80,9 @@ public class Insertion extends EditHint {
 		data.put("type", type);
 		putNodeReference(data, "replacement", replaced, refNodeIDs);
 		putNodeReference(data, "candidate", candidate, refNodeIDs);
+		JSONArray hints = new JSONArray();
+		for (TextHint hint : textHints) hints.put(hint.toJSON());
+		data.put("textHints", hints);
 		return data;
 	}
 

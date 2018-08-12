@@ -18,8 +18,14 @@ public class DefHintNode extends DefaultNode {
 		if (children.children.isEmpty()) {
 			throw new RuntimeException("Hint defined with no children: " + name());
 		}
+		int priority = 0;
 		String text = children.children.get(0).type;
-		context.hints.put(name(), new TextHint(text));
+		for (BNode child : children.children) {
+			if ("priority".equals(child.type)) {
+				priority = Integer.parseInt(child.children.get(0).type);
+			}
+		}
+		context.hints.put(name(), new TextHint(text, priority));
 		return new LinkedList<>();
 	}
 
