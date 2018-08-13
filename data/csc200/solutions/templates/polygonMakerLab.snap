@@ -38,6 +38,9 @@ snapshot {
         :`For a triangle (3 sides), the sprite should turn 120 degrees after each side. For a square (4 sides), it should be 90 degrees.`
         priority(2)
     }
+    @defHint CUSTOM_BLOCK {
+        :`You should create a new block called "draw polygon" and put your code there. You can do this by clicking the "Make a block" button on the bottom-left of the screen.`
+    }
     stage {
         sprite {
             @hint TEST {
@@ -47,7 +50,7 @@ snapshot {
             }
         }
     }
-    customBlock {
+    @hint CUSTOM_BLOCK customBlock {
         script {
             @anyOrder {
                 @hint PEN_DOWN

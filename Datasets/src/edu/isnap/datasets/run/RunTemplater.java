@@ -11,7 +11,7 @@ public class RunTemplater {
 		Node.PrettyPrintSpacing = 4;
 		Node.PrettyPrintUseColon = true;
 		TemplateParser.parseSnapTemplate(CSC200Solutions.PolygonMaker);
-//		for (Assignment assignment : CampSolutions.All) {
+//		for (Assignment assignment : CSC200Solutions.All) {
 //			TemplateParser.parseSnapTemplate(assignment);
 //		}
 	}
