@@ -6,6 +6,7 @@ import java.util.Scanner;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.datasets.BJC2017;
+import edu.isnap.datasets.CampHS2018;
 import edu.isnap.datasets.Demo;
 import edu.isnap.datasets.Fall2015;
 import edu.isnap.datasets.Fall2016;
@@ -38,6 +39,7 @@ public class Shell {
 			HelpSeeking.instance,
 			Samples.instance,
 			BJC2017.instance,
+			CampHS2018.instance,
 	};
 
 	public static void main(String[] args) {

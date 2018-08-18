@@ -194,7 +194,9 @@ public class Snapshot extends Code implements IHasID {
 		}
 
 		if (index == null) {
-			System.err.printf("Not found: %s %s %s:\n", name, type, category);
+			// This can happen, but new data has GUIDs and should not worry about it
+			// and old data has been investigated
+//			System.err.printf("Not found: %s %s %s:\n", name, type, category);
 		}
 
 		return index;

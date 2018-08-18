@@ -24,6 +24,10 @@ public class Assignment {
 	public final Assignment None;
 	public final boolean hasIDs;
 
+	public Assignment(Dataset dataset, String name) {
+		this(dataset, name, null, true);
+	}
+
 	public Assignment(Dataset dataset, String name, Date end, boolean hasNodeIDs) {
 		this(dataset, name, end, hasNodeIDs, false, null);
 	}

@@ -48,8 +48,11 @@ public class Sprite extends Code implements IHasID {
 		for (Element variable : XML.getGrandchildrenByTagName(element, "variables", "variable")) {
 			sprite.variables.add(variable.getAttribute("name"));
 		}
-		for (Code code : XML.getCodeInFirstChild(element, "scripts")) {
-			sprite.scripts.add((Script) code);
+		// Sometimes a Sprite can be missing the scripts tag (if it's a clone), so check first
+		if (XML.getFirstChildByTagName(element, "scripts") != null) {
+			for (Code code : XML.getCodeInFirstChild(element, "scripts")) {
+				sprite.scripts.add((Script) code);
+			}
 		}
 		for (Code code : XML.getCodeInFirstChild(element, "blocks")) {
 			sprite.blocks.add((BlockDefinition) code);
