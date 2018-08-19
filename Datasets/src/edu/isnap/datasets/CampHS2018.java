@@ -12,6 +12,11 @@ public class CampHS2018 extends Dataset {
 	public final static String dataFile = dataDir + ".csv";
 	public final static CampHS2018 instance = new CampHS2018();
 
+	@Override
+	public boolean onlyLogExportedCode() {
+		return false;
+	}
+
 	public final static Assignment DaisyDesign = new Assignment(instance, "DaisyDesign");
 	public final static Assignment SpiralPolygon = new Assignment(instance, "SpiralPolygon");
 	public final static Assignment BrickWall = new Assignment(instance, "BrickWall");

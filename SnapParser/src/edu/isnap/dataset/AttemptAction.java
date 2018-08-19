@@ -46,6 +46,7 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	public final static String SHOW_STRUCTURE_HINT = "SnapDisplay.showStructureHint";
 	public static final String SPRITE_ADD_VARIABLE = "Sprite.addVariable";
 	public static final String SPRITE_DELETE_VARIABLE = "Sprite.deleteVariable";
+	public final static String WE_START = "WE.Start";
 
 	public final static Set<String> SHOW_HINT_MESSAGES = new HashSet<>(Arrays.asList(new String[] {
 			SHOW_SCRIPT_HINT, SHOW_BLOCK_HINT, SHOW_STRUCTURE_HINT

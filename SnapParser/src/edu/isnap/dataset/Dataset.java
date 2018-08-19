@@ -38,6 +38,10 @@ public abstract class Dataset {
 		return CSVFormat.DEFAULT.withHeader();
 	}
 
+	public boolean onlyLogExportedCode() {
+		return true;
+	}
+
 	public Map<String, Assignment> getAssignmentMap() {
 		Map<String, Assignment> map = new HashMap<>();
 		for (Assignment assignment : all()) {

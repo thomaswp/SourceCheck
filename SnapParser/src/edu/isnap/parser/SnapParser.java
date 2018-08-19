@@ -63,6 +63,7 @@ public class SnapParser {
 
 	private final Assignment assignment;
 	private final Mode storeMode;
+	private final boolean onlyLogExportedCode;
 
 	/**
 	 * Constructor for a SnapParser. This should rarely be called directly. Instead, use
@@ -70,10 +71,12 @@ public class SnapParser {
 	 *
 	 * @param assignment The assignment to load
 	 * @param cacheUse The cache {@link Mode} to use when loading data.
+	 * @param onlyLogExportedCode
 	 */
-	public SnapParser(Assignment assignment, Mode cacheUse){
+	public SnapParser(Assignment assignment, Mode cacheUse, boolean onlyLogExportedCode){
 		this.assignment = assignment;
 		this.storeMode = cacheUse;
+		this.onlyLogExportedCode = onlyLogExportedCode;
 		new File(assignment.dataDir).mkdirs();
 	}
 
@@ -296,6 +299,10 @@ public class SnapParser {
 		for (int i = 0; i < actions.size(); i++) {
 			AttemptAction action = actions.get(i);
 
+			if (AttemptAction.WE_START.equals(action.message)) {
+				attempt.hasWorkedExample = true;
+			}
+
 			// Ignore actions outside of our time range
 			if (params.addMetadata && action.timestamp != null && (
 					(minDate != null && action.timestamp.before(minDate)) ||
@@ -373,7 +380,7 @@ public class SnapParser {
 				}
 
 				boolean done = false;
-				boolean saveWork = false;
+				boolean saveWork = !onlyLogExportedCode;
 
 				// If this is an export keep the work we've seen so far
 				if (AttemptAction.IDE_EXPORT_PROJECT.equals(action.message)) {
