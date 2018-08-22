@@ -21,4 +21,9 @@ attempts <- merge(attempts, counts, by="userID")
 attempts <- attempts[attempts$nAssignments == 3,]
 
 
-ggplot(attempts, aes(x=isGroupA, y=total)) + geom_boxplot() + facet_grid(~ assignment)
+ggplot(attempts, aes(x=isGroupA, y=total)) + geom_boxplot() + 
+  geom_abline(slope=0, intercept = 2700, color="red") + 
+  facet_grid(~ assignment)
+
+ddply(attempts, c("assignment", "isGroupA"), summarize, sd=sd(total))
+
