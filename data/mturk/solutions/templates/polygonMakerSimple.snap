@@ -1,0 +1,161 @@
+snapshot {
+    @defHint PEN_DOWN {
+        :`Using the "pen down" block (under Pen) makes the sprite draw a trail behind it when it moves, which should happen before you draw a polygon.`
+    }
+    @defHint PEN_UP {
+        :`Using the "pen up" block (under Pen) makes the sprite drop drawing a trail behind it when it moves, which should happen after you draw a polygon.`
+    }
+    @defHint VARIABLE {
+        :`You need to create a new variable by going to the "Variables" tab in the top-left corner and pressing "Make a variable."`
+        priority(1)
+    }
+    @defHint REPEAT {
+        :`The "repeat" block (under Control) allows you to run the same code a fixed number of times, like drawing each side of a polygon.`
+    }
+    @defHint MOVE {
+        :`The "move __ steps" block (under Motion) makes the sprite move forward some amount, like at each side of a polygon.`
+    }
+    @defHint TURN {
+        :`The "turn __ degrees" block (under Motion) makes the sprite turn some degrees, like at the corner of a polygon.`
+    }
+    @defHint TURN_AMOUNT1 {
+        :`The amount the sprite should turn after drawnig each side is related to the number of sides.`
+        priority(1)
+    }
+    @defHint TURN_AMOUNT2 {
+        :`For a triangle (3 sides), the sprite should turn 120 degrees after each side. For a square (4 sides), it should be 90 degrees.`
+        priority(2)
+    }
+    @defHint ASK {
+        :`The "ask __ and wait" block (under Sensing) asks the user a question, like how many sides the polygon should have, and stores their response in the "answer" block (under Sensing).`
+        priority(1)
+    }
+    @defHint SET_VAR {
+        :`The "set __ to __" block (under Variables) stores a value in a variable to use later, like the length or number of sides of the polygon.`
+    }
+    @defHint CHOOSE_VAR {
+        :`With the "set __ to __" block, you use the drop-down menu to choose a variable to give a value. You must first create a variable (under Variables).`
+        priority(1)
+    }
+    @defHint SET_LENGTH {
+        :`After asking the user for the length of the polygon, you should store this value in a variable.`
+        priority(2)
+    }
+    @defHint SET_SIDES {
+        :`After asking the user for the number of sides of the polygon, you should store this value in a variable.`
+        priority(2)
+    }
+    @defHint LENGTH {
+        :`One variable stores how far the sprite should move when drawing each side of the polygon.`
+        priority(2)
+    }
+    @defHint SIDES {
+        :`One variable stores how many sides the sprite should draw, which also affects how much the sprite should turn after drawing each side.`
+        priority(2)
+    }
+    stage:Stage {
+        sprite:Sprite {
+            script {
+                @+optional { receiveGo }
+                @anyOrder {
+                    @+optional { clear }
+                    @+optional { setHeading(literal:90) }
+                    @+optional { gotoXY(literal:0, literal:0) }
+                }
+                @defVar TWO_VARS {
+                    @defVar LEN_FIRST {
+                        @hint ASK
+                        doAsk(literal)
+                        @hint SET_VAR
+                        doSetVar(
+                            @if (LEN_FIRST) {
+                                @hint CHOOSE_VAR
+                                @hint SET_LENGTH
+                                varMenu:length
+                            } @unless (LEN_FIRST) {
+                                @hint CHOOSE_VAR
+                                @hint SET_SIDES
+                                varMenu:sides
+                            },
+                            @hint ASK
+                            getLastAnswer
+                        )
+                        @hint ASK
+                        doAsk(literal)
+                        @if (TWO_VARS) {
+                            @hint SET_VAR
+                            doSetVar(
+                                @if (LEN_FIRST) {
+                                    @hint CHOOSE_VAR
+                                    @hint SET_SIDES
+                                    varMenu:sides
+                                } @unless (LEN_FIRST) {
+                                    @hint CHOOSE_VAR
+                                    @hint SET_LENGTH
+                                    varMenu:length
+                                },
+                                @hint ASK
+                                getLastAnswer
+                            )
+                        }
+                        @defBlock LEN {
+                            @if (LEN_FIRST) {
+                                @hint LENGTH
+                                var:length
+                            } @unless (LEN_FIRST) {
+                                @if (TWO_VARS) {
+                                    @hint LENGTH
+                                    var:length
+                                } @unless (TWO_VARS) {
+                                    @hint LENGTH
+                                    getLastAnswer
+                                }
+                            }
+                        }
+                        @defBlock SIDES {
+                            @unless (LEN_FIRST) {
+                                @hint SIDES
+                                var:sides
+                            } @if (LEN_FIRST) {
+                                @if (TWO_VARS) {
+                                    @hint SIDES
+                                    var:sides
+                                } @unless (TWO_VARS) {
+                                    @hint SIDES
+                                    getLastAnswer
+                                }
+                            }
+                        }
+                        @hint PEN_DOWN
+                        down
+                        @hint REPEAT
+                        doRepeat(@block SIDES, script {
+                            @anyOrder{
+                                @hint MOVE
+                                forward(@block LEN)
+                                @defBlock DEGREES {
+                                    @hint TURN_AMOUNT1 @hint TURN_AMOUNT2
+                                    reportQuotient(literal:360, @block SIDES)
+                                }
+                                @+or {
+                                    @hint TURN
+                                    turn(@block DEGREES)
+                                    @hint TURN
+                                    turnLeft(@block DEGREES)
+                                }
+                            }
+                        })
+                    }
+                    @hint PEN_UP
+                    up
+                }
+            }
+        }
+    }
+    @anyOrder {
+        @hint VARIABLE @hint SIDES
+        varDec:sides
+        @hint VARIABLE @hint LENGTH
+        varDec:length
+    }
+}
