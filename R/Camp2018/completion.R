@@ -4,9 +4,13 @@ library(ggplot2)
 
 source("../Hints Comparison/util.R")
 
+se <- function(x) ifelse(length(x) == 0, 0, sqrt(var(x, na.rm=T)/sum(!is.na(x))))
+
 runme <- function() {
   logs <- read.csv("../../data/camp/campHS2018.csv", colClasses = c(rep(NA,9), "NULL"))
   logs$time <- strptime(logs$time, "%Y-%m-%d %H:%M:%S")
+  
+  # Load Data
   
   daisyWECols <- 14:15
   daisyObjCols <- 16:24
@@ -14,9 +18,41 @@ runme <- function() {
   daisy <- read.csv("data/hs/daisy-grading.csv")
   daisy <- replaceTimes(daisy, logs, daisyWECols, daisyObjCols)
   daisy$GroupA <- daisy$GroupA == "1"
+  daisy$assignment <- "daisy"
   
-  plotProgress(daisy, daisyObjCols)
-  plotMeanProgress(daisy, daisyObjCols)
+  polyWECols <- 10:11
+  polyObjCols <- 12:16
+  
+  poly <- read.csv("data/hs/poly-grading.csv")
+  poly <- replaceTimes(poly, logs, polyWECols, polyObjCols)
+  poly$GroupA <- poly$GroupA == "1"
+  poly$assignment = "poly"
+  
+  brickWECols <- c()
+  brickObjCols <- 8:12
+  
+  brick <- read.csv("data/hs/brick-grading.csv")
+  brick <- replaceTimes(brick, logs, brickWECols, brickObjCols)
+  brick$GroupA <- brick$GroupA == "1"
+  brick$assignment <- "brick"
+  
+  # Plot progress
+  
+  # TODO: Need to provide a start time, since min(time) will be the first obj finished
+  dProg <- getProgress(daisy, daisyObjCols)
+  pProg <- getProgress(poly, polyObjCols)
+  bProg <- getProgress(brick, brickObjCols)
+  allProg <- rbind(dProg, pProg, bProg)
+  
+  plotMeanProgress(dProg)
+  plotMeanProgress(pProg)
+  plotMeanProgress(bProg)
+  
+  # TODO: count accomplished in each third, see if there's a relationship btw condition and time
+  end <- 45 * 60
+  snapshots <- allProg[allProg$time %in% c(0, end/2, end),]
+  
+  # Daisy Comps
   
   daisy$nComplete <- sapply(1:nrow(daisy), function(i) sum(!is.na(daisy[i,daisyObjCols])))
   daisy$nAttempted <- sapply(1:nrow(daisy), function(i) sum(daisy[i,5:13] >= 1))
@@ -30,16 +66,7 @@ runme <- function() {
   condCompare(daisy$nComplete, daisy$GroupA)
   condCompare(daisy$nAttempted, daisy$GroupA)
   
-  
-  polyWECols <- 10:11
-  polyObjCols <- 12:16
-  
-  poly <- read.csv("data/hs/poly-grading.csv")
-  poly <- replaceTimes(poly, logs, polyWECols, polyObjCols)
-  poly$GroupA <- poly$GroupA == "1"
-  
-  plotProgress(poly, polyObjCols)
-  plotMeanProgress(poly, polyObjCols)
+  #Poly Comps
   
   poly$nComplete <- sapply(1:nrow(poly), function(i) sum(!is.na(poly[i,polyObjCols])))
   poly$nAttempted <- sapply(1:nrow(poly), function(i) sum(poly[i,5:9] >= 1))
@@ -53,15 +80,7 @@ runme <- function() {
   condCompare(poly$nComplete, poly$GroupA)
   condCompare(poly$nAttempted, poly$GroupA)
   
-  brickWECols <- c()
-  brickObjCols <- 8:12
-  
-  brick <- read.csv("data/hs/brick-grading.csv")
-  brick <- replaceTimes(brick, logs, brickWECols, brickObjCols)
-  brick$GroupA <- brick$GroupA == "1"
-  
-  plotProgress(brick, brickObjCols)
-  plotMeanProgress(brick, brickObjCols)
+  # Brick Comps
   
   brick$nComplete <- sapply(1:nrow(brick), function(i) sum(!is.na(brick[i,brickObjCols])))
   brick$nAttempted <- sapply(1:nrow(brick), function(i) sum(brick[i,5:9] >= 1))
@@ -98,30 +117,36 @@ replaceTimes <- function(grades, logs, weCols, objCols) {
   grades
 }
 
-getProgress <- function(grades, objCols, divs=50) {
+getProgress <- function(grades, objCols) {
   start <- min(grades[,objCols], na.rm = T)
   end <- max(grades[,objCols], na.rm = T)
   
+  inc <- 50
+  time <- start
+  
   progress <- NULL
-  for (i in 0:divs) {
-    time <- floor((end - start) * i / divs + start)
+  while (time < end + inc) {
     for (j in 1:nrow(grades)) {
       id <- grades[j,1]
       group <- grades$GroupA[j]
+      assignment <- grades$assignment[j]
       comp <- sum(grades[j,objCols] <= time, na.rm = T)
-      progress <- rbind(progress, data.frame(id=id, group=group, time=time-start, comp=comp))
+      perc <- comp / length(objCols)
+      progress <- rbind(progress, data.frame(id=id, group=group, assignment=assignment, 
+                                             time=time-start, comp=comp, perc=perc))
     }
+    time <- time + inc
   }
   progress
 }
 
-plotProgress <- function(grades, objCols) {
-  progress <- getProgress(grades, objCols)
-  ggplot(progress, aes(x=as.ordered(time),y=comp,fill=group)) + geom_boxplot()
+plotProgress <- function(progress) {
+  ggplot(progress, aes(x=as.ordered(time),y=perc,fill=group)) + geom_boxplot() + theme_bw()
 }
 
-plotMeanProgress <- function(grades, objCols) {
-  progress <- getProgress(grades, objCols)
-  mProgress <- ddply(progress, c("group", "time"), summarize, mComp=mean(comp))
-  ggplot(mProgress, aes(x=time,y=mComp,group=group,color=group)) + geom_line() + geom_vline(xintercept = 45*60)
+plotMeanProgress <- function(progress) {
+  mProgress <- ddply(progress, c("group", "time"), summarize, mPerc = mean(perc), sePerc = se(perc))
+  ggplot(mProgress, aes(x=time,y=mPerc,group=group,color=group)) + 
+    geom_line() + geom_ribbon(aes(ymin=mPerc-sePerc, ymax=mPerc+sePerc, x=time, fill=group), alpha=0.5, color="gray") + 
+    geom_vline(xintercept = 45*60) + theme_bw()
 }
