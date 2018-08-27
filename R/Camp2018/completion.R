@@ -20,6 +20,8 @@ runme <- function() {
   daisy$GroupA <- daisy$GroupA == "1"
   daisy$assignment <- "daisy"
   
+  daisyStart <- as.numeric(strptime("2018-07-23 13:09:00", "%Y-%m-%d %H:%M:%S"))
+  
   polyWECols <- 10:11
   polyObjCols <- 12:16
   
@@ -98,16 +100,16 @@ runme <- function() {
 replaceTimes <- function(grades, logs, weCols, objCols) {
   allCols <- c(weCols, objCols)
   idMap <- data.frame(id=unique(unlist(grades[,allCols])))
-  idMap <- merge(idMap, logs[1:3], all.y = T)
+  idMap <- merge(idMap, logs[1:3], all.x = T)
   missing <- idMap$id[!is.na(idMap$id) & is.na(idMap$time)]
-  if (length(missing) > 0) {
+  if (sum(missing != -1) > 0) {
     stop(paste('Missing IDs:', str(missing)))
   }
   idMap$time <- as.numeric(idMap$time)
   
   for (i in allCols) {
     tmp <- data.frame(id=grades[,i])
-    tmp <- merge(tmp, idMap, all.x = T)
+    tmp <- join(tmp, idMap, by="id", type="left")
     if (sum(tmp$id == -1) != sum(is.na(tmp$time))) {
       print(tmp[,c("id", "time")])
       stop('Missing IDs')
