@@ -83,7 +83,7 @@ public class Sprite extends Code implements IHasID {
 		List<Script> scripts = getScripts(canon);
 		addVariables(ac, variables);
 		ac.add(scripts);
-		if (scripts != this.scripts) ac.add(new Reorder(this.scripts, scripts));
+		if (scripts != this.scripts) ac.add(new Reorder(this.scripts, scripts, variables.size()));
 		ac.add(blocks.getWithEdits(true));
 	}
 

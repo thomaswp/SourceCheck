@@ -519,10 +519,13 @@ public abstract class Node extends StringHashable implements INode {
 				}
 				if (c instanceof Reorder) {
 					int[] reorderings = ((Reorder) c).reordering;
+					int originalIndex = index;
 					index = ArrayUtils.indexOf(reorderings, index);
 					if (index == -1) {
+						System.err.println(node.parent);
+						System.err.println(node.type);
 						throw new RuntimeException("Invalid reorder index: " +
-								index + ", " + Arrays.toString(reorderings));
+								originalIndex + ", " + Arrays.toString(reorderings));
 					}
 				}
 			}
