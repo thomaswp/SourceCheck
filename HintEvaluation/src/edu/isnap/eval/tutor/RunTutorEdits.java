@@ -51,10 +51,10 @@ public class RunTutorEdits extends TutorEdits {
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
 		RatingDataset dataset = iSnapF16F17;
-//		dataset = ITAPS16;
+		dataset = ITAPS16;
 		Source source = Source.StudentData;
-		HintAlgorithm algorithm = SourceCheck;
-		boolean debug = true;
+		HintAlgorithm algorithm = CTD;
+		boolean debug = false;
 		boolean writeHints = false;
 
 //		writeAllHintSets(iSnapF16F17, ITAPS16);
