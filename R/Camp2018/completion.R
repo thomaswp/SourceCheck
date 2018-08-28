@@ -5,6 +5,8 @@ library(ggplot2)
 source("../Hints Comparison/util.R")
 
 se <- function(x) ifelse(length(x) == 0, 0, sqrt(var(x, na.rm=T)/sum(!is.na(x))))
+tr <- function(x) ifelse(is.na(x), F, x)
+range1 <- function(x) max(x, na.rm=T) - min(x, na.rm=T)
 
 runme <- function() {
   logs <- read.csv("../../data/camp/campHS2018.csv", colClasses = c(rep(NA,9), "NULL"))
@@ -16,85 +18,111 @@ runme <- function() {
   daisyObjCols <- 16:24
   
   daisy <- read.csv("data/hs/daisy-grading.csv")
+  daisy$assignmentID <- "DaisyDesign"
   daisy <- replaceTimes(daisy, logs, daisyWECols, daisyObjCols)
   daisy$GroupA <- daisy$GroupA == "1"
-  daisy$assignment <- "daisy"
   
   daisyStart <- as.numeric(strptime("2018-07-23 13:09:00", "%Y-%m-%d %H:%M:%S"))
+  daisyEnd <- as.numeric(strptime("2018-07-23 13:55:00", "%Y-%m-%d %H:%M:%S"))
+  # manually check that the start time is valid (investigate outliers)
+  # boxplot(daisy$startTime - daisyStart)
+  # then use the same start time for everyone
+  daisy$startTime <- daisyStart
+  daisy$duration <- daisy$endTime - daisy$startTime
+  # manually check any particularly short-druation ones
+  # daisy[order(daisy$duration), c(1,32)]
   
   polyWECols <- 10:11
   polyObjCols <- 12:16
   
   poly <- read.csv("data/hs/poly-grading.csv")
+  poly$assignmentID = "SpiralPolygon"
   poly <- replaceTimes(poly, logs, polyWECols, polyObjCols)
   poly$GroupA <- poly$GroupA == "1"
-  poly$assignment = "poly"
+  
+  polyStart <- as.numeric(strptime("2018-07-24 9:04:00", "%Y-%m-%d %H:%M:%S"))
+  polyEnd <- as.numeric(strptime("2018-07-24 9:50:00", "%Y-%m-%d %H:%M:%S"))
+  # boxplot(poly$startTime - polyStart)
+  poly$startTime <- polyStart
+  poly$duration <- poly$endTime - poly$startTime
+  # poly[order(poly$duration), c(1,21)]
   
   brickWECols <- c()
   brickObjCols <- 8:12
   
   brick <- read.csv("data/hs/brick-grading.csv")
+  brick$assignmentID <- "BrickWall"
   brick <- replaceTimes(brick, logs, brickWECols, brickObjCols)
   brick$GroupA <- brick$GroupA == "1"
-  brick$assignment <- "brick"
+  
+  brickStart <- as.numeric(strptime("2018-07-24 10:15:00", "%Y-%m-%d %H:%M:%S"))
+  brickEnd <- as.numeric(strptime("2018-07-24 11:00:00", "%Y-%m-%d %H:%M:%S"))
+  # boxplot(brick$startTime - brickStart)
+  brick$startTime <- brickStart
+  brick$duration <- brick$endTime - brick$startTime
+  # brick[order(brick$duration), c(1,18)]
   
   # Plot progress
   
-  # TODO: Need to provide a start time, since min(time) will be the first obj finished
   dProg <- getProgress(daisy, daisyObjCols)
   pProg <- getProgress(poly, polyObjCols)
   bProg <- getProgress(brick, brickObjCols)
   allProg <- rbind(dProg, pProg, bProg)
   
-  plotMeanProgress(dProg)
-  plotMeanProgress(pProg)
-  plotMeanProgress(bProg)
+  plotMeanProgress(dProg, daisyEnd - daisyStart)
+  plotMeanProgress(pProg, polyEnd - polyStart)
+  plotMeanProgress(bProg, brickEnd - brickStart)
   
-  # TODO: count accomplished in each third, see if there's a relationship btw condition and time
-  end <- 45 * 60
-  snapshots <- allProg[allProg$time %in% c(0, end/2, end),]
+  
+  daisyPostWE <- daisy
+  daisyPostWE$startTime <- daisyPostWE$RowID4.Draw.a.daisy.design
+  plotMeanProgress(getProgress(daisyPostWE, 18:24), daisyEnd - daisyStart)
+  
+  polyPostWE <- poly
+  polyPostWE$startTime <- polyPostWE$RowID3.Draw.a.squiral..WE.step.
+  plotMeanProgress(getProgress(polyPostWE, 13:16), polyEnd - polyStart)
+  
   
   # Daisy Comps
   
-  daisy$nComplete <- sapply(1:nrow(daisy), function(i) sum(!is.na(daisy[i,daisyObjCols])))
+  daisy$nComplete <- sapply(1:nrow(daisy), function(i) sum(tr(daisy[i,daisyObjCols] <= daisyEnd)))
   daisy$nAttempted <- sapply(1:nrow(daisy), function(i) sum(daisy[i,5:13] >= 1))
   
   hist(daisy$nComplete)
-  hist(daisy$nAttempted)
-  
-  ggplot(daisy, aes(x=GroupA, y=nComplete)) + geom_boxplot()
-  ggplot(daisy, aes(x=GroupA, y=nAttempted)) + geom_boxplot()
+  ggplot(daisy, aes(x=GroupA, y=nComplete)) + geom_violin() + geom_boxplot(width=0.2)
   
   condCompare(daisy$nComplete, daisy$GroupA)
   condCompare(daisy$nAttempted, daisy$GroupA)
   
+  # Sig diff at t=15
+  condCompare(dProg$comp, dProg$group, filter=dProg$time == 15*60)
+  
   #Poly Comps
   
-  poly$nComplete <- sapply(1:nrow(poly), function(i) sum(!is.na(poly[i,polyObjCols])))
+  poly$nComplete <- sapply(1:nrow(poly), function(i) sum(tr(poly[i,polyObjCols] <= polyEnd)))
   poly$nAttempted <- sapply(1:nrow(poly), function(i) sum(poly[i,5:9] >= 1))
   
   hist(poly$nComplete)
-  hist(poly$nAttempted)
   
-  ggplot(poly, aes(x=GroupA, y=nComplete)) + geom_boxplot()
-  ggplot(poly, aes(x=GroupA, y=nAttempted)) + geom_boxplot()
+  ggplot(poly, aes(x=GroupA, y=nComplete)) + geom_violin() + geom_boxplot(width=0.2)
   
   condCompare(poly$nComplete, poly$GroupA)
-  condCompare(poly$nAttempted, poly$GroupA)
+  
+  # Sig diff at t=20
+  condCompare(pProg$comp, pProg$group, filter=pProg$time == 20*60)
   
   # Brick Comps
   
-  brick$nComplete <- sapply(1:nrow(brick), function(i) sum(!is.na(brick[i,brickObjCols])))
+  brick$nComplete <- sapply(1:nrow(brick), function(i) sum(tr(brick[i,brickObjCols] <= brickEnd)))
   brick$nAttempted <- sapply(1:nrow(brick), function(i) sum(brick[i,5:9] >= 1))
   
   hist(brick$nComplete)
-  hist(brick$nAttempted)
   
-  ggplot(brick, aes(x=GroupA, y=nComplete)) + geom_boxplot()
-  ggplot(brick, aes(x=GroupA, y=nAttempted)) + geom_boxplot()
+  ggplot(brick, aes(x=GroupA, y=nComplete)) + geom_violin() + geom_boxplot(width=0.2)
   
   condCompare(brick$nComplete, brick$GroupA)
-  condCompare(brick$nAttempted, brick$GroupA)
+  
+  condCompare(bProg$comp, bProg$group, filter=bProg$time == 35*60)
 }
 
 replaceTimes <- function(grades, logs, weCols, objCols) {
@@ -116,26 +144,39 @@ replaceTimes <- function(grades, logs, weCols, objCols) {
     }
     grades[,i] <- tmp$time
   }
+  
+  names(grades)[1] <- "projectID"
+  grades$startTime <- grades$endTime <- NA
+  for (i in 1:nrow(grades)) {
+    assignmentID <- grades$assignmentID[i]
+    projectID <- as.character(grades$projectID[i])
+    times <- logs[(logs$assignmentID == assignmentID | logs$assignmentID == "demo") & 
+                   logs$projectID == projectID, "time"]
+    start <- as.numeric(min(times))
+    grades$startTime[i] <- start
+    grades$endTime[i] <- as.numeric(max(times[times < start + 60 * 60]))
+  }
   grades
 }
 
 getProgress <- function(grades, objCols) {
-  start <- min(grades[,objCols], na.rm = T)
-  end <- max(grades[,objCols], na.rm = T)
+  start <- min(grades$startTime, na.rm=T)
+  end <- max(grades$duration)
   
   inc <- 50
-  time <- start
+  time <- 0
   
   progress <- NULL
   while (time < end + inc) {
     for (j in 1:nrow(grades)) {
       id <- grades[j,1]
       group <- grades$GroupA[j]
-      assignment <- grades$assignment[j]
-      comp <- sum(grades[j,objCols] <= time, na.rm = T)
+      assignmentID <- grades$assignmentID[j]
+      startTime <- grades$startTime[j]
+      comp <- sum(grades[j,objCols] <= startTime + time, na.rm = T)
       perc <- comp / length(objCols)
-      progress <- rbind(progress, data.frame(id=id, group=group, assignment=assignment, 
-                                             time=time-start, comp=comp, perc=perc))
+      progress <- rbind(progress, data.frame(id=id, group=group, assignmentID=assignmentID, 
+                                             time=time, realTime=time+startTime-start, comp=comp, perc=perc))
     }
     time <- time + inc
   }
@@ -146,9 +187,15 @@ plotProgress <- function(progress) {
   ggplot(progress, aes(x=as.ordered(time),y=perc,fill=group)) + geom_boxplot() + theme_bw()
 }
 
-plotMeanProgress <- function(progress) {
-  mProgress <- ddply(progress, c("group", "time"), summarize, mPerc = mean(perc), sePerc = se(perc))
-  ggplot(mProgress, aes(x=time,y=mPerc,group=group,color=group)) + 
-    geom_line() + geom_ribbon(aes(ymin=mPerc-sePerc, ymax=mPerc+sePerc, x=time, fill=group), alpha=0.5, color="gray") + 
-    geom_vline(xintercept = 45*60) + theme_bw()
+plotMeanProgress <- function(progress, cutoff = 45*60) {
+  progress$working <- tr(progress$realTime < cutoff)
+  mProgress <- ddply(progress, c("group", "time"), summarize, 
+                     mPerc = mean(perc[working]), sePerc = se(perc[working]), pWorking=mean(working))
+  mProgress <- mProgress[mProgress$time <= cutoff,]
+  ggplot(mProgress) + 
+    geom_line(aes(x=time,y=mPerc,group=group,color=group), size=1) + 
+    geom_line(aes(x=time,y=pWorking,group=group,color=group), linetype=2, size=1) + 
+    geom_ribbon(aes(ymin=mPerc-sePerc, ymax=mPerc+sePerc, x=time, fill=group), alpha=0.3, color="gray") +
+    #geom_ribbon(aes(ymin=mPerc-sePerc*1.96, ymax=mPerc+sePerc*1.96, x=time, fill=group), alpha=0.15, color="NA") + 
+    theme_bw()
 }
