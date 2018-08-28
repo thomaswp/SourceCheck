@@ -1,12 +1,15 @@
 
 library(plyr)
 library(ggplot2)
+library(survival)
+library(survminer)
 
 source("../Hints Comparison/util.R")
 
 se <- function(x) ifelse(length(x) == 0, 0, sqrt(var(x, na.rm=T)/sum(!is.na(x))))
 tr <- function(x) ifelse(is.na(x), F, x)
 range1 <- function(x) max(x, na.rm=T) - min(x, na.rm=T)
+min.d <- function(x, default) if (length(x) == 0) default else min(x)
 
 runme <- function() {
   logs <- read.csv("../../data/camp/campHS2018.csv", colClasses = c(rep(NA,9), "NULL"))
@@ -75,8 +78,11 @@ runme <- function() {
   
   
   daisyPostWE <- daisy
+  daisyPostWEProg <- getProgress(daisyPostWE, 18:24)
   daisyPostWE$startTime <- daisyPostWE$RowID4.Draw.a.daisy.design
-  plotMeanProgress(getProgress(daisyPostWE, 18:24), daisyEnd - daisyStart)
+  plotMeanProgress(daisyPostWEProg, daisyEnd - daisyStart)
+  daisyDuration <- daisyEnd - daisyStart
+  survivalPlot(daisyPostWE, daisyDuration, 3)
   
   polyPostWE <- poly
   polyPostWE$startTime <- polyPostWE$RowID3.Draw.a.squiral..WE.step.
@@ -123,6 +129,20 @@ runme <- function() {
   condCompare(brick$nComplete, brick$GroupA)
   
   condCompare(bProg$comp, bProg$group, filter=bProg$time == 35*60)
+}
+
+survivalPlot <- function(progress, duration, n) {
+  progress$duration <- duration
+  progress <- progress[progress$realTime <= duration,]
+  valid <- ddply(progress,
+                  c("id", "group", "duration"), summarize,
+                  maxTime = duration - min(realTime),
+                  time = min.d(time[comp >= n], maxTime), 
+                  event = time!=maxTime)
+  surv <- Surv(time=valid$time, event=valid$event)
+  fit <- survfit(surv ~ group, data=valid)
+  do.call("ggsurvplot", list(fit, pval=T, data=valid))
+  #ggsurvplot(fit, pval=T, data=valid)
 }
 
 replaceTimes <- function(grades, logs, weCols, objCols) {
