@@ -78,16 +78,56 @@ runme <- function() {
   
   
   daisyPostWE <- daisy
-  daisyPostWEProg <- getProgress(daisyPostWE, 18:24)
   daisyPostWE$startTime <- daisyPostWE$RowID4.Draw.a.daisy.design
+  daisyPostWEProg <- getProgress(daisyPostWE, 18:24, 10)
   plotMeanProgress(daisyPostWEProg, daisyEnd - daisyStart)
   daisyDuration <- daisyEnd - daisyStart
-  survivalPlot(daisyPostWE, daisyDuration, 3)
+  
+  valid <- survivalPlot(daisyPostWEProg, daisyDuration, 3)
+  surv <- Surv(time=valid$time, event=valid$event)
+  fit <- survfit(surv ~ group, data=valid)
+  ggsurvplot(fit, pval=T, data=valid)
+  
+  valid1 <- survivalPlot(daisyPostWEProg, daisyDuration, 1)
+  surv1 <- Surv(time=valid1$time, event=valid1$event)
+  fit1 <- survfit(surv1 ~ group, data=valid1)
+  ggsurvplot(fit1, pval=T, data=valid)
+  
+  valid2 <- survivalPlot(daisyPostWEProg, daisyDuration, 2)
+  surv2 <- Surv(time=valid2$time, event=valid2$event)
+  fit2 <- survfit(surv2 ~ group, data=valid2)
+  ggsurvplot(fit2, pval=T, data=valid)
+  
+  valid3 <- survivalPlot(daisyPostWEProg, daisyDuration, 3)
+  surv3 <- Surv(time=valid3$time, event=valid3$event)
+  fit3 <- survfit(surv3 ~ group, data=valid3)
+  ggsurvplot(fit3, pval=T, data=valid)
+  
   
   polyPostWE <- poly
   polyPostWE$startTime <- polyPostWE$RowID3.Draw.a.squiral..WE.step.
-  plotMeanProgress(getProgress(polyPostWE, 13:16), polyEnd - polyStart)
+  polyPostWEProg <- getProgress(polyPostWE, 13:16)
+  plotMeanProgress(polyPostWEProg, polyEnd - polyStart)
+  polyDuration <- polyEnd - polyStart
   
+  valid <- survivalPlot(polyPostWEProg, polyDuration, 3)
+  surv <- Surv(time=valid$time, event=valid$event)
+  fit <- survfit(surv ~ group, data=valid)
+  ggsurvplot(fit, pval=T, data=valid)
+  
+  test <- data.frame(time = fit$time, comp = 1-fit$surv, groupA=c(rep(F, fit$strata[1]), rep(T, fit$strata[2])), censor=fit$n.censor)
+  if (sum(test$time == 0 & test$groupA) == 0) test <- rbind(test, data.frame(time = 0, comp=0, groupA=T, censor=F))
+  if (sum(test$time == 0 & !test$groupA) == 0) test <- rbind(test, data.frame(time = 0, comp=0, groupA=F, censor=F))
+  test$real <- F
+  valid <- valid[-nrow(valid),]
+  valid$comp <- sapply(1:nrow(valid), function(i) {
+    time <- valid$time[i]
+    group <- valid$group[i]
+    sum(valid$event[valid$time <= time & valid$group == group & valid$event]) / sum(valid$group == group)
+  })
+  test2 <- data.frame(time=valid$time, comp=valid$comp, groupA=valid$group, censor=F, real=T)
+  test <- rbind(test, test2)
+  ggplot(test, aes(x=time, y=comp, group=paste(groupA,real), color=groupA)) + geom_line(aes(linetype=real)) + geom_point(aes(shape=as.factor(censor)))
   
   # Daisy Comps
   
@@ -131,18 +171,15 @@ runme <- function() {
   condCompare(bProg$comp, bProg$group, filter=bProg$time == 35*60)
 }
 
-survivalPlot <- function(progress, duration, n) {
-  progress$duration <- duration
+survivalPlot <- function(progress, duration, minComp) {
+  # progress$duration <- duration
   progress <- progress[progress$realTime <= duration,]
   valid <- ddply(progress,
-                  c("id", "group", "duration"), summarize,
+                  c("id", "group"), here(summarize),
                   maxTime = duration - min(realTime),
-                  time = min.d(time[comp >= n], maxTime), 
+                  time = min.d(time[comp >= minComp], maxTime), 
                   event = time!=maxTime)
-  surv <- Surv(time=valid$time, event=valid$event)
-  fit <- survfit(surv ~ group, data=valid)
-  do.call("ggsurvplot", list(fit, pval=T, data=valid))
-  #ggsurvplot(fit, pval=T, data=valid)
+  return (valid)
 }
 
 replaceTimes <- function(grades, logs, weCols, objCols) {
@@ -179,11 +216,10 @@ replaceTimes <- function(grades, logs, weCols, objCols) {
   grades
 }
 
-getProgress <- function(grades, objCols) {
+getProgress <- function(grades, objCols, inc=50) {
   start <- min(grades$startTime, na.rm=T)
   end <- max(grades$duration)
   
-  inc <- 50
   time <- 0
   
   progress <- NULL
