@@ -29,6 +29,8 @@ public class MTurkSolutions extends Dataset {
 
 	public final static Assignment PolygonMakerSimple =
 			new TemplateAssignment("polygonMakerSimple");
+	public final static Assignment DrawTriangles =
+			new TemplateAssignment("drawTriangles");
 
 	public final static Assignment[] All = {
 		PolygonMakerSimple
