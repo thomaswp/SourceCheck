@@ -3,8 +3,11 @@ library(plyr)
 library(ggplot2)
 library(survival)
 library(survminer)
+library(scales)
 
 source("../Hints Comparison/util.R")
+
+twoColors <- c("#a1d99b","#2c7fb8")
 
 se <- function(x) ifelse(length(x) == 0, 0, sqrt(var(x, na.rm=T)/sum(!is.na(x))))
 tr <- function(x) ifelse(is.na(x), F, x)
@@ -27,6 +30,7 @@ runme <- function() {
   
   daisyStart <- as.numeric(strptime("2018-07-23 13:09:00", "%Y-%m-%d %H:%M:%S"))
   daisyEnd <- as.numeric(strptime("2018-07-23 13:55:00", "%Y-%m-%d %H:%M:%S"))
+  daisyDuration <- daisyEnd - daisyStart
   # manually check that the start time is valid (investigate outliers)
   # boxplot(daisy$startTime - daisyStart)
   # then use the same start time for everyone
@@ -45,6 +49,7 @@ runme <- function() {
   
   polyStart <- as.numeric(strptime("2018-07-24 9:04:00", "%Y-%m-%d %H:%M:%S"))
   polyEnd <- as.numeric(strptime("2018-07-24 9:50:00", "%Y-%m-%d %H:%M:%S"))
+  polyDuration <- polyEnd - polyStart
   # boxplot(poly$startTime - polyStart)
   poly$startTime <- polyStart
   poly$duration <- poly$endTime - poly$startTime
@@ -72,6 +77,8 @@ runme <- function() {
   bProg <- getProgress(brick, brickObjCols)
   allProg <- rbind(dProg, pProg, bProg)
   
+  plotMeanProgressAll(allProg)
+  
   plotMeanProgress(dProg, daisyEnd - daisyStart)
   plotMeanProgress(pProg, polyEnd - polyStart)
   plotMeanProgress(bProg, brickEnd - brickStart)
@@ -79,55 +86,30 @@ runme <- function() {
   
   daisyPostWE <- daisy
   daisyPostWE$startTime <- daisyPostWE$RowID4.Draw.a.daisy.design
-  daisyPostWEProg <- getProgress(daisyPostWE, 18:24, 10)
+  daisyPostWEProg <- getProgress(daisyPostWE, 18:24)
   plotMeanProgress(daisyPostWEProg, daisyEnd - daisyStart)
-  daisyDuration <- daisyEnd - daisyStart
   
-  valid <- survivalPlot(daisyPostWEProg, daisyDuration, 3)
+  valid <- survivalPlot(daisyPostWE, 18:24, daisyEnd, 3)
   surv <- Surv(time=valid$time, event=valid$event)
-  fit <- survfit(surv ~ group, data=valid)
+  fit <- survfit(surv ~ groupA, data=valid)
   ggsurvplot(fit, pval=T, data=valid)
-  
-  valid1 <- survivalPlot(daisyPostWEProg, daisyDuration, 1)
-  surv1 <- Surv(time=valid1$time, event=valid1$event)
-  fit1 <- survfit(surv1 ~ group, data=valid1)
-  ggsurvplot(fit1, pval=T, data=valid)
-  
-  valid2 <- survivalPlot(daisyPostWEProg, daisyDuration, 2)
-  surv2 <- Surv(time=valid2$time, event=valid2$event)
-  fit2 <- survfit(surv2 ~ group, data=valid2)
-  ggsurvplot(fit2, pval=T, data=valid)
-  
-  valid3 <- survivalPlot(daisyPostWEProg, daisyDuration, 3)
-  surv3 <- Surv(time=valid3$time, event=valid3$event)
-  fit3 <- survfit(surv3 ~ group, data=valid3)
-  ggsurvplot(fit3, pval=T, data=valid)
-  
+  ddply(valid, c("groupA"), summarize, pComp=mean(event))
+  # extractSurvivalData(fit, valid)
   
   polyPostWE <- poly
   polyPostWE$startTime <- polyPostWE$RowID3.Draw.a.squiral..WE.step.
   polyPostWEProg <- getProgress(polyPostWE, 13:16)
   plotMeanProgress(polyPostWEProg, polyEnd - polyStart)
-  polyDuration <- polyEnd - polyStart
   
-  valid <- survivalPlot(polyPostWEProg, polyDuration, 3)
+  valid <- survivalPlot(polyPostWE, 13:16, polyEnd, 3)
   surv <- Surv(time=valid$time, event=valid$event)
-  fit <- survfit(surv ~ group, data=valid)
+  fit <- survfit(surv ~ groupA, data=valid)
   ggsurvplot(fit, pval=T, data=valid)
+  ddply(valid, c("groupA"), summarize, pComp=mean(event))
+  extractSurvivalData(fit, valid)
   
-  test <- data.frame(time = fit$time, comp = 1-fit$surv, groupA=c(rep(F, fit$strata[1]), rep(T, fit$strata[2])), censor=fit$n.censor)
-  if (sum(test$time == 0 & test$groupA) == 0) test <- rbind(test, data.frame(time = 0, comp=0, groupA=T, censor=F))
-  if (sum(test$time == 0 & !test$groupA) == 0) test <- rbind(test, data.frame(time = 0, comp=0, groupA=F, censor=F))
-  test$real <- F
-  valid <- valid[-nrow(valid),]
-  valid$comp <- sapply(1:nrow(valid), function(i) {
-    time <- valid$time[i]
-    group <- valid$group[i]
-    sum(valid$event[valid$time <= time & valid$group == group & valid$event]) / sum(valid$group == group)
-  })
-  test2 <- data.frame(time=valid$time, comp=valid$comp, groupA=valid$group, censor=F, real=T)
-  test <- rbind(test, test2)
-  ggplot(test, aes(x=time, y=comp, group=paste(groupA,real), color=groupA)) + geom_line(aes(linetype=real)) + geom_point(aes(shape=as.factor(censor)))
+  condCompare(daisy$RowID4.Draw.a.daisy.design, daisy$GroupA)
+  condCompare(poly$RowID3.Draw.a.squiral..WE.step., poly$GroupA)
   
   # Daisy Comps
   
@@ -171,19 +153,69 @@ runme <- function() {
   condCompare(bProg$comp, bProg$group, filter=bProg$time == 35*60)
 }
 
-survivalPlot <- function(progress, duration, minComp) {
-  # progress$duration <- duration
-  progress <- progress[progress$realTime <= duration,]
-  valid <- ddply(progress,
-                  c("id", "group"), here(summarize),
-                  maxTime = duration - min(realTime),
-                  time = min.d(time[comp >= minComp], maxTime), 
-                  event = time!=maxTime)
+extractSurvivalData <- function(fit, valid) {
+  test <- data.frame(time = fit$time, comp = 1-fit$surv, groupA=c(rep(F, fit$strata[1]), rep(T, fit$strata[2])), censor=fit$n.censor)
+  if (sum(test$time == 0 & test$groupA) == 0) test <- rbind(test, data.frame(time = 0, comp=0, groupA=T, censor=F))
+  if (sum(test$time == 0 & !test$groupA) == 0) test <- rbind(test, data.frame(time = 0, comp=0, groupA=F, censor=F))
+  return(test)
+  test$real <- F
+  valid <- valid[-nrow(valid),]
+  valid$comp <- sapply(1:nrow(valid), function(i) {
+    time <- valid$time[i]
+    group <- valid$group[i]
+    sum(valid$event[valid$time <= time & valid$group == group & valid$event]) / sum(valid$group == group)
+  })
+  test2 <- data.frame(time=valid$time, comp=valid$comp, groupA=valid$group, censor=F, real=T)
+  test <- rbind(test, test2)
+  
+  test <- test[!test$censor & !test$real, ]
+  test$weight <- sapply(1:nrow(test), function(i) {
+    group <- test$groupA[i]
+    comp <- test$comp[i]
+    lesser <- test$comp[test$groupA==group & test$comp < comp]
+    if (length(lesser) == 0) return (comp)
+    return (comp - max(lesser))
+  })
+  ddply(test, c("groupA", "real"), summarize, mComp=sum(weight * time)/60, sdCompIsh=sqrt(sum((mComp-time)^2 * weight))/60)
+  
+  # ggplot(test, aes(x=time, y=comp, group=paste(groupA,real), color=groupA)) + geom_line(aes(linetype=real)) + geom_point(aes(shape=as.factor(censor)))
+}
+
+survivalPlot <- function(grades, objCols, endTime, minComp) {
+  valid <- NULL
+  for (i in 1:nrow(grades)) {
+    id <- grades$projectID[i]
+    groupA <- grades$GroupA[i]
+    startTime <- grades$startTime[i]
+    maxTime <- endTime - startTime
+    times <- grades[i,objCols]
+    times <- times[!is.na(times)]
+    times <- times[times <= endTime]
+    if (is.na(startTime)) {
+      time <- NA
+      event <- F
+    } else if (length(times) < minComp) {
+      time <- maxTime
+      event <- F
+    } else {
+      times <- times[order(times)]
+      time <- times[minComp] - startTime
+      event <- T
+    }
+    valid <- rbind(valid, data.frame(id=id, groupA=groupA, time=time, event=event))
+  }
+  valid <- valid[order(valid$id, valid$groupA, valid$time),]
   return (valid)
 }
 
 replaceTimes <- function(grades, logs, weCols, objCols) {
   allCols <- c(weCols, objCols)
+  # For now, remove all times for incomplete objectives
+  # (may want to change this later if we decide to analyze attempted times)
+  for (i in 1:length(allCols)) {
+    col <- allCols[i]
+    grades[,col] <- ifelse(grades[,i+2] == 2, grades[,col], -1)
+  }
   idMap <- data.frame(id=unique(unlist(grades[,allCols])))
   idMap <- merge(idMap, logs[1:3], all.x = T)
   missing <- idMap$id[!is.na(idMap$id) & is.na(idMap$time)]
@@ -241,6 +273,22 @@ getProgress <- function(grades, objCols, inc=50) {
 
 plotProgress <- function(progress) {
   ggplot(progress, aes(x=as.ordered(time),y=perc,fill=group)) + geom_boxplot() + theme_bw()
+}
+
+
+plotMeanProgressAll <- function(progress, cutoff = 45*60) {
+  progress <- progress[progress$time <= cutoff,]
+  mProgress <- ddply(progress, c("group", "time", "assignmentID"), summarize, 
+                     mPerc = mean(perc), sePerc = se(perc))
+  
+  ggplot(mProgress) + 
+    geom_line(aes(x=time/60,y=mPerc,group=group,color=group), size=1) + 
+    geom_ribbon(aes(ymin=mPerc-sePerc, ymax=mPerc+sePerc, x=time/60, fill=group), alpha=0.3, color="gray") +
+    scale_y_continuous(labels = scales::percent) + 
+    scale_color_manual(values=twoColors, labels=c("B", "A")) + 
+    scale_fill_manual(values=twoColors, guide=F) +
+    labs(x="Time (min)", y="Avg. Objectives Complete", color="Group") +
+    theme_bw() + facet_wrap(~ assignmentID)
 }
 
 plotMeanProgress <- function(progress, cutoff = 45*60) {
