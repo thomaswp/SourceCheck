@@ -520,6 +520,8 @@ public abstract class Node extends StringHashable implements INode {
 				if (c instanceof Reorder) {
 					int[] reorderings = ((Reorder) c).reordering;
 					int originalIndex = index;
+					// Ignore a reorder if this child's index is outside of the reordering range
+					if (originalIndex >= reorderings.length) continue;
 					index = ArrayUtils.indexOf(reorderings, index);
 					if (index == -1) {
 						System.err.println(node.parent);
