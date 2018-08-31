@@ -89,14 +89,21 @@ runme <- function() {
   daisyPostWEProg <- getProgress(daisyPostWE, 18:24)
   plotMeanProgress(daisyPostWEProg, daisyEnd - daisyStart)
   
+  valid <- survivalPlot(daisyPostWE, 18:24, daisyEnd, 2)
   # Median of 10 (group B) is #5.5; Median of 9 (group A) is #5
   # Quartile of 10 (B) is #2.75; Quartile of 9 (A) is #2.5
-  valid <- survivalPlot(daisyPostWE, 18:24, daisyEnd, 3)
+  ddply(valid[valid$event,], c("groupA"), summarize, 
+        quar25 = (time[2] *.5 + time[3] * .5) / 60,
+        med5 = time[5] / 60, 
+        quar275 = (time[2] * .25 + time[3] * .75) / 60,
+        med55 = (time[5] * .5 + time[6] * .5) / 60
+  )
+  ddply(valid, c("groupA"), summarize, pComp=mean(event))
   surv <- Surv(time=valid$time, event=valid$event)
   fit <- survfit(surv ~ groupA, data=valid)
   ggsurvplot(fit, pval=T, data=valid)
   summary(fit)
-  ddply(valid, c("groupA"), summarize, pComp=mean(event))
+  extractSurvivalData(fit, valid)
   
   polyPostWE <- poly
   polyPostWE$startTime <- polyPostWE$RowID3.Draw.a.squiral..WE.step.
@@ -104,14 +111,23 @@ runme <- function() {
   plotMeanProgress(polyPostWEProg, polyEnd - polyStart)
   
   valid <- survivalPlot(polyPostWE, 13:16, polyEnd, 3)
+  # Somehow, due to drop out, now Group A has 10 and Group B 9
+  # So no-WE still has 10 and WE still has 9
+  ddply(valid[valid$event,], c("groupA"), summarize, 
+        quar25 = (time[2] *.5 + time[3] * .5) / 60,
+        med5 = time[5] / 60, 
+        quar275 = (time[2] * .25 + time[3] * .75) / 60,
+        med55 = (time[5] * .5 + time[6] * .5) / 60
+  )
+  ddply(valid, c("groupA"), summarize, pComp=mean(event))
   surv <- Surv(time=valid$time, event=valid$event)
   fit <- survfit(surv ~ groupA, data=valid)
   ggsurvplot(fit, pval=T, data=valid)
+  extractSurvivalData(fit, valid)
   summary(fit)
-  ddply(valid, c("groupA"), summarize, pComp=mean(event))
   
-  condCompare(daisy$RowID4.Draw.a.daisy.design, daisy$GroupA)
-  condCompare(poly$RowID3.Draw.a.squiral..WE.step., poly$GroupA)
+  condCompare((daisy$RowID4.Draw.a.daisy.design - daisyStart) / 60, daisy$GroupA)
+  condCompare((poly$RowID3.Draw.a.squiral..WE.step. - polyStart) / 60, poly$GroupA)
   
   # Daisy Comps
   
@@ -122,7 +138,6 @@ runme <- function() {
   ggplot(daisy, aes(x=GroupA, y=nComplete)) + geom_violin() + geom_boxplot(width=0.2)
   
   condCompare(daisy$nComplete, daisy$GroupA)
-  condCompare(daisy$nAttempted, daisy$GroupA)
   
   # Sig diff at t=15
   condCompare(dProg$comp, dProg$group, filter=dProg$time == 15*60)
@@ -159,20 +174,21 @@ extractSurvivalData <- function(fit, valid) {
   test <- data.frame(time = fit$time, comp = 1-fit$surv, groupA=c(rep(F, fit$strata[1]), rep(T, fit$strata[2])), censor=fit$n.censor)
   if (sum(test$time == 0 & test$groupA) == 0) test <- rbind(test, data.frame(time = 0, comp=0, groupA=T, censor=F))
   if (sum(test$time == 0 & !test$groupA) == 0) test <- rbind(test, data.frame(time = 0, comp=0, groupA=F, censor=F))
-  return(test)
+  #return(test)
   test$real <- F
-  valid <- valid[-nrow(valid),]
+  valid <- valid[!is.na(valid$time),]
   valid$comp <- sapply(1:nrow(valid), function(i) {
     time <- valid$time[i]
     group <- valid$group[i]
     sum(valid$event[valid$time <= time & valid$group == group & valid$event]) / sum(valid$group == group)
   })
+  valid <- 
   test2 <- data.frame(time=valid$time, comp=valid$comp, groupA=valid$group, censor=F, real=T)
   test <- rbind(test, test2)
   
-  return (test)
+  #return (test)
   
-  # ggplot(test, aes(x=time, y=comp, group=paste(groupA,real), color=groupA)) + geom_line(aes(linetype=real)) + geom_point(aes(shape=as.factor(censor)))
+  ggplot(test, aes(x=time, y=comp, group=paste(groupA,real), color=groupA)) + geom_line(aes(linetype=real)) + geom_point(aes(shape=as.factor(censor)))
 }
 
 survivalPlot <- function(grades, objCols, endTime, minComp) {
@@ -198,7 +214,7 @@ survivalPlot <- function(grades, objCols, endTime, minComp) {
     }
     valid <- rbind(valid, data.frame(id=id, groupA=groupA, time=time, event=event))
   }
-  valid <- valid[order(valid$id, valid$groupA, valid$time),]
+  valid <- valid[order(valid$groupA, !valid$event, valid$time),]
   return (valid)
 }
 
