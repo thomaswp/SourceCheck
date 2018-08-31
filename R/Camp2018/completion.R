@@ -132,12 +132,14 @@ runme <- function() {
   # Daisy Comps
   
   daisy$nComplete <- sapply(1:nrow(daisy), function(i) sum(tr(daisy[i,daisyObjCols] <= daisyEnd)))
+  daisy$nCompletePostWE <- sapply(1:nrow(daisy), function(i) sum(tr(daisy[i,18:24] <= daisyEnd)))
   daisy$nAttempted <- sapply(1:nrow(daisy), function(i) sum(daisy[i,5:13] >= 1))
   
   hist(daisy$nComplete)
   ggplot(daisy, aes(x=GroupA, y=nComplete)) + geom_violin() + geom_boxplot(width=0.2)
   
   condCompare(daisy$nComplete, daisy$GroupA)
+  condCompare(daisy$nCompletePostWE, daisy$GroupA)
   
   # Sig diff at t=15
   condCompare(dProg$comp, dProg$group, filter=dProg$time == 15*60)
@@ -145,6 +147,7 @@ runme <- function() {
   #Poly Comps
   
   poly$nComplete <- sapply(1:nrow(poly), function(i) sum(tr(poly[i,polyObjCols] <= polyEnd)))
+  poly$nCompletePostWE <- sapply(1:nrow(poly), function(i) sum(tr(poly[i,13:16] <= polyEnd)))
   poly$nAttempted <- sapply(1:nrow(poly), function(i) sum(poly[i,5:9] >= 1))
   
   hist(poly$nComplete)
@@ -152,6 +155,7 @@ runme <- function() {
   ggplot(poly, aes(x=GroupA, y=nComplete)) + geom_violin() + geom_boxplot(width=0.2)
   
   condCompare(poly$nComplete, poly$GroupA)
+  condCompare(poly$nCompletePostWE, poly$GroupA)
   
   # Sig diff at t=20
   condCompare(pProg$comp, pProg$group, filter=pProg$time == 20*60)
@@ -293,9 +297,9 @@ plotMeanProgressAll <- function(progress, cutoff = 45*60) {
   
   ggplot(mProgress) + 
     geom_line(aes(x=time/60,y=mPerc,group=group,color=group), size=1) + 
-    geom_ribbon(aes(ymin=mPerc-sePerc, ymax=mPerc+sePerc, x=time/60, fill=group), alpha=0.3, color="gray") +
+    geom_ribbon(aes(ymin=mPerc-sePerc, ymax=mPerc+sePerc, x=time/60, fill=group), alpha=0.2, color=NA) +
     scale_y_continuous(labels = scales::percent) + 
-    scale_color_manual(values=twoColors, labels=c("B", "A")) + 
+    scale_color_manual(values=twoColors, labels=c("E2", "E1")) + 
     scale_fill_manual(values=twoColors, guide=F) +
     labs(x="Time (min)", y="Avg. Objectives Complete", color="Group") +
     theme_bw() + facet_wrap(~ assignmentID)
