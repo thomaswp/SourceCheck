@@ -89,12 +89,14 @@ runme <- function() {
   daisyPostWEProg <- getProgress(daisyPostWE, 18:24)
   plotMeanProgress(daisyPostWEProg, daisyEnd - daisyStart)
   
+  # Median of 10 (group B) is #5.5; Median of 9 (group A) is #5
+  # Quartile of 10 (B) is #2.75; Quartile of 9 (A) is #2.5
   valid <- survivalPlot(daisyPostWE, 18:24, daisyEnd, 3)
   surv <- Surv(time=valid$time, event=valid$event)
   fit <- survfit(surv ~ groupA, data=valid)
   ggsurvplot(fit, pval=T, data=valid)
+  summary(fit)
   ddply(valid, c("groupA"), summarize, pComp=mean(event))
-  # extractSurvivalData(fit, valid)
   
   polyPostWE <- poly
   polyPostWE$startTime <- polyPostWE$RowID3.Draw.a.squiral..WE.step.
@@ -105,8 +107,8 @@ runme <- function() {
   surv <- Surv(time=valid$time, event=valid$event)
   fit <- survfit(surv ~ groupA, data=valid)
   ggsurvplot(fit, pval=T, data=valid)
+  summary(fit)
   ddply(valid, c("groupA"), summarize, pComp=mean(event))
-  extractSurvivalData(fit, valid)
   
   condCompare(daisy$RowID4.Draw.a.daisy.design, daisy$GroupA)
   condCompare(poly$RowID3.Draw.a.squiral..WE.step., poly$GroupA)
@@ -168,15 +170,7 @@ extractSurvivalData <- function(fit, valid) {
   test2 <- data.frame(time=valid$time, comp=valid$comp, groupA=valid$group, censor=F, real=T)
   test <- rbind(test, test2)
   
-  test <- test[!test$censor & !test$real, ]
-  test$weight <- sapply(1:nrow(test), function(i) {
-    group <- test$groupA[i]
-    comp <- test$comp[i]
-    lesser <- test$comp[test$groupA==group & test$comp < comp]
-    if (length(lesser) == 0) return (comp)
-    return (comp - max(lesser))
-  })
-  ddply(test, c("groupA", "real"), summarize, mComp=sum(weight * time)/60, sdCompIsh=sqrt(sum((mComp-time)^2 * weight))/60)
+  return (test)
   
   # ggplot(test, aes(x=time, y=comp, group=paste(groupA,real), color=groupA)) + geom_line(aes(linetype=real)) + geom_point(aes(shape=as.factor(censor)))
 }
