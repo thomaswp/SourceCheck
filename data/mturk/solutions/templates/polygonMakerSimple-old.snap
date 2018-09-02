@@ -3,7 +3,7 @@ snapshot {
         :`Using the "pen down" block (under Pen) makes the sprite draw a trail behind it when it moves, which should happen before you draw a polygon.`
     }
     @defHint PEN_UP {
-        :`Using the "pen up" block (under Pen) makes the sprite drop drawing a trail behind it when it moves, which should happen after you draw a polygon.`
+        :`Using the "pen up" block (under Pen) makes the sprite stop drawing a trail behind it when it moves, which should happen after you draw a polygon.`
     }
     @defHint VARIABLE {
         :`You need to create a new variable by going to the "Variables" tab in the top-left corner and pressing "Make a variable."`
