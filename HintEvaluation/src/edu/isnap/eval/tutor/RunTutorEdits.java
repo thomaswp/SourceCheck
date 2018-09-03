@@ -57,7 +57,7 @@ public class RunTutorEdits extends TutorEdits {
 		boolean debug = false;
 		boolean writeHints = false;
 
-//		writeAllHintSets(iSnapF16F17, ITAPS16);
+		writeAllHintSets(iSnapF16F17, ITAPS16);
 
 //		dataset.exportTrainingAndTestData(true);
 //		dataset.writeGoldStandard();
@@ -68,7 +68,7 @@ public class RunTutorEdits extends TutorEdits {
 //		dataset.verifyGoldStandard();
 //		dataset.printData();
 
-		dataset.runHintRating(algorithm, source, debug, writeHints);
+//		dataset.runHintRating(algorithm, source, debug, writeHints);
 //		dataset.runTutorHintBenchmarks(debug);
 //		dataset.writeTutorHintBenchmark();
 

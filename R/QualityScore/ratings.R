@@ -219,17 +219,22 @@ findInterestingRequests <- function(algRequests, ratings) {
                       PQGram=scorePartial[source=="PQGram"],
                       # chf_without_past=scorePartial[source=="chf_without_past"],
                       chf_with_past=scorePartial[source=="chf_with_past"],
+                      gross=scorePartial[source=="gross"],
                       CTD=scorePartial[source=="CTD"],
                       SourceCheck=scorePartial[source=="SourceCheck"],
                       ITAP=(if (sum(source=="ITAP") == 0) NA else scorePartial[source=="ITAP"]))
-  cor(byRequest[byRequest$dataset=="isnap",5:8])
-  mean(cor(byRequest[byRequest$dataset=="isnap",5:8]))
-  KMO(cor(byRequest[byRequest$dataset=="isnap",5:8]))
-  icc(t(byRequest[byRequest$dataset=="isnap",5:8]), type="agreement")
-  cor(byRequest[byRequest$dataset=="itap",5:9])
-  KMO(cor(byRequest[byRequest$dataset=="itap",5:9]))
-  icc(t(byRequest[byRequest$dataset=="itap",5:9]), type="agreement")
   
+  isnapCor <- cor(byRequest[byRequest$dataset=="isnap",5:9])
+  KMO(isnapCor)
+  icc(byRequest[byRequest$dataset=="isnap",5:9], type="agreement")
+  isnapCor[isnapCor == 1] <- NA
+  mean(isnapCor, na.rm=T)
+  
+  itapCor <- cor(byRequest[byRequest$dataset=="itap",5:10])
+  KMO(itapCor)
+  icc(byRequest[byRequest$dataset=="itap",5:10], type="agreement")
+  itapCor[itapCor == 1] <- NA
+  mean(itapCor, na.rm=T)
   
   scores <- getScores(algRequests)
   
@@ -323,6 +328,13 @@ investigateHypotheses <- function() {
   (corITAP <- cor(byRequestFullNorm[byRequestFullNorm$dataset=="itap",5:10], method="spearman"))
   mean(corITAP[corITAP!=1])
   
+### Effect of hint requests
+  
+  # USED: Significant effect of requestID on partial qscore
+  kruskal.test(scorePartial ~ as.factor(requestID), algRequests[algRequests$dataset=="isnap",])
+  kruskal.test(scorePartial ~ as.factor(requestID), algRequests[algRequests$dataset=="itap",])
+  
+  ddply(scores, "dataset", summarize, md=mean(difficulty), medd=median(difficulty))
 
 ### Hint Request Relationships
   
@@ -334,8 +346,9 @@ investigateHypotheses <- function() {
   # It's possible the size and deviance are the same idea
   dsSpear(scores, "requestTreeSize", "medTED")
   # Linear model suggests independent effects from size and deviance, but not nHints (I think?)
-  summary(m <- lm(difficulty ~ requestTreeSize + medTED + nHints + dataset, data=scores))
+  summary(m <- lm(difficulty ~ requestTreeSize + medTED + nHints + traceLength, data=scores[scores$dataset=="isnap",]))
   shapiro.test(m$residuals)
+  qqnorm(m$residuals)
   
 ### Too Much Code
   
@@ -565,7 +578,7 @@ plotComparisonStacked <- function(assignments, dataset) {
   title <- paste("QualityScore Ratings -", if (isnap) "iSnap" else "ITAP")
   textOffsetX <- if (isnap) 0.15 else 0.16
   yMax <- if (isnap) 1.1 else 1.25
-  ylabs <- c("Tutors", "ITAP", "SourceCheck", "CTD", "CHF", "NSNLS", "Zimmerman")
+  ylabs <- c("Tutors", "ITAP", "SourceCheck", "CTD", "CHF", "NSNLS", "TR-ER")
   if (isnap) ylabs <- ylabs[ylabs != "ITAP"]
   
   assignments <- assignments[assignments$dataset == dataset,]
@@ -613,7 +626,7 @@ plotComparisonTogetherStacked <- function(requests) {
   ggplot(melt(together, id=c("dataset", "source")),aes(x=source, y=value, fill=variable)) + geom_bar(stat="identity") +
     suppressWarnings(geom_text(aes(x=source, y=mScoreFull+mScorePartialPlus+0.15, label = sprintf("%.02f (%.02f)", mScoreFull, mScoreFull+mScorePartialPlus), fill=NULL), data = together)) +
     scale_fill_manual(labels=c("Partial", "Full"), values=twoColors) + 
-    scale_x_discrete(labels=rev(c("Tutors", "ITAP", "SourceCheck", "CTD", "CHF", "NSNLS", "Zimmerman"))) +
+    scale_x_discrete(labels=rev(c("Tutors", "ITAP", "SourceCheck", "CTD", "CHF", "NSNLS", "TR-ER"))) +
     scale_y_continuous(limits=c(0, 1.15), breaks = c(0, 0.25, 0.5, 0.75, 1.0)) +
     labs(fill="Match", x="Algorithm", y="QualityScore", title="QualityScore Ratings") +
     theme_bw(base_size = 17) +
