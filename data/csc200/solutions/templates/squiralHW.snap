@@ -21,7 +21,7 @@ snapshot {
         :`Starting from the center, each side of the Squiral will get longer, so you will need a variable to hold the length as the sprite draws each side.`
     }
     @defHint SET_LENGTH {
-        :`Starting from the center, the first side of the Squiral is always the same (short) length, so you should set your length variable before you draw.`
+        :`You should give the length variable an initial value, which will be the smallest side of the Squiral.`
     }
     @defHint MOVE_AND_TURN {
         :`Each time your code repeats, your sprite should draw one side of the Sqruial and turn.`

@@ -30,9 +30,6 @@ snapshot {
     @defHint REPEAT {
         :`The "repeat" block (under Control) allows you to run the same code a fixed number of times, like drawing each side of a polygon.`
     }
-    @defHint TURN {
-        :`The "turn __ degrees" block (under Motion) makes the sprite turn some degrees, like at the corner of a polygon.`
-    }
     @defHint TURN_AMOUNT1 {
         :`The amount the sprite should turn after drawnig each side is related to the number of sides.`
         priority(1)
@@ -43,6 +40,9 @@ snapshot {
     }
     @defHint CUSTOM_BLOCK {
         :`You should create a new block called "draw polygon" and put your code there. You can do this by clicking the "Make a block" button on the bottom-left of the screen.`
+    }
+    @defHint MOVE_AND_TURN {
+        :`Each time your code repeats, your sprite should draw one side of the polygon and turn.`
     }
     stage {
         sprite {
@@ -63,13 +63,14 @@ snapshot {
             }
             @hint REPEAT doRepeat(@hint SIDES_INPUT var:sides, script {
                 @anyOrder {
+                    @hint MOVE_AND_TURN
                     forward(@hint LENGTH_INPUT var:length)
-                    @hint TURN
+                    @hint MOVE_AND_TURN
                     @defBlock TURN {
                         @hint TURN_AMOUNT1 @hint TURN_AMOUNT2
                         reportQuotient(literal, var:sides)
                     }
-                    @hint TURN
+                    @hint MOVE_AND_TURN
                     @or {
                         turn(@block TURN)
                         turnLeft(@block TURN)
