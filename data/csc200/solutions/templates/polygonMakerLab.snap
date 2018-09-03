@@ -1,6 +1,6 @@
 snapshot {
     @defHint TEST {
-        :`Don't forget to test your code once you've made your "draw polygon" block.` You can do this by finding the block, dragging it to the main code area and left clicking on it once.
+        :`Don't forget to test your code once you've made your "draw polygon" block.` You can do this by finding the block, dragging it to the main code area and left clicking on it once.`
     }
     @defHint PEN_DOWN {
         :`Using the "pen down" block (under Pen) makes the sprite draw a trail behind it when it moves, which should happen before you draw a polygon.`

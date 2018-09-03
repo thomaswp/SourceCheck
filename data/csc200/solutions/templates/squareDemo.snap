@@ -1,0 +1,27 @@
+snapshot {
+    @defHint SET_VAR {
+        :`We need to store the size of the square in a variable, which tells us how long each side should be.`
+    }
+    @defHint RANDOM {
+        :`The square should be a different, random size each time it is drawn.`
+    }
+    @defHint VAR {
+        :`Each side of the square should be the same, random length that is stored in the variable.`
+    }
+    stage:Stage {
+        sprite:Sprite {
+            script {
+                receiveGo
+                down
+                @hint SET_VAR @hint var
+                doSetVar(varMenu:length, @hint RANDOM reportRandom(literal:50, literal:100))
+                doRepeat(literal:4, script {
+                    forward(@hint VAR var:length)
+                    turn(literal:90)
+                })
+                up
+            }
+        }
+    }
+    varDec:length
+}
