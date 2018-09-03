@@ -277,8 +277,10 @@ findInterestingRequests <- function(algRequests, ratings) {
 investigateHypotheses <- function() { 
   algRatings <- ratings[ratings$source != "AllTutors" & ratings$source != "chf_without_past",]
   algRatings$matched <- algRatings$type == "Full"
+  algRatings$matchedP <- algRatings$type != "None"
   algRatings$nEdits <- algRatings$nInsertions + algRatings$nDeletions + algRatings$nRelabels - algRatings$nValueInsertions
   algRatings$delOnly <- algRatings$nDeletions == algRatings$nEdits
+  algRatings$delMostly <- algRatings$nDeletions > algRatings$nEdits / 2
   allSame <- function(x) if (length(unique(x)) == 1) head(x, 1) else NA
   matchedHints <- ddply(algRatings[algRatings$matched,], c("dataset", "matchID"), summarize, 
                         n=length(nEdits), delOnly=allSame(delOnly), nEdits=mean(nEdits))
@@ -345,11 +347,31 @@ investigateHypotheses <- function() {
   dsSpear(scores, "difficulty", "traceLength")
   # It's possible the size and deviance are the same idea
   dsSpear(scores, "requestTreeSize", "medTED")
-  # Linear model suggests independent effects from size and deviance, but not nHints (I think?)
-  summary(m <- lm(difficulty ~ requestTreeSize + medTED + nHints + traceLength, data=scores[scores$dataset=="isnap",]))
-  shapiro.test(m$residuals)
-  qqnorm(m$residuals)
   
+  psych::corr.test(scores[scores$dataset=="isnap",c("requestTreeSize", "medTED", "nHints", "traceLength")], method="spearman")
+  psych::corr.test(scores[scores$dataset=="itap",c("requestTreeSize", "medTED", "nHints", "traceLength")], method="spearman")
+  
+  
+  isnapScores <- scores[scores$dataset=="isnap",]
+  fullModel <- lm(difficulty ~ assignmentID + requestTreeSize + medTED + nHints, data=isnapScores)
+  emptyModel <- lm(difficulty ~ 1, data=isnapScores)
+  stepAIC(emptyModel, direction="forward", scope=list(upper=fullModel))
+  m1 <- lm(difficulty ~ requestTreeSize, data=isnapScores)
+  m2 <- lm(difficulty ~ requestTreeSize + medTED, data=isnapScores)
+  anova(emptyModel, m1, m2)
+  summary(m2)
+  shapiro.test(m2$residuals)
+  
+  itapScores <- scores[scores$dataset=="itap",]
+  fullModel <- lm(difficulty ~ assignmentID + requestTreeSize + medTED + nHints, data=itapScores)
+  emptyModel <- lm(difficulty ~ 1, data=itapScores)
+  stepAIC(emptyModel, direction="forward", scope=list(upper=fullModel))
+  m1 <- lm(difficulty ~ medTED, data=itapScores)
+  m2 <- lm(difficulty ~ medTED + assignmentID, data=itapScores)
+  anova(emptyModel, m1, m2)
+  summary(m2)
+  shapiro.test(m2$residuals)
+    
 ### Too Much Code
   
   # Positive correlation between tree size and difficulty
@@ -381,7 +403,11 @@ investigateHypotheses <- function() {
 # Unfiltered Hints
   
   dsSpear(algRequests, "hintCount", "scoreFull")
-  ddply(algRequests, c("dataset", "source"), summarize, chs=cor(hintCount, scoreFull, method="spearman"), mhc=mean(hintCount))
+  dsSpear(algRequests, "hintCount", "scorePartial")
+  ddply(algRequests, c("dataset", "source"), summarize, 
+        chs=cor(hintCount, scoreFull, method="spearman"),
+        chsPartial=cor(hintCount, scorePartial, method="spearman"), 
+        mhc=mean(hintCount))
   
 ### Deviant Code
   
@@ -411,19 +437,20 @@ investigateHypotheses <- function() {
   # 8 hints were matched by 5/6 algorithms for itap
   table(goldStandard$nMatches[goldStandard$dataset=="itap"])
   
-  # (not really used):
   # Non-deletions do _much_ better than delete-only hints
   table(algRatings$delOnly, algRatings$type, algRatings$dataset)
   # There's an issue here with the fact that hints are not at all independent
   # Could some algorithms be better (e.g. with insertions), but also happen to have fewer deletions
   # Should really test within an algorithm, within a hint request
-  fisher.test(algRatings$delOnly[algRatings$dataset=="isnap"], algRatings$matched[algRatings$dataset=="isnap"])
-  fisher.test(algRatings$delOnly[algRatings$dataset=="itap"], algRatings$matched[algRatings$dataset=="itap"])
+  fisher.test(algRatings$delOnly[algRatings$dataset=="isnap"], algRatings$matchedP[algRatings$dataset=="isnap"])
+  fisher.test(algRatings$delOnly[algRatings$dataset=="itap"], algRatings$matchedP[algRatings$dataset=="itap"])
   # For ITAP we actually see that the poor-performing algorithms have more successful deletes, perhaps because there are so few
   ddply(algRatings, c("dataset", "source"), summarize, 
-        successDel=mean(matched[delOnly]), 
-        successNotDel=mean(matched[!delOnly]),
-        oddsRatio=successDel/successNotDel)
+        ndel=sum(delOnly),
+        successDel=mean(matchedP[delOnly]), 
+        successNotDel=mean(matchedP[!delOnly]),
+        oddsRatio=successDel/successNotDel,
+        fishersp=if (!is.na(oddsRatio)) fisher.test(delOnly, matchedP)$p.value else 0)
   # However, we see that only 2.2 and 4.1% of matching hints are deletions
   table(matchedHints$dataset, matchedHints$delOnly)
   ddply(matchedHints, "dataset", summarize, p=mean(delOnly))
