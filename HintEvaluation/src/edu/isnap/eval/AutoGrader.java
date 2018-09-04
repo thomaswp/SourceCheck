@@ -19,11 +19,18 @@ import edu.isnap.parser.elements.Snapshot;
 public class AutoGrader {
 
 	public static void main(String[] args) throws IOException {
-		Snapshot snapshot = Snapshot.parse(new File("A.xml"));
-		Node node = SimpleNodeBuilder.toTree(snapshot, false);
 
-		for (Grader grader : PolygonGraders) {
-			System.out.println(grader.name() + ": " + grader.pass(node));
+		for (File xml : new File("tests").listFiles()) {
+			if (!xml.getName().endsWith(".xml")) return;
+			System.out.println(xml.getName() + ":");
+
+			Snapshot snapshot = Snapshot.parse(xml);
+			Node node = SimpleNodeBuilder.toTree(snapshot, false);
+
+			for (Grader grader : PolygonGraders) {
+				System.out.println(grader.name() + ": " + grader.pass(node));
+			}
+			System.out.println();
 		}
 
 //		Assignment assignments[] = new Assignment[] {
