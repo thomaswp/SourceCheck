@@ -500,6 +500,21 @@ investigateHypotheses <- function() {
   noMatch <- goldStandard[goldStandard$nMatches==0 & goldStandard$MultipleTutors,c("dataset", "year", "hintID")]
   noMatch <- noMatch[order(noMatch$dataset, noMatch$year, noMatch$hintID),]
   write.csv(noMatch, "data/noMatch.csv")
+  
+  
+  ## Tutor ratings
+  
+  allManual <- rbind(manualT1[,1:7], manualT2[,1:7], manualT3[,1:7])
+  names(allManual)[1] <- "assignmentID"
+  names(allManual)[5] <- "ratePriority"
+  uniqueRatings <- newRatingsMT
+  uniqueRatings$nEdits <- uniqueRatings$nInsertions + uniqueRatings$nDeletions + uniqueRatings$nRelabels - uniqueRatings$nValueInsertions
+  uniqueRatings$delOnly <- uniqueRatings$nDeletions == uniqueRatings$nEdits
+  uniqueRatings <- uniqueRatings[,c(intersect(names(allManual), names(uniqueRatings)), "delOnly")]
+  uniqueRatings <- uniqueRatings[!duplicated(uniqueRatings),]
+  allManual <- merge(allManual, uniqueRatings, all.x=T, all.y=F)
+  allManual <- allManual[!is.na(allManual$reason),]
+  table(allManual$reason[allManual$delOnly]) / sum(allManual$delOnly)
 }
 
 loadAllRatings <- function() {
@@ -649,7 +664,7 @@ plotComparisonTogetherStacked <- function(requests) {
   nITAP <- length(unique(requests$requestID[requests$dataset=="itap"]))
   requests <- requests[requests$source != "chf_without_past",]
   together <- ddply(requests, c("dataset", "source"), summarize, mScorePartialPlus=mean(scorePartial)-mean(scoreFull), mScoreFull=mean(scoreFull))
-  
+  #print(together)
   ggplot(melt(together, id=c("dataset", "source")),aes(x=source, y=value, fill=variable)) + geom_bar(stat="identity") +
     suppressWarnings(geom_text(aes(x=source, y=mScoreFull+mScorePartialPlus+0.15, label = sprintf("%.02f (%.02f)", mScoreFull, mScoreFull+mScorePartialPlus), fill=NULL), data = together)) +
     scale_fill_manual(labels=c("Partial", "Full"), values=twoColors) + 
