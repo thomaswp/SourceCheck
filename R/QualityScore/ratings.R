@@ -219,17 +219,22 @@ findInterestingRequests <- function(algRequests, ratings) {
                       PQGram=scorePartial[source=="PQGram"],
                       # chf_without_past=scorePartial[source=="chf_without_past"],
                       chf_with_past=scorePartial[source=="chf_with_past"],
+                      gross=scorePartial[source=="gross"],
                       CTD=scorePartial[source=="CTD"],
                       SourceCheck=scorePartial[source=="SourceCheck"],
                       ITAP=(if (sum(source=="ITAP") == 0) NA else scorePartial[source=="ITAP"]))
-  cor(byRequest[byRequest$dataset=="isnap",5:8])
-  mean(cor(byRequest[byRequest$dataset=="isnap",5:8]))
-  KMO(cor(byRequest[byRequest$dataset=="isnap",5:8]))
-  icc(t(byRequest[byRequest$dataset=="isnap",5:8]), type="agreement")
-  cor(byRequest[byRequest$dataset=="itap",5:9])
-  KMO(cor(byRequest[byRequest$dataset=="itap",5:9]))
-  icc(t(byRequest[byRequest$dataset=="itap",5:9]), type="agreement")
   
+  isnapCor <- cor(byRequest[byRequest$dataset=="isnap",5:9])
+  KMO(isnapCor)
+  icc(byRequest[byRequest$dataset=="isnap",5:9], type="agreement")
+  isnapCor[isnapCor == 1] <- NA
+  mean(isnapCor, na.rm=T)
+  
+  itapCor <- cor(byRequest[byRequest$dataset=="itap",5:10])
+  KMO(itapCor)
+  icc(byRequest[byRequest$dataset=="itap",5:10], type="agreement")
+  itapCor[itapCor == 1] <- NA
+  mean(itapCor, na.rm=T)
   
   scores <- getScores(algRequests)
   
@@ -272,8 +277,10 @@ findInterestingRequests <- function(algRequests, ratings) {
 investigateHypotheses <- function() { 
   algRatings <- ratings[ratings$source != "AllTutors" & ratings$source != "chf_without_past",]
   algRatings$matched <- algRatings$type == "Full"
+  algRatings$matchedP <- algRatings$type != "None"
   algRatings$nEdits <- algRatings$nInsertions + algRatings$nDeletions + algRatings$nRelabels - algRatings$nValueInsertions
   algRatings$delOnly <- algRatings$nDeletions == algRatings$nEdits
+  algRatings$delMostly <- algRatings$nDeletions > algRatings$nEdits / 2
   allSame <- function(x) if (length(unique(x)) == 1) head(x, 1) else NA
   matchedHints <- ddply(algRatings[algRatings$matched,], c("dataset", "matchID"), summarize, 
                         n=length(nEdits), delOnly=allSame(delOnly), nEdits=mean(nEdits))
@@ -323,6 +330,13 @@ investigateHypotheses <- function() {
   (corITAP <- cor(byRequestFullNorm[byRequestFullNorm$dataset=="itap",5:10], method="spearman"))
   mean(corITAP[corITAP!=1])
   
+### Effect of hint requests
+  
+  # USED: Significant effect of requestID on partial qscore
+  kruskal.test(scorePartial ~ as.factor(requestID), algRequests[algRequests$dataset=="isnap",])
+  kruskal.test(scorePartial ~ as.factor(requestID), algRequests[algRequests$dataset=="itap",])
+  
+  ddply(scores, "dataset", summarize, md=mean(difficulty), medd=median(difficulty))
 
 ### Hint Request Relationships
   
@@ -333,10 +347,31 @@ investigateHypotheses <- function() {
   dsSpear(scores, "difficulty", "traceLength")
   # It's possible the size and deviance are the same idea
   dsSpear(scores, "requestTreeSize", "medTED")
-  # Linear model suggests independent effects from size and deviance, but not nHints (I think?)
-  summary(m <- lm(difficulty ~ requestTreeSize + medTED + nHints + dataset, data=scores))
-  shapiro.test(m$residuals)
   
+  psych::corr.test(scores[scores$dataset=="isnap",c("requestTreeSize", "medTED", "nHints", "traceLength")], method="spearman")
+  psych::corr.test(scores[scores$dataset=="itap",c("requestTreeSize", "medTED", "nHints", "traceLength")], method="spearman")
+  
+  
+  isnapScores <- scores[scores$dataset=="isnap",]
+  fullModel <- lm(difficulty ~ assignmentID + requestTreeSize + medTED + nHints, data=isnapScores)
+  emptyModel <- lm(difficulty ~ 1, data=isnapScores)
+  stepAIC(emptyModel, direction="forward", scope=list(upper=fullModel))
+  m1 <- lm(difficulty ~ requestTreeSize, data=isnapScores)
+  m2 <- lm(difficulty ~ requestTreeSize + medTED, data=isnapScores)
+  anova(emptyModel, m1, m2)
+  summary(m2)
+  shapiro.test(m2$residuals)
+  
+  itapScores <- scores[scores$dataset=="itap",]
+  fullModel <- lm(difficulty ~ assignmentID + requestTreeSize + medTED + nHints, data=itapScores)
+  emptyModel <- lm(difficulty ~ 1, data=itapScores)
+  stepAIC(emptyModel, direction="forward", scope=list(upper=fullModel))
+  m1 <- lm(difficulty ~ medTED, data=itapScores)
+  m2 <- lm(difficulty ~ medTED + assignmentID, data=itapScores)
+  anova(emptyModel, m1, m2)
+  summary(m2)
+  shapiro.test(m2$residuals)
+    
 ### Too Much Code
   
   # Positive correlation between tree size and difficulty
@@ -368,7 +403,11 @@ investigateHypotheses <- function() {
 # Unfiltered Hints
   
   dsSpear(algRequests, "hintCount", "scoreFull")
-  ddply(algRequests, c("dataset", "source"), summarize, chs=cor(hintCount, scoreFull, method="spearman"), mhc=mean(hintCount))
+  dsSpear(algRequests, "hintCount", "scorePartial")
+  ddply(algRequests, c("dataset", "source"), summarize, 
+        chs=cor(hintCount, scoreFull, method="spearman"),
+        chsPartial=cor(hintCount, scorePartial, method="spearman"), 
+        mhc=mean(hintCount))
   
 ### Deviant Code
   
@@ -398,19 +437,20 @@ investigateHypotheses <- function() {
   # 8 hints were matched by 5/6 algorithms for itap
   table(goldStandard$nMatches[goldStandard$dataset=="itap"])
   
-  # (not really used):
   # Non-deletions do _much_ better than delete-only hints
   table(algRatings$delOnly, algRatings$type, algRatings$dataset)
   # There's an issue here with the fact that hints are not at all independent
   # Could some algorithms be better (e.g. with insertions), but also happen to have fewer deletions
   # Should really test within an algorithm, within a hint request
-  fisher.test(algRatings$delOnly[algRatings$dataset=="isnap"], algRatings$matched[algRatings$dataset=="isnap"])
-  fisher.test(algRatings$delOnly[algRatings$dataset=="itap"], algRatings$matched[algRatings$dataset=="itap"])
+  fisher.test(algRatings$delOnly[algRatings$dataset=="isnap"], algRatings$matchedP[algRatings$dataset=="isnap"])
+  fisher.test(algRatings$delOnly[algRatings$dataset=="itap"], algRatings$matchedP[algRatings$dataset=="itap"])
   # For ITAP we actually see that the poor-performing algorithms have more successful deletes, perhaps because there are so few
   ddply(algRatings, c("dataset", "source"), summarize, 
-        successDel=mean(matched[delOnly]), 
-        successNotDel=mean(matched[!delOnly]),
-        oddsRatio=successDel/successNotDel)
+        ndel=sum(delOnly),
+        successDel=mean(matchedP[delOnly]), 
+        successNotDel=mean(matchedP[!delOnly]),
+        oddsRatio=successDel/successNotDel,
+        fishersp=if (!is.na(oddsRatio)) fisher.test(delOnly, matchedP)$p.value else 0)
   # However, we see that only 2.2 and 4.1% of matching hints are deletions
   table(matchedHints$dataset, matchedHints$delOnly)
   ddply(matchedHints, "dataset", summarize, p=mean(delOnly))
@@ -460,6 +500,21 @@ investigateHypotheses <- function() {
   noMatch <- goldStandard[goldStandard$nMatches==0 & goldStandard$MultipleTutors,c("dataset", "year", "hintID")]
   noMatch <- noMatch[order(noMatch$dataset, noMatch$year, noMatch$hintID),]
   write.csv(noMatch, "data/noMatch.csv")
+  
+  
+  ## Tutor ratings
+  
+  allManual <- rbind(manualT1[,1:7], manualT2[,1:7], manualT3[,1:7])
+  names(allManual)[1] <- "assignmentID"
+  names(allManual)[5] <- "ratePriority"
+  uniqueRatings <- newRatingsMT
+  uniqueRatings$nEdits <- uniqueRatings$nInsertions + uniqueRatings$nDeletions + uniqueRatings$nRelabels - uniqueRatings$nValueInsertions
+  uniqueRatings$delOnly <- uniqueRatings$nDeletions == uniqueRatings$nEdits
+  uniqueRatings <- uniqueRatings[,c(intersect(names(allManual), names(uniqueRatings)), "delOnly")]
+  uniqueRatings <- uniqueRatings[!duplicated(uniqueRatings),]
+  allManual <- merge(allManual, uniqueRatings, all.x=T, all.y=F)
+  allManual <- allManual[!is.na(allManual$reason),]
+  table(allManual$reason[allManual$delOnly]) / sum(allManual$delOnly)
 }
 
 loadAllRatings <- function() {
@@ -565,7 +620,7 @@ plotComparisonStacked <- function(assignments, dataset) {
   title <- paste("QualityScore Ratings -", if (isnap) "iSnap" else "ITAP")
   textOffsetX <- if (isnap) 0.15 else 0.16
   yMax <- if (isnap) 1.1 else 1.25
-  ylabs <- c("Tutors", "ITAP", "SourceCheck", "CTD", "CHF", "NSNLS", "Zimmerman")
+  ylabs <- c("Tutors", "ITAP", "SourceCheck", "CTD", "CHF", "NSNLS", "TR-ER")
   if (isnap) ylabs <- ylabs[ylabs != "ITAP"]
   
   assignments <- assignments[assignments$dataset == dataset,]
@@ -609,11 +664,11 @@ plotComparisonTogetherStacked <- function(requests) {
   nITAP <- length(unique(requests$requestID[requests$dataset=="itap"]))
   requests <- requests[requests$source != "chf_without_past",]
   together <- ddply(requests, c("dataset", "source"), summarize, mScorePartialPlus=mean(scorePartial)-mean(scoreFull), mScoreFull=mean(scoreFull))
-  
+  #print(together)
   ggplot(melt(together, id=c("dataset", "source")),aes(x=source, y=value, fill=variable)) + geom_bar(stat="identity") +
     suppressWarnings(geom_text(aes(x=source, y=mScoreFull+mScorePartialPlus+0.15, label = sprintf("%.02f (%.02f)", mScoreFull, mScoreFull+mScorePartialPlus), fill=NULL), data = together)) +
     scale_fill_manual(labels=c("Partial", "Full"), values=twoColors) + 
-    scale_x_discrete(labels=rev(c("Tutors", "ITAP", "SourceCheck", "CTD", "CHF", "NSNLS", "Zimmerman"))) +
+    scale_x_discrete(labels=rev(c("Tutors", "ITAP", "SourceCheck", "CTD", "CHF", "NSNLS", "TR-ER"))) +
     scale_y_continuous(limits=c(0, 1.15), breaks = c(0, 0.25, 0.5, 0.75, 1.0)) +
     labs(fill="Match", x="Algorithm", y="QualityScore", title="QualityScore Ratings") +
     theme_bw(base_size = 17) +

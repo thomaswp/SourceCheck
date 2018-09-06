@@ -24,6 +24,10 @@ public class Assignment {
 	public final Assignment None;
 	public final boolean hasIDs;
 
+	public Assignment(Dataset dataset, String name) {
+		this(dataset, name, null, true);
+	}
+
 	public Assignment(Dataset dataset, String name, Date end, boolean hasNodeIDs) {
 		this(dataset, name, end, hasNodeIDs, false, null);
 	}
@@ -99,7 +103,8 @@ public class Assignment {
 
 	public AssignmentAttempt loadSubmission(String id, Mode mode, boolean snapshotsOnly) {
 		try {
-			return new SnapParser(this, mode).parseSubmission(id, snapshotsOnly);
+			return new SnapParser(this, mode, dataset.onlyLogExportedCode())
+					.parseSubmission(id, snapshotsOnly);
 		} catch (IOException e) {
 			e.printStackTrace();
 			return null;
@@ -148,7 +153,8 @@ public class Assignment {
 	public Map<String, AssignmentAttempt> load(Mode mode, boolean snapshotsOnly,
 			boolean addMetadata, Filter... filters) {
 		Map<String, AssignmentAttempt> attempts =
-				new SnapParser(this, mode).parseAssignment(snapshotsOnly, addMetadata, filters);
+				new SnapParser(this, mode, dataset.onlyLogExportedCode())
+				.parseAssignment(snapshotsOnly, addMetadata, filters);
 		return attempts;
 	}
 
@@ -161,20 +167,27 @@ public class Assignment {
 	}
 
 	public HashMap<String,Grade> loadGrades() {
-		return new SnapParser(this, Mode.Ignore).parseGrades();
+		return new SnapParser(this, Mode.Ignore, dataset.onlyLogExportedCode()).parseGrades();
 	}
 
 	/**
 	 * Loads an attempt for every submitted snapshot for this assignment. For submitted attempts
 	 * that have no logs, returns an empty AssignmentAttempt.
 	 */
-	public Map<String, AssignmentAttempt> loadAllSubmitted(Mode mode, boolean snapshotsOnly,
+	public Map<String, AssignmentAttempt> loadAllLikelySubmitted(Mode mode, boolean snapshotsOnly,
 			boolean addMetadata) {
 		// Start with all the base set of attempts
 		Map<String, AssignmentAttempt> attempts = load(mode, snapshotsOnly, addMetadata,
-				new SnapParser.SubmittedOnly());
+				new Filter() {
+					@Override
+					public boolean keep(AssignmentAttempt attempt) {
+						return attempt.isLikelySubmitted() || !dataset.onlyLogExportedCode();
+					}
+				}
+		);
 		// Then add any submission not included in the logs
 		Map<String, Submission> submissions = ParseSubmitted.getSubmissions(this);
+		if (submissions == null) return attempts;
 		HashMap<String, Grade> grades = loadGrades();
 		for (String attemptID : submissions.keySet()) {
 			// If we don't have an attempt, add a fake one
