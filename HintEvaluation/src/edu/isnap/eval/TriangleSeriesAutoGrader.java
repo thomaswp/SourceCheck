@@ -12,7 +12,7 @@ public class TriangleSeriesAutoGrader {
 	
 	public static void main(String[] args) throws IOException {
 		for (File xml : new File("tests").listFiles()) {
-			if (!xml.getName().endsWith("triangle5.xml"))
+			if (!xml.getName().endsWith("triangle1.xml"))
 				continue;
 			System.out.println(xml.getName() + ":");
 
@@ -31,7 +31,6 @@ public class TriangleSeriesAutoGrader {
 	// I divided the triangleSeries maker code into 3 features, Use of Ask block, Use of PenDown , and Use of Repeat Block.
   
 	// this global variable, to make check on PenDown in the repeat block 
-	public static boolean PenDownCheck=true;
 	public static boolean PenDowninRepeat=false;
 	
 	public final static Grader[] PolygonTriangleSeriesGraders = new Grader[] { 
@@ -82,26 +81,18 @@ public class TriangleSeriesAutoGrader {
 			@Override
 			public boolean eval(Node node)  // just check if penDown exists or not
 			{
-				if(PenDownCheck==false)
-					return false;
-				
 				int downIndex = node.searchChildren(new Node.TypePredicate("down"));
 				if (downIndex < 0) // if no pen down in the main script
 				{
 					if(PenDowninRepeat==false) // check if it's not in the repeat as well
 					   return false;
+					else
+						return true;
 				}
 
-//				// check if there is forward (move block) index
-//				int forwardIndex = node.searchChildren(new Node.TypePredicate("forward"));
-//				if (forwardIndex < 0) // this means forward is not a child of down, so it might be nested in repeat
-//				{
-//					int repeatIndex = node.searchChildren(new Node.TypePredicate("doRepeat"), downIndex + 1);
-//					if (repeatIndex < 0) // if this is true, then repeat is not after the pen down, then return false
-//						return false;
-//
-//				} // else repeat block exists, and it might have forward nested to it.
-//					// Note: In TriangleSeriesGraderRepeat I handled if pen down is inside the repeat block
+				int repeatIndex = node.searchChildren(new Node.TypePredicate("doRepeat"), downIndex + 1);
+				if (repeatIndex < 0) // if this is true, then repeat is not after the pen down, then return false
+						return false;
 				
 				return true;
 			}
@@ -191,28 +182,13 @@ public class TriangleSeriesAutoGrader {
 						{
 							int index1 = scriptNodeFirstRepeat.searchChildren(new Node.TypePredicate("forward"));
 							int index2 = scriptNodeFirstRepeat.searchChildren(new Node.TypePredicate("down"));
-							if (index2 >= index1) // this means PenDown is after move, then set PenDownCheck to false
-								PenDownCheck=false;
-							else
+							if (index2 < index1) // this means PenDown is before move, then set PenDowninRepeat to true
 								PenDowninRepeat=true;
 								
 						}
 						
 					}
-				}
-				
-			//	   script {
-//				        doAsk(how many triangles)
-//				        down
-//				        doRepeat(getLastAnswer, 
-				    //    script {forward ,doRepeat(3, script { forward(20)
-//				                                       turn(120)
-				                                   //} 
-				                        //)
-//				           forward(20)
-//				                 }
-				              //)		
-				
+				}				
 				return true; // if all conditions are met.
 			}
 		};

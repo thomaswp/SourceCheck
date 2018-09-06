@@ -12,7 +12,7 @@ public class PolygonAutoGrader {
 	
 	public static void main(String[] args) throws IOException {
 		for (File xml : new File("tests").listFiles()) {
-			if (!xml.getName().endsWith("polygon-solution102.xml"))
+			if (!xml.getName().endsWith("polygon-solution4.xml"))
 				continue;
 			System.out.println(xml.getName() + ":");
 
@@ -27,16 +27,20 @@ public class PolygonAutoGrader {
 		}
 	}
 	
+	// this global variable, to make check on PenDown in the repeat block 
+		public static boolean PenDowninRepeat=false;
+	
 	// I divided the Polygon maker code into 3 features, Use of Ask block,
 	// Use of PenDown , and Use of Repeat Block.
 
 	public final static Grader[] PolygonGraders = new Grader[] { 
 		new PolygonGraderAsk(),
-		new PolygonGraderPenDown(),
 		new PolygonGraderRepeat(), 
+		new PolygonGraderPenDown(),
+		
+
 	};
 
-	
 	public static class PolygonGraderAsk implements Grader {
 
 		@Override
@@ -74,27 +78,24 @@ public class PolygonAutoGrader {
 
 		private final static Predicate backbone = new Node.BackbonePredicate("sprite", "script");
 		private final static Predicate isPenDown = new Predicate() {
+
 			@Override
 			public boolean eval(Node node) {
 				int downIndex = node.searchChildren(new Node.TypePredicate("down"));
-				if (downIndex < 0) // if no pen down, return false
-					return false;
+				if (downIndex < 0) // if no pen down, check if it exists in the repeat block
+					{
+					if(PenDowninRepeat==false) // check if it's not in the repeat as well
+						   return false;
+					else
+						return true;
+					}
 
-				// check if there is forward (move block) index
-				int forwardIndex = node.searchChildren(new Node.TypePredicate("forward"));
-				if (forwardIndex < 0) // this means forward is not a child of down, so it might be nested in repeat
-				{
+				// if pen down exists, then check if it's before or after repeat. if after it then return false	
 					int repeatIndex = node.searchChildren(new Node.TypePredicate("doRepeat"), downIndex + 1);
 					if (repeatIndex < 0) // if this is true, then repeat is not after the pen down, then return false
 						return false;
 
-				} // else repeat block exists, and it might have forward nested to it.
-					// Note: In PolygonGraderRepeat I handled if pen down is inside the repeat
-					// block.
-				else if (forwardIndex < downIndex) // if pendown is after the forward block, then return false
-					return false;
-
-				return true;
+				return true; // all conditions are met!!
 			}
 		};
 
@@ -132,20 +133,20 @@ public class PolygonAutoGrader {
 				// repeat block must have at least 2 blocks inside.
 				if (scriptNode.children.size() < 2)
 					return false;
-
-				if (scriptNode.children.size() >= 2) { // turn and forward must exist in the repeat, if any doesn't
+				else
+				{ // turn and forward must exist in the repeat, if any doesn't
 														// exist then return false
-					if (!scriptNode.childHasType("turn", scriptNode.index()) ||
-						scriptNode.childHasType("forward", scriptNode.index()))
+					if(scriptNode.searchChildren(new Node.TypePredicate("forward"))==-1
+							|| scriptNode.searchChildren(new Node.TypePredicate("turn"))==-1)
 						return false;
 
 					// if forward and pen down are in the repeat block
-					if (scriptNode.childHasType("forward", scriptNode.index())
-							&& scriptNode.childHasType("down", scriptNode.index())) {
+					if(scriptNode.searchChildren(new Node.TypePredicate("down"))>-1)
+				 {
 						int index1 = scriptNode.searchChildren(new Node.TypePredicate("forward"));
 						int index2 = scriptNode.searchChildren(new Node.TypePredicate("down"));
-						if (index2 >= index1) // this means PenDown is after move, then return false
-							return false;
+						if (index2 < index1) // this means PenDown is before move, then set PenDowninRepeat to true
+							PenDowninRepeat=true;
 					}
 				}
 
