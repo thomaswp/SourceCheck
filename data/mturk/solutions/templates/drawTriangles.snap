@@ -1,0 +1,82 @@
+snapshot {
+    @defHint PEN_DOWN {
+        :`Using the "pen down" block (under Pen) makes the sprite draw a trail behind it when it moves, which should happen before you draw a triangles.`
+    }
+    @defHint REPEAT {
+        :`The "repeat" block (under Control) allows you to run the same code a fixed number of times, like drawing each triangle, or each side of the triangle.`
+        priority(3)
+    }
+    @defHint MOVE {
+        :`The "move __ steps" block (under Motion) makes the sprite move forward some amount, like for each .`
+    }
+    @defHint TURN {
+        :`The "turn __ degrees" block (under Motion) makes the sprite turn some degrees, like at the corner of a polygon.`
+    }
+    @defHint ASK {
+        :`The "ask __ and wait" block (under Sensing) asks the user a question, like how many triangles to draw, and stores their response in the "answer" block (under Sensing).`
+        priority(2)
+    }
+    @defHint N_TRIANGLES {
+        :`The "answer" block (under Sensing) should store how many triangles the sprite should draw (in the "repeat" block).`
+        priority(1)
+    }
+    @defHint TRIANGLE {
+        :`Inside the "repeat" block, you should draw a triangle.`
+        priority(1)
+    }
+    @defHint REPEAT_INNER {
+        :`You can put one "repeat" block (for drawing each side of a triangle) inside of another (for drawing multiple triangles).`
+        priority(2)
+    }
+    @defHint TRIANGLE_BODY {
+        :`To draw each triangle, the sprite should move forward and then turn 120 degrees 3 times.`
+    }
+    @defHint MOVE_LINE {
+        :`After drawing each triangle, the sprite must move forward, so the triangles are in a line.`
+    }
+    stage:Stage {
+        sprite:Sprite {
+            script {
+                @+optional { receiveGo }
+                @anyOrder {
+                    @+optional { clear }
+                    @+optional { setHeading(literal:90) }
+                    @+optional { gotoXY(literal:0, literal:0) }
+                    @hint ASK
+                    doAsk(literal:`How many triangles`)
+                    @hint PEN_DOWN
+                    down
+                }
+                @hint REPEAT
+                doRepeat(@hint ASK @hint N_TRIANGLES getLastAnswer, script {
+                    @or {
+                        @inline {
+                            @hint TRIANGLE
+                            @hint REPEAT
+                            @hint REPEAT_INNER
+                            doRepeat(literal:3, script {
+                                @hint TRIANGLE_BODY {
+                                    forward(literal:40)
+                                    turn(literal:120)
+                                }
+                            })
+                        }
+                        @inline {
+                            @hint TRIANGLE @hint TRIANGLE_BODY {
+                               forward(literal:40)
+                               turn(literal:120)
+                               forward(literal:40)
+                               turn(literal:120)
+                               forward(literal:40)
+                               turn(literal:120)
+                            }
+                        }
+                    }
+                    @hint MOVE_LINE
+                    forward(literal:40)
+                })
+                @+optional { up }
+            }
+        }
+    }
+}

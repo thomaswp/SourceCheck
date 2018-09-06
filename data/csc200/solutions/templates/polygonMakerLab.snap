@@ -1,28 +1,91 @@
 snapshot {
+    @defHint TEST {
+        :`Don't forget to test your code once you've made your "draw polygon" block.` You can do this by finding the block, dragging it to the main code area and left clicking on it once.`
+    }
+    @defHint PEN_DOWN {
+        :`Using the "pen down" block (under Pen) makes the sprite draw a trail behind it when it moves, which should happen before you draw a polygon.`
+    }
+    @defHint PEN_UP {
+        :`Using the "pen up" block (under Pen) makes the sprite stop drawing a trail behind it when it moves, which should happen after you draw a polygon.`
+    }
+    @defHint PEN_SIZE {
+        :`The "set pen size to __" block (under Pen) will set the thickness of the trail drawn by the sprite when it moves.`
+    }
+    @defHint INPUTS {
+        :`Your "draw polygon" block should have three inputs, which you can add using the '+' buttons after the block name.`
+        priority(1)
+    }
+    @defHint THICKNESS_INPUT {
+        :`Your "draw polygon" block should have an input for the thickness of the polygon, which should be used to set the pen size.`
+        priority(2)
+    }
+    @defHint LENGTH_INPUT {
+        :`Your "draw polygon" block should have an input for the length of each side of the polygon, which affects how far the sprite moves.`
+        priority(2)
+    }
+    @defHint SIDES_INPUT {
+        :`Your "draw polygon" block should have an input for the number of sides of the polygon, which affects how many times your code should repeat.`
+        priority(2)
+    }
+    @defHint REPEAT {
+        :`The "repeat" block (under Control) allows you to run the same code a fixed number of times, like drawing each side of a polygon.`
+    }
+    @defHint TURN_AMOUNT1 {
+        :`The amount the sprite should turn after drawnig each side is related to the number of sides.`
+        priority(1)
+    }
+    @defHint TURN_AMOUNT2 {
+        :`For a triangle (3 sides), the sprite should turn 120 degrees after each side. For a square (4 sides), it should be 90 degrees.`
+        priority(2)
+    }
+    @defHint CUSTOM_BLOCK {
+        :`You should create a new block called "draw polygon" and put your code there. You can do this by clicking the "Make a block" button on the bottom-left of the screen.`
+    }
+    @defHint MOVE_AND_TURN {
+        :`Each time your code repeats, your sprite should draw one side of the polygon and turn.`
+    }
     stage {
         sprite {
-            @anything
+            @hint TEST {
+                script {
+                    @anything
+                }
+            }
         }
     }
-    customBlock {
+    @hint CUSTOM_BLOCK customBlock {
         script {
             @anyOrder {
+                @hint PEN_DOWN
                 down
-                setSize(var:thickness)
+                @hint PEN_SIZE
+                setSize(@hint THICKNESS_INPUT var:thickness)
             }
-            doRepeat(var:sides, script {
+            @hint REPEAT doRepeat(@hint SIDES_INPUT var:sides, script {
                 @anyOrder {
-                    forward(var:length)
+                    @hint MOVE_AND_TURN
+                    forward(@hint LENGTH_INPUT var:length)
+                    @hint MOVE_AND_TURN
+                    @defBlock TURN {
+                        @hint TURN_AMOUNT1 @hint TURN_AMOUNT2
+                        reportQuotient(literal, var:sides)
+                    }
+                    @hint MOVE_AND_TURN
                     @or {
-                        turn(reportQuotient(literal, var:sides))
-                        turnLeft(reportQuotient(literal, var:sides))
+                        turn(@block TURN)
+                        turnLeft(@block TURN)
                     }
                 }
             })
+            @hint PEN_UP
             up
         }
-        varDec:length
-        varDec:sides
-        varDec:thickness
+        @anyOrder {
+            @hint INPUTS {
+                @hint LENGTH_INPUT varDec:length
+                @hint SIDES_INPUT varDec:sides
+                @hint THICKNESS_INPUT varDec:thickness
+            }
+        }
     }
 }

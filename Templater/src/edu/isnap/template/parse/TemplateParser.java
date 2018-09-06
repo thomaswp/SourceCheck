@@ -7,7 +7,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -53,7 +55,6 @@ public class TemplateParser {
 		byte[] encoded = Files.readAllBytes(Paths.get(baseFile + ".snap"));
 		String template = new String(encoded);
 		DefaultNode node = new TemplateParser(template).parse();
-
 
 		List<BNode> variants = node.getVariants(Context.fromSample(sample));
 
@@ -128,6 +129,7 @@ public class TemplateParser {
 
 	private String[] parts;
 	private int index;
+	private Map<String, String> valueMap = new HashMap<>();
 
 	public TemplateParser(String template) {
 		template = Arrays.stream(template.split("\n")).map(line -> {
@@ -140,7 +142,9 @@ public class TemplateParser {
 		StringBuffer sb = new StringBuffer();
 		while (matcher.find()) {
 			// TODO: This should really escape ( { } ) and space
-			matcher.appendReplacement(sb, ":" + matcher.group(1).replaceAll(" ", "&nbsp;"));
+			String holder = "_HOLDER_" + valueMap.size();
+			valueMap.put(holder, matcher.group(1));
+			matcher.appendReplacement(sb, ":" + holder);
 		}
 		matcher.appendTail(sb);
 		template = sb.toString();
@@ -149,8 +153,10 @@ public class TemplateParser {
 				.replaceAll("(\\{|\\}|\\(|\\))", " $1 ")
 				.replace(",", "").split("\\s+");
 
-		for (int i = 0; i < parts.length; i++) {
-			parts[i] = parts[i].replaceAll("&nbsp;", " ");
+		for (String holder : valueMap.keySet()) {
+			for (int i = 0; i < parts.length; i++) {
+				parts[i] = parts[i].replaceAll(holder, valueMap.get(holder));
+			}
 		}
 //		for (String part : parts) {
 //			System.out.println("`" + part + "`");
@@ -218,6 +224,8 @@ public class TemplateParser {
 				node.children.add(parseNode());
 			}
 			read();
+		} else if (node.type.equals("@hint")) {
+			node.children.add(parseNode());
 		}
 
 //		System.out.println("Exiting " + node.type);

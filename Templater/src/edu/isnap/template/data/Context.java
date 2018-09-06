@@ -5,12 +5,14 @@ import java.util.LinkedHashMap;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
+import edu.isnap.ctd.hint.TextHint;
 
 public class Context {
 
 	public HashMap<String, DefBlockNode> blocksDefs = new HashMap<>();
 	public HashMap<String, String> varDefs = new LinkedHashMap<>();
 	public HashMap<String, Integer> defaultAgs = new HashMap<>();
+	public HashMap<String, TextHint> hints = new HashMap<>();
 
 	public boolean addOptional = true;
 

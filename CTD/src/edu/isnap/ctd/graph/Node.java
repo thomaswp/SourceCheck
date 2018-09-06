@@ -16,6 +16,7 @@ import edu.isnap.ctd.hint.Canonicalization;
 import edu.isnap.ctd.hint.Canonicalization.Rename;
 import edu.isnap.ctd.hint.Canonicalization.Reorder;
 import edu.isnap.ctd.hint.Canonicalization.SwapBinaryArgs;
+import edu.isnap.ctd.hint.TextHint;
 import edu.isnap.ctd.util.StringHashable;
 import util.LblTree;
 
@@ -106,6 +107,11 @@ public abstract class Node extends StringHashable implements INode {
 	public Node setOrderGroup(int group) {
 		writableAnnotations().orderGroup = group;
 		return this;
+	}
+
+	public void addTextHint(TextHint hint) {
+		if (hint == null) return;
+		annotations.getHints().add(hint);
 	}
 
 	public Node root() {
@@ -516,6 +522,8 @@ public abstract class Node extends StringHashable implements INode {
 				if (c instanceof Reorder) {
 					int[] reorderings = ((Reorder) c).reordering;
 					int originalIndex = index;
+					// Ignore a reorder if this child's index is outside of the reordering range
+					if (originalIndex >= reorderings.length) continue;
 					index = ArrayUtils.indexOf(reorderings, index);
 					if (index == -1) {
 						System.err.println(node.parent);
@@ -549,10 +557,18 @@ public abstract class Node extends StringHashable implements INode {
 		public boolean matchAnyChildren;
 		public int orderGroup;
 
+		private List<TextHint> hints;
+
+		public List<TextHint> getHints() {
+			if (hints == null) hints = new ArrayList<>();
+			return hints;
+		}
+
 		public Annotations copy() {
 			Annotations copy = new Annotations();
 			copy.orderGroup = orderGroup;
 			copy.matchAnyChildren = matchAnyChildren;
+			if (hints != null) hints.forEach(hint -> copy.getHints().add(hint.copy()));
 			return copy;
 		}
 
@@ -561,6 +577,11 @@ public abstract class Node extends StringHashable implements INode {
 			String out = "";
 			if (orderGroup != 0) out += "<" + orderGroup + ">";
 			if (matchAnyChildren) out += "<*>";
+			if (hints != null) {
+				for (TextHint hint : hints) {
+					out += "^" + hint.text;
+				}
+			}
 			return out;
 		}
 	}
