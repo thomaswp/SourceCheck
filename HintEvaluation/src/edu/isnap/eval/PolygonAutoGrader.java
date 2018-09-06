@@ -12,7 +12,7 @@ public class PolygonAutoGrader {
 	
 	public static void main(String[] args) throws IOException {
 		for (File xml : new File("tests").listFiles()) {
-			if (!xml.getName().endsWith(".xml"))
+			if (!xml.getName().endsWith("polygon-solution102.xml"))
 				continue;
 			System.out.println(xml.getName() + ":");
 

@@ -137,6 +137,7 @@ public class AutoGrader {
 
 	public interface Grader {
 		String name();
+	
 		boolean pass(Node node);
 	}
 
