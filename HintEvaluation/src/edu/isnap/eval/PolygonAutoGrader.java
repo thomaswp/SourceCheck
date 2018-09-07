@@ -1,43 +1,85 @@
 package edu.isnap.eval;
 
-import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Map;
+
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Predicate;
+import edu.isnap.dataset.Assignment;
+import edu.isnap.dataset.AssignmentAttempt;
+import edu.isnap.dataset.AttemptAction;
+import edu.isnap.datasets.MTurk2018;
 import edu.isnap.eval.AutoGrader.Grader;
 import edu.isnap.hint.util.SimpleNodeBuilder;
-import edu.isnap.parser.elements.Snapshot;
+import edu.isnap.parser.Store.Mode;
 
 public class PolygonAutoGrader {
-	
+
+	//	public static void main(String[] args) throws IOException {
+	//		for (File xml : new File("tests").listFiles()) {
+	//			if (!xml.getName().endsWith("polygon-solution4.xml"))
+	//				continue;
+	//			System.out.println(xml.getName() + ":");
+	//
+	//			Snapshot snapshot = Snapshot.parse(xml);
+	//			Node node = SimpleNodeBuilder.toTree(snapshot, false);
+	//			System.out.println(node); // print whole tree
+	//
+	//			for (Grader grader : PolygonGraders) {
+	//				System.out.println(grader.name() + ": " + grader.pass(node));
+	//			}
+	//			System.out.println();
+	//		}
+	//	}
+
 	public static void main(String[] args) throws IOException {
-		for (File xml : new File("tests").listFiles()) {
-			if (!xml.getName().endsWith("polygon-solution4.xml"))
-				continue;
-			System.out.println(xml.getName() + ":");
 
-			Snapshot snapshot = Snapshot.parse(xml);
-			Node node = SimpleNodeBuilder.toTree(snapshot, false);
-			System.out.println(node); // print whole tree
+		Assignment assignment = MTurk2018.PolygonMakerSimple;
+		//System.out.print(assignment);
+		analyzeSyntaxTree(assignment);	
 
-			for (Grader grader : PolygonGraders) {
-				System.out.println(grader.name() + ": " + grader.pass(node));
-			}
-			System.out.println();
-		}
 	}
-	
+
+	public static void analyzeSyntaxTree(Assignment assignment) throws FileNotFoundException, IOException
+	{
+		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Ignore, false, true);
+		int attemptCount = 0;
+		int snapshotCount = 0;
+		int i=0;
+		for (AssignmentAttempt attempt: attempts.values()) 
+		{
+			++attemptCount;
+		 AttemptAction lastRow = attempt.rows.get(attempt.rows.size()-1);
+		 if(lastRow.lastSnapshot!=null)
+		 {
+			 Node tree = SimpleNodeBuilder.toTree(lastRow.lastSnapshot, false);
+			// if(i<8)
+			 {
+				System.out.println(tree);
+				for (Grader grader : PolygonGraders) {
+								System.out.println(grader.name() + ": " + grader.pass(tree));
+						}
+			 }
+		 }
+		 i++;
+				
+		}
+		//System.out.println("attempt #:"+attemptCount);
+		//System.out.println("snapshot #:"+snapshotCount);
+	}
+
 	// this global variable, to make check on PenDown in the repeat block 
-		public static boolean PenDowninRepeat=false;
-	
+	public static boolean PenDowninRepeat=false;
+
 	// I divided the Polygon maker code into 3 features, Use of Ask block,
 	// Use of PenDown , and Use of Repeat Block.
 
 	public final static Grader[] PolygonGraders = new Grader[] { 
-		new PolygonGraderAsk(),
-		new PolygonGraderRepeat(), 
-		new PolygonGraderPenDown(),
-		
+			new PolygonGraderAsk(),
+			new PolygonGraderRepeat(), 
+			new PolygonGraderPenDown(),
+
 
 	};
 
@@ -83,17 +125,21 @@ public class PolygonAutoGrader {
 			public boolean eval(Node node) {
 				int downIndex = node.searchChildren(new Node.TypePredicate("down"));
 				if (downIndex < 0) // if no pen down, check if it exists in the repeat block
-					{
+				{
 					if(PenDowninRepeat==false) // check if it's not in the repeat as well
-						   return false;
+						return false;
 					else
 						return true;
-					}
+				}
 
 				// if pen down exists, then check if it's before or after repeat. if after it then return false	
-					int repeatIndex = node.searchChildren(new Node.TypePredicate("doRepeat"), downIndex + 1);
-					if (repeatIndex < 0) // if this is true, then repeat is not after the pen down, then return false
+				int repeatIndex = node.searchChildren(new Node.TypePredicate("doRepeat"));
+				if(repeatIndex>-1) // repeat exists in this script, then check if pen down is after it.
+				{
+					int repeatIndex2 = node.searchChildren(new Node.TypePredicate("doRepeat"), downIndex + 1);
+					if (repeatIndex2 < 0) // if this is true, then pen down is after repeat, then return false
 						return false;
+				}
 
 				return true; // all conditions are met!!
 			}
@@ -107,7 +153,7 @@ public class PolygonAutoGrader {
 		}
 	}
 
-// Test the repeat block
+	// Test the repeat block
 	public static class PolygonGraderRepeat implements Grader {
 		@Override
 		public String name() {
@@ -135,14 +181,14 @@ public class PolygonAutoGrader {
 					return false;
 				else
 				{ // turn and forward must exist in the repeat, if any doesn't
-														// exist then return false
+					// exist then return false
 					if(scriptNode.searchChildren(new Node.TypePredicate("forward"))==-1
 							|| scriptNode.searchChildren(new Node.TypePredicate("turn"))==-1)
 						return false;
 
 					// if forward and pen down are in the repeat block
 					if(scriptNode.searchChildren(new Node.TypePredicate("down"))>-1)
-				 {
+					{
 						int index1 = scriptNode.searchChildren(new Node.TypePredicate("forward"));
 						int index2 = scriptNode.searchChildren(new Node.TypePredicate("down"));
 						if (index2 < index1) // this means PenDown is before move, then set PenDowninRepeat to true

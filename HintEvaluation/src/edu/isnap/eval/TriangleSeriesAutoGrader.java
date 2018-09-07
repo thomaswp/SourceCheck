@@ -2,6 +2,7 @@ package edu.isnap.eval;
 
 import java.io.File;
 import java.io.IOException;
+
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Predicate;
 import edu.isnap.eval.AutoGrader.Grader;
@@ -12,7 +13,7 @@ public class TriangleSeriesAutoGrader {
 	
 	public static void main(String[] args) throws IOException {
 		for (File xml : new File("tests").listFiles()) {
-			if (!xml.getName().endsWith("triangle1.xml"))
+			if (!xml.getName().endsWith("triangle3.xml"))
 				continue;
 			System.out.println(xml.getName() + ":");
 
