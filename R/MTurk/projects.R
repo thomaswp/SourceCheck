@@ -80,11 +80,18 @@ loadData <- function() {
   mean(task1$obj2 / 60000, na.rm=T)
   mean(!is.na(task1$obj2))
   hist(task1$idleTime / 60000)
+  hist(task1$idleTime[task1$objs!=3] / 60000)
   
   hist(task2$obj2 / 60000)
   mean(task2$obj2 / 60000, na.rm=T)
   mean(!is.na(task2$obj2))
+  hist(task2$idleTime / 60000)
+  hist(task2$idleTime[task2$objs!=3] / 60000)
   
-  cat(as.character(task1$lastCode[is.na(task1$obj2)]))
+  #sink("C:/Users/Thomas/Desktop/poly.txt")
+  cat(paste0(as.character(task1$lastCode[is.na(task1$obj2)]), "\n\n"))
+  #sink("C:/Users/Thomas/Desktop/triangles.txt")
+  cat(paste0(as.character(task2$lastCode[is.na(task2$obj2)]), "\n\n"))
+  sink()
 }
 
