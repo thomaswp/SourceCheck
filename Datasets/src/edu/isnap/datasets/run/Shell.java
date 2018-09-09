@@ -13,6 +13,7 @@ import edu.isnap.datasets.Fall2016;
 import edu.isnap.datasets.Fall2017;
 import edu.isnap.datasets.HelpSeeking;
 import edu.isnap.datasets.HelpSeekingExperts;
+import edu.isnap.datasets.MTurk2018;
 import edu.isnap.datasets.Samples;
 import edu.isnap.datasets.Spring2016;
 import edu.isnap.datasets.Spring2017;
@@ -40,6 +41,7 @@ public class Shell {
 			Samples.instance,
 			BJC2017.instance,
 			CampHS2018.instance,
+			MTurk2018.instance,
 	};
 
 	public static void main(String[] args) {

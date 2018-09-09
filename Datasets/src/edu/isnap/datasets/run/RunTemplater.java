@@ -10,9 +10,9 @@ public class RunTemplater {
 	public static void main(String[] args) throws IOException {
 		Node.PrettyPrintSpacing = 4;
 		Node.PrettyPrintUseColon = true;
-		TemplateParser.parseSnapTemplate(CSC200Solutions.PolygonMaker);
+		TemplateParser.parseSnapTemplate(CSC200Solutions.Pong1Lab);
 //		for (Assignment assignment : CSC200Solutions.All) {
 //			TemplateParser.parseSnapTemplate(assignment);
 //		}
 	}
-}
+} 

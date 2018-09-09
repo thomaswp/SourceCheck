@@ -249,10 +249,12 @@ public abstract class Node extends StringHashable implements INode {
 		}
 	}
 
-	public static class BackbonePredicate implements Predicate {
+	public static class BackbonePredicate implements Predicate
+	{
 		private final String[] backbone;
 
-		public BackbonePredicate(String... backbone) {
+		public BackbonePredicate(String... backbone) 
+		{
 			this.backbone = backbone;
 		}
 
