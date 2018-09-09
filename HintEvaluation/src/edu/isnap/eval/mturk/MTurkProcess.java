@@ -61,6 +61,7 @@ public class MTurkProcess {
 		long start = attempt.rows.get(0).timestamp.getTime();
 		long lastEdit = start;
 
+		Node lastCode = null;
 
 		for (AttemptAction row : attempt.rows) {
 			long time = row.timestamp.getTime();
@@ -68,7 +69,7 @@ public class MTurkProcess {
 
 			if (row.snapshot != null) {
 				int duration = (int) (time - lastEdit);
-				if (duration > 5 * 60 * 1000) {
+				if (duration > 3 * 60 * 1000) {
 					idleTime += duration;
 				} else {
 					activeTime += duration;
@@ -76,7 +77,7 @@ public class MTurkProcess {
 				if (firstEditTime == 0) firstEditTime = relTime;
 				lastEdit = time;
 
-				Node node = SimpleNodeBuilder.toTree(row.snapshot, false);
+				Node node = lastCode = SimpleNodeBuilder.toTree(row.snapshot, false);
 				for (int i = 0; i < graders.length; i++) {
 					if (objectiveTimes[i] > 0) continue;
 					if (graders[i].pass(node)) {
@@ -139,5 +140,6 @@ public class MTurkProcess {
 		for (int i = 0; i < objectiveTimes.length; i++) {
 			attempts.put("obj" + i, objectiveTimes[i] == 0 ? null : objectiveTimes[i]);
 		}
+		attempts.put("lastCode", lastCode.prettyPrint(true));
 	}
 }

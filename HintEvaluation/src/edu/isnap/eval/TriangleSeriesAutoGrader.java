@@ -36,8 +36,8 @@ public class TriangleSeriesAutoGrader {
 
 	public final static Grader[] PolygonTriangleSeriesGraders = new Grader[] {
 		new TriangleSeriesGraderAsk(),
-		new TriangleSeriesGraderRepeat(),
 		new TriangleSeriesGraderPenDown(),
+		new TriangleSeriesGraderRepeat(),
 
 	};
 

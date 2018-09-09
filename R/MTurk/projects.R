@@ -75,5 +75,16 @@ loadData <- function() {
   hist(postHelp$Q10[postHelp$assignmentID=="drawTriangles"])
   summary(lm(Q10 ~ codeHint * textHint + reflect + userID, data=postHelp[postHelp$assignmentID=="drawTriangles",]))
   summary(aov(Q10 ~ codeHint * textHint + reflect + Error(userID), data=postHelp[postHelp$assignmentID=="drawTriangles",]))
+  
+  hist(task1$obj2 / 60000)
+  mean(task1$obj2 / 60000, na.rm=T)
+  mean(!is.na(task1$obj2))
+  hist(task1$idleTime / 60000)
+  
+  hist(task2$obj2 / 60000)
+  mean(task2$obj2 / 60000, na.rm=T)
+  mean(!is.na(task2$obj2))
+  
+  cat(as.character(task1$lastCode[is.na(task1$obj2)]))
 }
 
