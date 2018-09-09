@@ -10,7 +10,7 @@ import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.elements.Snapshot;
 
 public class TriangleSeriesAutoGrader {
-	
+
 	public static void main(String[] args) throws IOException {
 		for (File xml : new File("tests").listFiles()) {
 			if (!xml.getName().endsWith("triangle3.xml"))
@@ -27,21 +27,21 @@ public class TriangleSeriesAutoGrader {
 			System.out.println();
 		}
 	}
-		 
-	
+
+
 	// I divided the triangleSeries maker code into 3 features, Use of Ask block, Use of PenDown , and Use of Repeat Block.
-  
-	// this global variable, to make check on PenDown in the repeat block 
+
+	// this global variable, to make check on PenDown in the repeat block
 	public static boolean PenDowninRepeat=false;
-	
-	public final static Grader[] PolygonTriangleSeriesGraders = new Grader[] { 
+
+	public final static Grader[] PolygonTriangleSeriesGraders = new Grader[] {
 		new TriangleSeriesGraderAsk(),
 		new TriangleSeriesGraderRepeat(),
 		new TriangleSeriesGraderPenDown(),
-		 
+
 	};
 
-	
+
 	public static class TriangleSeriesGraderAsk implements Grader {
 
 		@Override
@@ -94,7 +94,7 @@ public class TriangleSeriesAutoGrader {
 				int repeatIndex = node.searchChildren(new Node.TypePredicate("doRepeat"), downIndex + 1);
 				if (repeatIndex < 0) // if this is true, then repeat is not after the pen down, then return false
 						return false;
-				
+
 				return true;
 			}
 		};
@@ -119,19 +119,19 @@ public class TriangleSeriesAutoGrader {
 		{
 			if (nestedRepeatNode.children.size() < 2)
 				return false;
-			
+
 			String t1 = nestedRepeatNode.children.get(0).value();
 			if (!"3".equals(t1)) // if the loop is not looping 3 times, then return false
 				return false;
-			
+
 			Node scriptNode = nestedRepeatNode.children.get(1); // get the script of the nested repeated
 
-			if (scriptNode.children.size() >= 2) 
-			{ // turn and forward must exist in the repeat, if any doesn't exist then return false
+//			if (scriptNode.children.size() >= 2)
+//			{ // turn and forward must exist in the repeat, if any doesn't exist then return false
 				if (scriptNode.searchChildren(new Node.TypePredicate("forward"))==-1 ||
 						scriptNode.searchChildren(new Node.TypePredicate("turn"))==-1)
 					return false;
-			}
+//			}
 
 			// Now checking the turn block inside the repeat block
 
@@ -141,13 +141,13 @@ public class TriangleSeriesAutoGrader {
 			String t3 = nodeTurn.children.get(0).value();
 			if (!"120".equals(t3))
 				return false;
-			
+
 			return true; // if all conditions are met.
-		
+
 	     }
 
 		private final static Predicate backbone = new Node.BackbonePredicate("sprite", "script", "...", "doRepeat");
-		private final static Predicate isRepeat = new Predicate() 
+		private final static Predicate isRepeat = new Predicate()
 		{
 			@Override
 			public boolean eval(Node node) {
@@ -165,7 +165,7 @@ public class TriangleSeriesAutoGrader {
 				// repeat block must have at least 2 blocks inside (repeat + forward).
 				if (scriptNodeFirstRepeat.children.size() < 2)
 					return false;
-				else       
+				else
 				{    // forward block can be before the script or after it
 					if(scriptNodeFirstRepeat.searchChildren(new Node.TypePredicate("forward"))==-1
 							|| scriptNodeFirstRepeat.searchChildren(new Node.TypePredicate("doRepeat"))==-1)
@@ -178,18 +178,18 @@ public class TriangleSeriesAutoGrader {
 						Node nestedRepeatNode = scriptNodeFirstRepeat.children.get(index4); // get the nested repeat block
 						if(!checkNestedLoop(nestedRepeatNode)) // check if the nested loop is correct or not
 							return false;
-						
+
 						if(scriptNodeFirstRepeat.searchChildren(new Node.TypePredicate("down"))>-1) // check the index of pendown if it exists inside the first repeat block
 						{
 							int index1 = scriptNodeFirstRepeat.searchChildren(new Node.TypePredicate("forward"));
 							int index2 = scriptNodeFirstRepeat.searchChildren(new Node.TypePredicate("down"));
 							if (index2 < index1) // this means PenDown is before move, then set PenDowninRepeat to true
 								PenDowninRepeat=true;
-								
+
 						}
-						
+
 					}
-				}				
+				}
 				return true; // if all conditions are met.
 			}
 		};

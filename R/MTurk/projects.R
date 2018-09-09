@@ -19,12 +19,17 @@ loadData <- function() {
   consent <- read.qualtrics("data/consent.csv")
   post1 <- read.qualtrics("data/post1.csv")
   post2 <- read.qualtrics("data/post2.csv")
+  post2 <- post2[post2$assignmentID == "drawTriangles",]
   preHelp <- read.qualtrics("data/pre-help.csv")
   postHelp <- read.qualtrics("data/post-help.csv")
+  attempts <- read.csv("../../data/mturk/mturk2018/analysis/attempts.csv")
+  attempts <- attempts[attempts$errors < 5 & !is.na(attempts$midSurveyTime) & !is.na(attempts$firstEditTime),]
+  actions <- read.csv("../../data/mturk/mturk2018/analysis/actions.csv")
   
-  post2 <- post2[post2$assignmentID == "drawTriangles",]
   length(users <- Reduce(intersect, list(
-    consent$userID, post1$userID, post2$userID, preHelp$userID, postHelp$userID
+    consent$userID, post1$userID, post2$userID, preHelp$userID, postHelp$userID, 
+    attempts$userID[attempts$assignmentID == "polygonMakerSimple"],
+    attempts$userID[attempts$assignmentID == "drawTriangles"]
   )))
   
   users <- users[!(users %in% post1$userID[duplicated(post1$userID)])]
@@ -33,8 +38,42 @@ loadData <- function() {
   post2 <- post2[post2$userID %in% users,]
   preHelp <- preHelp[preHelp$userID %in% users,]
   postHelp <- postHelp[postHelp$userID %in% users,]
+  attempts <- attempts[attempts$userID %in% users, ]
+  actions <- actions[actions$userID %in% users, ]
   
-  table(preHelp$assignmentID)
-
+  preHelp <- merge(preHelp, actions)
+  preHelp <- preHelp[order(preHelp$userID),]
+  postHelp <- merge(postHelp, actions)
+  postHelp <- postHelp[order(postHelp$userID),]
+  
+  attempts$hadCodeHints <- attempts$codeHints > 0
+  attempts$hadTextHints <- attempts$textHints > 0
+  attempts$hadReflects <- attempts$reflects > 0
+  
+  task1 <- attempts[attempts$assignmentID == "polygonMakerSimple",]
+  task1 <- task1[order(task1$userID),]
+  task2 <- attempts[attempts$assignmentID == "drawTriangles",]
+  task2 <- task2[order(task2$userID),]
+  
+  
+  hist(task1$objs)
+  summary(lm(objs ~ hadCodeHints * hadTextHints + hadReflects, data=task1))
+  
+  task2$t1CodeHints <- task1$codeHints
+  task2$t1TextHints <- task1$textHints
+  task2$t1Reflects <- task1$reflects
+  task2$t1HadCodeHints <- task2$t1CodeHints > 0
+  task2$t1HadTextHints <- task2$t1TextHints > 0
+  task2$t1HadReflects <- task2$t1Reflects > 0
+  
+  summary(lm(objs ~ t1HadCodeHints * t1HadTextHints + t1HadReflects, data=task2))
+  
+  hist(postHelp$Q10[postHelp$assignmentID=="polygonMakerSimple"])
+  summary(lm(Q10 ~ codeHint * textHint + reflect, data=postHelp[postHelp$assignmentID=="polygonMakerSimple",]))
+  summary(aov(Q10 ~ codeHint * textHint + reflect, data=postHelp[postHelp$assignmentID=="polygonMakerSimple",]))
+  
+  hist(postHelp$Q10[postHelp$assignmentID=="drawTriangles"])
+  summary(lm(Q10 ~ codeHint * textHint + reflect + userID, data=postHelp[postHelp$assignmentID=="drawTriangles",]))
+  summary(aov(Q10 ~ codeHint * textHint + reflect + Error(userID), data=postHelp[postHelp$assignmentID=="drawTriangles",]))
 }
 

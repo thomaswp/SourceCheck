@@ -13,6 +13,7 @@ import edu.isnap.parser.elements.Snapshot;
 public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	private static final long serialVersionUID = 1L;
 
+	public final static String ERROR = "Error";
 	public static final String ASSIGNMENT_SET_ID_FROM = "Assignment.setIDFrom";
 	public static final String ASSIGNMENT_SET_ID = "Assignment.setID";
 	public final static String BLOCK_CLICK_RUN = "Block.clickRun";
@@ -47,6 +48,9 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	public static final String SPRITE_ADD_VARIABLE = "Sprite.addVariable";
 	public static final String SPRITE_DELETE_VARIABLE = "Sprite.deleteVariable";
 	public final static String WE_START = "WE.Start";
+	public final static String PROACTIVE_MIDSURVEY = "ProactiveDisplay.midSurveyShown";
+	public final static String PROACTIVE_SEE_HINT = "ProactiveDisplay.seeHint";
+	public final static String PROACTIVE_NO_HINT = "ProactiveDisplay.showNoAction";
 
 	public final static Set<String> SHOW_HINT_MESSAGES = new HashSet<>(Arrays.asList(new String[] {
 			SHOW_SCRIPT_HINT, SHOW_BLOCK_HINT, SHOW_STRUCTURE_HINT
