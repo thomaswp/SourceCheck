@@ -118,5 +118,8 @@ loadData <- function() {
   #sink("C:/Users/Thomas/Desktop/triangles.txt")
   cat(paste0(as.character(task2$lastCode[is.na(task2$obj2)]), "\n\n"))
   sink()
+  
+  write.csv(post1[,lapply(post1, class) != "numeric"][,-1:-13], "C:/Users/Thomas/Desktop/post1-filtered-50.csv")
+  write.csv(post2[,lapply(post2, class) != "numeric"][,-1:-13], "C:/Users/Thomas/Desktop/post2-filtered-50.csv")
 }
 
