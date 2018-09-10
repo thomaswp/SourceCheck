@@ -2,7 +2,6 @@ library(readr)
 library(ggplot2)
 library(plyr)
 library(reshape2)
-library(car)
 
 source("../Hints Comparison/util.R")
 
@@ -329,9 +328,46 @@ aied2018 <- function() {
 
   # Loss of peak quality
   # Uniform weighting
-  1 - last(isnapRounds$fullEven[isnapRounds$assignmentID=="guess1Lab"]) / max(isnapRounds$fullEven[isnapRounds$assignmentID=="guess1Lab"])
-  1 - last(isnapRounds$fullEven[isnapRounds$assignmentID=="squiralHW"]) / max(isnapRounds$fullEven[isnapRounds$assignmentID=="squiralHW"])
+  1 - isnapRound("guess1Lab", F, last) / isnapRound("guess1Lab", F, max)
+  1 - isnapRound("squiralHW", F, last) / isnapRound("squiralHW", F, max)
   # Voting-based weighting
-  1 - last(isnapRounds$fullMean[isnapRounds$assignmentID=="guess1Lab"]) / max(isnapRounds$fullMean[isnapRounds$assignmentID=="guess1Lab"])
-  1 - last(isnapRounds$fullMean[isnapRounds$assignmentID=="squiralHW"]) / max(isnapRounds$fullMean[isnapRounds$assignmentID=="squiralHW"])
+  1 - isnapRound("guess1Lab", T, last) / isnapRound("guess1Lab", T, max)
+  1 - isnapRound("squiralHW", T, last) / isnapRound("squiralHW", T, max)
+
+  # Improvement from voting-based weighting at end
+  isnapRound("guess1Lab", T, last) / isnapRound("guess1Lab", F, last) - 1
+  isnapRound("squiralHW", T, last) / isnapRound("squiralHW", F, last) - 1
+  
+  # Percent of hint requests with positive and negative slopes
+  bests <- getBests(isnap)
+  mean(bests$sl[bests$assignmentID == "guess1Lab"] < 0)
+  mean(bests$sl[bests$assignmentID == "squiralHW"] < 0)
+  mean(bests$sl[bests$assignmentID == "guess1Lab"] > 0)
+  mean(bests$sl[bests$assignmentID == "squiralHW"] > 0)
+  
+  
+  # When student data outperforms the single baseline
+  surpasses("guess1Lab", "single")
+  surpasses("squiralHW", "single")
+  
+  # Improvement of peak voting student over single baseline
+  isnapRound("guess1Lab", T, max) / baseline("guess1Lab", "single") - 1
+  isnapRound("squiralHW", T, max) / baseline("squiralHW", "single") - 1
+  
+  # How short peak voting student is of template baseline
+  isnapRound("guess1Lab", T, max) / baseline("guess1Lab", "template")
+  isnapRound("squiralHW", T, max) / baseline("squiralHW", "template")
+}
+
+surpasses <- function(assignment, baseline) {
+  min(which(isnapRounds$fullMean[isnapRounds$assignmentID == assignment] > baseline(assignment, baseline)))
+}
+
+baseline <- function(assignment, baseline) {
+  isnapBaselines$fullMean[isnapBaselines$assignmentID==assignment & isnapBaselines$type==baseline]  
+}
+
+isnapRound <- function(assignment, voting, fn) {
+  col <- if (voting) isnapRounds$fullMean else isnapRounds$fullEven
+  fn(col[isnapRounds$assignmentID == assignment])
 }

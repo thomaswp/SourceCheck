@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import edu.isnap.ctd.graph.ASTNode;
+import edu.isnap.ctd.graph.ASTSnapshot;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.edit.EditHint;
@@ -103,20 +103,21 @@ public class PythonImport {
 				if (!file.getName().endsWith(".json")) continue;
 				PythonNode node;
 				try {
+					String source = null;
+					File sourceFile = new File(studentDir, file.getName().replace(".json", ".py"));
+					if (sourceFile.exists()) {
+						source = new String(Files.readAllBytes(sourceFile.toPath()));
+					}
 					String json = new String(Files.readAllBytes(file.toPath()));
 					JSONObject obj = new JSONObject(json);
-					ASTNode astNode = ASTNode.parse(obj);
+					ASTSnapshot astNode = ASTSnapshot.parse(obj, source);
 					node = (PythonNode) JsonAST.toNode(astNode, PythonNode::new);
 					if (obj.has("correct")) {
 						boolean correct = obj.getBoolean("correct");
 						node.correct = Optional.of(correct);
 						node.student = student;
 					}
-					File sourceFile = new File(studentDir, file.getName().replace(".json", ".py"));
-					if (sourceFile.exists()) {
-						String source = new String(Files.readAllBytes(sourceFile.toPath()));
-						node.source = source;
-					}
+					node.source = source;
 				} catch (JSONException e) {
 					System.out.println("Error parsing: " + file.getAbsolutePath());
 					e.printStackTrace();
@@ -159,5 +160,8 @@ public class PythonImport {
 			return typeHasBody(type);
 		}
 
+		public ASTSnapshot toASTSnapshot() {
+			return super.toASTSnapshot(correct.orElse(false), source);
+		}
 	}
 }

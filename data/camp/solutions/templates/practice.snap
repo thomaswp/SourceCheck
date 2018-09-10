@@ -1,0 +1,21 @@
+snapshot {
+    stage:Stage {
+        sprite:Sprite {
+            script {
+                @anything
+            }
+        }
+    }
+    customBlock:`draw polygon %s sides %s length` {
+        script {
+            down
+            doRepeat(var:sides, script {
+                forward(var:length)
+                turn(reportQuotient(literal:360, var:sides))
+            })
+            up
+        }
+        varDec:sides
+        varDec:length
+    }
+}

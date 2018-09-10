@@ -10,11 +10,19 @@ public abstract class HintConfig implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	/**
+	 * Should return true if the hint generator can expect traces to keep consistent node IDs
+	 * between snapshots, i.e. a node with ID 1 in two snapshots is the same node. If false, AST
+	 * diffs will be used to try to infer which nodes are the same between snapshots, which is more
+	 * expensive and less accurate.
+	 */
+	public abstract boolean areNodeIDsConsistent();
+
+	/**
 	 * Should return a constructor for the Node to be used with this config.
 	 */
 	public abstract NodeConstructor getNodeConstructor();
 	/**
-	 * Should return true if children of this type have no meaningful order
+	 * Should return true if children with this type have no meaningful order
 	 */
 	public abstract boolean isOrderInvariant(String type);
 
@@ -100,6 +108,20 @@ public abstract class HintConfig implements Serializable {
 	 * action
 	 */
 	public boolean createSubedits = true;
+
+	// TODO: These two are temporarily configurable and a default should probably be chosen
+	/**
+	 * If true, any single line that has a single insertion and deletion will combine those
+	 * into one replacement.
+	 */
+	public boolean createSingleLineReplacements = false;
+
+	/**
+	 * If true, the distance measure is used to determine child alignment subcost for tie breaking;
+	 * otherwise, a special measure is used which has no cost for deletions and does not count
+	 * valueless nodes.
+	 */
+	public boolean useDeletionsInSubcost = true;
 
 	/**
 	 * Determines how Node values will be used when matching and hinting nodes
@@ -264,6 +286,11 @@ public abstract class HintConfig implements Serializable {
 		@Override
 		public NodeConstructor getNodeConstructor() {
 			return SimpleNode::new;
+		}
+
+		@Override
+		public boolean areNodeIDsConsistent() {
+			return false;
 		}
 
 	}

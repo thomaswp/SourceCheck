@@ -23,6 +23,7 @@ public class RunPythonTemplater {
 				"oneToN",
 		};
 		for (String problem : problems) {
+			parse("../data/itap/single/templates", problem);
 			parse("../data/itap/templates", problem);
 		}
 	}

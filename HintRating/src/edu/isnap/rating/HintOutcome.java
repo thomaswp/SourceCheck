@@ -7,6 +7,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.ASTNode;
@@ -16,12 +17,17 @@ public class HintOutcome implements Comparable<HintOutcome> {
 	public final ASTNode result;
 	public final String assignmentID;
 	public final String requestID;
+	/**
+	 * Distinguishable ID for this hint outcome.
+	 * This ID is a hash code and not guaranteed to be collision-free
+	 * */
+	public final int id;
 
 	private final double weight;
 
 	private final static Comparator<HintOutcome> comparator =
-			Comparator.comparing((HintOutcome a) -> a.weight()).thenComparing(
-					Comparator.comparing(a -> a.result.hashCode()));
+			Comparator.comparing((HintOutcome outcome) -> outcome.weight()).thenComparing(
+					Comparator.comparing(outcome -> outcome.id));
 
 	public double weight() {
 		return weight;
@@ -32,13 +38,20 @@ public class HintOutcome implements Comparable<HintOutcome> {
 		this.assignmentID = assignmentID;
 		this.requestID = requestID;
 		this.weight = weight;
+		HashCodeBuilder builder = new HashCodeBuilder(5, 13);
+		builder.append(result);
+		builder.append(assignmentID);
+		builder.append(requestID);
+		builder.append(weight);
+		// Force the ID to be positive
+		id = result == null ? 0 : builder.toHashCode() & 0x7FFFFFFF;
 		if (weight <= 0 || Double.isNaN(weight)) {
 			throw new IllegalArgumentException("All weights must be positive: " + weight);
 		}
 	}
 
-	public String resultString() {
-		return result.toString();
+	public String resultString(ASTNode from, RatingConfig config) {
+		return ASTNode.diff(from, result, config, 1);
 	}
 
 	@Override
@@ -98,7 +111,7 @@ public class HintOutcome implements Comparable<HintOutcome> {
 		}
 	}
 
-	public Map<String, String> getDebuggingProperties() {
+	public Map<String, String> getDebuggingProperties(ASTNode requestNode) {
 		return new HashMap<>();
 	}
 }

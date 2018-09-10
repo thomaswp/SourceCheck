@@ -8,14 +8,14 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
-import edu.isnap.datasets.Fall2017;
+import edu.isnap.datasets.Spring2016;
 import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.parser.Store.Mode;
 
 public class CreateGradingBaseSpreadsheet {
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 		String formatBase = "http://arena.csc.ncsu.edu/%s/logging/view/display.php";
-		createSpreadsheet(Fall2017.instance, String.format(formatBase, "history/fall2017"));
+		createSpreadsheet(Spring2016.instance, String.format(formatBase, "history/spring2016"));
 	}
 
 	private static void createSpreadsheet(Dataset dataset, String baseURL) {

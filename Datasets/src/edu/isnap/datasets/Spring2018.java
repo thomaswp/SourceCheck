@@ -24,6 +24,7 @@ import edu.isnap.parser.SnapParser.Filter;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.Snapshot;
 
+//TODO: Check for students starting on different assignments
 public class Spring2018 extends Dataset {
 
 	public final static Date start = Assignment.date(2018, 1, 6);

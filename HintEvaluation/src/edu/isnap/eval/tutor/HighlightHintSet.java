@@ -2,7 +2,6 @@ package edu.isnap.eval.tutor;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -13,18 +12,19 @@ import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.HintMap;
-import edu.isnap.ctd.hint.edit.Deletion;
 import edu.isnap.ctd.hint.edit.EditHint;
 import edu.isnap.ctd.hint.edit.Insertion;
-import edu.isnap.ctd.hint.edit.Reorder;
 import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.Diff.ColorStyle;
 import edu.isnap.ctd.util.Tuple;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.eval.tutor.TutorEdits.PrintableTutorHint;
+import edu.isnap.rating.GoldStandard;
 import edu.isnap.rating.HintOutcome;
 import edu.isnap.rating.HintRequest;
+import edu.isnap.rating.RatingConfig;
+import edu.isnap.rating.Trace;
 
 public abstract class HighlightHintSet extends HintMapHintSet {
 
@@ -32,6 +32,19 @@ public abstract class HighlightHintSet extends HintMapHintSet {
 
 	public HighlightHintSet(String name, HintConfig hintConfig) {
 		super(name, hintConfig);
+	}
+
+	/** Legacy method to support loading single-snapshot hint requests from a GoldStandard */
+	public HighlightHintSet addHints(GoldStandard standard) {
+		List<HintRequest> requests = new ArrayList<>();
+		for (String assignmentID : standard.getAssignmentIDs()) {
+			for (String requestID : standard.getRequestIDs(assignmentID)) {
+				Trace trace = new Trace(requestID, assignmentID);
+				trace.add(standard.getHintRequestNode(assignmentID, requestID).toSnapshot());
+				requests.add(new HintRequest(trace));
+			}
+		}
+		return addHints(requests);
 	}
 
 	@Override
@@ -43,7 +56,7 @@ public abstract class HighlightHintSet extends HintMapHintSet {
 			Node code = JsonAST.toNode(request.code, hintConfig.getNodeConstructor());
 			// Applying edits requires nodes to have meaningful IDs, so if they don't by default, we
 			// generate them. We don't otherwise, since the generated IDs won't be consistent.
-			code = config.areNodeIDsConsistent() ? code.copy() : copyWithIDs(code);
+			code = hintConfig.areNodeIDsConsistent() ? code.copy() : copyWithIDs(code);
 			List<EditHint> allHints = hintConfig.usePriority ?
 					highlighter.highlightWithPriorities(code) :
 						highlighter.highlight(code);
@@ -68,8 +81,7 @@ public abstract class HighlightHintSet extends HintMapHintSet {
 				if (outcomeNode.hasType("snapshot")) outcomeNode.type = "Snap!shot";
 				double weight;
 				if (hintConfig.usePriority) {
-					weight = hint.priority.consensus() * getDefaultWeight(hint);
-//					if (priority < 0.25) continue;
+					weight = hint.priority.consensus();
 				} else {
 					weight = 1;
 				}
@@ -80,11 +92,6 @@ public abstract class HighlightHintSet extends HintMapHintSet {
 		}
 		finish();
 		return this;
-	}
-
-	private static double getDefaultWeight(EditHint hint) {
-//		if (hint instanceof Deletion) return 0.25f;
-		return 1;
 	}
 
 	// Filter out hints that wouldn't be shown in iSnap anyway
@@ -117,15 +124,11 @@ public abstract class HighlightHintSet extends HintMapHintSet {
 			}
 		}
 
-		Set<EditHint> hintSet = hints.stream()
-				.filter(h -> !(h instanceof Insertion))
-				// Maybe? Last study showed these are not generally created by people
-				.filter(h -> !(h instanceof Reorder))
-				// Maybe? Technically we do show this, but it's just highlighting, and probably
-				// should go away
-				.filter(h -> !(h instanceof Deletion && ((Deletion) h).node.hasType("script")))
+		// Empirically, we know that almost all hints take the form of moves or insertions
+		Set<EditHint> hintSet = insertions.stream()
+				.map(i -> (EditHint)i)
 				.collect(Collectors.toSet());
-		hintSet.addAll(insertions);
+
 		return hintSet;
 	}
 
@@ -152,15 +155,15 @@ public abstract class HighlightHintSet extends HintMapHintSet {
 		}
 
 		@Override
-		public String resultString() {
+		public String resultString(ASTNode from, RatingConfig config) {
 			return (editHint.priority == null ? "" : (editHint.priority.toString() + "\n")) +
 					editHint.toString() + ":\n" +
-					ASTNode.diff(from, result, config, 1);
+					super.resultString(from, config);
 		}
 
 		@Override
-		public Map<String, String> getDebuggingProperties() {
-			Map<String, String> map = new LinkedHashMap<>();
+		public Map<String, String> getDebuggingProperties(ASTNode requestNode) {
+			Map<String, String> map = super.getDebuggingProperties(requestNode);
 			map.put("action", editHint.action());
 			if (editHint.priority == null) return map;
 			Map<String, Object> props = editHint.priority.getPropertiesMap();
@@ -182,7 +185,7 @@ public abstract class HighlightHintSet extends HintMapHintSet {
 				String from = outcome.from.prettyPrint(true, config);
 				String to = outcome.result.prettyPrint(true, config);
 				edits.add(new PrintableTutorHint(hintID++, requestID, null,
-						outcome.assignmentID, outcome.from,
+						outcome.assignmentID, null, outcome.from,
 						outcome.result, Diff.diff(from, to)));
 			}
 		}

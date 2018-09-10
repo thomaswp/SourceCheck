@@ -20,6 +20,8 @@ import edu.isnap.parser.elements.Snapshot;
 
 public class ParseSubmitted {
 
+	public final static String NO_LOG_PREFIX = "nolog-";
+
 	private final static int MIN_LOG_LENGTH = 30;
 
 	public static void printToGrade(Assignment assignment) throws IOException {
@@ -84,8 +86,8 @@ public class ParseSubmitted {
 				boolean noGUID = false;
 				if (guid == null || guid.length() == 0) {
 					guid = file.getName();
-					guid = guid.substring(0, guid.length() - 4).replaceAll("nolog-", "");
-					guid = "nolog-" + guid;
+					guid = guid.substring(0, guid.length() - 4).replaceAll(NO_LOG_PREFIX, "");
+					guid = NO_LOG_PREFIX + guid;
 					noGUID = true;
 				}
 

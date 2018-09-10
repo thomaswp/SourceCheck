@@ -2,37 +2,33 @@ package edu.isnap.eval.milestones;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
-import edu.isnap.datasets.Fall2016;
+import edu.isnap.datasets.aggregate.CSC200;
 import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
 
-public class SelectSquiralProjects {
+public class SelectProjects {
+
+
 	public static void main(String[] args) throws FileNotFoundException, IOException {
-		writeRatingIDs();
+		Assignment assignment = CSC200.Squiral;
+		writeDataSpreadsheet(assignment);
+		writeRatingIDs(assignment);
 	}
 
-	public static void writeDataSpreadsheet() throws FileNotFoundException, IOException {
+	public static void writeDataSpreadsheet(Assignment assignment)
+			throws FileNotFoundException, IOException {
 		String baseURL = "http://arena.csc.ncsu.edu/history/fall2016/logging/view/display.php";
 		Spreadsheet spreadsheet = new Spreadsheet();
-		Assignment assignment = Fall2016.Squiral;
-		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, false, true,
-				new SnapParser.SubmittedOnly());
-		for (AssignmentAttempt attempt : attempts.values()) {
-//			if (attempt.grade.average() != 1) continue;
-			boolean usedHint = false;
-			for (AttemptAction action : attempt) {
-				if (AttemptAction.HINT_DIALOG_DESTROY.equals(action.message)) {
-					usedHint = true;
-					break;
-				}
-			}
-			if (usedHint) continue;
+		List<AssignmentAttempt> attempts = selectAttempts(assignment);
+		for (AssignmentAttempt attempt : attempts) {
 			spreadsheet.newRow();
 			spreadsheet.put("id", String.format(
 					"=HYPERLINK(\"%s?id=%s&assignment=%s&start=%d&end=%d\", \"%s\")",
@@ -45,12 +41,11 @@ public class SelectSquiralProjects {
 		spreadsheet.write(assignment.exportDir() + "/feature-tagging.csv");
 	}
 
-	public static void writeRatingIDs() {
-		Assignment assignment = Fall2016.Squiral;
+	public static List<AssignmentAttempt> selectAttempts(Assignment assignment) {
 		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, false, true,
 				new SnapParser.SubmittedOnly());
+		List<AssignmentAttempt> selected = new ArrayList<>();
 		for (AssignmentAttempt attempt : attempts.values()) {
-//			if (attempt.grade.average() != 1) continue;
 			boolean usedHint = false;
 			for (AttemptAction action : attempt) {
 				if (AttemptAction.HINT_DIALOG_DESTROY.equals(action.message)) {
@@ -59,6 +54,14 @@ public class SelectSquiralProjects {
 				}
 			}
 			if (usedHint) continue;
+			selected.add(attempt);
+		}
+		return selected;
+	}
+
+	public static void writeRatingIDs(Assignment assignment) {
+		List<AssignmentAttempt> attempts = selectAttempts(assignment);
+		for (AssignmentAttempt attempt : attempts) {
 			System.out.println(attempt.id);
 			for (AttemptAction action : attempt) {
 				if (action.snapshot != null) {

@@ -307,6 +307,10 @@ public abstract class Node extends StringHashable implements INode {
 		return a.equals(b);
 	}
 
+	public String parentType() {
+		return parent == null ? null : parent.type;
+	}
+
 	public boolean parentHasType(String... types) {
 		return parent != null && parent.hasType(types);
 	}
@@ -509,10 +513,13 @@ public abstract class Node extends StringHashable implements INode {
 				}
 				if (c instanceof Reorder) {
 					int[] reorderings = ((Reorder) c).reordering;
+					int originalIndex = index;
 					index = ArrayUtils.indexOf(reorderings, index);
 					if (index == -1) {
+						System.err.println(node.parent);
+						System.err.println(node.type);
 						throw new RuntimeException("Invalid reorder index: " +
-								index + ", " + Arrays.toString(reorderings));
+								originalIndex + ", " + Arrays.toString(reorderings));
 					}
 				}
 			}
@@ -601,9 +608,20 @@ public abstract class Node extends StringHashable implements INode {
 		Node constructNode(Node parent, String type, String value, String id);
 	}
 
+	public ASTSnapshot toASTSnapshot(boolean isCorrect, String source) {
+		ASTSnapshot node = new ASTSnapshot(type, value, id, isCorrect, source);
+		children.forEach(child -> node.addChild(child == null ? null : child.toASTNode()));
+		return node;
+	}
+
 	public ASTNode toASTNode() {
 		ASTNode node = new ASTNode(type, value, id);
 		children.forEach(child -> node.addChild(child == null ? null : child.toASTNode()));
 		return node;
+	}
+
+	@Override
+	public String toString() {
+		return prettyPrint(true);
 	}
 }

@@ -12,3 +12,4 @@ help-seeking/*/submitted/*/*
 !*/*/unittests/**
 !*/*/starts.csv
 *.zip
+*.gz

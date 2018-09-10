@@ -242,7 +242,7 @@ public class Graph<N,E> {
 		public final E data;
 		public int weight = 1;
 		public boolean synthetic;
-		public double bRelativeWeight, bR;
+		public double bRelativeWeight;
 		public boolean bBest;
 
 		@SuppressWarnings("unused")

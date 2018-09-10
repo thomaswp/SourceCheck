@@ -16,9 +16,17 @@ public class Deletion extends PositionalEdit {
 		return String.format(DELETION_STRING, this.lineNumber, this.bG.getUniqueLabel(), this.aG.getUniqueLabel(), this.start);
 	}
 
+	public Node parentNode() {
+		return aG.tag;
+	}
+
+	public Node deletedNode() {
+		return bG.tag;
+	}
+
 	@Override
 	public Node outcome(Node from) {
-		Node parent = aG.tag, deleted = bG.tag;
+		Node parent = parentNode(), deleted = deletedNode();
 		if (deleted.root() != from) {
 			throw new RuntimeException("Deleted node not in from");
 		}

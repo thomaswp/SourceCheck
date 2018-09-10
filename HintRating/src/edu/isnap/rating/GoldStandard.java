@@ -4,12 +4,11 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -19,21 +18,15 @@ import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.ctd.util.map.MapFactory;
 import edu.isnap.hint.util.Spreadsheet;
-import edu.isnap.rating.EditExtractor.Edit;
 import edu.isnap.rating.TutorHint.Priority;
 import edu.isnap.rating.TutorHint.Validity;
 
 public class GoldStandard {
 
 	private final HashMap<String, ListMap<String, TutorHint>> map = new HashMap<>();
-	private final List<HintRequest> hintRequests = new ArrayList<>();
 
 	public Set<String> getAssignmentIDs() {
 		return map.keySet();
-	}
-
-	public List<HintRequest> getHintRequests() {
-		return Collections.unmodifiableList(hintRequests);
 	}
 
 	public Set<String> getRequestIDs(String assignmentID) {
@@ -41,7 +34,7 @@ public class GoldStandard {
 	}
 
 	public List<TutorHint> getValidHints(String assignmentID, String requestID) {
-		return map.get(assignmentID).getList(requestID);
+		return new ArrayList<>(map.get(assignmentID).getList(requestID));
 	}
 
 	public ASTNode getHintRequestNode(String assignment, String requestID) {
@@ -55,30 +48,8 @@ public class GoldStandard {
 			List<? extends TutorHint> list = hints.get(assignment);
 			ListMap<String, TutorHint> hintMap = new ListMap<>(MapFactory.TreeMapFactory);
 			list.forEach(hint -> hintMap.add(hint.requestID, hint));
-//			testEditExtraction(list);
 			map.put(assignment, hintMap);
-
-			Set<String> addedIDs = new HashSet<>();
-			list.forEach(edit -> {
-				if (addedIDs.add(edit.requestID)) {
-					hintRequests.add(new HintRequest(edit.requestID, assignment, edit.from));
-				}
-			});
-			hintRequests.sort(Comparator.comparing((HintRequest req) -> req.assignmentID)
-					.thenComparing(Comparator.comparing(req -> req.id)));
 		}
-	}
-
-	protected void testEditExtraction(List<? extends TutorHint> list) {
-		list.forEach(hint -> {
-			Set<Edit> editsTED = EditExtractor.extractEditsUsingTED(hint.from, hint.to);
-			Set<Edit> editsIDs = EditExtractor.extractEditsUsingIDs(hint.from, hint.to);
-			if (!editsTED.equals(editsIDs)) {
-				System.out.println(hint.toDiff(RatingConfig.Snap));
-				EditExtractor.printEditsComparison(editsTED, editsIDs, "TED", "IDs");
-				System.out.println("------------");
-			}
-		});
 	}
 
 	public static GoldStandard merge(GoldStandard... standards) {
@@ -92,7 +63,13 @@ public class GoldStandard {
 		return new GoldStandard(allHints);
 	}
 
-	public void writeSpreadsheet(String path) throws FileNotFoundException, IOException {
+	public void writeSpreadsheet(String path)
+			throws FileNotFoundException, IOException {
+		Spreadsheet spreadsheet = createHintsSpreadsheet((hint, spreadhseet) -> {});
+		spreadsheet.write(path);
+	}
+
+	public Spreadsheet createHintsSpreadsheet(BiConsumer<TutorHint, Spreadsheet> addColumns) {
 		Spreadsheet spreadsheet = new Spreadsheet();
 		for (String assignmentID : map.keySet()) {
 			ListMap<String, TutorHint> hintMap = map.get(assignmentID);
@@ -104,15 +81,19 @@ public class GoldStandard {
 					spreadsheet.newRow();
 					spreadsheet.put("assignmentID", assignmentID);
 					spreadsheet.put("requestID", requestID);
+					spreadsheet.put("year", hint.year);
 					spreadsheet.put("hintID", hint.hintID);
-					spreadsheet.put("validity", hint.validity.value);
+					for (Validity v : Validity.values()) {
+						spreadsheet.put(v.name(), hint.validity.contains(v));
+					}
 					spreadsheet.put("priority", hint.priority == null ? "" : hint.priority.value);
 					spreadsheet.put("from", fromJSON);
 					spreadsheet.put("to", hint.to.toJSON().toString());
+					addColumns.accept(hint, spreadsheet);
 				}
 			}
 		}
-		spreadsheet.write(path);
+		return spreadsheet;
 	}
 
 	public static GoldStandard parseSpreadsheet(String path)
@@ -123,8 +104,8 @@ public class GoldStandard {
 		for (CSVRecord record : parser) {
 			String assignmentID = record.get("assignmentID");
 			String requestID = record.get("requestID");
+			String year = record.get("year");
 			int hintID = Integer.parseInt(record.get("hintID"));
-			Validity validity = Validity.fromInt(Integer.parseInt(record.get("validity")));
 			String priorityString = record.get("priority");
 			Priority priority = priorityString.isEmpty() ?
 					null : Priority.fromInt(Integer.parseInt(priorityString));
@@ -135,8 +116,13 @@ public class GoldStandard {
 			}
 			ASTNode to = ASTNode.parse(record.get("to"));
 
+			EnumSet<Validity> validity = EnumSet.noneOf(Validity.class);
+			for (Validity v : Validity.values()) {
+				if (Spreadsheet.TRUE.equals(record.get(v.name()))) validity.add(v);
+			}
+
 			TutorHint hint = new TutorHint(
-					hintID, requestID, "consensus", assignmentID, lastFrom, to);
+					hintID, requestID, "consensus", assignmentID, year, lastFrom, to);
 			hint.validity = validity;
 			hint.priority = priority;
 			hints.add(assignmentID, hint);

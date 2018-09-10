@@ -1,33 +1,25 @@
 package edu.isnap.rating;
 
+import java.util.Comparator;
+import java.util.EnumSet;
+
 import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.util.Diff;
 
-public class TutorHint {
+public class TutorHint implements Comparable<TutorHint> {
 
 	public enum Validity {
-		NoTutors(0), OneTutor(1), MultipleTutors(2), Consensus(3);
+		OneTutor(1), MultipleTutors(2), Consensus(3);
 
 		public final int value;
 
 		Validity(int value) {
 			this.value = value;
 		}
-
-		public static Validity fromInt(int value) {
-			for (Validity validity : Validity.values()) {
-				if (validity.value == value) return validity;
-			}
-			return null;
-		}
-
-		public boolean isAtLeast(Validity minValidity) {
-			return value >= minValidity.value;
-		}
 	}
 
 	public enum Priority {
-		Highest(1), High(2), Normal(3), TooSoon(4);
+		Highest(1), High(2), Normal(3);
 
 		public final int value;
 
@@ -49,18 +41,27 @@ public class TutorHint {
 
 	public final int hintID;
 	public final String requestID;
+	public final String year;
 	public final String tutor, assignmentID;
 	public final ASTNode from, to;
 
-	public Validity validity;
+	// We use an EnumSet for validity, since they do no have a strict ordering. A hint may have
+	// only 1 initial tutor vote but then be included in consensus (so Consensus, but not
+	// MultipleTutors).
+	public EnumSet<Validity> validity;
 	public Priority priority;
 
-	public TutorHint(int hintID, String requestID, String tutor, String assignmentID, ASTNode from,
-			ASTNode to) {
+	private Validity highestValidity() {
+		return validity.stream().max(Comparator.comparing(v -> v.value)).orElseGet(() -> null);
+	}
+
+	public TutorHint(int hintID, String requestID, String tutor, String assignmentID, String year,
+			ASTNode from, ASTNode to) {
 		this.hintID = hintID;
 		this.requestID = requestID;
 		this.tutor = tutor;
 		this.assignmentID = assignmentID;
+		this.year = year;
 		this.from = from;
 		this.to = to;
 	}
@@ -76,6 +77,18 @@ public class TutorHint {
 
 	public HintOutcome toOutcome() {
 		return new HintOutcome(to, assignmentID, requestID,
-				priority == null ? 1 : (1.0 / priority.value));
+				priority == null ? 1 : priority.points());
+	}
+
+	private static Comparator<TutorHint> comparator =
+			Comparator.comparing((TutorHint hint) -> hint.assignmentID)
+			.thenComparing(hint -> hint.year == null ? "" : hint.year)
+			.thenComparing(hint -> hint.requestID)
+			.thenComparing(hint -> hint.highestValidity())
+			.thenComparing(hint -> hint.priority == null ? 0 : hint.priority.value);
+
+	@Override
+	public int compareTo(TutorHint o) {
+		return comparator.compare(this, o);
 	}
 }

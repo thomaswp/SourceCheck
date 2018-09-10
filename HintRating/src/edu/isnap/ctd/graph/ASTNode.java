@@ -26,7 +26,7 @@ public class ASTNode implements INode {
 	 * type held in this constant (and no value or id). This is different than an node actually
 	 * representing null/nil/None in the AST, which would presumably have a different type.
 	 * We chose not to ignore these nodes completely, since often they are placeholders for other
-	 * nodes that could exist but where non currently exists, and the index ordering is meaningful.
+	 * nodes that could exist but where none currently exists, and the index ordering is meaningful.
 	 */
 	public final static String EMPTY_TYPE = "null";
 
@@ -103,7 +103,7 @@ public class ASTNode implements INode {
 	public boolean addChild(int index, ASTNode child) {
 		int i = children.size();
 		while (childRelations.contains(String.valueOf(i))) i++;
-		return addChild(String.valueOf(i), child);
+		return addChild(index, String.valueOf(i), child);
 	}
 
 	public boolean addChild(int index, String relation, ASTNode child) {
@@ -132,10 +132,11 @@ public class ASTNode implements INode {
 		return prettyPrint(showValues, config::nodeTypeHasBody);
 	}
 
-	public String prettyPrint(boolean showValues, Predicate<String> isBodyType) {
+	private String prettyPrint(boolean showValues, Predicate<String> isBodyType) {
 		Params params = new Params();
 		params.showValues = showValues;
 		params.isBodyType = isBodyType;
+		params.backquoteValuesWithWhitespace = false;
 		return PrettyPrint.toString(this, params);
 	}
 
@@ -163,9 +164,6 @@ public class ASTNode implements INode {
 		String type = object.getString("type");
 		String value = object.has("value") ? object.getString("value") : null;
 		String id = object.has("id") ? object.getString("id") : null;
-
-		// TODO: Remove IDs from the data and remove this line!
-		if ("script".equals(type)) id = null;
 
 		ASTNode node = new ASTNode(type, value, id);
 
@@ -228,6 +226,35 @@ public class ASTNode implements INode {
 		}
 	}
 
+	public int depth() {
+		if (parent == null) return 0;
+		return parent.depth() + 1;
+	}
+
+	public String parentType() {
+		return parent == null ? null : parent.type;
+	}
+
+	/**
+	 * Replaces this node with the given node in the root AST. Removes this node from its parent and
+	 * adds the given node at the same index. Additionally removes all of this node's children and
+	 * adds them to the given node. Parents will be appropriately set to reflect the replacement.
+	 * Note after replacement, this node will have no parent or children, effectively removed from
+	 * the root AST.
+	 */
+	public void replaceWith(ASTNode node) {
+		if (parent != null) {
+			int index = index();
+			ASTNode parent = this.parent;
+			parent.removeChild(index);
+			parent.addChild(index, node);
+		}
+		for (int i = 0; i < children.size(); i++) {
+			node.addChild(childRelations.get(i), children.get(i));
+		}
+		clearChildren();
+	}
+
 	public ASTNode copy() {
 		ASTNode copy = shallowCopy();
 		for (int i = 0; i < children.size(); i++) {
@@ -258,11 +285,22 @@ public class ASTNode implements INode {
 	}
 
 	public boolean equals(ASTNode rhs, boolean compareIDs, boolean compareChildRelations) {
-		EqualsBuilder builder = new EqualsBuilder();
 		if (!shallowEquals(rhs, compareIDs)) return false;
-		builder.append(children, rhs.children);
-		if (compareChildRelations) builder.append(childRelations, rhs.childRelations);
-		return builder.isEquals();
+		if (children.size() != rhs.children.size()) return false;
+		// Compare children manually so we can pass on the compare flags
+		for (int i = 0; i < children.size(); i++) {
+			if (!equals(children.get(i), rhs.children.get(i), compareIDs, compareChildRelations)) {
+				return false;
+			}
+		}
+		if (compareChildRelations && !childRelations.equals(rhs.childRelations)) return false;
+		return true;
+	}
+
+	public static boolean equals(ASTNode a, ASTNode b, boolean compareIDs,
+			boolean compareChildRelations) {
+		if (a == null) return b == null;
+		return a.equals(b, compareIDs, compareChildRelations);
 	}
 
 	public boolean shallowEquals(ASTNode rhs, boolean compareIDs) {
@@ -286,5 +324,17 @@ public class ASTNode implements INode {
 	@Override
 	public String toString() {
 		return prettyPrint(false, node -> false);
+	}
+
+	public ASTSnapshot toSnapshot() {
+		return toSnapshot(false, null);
+	}
+
+	public ASTSnapshot toSnapshot(boolean isCorrect, String source) {
+		ASTSnapshot snapshot = new ASTSnapshot(type, value, id, isCorrect, source);
+		for (int i = 0; i < children.size(); i++) {
+			snapshot.addChild(childRelations.get(i), children.get(i));
+		}
+		return snapshot;
 	}
 }

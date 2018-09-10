@@ -12,11 +12,11 @@ import edu.isnap.eval.export.JsonAST;
 import edu.isnap.eval.python.PythonHintConfig;
 import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.hint.util.SnapNode;
-import edu.isnap.rating.GoldStandard;
 import edu.isnap.rating.HintRequest;
+import edu.isnap.rating.HintRequestDataset;
 import edu.isnap.rating.HintSet;
 import edu.isnap.rating.RatingConfig;
-import edu.isnap.rating.TrainingDataset.Trace;
+import edu.isnap.rating.Trace;
 
 public abstract class HintMapHintSet extends HintSet {
 
@@ -36,8 +36,8 @@ public abstract class HintMapHintSet extends HintSet {
 		return RatingConfig.Default;
 	}
 
-	public HintMapHintSet addHints(GoldStandard standard) {
-		return addHints(standard.getHintRequests());
+	public HintMapHintSet addHints(HintRequestDataset requestDataset) {
+		return addHints(requestDataset.getAllRequests());
 	}
 
 	public static Node copyWithIDs(Node node) {
@@ -60,7 +60,7 @@ public abstract class HintMapHintSet extends HintSet {
 			List<Node> nodes = trace.stream()
 					.map(node -> JsonAST.toNode(node, SnapNode::new))
 					.collect(Collectors.toList());
-			builder.addAttempt(nodes, config.areNodeIDsConsistent());
+			builder.addAttempt(nodes, hintConfig.areNodeIDsConsistent());
 		}
 		builder.finishedAdding();
 		return builder;

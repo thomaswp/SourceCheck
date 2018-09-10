@@ -2,7 +2,9 @@ package edu.isnap.parser.elements.util;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -19,8 +21,19 @@ import edu.isnap.parser.elements.Sprite;
 public class XML {
 
 	private static HashMap<String, Code> refMap = new HashMap<>();
+	private static Set<String> importedBlockSelectors = new HashSet<>();
 
 	public static void buildRefMap(Element root, String... tags) {
+		NodeList blocks = root.getElementsByTagName("block-definition");
+		for (int i = 0; i < blocks.getLength(); i++) {
+			Element item = as(blocks.item(i), Element.class);
+			if (item != null) {
+				if (item.getAttribute("isImported").equals("true")) {
+					String selector = BlockDefinition.normalizeSelector(item.getAttribute("s"));
+					importedBlockSelectors.add(selector);
+				}
+			}
+		}
 		for (String tag : tags) {
 			NodeList list = root.getElementsByTagName(tag);
 			for (int i = 0; i < list.getLength(); i++) {
@@ -35,6 +48,11 @@ public class XML {
 
 	public static void clearRefMap() {
 		refMap.clear();
+		importedBlockSelectors.clear();
+	}
+
+	public static boolean isImportedBlock(String selector) {
+		return importedBlockSelectors.contains(selector);
 	}
 
 	@SuppressWarnings("unchecked")

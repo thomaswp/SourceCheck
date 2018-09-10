@@ -1,30 +1,30 @@
 package edu.isnap.eval.tutor;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import edu.isnap.ctd.util.map.ListMap;
-import edu.isnap.eval.tutor.TutorEdits.PrintableTutorHint;
 import edu.isnap.rating.HintSet;
 import edu.isnap.rating.RatingConfig;
 import edu.isnap.rating.TutorHint;
 
 public class TutorHintSet extends HintSet {
 
-	public TutorHintSet(String name, RatingConfig config, List<TutorHint> hints) {
+	private List<TutorHint> tutorHints;
+
+	public TutorHintSet(String name, RatingConfig config, List<? extends TutorHint> hints) {
 		super(name, config);
+		this.tutorHints = hints.stream().map(e -> (TutorHint) e).collect(Collectors.toList());
 		hints.forEach(hint -> add(hint.toOutcome()));
 	}
 
-	public static TutorHintSet fromFile(String tutor, RatingConfig config, String filePath)
-			throws FileNotFoundException, IOException {
-		ListMap<String, PrintableTutorHint> edits = TutorEdits.readTutorEditsPython(filePath);
-		List<TutorHint> hints = edits.values().stream()
-				.flatMap(list -> list.stream())
-				.filter(edit -> tutor.equals(edit.tutor))
+	public static TutorHintSet combine(String name, TutorHintSet... hintSets) {
+		if (hintSets.length == 0) {
+			throw new IllegalArgumentException("Must have at least one TutorHintSet");
+		}
+		List<TutorHint> allHints = Arrays.stream(hintSets)
+				.flatMap(set -> set.tutorHints.stream())
 				.collect(Collectors.toList());
-		return new TutorHintSet(tutor, config, hints);
+		return new TutorHintSet(name, hintSets[0].config, allHints);
 	}
 }

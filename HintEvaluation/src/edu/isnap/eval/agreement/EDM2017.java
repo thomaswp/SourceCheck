@@ -42,7 +42,6 @@ import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.agreement.EditComparer.EditDifference;
 import edu.isnap.hint.ConfigurableAssignment;
 import edu.isnap.hint.SnapHintBuilder;
-import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
@@ -91,8 +90,7 @@ public class EDM2017 {
 
 		HashMap<String, HintHighlighter> highlighters = new HashMap<>();
 		for (Assignment assignment : trainingAssignments) {
-			HintConfig config = (assignment instanceof ConfigurableAssignment) ?
-					((ConfigurableAssignment) assignment).getConfig() : new SnapHintConfig();
+			HintConfig config = ConfigurableAssignment.getConfig(assignment);
 			config.useRulesToFilter = false;
 			SnapHintBuilder builder = new SnapHintBuilder(assignment);
 			HintMap hintMap = builder.buildGenerator(Mode.Ignore, 1).hintMap;

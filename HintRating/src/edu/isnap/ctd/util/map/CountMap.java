@@ -21,20 +21,22 @@ public class CountMap<K> extends ExtensionMap<K, Integer>{
 		return count;
 	}
 
-	public void change(K key, int by) {
-		put(key, getCount(key) + by);
+	public int change(K key, int by) {
+		int value = getCount(key) + by;
+		put(key, value);
+		return value;
 	}
 
-	public void increment(K key) {
-		change(key, 1);
+	public int increment(K key) {
+		return change(key, 1);
 	}
 
 	public void incrementAll(Collection<K> items) {
 		for (K item : items) increment(item);
 	}
 
-	public void decrement(K key) {
-		change(key, -1);
+	public int decrement(K key) {
+		return change(key, -1);
 	}
 
 	public void add(CountMap<K> map) {

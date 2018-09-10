@@ -8,6 +8,7 @@ import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.NodeConstructor;
 import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.eval.python.PythonImport.PythonNode;
+import edu.isnap.rating.RatingConfig;
 
 public class PythonHintConfig extends HintConfig {
 	private static final long serialVersionUID = 1L;
@@ -21,18 +22,9 @@ public class PythonHintConfig extends HintConfig {
 		return false;
 	}
 
-	// Some nodes in python have list children that almost always have a single child, such as
-	// comparison and assignment operators. This allows the children of these to be replaced, as
-	// fixed arguments, rather than added and removed separately as statements.
-	private final static String[] usuallySingleListParents = new String[] {
-			"Compare",
-			"Assign",
-	};
-
 	@Override
 	public boolean hasFixedChildren(Node node) {
-		return node != null &&
-				(!"list".equals(node.type()) || node.parentHasType(usuallySingleListParents));
+		return node != null && RatingConfig.Python.hasFixedChildren(node.type(), node.parentType());
 	}
 
 	// No hint should suggest moving lists or most literal types
@@ -41,12 +33,14 @@ public class PythonHintConfig extends HintConfig {
 					"null",
 					"list",
 					"Num",
-					"Str",
 					"FormattedValue",
 					"JoinedStr",
 					"Bytes",
 					"Ellipsis",
 					"NamedConstant",
+					"Load",
+					"Store",
+					"Del",
 			}
 	));
 
@@ -79,6 +73,7 @@ public class PythonHintConfig extends HintConfig {
 				(parent.hasType("UnaryOp") && index == 0) ||
 				(parent.hasType("BoolOp") && index == 0) ||
 				(parent.hasType("Compare") && index == 1) ||
+				(parent.hasType("Call") && index == 0) ||
 				// Children of auto-added lists (e.g. in compare) should also be auto-added
 				(parent.hasType("list") && shouldAutoAdd(parent)) ||
 				node.hasType("Load", "Store", "Del");
@@ -87,5 +82,10 @@ public class PythonHintConfig extends HintConfig {
 	@Override
 	public NodeConstructor getNodeConstructor() {
 		return PythonNode::new;
+	}
+
+	@Override
+	public boolean areNodeIDsConsistent() {
+		return false;
 	}
 }

@@ -6,14 +6,13 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.apache.commons.csv.CSVFormat;
@@ -21,14 +20,13 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.ASTNode;
+import edu.isnap.ctd.graph.ASTSnapshot;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.HintJSON;
-import edu.isnap.ctd.hint.RuleSet;
 import edu.isnap.ctd.hint.edit.EditHint;
 import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.Diff.ColorStyle;
@@ -48,50 +46,52 @@ import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.hint.util.SnapNode;
 import edu.isnap.hint.util.Spreadsheet;
+import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.Snapshot;
 import edu.isnap.rating.GoldStandard;
-import edu.isnap.rating.HintSet;
 import edu.isnap.rating.RateHints;
 import edu.isnap.rating.RatingConfig;
+import edu.isnap.rating.Trace;
+import edu.isnap.rating.TraceDataset;
 import edu.isnap.rating.TutorHint;
 import edu.isnap.rating.TutorHint.Priority;
 import edu.isnap.rating.TutorHint.Validity;
 
 public class TutorEdits {
 
-	protected static void highlightSQL(Dataset trainingDataset, GoldStandard standard)
+//	protected static void highlightSQL(Dataset trainingDataset, GoldStandard standard)
+//			throws FileNotFoundException, IOException {
+//		RuleSet.trace = NullStream.instance;
+//		HintConfig config = new SnapHintConfig();
+//
+//		int offset = 20000;
+//
+//		Spreadsheet spreadsheet = new Spreadsheet();
+//		HighlightHintSet hintSet = new DatasetHighlightHintSet(
+//				trainingDataset.getName(), config, trainingDataset)
+//				.addHints(standard.getHintRequests());
+//		hintSet.toTutorEdits().forEach(edit -> {
+//			System.out.println(edit.toSQLInsert(
+//					"handmade_hints", "highlight", offset, false, true));
+//
+//			spreadsheet.newRow();
+//			spreadsheet.put("Assignment ID", edit.assignmentID);
+//			spreadsheet.put("Row ID", edit.requestID);
+//			spreadsheet.put("Hint ID", edit.hintID + offset);
+//
+//			spreadsheet.put("Valid (0-1)", null);
+//			spreadsheet.put("Priority (1-3)", null);
+//
+//			spreadsheet.put("Hint", edit.editsString(false));
+//		});
+//		spreadsheet.write(trainingDataset.analysisDir() + "/highlight-hints.csv");
+//	}
+
+	public static void buildSnapDatasets(Dataset dataset, String consensusPath,
+			TraceDataset training, TraceDataset requests, Assignment... assignments)
 			throws FileNotFoundException, IOException {
-		RuleSet.trace = NullStream.instance;
-		HintConfig config = new SnapHintConfig();
-
-		int offset = 20000;
-
-		Spreadsheet spreadsheet = new Spreadsheet();
-		HighlightHintSet hintSet = new DatasetHighlightHintSet(
-				trainingDataset.getName(), config, trainingDataset)
-				.addHints(standard.getHintRequests());
-		hintSet.toTutorEdits().forEach(edit -> {
-			System.out.println(edit.toSQLInsert(
-					"handmade_hints", "highlight", offset, false, true));
-
-			spreadsheet.newRow();
-			spreadsheet.put("Assignment ID", edit.assignmentID);
-			spreadsheet.put("Row ID", edit.requestID);
-			spreadsheet.put("Hint ID", edit.hintID + offset);
-
-			spreadsheet.put("Valid (0-1)", null);
-			spreadsheet.put("Priority (1-3)", null);
-
-			spreadsheet.put("Hint", edit.editsString(false));
-		});
-		spreadsheet.write(trainingDataset.analysisDir() + "/highlight-hints.csv");
-	}
-
-	public static void exportRatingDatasetSnap(Dataset dataset, String path,
-			String folder, Assignment... assignments)
-			throws FileNotFoundException, IOException {
-		CSVParser parser = new CSVParser(new FileReader(dataset.dataDir + "/" + path),
+		CSVParser parser = new CSVParser(new FileReader(dataset.dataDir + "/" + consensusPath),
 				CSVFormat.DEFAULT.withHeader());
 		Set<Integer> ids = new HashSet<>();
 		for (CSVRecord record : parser) {
@@ -104,44 +104,42 @@ public class TutorEdits {
 			if (assignment.dataset != dataset) {
 				throw new RuntimeException("Assignment must be from given dataset!");
 			}
-			Set<String> stopped = new HashSet<>();
-			Function<AssignmentAttempt, Predicate<AttemptAction>> actionFilter =
-					attempt -> action -> {
-				if (ids.contains(action.id)) {
-					stopped.add(attempt.id);
-					collectedIDs.add(action.id);
-					return true;
+			for (AssignmentAttempt attempt : assignment.load(
+					Mode.Use, false, true, new SnapParser.LikelySubmittedOnly()).values()) {
+				List<Integer> requestIDs = attempt.rows.rows.stream()
+						.filter(a -> ids.contains(a.id))
+						.map(a -> a.id)
+						.collect(Collectors.toList());
+				collectedIDs.addAll(requestIDs);
+
+				if (requestIDs.size() == 0) {
+					if (assignment.wasLoggingUnstable(attempt.id) ||
+							attempt.grade == null || attempt.grade.average() != 1) continue;
+					Trace trace = JsonAST.createTrace(attempt, assignment.name, true, null);
+					training.addTrace(trace);
+				} else {
+					for (Integer requestID : requestIDs) {
+						requests.addTrace(
+								JsonAST.createTrace(attempt, assignment.name, true, requestID));
+					}
 				}
-				return !stopped.contains(attempt.id);
-			};
-			JsonAST.exportAssignmentTraces(assignment, true, folder + "/requests",
-					attempt -> attempt.rows.rows.stream().anyMatch(a -> ids.contains(a.id)),
-					actionFilter,
-					attempt -> attempt.rows.rows.stream()
-									.filter(a -> ids.contains(a.id))
-									.map(a -> String.valueOf(a.id))
-									.findAny().orElse(attempt.id));
-			JsonAST.exportAssignmentTraces(assignment, true, folder + "/training",
-					attempt -> !stopped.contains(attempt.id) &&
-						attempt.grade != null && attempt.grade.average() == 1,
-					attempt -> action -> true,
-					attempt -> attempt.id);
+
+			}
 		}
 
 		if (collectedIDs.size() != ids.size()) {
 			ids.removeAll(collectedIDs);
 			throw new RuntimeException("Missing row IDs: " + ids);
 		}
-		JsonAST.write(dataset.dataDir + "/export/" + folder + "/values.txt",
-				JsonAST.flushWrittenValues());
 	}
 
-	public static void exportRatingDatasetPython(String jsonDir, String editsDir, String outputDir)
-			throws IOException {
+	public static void buildPythonDatasets(String jsonDir, String editsDir,
+			TraceDataset training, TraceDataset requests) throws IOException {
+
 		Map<String, ListMap<String, PythonNode>> nodeMap =
 				PythonImport.loadAllAssignments(jsonDir);
 		ListMap<String, PrintableTutorHint> tutorHint =
-				readTutorEditsPython(editsDir + "/handmade_hints_ast.csv");
+				readTutorEditsPython(editsDir + "/handmade_hints_ast.csv", null);
 
 		for (String assignmentID : tutorHint.keySet()) {
 			List<PrintableTutorHint> list = tutorHint.get(assignmentID);
@@ -161,11 +159,11 @@ public class TutorEdits {
 					while (!snapshots.get(snapshots.size() - 1).correct.orElse(false)) {
 						snapshots.remove(snapshots.size() - 1);
 					}
-					exportHistory(outputDir, assignmentID, snapshots, null);
+					training.addTrace(createTrace(assignmentID, snapshots, null));
 				} else {
 					for (PythonNode request : hintRequestNodes) {
 						hintRequestIDs.remove(request.id);
-						exportHistory(outputDir, assignmentID, snapshots, request);
+						requests.addTrace(createTrace(assignmentID, snapshots, request));
 					}
 				}
 			}
@@ -177,29 +175,21 @@ public class TutorEdits {
 		}
 	}
 
-	private static void exportHistory(String rootDir, String assignmentID,
-			List<PythonNode> snapshots, PythonNode requestNode)
-					throws FileNotFoundException, JSONException {
+	private static Trace createTrace(String assignmentID, List<PythonNode> snapshots,
+			PythonNode requestNode) throws FileNotFoundException, JSONException {
+		if (snapshots.size() == 0) return null;
+		String id = requestNode == null ? snapshots.get(0).id : requestNode.id;
+		Trace trace = new Trace(id, assignmentID);
 		PythonNode lastNode = null;
-		int order = 0;
-		boolean isTraining = requestNode == null;
 		for (PythonNode snapshot : snapshots) {
 			if (snapshot.equals(lastNode)) continue;
-			JSONObject json = snapshot.toASTNode().toJSON();
-			json.put("isCorrect", snapshot.correct.orElse(false));
-			json.put("source", snapshot.source);
-			String id = snapshot.id;
-			if (id.length() > 8) id = id.substring(0, 8);
-			JsonAST.write(
-					String.format("%s/%s/%s/%s/%05d-%s.json",
-						rootDir,
-						isTraining ? "training" : "requests",
-						assignmentID,
-						isTraining ? snapshot.student : requestNode.id,
-						order++, id),
-					json.toString(2));
+			if (snapshot.tag == null || !(snapshot.tag instanceof ASTSnapshot)) {
+				throw new RuntimeException("PythonNode missing ASTSnapshot tag");
+			}
+			trace.add((ASTSnapshot) snapshot.tag);
 			if (snapshot == requestNode) break;
 		}
+		return trace;
 	}
 
 	public static void verifyHints(Dataset dataset) throws FileNotFoundException, IOException {
@@ -216,7 +206,7 @@ public class TutorEdits {
 	public static void compareHintsPython(String dir, int offset)
 			throws FileNotFoundException, IOException {
 		String writeDir = String.format("%s/analysis/tutor-hints/%d/", dir, offset);
-		compareHints(readTutorEditsPython(dir + "/handmade_hints_ast.csv"),
+		compareHints(readTutorEditsPython(dir + "/handmade_hints_ast.csv", null),
 				writeDir, offset, RatingConfig.Python);
 	}
 
@@ -249,10 +239,12 @@ public class TutorEdits {
 				edits.stream()
 				.filter(e -> e.requestID.equals(requestID))
 				.forEach(e -> givers.add(
-						RateHints.normalizeNewValuesTo(e.from, e.to, config), e));
+						RateHints.normalizeNewValuesTo(
+								RateHints.normalizeNodeValues(e.from, config),
+								e.to, config, null), e));
 
 				ASTNode from = givers.values().stream().findFirst().get().get(0).from;
-				String fromPP = from.prettyPrint(true, config::nodeTypeHasBody);
+				String fromPP = from.prettyPrint(true, config);
 				System.out.println(fromPP);
 
 				List<ASTNode> keys = new ArrayList<>(givers.keySet());
@@ -262,7 +254,7 @@ public class TutorEdits {
 						givers.get(n1).get(0).hintID, givers.get(n2).get(0).hintID));
 				for (ASTNode to : keys) {
 					System.out.println(Diff.diff(fromPP,
-							to.prettyPrint(true, config::nodeTypeHasBody), 1));
+							to.prettyPrint(true, config), 1));
 					List<PrintableTutorHint> tutorEdits = givers.get(to);
 					PrintableTutorHint firstEdit = tutorEdits.get(0);
 					String editsString = firstEdit.editsString(true);
@@ -286,8 +278,8 @@ public class TutorEdits {
 								.collect(Collectors.toMap(e -> e.tutor, e -> e));
 					} catch (Exception e) {
 						System.out.println("Duplicate hints from one tutor:");
-						System.out.println(from.prettyPrint(true, config::nodeTypeHasBody));
-						System.out.println(to.prettyPrint(true, config::nodeTypeHasBody));
+						System.out.println(from.prettyPrint(true, config));
+						System.out.println(to.prettyPrint(true, config));
 						tutorEdits.forEach(System.out::println);
 						throw e;
 					}
@@ -321,43 +313,50 @@ public class TutorEdits {
 		JsonAST.write(writeDir + "consensus.sql", sql.toString());
 	}
 
-	public static Map<String, HintSet> readTutorHintSets(Dataset dataset)
+	public static Map<String, TutorHintSet> readTutorHintSetsSnap(Dataset dataset)
 			throws FileNotFoundException, IOException {
-		Map<String, HintSet> hintSets = new HashMap<>();
 		ListMap<String, PrintableTutorHint> allEdits = readTutorEditsSnap(dataset);
-		for (List<PrintableTutorHint> list : allEdits.values()) {
-			for (TutorHint edit : list) {
-				if (edit.tutor.equals("consensus")) continue;
-				HintSet set = hintSets.get(edit.tutor);
-				if (set == null) {
-					hintSets.put(edit.tutor,
-							set = new HintSet(edit.tutor, RatingConfig.Snap));
-				}
-				set.add(edit.toOutcome());
-			}
-		}
-		hintSets.values().forEach(s -> s.finish());
-		return hintSets;
+		return createTutorHintSets(allEdits, RatingConfig.Snap);
+	}
+
+	public static Map<String, TutorHintSet> readTutorHintSetsPython(String filePath, String year)
+			throws FileNotFoundException, IOException {
+		ListMap<String, PrintableTutorHint> allEdits = readTutorEditsPython(
+				filePath + "handmade_hints_ast.csv", year);
+		return createTutorHintSets(allEdits, RatingConfig.Python);
+	}
+
+	private static Map<String, TutorHintSet> createTutorHintSets(
+			ListMap<String, PrintableTutorHint> allEdits, RatingConfig config) {
+		ListMap<String, TutorHint> hintMap = new ListMap<>();
+		allEdits.values().stream()
+		.flatMap(list -> list.stream())
+		.filter(edit -> !edit.tutor.equals("consensus"))
+		.forEach(hint -> hintMap.add(hint.tutor, hint));
+		return hintMap.keySet().stream().collect(Collectors.toMap(
+				tutor -> tutor,
+				tutor -> new TutorHintSet(tutor, config, hintMap.get(tutor))));
 	}
 
 	protected static GoldStandard readConsensusSnap(Dataset dataset, String consensusPath)
 			throws FileNotFoundException, IOException {
-		Map<Integer, Tuple<Validity, Priority>> consensus =
+		Map<Integer, Tuple<EnumSet<Validity>, Priority>> consensus =
 				readConsensusSpreadsheet(new File(dataset.dataDir, consensusPath).getPath(), true);
 		ListMap<String, PrintableTutorHint> allEdits = readTutorEditsSnap(dataset);
 		return readConsensus(consensus, allEdits);
 	}
 
-	protected static GoldStandard readConsensusPython(String dir)
+	protected static GoldStandard readConsensusPython(String dir, String year)
 			throws FileNotFoundException, IOException {
-		Map<Integer, Tuple<Validity, Priority>> consensus =
+		Map<Integer, Tuple<EnumSet<Validity>, Priority>> consensus =
 				readConsensusSpreadsheet(new File(dir, "consensus.csv").getPath(), false);
 		ListMap<String, PrintableTutorHint> allEdits =
-				readTutorEditsPython(dir + "/handmade_hints_ast.csv");
+				readTutorEditsPython(dir + "/handmade_hints_ast.csv", year);
 		return readConsensus(consensus, allEdits);
 	}
 
-	private static GoldStandard readConsensus(Map<Integer, Tuple<Validity, Priority>> consensus,
+	private static GoldStandard readConsensus(Map<Integer,
+			Tuple<EnumSet<Validity>, Priority>> consensus,
 			ListMap<String, PrintableTutorHint> allEdits) {
 		ListMap<String, PrintableTutorHint> consensusEdits = new ListMap<>();
 		for (String assignmentID : allEdits.keySet()) {
@@ -365,11 +364,11 @@ public class TutorEdits {
 			List<PrintableTutorHint> keeps = new ArrayList<>();
 			for (PrintableTutorHint hint : list) {
 				if (!hint.tutor.equals("consensus")) continue;
-				Tuple<Validity, Priority> ratings = consensus.get(hint.hintID);
+				Tuple<EnumSet<Validity>, Priority> ratings = consensus.get(hint.hintID);
 				if (ratings == null) {
 					throw new RuntimeException("No consensus rating for: " + hint.hintID);
 				}
-				if (ratings.x == Validity.NoTutors) continue;
+				if (ratings.x.isEmpty()) continue;
 				hint.validity = ratings.x;
 				hint.priority = ratings.y;
 				keeps.add(hint);
@@ -379,23 +378,21 @@ public class TutorEdits {
 		return new GoldStandard(consensusEdits);
 	}
 
-	private static Map<Integer, Tuple<Validity, Priority>> readConsensusSpreadsheet(String path,
-			boolean failIfNoConsensus)
+	private static Map<Integer, Tuple<EnumSet<Validity>, Priority>>
+			readConsensusSpreadsheet(String path, boolean failIfNoConsensus)
 			throws FileNotFoundException, IOException {
-		Map<Integer, Tuple<Validity, Priority>> map = new HashMap<>();
+		Map<Integer, Tuple<EnumSet<Validity>, Priority>> map = new HashMap<>();
 		CSVParser parser = new CSVParser(new FileReader(path), CSVFormat.DEFAULT.withHeader());
 		for (CSVRecord row : parser) {
 			int id = Integer.parseInt(row.get("Hint ID"));
 			String priorityString = row.get("Consensus (Priority)");
 			boolean consensusValid = false;
-			boolean hasConsensus = false;
 			int priority = 0;
 			try {
 				consensusValid = Double.parseDouble(row.get("Consensus (Validity)")) == 1;
 				if (consensusValid) {
 					priority = Integer.parseInt(priorityString);
 				}
-				hasConsensus = true;
 			} catch (NumberFormatException e) {
 				if (failIfNoConsensus) {
 					parser.close();
@@ -405,19 +402,16 @@ public class TutorEdits {
 
 			int v1 = Integer.parseInt(row.get("V1"));
 
-			if (!hasConsensus) {
+			if (parser.getHeaderMap().containsKey("P4")) {
+				// This is a fix to ensure that "Too Soon" votes are not counted as valid votes:
 				// Count the validity using the number of P1-P3 votes, since P4 votes (which are
 				// counted in V1) should not count as votes for validity unless there is consensus.
-				// If there is consensus, none of it matters, since we will use that validity value.
 				int validPriorityCount = 0;
 				for (int i = 1; i <= 3; i++) {
 					String key = "P" + i;
 					validPriorityCount += Integer.parseInt(row.get(key));
 				}
-				int tooSoonCount = 0;
-				if (parser.getHeaderMap().containsKey("P4")) {
-					tooSoonCount = Integer.parseInt(row.get("P4"));
-				}
+				int tooSoonCount = Integer.parseInt(row.get("P4"));
 				if (v1 > validPriorityCount + tooSoonCount) {
 					parser.close();
 					System.err.printf("ID: %d, V1: %d > (P1-3: %d) + (P4: %d)\n",
@@ -427,15 +421,16 @@ public class TutorEdits {
 				v1 -= tooSoonCount;
 			}
 
-			Validity validity;
+			EnumSet<Validity> validity = EnumSet.noneOf(Validity.class);
+
 			if (consensusValid) {
-				validity = Validity.Consensus;
-			} else if (v1 > 1) {
-				validity = Validity.MultipleTutors;
-			} else if (v1 > 0) {
-				validity = Validity.OneTutor;
-			} else {
-				validity = Validity.NoTutors;
+				validity.add(Validity.Consensus);
+			}
+			if (v1 > 1) {
+				validity.add(Validity.MultipleTutors);
+			}
+			if (v1 > 0) {
+				validity.add(Validity.OneTutor);
 			}
 			map.put(id, new Tuple<>(validity, Priority.fromInt(priority)));
 		}
@@ -454,6 +449,8 @@ public class TutorEdits {
 		Map<String, Assignment> assignments = dataset.getAssignmentMap();
 		Map<Integer, AttemptAction> hintActionMap = new HashMap<>();
 		Set<String> loadedAssignments = new HashSet<>();
+
+		String year = dataset.getName().toLowerCase();
 
 		return readTutorEdits(dataset.dataDir + File.separator + csvFile,
 				(hintID, requestID, tutor, assignmentID, toSource, row) -> {
@@ -485,9 +482,45 @@ public class TutorEdits {
 				return null;
 			}
 
-			return new PrintableTutorHint(hintID, requestID, tutor, assignmentID, from, to,
-					toSource);
+			fixNewCustomBlockValues(from, to);
+
+			return new PrintableTutorHint(hintID, requestID, tutor, assignmentID, year,
+					from, to, toSource);
 		});
+	}
+
+	/**
+	 * Fixes an issue with newly-added custom block calls, where an un-applied custom block may
+	 * have a different name than the call block the tutor used. Since a hint algorithm will only
+	 * see the current version of the custom block name, this is problematic, so we search for the
+	 * match and change the value to the most recent custom block name.
+	 */
+	private static boolean fixNewCustomBlockValues(ASTNode from, ASTNode to) {
+		Map<String, ASTNode> added = new HashMap<>();
+		Map<String, ASTNode> customBlocks = new HashMap<>();
+		to.recurse(node -> {
+			if (node.id != null) added.put(node.id, node);
+			if (node.hasType("customBlock")) customBlocks.put(node.value, node);
+		});
+		from.recurse(node -> added.remove(node.id));
+		boolean fixed = true;
+		for (ASTNode node : added.values()) {
+			if (node.hasType("evaluateCustomBlock")) {
+				if (!customBlocks.containsKey(node.value)) {
+					List<String> matches = customBlocks.keySet().stream()
+						.filter(name -> name.contains(node.value) || node.value.contains(name))
+						.collect(Collectors.toList());
+					if (matches.size() != 1) {
+						System.err.println("No matching custom block: " + node.value);
+						System.err.println(ASTNode.diff(from, to, RatingConfig.Snap));
+						continue;
+					}
+					node.replaceWith(new ASTNode(node.type, matches.get(0), node.id));
+					fixed = true;
+				}
+			}
+		}
+		return fixed;
 	}
 
 	private static ASTNode toPrunedPythonNode(String json) {
@@ -504,8 +537,8 @@ public class TutorEdits {
 		return node;
 	}
 
-	public static ListMap<String, PrintableTutorHint> readTutorEditsPython(String filePath)
-			throws FileNotFoundException, IOException {
+	public static ListMap<String, PrintableTutorHint> readTutorEditsPython(String filePath,
+			String year) throws FileNotFoundException, IOException {
 		return readTutorEdits(filePath,
 				(hintID, requestID, tutor, assignmentID, toSource, row) -> {
 			ASTNode from, to;
@@ -516,7 +549,7 @@ public class TutorEdits {
 				System.out.println("Error reading hint: " + hintID);
 				throw e;
 			}
-			return new PrintableTutorHint(hintID, requestID, tutor, assignmentID, from, to,
+			return new PrintableTutorHint(hintID, requestID, tutor, assignmentID, year, from, to,
 					toSource);
 		});
 	}
@@ -592,8 +625,8 @@ public class TutorEdits {
 
 
 		public PrintableTutorHint(int hintID, String requestID, String tutor, String assignmentID,
-				ASTNode from, ASTNode to, String toSource) {
-			super(hintID, requestID, tutor, assignmentID, from, to);
+				String year, ASTNode from, ASTNode to, String toSource) {
+			super(hintID, requestID, tutor, assignmentID, year, from, to);
 			fromNode = HighlightHintSet.copyWithIDs(JsonAST.toNode(from, SnapNode::new));
 			toNode = JsonAST.toNode(to, SnapNode::new);
 			edits = calculateEdits();

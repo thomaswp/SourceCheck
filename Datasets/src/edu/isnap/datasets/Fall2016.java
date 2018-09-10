@@ -44,6 +44,9 @@ public class Fall2016 extends Dataset {
 				// Did both inlab and homework under the same assignment
 				case "b15bace5-74b5-4b0e-9592-e541c47b8678":
 					return PolygonMaker;
+				// Did whole assignment in polygonMaker but didn't export
+				case "df49facd-18f2-4930-882a-64a106b52f36":
+					return PolygonMaker;
 			}
 			return super.getLocationAssignment(attemptID);
 		}
@@ -59,6 +62,8 @@ public class Fall2016 extends Dataset {
 			switch (attemptID) {
 				// Briefly changed to "none" and changed small things before submitting
 				case "308e9a37-8630-481c-b983-d1803f5b83ee": return 172189;
+				// Did whole assignment in polygonMaker but didn't export
+				case "df49facd-18f2-4930-882a-64a106b52f36": return 150050;
 			}
 			return super.getSubmittedRow(attemptID);
 		}
