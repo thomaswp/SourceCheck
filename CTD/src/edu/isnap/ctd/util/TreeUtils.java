@@ -3,7 +3,9 @@ package edu.isnap.ctd.util;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
@@ -164,8 +166,12 @@ public class TreeUtils {
 		
 		opt.init(tree1, tree2);
 		
-		ArrayList<LblTree> list1 = Collections.list(tree1.depthFirstEnumeration());
-		ArrayList<LblTree> list2 = Collections.list(tree2.depthFirstEnumeration());
+		List<TreeNode> nodes1 = Collections.list(tree1.depthFirstEnumeration());
+		List<LblTree> list1 = nodes1.stream().map(n -> (LblTree) n).collect(Collectors.toList());
+		list1 = new ArrayList<>(list1);
+		List<TreeNode> nodes2 = Collections.list(tree2.depthFirstEnumeration());
+		List<LblTree> list2 = nodes2.stream().map(n -> (LblTree) n).collect(Collectors.toList());
+		list2 = new ArrayList<>(list2);
 				
 		LinkedList<int[]> editMapping = opt.computeEditMapping();
 		for (int[] a : editMapping) {
@@ -246,14 +252,14 @@ public class TreeUtils {
 	}
 
 	private static int getPairedIndex(LinkedList<int[]> editMapping, TreeNode item, 
-			ArrayList<LblTree> itemList, boolean itemInTree2) {
+			List<LblTree> list2, boolean itemInTree2) {
 		
 		int fromIndex = itemInTree2 ? 1 : 0;
 		int toIndex = itemInTree2 ? 0 : 1;
 		
 		int index = 0;
-		for (; index < itemList.size(); index++) {
-			if (itemList.get(index) == item) break;
+		for (; index < list2.size(); index++) {
+			if (list2.get(index) == item) break;
 		}
 		for (int[] a : editMapping) {
 			if (a[fromIndex] == index + 1) {
@@ -264,13 +270,13 @@ public class TreeUtils {
 	}
 	
 	private static TreeAction insert(LinkedList<int[]> editMapping, LblTree toInsert, 
-			ArrayList<LblTree> insertList, ArrayList<LblTree> otherList) {
+			List<LblTree> list2, List<LblTree> list1) {
 		TreeNode parent = toInsert.getParent();
 		
-		int parentPairIndex = getPairedIndex(editMapping, parent, insertList, true);
+		int parentPairIndex = getPairedIndex(editMapping, parent, list2, true);
 		
 		if (parentPairIndex >= 0) {
-			LblTree parentPair = otherList.get(parentPairIndex);
+			LblTree parentPair = list1.get(parentPairIndex);
 			int i0 = 0, i1 = 0;
 			while (true) {
 				if (i1 == parentPair.getChildCount()) {
@@ -295,9 +301,9 @@ public class TreeUtils {
 				TreeNode childPair = parentPair.getChildAt(i);
 				if (childPair == added) continue;
 				
-				int childIndex = getPairedIndex(editMapping, childPair, otherList, false);
+				int childIndex = getPairedIndex(editMapping, childPair, list1, false);
 				if (childIndex < 0) continue;
-				TreeNode child = insertList.get(childIndex);
+				TreeNode child = list2.get(childIndex);
 				while (child != parent) {
 					child = child.getParent();
 					if (child == toInsert) {
@@ -309,7 +315,7 @@ public class TreeUtils {
 				}
 			}
 			
-			return new InsertAction(otherList.get(otherList.size() - 1),
+			return new InsertAction(list1.get(list1.size() - 1),
 					toInsert.getLabel(), i0, parentPair.getLabel(), parentPairIndex);
 		}
 		
