@@ -45,7 +45,7 @@ snapshot {
         :`If the ball touches the left or right edge, the opposite player should score a point.`
     }
     @defHint BACK_EDGE_X {
-        :`You can use the Ball's "x position" (under Motion) and the ">" block (under Operators) to check if it is touching the right edge (x > 230) or left edge (x < -230).`
+        :`You can use the Ball's "x position" (under Motion) and the "<" block (under Operators) to check if it is touching the right edge (230 < x) or left edge (x < -230).`
     }
     @defHint BALL_DIRECTION {
         :`Use the "point in direction __" block (under Motion) point the Ball in to the opposite direction when it hits the Paddle. To make it bounce, the ball should face 360 - its current "direction" (under Motion).`
@@ -134,7 +134,7 @@ snapshot {
                         })
                         @hint TOUCH_BACK_EDGE
                         doIf(@or {
-                            @hint BACK_EDGE_X 
+                            @hint BACK_EDGE_X
                             reportLessThan(@hint BACK_EDGE_X xPosition, literal)
                             reportAnd(@hint BACK_EDGE_X reportLessThan(xPosition, literal), reportTouchingObject(literal))
                         }, script {

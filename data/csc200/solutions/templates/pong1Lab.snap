@@ -36,10 +36,10 @@ snapshot {
         :`Use "touching" block (under Sensing) to detect if the Ball sprite has touched the Paddle. Note that this block should be used in an "if" condition.`
     }
     @defHint TOUCH_BACK_EDGE {
-        :`If the ball touches the right edge (x > 230), the player's score should go to 0 and the ball should reset.`
+        :`If the ball touches the right edge (230 < x), the player's score should go to 0 and the ball should reset.`
     }
     @defHint BACK_EDGE_X {
-        :`You can use the Ball's "x position" (under Motion) and the ">" block (under Operators) to check if it is touching the right edge (x > 230).`
+        :`You can use the Ball's "x position" (under Motion) and the "<" block (under Operators) to check if it is touching the right edge (230 < x).`
     }
     @defHint BALL_DIRECTION {
         :`Use the "point in direction __" block (under Motion) point the Ball in to the opposite direction when it hits the Paddle. To make it bounce, the ball should face 360 - its current "direction" (under Motion).`
@@ -120,7 +120,7 @@ snapshot {
                         @defBlock RESET {
                             @hint TOUCH_BACK_EDGE
                             doIf(@or {
-                                @hint BACK_EDGE_X 
+                                @hint BACK_EDGE_X
                                 reportLessThan(literal, @hint BACK_EDGE_X xPosition)
                                 reportAnd(@hint BACK_EDGE_X  reportLessThan(literal, @hint BACK_EDGE_X xPosition), reportTouchingObject(literal))
                             }, script {
