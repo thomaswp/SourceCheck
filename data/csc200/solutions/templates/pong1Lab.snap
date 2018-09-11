@@ -131,8 +131,9 @@ snapshot {
                                 reportAnd(reportLessThan(literal, xPosition), reportTouchingObject(literal))
                             }, script {
                                 @hint SCORE_CHANGE
-                                    doSetVar(varMenu:rightPoints, literal)
-                                    evaluateCustomBlock:resetBall
+                                doSetVar(varMenu:rightPoints, literal)
+                                @hint BALL_RESET
+                                evaluateCustomBlock:resetBall
                             })
                         }
                         @or {
