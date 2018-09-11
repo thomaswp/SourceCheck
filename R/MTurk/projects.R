@@ -13,29 +13,61 @@ read.qualtrics <- function(file) {
       data[,i] <- factor(col)
     }
   }
+  data$StartDate <- strptime(as.character(data$StartDate), "%Y-%m-%d %H:%M:%S")
+  data$EndDate <- strptime(as.character(data$EndDate), "%Y-%m-%d %H:%M:%S")
+  data <- data[data$StartDate > strptime("2018-09-05 00:00:00", "%Y-%m-%d %H:%M:%S"),]
   data
 }
 
 loadData <- function() {
-  consent <- read.qualtrics("data/consent.csv")
-  post1 <- read.qualtrics("data/post1.csv")
-  post2 <- read.qualtrics("data/post2.csv")
-  post2 <- post2[post2$assignmentID == "drawTriangles",]
-  preHelp <- read.qualtrics("data/pre-help.csv")
-  postHelp <- read.qualtrics("data/post-help.csv")
-  attempts <- read.csv("../../data/mturk/mturk2018/analysis/attempts.csv")
-  print(sum(attempts$errors >= 5))
-  attempts <- attempts[attempts$errors < 5 & !is.na(attempts$midSurveyTime) & !is.na(attempts$firstEditTime),]
-  actions <- read.csv("../../data/mturk/mturk2018/analysis/actions.csv")
+  consentUF <- read.qualtrics("data/consent.csv")
+  post1UF <- read.qualtrics("data/post1.csv")
+  post2UF <- read.qualtrics("data/post2.csv")
+  post2UF <- post2UF[post2$assignmentID == "drawTriangles",]
+  preHelpUF <- read.qualtrics("data/pre-help.csv")
+  postHelpUF <- read.qualtrics("data/post-help.csv")
+  attemptsUF <- read.csv("../../data/mturk/mturk2018/analysis/attempts.csv")
+  attemptsUF <- attemptsUF[attemptsUF$errors < 5 & !is.na(attemptsUF$firstEditTime),]
+  actionsUF <- read.csv("../../data/mturk/mturk2018/analysis/actions.csv")
   
-  length(users <- Reduce(intersect, list(
+  usersUF <- Reduce(intersect, list(
+    consentUF$userID, 
+    preHelpUF$userID, postHelpUF$userID, 
+    attemptsUF$userID
+  ))
+  
+  usersUF <- usersUF[!(usersUF %in% post1UF$userID[duplicated(post1UF$userID)])]
+  usersUF <- usersUF[!(usersUF %in% postHelpUF$userID[duplicated(postHelpUF$eventID)])]
+  
+  consentUF <- consentUF[consentUF$userID %in% usersUF,]
+  post1UF <- post1UF[post1UF$userID %in% usersUF,]
+  post2UF <- post2UF[post2UF$userID %in% usersUF,]
+  preHelpUF <- preHelpUF[preHelpUF$userID %in% usersUF,]
+  postHelpUF <- postHelpUF[postHelpUF$userID %in% usersUF,]
+  attemptsUF <- attemptsUF[attemptsUF$userID %in% usersUF, ]
+  actionsUF <- actionsUF[actionsUF$userID %in% usersUF, ]
+  
+  # Analysis of dropouts is difficult because they may have started multiple times in different conditions
+  # We can only assign a condition if they complete the task
+  dropouts <- consentUF$userID[!(consentUF$userID %in% post1UF$userID | consentUF$userID %in% post2UF$userID)]
+  dropouts <- attemptsUF[attemptsUF$userID %in% dropouts,]
+  
+  consent <- consentUF
+  post1 <- post1UF
+  post2 <- post2UF
+  preHelp <- preHelpUF
+  postHelp <- postHelpUF
+  attempts <- attemptsUF
+  attempts <- attempts[!is.na(attempts$midSurveyTime),]
+  
+  users <- Reduce(intersect, list(
     consent$userID, 
     post1$userID, post2$userID, preHelp$userID, postHelp$userID, 
     attempts$userID[attempts$assignmentID == "polygonMakerSimple"],
     attempts$userID[attempts$assignmentID == "drawTriangles"]
-  )))
+  ))
   
-  users <- users[!(users %in% post1$userID[duplicated(post1$userID)])]
+  length(users)
   
   post1 <- post1[post1$userID %in% users,]
   post2 <- post2[post2$userID %in% users,]
@@ -45,9 +77,9 @@ loadData <- function() {
   actions <- actions[actions$userID %in% users, ]
   
   preHelp <- merge(preHelp, actions)
-  preHelp <- preHelp[order(preHelp$userID),]
+  preHelp <- preHelp[order(preHelp$userID, preHelp$time),]
   postHelp <- merge(postHelp, actions)
-  postHelp <- postHelp[order(postHelp$userID),]
+  postHelp <- postHelp[order(postHelp$userID, postHelp$time),]
   
   attempts$hadCodeHints <- attempts$codeHints > 0
   attempts$hadTextHints <- attempts$textHints > 0
@@ -61,6 +93,7 @@ loadData <- function() {
   
   hist(task1$objs)
   summary(lm(objs ~ hadCodeHints * hadTextHints + hadReflects, data=task1))
+  summary(lm(objs==3 ~ hadCodeHints * hadTextHints + hadReflects, data=task1))
   
   task2$t1CodeHints <- task1$codeHints
   task2$t1TextHints <- task1$textHints
@@ -81,6 +114,7 @@ loadData <- function() {
                       summarize, mRating=mean(Q10), nRating=length(Q10))
   hist(task1Users$mRating)
   summary(lm(mRating ~ codeHint * textHint + reflect, data=task1Users))
+  summary(aov(mRating ~ codeHint * textHint + reflect, data=task1Users))
   anova(aov(mRating ~ codeHint + textHint + reflect, data=task1Users), aov(mRating ~ codeHint * textHint + reflect, data=task1Users))
   
   # Pretty similar results when randomizing, except smaller effect and reflect may not be bad
@@ -88,9 +122,21 @@ loadData <- function() {
   summary(lm(Q10 ~ codeHint * textHint + reflect + userID, data=postHelp[postHelp$assignmentID=="drawTriangles",]))
   summary(aov(Q10 ~ codeHint * textHint + reflect + Error(userID), data=postHelp[postHelp$assignmentID=="drawTriangles",]))
   
+  stepAIC(lm(mRating ~ 1, data=task1Users), scope=list(
+    lower=lm(mRating ~ 1, data=task1Users), 
+    upper=lm(mRating ~ codeHint * textHint * reflect, data=task1Users)), direction="forward")
+  
   postHelp$followedHint <- postHelp$Q14 < 3
   table(postHelp$followedHint, postHelp$textHint, postHelp$assignmentID)
-  fisher.test(postHelp$followedHint, postHelp$textHint)
+  fisher.test(postHelp$followedHint[postHelp$assignmentID == "polygonMakerSimple"], postHelp$textHint[postHelp$assignmentID == "polygonMakerSimple"])
+  
+  
+  task1UF <- postHelpUF[postHelpUF$assignmentID=="polygonMakerSimple",]
+  task1UF <- task1UF[task1UF$userID %in% consentUF$userID,]
+  started <- ddply(task1UF, c("assignmentID", "userID", "codeHint", "textHint", "reflect"), summarize, n=length(codeHint))
+  table(task1UF$codeHint, task1UF$textHint, task1UF$assignmentID)
+  
+  table(postHelp$codeHint, postHelp$textHint, postHelp$assignmentID)
   
   # How helpful was Snap?
   summary(lm(Q22_1 ~ codeHint + textHint + reflect, data=post1))
@@ -124,6 +170,8 @@ loadData <- function() {
   
   postHelp$minute <- floor(postHelp$time / 60000)
   ddply(postHelp, c("assignmentID", "codeHint", "textHint", "reflect"), summarize,
+        n=length(Q10), spear=cor(Q10, minute, method="spearman"), p=cor.test(Q10, minute, method="spearman")$p.value)
+  ddply(postHelp, c("assignmentID"), summarize,
         n=length(Q10), spear=cor(Q10, minute, method="spearman"), p=cor.test(Q10, minute, method="spearman")$p.value)
 }
 
