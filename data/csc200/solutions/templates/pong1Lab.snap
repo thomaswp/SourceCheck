@@ -1,104 +1,91 @@
 snapshot {
-@defHint PADDLE_POSITION {
-    :`The Paddle position should be set to (215, 0). To set its position use "go to x: __ y: __" block (under Motion). Note that this position should be set at beginning of the Paddle code`
-}
-@defHint FOREVER_LOOP {
-    :`To make the Paddle keep moving during the game, you need its code to run forever. The "forever" block (under Control) runs the code you put inside of it forever.`
-}
-@defHint IF_CONDITION {
-    :`The Paddle should move up if the up arrow key is pressed and the Paddle's "y position" is lower then the edge of the screen (150). Moving down works the same way.`
-}
-@defHint AND_OPERATOR {
-    :`You can combine two conditions for one "if" block by using the "and" block (under Operators).`
-}
-@defHint KEY_PRESSED {
-    :`Use the "key pressed" block (under Sensing) to check whether a key is pressed. You can choose which key from the dropdown list.`
-}
-@defHint COMPARE {
-    :`The Paddle should not move up or down if that would take it off the screen (y > 150 or y < -150). Use "<" or ">" blocks (under Operators) to check if the "y position" block (under Motion) lies in this range or not.`
-}
-@defHint Y_VALUE1 {
-    :`The Paddle's "y position" (under Motion) must be less than 150. If it exceeds 150 the Paddle will be off screen.`
-}
-@defHint Y_VALUE2 {
-    :`The Paddle's "y position" (under Motion) must be greater than -150. If it is less than -150 the Paddle will be off screen.`
-}
-@defHint PADDLE_UP {
-    :`Change the Paddle's "y position" (under Motion) by a positive value to allow it to move up, or by a negative value to allow it to move down.`
-}
-@defHint BALL_FOREVER {
-    :`To make the Ball keep moving during the game, you need its code to run forever. The "forever" block (under Control) runs the code you put inside of it forever.`
-}
-@defHint MOVE_BALL {
-    :`Use "move" block (under Motion) with a positive value to allow the ball to move forward.`
-}
-@defHint TOUCH_PADDLE {
-    :`If the ball touches the Paddle, it should bounce off.`
-}
-@defHint TOUCH_BACK_EDGE {
-    :`If the ball touches the right edge (x > 230), the player's score should go to 0 and the ball should reset.`
-}
-@defHint BACK_EDGE_X {
-    :`You can use the Ball's "x position" (under Motion) and the ">" block (under Operators) to check if is touching the right edge (x > 230).`
-}
-@defHint BALL_DIRECTION {
-    :`Use the "point in direction __" block (under Motion) point the Ball in to the opposite direction when it hits the Paddle. To make it bounce, the ball should face 360 - its current "direction" (under Motion).`
-}
-@defHint SCORE_CHANGE {
-    :`The player's score should start at 0. It should go up by one if the player "scores" (hitting the left edge), and reset to 0 if the ball hits the right wall.`
-}
-@defHint BOUNCE_OFF {
-    :`To make the ball bounces off any edge, use "if on edge, bounce" (under Motion)`
-}
-@defHint BALL_RESET {
-    :`You have to "reset" the Ball, after setting its points to zero. You can find the "reset" custom block under Motion.`
-}
+    @defHint PADDLE_POSITION {
+        :`The Paddle position should be set to (215, 0). To set its position use "go to x: __ y: __" block (under Motion). Note that this position should be set at beginning of the Paddle code`
+    }
+    @defHint FOREVER_LOOP {
+        :`To make the Paddle keep moving during the game, you need its code to run forever. The "forever" block (under Control) runs the code you put inside of it forever.`
+    }
+    @defHint IF_CONDITION {
+        :`The Paddle should move up if the the mouse is above the Paddle's "y position" (under Motion) and down if it is lower.`
+    }
+    @defHint AND_OPERATOR {
+        :`You can combine two conditions for one "if" block by using the "and" block (under Operators).`
+    }
+    @defHint KEY_PRESSED {
+        :`Use the "key pressed" block (under Sensing) to check whether a key is pressed. You can choose which key from the dropdown list.`
+    }
+    @defHint COMPARE {
+        :`Use "<" or ">" blocks (under Operators) to check if the Paddle's "y position" block is above or below the "mouse y" position (under Sensing).`
+    }
+    @defHint Y_VALUE1 {
+        :`The Paddle's "y position" (under Motion) must be less than 150. If it exceeds 150 the Paddle will be off screen.`
+    }
+    @defHint Y_VALUE2 {
+        :`The Paddle's "y position" (under Motion) must be greater than -150. If it is less than -150 the Paddle will be off screen.`
+    }
+    @defHint PADDLE_UP {
+        :`Use the Paddle's "change y by __" block (under Motion) with a positive value to move the Paddle up, or with a negative value to move it down.`
+    }
+    @defHint BALL_FOREVER {
+        :`To make the Ball keep moving during the game, you need its code to run forever. The "forever" block (under Control) runs the code you put inside of it forever.`
+    }
+    @defHint MOVE_BALL {
+        :`Use "move" block (under Motion) with a positive value to allow the ball to move forward.`
+    }
+    @defHint TOUCH_PADDLE {
+        :`If the ball touches the Paddle, it should bounce off.`
+    }
+    @defHint TOUCH_BACK_EDGE {
+        :`If the ball touches the right edge (x > 230), the player's score should go to 0 and the ball should reset.`
+    }
+    @defHint BACK_EDGE_X {
+        :`You can use the Ball's "x position" (under Motion) and the ">" block (under Operators) to check if it is touching the right edge (x > 230).`
+    }
+    @defHint BALL_DIRECTION {
+        :`Use the "point in direction __" block (under Motion) point the Ball in to the opposite direction when it hits the Paddle. To make it bounce, the ball should face 360 - its current "direction" (under Motion).`
+    }
+    @defHint SCORE_CHANGE {
+        :`The player's score should start at 0. It should go up by one if the player "scores" (hitting the left edge), and reset to 0 if the ball hits the right wall.`
+    }
+    @defHint BOUNCE_OFF {
+        :`To make the ball bounces off any edge, use "if on edge, bounce" (under Motion)`
+    }
+    @defHint BALL_RESET {
+        :`You have to "reset" the Ball, after setting its points to zero. You can find the "reset" custom block under Motion.`
+    }
     stage {
         sprite {
-            @defVar(FOREVER_KEYS) {
-                script {
-                    receiveGo
-                    setScale(literal)
-                    @hint PADDLE_POSITION
-                    gotoXY(literal, literal)
-                    @hint FOREVER_LOOP
-                    @if (FOREVER_KEYS) {
-                        doForever(script {
-                            @defVar(Y_FIRST) {
-                                @hint IF_CONDITION
-                                doIf(@hint AND_OPERATOR reportAnd(@hint KEY_PRESSED reportKeyPressed(literal),@hint COMPARE reportLessThan(
-                                    @if(Y_FIRST) {@hint Y_VALUE1 yPosition, literal }
-                                    @unless(Y_FIRST) { literal, @hint Y_VALUE2 yPosition }
-                                )), script {@hint PADDLE_UP
-                                    changeYPosition(literal)
-                                })
-                                @hint IF_CONDITION
-                                doIf(@hint AND_OPERATOR reportAnd(@hint KEY_PRESSED reportKeyPressed(literal), @hint COMPARE reportLessThan(
-                                    @if(Y_FIRST) {literal,  @hint Y_VALUE2  yPosition }
-                                    @unless(Y_FIRST) {@hint Y_VALUE1 yPosition, literal }
-                                )), script { @hint PADDLE_UP
-                                    changeYPosition(literal)
-                                })
-                            }
-                        })
+            script {
+                receiveGo
+                setScale(literal)
+                @hint PADDLE_POSITION
+                gotoXY(literal, literal)
+                @hint FOREVER_LOOP
+                doForever(script {
+                    @or {
+                        @inline {
+                            @hint IF_CONDITION
+                            doIf(@or {
+                                    @hint COMPARE
+                                    reportLessThan(@hint IF_CONDITION yPosition, @hint COMPARE reportMouseY)
+                                    reportAnd(@hint COMPARE reportLessThan(@hint IF_CONDITION yPosition, @hint COMPARE reportMouseY), @hint Y_VALUE1 reportLessThan(yPosition, literal:150))
+                                }, script {
+                                @hint PADDLE_UP
+                                changeYPosition(literal)
+                            })
+                            @hint IF_CONDITION
+                            doIf(@or {
+                                    @hint COMPARE
+                                    reportLessThan(@hint COMPARE reportMouseY, @hint IF_CONDITION yPosition)
+                                    reportAnd(@hint COMPARE reportLessThan(@hint COMPARE reportMouseY, @hint IF_CONDITION yPosition), @hint Y_VALUE2 reportLessThan(literal:-150, yPosition))
+                                }, script {
+                                @hint PADDLE_UP
+                                changeYPosition(literal)
+                            })
+                        }
+                        setYPosition(reportMouseY)
                     }
-                }
-                @unless (FOREVER_KEYS) {
-                    script {
-                        receiveKey
-                        @hint IF_CONDITION
-                        doIf(@hint COMPARE reportLessThan( @hint Y_VALUE1 yPosition, literal), script {@hint PADDLE_UP
-                            changeYPosition(literal)
-                        })
-                    }
-                    script {
-                        receiveKey
-                        @hint IF_CONDITION
-                        doIf(@hint COMPARE reportLessThan(literal, @hint Y_VALUE2 yPosition), script {@hint PADDLE_UP
-                            changeYPosition(literal)
-                        })
-                    }
-                }
+                })
             }
         }
         sprite {
@@ -124,7 +111,7 @@ snapshot {
                             reportTouchingObject(literal), script {
                                 @anyOrder {
                                     @hint BALL_DIRECTION
-                                    setHeading(reportDifference(literal, @hint BALL_DIRECTION direction))
+                                    setHeading(@defHint BALL_DIRECTION reportDifference(literal, @hint BALL_DIRECTION direction))
                                     @hint SCORE_CHANGE
                                     doChangeVar(varMenu:rightPoints, literal)
                                 }

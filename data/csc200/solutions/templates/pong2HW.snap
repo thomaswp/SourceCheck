@@ -5,11 +5,8 @@ snapshot {
     @defHint FOREVER_LOOP {
         :`To make the Paddle keep moving during the game, you need its code to run forever unless you clicked on the "red" stop sign on the top right. The "Forever" block (under Control) makes the Paddle code running infinitly.`
     }
-    @defHint IF_CONDITION1 {
-        :`The Paddle moves up "if" the user press an up direction button and the Paddle's "y position" is less than 150, and moves down "if" the user press a down direction button and the Paddle's "y position" is more than -150.`
-    }
-    @defHint IF_CONDITION2 {
-        :`Remember that you need to have two conditions to control the Paddle movement. One "if" the user press an up direction button and the Paddle's "y position" is less than 150, the Paddle should move updwards. Second, "if" the user press a down direction button and the Paddle's "y position" is more than -150, then the Paddle should move downwards. You can the "if" block under "Control".`
+    @defHint IF_CONDITION {
+        :`The Paddle should move up if the the mouse is above the Paddle's "y position" (under Motion) and down if it is lower.`
     }
     @defHint AND_OPERATOR {
         :`You can have two conditions in one "if" condition by using the "and" block (under Operators).`
@@ -18,7 +15,7 @@ snapshot {
         :`Use the "key pressed" block (under Sensing) to know if the user pressed a key or not, and choose which key you want to detect from the list.`
     }
     @defHint COMPARE {
-        :`You need to check if the Paddle's y position lies in the stage range (-150,150). Use "less than" block (under Operators) to check if the "y position" block (under Motion) lies in this range or not.`
+        :`Use "<" or ">" blocks (under Operators) to check if the Paddle's "y position" block is above or below the "mouse y" position (under Sensing).`
     }
     @defHint Y_VALUE1 {
         :`The Paddle's "y position" (under Motion) must be less than 150.`
@@ -27,7 +24,7 @@ snapshot {
         :`The Paddle's "y position" (under Motion) must be greater than -150.`
     }
     @defHint PADDLE_UP {
-        :`Change the Paddle's "y position" (under Motion) by a positive value to allow it to move upwards, or by a negative value to allow it to move downwards.`
+        :`Use the Paddle's "change y by __" block (under Motion) with a positive value to move the Paddle up, or with a negative value to move it down.`
     }
     @defHint POINTS_SETUP {
         :`Make two variables, one to hold the points of the left Paddle and the other to hold the points of the right Paddle. You can set these variables to an initial value by using "set __ to __" block (under Variables) .`
@@ -55,52 +52,37 @@ snapshot {
     }
     stage {
         sprite {
-            @defVar(FOREVER_KEYS) {
-                script {
-                    receiveGo
-                    setScale(literal)
-                    @hint PADDLE_POSITION
-                    gotoXY(literal, literal)
-                    @if (FOREVER_KEYS) {
-                        @hint FOREVER_LOOP
-                        doForever(script {
-                            @defVar(Y_FIRST) {
-                                @hint IF_CONDITION1
-                                doIf(@hint AND_OPERATOR reportAnd(@hint KEY_PRESSED reportKeyPressed(literal), @hint COMPARE reportLessThan(
-                                    @if(Y_FIRST) {@hint Y_VALUE1  yPosition, literal }
-                                    @unless(Y_FIRST) {@hint Y_VALUE2 literal, yPosition }
-                                )), script {
-                                    @hint PADDLE_UP
-                                    changeYPosition(literal)
-                                })
-                                @hint IF_CONDITION2
-                                doIf(reportAnd(reportKeyPressed(literal), @hint Y_VALUE1 reportLessThan(
-                                    @if(Y_FIRST) { literal, yPosition }
-                                    @unless(Y_FIRST) { yPosition, literal }
-                                )), script {
-                                    @hint PADDLE_UP
-                                    changeYPosition(literal)
-                                })
-                            }
-                        })
+            script {
+                receiveGo
+                setScale(literal)
+                @hint PADDLE_POSITION
+                gotoXY(literal, literal)
+                @hint FOREVER_LOOP
+                doForever(script {
+                    @or {
+                        @inline {
+                            @hint IF_CONDITION
+                            doIf(@or {
+                                    @hint COMPARE
+                                    reportLessThan(@hint IF_CONDITION yPosition, @hint COMPARE reportMouseY)
+                                    reportAnd(@hint COMPARE reportLessThan(@hint IF_CONDITION yPosition, @hint COMPARE reportMouseY), @hint Y_VALUE1 reportLessThan(yPosition, literal:150))
+                                }, script {
+                                @hint PADDLE_UP
+                                changeYPosition(literal)
+                            })
+                            @hint IF_CONDITION
+                            doIf(@or {
+                                    @hint COMPARE
+                                    reportLessThan(@hint COMPARE reportMouseY, @hint IF_CONDITION yPosition)
+                                    reportAnd(@hint COMPARE reportLessThan(@hint COMPARE reportMouseY, @hint IF_CONDITION yPosition), @hint Y_VALUE2 reportLessThan(literal:-150, yPosition))
+                                }, script {
+                                @hint PADDLE_UP
+                                changeYPosition(literal)
+                            })
+                        }
+                        setYPosition(reportMouseY)
                     }
-                }
-                @unless (FOREVER_KEYS) {
-                    script {
-                        receiveKey
-                        doIf(reportLessThan(yPosition, literal), script {
-                            @hint PADDLE_UP
-                            changeYPosition(literal)
-                        })
-                    }
-                    script {
-                        receiveKey
-                        doIf(reportLessThan(literal, yPosition), script {
-                            @hint PADDLE_UP
-                            changeYPosition(literal)
-                        })
-                    }
-                }
+                })
             }
         }
         sprite {
@@ -162,24 +144,45 @@ snapshot {
                 setScale(literal)
                 @hint PADDLE_POSITION
                 gotoXY(literal, literal)
-                @hint FOREVER_LOOP
-                doForever(script {
-                    @or {
-                        @inline {
-                            @hint IF_CONDITION1
-                            doIf(@hint COMPARE reportLessThan(reportMouseY, yPosition), script {
-                                @hint PADDLE_UP
-                                changeYPosition(literal)
-                            })
-                            @hint IF_CONDITION2
-                            doIf(@hint COMPARE reportLessThan(yPosition, reportMouseY), script {
-                                @hint PADDLE_UP
+                @defVar(FOREVER_KEYS) {
+                    @if (FOREVER_KEYS) {
+                        @hint FOREVER_LOOP
+                        doForever(script {
+                            @defVar(Y_FIRST) {
+                                @hint IF_CONDITION
+                                doIf(@hint AND_OPERATOR reportAnd(@hint KEY_PRESSED reportKeyPressed(literal),@hint Y_VALUE1 reportLessThan(
+                                    @if(Y_FIRST) {@hint Y_VALUE1 yPosition, literal }
+                                    @unless(Y_FIRST) { literal, @hint Y_VALUE2 yPosition }
+                                )), script {@hint PADDLE_UP
+                                    changeYPosition(literal)
+                                })
+                                @hint IF_CONDITION
+                                doIf(@hint AND_OPERATOR reportAnd(@hint KEY_PRESSED reportKeyPressed(literal), @hint Y_VALUE2 reportLessThan(
+                                    @if(Y_FIRST) {literal,  @hint Y_VALUE2  yPosition }
+                                    @unless(Y_FIRST) {@hint Y_VALUE1 yPosition, literal }
+                                )), script { @hint PADDLE_UP
+                                    changeYPosition(literal)
+                                })
+                            }
+                        })
+                    }
+                    @unless (FOREVER_KEYS) {
+                        script {
+                            receiveKey
+                            @hint IF_CONDITION
+                            doIf(@hint COMPARE reportLessThan( @hint Y_VALUE1 yPosition, literal), script {@hint PADDLE_UP
                                 changeYPosition(literal)
                             })
                         }
-                        setYPosition(reportMouseY)
+                        script {
+                            receiveKey
+                            @hint IF_CONDITION
+                            doIf(@hint COMPARE reportLessThan(literal, @hint Y_VALUE2 yPosition), script {@hint PADDLE_UP
+                                changeYPosition(literal)
+                            })
+                        }
                     }
-                })
+                }
             }
         }
     }
