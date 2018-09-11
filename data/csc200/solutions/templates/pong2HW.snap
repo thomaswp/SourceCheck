@@ -1,27 +1,30 @@
 snapshot {
     @defHint PADDLE_POSITION {
-        :`The position of the right Paddle should be set to (-215, 0) and the position of the left Paddle should be set to (215, 0). To set its position use "go to x: __ y: __" block (under Motion). Note that this position should be set at beginning of the Paddle code`
+        :`The left Paddle position should be set to (-215, 0). To set its position use "go to x: __ y: __" block (under Motion). Note that this position should be set at beginning of the Paddle code`
     }
     @defHint FOREVER_LOOP {
-        :`To make the Paddle keep moving during the game, you need its code to run forever unless you clicked on the "red" stop sign on the top right. The "Forever" block (under Control) makes the Paddle code running infinitly.`
+        :`To make the Paddle keep moving during the game, you need its code to run forever. The "forever" block (under Control) runs the code you put inside of it forever.`
     }
     @defHint IF_CONDITION {
         :`The Paddle should move up if the the mouse is above the Paddle's "y position" (under Motion) and down if it is lower.`
     }
+    @defHint IF_CONDITION_LEFT {
+        :`The Paddle should move up if the up arrow key is pressed and the Paddle's "y position" is lower then the edge of the screen (150). Moving down works the same way.`
+    }
     @defHint AND_OPERATOR {
-        :`You can have two conditions in one "if" condition by using the "and" block (under Operators).`
+        :`You can combine two conditions for one "if" block by using the "and" block (under Operators).`
     }
     @defHint KEY_PRESSED {
-        :`Use the "key pressed" block (under Sensing) to know if the user pressed a key or not, and choose which key you want to detect from the list.`
+        :`Use the "key pressed" block (under Sensing) to check whether a key is pressed. You can choose which key from the dropdown list.`
     }
     @defHint COMPARE {
         :`Use "<" or ">" blocks (under Operators) to check if the Paddle's "y position" block is above or below the "mouse y" position (under Sensing).`
     }
     @defHint Y_VALUE1 {
-        :`The Paddle's "y position" (under Motion) must be less than 150.`
+        :`The Paddle's "y position" (under Motion) must be less than 150. If it exceeds 150 the Paddle will be off screen.`
     }
     @defHint Y_VALUE2 {
-        :`The Paddle's "y position" (under Motion) must be greater than -150.`
+        :`The Paddle's "y position" (under Motion) must be greater than -150. If it is less than -150 the Paddle will be off screen.`
     }
     @defHint PADDLE_UP {
         :`Use the Paddle's "change y by __" block (under Motion) with a positive value to move the Paddle up, or with a negative value to move it down.`
@@ -29,23 +32,26 @@ snapshot {
     @defHint POINTS_SETUP {
         :`Make two variables, one to hold the points of the left Paddle and the other to hold the points of the right Paddle. You can set these variables to an initial value by using "set __ to __" block (under Variables) .`
     }
-    @defHint FOREVER_LOOP2 {
-        :`To make the Ball keep moving during the game, you need its code to run forever unless the ball hits the righ edge or you clicked on the "red" stop sign on the top right.  The "Forever" block (under Control) makes the Ball code run infinitly.`
+    @defHint BALL_FOREVER {
+        :`To make the Ball keep moving during the game, you need its code to run forever. The "forever" block (under Control) runs the code you put inside of it forever.`
     }
     @defHint MOVE_BALL {
         :`Use "move" block (under Motion) with a positive value to allow the ball to move forward.`
     }
     @defHint TOUCH_PADDLE {
-        :`Use "touching" block (under Sensing) to detect if the Ball sprite touched the Paddle, either the left or the right Paddle. Note that this block should be used in an "if" condition.`
+        :`Use the "touching" block (under Sensing) to detect if the Ball sprite has touched the Paddle, either the left or the right Paddle. Note that this block should be used in an "if" condition.`
     }
     @defHint TOUCH_BACK_EDGE {
-        :`To know if the Ball touches the back wall behind any Paddle or not, check the Ball's "x position" (under Motion). If it is >230 then the ball touches the back wall behind the right Paddle, while if it's <-230 then the ball touches the back wall behind the left Paddle.`
+        :`If the ball touches the left or right edge, the opposite player should score a point.`
+    }
+    @defHint BACK_EDGE_X {
+        :`You can use the Ball's "x position" (under Motion) and the ">" block (under Operators) to check if it is touching the right edge (x > 230) or left edge (x < -230).`
     }
     @defHint BALL_DIRECTION {
-        :`Use "Point in direction __" block (under Motion) to allow the Ball points to the opposite direction (360-"direction") when it hits the Paddle. Note that the "direction" block (under Motion) holds the current direction of the Ball.`
+        :`Use the "point in direction __" block (under Motion) point the Ball in to the opposite direction when it hits the Paddle. To make it bounce, the ball should face 360 - its current "direction" (under Motion).`
     }
     @defHint SCORE_CHANGE {
-        :`If the Ball hits the wall behind the first Paddle, first update the points variable of the second Paddle by 1 using "change __ by 1" block (under Variables) and then Reset the Ball. When the ball hits the back wall behind the second Paddle, first update the points variable of the first Paddle by 1 using "change __ by 1" block (under Variables) and then reset the Ball.`
+        :`Each player's score should start at 0. The right player's score goes up when the ball hits the left wall, and vice versa.`
     }
     @defHint BOUNCE_OFF {
         :`To make the ball bounces off any edge, use "if on edge, bounce" (under Motion)`
@@ -55,7 +61,6 @@ snapshot {
             script {
                 receiveGo
                 setScale(literal)
-                @hint PADDLE_POSITION
                 gotoXY(literal, literal)
                 @hint FOREVER_LOOP
                 doForever(script {
@@ -89,9 +94,10 @@ snapshot {
             script {
                 receiveGo
                 @anyOrder {
-                    @hint POINTS_SETUP
-                    doSetVar(varMenu:rightPoints, literal)
-                    doSetVar(varMenu:leftPoints, literal)
+                    @hint POINTS_SETUP {
+                        doSetVar(varMenu:rightPoints, literal)
+                        doSetVar(varMenu:leftPoints, literal)
+                    }
                     setScale(literal)
                     evaluateCustomBlock:resetBall
                 }
@@ -99,7 +105,7 @@ snapshot {
             script {
                 receiveKey(literal)
                 @optional { setHeading(@anything) }
-                @hint FOREVER_LOOP2
+                @hint BALL_FOREVER
                 doForever(script {
                     @anyOrder {
                         @hint MOVE_BALL
@@ -107,28 +113,32 @@ snapshot {
                         @or {
                             @repeat(2) {
                                 @hint TOUCH_PADDLE
-                                doIf (reportTouchingObject(literal), @hint BALL_DIRECTION script {
-                                    setHeading(reportDifference(literal, direction))
+                                doIf (@hint TOUCH_PADDLE reportTouchingObject(literal), script {
+                                    @hint BALL_DIRECTION setHeading(@hint BALL_DIRECTION reportDifference(literal, @hint BALL_DIRECTION direction))
                                 })
                             }
                             @hint TOUCH_PADDLE
-                            doIf (reportOr(reportTouchingObject(literal), reportTouchingObject(literal)), @hint BALL_DIRECTION script {
-                                setHeading(reportDifference(literal, direction))
+                            doIf (reportOr(@hint TOUCH_PADDLE reportTouchingObject(literal), @hint TOUCH_PADDLE reportTouchingObject(literal)),script {
+                                @hint BALL_DIRECTION setHeading(@hint BALL_DIRECTION reportDifference(literal, @hint BALL_DIRECTION direction))
                             })
                         }
+                        @hint TOUCH_BACK_EDGE
                         doIf(@or {
-                            @hint TOUCH_BACK_EDGE
-                            reportLessThan(literal, xPosition)
-                            reportAnd(reportLessThan(literal, xPosition), reportTouchingObject(literal))
-                        }, @hint SCORE_CHANGE script {
+                            @hint BACK_EDGE_X
+                            reportLessThan(literal, @hint BACK_EDGE_X xPosition)
+                            reportAnd(@hint BACK_EDGE_X reportLessThan(literal, @hint BACK_EDGE_X xPosition), reportTouchingObject(literal))
+                        }, script {
+                            @hint SCORE_CHANGE
                             doChangeVar(varMenu:leftPoints, literal)
                             evaluateCustomBlock:resetBall
                         })
+                        @hint TOUCH_BACK_EDGE
                         doIf(@or {
-                            @hint TOUCH_BACK_EDGE
-                            reportLessThan(xPosition, literal)
-                            reportAnd(reportLessThan(xPosition, literal), reportTouchingObject(literal))
-                        }, @hint SCORE_CHANGE script {
+                            @hint BACK_EDGE_X 
+                            reportLessThan(@hint BACK_EDGE_X xPosition, literal)
+                            reportAnd(@hint BACK_EDGE_X reportLessThan(xPosition, literal), reportTouchingObject(literal))
+                        }, script {
+                            @hint SCORE_CHANGE
                             doChangeVar(varMenu:rightPoints, literal)
                             evaluateCustomBlock:resetBall
                         })
@@ -139,48 +149,52 @@ snapshot {
             }
         }
         sprite {
-            script {
-                receiveGo
-                setScale(literal)
-                @hint PADDLE_POSITION
-                gotoXY(literal, literal)
-                @defVar(FOREVER_KEYS) {
+            @defVar(FOREVER_KEYS) {
+                script {
+                    receiveGo
+                    setScale(literal)
+                    @hint PADDLE_POSITION
+                    gotoXY(literal, literal)
                     @if (FOREVER_KEYS) {
                         @hint FOREVER_LOOP
                         doForever(script {
                             @defVar(Y_FIRST) {
-                                @hint IF_CONDITION
-                                doIf(@hint AND_OPERATOR reportAnd(@hint KEY_PRESSED reportKeyPressed(literal),@hint Y_VALUE1 reportLessThan(
-                                    @if(Y_FIRST) {@hint Y_VALUE1 yPosition, literal }
-                                    @unless(Y_FIRST) { literal, @hint Y_VALUE2 yPosition }
-                                )), script {@hint PADDLE_UP
-                                    changeYPosition(literal)
-                                })
-                                @hint IF_CONDITION
-                                doIf(@hint AND_OPERATOR reportAnd(@hint KEY_PRESSED reportKeyPressed(literal), @hint Y_VALUE2 reportLessThan(
-                                    @if(Y_FIRST) {literal,  @hint Y_VALUE2  yPosition }
-                                    @unless(Y_FIRST) {@hint Y_VALUE1 yPosition, literal }
-                                )), script { @hint PADDLE_UP
-                                    changeYPosition(literal)
-                                })
+                                @anyOrder {
+                                    @hint IF_CONDITION_LEFT
+                                    doIf(@hint AND_OPERATOR reportAnd(@hint KEY_PRESSED reportKeyPressed(literal),@hint Y_VALUE1 reportLessThan(
+                                        @if(Y_FIRST) {@hint Y_VALUE1 yPosition, literal }
+                                        @unless(Y_FIRST) { literal, @hint Y_VALUE2 yPosition }
+                                    )), script {@hint PADDLE_UP
+                                        changeYPosition(literal)
+                                    })
+                                    @hint IF_CONDITION_LEFT
+                                    doIf(@hint AND_OPERATOR reportAnd(@hint KEY_PRESSED reportKeyPressed(literal), @hint Y_VALUE2 reportLessThan(
+                                        @if(Y_FIRST) {literal,  @hint Y_VALUE2  yPosition }
+                                        @unless(Y_FIRST) {@hint Y_VALUE1 yPosition, literal }
+                                    )), script { @hint PADDLE_UP
+                                        changeYPosition(literal)
+                                    })
+                                }
                             }
                         })
                     }
-                    @unless (FOREVER_KEYS) {
-                        script {
-                            receiveKey
-                            @hint IF_CONDITION
-                            doIf(@hint COMPARE reportLessThan( @hint Y_VALUE1 yPosition, literal), script {@hint PADDLE_UP
-                                changeYPosition(literal)
-                            })
-                        }
-                        script {
-                            receiveKey
-                            @hint IF_CONDITION
-                            doIf(@hint COMPARE reportLessThan(literal, @hint Y_VALUE2 yPosition), script {@hint PADDLE_UP
-                                changeYPosition(literal)
-                            })
-                        }
+                }
+                @unless (FOREVER_KEYS) {
+                    script {
+                        receiveKey
+                        @hint IF_CONDITION_LEFT
+                        doIf(@hint Y_VALUE1 reportLessThan( @hint Y_VALUE1 yPosition, literal), script {
+                            @hint PADDLE_UP
+                            changeYPosition(literal)
+                        })
+                    }
+                    script {
+                        receiveKey
+                        @hint IF_CONDITION_LEFT
+                        doIf(@hint Y_VALUE2 reportLessThan(literal, @hint Y_VALUE2 yPosition), script {
+                            @hint PADDLE_UP
+                            changeYPosition(literal)
+                        })
                     }
                 }
             }

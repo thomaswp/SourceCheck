@@ -33,7 +33,7 @@ snapshot {
         :`Use "move" block (under Motion) with a positive value to allow the ball to move forward.`
     }
     @defHint TOUCH_PADDLE {
-        :`If the ball touches the Paddle, it should bounce off.`
+        :`Use "touching" block (under Sensing) to detect if the Ball sprite has touched the Paddle. Note that this block should be used in an "if" condition.`
     }
     @defHint TOUCH_BACK_EDGE {
         :`If the ball touches the right edge (x > 230), the player's score should go to 0 and the ball should reset.`
@@ -111,7 +111,7 @@ snapshot {
                             reportTouchingObject(literal), script {
                                 @anyOrder {
                                     @hint BALL_DIRECTION
-                                    setHeading(@defHint BALL_DIRECTION reportDifference(literal, @hint BALL_DIRECTION direction))
+                                    setHeading(@hint BALL_DIRECTION reportDifference(literal, @hint BALL_DIRECTION direction))
                                     @hint SCORE_CHANGE
                                     doChangeVar(varMenu:rightPoints, literal)
                                 }
