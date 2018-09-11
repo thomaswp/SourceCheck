@@ -141,6 +141,7 @@ public class SnapParser {
 							JSONObject dataObject = new JSONObject(data);
 							if (dataObject.has("userID")) userID = dataObject.getString("userID");
 						}
+						if (solution.userID == null) solution.userID = userID;
 
 						if (AttemptAction.IDE_EXPORT_PROJECT.equals(action)) {
 							if (userID != null && !userID.equals("none")) {

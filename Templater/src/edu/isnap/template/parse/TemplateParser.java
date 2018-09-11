@@ -142,7 +142,7 @@ public class TemplateParser {
 		StringBuffer sb = new StringBuffer();
 		while (matcher.find()) {
 			// TODO: This should really escape ( { } ) and space
-			String holder = "_HOLDER_" + valueMap.size();
+			String holder = "_HOLDER_" + valueMap.size() + "_";
 			valueMap.put(holder, matcher.group(1));
 			matcher.appendReplacement(sb, ":" + holder);
 		}
