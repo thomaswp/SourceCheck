@@ -68,7 +68,7 @@ snapshot {
                     @hint MOVE_AND_TURN
                     @defBlock TURN {
                         @hint TURN_AMOUNT1 @hint TURN_AMOUNT2
-                        reportQuotient(literal, var:sides)
+                        reportQuotient(literal, @hint TURN_AMOUNT1 @hint TURN_AMOUNT2 var:sides)
                     }
                     @hint MOVE_AND_TURN
                     @or {

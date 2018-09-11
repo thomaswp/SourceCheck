@@ -37,7 +37,7 @@ public class PolygonAutoGrader {
 
 		Assignment assignment = MTurk2018.PolygonMakerSimple;
 		//System.out.print(assignment);
-		analyzeSyntaxTree(assignment);	
+		analyzeSyntaxTree(assignment);
 
 	}
 
@@ -47,7 +47,7 @@ public class PolygonAutoGrader {
 		int attemptCount = 0;
 		int snapshotCount = 0;
 		int i=0;
-		for (AssignmentAttempt attempt: attempts.values()) 
+		for (AssignmentAttempt attempt: attempts.values())
 		{
 			++attemptCount;
 		 AttemptAction lastRow = attempt.rows.get(attempt.rows.size()-1);
@@ -63,22 +63,22 @@ public class PolygonAutoGrader {
 			 }
 		 }
 		 i++;
-				
+
 		}
 		//System.out.println("attempt #:"+attemptCount);
 		//System.out.println("snapshot #:"+snapshotCount);
 	}
 
-	// this global variable, to make check on PenDown in the repeat block 
+	// this global variable, to make check on PenDown in the repeat block
 	public static boolean PenDowninRepeat=false;
 
 	// I divided the Polygon maker code into 3 features, Use of Ask block,
 	// Use of PenDown , and Use of Repeat Block.
 
-	public final static Grader[] PolygonGraders = new Grader[] { 
+	public final static Grader[] PolygonGraders = new Grader[] {
 			new PolygonGraderAsk(),
-			new PolygonGraderRepeat(), 
 			new PolygonGraderPenDown(),
+			new PolygonGraderRepeat(),
 
 
 	};
@@ -132,7 +132,7 @@ public class PolygonAutoGrader {
 						return true;
 				}
 
-				// if pen down exists, then check if it's before or after repeat. if after it then return false	
+				// if pen down exists, then check if it's before or after repeat. if after it then return false
 				int repeatIndex = node.searchChildren(new Node.TypePredicate("doRepeat"));
 				if(repeatIndex>-1) // repeat exists in this script, then check if pen down is after it.
 				{
