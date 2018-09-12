@@ -68,12 +68,15 @@ public class Snapshot extends Code implements IHasID {
 		String xmlSource = "";
 		while (sc.hasNext()) xmlSource += sc.nextLine();
 		sc.close();
-		if (xmlSource.length() == 0) return null;
 		return parse(file.getName(), xmlSource);
 	}
 
 	public static Snapshot parse(String name, String xmlSource) {
 		if (xmlSource == null || xmlSource.length() == 0) return null;
+		if (xmlSource.length() == 65000) {
+			System.out.println("Warning: xml file truncated: " + name);
+			return null;
+		}
 		try {
 			// Sometimes snap files have newlines in their string literals and this can get messy
 			xmlSource = xmlSource.replace("\r", "").replace("\n", "");
