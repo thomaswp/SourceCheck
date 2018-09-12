@@ -165,8 +165,28 @@ loadData <- function() {
   cat(paste0(as.character(task2$lastCode[is.na(task2$obj2)]), "\n\n"))
   sink()
   
-  write.csv(post1[,lapply(post1, class) != "numeric"][,-1:-13], "C:/Users/Thomas/Desktop/post1-filtered-50.csv")
-  write.csv(post2[,lapply(post2, class) != "numeric"][,-1:-13], "C:/Users/Thomas/Desktop/post2-filtered-50.csv")
+  post1 <- post1[order(post1$userID),]
+  post2 <- post2[order(post2$userID),]
+  test <- cbind(post1[,lapply(post1, class) != "numeric"][,-1:-13], post2[,lapply(post2, class) != "numeric"][,-1:-13])
+  test <- test[order(post1$codeHint, post1$textHint, post1$reflect, post1$userID),]
+  write.csv(test, "C:/Users/Thomas/Desktop/post-filtered-93.csv")
+  
+  qual <- c("Q34", "Q38", "X1_Q39",	"X1_Q41",	"X2_Q39",	"X2_Q41",	"X3_Q39",	"X3_Q41",	"X4_Q39",	"X4_Q41",	"Q44",	"Q45",	"Q47",	"Q48")
+  
+  sink("C:/Users/Thomas/Desktop/qual.txt")
+  for (col in qual) {
+    cat("----------------\n")
+    cat(paste("#####", col, "#####"))
+    cat("\n")
+    for (i in 1:nrow(test)) {
+      cat(paste("+", test$userID[i], test$hintTypes[i]))
+      cat("\n")
+      cat(as.character(test[i,col]))
+      cat("\n\n")
+    }
+    cat("\n")
+  }
+  sink()
   
   postHelp$minute <- floor(postHelp$time / 60000)
   ddply(postHelp, c("assignmentID", "codeHint", "textHint", "reflect"), summarize,
