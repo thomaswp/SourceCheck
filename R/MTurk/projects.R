@@ -176,15 +176,23 @@ loadData <- function() {
   
   postHelp$helpNeeded <- preHelp$Q6
   cor.test(postHelp$Q10, postHelp$helpNeeded, method="spearman")
-  postHelp$helpNeededBinned <- as.ordered(floor(5 * postHelp$helpNeeded / 11))
+  postHelp$helpNeededBinned <- cut(postHelp$helpNeeded, 4) # as.ordered(floor(5 * postHelp$helpNeeded / 11))
   ddply(postHelp, c("assignmentID", "codeHint", "textHint", "reflect"), summarize,
         n=length(Q10), spear=cor(Q10, helpNeeded, method="spearman"), p=cor.test(Q10, helpNeeded, method="spearman")$p.value)
   table(postHelp$helpNeededBinned)
   
+  postHelp$anyHint <- postHelp$codeHint | postHelp$textHint
+  postHelp$group <- paste0(postHelp$codeHint, postHelp$textHint)
+  ggplot(postHelp, aes(y=Q10, x=group)) + geom_boxplot() + 
+    stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) + 
+    facet_wrap(~assignmentID)
+  ggplot(postHelp, aes(x=helpNeededBinned, y=Q10, fill=group)) + geom_boxplot() + facet_wrap(~assignmentID)
+  
+  
   ratingsBinned <- ddply(postHelp[,c("assignmentID", "codeHint", "textHint", "reflect", "helpNeededBinned", "Q10")], 
                          c("assignmentID", "codeHint", "textHint", "reflect", "helpNeededBinned"), summarize,
                          nc=length(Q10), mRating=mean(Q10), sdRating=sd(Q10))
-  #ratingsBinned$group <- paste0(ratingsBinned$codeHint, ratingsBinned$textHint, ratingsBinned$reflect)
+  ratingsBinned$group <- paste0(ratingsBinned$codeHint, ratingsBinned$textHint, ratingsBinned$reflect)
   ggplot(ratingsBinned, aes(x=helpNeededBinned, y=mRating, group=codeHint, color=codeHint)) + geom_line() + facet_wrap(~assignmentID)
 }
 
