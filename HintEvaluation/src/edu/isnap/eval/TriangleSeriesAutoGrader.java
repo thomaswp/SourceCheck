@@ -13,7 +13,7 @@ public class TriangleSeriesAutoGrader {
 
 	public static void main(String[] args) throws IOException {
 		for (File xml : new File("tests").listFiles()) {
-			if (!xml.getName().endsWith("triangle3.xml"))
+			if (!xml.getName().endsWith("triangle13.xml"))
 				continue;
 			System.out.println(xml.getName() + ":");
 
@@ -36,8 +36,9 @@ public class TriangleSeriesAutoGrader {
 
 	public final static Grader[] PolygonTriangleSeriesGraders = new Grader[] {
 		new TriangleSeriesGraderAsk(),
-		new TriangleSeriesGraderPenDown(),
 		new TriangleSeriesGraderRepeat(),
+		new TriangleSeriesGraderPenDown(),
+		
 
 	};
 
@@ -113,8 +114,88 @@ public class TriangleSeriesAutoGrader {
 		public String name() {
 			return "Repeat";
 		}
+		
+		// check if the student repeats 360/3 or 120
+		private static boolean checkTurnLiterals(Node nestedTurnNode)
+		{
+			   String t3 = nestedTurnNode.children.get(0).value();
+			   String t4 = nestedTurnNode.children.get(0).type();
+			   if ("120".equals(t3))
+			      return true;
+			   else if("reportQuotient".equals(t4))
+			   {
+				   Node reportQuotientNode = nestedTurnNode.children.get(0);
+				   String t5 = reportQuotientNode.children.get(0).value(); // here the value must be 360
+				   String t6 = reportQuotientNode.children.get(1).value();
+				   if ("360".equals(t5) && "3".equals(t6))
+						return true;
+				   else
+					   return false;
+				   
+			   }
+			   else
+			     return false;
+		}
+		
+		// check if the student draws a triangle iteratively not inside a repeat
+		private static boolean checkRepeatIteratively(Node nestedRepeatNode)
+		{
+			//move, turn, move, turn, move, turn
+			if (nestedRepeatNode.children.size() < 6)
+			   return false;
+			else
+			{
+				int indexForward = nestedRepeatNode.searchChildren(new Node.TypePredicate("forward"),0);
+				int indexTurn = nestedRepeatNode.searchChildren(new Node.TypePredicate("turn"),0);
+				int indexTurnLeft = nestedRepeatNode.searchChildren(new Node.TypePredicate("turnLeft"),0);
+				int indexDown = nestedRepeatNode.searchChildren(new Node.TypePredicate("down"),0,indexForward);
+				if(indexDown>-1)
+				{
+					if(indexDown<indexForward)
+						PenDowninRepeat=true;
+				}
+				if(indexForward>-1 && (indexTurn>-1 || indexTurnLeft>-1))
+				{
+					int startIndex=0;
+					// it works for special conditions, need to think about in a better way!!
+					if(indexTurn>indexForward || indexTurnLeft>indexForward)
+						startIndex= indexForward;
+					else if(indexTurn==-1)
+						startIndex= indexTurnLeft;
+					else
+						startIndex= indexTurn;
+				
+					for(int i=startIndex; i<(startIndex+6); i+=2)
+						{
+							String t1 = nestedRepeatNode.children.get(i).type();
+							String t2 = nestedRepeatNode.children.get(i+1).type();
+					
+							if ("forward".equals(t1) && ("turn".equals(t2) || "turnLeft".equals(t2)))
+								{
+						   // send the turn node to checkRepeatNumber
+									boolean check = checkTurnLiterals(nestedRepeatNode.children.get(i+1));
+									if(check==false)
+										return false;
+								
+								}
+							else if("forward".equals(t2) && ("turn".equals(t1)|| "turnLeft".equals(t1)))
+								{
+									boolean check = checkTurnLiterals(nestedRepeatNode.children.get(i));
+									if(check==false)
+										return false;
+								}
+							else
+								return false;
+						}
+				}
+				else
+					return false;
+					
+			}
+			return true;
+		}
 
-		// a helper method to check the nested loop
+		// check if the student draws a triangle in a nested loop
 		private static boolean checkNestedLoop(Node nestedRepeatNode)
 		{
 			if (nestedRepeatNode.children.size() < 2)
@@ -128,8 +209,8 @@ public class TriangleSeriesAutoGrader {
 
 //			if (scriptNode.children.size() >= 2)
 //			{ // turn and forward must exist in the repeat, if any doesn't exist then return false
-				if (scriptNode.searchChildren(new Node.TypePredicate("forward"))==-1 ||
-						scriptNode.searchChildren(new Node.TypePredicate("turn"))==-1)
+			if (scriptNode.searchChildren(new Node.TypePredicate("forward"))==-1 &&
+				(scriptNode.searchChildren(new Node.TypePredicate("turn"))==-1 || scriptNode.searchChildren(new Node.TypePredicate("turnLeft"))==-1 ))
 					return false;
 //			}
 
@@ -137,15 +218,50 @@ public class TriangleSeriesAutoGrader {
 
 			// retrieving the turn node to check its children.
 			int index3 = scriptNode.searchChildren(new Node.TypePredicate("turn"));
-			Node nodeTurn = scriptNode.children.get(index3);
-			String t3 = nodeTurn.children.get(0).value();
-			if (!"120".equals(t3))
-				return false;
+			if(index3>-1)
+			{
+				Node nodeTurn = scriptNode.children.get(index3);
+				return checkTurnLiterals(nodeTurn);
+			}
+			else
+			{
+				 index3 = scriptNode.searchChildren(new Node.TypePredicate("turnLeft"));
+				 Node nodeTurn = scriptNode.children.get(index3);
+				 return checkTurnLiterals(nodeTurn);
+			}
+			//return checkTurnLiterals(nodeTurn); // check if the literals are 360/3 or 120
+//			String t3 = nodeTurn.children.get(0).value();
+//			if (!"120".equals(t3))
+//				return false;
 
-			return true; // if all conditions are met.
+			//return true; // if all conditions are met.
 
 	     }
-
+        
+		// check for the extra forward after drawing 1 triangle
+        private static boolean checkExtraForward(Node scriptNodeFirstRepeat)
+        {
+        	if(scriptNodeFirstRepeat.children.size()>6) // check for the extra forward
+			{
+        		// possibilities!!
+			  int indexForward = scriptNodeFirstRepeat.searchChildren(new Node.TypePredicate("forward"),6);
+			  int indexUp = scriptNodeFirstRepeat.searchChildren(new Node.TypePredicate("up"),6);
+			  int indexDown = scriptNodeFirstRepeat.searchChildren(new Node.TypePredicate("down"),6);
+			  if(indexForward==-1)
+				  return false;
+			  else if(indexUp>-1) // if there exist up, it must be before forward
+			  {
+				  if(indexForward>indexUp && indexDown>indexUp && indexDown>indexForward)
+				      return true;
+				  else
+					  return false;
+			  }
+			  else
+				  return true;
+			}
+        	else
+        		return false;
+        }
 		private final static Predicate backbone = new Node.BackbonePredicate("sprite", "script", "...", "doRepeat");
 		private final static Predicate isRepeat = new Predicate()
 		{
@@ -161,24 +277,30 @@ public class TriangleSeriesAutoGrader {
 					return false;
 ////////////////////////////////////////////////////////////////////////////////////////
 				Node scriptNodeFirstRepeat = node.children.get(1); // get the script inside the repeat block
-
-				// repeat block must have at least 2 blocks inside (repeat + forward).
+                
+				// repeat block must have at least 2 blocks inside (repeat + forward), 
+				//or it can have several move and turn.
 				if (scriptNodeFirstRepeat.children.size() < 2)
 					return false;
 				else
-				{    // forward block can be before the script or after it
-					if(scriptNodeFirstRepeat.searchChildren(new Node.TypePredicate("forward"))==-1
-							|| scriptNodeFirstRepeat.searchChildren(new Node.TypePredicate("doRepeat"))==-1)
-						return false;
-
-					else  // it has both the forward and the doRepeat blocks
+				{
+					// this mean it doesn't have a repeat , so check if it has iterative loop.
+					if(scriptNodeFirstRepeat.searchChildren(new Node.TypePredicate("doRepeat"))==-1)
 					{
-						// check the nested loop
+						boolean iterativeRepeats= checkRepeatIteratively(scriptNodeFirstRepeat);
+						if(iterativeRepeats) // if it has an iterative repeat, check the extra forward 
+						{
+							return checkExtraForward(scriptNodeFirstRepeat);
+//							
+						}
+					} // there exist a nested repeatblock, and then there must be forward block
+					if(scriptNodeFirstRepeat.searchChildren(new Node.TypePredicate("doRepeat"))>-1
+							&& scriptNodeFirstRepeat.searchChildren(new Node.TypePredicate("forward"))>-1)
+					{
 						int index4 = scriptNodeFirstRepeat.searchChildren(new Node.TypePredicate("doRepeat"));
 						Node nestedRepeatNode = scriptNodeFirstRepeat.children.get(index4); // get the nested repeat block
 						if(!checkNestedLoop(nestedRepeatNode)) // check if the nested loop is correct or not
 							return false;
-
 						if(scriptNodeFirstRepeat.searchChildren(new Node.TypePredicate("down"))>-1) // check the index of pendown if it exists inside the first repeat block
 						{
 							int index1 = scriptNodeFirstRepeat.searchChildren(new Node.TypePredicate("forward"));
@@ -187,8 +309,8 @@ public class TriangleSeriesAutoGrader {
 								PenDowninRepeat=true;
 
 						}
-
 					}
+
 				}
 				return true; // if all conditions are met.
 			}
