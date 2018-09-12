@@ -76,14 +76,14 @@ public class PolygonAutoGrader {
 	// Use of PenDown , and Use of Repeat Block.
 
 	public final static Grader[] PolygonGraders = new Grader[] {
-			new PolygonGraderAsk(),
+			new PolygonGraderAskAndUseAnswer(),
 			new PolygonGraderPenDown(),
 			new PolygonGraderRepeat(),
 
 
 	};
 
-	public static class PolygonGraderAsk implements Grader {
+	public static class PolygonGraderAskAndUseAnswer implements Grader {
 
 		@Override
 		public String name() {
@@ -98,7 +98,12 @@ public class PolygonAutoGrader {
 			public boolean eval(Node node) {
 				// if ask block exists in the script, return true.
 				int ask = node.searchChildren(new Node.TypePredicate("doAsk"));
-				return ask >= 0;
+				if (ask < 0) return false;
+				int repeatIndex = node.searchChildren(new Node.TypePredicate("doRepeat"));
+				if (repeatIndex < ask) return false;
+				Node repeat = node.children.get(repeatIndex);
+				int answerIndex = repeat.searchChildren(new Node.TypePredicate("answer"));
+				return answerIndex == 0;
 			}
 		};
 
