@@ -173,5 +173,18 @@ loadData <- function() {
         n=length(Q10), spear=cor(Q10, minute, method="spearman"), p=cor.test(Q10, minute, method="spearman")$p.value)
   ddply(postHelp, c("assignmentID"), summarize,
         n=length(Q10), spear=cor(Q10, minute, method="spearman"), p=cor.test(Q10, minute, method="spearman")$p.value)
+  
+  postHelp$helpNeeded <- preHelp$Q6
+  cor.test(postHelp$Q10, postHelp$helpNeeded, method="spearman")
+  postHelp$helpNeededBinned <- as.ordered(floor(5 * postHelp$helpNeeded / 11))
+  ddply(postHelp, c("assignmentID", "codeHint", "textHint", "reflect"), summarize,
+        n=length(Q10), spear=cor(Q10, helpNeeded, method="spearman"), p=cor.test(Q10, helpNeeded, method="spearman")$p.value)
+  table(postHelp$helpNeededBinned)
+  
+  ratingsBinned <- ddply(postHelp[,c("assignmentID", "codeHint", "textHint", "reflect", "helpNeededBinned", "Q10")], 
+                         c("assignmentID", "codeHint", "textHint", "reflect", "helpNeededBinned"), summarize,
+                         nc=length(Q10), mRating=mean(Q10), sdRating=sd(Q10))
+  #ratingsBinned$group <- paste0(ratingsBinned$codeHint, ratingsBinned$textHint, ratingsBinned$reflect)
+  ggplot(ratingsBinned, aes(x=helpNeededBinned, y=mRating, group=codeHint, color=codeHint)) + geom_line() + facet_wrap(~assignmentID)
 }
 
