@@ -195,7 +195,7 @@ loadData <- function() {
   # But NS less likely on task 2... so maybe it's a cumulative effect?
   fisher.test(codeHinted$followedHint[codeHinted$assignmentID == "drawTriangles"], codeHinted$textHint[codeHinted$assignmentID == "drawTriangles"]==1)
   
-  # But difference in percieved quality
+  # But no difference in percieved quality
   condCompare(codeHinted$Q12_1, codeHinted$textHint==1, filter=codeHinted$assignmentID=="polygonMakerSimple")
   condCompare(codeHinted$Q12_2, codeHinted$textHint==1, filter=codeHinted$assignmentID=="polygonMakerSimple")
   condCompare(codeHinted$Q12_3, codeHinted$textHint==1, filter=codeHinted$assignmentID=="polygonMakerSimple")
