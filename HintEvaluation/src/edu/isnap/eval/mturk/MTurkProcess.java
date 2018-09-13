@@ -2,6 +2,7 @@ package edu.isnap.eval.mturk;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Map;
 
 import org.json.JSONObject;
 
@@ -37,10 +38,16 @@ public class MTurkProcess {
 			} else if ("drawTriangles".equals(assignment.name)) {
 				graders = TriangleSeriesAutoGrader.PolygonTriangleSeriesGraders;
 			}
-
-			for (AssignmentAttempt attempt : assignment.load(Mode.Use, false).values()) {
+			Map<String, AssignmentAttempt> data = assignment.load(Mode.Use, false);
+			System.out.println("Number of Submissions: " + data.size());
+			Object[] arr_data = data.values().toArray();
+			for (int i = 0; i < arr_data.length; i++) {
+				AssignmentAttempt attempt = (AssignmentAttempt) arr_data[i];
 				processAttempt(attempt, graders, attempts, actions);
 			}
+//			for (AssignmentAttempt attempt : data.values()) {
+//				processAttempt(attempt, graders, attempts, actions);
+//			}
 		}
 		attempts.write(dataset.analysisDir() + "/attempts.csv");
 		actions.write(dataset.analysisDir() + "/actions.csv");
@@ -122,7 +129,15 @@ public class MTurkProcess {
 				break;
 			}
 		}
-
+		if (lastCode != null) {
+			System.out.println(attempt.id);
+			System.out.println(lastCode.prettyPrint(true));
+			for (Grader grader : graders) {
+				System.out.println(grader.name() + ": " + grader.pass(lastCode));
+			}
+			System.out.println();
+		}
+		
 		attempts.newRow();
 		attempts.put("userID", attempt.userID());
 		attempts.put("projectID", attempt.id);

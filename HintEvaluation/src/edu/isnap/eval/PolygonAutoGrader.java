@@ -1,5 +1,6 @@
 package edu.isnap.eval;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Map;
@@ -9,10 +10,10 @@ import edu.isnap.ctd.graph.Node.Predicate;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
-import edu.isnap.datasets.MTurk2018;
 import edu.isnap.eval.AutoGrader.Grader;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.Store.Mode;
+import edu.isnap.parser.elements.Snapshot;
 
 public class PolygonAutoGrader {
 
@@ -32,14 +33,29 @@ public class PolygonAutoGrader {
 	//			System.out.println();
 	//		}
 	//	}
-
 	public static void main(String[] args) throws IOException {
+		for (File xml : new File("tests").listFiles()) {
+			if (!xml.getName().endsWith("polygon-solution16.xml"))
+				continue;
+			System.out.println(xml.getName() + ":");
 
-		Assignment assignment = MTurk2018.PolygonMakerSimple;
-		//System.out.print(assignment);
-		analyzeSyntaxTree(assignment);
+			Snapshot snapshot = Snapshot.parse(xml);
+			Node node = SimpleNodeBuilder.toTree(snapshot, false);
+			System.out.println(node); // print whole tree
 
+			for (Grader grader : PolygonGraders) {
+					System.out.println(grader.name() + ": " + grader.pass(node));
+				}
+					System.out.println();
+		}
 	}
+//	public static void main(String[] args) throws IOException {
+//
+//		Assignment assignment = MTurk2018.PolygonMakerSimple;
+//		//System.out.print(assignment);
+//		analyzeSyntaxTree(assignment);
+//
+//	}
 
 	public static void analyzeSyntaxTree(Assignment assignment) throws FileNotFoundException, IOException
 	{
@@ -65,29 +81,23 @@ public class PolygonAutoGrader {
 		 i++;
 
 		}
-		//System.out.println("attempt #:"+attemptCount);
-		//System.out.println("snapshot #:"+snapshotCount);
+	
 	}
 
-	// this global variable, to make check on PenDown in the repeat block
-	public static boolean PenDowninRepeat=false;
-
-	// I divided the Polygon maker code into 3 features, Use of Ask block,
-	// Use of PenDown , and Use of Repeat Block.
 
 	public final static Grader[] PolygonGraders = new Grader[] {
 			new PolygonGraderAskAndUseAnswer(),
-			new PolygonGraderPenDown(),
-			new PolygonGraderRepeat(),
-
+			new PolygonGraderDrawSomething(),
+			new PolygonGraderMovesShape(),
+			new PolygonGraderTurnCorrectly(),
 
 	};
-
+	// "Ask followed by a repeat on answer";
 	public static class PolygonGraderAskAndUseAnswer implements Grader {
 
 		@Override
 		public String name() {
-			return "Ask";
+			return "Ask followed by a repeat on answer";
 		}
 
 		// step 1
@@ -102,7 +112,7 @@ public class PolygonAutoGrader {
 				int repeatIndex = node.searchChildren(new Node.TypePredicate("doRepeat"));
 				if (repeatIndex < ask) return false;
 				Node repeat = node.children.get(repeatIndex);
-				int answerIndex = repeat.searchChildren(new Node.TypePredicate("answer"));
+				int answerIndex = repeat.searchChildren(new Node.TypePredicate("getLastAnswer"));
 				return answerIndex == 0;
 			}
 		};
@@ -114,110 +124,115 @@ public class PolygonAutoGrader {
 			return node.exists(test);
 		}
 	}
+	
+	// "Draws something"
+	public static class PolygonGraderDrawSomething implements Grader {
 
-	// check if pen down exists, if yes, need to check if it's before or after the
-	// move block.
-	public static class PolygonGraderPenDown implements Grader {
 		@Override
 		public String name() {
-			return "PenDown";
+			return "Draws Something";
 		}
 
-		private final static Predicate backbone = new Node.BackbonePredicate("sprite", "script");
-		private final static Predicate isPenDown = new Predicate() {
+		// step 1
+		private final static Predicate backbone = new Node.BackbonePredicate("down");
 
+		private final static Predicate Draws = new Predicate() {
 			@Override
 			public boolean eval(Node node) {
-				int downIndex = node.searchChildren(new Node.TypePredicate("down"));
-				if (downIndex < 0) // if no pen down, check if it exists in the repeat block
-				{
-					if(PenDowninRepeat==false) // check if it's not in the repeat as well
-						return false;
-					else
-						return true;
+				int downIndex = node.index();
+				if(downIndex<0)
+					return false;
+				Node forwardNode = node.parent().search(new Node.BackbonePredicate("forward"));
+				if (forwardNode == null) return false;
+				
+				if (forwardNode.parent() == node.parent()) {
+					return forwardNode.index() > downIndex;
 				}
-
-				// if pen down exists, then check if it's before or after repeat. if after it then return false
-				int repeatIndex = node.searchChildren(new Node.TypePredicate("doRepeat"));
-				if(repeatIndex>-1) // repeat exists in this script, then check if pen down is after it.
-				{
-					int repeatIndex2 = node.searchChildren(new Node.TypePredicate("doRepeat"), downIndex + 1);
-					if (repeatIndex2 < 0) // if this is true, then pen down is after repeat, then return false
-						return false;
-				}
-
-				return true; // all conditions are met!!
+				else return forwardNode.depth() > node.depth();
 			}
 		};
 
-		private final static Predicate test = new Node.ConjunctionPredicate(true, backbone, isPenDown);
+		private final static Predicate test = new Node.ConjunctionPredicate(true, backbone, Draws);
 
 		@Override
 		public boolean pass(Node node) {
 			return node.exists(test);
 		}
 	}
-
-	// Test the repeat block
-	public static class PolygonGraderRepeat implements Grader {
+	
+	// "Move Shape"
+	public static class PolygonGraderMovesShape implements Grader {
 		@Override
 		public String name() {
-			return "Repeat";
+			return "Moves shape (repeat with turn and move)";
 		}
 
 		private final static Predicate backbone = new Node.BackbonePredicate("sprite|customBlock", "script", "...",
 				"doRepeat");
-		private final static Predicate isRepeat = new Predicate() {
+
+		private final static Predicate MoveShape = new Predicate() {
 			@Override
 			public boolean eval(Node node) {
-				// repeat block must have at least 2 blocks inside (the answer + script).
 				if (node.children.size() < 2)
 					return false;
 
 				// check that it repeats on the answer.
 				String t1 = node.children.get(0).type();
-				if (!"getLastAnswer".equals(t1))
+				if (!"getLastAnswer".equals(t1) && !"literal".equals(t1))
 					return false;
 
 				Node scriptNode = node.children.get(1); // get the script inside the repeat block
 
-				// repeat block must have at least 2 blocks inside.
+				// repeat block must have at least 2 blocks inside (move+turn).
 				if (scriptNode.children.size() < 2)
 					return false;
 				else
 				{ // turn and forward must exist in the repeat, if any doesn't
 					// exist then return false
 					if(scriptNode.searchChildren(new Node.TypePredicate("forward"))==-1
-							|| scriptNode.searchChildren(new Node.TypePredicate("turn"))==-1)
-						return false;
-
-					// if forward and pen down are in the repeat block
-					if(scriptNode.searchChildren(new Node.TypePredicate("down"))>-1)
-					{
-						int index1 = scriptNode.searchChildren(new Node.TypePredicate("forward"));
-						int index2 = scriptNode.searchChildren(new Node.TypePredicate("down"));
-						if (index2 < index1) // this means PenDown is before move, then set PenDowninRepeat to true
-							PenDowninRepeat=true;
-					}
+							&& (scriptNode.searchChildren(new Node.TypePredicate("turn"))==-1|| scriptNode.searchChildren(new Node.TypePredicate("turnLeft"))==-1))
+						return false;	
 				}
 
-				// Now checking the turn block inside the repeat block
+				return true; 
+			}
+		};
 
-				// retrieving the turn node to check its children.
-				int index3 = scriptNode.searchChildren(new Node.TypePredicate("turn"));
-				Node nodeTurn = scriptNode.children.get(index3);
+		private final static Predicate test = new Node.ConjunctionPredicate(true, backbone, MoveShape);
 
-				if (nodeTurn == null)
+		@Override
+		public boolean pass(Node node) {
+			return node.exists(test);
+		}
+	}
+	
+	// "Turn Correctly"
+	public static class PolygonGraderTurnCorrectly implements Grader {
+
+		@Override
+		public String name() {
+			return "Turns Correctly";
+		}
+
+		// step 1
+		private final static Predicate backbone = new Node.BackbonePredicate("turn|turnLeft");
+
+		private final static Predicate Turns = new Predicate() {
+			@Override
+			public boolean eval(Node node) {
+				int turnIndex = node.index();
+				if(turnIndex<0)
 					return false;
-				else { // turn node must have only one child (the Quotient block)
-					if (nodeTurn.children.size() != 1)
+				
+			  // turn node must have only one child (the Quotient block)
+					if (node.children.size() != 1)
 						return false;
 
-					String t2 = nodeTurn.children.get(0).type();
+					String t2 = node.children.get(0).type();
 					if (!"reportQuotient".equals(t2))
 						return false;
 					else {
-						Node reportQuotientNode = nodeTurn.children.get(0);
+						Node reportQuotientNode = node.children.get(0);
 
 						if (reportQuotientNode.children.size() != 2)
 							return false;
@@ -230,16 +245,17 @@ public class PolygonAutoGrader {
 						if (!"getLastAnswer".equals(t4))
 							return false;
 					}
-				}
-				return true; // if all conditions are met.
+					return true; // all conditions are met!!
 			}
 		};
 
-		private final static Predicate test = new Node.ConjunctionPredicate(true, backbone, isRepeat);
+		private final static Predicate test = new Node.ConjunctionPredicate(true, backbone, Turns);
 
 		@Override
 		public boolean pass(Node node) {
 			return node.exists(test);
 		}
 	}
+
+	
 }
