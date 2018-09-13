@@ -132,7 +132,7 @@ snapshot {
                         }
                         @or {
                             @inline {
-                                @hint TOUCH_BACK_EDGE
+                                @hint TOUCH_PADDLE
                                 doIf(@block BOUNCE)
                                 @block RESET
                             }
@@ -141,9 +141,8 @@ snapshot {
                                 @block RESET
                             })
                         }
-                        @hint BOUNCE_OFF
                     }
-
+                    @hint BOUNCE_OFF
                     bounceOffEdge
                 })
             }
