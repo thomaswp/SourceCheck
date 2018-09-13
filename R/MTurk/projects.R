@@ -104,9 +104,36 @@ loadData <- function() {
   
   hist(task1$objs)
   summary(lm(objs ~ hadCodeHints * hadTextHints + hadReflects, data=task1))
+  summary(aov(objs ~ hadCodeHints * hadTextHints + hadReflects, data=task1))
+  # Significantly more objectives completed on task 1 if you had code hints, moderate effect size
+  condCompare(task1$objs, task1$hadCodeHints)
+  # No effect at all of text hints overall
+  condCompare(task1$objs, task1$hadTextHints)
+  # Small, positive, NS effect of reflects
+  condCompare(task1$objs, task1$hadReflects, filter=task1$hadCodeHints|task1$hadTextHints)
   summary(lm(objs==3 ~ hadCodeHints * hadTextHints + hadReflects, data=task1))
   
+  hist(task2$objs)
+  
   summary(lm(objs ~ t1HadCodeHints * t1HadTextHints + t1HadReflects, data=task2))
+  # Maybe reflects helped people in task 2?
+  summary(aov(objs ~ t1HadCodeHints * t1HadTextHints + t1HadReflects, data=task2))
+  # No effect at all of code or text hints on learning 
+  condCompare(task2$objs, task1$hadCodeHints)
+  condCompare(task2$objs, task1$hadTextHints)
+  condCompare(task2$objs, task1$hadCodeHints|task1$hadTextHints)
+  # Moderate effect size of reflects but not _quite_ significant
+  condCompare(task2$objs, task1$hadReflects, filter=task1$hadCodeHints|task1$hadTextHints)
+  condCompare(task2$objs, task1$hadReflects)
+  
+  task2Hints <- ddply(actions[actions$assignmentID=="drawTriangles",], c("assignmentID", "userID"), summarize,
+                      nCodeHints=sum(codeHint), nTextHints=sum(textHint), nReflects=sum(reflect))
+  task2 <- merge(task2, task2Hints)
+  # seems to really be a product of code hints now and reflects earlier
+  summary(aov(objs ~ t1HadCodeHints * t1HadTextHints + t1HadReflects + nCodeHints + nTextHints + nReflects, data=task2))
+  summary(aov(objs ~ t1HadReflects + nCodeHints + nTextHints + nReflects, data=task2))
+  
+  
   
   hist(postHelp$Q10[postHelp$assignmentID=="polygonMakerSimple"])
   summary(lm(Q10 ~ codeHint * textHint + reflect, data=postHelp[postHelp$assignmentID=="polygonMakerSimple",]))
