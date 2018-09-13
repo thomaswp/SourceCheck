@@ -1,6 +1,8 @@
 library(plyr)
 library(ggplot2)
 
+source("../Hints Comparison/util.R")
+
 read.qualtrics <- function(file) {
   data <- read.csv(file)
   data <- data[-1:-2,]
@@ -13,9 +15,9 @@ read.qualtrics <- function(file) {
       data[,i] <- factor(col)
     }
   }
-  data$StartDate <- strptime(as.character(data$StartDate), "%Y-%m-%d %H:%M:%S")
-  data$EndDate <- strptime(as.character(data$EndDate), "%Y-%m-%d %H:%M:%S")
-  data <- data[data$StartDate > strptime("2018-09-05 00:00:00", "%Y-%m-%d %H:%M:%S"),]
+  data$StartDate <- as.POSIXct(strptime(as.character(data$StartDate), "%Y-%m-%d %H:%M:%S"))
+  data$EndDate <- as.POSIXct(strptime(as.character(data$EndDate), "%Y-%m-%d %H:%M:%S"))
+  data <- data[data$StartDate > as.POSIXct(strptime("2018-09-05 00:00:00", "%Y-%m-%d %H:%M:%S")),]
   data
 }
 
@@ -59,12 +61,15 @@ loadData <- function() {
   postHelp <- postHelpUF
   attempts <- attemptsUF
   attempts <- attempts[!is.na(attempts$midSurveyTime),]
+  attempts <- attempts[!(attempts$userID %in% attempts$userID[duplicated(attempts[,c("assignmentID", "userID")])]),]
+  actions <- actionsUF
   
   users <- Reduce(intersect, list(
     consent$userID, 
     post1$userID, post2$userID, preHelp$userID, postHelp$userID, 
     attempts$userID[attempts$assignmentID == "polygonMakerSimple"],
-    attempts$userID[attempts$assignmentID == "drawTriangles"]
+    attempts$userID[attempts$assignmentID == "drawTriangles"],
+    actions$userID
   ))
   
   length(users)
@@ -90,17 +95,16 @@ loadData <- function() {
   task2 <- attempts[attempts$assignmentID == "drawTriangles",]
   task2 <- task2[order(task2$userID),]
   
-  
-  hist(task1$objs)
-  summary(lm(objs ~ hadCodeHints * hadTextHints + hadReflects, data=task1))
-  summary(lm(objs==3 ~ hadCodeHints * hadTextHints + hadReflects, data=task1))
-  
   task2$t1CodeHints <- task1$codeHints
   task2$t1TextHints <- task1$textHints
   task2$t1Reflects <- task1$reflects
   task2$t1HadCodeHints <- task2$t1CodeHints > 0
   task2$t1HadTextHints <- task2$t1TextHints > 0
   task2$t1HadReflects <- task2$t1Reflects > 0
+  
+  hist(task1$objs)
+  summary(lm(objs ~ hadCodeHints * hadTextHints + hadReflects, data=task1))
+  summary(lm(objs==3 ~ hadCodeHints * hadTextHints + hadReflects, data=task1))
   
   summary(lm(objs ~ t1HadCodeHints * t1HadTextHints + t1HadReflects, data=task2))
   
@@ -115,21 +119,60 @@ loadData <- function() {
   hist(task1Users$mRating)
   summary(lm(mRating ~ codeHint * textHint + reflect, data=task1Users))
   summary(aov(mRating ~ codeHint * textHint + reflect, data=task1Users))
+  summary(aov(mRating > 5 ~ codeHint * textHint + reflect, data=task1Users))
   anova(aov(mRating ~ codeHint + textHint + reflect, data=task1Users), aov(mRating ~ codeHint * textHint + reflect, data=task1Users))
+  
+  # text > no text
+  condCompare(task1Users$mRating, task1Users$codeHint==1)
+  # code > no code
+  condCompare(task1Users$mRating, task1Users$textHint==1)
+  # reflect NS < no reflect
+  condCompare(task1Users$mRating, task1Users$reflect==1, filter=task1Users$textHint+task1Users$codeHint>0)
+  # code NS > no code when text hint
+  condCompare(task1Users$mRating, task1Users$codeHint==1, filter=task1Users$textHint==1)
+  # text NS > no text when code hint
+  condCompare(task1Users$mRating, task1Users$textHint==1, filter=task1Users$codeHint==1)
+  
+  ggplot(task1Users, aes(y=mRating, x=reflect==1)) + geom_boxplot() + facet_grid(codeHint ~ textHint==1)
   
   # Pretty similar results when randomizing, except smaller effect and reflect may not be bad
   hist(postHelp$Q10[postHelp$assignmentID=="drawTriangles"])
   summary(lm(Q10 ~ codeHint * textHint + reflect + userID, data=postHelp[postHelp$assignmentID=="drawTriangles",]))
   summary(aov(Q10 ~ codeHint * textHint + reflect + Error(userID), data=postHelp[postHelp$assignmentID=="drawTriangles",]))
   
-  stepAIC(lm(mRating ~ 1, data=task1Users), scope=list(
-    lower=lm(mRating ~ 1, data=task1Users), 
+  # text > no text
+  condCompare(postHelp$Q10, postHelp$codeHint==1)
+  # code > no code
+  condCompare(postHelp$Q10, postHelp$textHint==1)
+  # reflect < no reflect
+  condCompare(postHelp$Q10, postHelp$reflect==1, filter=postHelp$textHint+postHelp$codeHint>0)
+  # code > no code when text hint
+  condCompare(postHelp$Q10, postHelp$codeHint==1, filter=postHelp$textHint==1)
+  # text > no text when code hint
+  condCompare(postHelp$Q10, postHelp$textHint==1, filter=postHelp$codeHint==1)
+  
+  ggplot(postHelp, aes(y=Q10, x=reflect==1)) + geom_boxplot() + facet_grid(codeHint ~ textHint==1)
+  
+  stepAIC(lm(mRating ~ 1, data=postHelp), scope=list(
+    lower=lm(mRating ~ 1, data=postHelp), 
     upper=lm(mRating ~ codeHint * textHint * reflect, data=task1Users)), direction="forward")
+  stepAIC(lm(Q10 ~ 1, data=postHelp), scope=list(
+    lower=lm(Q10 ~ 1, data=postHelp), 
+    upper=lm(Q10 ~ codeHint * textHint * reflect, data=postHelp)), direction="forward")
   
   postHelp$followedHint <- postHelp$Q14 < 3
   table(postHelp$followedHint, postHelp$textHint, postHelp$assignmentID)
-  fisher.test(postHelp$followedHint[postHelp$assignmentID == "polygonMakerSimple"], postHelp$textHint[postHelp$assignmentID == "polygonMakerSimple"])
+  codeHinted <- postHelp[postHelp$codeHint == 1, ]
+  # Text hints make you significantly more likely to follow a code hint (2x) on task1
+  fisher.test(codeHinted$followedHint[codeHinted$assignmentID == "polygonMakerSimple"], codeHinted$textHint[codeHinted$assignmentID == "polygonMakerSimple"]==1)
+  # But NS less likely on task 2... so maybe it's a cumulative effect?
+  fisher.test(codeHinted$followedHint[codeHinted$assignmentID == "drawTriangles"], codeHinted$textHint[codeHinted$assignmentID == "drawTriangles"]==1)
   
+  # But difference in percieved quality
+  condCompare(codeHinted$Q12_1, codeHinted$textHint==1, filter=codeHinted$assignmentID=="polygonMakerSimple")
+  condCompare(codeHinted$Q12_2, codeHinted$textHint==1, filter=codeHinted$assignmentID=="polygonMakerSimple")
+  condCompare(codeHinted$Q12_3, codeHinted$textHint==1, filter=codeHinted$assignmentID=="polygonMakerSimple")
+  ggplot(postHelp, aes(x=textHint==1, y=Q12_3)) + geom_boxplot() + facet_wrap(~assignmentID)
   
   task1UF <- postHelpUF[postHelpUF$assignmentID=="polygonMakerSimple",]
   task1UF <- task1UF[task1UF$userID %in% consentUF$userID,]
@@ -138,14 +181,13 @@ loadData <- function() {
   
   table(postHelp$codeHint, postHelp$textHint, postHelp$assignmentID)
   
-  # How helpful was Snap?
+  # How helpful was Snap? -- only code hint increased
   summary(lm(Q22_1 ~ codeHint + textHint + reflect, data=post1))
-  # How difficult was the task?
+  # How difficult was the task? -- probably no effect (except maybe reflects decrease?)
   summary(lm(Q24_1 ~ codeHint + textHint + reflect, data=post1))
-  # How prepared are you? - Really, this is where reflect prompts help?
+  # How prepared are you? -- probably no effect (except maybe reflects improve?)
   summary(lm(Q26_1 ~ codeHint + textHint + reflect, data=post1))
   
-  ggplot(postHelp, aes(x=textHint==1, y=Q12_2)) + geom_boxplot() + facet_wrap(~assignmentID)
   
   hist(task1$obj2 / 60000)
   mean(task1$obj2 / 60000, na.rm=T)
@@ -189,16 +231,24 @@ loadData <- function() {
   sink()
   
   postHelp$minute <- floor(postHelp$time / 60000)
+  # Very little correlation between time and helpfulness
   ddply(postHelp, c("assignmentID", "codeHint", "textHint", "reflect"), summarize,
         n=length(Q10), spear=cor(Q10, minute, method="spearman"), p=cor.test(Q10, minute, method="spearman")$p.value)
   ddply(postHelp, c("assignmentID"), summarize,
         n=length(Q10), spear=cor(Q10, minute, method="spearman"), p=cor.test(Q10, minute, method="spearman")$p.value)
   
   postHelp$helpNeeded <- preHelp$Q6
+  # Small correlation between help needed and action utility overall (including no help)
   cor.test(postHelp$Q10, postHelp$helpNeeded, method="spearman")
-  postHelp$helpNeededBinned <- cut(postHelp$helpNeeded, 4) # as.ordered(floor(5 * postHelp$helpNeeded / 11))
   ddply(postHelp, c("assignmentID", "codeHint", "textHint", "reflect"), summarize,
         n=length(Q10), spear=cor(Q10, helpNeeded, method="spearman"), p=cor.test(Q10, helpNeeded, method="spearman")$p.value)
+  
+  # Seems clear that there's interaction between help needed and code hint when predicing help utility
+  summary(aov(Q10 ~ codeHint * helpNeeded + Error(userID/assignmentID), data=postHelp))
+  cor.test(postHelp$Q10[postHelp$codeHint==1], postHelp$helpNeeded[postHelp$codeHint==1], method="spearman")
+  cor.test(postHelp$Q10[postHelp$codeHint==0], postHelp$helpNeeded[postHelp$codeHint==0], method="spearman")
+  
+  postHelp$helpNeededBinned <- cut(postHelp$helpNeeded, 4) # as.ordered(floor(5 * postHelp$helpNeeded / 11))
   table(postHelp$helpNeededBinned)
   
   postHelp$anyHint <- postHelp$codeHint | postHelp$textHint
@@ -207,12 +257,5 @@ loadData <- function() {
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) + 
     facet_wrap(~assignmentID)
   ggplot(postHelp, aes(x=helpNeededBinned, y=Q10, fill=group)) + geom_boxplot() + facet_wrap(~assignmentID)
-  
-  
-  ratingsBinned <- ddply(postHelp[,c("assignmentID", "codeHint", "textHint", "reflect", "helpNeededBinned", "Q10")], 
-                         c("assignmentID", "codeHint", "textHint", "reflect", "helpNeededBinned"), summarize,
-                         nc=length(Q10), mRating=mean(Q10), sdRating=sd(Q10))
-  ratingsBinned$group <- paste0(ratingsBinned$codeHint, ratingsBinned$textHint, ratingsBinned$reflect)
-  ggplot(ratingsBinned, aes(x=helpNeededBinned, y=mRating, group=codeHint, color=codeHint)) + geom_line() + facet_wrap(~assignmentID)
 }
 
