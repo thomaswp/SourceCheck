@@ -129,15 +129,15 @@ public class MTurkProcess {
 				break;
 			}
 		}
-		if (lastCode != null) {
-			System.out.println(attempt.id);
-			System.out.println(lastCode.prettyPrint(true));
-			for (Grader grader : graders) {
-				System.out.println(grader.name() + ": " + grader.pass(lastCode));
-			}
-			System.out.println();
-		}
-		
+//		if (lastCode != null) {
+//			System.out.println(attempt.id);
+//			System.out.println(lastCode.prettyPrint(true));
+//			for (Grader grader : graders) {
+//				System.out.println(grader.name() + ": " + grader.pass(lastCode));
+//			}
+//			System.out.println();
+//		}
+
 		attempts.newRow();
 		attempts.put("userID", attempt.userID());
 		attempts.put("projectID", attempt.id);
