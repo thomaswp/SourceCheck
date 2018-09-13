@@ -38,7 +38,7 @@ public class TriangleSeriesAutoGrader {
 		new TriangleSeriesGraderAsk(),
 		new TriangleSeriesGraderRepeat(),
 		new TriangleSeriesGraderPenDown(),
-		
+
 
 	};
 
@@ -114,7 +114,7 @@ public class TriangleSeriesAutoGrader {
 		public String name() {
 			return "Repeat";
 		}
-		
+
 		// check if the student repeats 360/3 or 120
 		private static boolean checkTurnLiterals(Node nestedTurnNode)
 		{
@@ -131,12 +131,12 @@ public class TriangleSeriesAutoGrader {
 						return true;
 				   else
 					   return false;
-				   
+
 			   }
 			   else
 			     return false;
 		}
-		
+
 		// check if the student draws a triangle iteratively not inside a repeat
 		private static boolean checkRepeatIteratively(Node nestedRepeatNode)
 		{
@@ -164,19 +164,19 @@ public class TriangleSeriesAutoGrader {
 						startIndex= indexTurnLeft;
 					else
 						startIndex= indexTurn;
-				
+
 					for(int i=startIndex; i<(startIndex+6); i+=2)
 						{
 							String t1 = nestedRepeatNode.children.get(i).type();
 							String t2 = nestedRepeatNode.children.get(i+1).type();
-					
+
 							if ("forward".equals(t1) && ("turn".equals(t2) || "turnLeft".equals(t2)))
 								{
 						   // send the turn node to checkRepeatNumber
 									boolean check = checkTurnLiterals(nestedRepeatNode.children.get(i+1));
 									if(check==false)
 										return false;
-								
+
 								}
 							else if("forward".equals(t2) && ("turn".equals(t1)|| "turnLeft".equals(t1)))
 								{
@@ -190,7 +190,7 @@ public class TriangleSeriesAutoGrader {
 				}
 				else
 					return false;
-					
+
 			}
 			return true;
 		}
@@ -226,8 +226,12 @@ public class TriangleSeriesAutoGrader {
 			else
 			{
 				 index3 = scriptNode.searchChildren(new Node.TypePredicate("turnLeft"));
-				 Node nodeTurn = scriptNode.children.get(index3);
-				 return checkTurnLiterals(nodeTurn);
+				 if (index3 >= 0) {
+					 Node nodeTurn = scriptNode.children.get(index3);
+					 return checkTurnLiterals(nodeTurn);
+				 } else {
+					 return false;
+				 }
 			}
 			//return checkTurnLiterals(nodeTurn); // check if the literals are 360/3 or 120
 //			String t3 = nodeTurn.children.get(0).value();
@@ -237,7 +241,7 @@ public class TriangleSeriesAutoGrader {
 			//return true; // if all conditions are met.
 
 	     }
-        
+
 		// check for the extra forward after drawing 1 triangle
         private static boolean checkExtraForward(Node scriptNodeFirstRepeat)
         {
@@ -277,8 +281,8 @@ public class TriangleSeriesAutoGrader {
 					return false;
 ////////////////////////////////////////////////////////////////////////////////////////
 				Node scriptNodeFirstRepeat = node.children.get(1); // get the script inside the repeat block
-                
-				// repeat block must have at least 2 blocks inside (repeat + forward), 
+
+				// repeat block must have at least 2 blocks inside (repeat + forward),
 				//or it can have several move and turn.
 				if (scriptNodeFirstRepeat.children.size() < 2)
 					return false;
@@ -288,10 +292,10 @@ public class TriangleSeriesAutoGrader {
 					if(scriptNodeFirstRepeat.searchChildren(new Node.TypePredicate("doRepeat"))==-1)
 					{
 						boolean iterativeRepeats= checkRepeatIteratively(scriptNodeFirstRepeat);
-						if(iterativeRepeats) // if it has an iterative repeat, check the extra forward 
+						if(iterativeRepeats) // if it has an iterative repeat, check the extra forward
 						{
 							return checkExtraForward(scriptNodeFirstRepeat);
-//							
+//
 						}
 					} // there exist a nested repeatblock, and then there must be forward block
 					if(scriptNodeFirstRepeat.searchChildren(new Node.TypePredicate("doRepeat"))>-1
