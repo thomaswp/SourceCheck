@@ -3,6 +3,9 @@ library(ggplot2)
 
 source("../Hints Comparison/util.R")
 
+# Use Type III ANOVA..?
+options(contrasts = c("contr.sum", "contr.poly"))
+
 read.qualtrics <- function(file) {
   data <- read.csv(file)
   data <- data[-1:-2,]
@@ -143,15 +146,17 @@ loadData <- function() {
   task1Users <- ddply(postHelp[postHelp$assignmentID=="polygonMakerSimple",], 
                       c("userID", "assignmentID", "codeHint", "textHint", "reflect"), 
                       summarize, mRating=mean(Q10), nRating=length(Q10))
+  task1Users$good <- task1Users$mRating > 5.5
   hist(task1Users$mRating)
   summary(lm(mRating ~ codeHint * textHint + reflect, data=task1Users))
   summary(aov(mRating ~ codeHint * textHint + reflect, data=task1Users))
   summary(aov(mRating > 5 ~ codeHint * textHint + reflect, data=task1Users))
   anova(aov(mRating ~ codeHint + textHint + reflect, data=task1Users), aov(mRating ~ codeHint * textHint + reflect, data=task1Users))
+  summary(glm(good ~ codeHint * textHint + reflect, family="binomial", data=task1Users))
   
-  # text > no text
-  condCompare(task1Users$mRating, task1Users$codeHint==1)
   # code > no code
+  condCompare(task1Users$mRating, task1Users$codeHint==1)
+  # text NS > no text
   condCompare(task1Users$mRating, task1Users$textHint==1)
   # reflect NS < no reflect
   condCompare(task1Users$mRating, task1Users$reflect==1, filter=task1Users$textHint+task1Users$codeHint>0)
@@ -165,27 +170,44 @@ loadData <- function() {
   # Pretty similar results when randomizing, except smaller effect and reflect may not be bad
   hist(postHelp$Q10[postHelp$assignmentID=="drawTriangles"])
   summary(lm(Q10 ~ codeHint * textHint + reflect + userID, data=postHelp[postHelp$assignmentID=="drawTriangles",]))
-  summary(aov(Q10 ~ codeHint * textHint + reflect + Error(userID), data=postHelp[postHelp$assignmentID=="drawTriangles",]))
+  summary(aov(Q10 ~ codeHint * textHint + reflect + Error(userID/(codeHint * textHint + reflect)), data=postHelp[postHelp$assignmentID=="drawTriangles",]))
+  summary(glm(good ~ codeHint * textHint + reflect + userID, family="binomial", data=postHelpT2))
   
+  # TODO: Use ANOVA, not wilcox
+  
+  
+  
+  # Task 2
+  postHelpT2 <- postHelp[postHelp$assignmentID=="drawTriangles",]
   # text > no text
-  condCompare(postHelp$Q10, postHelp$codeHint==1)
+  condCompare(postHelpT2$Q10, postHelpT2$codeHint==1)
   # code > no code
-  condCompare(postHelp$Q10, postHelp$textHint==1)
-  # reflect < no reflect
-  condCompare(postHelp$Q10, postHelp$reflect==1, filter=postHelp$textHint+postHelp$codeHint>0)
-  # code > no code when text hint
-  condCompare(postHelp$Q10, postHelp$codeHint==1, filter=postHelp$textHint==1)
-  # text > no text when code hint
-  condCompare(postHelp$Q10, postHelp$textHint==1, filter=postHelp$codeHint==1)
+  condCompare(postHelpT2$Q10, postHelpT2$textHint==1)
+  # reflect NS < no reflect
+  condCompare(postHelpT2$Q10, postHelpT2$reflect==1, filter=postHelpT2$textHint+postHelpT2$codeHint>0)
+  # code NS > no code when text hint
+  condCompare(postHelpT2$Q10, postHelpT2$codeHint==1, filter=postHelpT2$textHint==1)
+  # text NS > no text when code hint
+  condCompare(postHelpT2$Q10, postHelpT2$textHint==1, filter=postHelpT2$codeHint==1)
   
-  ggplot(postHelp, aes(y=Q10, x=reflect==1)) + geom_boxplot() + facet_grid(codeHint ~ textHint==1)
+  condCompare(postHelpT2$Q10, postHelpT2$codeHint==1, filter=postHelpT2$codeHint+postHelpT2$textHint==1)
   
-  stepAIC(lm(mRating ~ 1, data=postHelp), scope=list(
-    lower=lm(mRating ~ 1, data=postHelp), 
+  postHelp$goodness <- ifelse(postHelp$Q10 == 1, 0, ifelse(postHelp$Q10 < 11, 1, 2))
+  
+  ggplot(postHelpT2, aes(y=Q10, x=reflect==1)) + geom_boxplot() +
+    stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) +
+    facet_grid(codeHint ~ textHint==1)
+  ggplot(postHelpT2, aes(y=goodness, x=reflect==1)) + geom_boxplot() +
+    stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) +
+    facet_grid(codeHint ~ textHint==1)
+  ggplot(postHelpT2, aes(y=Q10)) + geom_boxplot() + facet_grid(codeHint ~ textHint==1)
+  
+  stepAIC(lm(mRating ~ 1, data=task1Users), scope=list(
+    lower=lm(mRating ~ 1, data=task1Users), 
     upper=lm(mRating ~ codeHint * textHint * reflect, data=task1Users)), direction="forward")
-  stepAIC(lm(Q10 ~ 1, data=postHelp), scope=list(
-    lower=lm(Q10 ~ 1, data=postHelp), 
-    upper=lm(Q10 ~ codeHint * textHint * reflect, data=postHelp)), direction="forward")
+  stepAIC(lm(Q10 ~ 1, data=postHelpT2), scope=list(
+    lower=lm(Q10 ~ 1, data=postHelpT2), 
+    upper=lm(Q10 ~ codeHint * textHint * reflect, data=postHelpT2)), direction="forward")
   
   postHelp$followedHint <- postHelp$Q14 < 3
   table(postHelp$followedHint, postHelp$textHint, postHelp$assignmentID)
@@ -215,6 +237,8 @@ loadData <- function() {
   # How prepared are you? -- probably no effect (except maybe reflects improve?)
   summary(lm(Q26_1 ~ codeHint + textHint + reflect, data=post1))
   
+  hist(post1$Q30)
+  summary(lm(Q30 ~ codeHint * textHint + reflect, data=post1))
   
   hist(task1$obj2 / 60000)
   mean(task1$obj2 / 60000, na.rm=T)
@@ -238,7 +262,7 @@ loadData <- function() {
   post2 <- post2[order(post2$userID),]
   test <- cbind(post1[,lapply(post1, class) != "numeric"][,-1:-13], post2[,lapply(post2, class) != "numeric"][,-1:-13])
   test <- test[order(post1$codeHint, post1$textHint, post1$reflect, post1$userID),]
-  write.csv(test, "C:/Users/Thomas/Desktop/post-filtered-93.csv")
+  write.csv(test, "C:/Users/Thomas/Desktop/post-filtered-124.csv")
   
   qual <- c("Q34", "Q38", "X1_Q39",	"X1_Q41",	"X2_Q39",	"X2_Q41",	"X3_Q39",	"X3_Q41",	"X4_Q39",	"X4_Q41",	"Q44",	"Q45",	"Q47",	"Q48")
   
@@ -262,6 +286,8 @@ loadData <- function() {
   ddply(postHelp, c("assignmentID", "codeHint", "textHint", "reflect"), summarize,
         n=length(Q10), spear=cor(Q10, minute, method="spearman"), p=cor.test(Q10, minute, method="spearman")$p.value)
   ddply(postHelp, c("assignmentID"), summarize,
+        n=length(Q10), spear=cor(Q10, minute, method="spearman"), p=cor.test(Q10, minute, method="spearman")$p.value)
+  ddply(postHelp, c("assignmentID", "codeHint"), summarize,
         n=length(Q10), spear=cor(Q10, minute, method="spearman"), p=cor.test(Q10, minute, method="spearman")$p.value)
   
   postHelp$helpNeeded <- preHelp$Q6
