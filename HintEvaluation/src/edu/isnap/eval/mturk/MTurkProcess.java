@@ -2,7 +2,9 @@ package edu.isnap.eval.mturk;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.json.JSONObject;
 
@@ -137,6 +139,10 @@ public class MTurkProcess {
 //			}
 //			System.out.println();
 //		}
+		if (lastCode == null) return;
+
+		Set<String> uniqueTypes = new HashSet<>();
+		lastCode.recurse((n) -> uniqueTypes.add(n.type()));
 
 		attempts.newRow();
 		attempts.put("userID", attempt.userID());
@@ -155,6 +161,17 @@ public class MTurkProcess {
 		for (int i = 0; i < objectiveTimes.length; i++) {
 			attempts.put("obj" + i, objectiveTimes[i] == 0 ? null : objectiveTimes[i]);
 		}
+		attempts.put("treeSize", lastCode.treeSize());
+		attempts.put("nSprites", lastCode.searchAll(n -> n.hasType("sprite")).size());
+		attempts.put("nScripts", lastCode.searchAll(
+				new Node.BackbonePredicate("stage|sprite", "script")).size());
+		attempts.put("nCustomBlocks", lastCode.searchAll(n -> n.hasType("customBlock")).size());
+		attempts.put("nUniqueTypes", uniqueTypes.size());
+		attempts.put("nBasics",
+				(uniqueTypes.contains("down") ? 1 : 0) +
+				(uniqueTypes.contains("forward") ? 1 : 0) +
+				(uniqueTypes.contains("turn") || uniqueTypes.contains("turnLeft") ? 1 : 0) +
+				(uniqueTypes.contains("doAsk") ? 1 : 0));
 		attempts.put("lastCode", lastCode.prettyPrint(true));
 	}
 }

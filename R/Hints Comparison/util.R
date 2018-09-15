@@ -39,13 +39,13 @@ condCompare <- function(x, cond, test = wilcox.test, filter = T) {
 }
 
 compareStats <- function(x, y, test = wilcox.test) {
-  x <- x[!is.na(x)]
-  y <- y[!is.na(y)]
+  #x <- x[!is.na(x)]
+  #y <- y[!is.na(y)]
   print(paste("Nx =", length(x), "Ny =", length(y)))
-  print(paste("Mx =", mean(x), "SD =", sd(x)))
-  print(paste("My =", mean(y), "SD =", sd(y)))
-  print(paste("Medx =", median(x), "IQR =", IQR(x)))
-  print(paste("Medy =", median(y), "IQR =", IQR(y)))
+  print(paste("Mx =", mean(x, na.rm=T), "SD =", sd(x, na.rm=T)))
+  print(paste("My =", mean(y, na.rm=T), "SD =", sd(y, na.rm=T)))
+  print(paste("Medx =", median(x, na.rm=T), "IQR =", IQR(x, na.rm=T)))
+  print(paste("Medy =", median(y, na.rm=T), "IQR =", IQR(y, na.rm=T)))
   # print(paste("Medx =", median(x), "IQR =", median(x) - IQR(x)/2, "-", median(x) + IQR(x)/2))
   # print(paste("Medy =", median(y), "IQR =", median(y) - IQR(y)/2, "-", median(y) + IQR(y)/2))
   print(paste("Cohen's D=", cohen.d(x,y)))
