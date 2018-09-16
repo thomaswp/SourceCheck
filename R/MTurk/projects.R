@@ -83,6 +83,7 @@ loadData <- function() {
   post2 <- post2[post2$userID %in% users,]
   preHelp <- preHelp[preHelp$userID %in% users,]
   postHelp <- postHelp[postHelp$userID %in% users,]
+  postHelp <- postHelp[postHelp$eventID %in% preHelp$eventID,]
   attempts <- attempts[attempts$userID %in% users, ]
   actions <- actions[actions$userID %in% users, ]
   
@@ -122,7 +123,7 @@ loadData <- function() {
   
   task2Hints <- ddply(actions[actions$assignmentID=="drawTriangles",], c("assignmentID", "userID"), summarize,
                       nCodeHints=sum(codeHint), nTextHints=sum(textHint), nReflects=sum(reflect),
-                      nCodeHintOnly=sum(codeHint&!textHint), nTextHintOnly=sum(!codeHint&textHint), nBothHints=sum(codeHint&textHint))
+                      nCodeHintOnly=sum(codeHint&!textHint), nTextHintOnly=sum(!codeHint&textHint), nBothHints=sum(codeHint&textHint), nNoHints=sum(!codeHint&!textHint))
   task2 <- merge(task2, task2Hints)
   
   ### Hint per user
@@ -298,9 +299,39 @@ loadData <- function() {
   condCompare(task1$objs, task1$hadTextHints)
   # Small, positive, NS effect of reflects
   condCompare(task1$objs, task1$hadReflects, filter=task1$hadCodeHints|task1$hadTextHints)
+  condCompare(task1$objs, task1$hadReflects)
   summary(lm(objs==3 ~ hadCodeHints * hadTextHints + hadReflects, data=task1))
   
+
   ### Task 2
+  
+  task1$task2Objs <- task2$objs
+  task1Melted <- melt(task1[,c("userID", "hadCodeHints", "hadTextHints", "hadReflects", "objs", "task2Objs")], 
+                      c("userID", "hadCodeHints", "hadTextHints", "hadReflects"))
+  task1Melted$groupCT <- paste0(task1Melted$hadCodeHints+0, task1Melted$hadTextHints+0)
+  task1Melted$groupR <- ifelse(task1Melted$groupCT=="00", "No Hints", ifelse(!task1Melted$hadReflects, "Hints (no Reflect)", "Hints + Reflect"))
+  task1Melted$groupR <- factor(task1Melted$groupR, c("No Hints", "Hints (no Reflect)", "Hints + Reflect"))
+  task1Melted$assignmentLabel <- ifelse(task1Melted$variable=="objs", "Task 1", "Task 2")
+  
+  ggplot(task1Melted, aes(y=value, x=groupCT)) + geom_boxplot() + 
+    stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) +
+    scale_x_discrete(labels=c("None", "Text", "Code", "Code+Text")) +
+    labs(x="Hint Type (Task 1)", y="Objectives") +
+    facet_wrap(~assignmentLabel)
+  ggplot(task1Melted, aes(y=value, x=groupR)) + geom_boxplot() + 
+    stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) +
+    labs(x="Hint Type (Task 1)", y="Objectives") +
+    facet_wrap(~assignmentLabel)
+  
+  ggplot(task1, aes(y=task2Objs-objs, x=groupCT)) + geom_boxplot() + 
+    stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) +
+    scale_x_discrete(labels=c("None", "Text", "Code", "Code+Text")) +
+    labs(x="Hint Type (Task 1)", y="Objectives")
+
+  table(task1$objs, task2$objs)
+  mean(task1$objs == task2$objs)
+  cor.test(task1$objs, task2$objs) 
+  Anova(aov(task2Objs ~ objs + hadCodeHints + hadTextHints + hadReflects, data=task1), type=3)
   
   hist(task2$objs)
   summary(lm(objs ~ t1HadCodeHints * t1HadTextHints + t1HadReflects, data=task2))
@@ -314,16 +345,24 @@ loadData <- function() {
   condCompare(task2$objs, task1$hadReflects, filter=task1$hadCodeHints|task1$hadTextHints)
   condCompare(task2$objs, task1$hadReflects)
   
-  task2HadHints <- task2[task1$hadCodeHints|task1$hadTextHints,]
-  # seems to really be a product of code hints now and reflects earlier
-  Anova(aov(objs ~ t1HadCodeHints + t1HadTextHints + t1HadReflects + nCodeHints + nTextHints + nReflects, data=task2), type=3)
-  # Anova(aov(objs ~ t1HadCodeHints + t1HadTextHints + t1HadReflects + nCodeHintOnly + nTextHintOnly + nBothHints + nReflects, data=task2), type=3)
+  ggplot(task2, aes(y=objs, x=factor(t1HadReflects))) + geom_boxplot()
+  table(task2$objs > 2, task2$t1HadReflects)
+  fisher.test(task2$objs > 2, task2$t1HadReflects)
+  
+  Anova(aov(objs ~ nCodeHints + nTextHints + nReflects, data=task2), type=3)
+  Anova(aov(objs ~ t1HadCodeHints + t1HadTextHints + t1HadReflects + nCodeHintOnly + nTextHintOnly + nBothHints + nNoHints + nReflects, data=task2), type=3)
   
   m0 <- lm(objs ~ 1, data=task2)
   m1 <- lm(objs ~ t1HadCodeHints + t1HadTextHints * t1HadReflects + nCodeHints * nTextHints + nReflects, data=task2)
-  Anova(stepAIC(m0, direction="forward", scope = list(lower=m0, upper=m1)))
+  summary(stepAIC(m0, direction="forward", scope = list(lower=m0, upper=m1)))
   
   summary(glm(objs>2 ~ t1HadCodeHints + t1HadTextHints + t1HadReflects + nCodeHints + nTextHints + nReflects, data=task2, family="binomial"))
+  
+  
+  #### Contextual factors
+  
+  
+  
   
   ## Other analysis
   
@@ -462,6 +501,7 @@ loadData <- function() {
   sink()
   
   postHelp$minute <- floor(postHelp$time / 60000)
+  postHelp <- postHelp[postHelp$minute < 17,]
   postHelp$number <- sapply(1:nrow(postHelp), function(i) {
     which(postHelp$eventID[postHelp$assignmentID == postHelp$assignmentID[i] & postHelp$userID == postHelp$userID[i]] == postHelp$eventID[i])
   })
@@ -484,8 +524,9 @@ loadData <- function() {
   cor.test(postHelp$Q10[postHelp$codeHint==1], postHelp$helpNeeded[postHelp$codeHint==1], method="spearman")
   cor.test(postHelp$Q10[postHelp$codeHint==0], postHelp$helpNeeded[postHelp$codeHint==0], method="spearman")
   
-  postHelp$helpNeededBinned <- cut(postHelp$helpNeeded, 4) # as.ordered(floor(5 * postHelp$helpNeeded / 11))
-  table(postHelp$helpNeededBinned)
+  hist(postHelp$helpNeeded)
+  postHelp$helpNeededBin <- postHelp$helpNeeded >= median(postHelp$helpNeeded)
+  table(postHelp$helpNeededBin)
   
   postHelp$anyHint <- postHelp$codeHint | postHelp$textHint
   postHelp$group <- paste0(postHelp$codeHint, postHelp$textHint)
@@ -511,6 +552,22 @@ loadData <- function() {
   ggplot(attempts, aes(y=nSprites, x=factor(objs))) + geom_boxplot() + facet_wrap(~assignmentID)
   ggplot(attempts, aes(y=nScripts, x=factor(objs))) + geom_boxplot() + facet_wrap(~assignmentID)
   ggplot(attempts, aes(y=nUniqueTypes, x=factor(objs))) + geom_boxplot() + facet_wrap(~assignmentID)
+  
+  conditionObjs <- ddply(task1, c("hadCodeHints", "hadTextHints", "hadReflects"), summarize, mObjs=mean(objs))
+  task1$objsRel <- sapply(1:nrow(task1), function(i) {
+    task1$objs[i] - conditionObjs$mObjs[conditionObjs$hadCodeHints==task1$hadCodeHints[i] & 
+                                        conditionObjs$hadTextHints==task1$hadTextHints[i] & 
+                                        conditionObjs$hadReflects==task1$hadReflects[i]]
+    
+  })
+  hist(task1$objsRel)
+  postHelp <- merge(postHelp, task1[,c("userID", "objsRel")])
+  postHelp$mastery <- postHelp$objsRel > 0
+  postHelp$late <- postHelp$minute > 7
+  
+  Anova(aov(Q10 ~ minute * helpNeededBin * mastery, data=postHelp[postHelp$assignmentID=="drawTriangles" & postHelp$codeHint,]), type=3)
+  Anova(aov(Q10 ~ minute * helpNeededBin * mastery, data=postHelp[postHelp$assignmentID=="drawTriangles" & postHelp$textHint,]), type=3)
+  Anova(aov(Q10 ~ minute * helpNeededBin * mastery, data=postHelp[postHelp$assignmentID=="drawTriangles" & postHelp$reflect,]), type=3)
 }
 
 
