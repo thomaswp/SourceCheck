@@ -29,10 +29,12 @@ public class MTurkProcess {
 	static void processDataset(Dataset dataset) throws FileNotFoundException, IOException {
 		Spreadsheet attempts = new Spreadsheet();
 		Spreadsheet actions = new Spreadsheet();
+		Spreadsheet explanations  = new Spreadsheet();
 		for (Assignment assignment : dataset.all()) {
 			System.out.println("Processing: " + assignment);
 			attempts.setHeader("assignmentID", assignment.name);
 			actions.setHeader("assignmentID", assignment.name);
+			explanations.setHeader("assignmentID", assignment.name);
 
 			Grader[] graders = null;
 			if ("polygonMakerSimple".equals(assignment.name)) {
@@ -45,7 +47,7 @@ public class MTurkProcess {
 			Object[] arr_data = data.values().toArray();
 			for (int i = 0; i < arr_data.length; i++) {
 				AssignmentAttempt attempt = (AssignmentAttempt) arr_data[i];
-				processAttempt(attempt, graders, attempts, actions);
+				processAttempt(attempt, graders, attempts, actions, explanations);
 			}
 //			for (AssignmentAttempt attempt : data.values()) {
 //				processAttempt(attempt, graders, attempts, actions);
@@ -53,12 +55,15 @@ public class MTurkProcess {
 		}
 		attempts.write(dataset.analysisDir() + "/attempts.csv");
 		actions.write(dataset.analysisDir() + "/actions.csv");
+		explanations.write(dataset.analysisDir() + "/explanations.csv");
 	}
 
 	static void processAttempt(AssignmentAttempt attempt, Grader[] graders,
-			Spreadsheet attempts, Spreadsheet actions) {
+			Spreadsheet attempts, Spreadsheet actions, Spreadsheet explanations) {
 		actions.setHeader("userID", attempt.userID());
 		actions.setHeader("projectID", attempt.id);
+		explanations.setHeader("userID", attempt.userID());
+		explanations.setHeader("projectID", attempt.id);
 
 		int errors = 0;
 		int idleTime = 0, activeTime = 0;
@@ -71,6 +76,10 @@ public class MTurkProcess {
 		long lastEdit = start;
 
 		Node lastCode = null;
+
+		String lastAction = null;
+		String eventID = null;
+		boolean codeHint = false, textHint = false, reflect = false;
 
 		for (AttemptAction row : attempt.rows) {
 			long time = row.timestamp.getTime();
@@ -100,10 +109,10 @@ public class MTurkProcess {
 			case AttemptAction.ERROR: errors++; break;
 			case AttemptAction.PROACTIVE_SEE_HINT:
 				JSONObject data = new JSONObject(row.data);
-				boolean codeHint = data.getBoolean("codeHintNext");
-				boolean textHint = data.getBoolean("textHintNext");
-				boolean reflect = data.getBoolean("selfExplainNext");
-				String eventID = data.getString("eventID");
+				codeHint = data.getBoolean("codeHintNext");
+				textHint = data.getBoolean("textHintNext");
+				reflect = data.getBoolean("selfExplainNext");
+				eventID = data.getString("eventID");
 				if (codeHint) codeHints++;
 				if (textHint) textHints++;
 				if (reflect) reflects++;
@@ -124,12 +133,26 @@ public class MTurkProcess {
 				noHints++;
 				if (firstNoHints == 0) firstNoHints = (int) (time - start);
 				break;
+			case AttemptAction.HINT_DIALOG_LOG_FEEDBACK:
+				if (AttemptAction.HINT_DIALOG_DONE.equals(lastAction)) {
+					JSONObject json = new JSONObject(row.data);
+					String explanation = json.optString("explanation");
+					if (explanation != null && explanation.length() > 0) {
+						explanations.newRow();
+						explanations.put("eventID", eventID);
+						explanations.put("codeHint", codeHint);
+						explanations.put("textHint", textHint);
+						explanations.put("explanation", explanation);
+					}
+				}
+				break;
 			}
 
 			if (AttemptAction.PROACTIVE_MIDSURVEY.equals(row.message)) {
 				midSurveyTime = relTime;
 				break;
 			}
+			lastAction = row.message;
 		}
 //		if (lastCode != null) {
 //			System.out.println(attempt.id);

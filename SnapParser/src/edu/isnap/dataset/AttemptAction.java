@@ -37,7 +37,6 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	public final static String HIGHLIGHT_CHECK_WORK = "HighlightDisplay.checkMyWork";
 	public final static String HIGHLIGHT_TOGGLE_INSERT = "HighlightDialogBoxMorph.toggleInsert";
 	public final static String HINT_DIALOG_DESTROY = "HintDialogBox.destroy";
-	@Deprecated
 	public final static String HINT_DIALOG_DONE = "HintDialogBox.done";
 	public final static String HINT_DIALOG_LOG_FEEDBACK = "HintDialogBox.logFeedback";
 	public final static String HINT_PROCESS_HINTS = "HintProvider.processHints";
