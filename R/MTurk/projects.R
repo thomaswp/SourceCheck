@@ -54,9 +54,14 @@ loadData <- function() {
   actionsUF <- actionsUF[actionsUF$userID %in% usersUF, ]
   
   # Analysis of dropouts is difficult because they may have started multiple times in different conditions
-  # We can only assign a condition if they complete the task
+  # We can only assign a condition if they complete the task. Also, we don't log condition until the first hint...
   dropouts <- consentUF$userID[!(consentUF$userID %in% post1UF$userID | consentUF$userID %in% post2UF$userID)]
   dropouts <- attemptsUF[attemptsUF$userID %in% dropouts,]
+  # Task 1 dropouts
+  length(unique(dropouts$userID))
+  #singleDrops <- dropouts[!(dropouts$user %in% dropouts$userID[duplicated(dropouts$userID)]),]
+  #table(singleDrops$codeHints > 0, singleDrops$textHints > 0)
+  #mean(singleDrops$codeHints > 0 & singleDrops$textHints > 0)
   
   consent <- consentUF
   post1 <- post1UF
@@ -74,7 +79,8 @@ loadData <- function() {
     post1$userID, post2$userID, preHelp$userID, postHelp$userID, 
     attempts$userID[attempts$assignmentID == "polygonMakerSimple"],
     attempts$userID[attempts$assignmentID == "drawTriangles"],
-    actions$userID
+    actions$userID[actions$assignmentID == "polygonMakerSimple"],
+    actions$userID[actions$assignmentID == "drawTriangles"]
   ))
   
   length(users)
@@ -124,7 +130,7 @@ loadData <- function() {
   task2Hints <- ddply(actions[actions$assignmentID=="drawTriangles",], c("assignmentID", "userID"), summarize,
                       nCodeHints=sum(codeHint), nTextHints=sum(textHint), nReflects=sum(reflect),
                       nCodeHintOnly=sum(codeHint&!textHint), nTextHintOnly=sum(!codeHint&textHint), nBothHints=sum(codeHint&textHint), nNoHints=sum(!codeHint&!textHint))
-  task2 <- merge(task2, task2Hints)
+  task2 <- merge(task2, task2Hints, all.X=T)
   
   ### Hint per user
   postHelpPerUser <- ddply(postHelp, c("assignmentID", "userID"), summarize, n=length(Q10))
@@ -138,39 +144,57 @@ loadData <- function() {
   
   ## Task 1
   
-  # Code hints improved Snap's helpfulness, but not text or interraction
+  # Code and hints improved Snap's helpfulness, but no interraction
   Anova(aov(Q22_1 ~ codeHint * textHint + reflect, data=post1), type=3)
-  # Nothing impacted difficulty
+  condCompare(post1$Q22_1, post1$codeHint==1)
+  condCompare(post1$Q22_1, post1$textHint==1)
+  # Code hints reduced perceived task difficulty
   Anova(aov(Q24_1 ~ codeHint * textHint + reflect, data=post1), type=3)
+  # Just slightly
+  condCompare(post1$Q24_1, post1$codeHint==1)
   # Reflective prompts may have impacted perceived preparedness (NS)
   Anova(aov(Q26_1 ~ codeHint * textHint + reflect, data=post1), type=3)
   
-  # Code hints and text hints improved the utility of the action
-  Anova(aov(Q30 ~ codeHint * textHint + reflect, data=post1), type=3)
   
+  # Code hints and text hints improved the utility of the action, no interraction
+  Anova(aov(Q30 ~ codeHint * textHint + reflect, data=post1), type=3)
   
   # Seems all help is useful and somewhat additive
   ggplot(post1, aes(y=Q30-1, x=groupCT)) + geom_boxplot() + 
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) +
     scale_x_discrete(labels=c("None", "Text", "Code", "Code+Text")) +
-    labs(x="Hint Type", y="User Rating")
-  
+    labs(x="Hint Type", y="User Rating") + theme_bw()
+
   # code == text
   compareStats(post1$Q30[post1$groupCT=="10"], post1$Q30[post1$groupCT=="01"])
-  # code < code + text
+  # code < code + text, moderate effect size
   compareStats(post1$Q30[post1$groupCT=="10"], post1$Q30[post1$groupCT=="11"])
   # text < code + text
   compareStats(post1$Q30[post1$groupCT=="01"], post1$Q30[post1$groupCT=="11"])
   
-  # No impact of code hint on frequency appropraiteness
+  # Some impact of code hint on frequency appropraiteness
   Anova(aov(Q32 ~ codeHint * textHint + reflect, data=post1), type=3)
   ggplot(post1, aes(y=Q32-6, x=groupCT)) + geom_boxplot() + 
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE)
+  mean(post1$Q32 > 6)
+  mean(post1$Q32[!(post1$codeHint | post1$textHint)] > 6)
+  table(post1$codeHint, post1$textHint, post1$Q32 > 6)
   
-  # But a real impact on how well-time it was, with code hints improving significantly
+  
+  ggplot(post1, aes(y=Q36-1, x=groupCT)) + geom_boxplot() + 
+    stat_summary(fun.data = mean_se, geom = "errorbar", width=0.3, color="#ff3333") +
+    stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) +
+    scale_x_discrete(labels=c("None", "Text", "Code", "Code+Text")) +
+    labs(x="Hint Type", y="User Rating") + theme_bw()
+  
+  # But a real impact on how well-time it was, with code/text hints improving significantly
   Anova(aov(Q36 ~ codeHint * textHint + reflect, data=post1), type=3)
   ggplot(post1, aes(y=Q36-1, x=groupCT)) + geom_boxplot() + 
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE)
+  
+  condCompare(post1$Q36, post1$codeHint)
+  condCompare(post1$Q36, post1$textHint)
+  compareStats(post1$Q36[post1$groupCT=="10"], post1$Q36[post1$groupCT=="01"])
   
   ## Task 2
   
@@ -179,11 +203,13 @@ loadData <- function() {
   # How helpful was each help type?
   post2Q30 <- melt(post2[,q30Cols], id.vars = "userID")
   hist(post2Q30$value)
+  
   # Clear differences
   ggplot(post2Q30, aes(y=value-1, x=variable)) + geom_boxplot() + 
+    stat_summary(fun.data = mean_se, geom = "errorbar", width=0.3, color="#ff3333") +
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) +
     scale_x_discrete(labels=c("None", "Text", "Code", "Reflect")) +
-      labs(x="Hint Type", y="User Rating")
+      labs(x="Hint Type", y="User Rating") + theme_bw()
   
   kruskal.test(value~variable, data=post2Q30)
   
@@ -214,6 +240,7 @@ loadData <- function() {
   compareStats(post2$X4_Q37, post2$X3_Q37, test=wilcoxSignRank)
   compareStats(post2$X3_Q37, post2$X2_Q37, test=wilcoxSignRank)
   
+  # How good was the frequency of this action (in the loop)
   post2Q38 <- melt(post2[,c("userID", "X1_Q38", "X2_Q38", "X3_Q38", "X4_Q38")], id.vars = "userID")
   ggplot(post2Q38, aes(y=value-6, x=variable)) + geom_boxplot() + 
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE)
@@ -221,17 +248,17 @@ loadData <- function() {
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE)
   kruskal.test(value~variable, post2Q38)
   
+  # How well-timed was this action
   post2Q40 <- melt(post2[,c("userID", "X1_Q40", "X2_Q40", "X3_Q40", "X4_Q40")], id.vars = "userID")
   ggplot(post2Q40, aes(y=value-1, x=variable)) + geom_boxplot() + 
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE)
-  # No action < reflects < text < code
+  # No action = reflects < text < code
   compareStats(post2$X1_Q40, post2$X4_Q40, test=wilcoxSignRank)
   compareStats(post2$X4_Q40, post2$X3_Q40, test=wilcoxSignRank)
   compareStats(post2$X3_Q40, post2$X2_Q40, test=wilcoxSignRank)
   
   # Most people thought text hints helped explain code hints...
   hist(post2$Q46_1[post2$Q46_1!=12])
-  summary(post2$Q46_1[post2$Q46_1!=12])
   mean(post2$Q46_1[post2$Q46_1!=12], na.rm=T)
   sd(post2$Q46_1[post2$Q46_1!=12], na.rm=T)
   mean(post2$Q46_1==12, na.rm=T)
@@ -243,12 +270,14 @@ loadData <- function() {
   # Seems both > code >? text > nothing
   ggplot(postHelp, aes(y=Q10, x=groupCT)) + geom_boxplot() + 
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) +
+    stat_summary(fun.data = mean_se, geom = "errorbar", width=0.4) +
     scale_x_discrete(labels=c("None", "Text", "Code", "Code+Text")) +
     labs(x="Hint Type", y="User Rating") +
     facet_wrap(~taskName) + theme_bw()
   
   ggplot(postHelp[postHelp$groupCT != "00",], aes(y=Q10, x=reflect==1)) + geom_boxplot() + 
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) +
+    stat_summary(fun.data = mean_se, geom = "errorbar", width=0.4) +
     facet_wrap(~assignmentID) + theme_bw()
   
   ## Task 1
@@ -297,10 +326,9 @@ loadData <- function() {
   condCompare(task1$objs, task1$hadCodeHints)
   # No effect at all of text hints overall
   condCompare(task1$objs, task1$hadTextHints)
-  # Small, positive, NS effect of reflects
+  # No effect of reflects given that users had hints
   condCompare(task1$objs, task1$hadReflects, filter=task1$hadCodeHints|task1$hadTextHints)
   condCompare(task1$objs, task1$hadReflects)
-  summary(lm(objs==3 ~ hadCodeHints * hadTextHints + hadReflects, data=task1))
   
 
   ### Task 2
@@ -314,13 +342,16 @@ loadData <- function() {
   task1Melted$assignmentLabel <- ifelse(task1Melted$variable=="objs", "Task 1", "Task 2")
   
   ggplot(task1Melted, aes(y=value, x=groupCT)) + geom_boxplot() + 
+    stat_summary(fun.data = mean_se, geom = "errorbar", width=0.3, color="#ff3333") +
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) +
     scale_x_discrete(labels=c("None", "Text", "Code", "Code+Text")) +
-    labs(x="Hint Type (Task 1)", y="Objectives") +
+    labs(x="Hint Type (Task 1)", y="Objectives Completed") + theme_bw() +
     facet_wrap(~assignmentLabel)
-  ggplot(task1Melted, aes(y=value, x=groupR)) + geom_boxplot() + 
+  ggplot(task1Melted, aes(y=value, x=groupR)) + geom_boxplot() +
+    stat_summary(fun.data = mean_se, geom = "errorbar", width=0.3, color="#ff3333") +
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) +
-    labs(x="Hint Type (Task 1)", y="Objectives") +
+    scale_x_discrete(labels=c("No Hints", "Hints (No Ref.)", "Hints + Reflect")) +
+    labs(x="Hint Type (Task 1)", y="Objectives Completed") + theme_bw() +
     facet_wrap(~assignmentLabel)
   
   ggplot(task1, aes(y=task2Objs-objs, x=groupCT)) + geom_boxplot() + 
@@ -331,26 +362,29 @@ loadData <- function() {
   table(task1$objs, task2$objs)
   mean(task1$objs == task2$objs)
   cor.test(task1$objs, task2$objs) 
-  Anova(aov(task2Objs ~ objs + hadCodeHints + hadTextHints + hadReflects, data=task1), type=3)
+  summary(lm(task2Objs ~ objs + hadCodeHints * hadTextHints + hadReflects, data=task1), type=3)
   
   hist(task2$objs)
-  summary(lm(objs ~ t1HadCodeHints * t1HadTextHints + t1HadReflects, data=task2))
   # Maybe reflects helped people in task 2?
   Anova(aov(objs ~ t1HadCodeHints * t1HadTextHints + t1HadReflects, data=task2), type=3)
-  # No effect at all of code or text hints on learning 
+  # No effect at all of code or text hints or reflects on learning 
   condCompare(task2$objs, task1$hadCodeHints)
   condCompare(task2$objs, task1$hadTextHints)
   condCompare(task2$objs, task1$hadCodeHints|task1$hadTextHints)
-  # Moderate effect size of reflects but not _quite_ significant
   condCompare(task2$objs, task1$hadReflects, filter=task1$hadCodeHints|task1$hadTextHints)
   condCompare(task2$objs, task1$hadReflects)
   
   ggplot(task2, aes(y=objs, x=factor(t1HadReflects))) + geom_boxplot()
   table(task2$objs > 2, task2$t1HadReflects)
   fisher.test(task2$objs > 2, task2$t1HadReflects)
+  fisher.test(task2$objs > 2, task2$t1HadCodeHints)
   
   Anova(aov(objs ~ nCodeHints + nTextHints + nReflects, data=task2), type=3)
   Anova(aov(objs ~ t1HadCodeHints + t1HadTextHints + t1HadReflects + nCodeHintOnly + nTextHintOnly + nBothHints + nNoHints + nReflects, data=task2), type=3)
+  
+  cor.test(task2$objs, task2$nCodeHints, method="spearman")
+  cor.test(task2$objs, task2$nTextHints, method="spearman")
+  cor.test(task2$objs, task2$nReflects, method="spearman")
   
   m0 <- lm(objs ~ 1, data=task2)
   m1 <- lm(objs ~ t1HadCodeHints + t1HadTextHints * t1HadReflects + nCodeHints * nTextHints + nReflects, data=task2)
@@ -564,6 +598,18 @@ loadData <- function() {
   postHelp <- merge(postHelp, task1[,c("userID", "objsRel")])
   postHelp$mastery <- postHelp$objsRel > 0
   postHelp$late <- postHelp$minute > 7
+  
+  # No meaningful effect of time
+  ddply(postHelp, c("assignmentID", "codeHint", "textHint"), summarize, r=cor(Q10, minute, method="spearman"), p=cor.test(Q10, minute, method="spearman")$p.value)
+  ddply(postHelp, c("assignmentID"), summarize, r=cor(Q10, minute, method="spearman"), p=cor.test(Q10, minute, method="spearman")$p.value)
+  
+  # Help is more helpful when it's needed...
+  ddply(postHelp, c("assignmentID", "codeHint", "textHint"), summarize, r=cor(Q10, helpNeeded, method="spearman"), p=cor.test(Q10, helpNeeded, method="spearman")$p.value)
+  ddply(postHelp, c("assignmentID"), summarize, r=cor(Q10, helpNeeded, method="spearman"), p=cor.test(Q10, helpNeeded, method="spearman")$p.value)
+  
+  # Students need less help when they have more mastery
+  ddply(postHelp, c("assignmentID", "codeHint", "textHint"), summarize, r=cor(Q10, objsRel, method="spearman"), p=cor.test(Q10, objsRel, method="spearman")$p.value)
+  ddply(postHelp, c("assignmentID"), summarize, r=cor(Q10, objsRel, method="spearman"), p=cor.test(Q10, objsRel, method="spearman")$p.value)
   
   Anova(aov(Q10 ~ minute * helpNeededBin * mastery, data=postHelp[postHelp$assignmentID=="drawTriangles" & postHelp$codeHint,]), type=3)
   Anova(aov(Q10 ~ minute * helpNeededBin * mastery, data=postHelp[postHelp$assignmentID=="drawTriangles" & postHelp$textHint,]), type=3)
