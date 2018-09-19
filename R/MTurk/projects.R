@@ -268,7 +268,7 @@ loadData <- function() {
   ## Plots
   
   # Seems both > code >? text > nothing
-  ggplot(postHelp, aes(y=Q10, x=groupCT)) + geom_boxplot() + 
+  ggplot(postHelp, aes(y=Q10-1, x=groupCT)) + geom_boxplot() + 
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) +
     stat_summary(fun.data = mean_se, geom = "errorbar", width=0.4) +
     scale_x_discrete(labels=c("None", "Text", "Code", "Code+Text")) +
