@@ -138,6 +138,10 @@ loadData <- function() {
   mean(postHelpPerUser$n[postHelpPerUser$assignmentID=="polygonMakerSimple"])
   mean(postHelpPerUser$n[postHelpPerUser$assignmentID=="drawTriangles"])
   
+  helpDurations <- as.numeric(postHelp$EndDate[order(postHelp$eventID)] - preHelp$StartDate[order(preHelp$eventID)])
+  summary(helpDurations)
+  hist(helpDurations[helpDurations < 300])
+  
   #### How does hint type impact perceived usefulness?
   
   ### After the task
@@ -162,8 +166,10 @@ loadData <- function() {
   # Seems all help is useful and somewhat additive
   ggplot(post1, aes(y=Q30-1, x=groupCT)) + geom_boxplot() + 
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) +
+    stat_summary(fun.data = mean_se, geom = "errorbar", width=0.4) +
     scale_x_discrete(labels=c("None", "Text", "Code", "Code+Text")) +
-    labs(x="Hint Type", y="User Rating") + theme_bw()
+    #scale_y_continuous(breaks = 0:10) +
+    labs(x="Hint Type", y="User Rating") + theme_bw(base_size = 14)
 
   # code == text
   compareStats(post1$Q30[post1$groupCT=="10"], post1$Q30[post1$groupCT=="01"])
@@ -171,6 +177,7 @@ loadData <- function() {
   compareStats(post1$Q30[post1$groupCT=="10"], post1$Q30[post1$groupCT=="11"])
   # text < code + text
   compareStats(post1$Q30[post1$groupCT=="01"], post1$Q30[post1$groupCT=="11"])
+  compareStats(post1$Q30[post1$groupCT=="00"], post1$Q30[post1$groupCT!="00"])
   
   # Some impact of code hint on frequency appropraiteness
   Anova(aov(Q32 ~ codeHint * textHint + reflect, data=post1), type=3)
@@ -209,7 +216,7 @@ loadData <- function() {
     stat_summary(fun.data = mean_se, geom = "errorbar", width=0.3, color="#ff3333") +
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) +
     scale_x_discrete(labels=c("None", "Text", "Code", "Reflect")) +
-      labs(x="Hint Type", y="User Rating") + theme_bw()
+      labs(x="Hint Type", y="User Rating") + theme_bw(base_size = 14)
   
   kruskal.test(value~variable, data=post2Q30)
   
@@ -260,6 +267,7 @@ loadData <- function() {
   # Most people thought text hints helped explain code hints...
   hist(post2$Q46_1[post2$Q46_1!=12])
   mean(post2$Q46_1[post2$Q46_1!=12], na.rm=T)
+  median(post2$Q46_1[post2$Q46_1!=12], na.rm=T)
   sd(post2$Q46_1[post2$Q46_1!=12], na.rm=T)
   mean(post2$Q46_1==12, na.rm=T)
   
@@ -345,13 +353,13 @@ loadData <- function() {
     stat_summary(fun.data = mean_se, geom = "errorbar", width=0.3, color="#ff3333") +
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) +
     scale_x_discrete(labels=c("None", "Text", "Code", "Code+Text")) +
-    labs(x="Hint Type (Task 1)", y="Objectives Completed") + theme_bw() +
+    labs(x="Hint Type (Task 1)", y="Objectives Completed") + theme_bw(base_size = 14) +
     facet_wrap(~assignmentLabel)
   ggplot(task1Melted, aes(y=value, x=groupR)) + geom_boxplot() +
     stat_summary(fun.data = mean_se, geom = "errorbar", width=0.3, color="#ff3333") +
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) +
     scale_x_discrete(labels=c("No Hints", "Hints (No Ref.)", "Hints + Reflect")) +
-    labs(x="Hint Type (Task 1)", y="Objectives Completed") + theme_bw() +
+    labs(x="Hint Type (Task 1)", y="Objectives Completed") + theme_bw(base_size = 14) +
     facet_wrap(~assignmentLabel)
   
   ggplot(task1, aes(y=task2Objs-objs, x=groupCT)) + geom_boxplot() + 
@@ -373,6 +381,7 @@ loadData <- function() {
   condCompare(task2$objs, task1$hadCodeHints|task1$hadTextHints)
   condCompare(task2$objs, task1$hadReflects, filter=task1$hadCodeHints|task1$hadTextHints)
   condCompare(task2$objs, task1$hadReflects)
+  compareStats(task2$objs[task2$t1HadCodeHints & !task2$t1HadTextHints & !task2$t1HadReflects], task2$objs[task2$t1HadCodeHints & !task2$t1HadTextHints & task2$t1HadReflects])
   
   ggplot(task2, aes(y=objs, x=factor(t1HadReflects))) + geom_boxplot()
   table(task2$objs > 2, task2$t1HadReflects)
