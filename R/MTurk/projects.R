@@ -352,14 +352,14 @@ loadData <- function() {
   ggplot(task1Melted, aes(y=value, x=groupCT)) + geom_boxplot() + 
     stat_summary(fun.data = mean_se, geom = "errorbar", width=0.3, color="#ff3333") +
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) +
-    scale_x_discrete(labels=c("None", "Text", "Code", "Code+Text")) +
-    labs(x="Hint Type (Task 1)", y="Objectives Completed") + theme_bw(base_size = 14) +
+    scale_x_discrete(labels=c("None", "Text", "Code", "Code + Text")) +
+    labs(x="Hint Type (Task 1)", y="Objectives Completed") + theme_bw(base_size = 16) +
     facet_wrap(~assignmentLabel)
   ggplot(task1Melted, aes(y=value, x=groupR)) + geom_boxplot() +
     stat_summary(fun.data = mean_se, geom = "errorbar", width=0.3, color="#ff3333") +
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) +
-    scale_x_discrete(labels=c("No Hints", "Hints (No Ref.)", "Hints + Reflect")) +
-    labs(x="Hint Type (Task 1)", y="Objectives Completed") + theme_bw(base_size = 14) +
+    scale_x_discrete(labels=c("No Hints", "Hints Only", "Hints + Reflect")) +
+    labs(x="Hint Type (Task 1)", y="Objectives Completed") + theme_bw(base_size = 16) +
     facet_wrap(~assignmentLabel)
   
   ggplot(task1, aes(y=task2Objs-objs, x=groupCT)) + geom_boxplot() + 
