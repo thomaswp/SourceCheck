@@ -76,6 +76,7 @@ public class TemplateParser {
 
 	public static void saveHintMap(HintMap hintMap, String basePath, String name)
 			throws FileNotFoundException {
+		new File(basePath).mkdirs();
 		HintMapBuilder hmb = new HintMapBuilder(hintMap, 1);
 		Kryo kryo = SnapHintBuilder.getKryo();
 		String path = SnapHintBuilder.getStorePath(basePath, name, 1, DATASET);
