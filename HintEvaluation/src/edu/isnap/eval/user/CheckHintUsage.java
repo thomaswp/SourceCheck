@@ -1,6 +1,8 @@
 package edu.isnap.eval.user;
 
-import static edu.isnap.dataset.AttemptAction.*;
+import static edu.isnap.dataset.AttemptAction.HINT_DIALOG_DESTROY;
+import static edu.isnap.dataset.AttemptAction.HINT_DIALOG_LOG_FEEDBACK;
+import static edu.isnap.dataset.AttemptAction.SHOW_HINT_MESSAGES;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -29,8 +31,8 @@ import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.dataset.Grade;
-import edu.isnap.datasets.CampHS2018;
 import edu.isnap.datasets.Fall2015;
+import edu.isnap.datasets.Fall2018;
 import edu.isnap.eval.AutoGrader;
 import edu.isnap.eval.AutoGrader.Grader;
 import edu.isnap.eval.util.Prune;
@@ -46,7 +48,7 @@ public class CheckHintUsage {
 	private static final long MIN_DURATON_WE = 30;
 
 	public static void main(String[] args) throws IOException {
-		writeHints(CampHS2018.instance);
+		writeHints(Fall2018.instance);
 	}
 
 	private static boolean isValidSubmission(AssignmentAttempt attempt) {
@@ -194,10 +196,13 @@ public class CheckHintUsage {
 					}
 
 					if (parent == null) {
-						System.out.println(node.prettyPrintWithIDs());
-						findParent(node, data);
-						System.out.println(attempt.id + "/" + row.id + ": " + data);
-						throw new RuntimeException("Parent shouldn't be null :/");
+//						System.out.println(node.prettyPrintWithIDs());
+//						findParent(node, data);
+//						System.out.println(attempt.id + "/" + row.id + ": " + data);
+						// TODO: Fix this :/
+						System.err.println("Unknown Parent (fix this!)");
+//						throw new RuntimeException("Parent shouldn't be null :/");
+						continue;
 					}
 
 

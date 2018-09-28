@@ -11,6 +11,7 @@ import edu.isnap.datasets.Demo;
 import edu.isnap.datasets.Fall2015;
 import edu.isnap.datasets.Fall2016;
 import edu.isnap.datasets.Fall2017;
+import edu.isnap.datasets.Fall2018;
 import edu.isnap.datasets.HelpSeeking;
 import edu.isnap.datasets.HelpSeekingExperts;
 import edu.isnap.datasets.MTurk2018;
@@ -35,6 +36,7 @@ public class Shell {
 			Spring2017.instance,
 			Fall2017.instance,
 			Spring2018.instance,
+			Fall2018.instance,
 			Demo.instance,
 			HelpSeekingExperts.instance,
 			HelpSeeking.instance,
