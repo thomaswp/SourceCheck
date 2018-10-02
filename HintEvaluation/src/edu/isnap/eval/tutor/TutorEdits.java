@@ -570,7 +570,7 @@ public class TutorEdits {
 			int hintID = Integer.parseInt(record.get("hid"));
 			String tutor = record.get("userID");
 			// Highlight hints aren't parsable
-			if ("highlight".equals(tutor)) continue;
+			if ("highlight".equals(tutor) || "algorithms".equals(tutor)) continue;
 			String requestID = record.get("rowID");
 			String assignmentID = record.get("trueAssignmentID");
 			String priorityString = record.get("priority");
