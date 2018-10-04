@@ -97,7 +97,7 @@ public class JsonAST {
 		for (AssignmentAttempt attempt : assignment.load(
 				Mode.Use, false, true, new SnapParser.LikelySubmittedOnly()).values()) {
 			System.out.println(attempt.id);
-			Trace trace = createTrace(attempt, assignment.name, canon, null);
+			Trace trace = createTrace(attempt, assignment.name, canon, false, null);
 			dataset.addTrace(trace);
 		}
 		String dir = assignment.dir("export/all-traces" + (canon ? "-canon" : "") + "/");
@@ -105,7 +105,7 @@ public class JsonAST {
 	}
 
 	public static Trace createTrace(AssignmentAttempt attempt, String assignmentID, boolean canon,
-			Integer stopID) {
+			boolean stripAllNonNumericLits, Integer stopID) {
 		Snapshot lastSnapshot = null;
 		ASTSnapshot lastNode = null;
 		boolean attemptCorrect = attempt.grade != null && attempt.grade.average() == 1;
@@ -114,7 +114,7 @@ public class JsonAST {
 		boolean stop = false;
 		ASTNode correct = null;
 		if (attemptCorrect && attempt.submittedSnapshot != null) {
-			correct = JsonAST.toAST(attempt.submittedSnapshot, canon);
+			correct = JsonAST.toAST(attempt.submittedSnapshot, canon, stripAllNonNumericLits);
 		}
 		for (AttemptAction action : attempt) {
 			// Set the stop flag when we see the stopID, but only break on the next snapshot
@@ -122,7 +122,7 @@ public class JsonAST {
 			if (stop && action.id != stopID) break;
 			if (lastSnapshot == action.lastSnapshot) continue;
 			lastSnapshot = action.lastSnapshot;
-			ASTNode astNode = JsonAST.toAST(action.lastSnapshot, canon);
+			ASTNode astNode = JsonAST.toAST(action.lastSnapshot, canon, stripAllNonNumericLits);
 			boolean isCorrect = correct != null && astNode.equals(correct);
 			ASTSnapshot snapshot = astNode.toSnapshot(isCorrect, null);
 			if (snapshot.equals(lastNode, true, true)) continue;
@@ -163,6 +163,10 @@ public class JsonAST {
 	}
 
 	public static ASTNode toAST(Code code, boolean canon) {
+		return toAST(code, canon, false);
+	}
+
+	public static ASTNode toAST(Code code, boolean canon, boolean stripAllNonNumericLits) {
 		String type = code.type(canon);
 		String value = code.value();
 		String id = code instanceof IHasID ? ((IHasID) code).getID() : null;
@@ -177,7 +181,10 @@ public class JsonAST {
 			id = null;
 		}
 
-		if (code instanceof LiteralBlock && ((LiteralBlock) code).type == Type.Text) {
+		// We strip non-numeric values for only text literals, or for all non-variable literals
+		// if the stripAll flag is true
+		if (code instanceof LiteralBlock && ((LiteralBlock) code).type != Type.VarMenu &&
+				(stripAllNonNumericLits || ((LiteralBlock) code).type == Type.Text)) {
 			// Only keep numeric text literal values
 			try {
 				Double.parseDouble(value);
@@ -215,7 +222,7 @@ public class JsonAST {
 					// Skip imported block definitions
 					if (((BlockDefinition) code).isImported) return;
 				}
-				node.addChild(toAST(code, canon));
+				node.addChild(toAST(code, canon, stripAllNonNumericLits));
 			}
 		});
 

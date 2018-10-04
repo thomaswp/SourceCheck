@@ -115,12 +115,12 @@ public class TutorEdits {
 				if (requestIDs.size() == 0) {
 					if (assignment.wasLoggingUnstable(attempt.id) ||
 							attempt.grade == null || attempt.grade.average() != 1) continue;
-					Trace trace = JsonAST.createTrace(attempt, assignment.name, true, null);
+					Trace trace = JsonAST.createTrace(attempt, assignment.name, true, true, null);
 					training.addTrace(trace);
 				} else {
 					for (Integer requestID : requestIDs) {
-						requests.addTrace(
-								JsonAST.createTrace(attempt, assignment.name, true, requestID));
+						requests.addTrace(JsonAST.createTrace(
+								attempt, assignment.name, true, true, requestID));
 					}
 				}
 
@@ -473,8 +473,10 @@ public class TutorEdits {
 				return null;
 			}
 
-			ASTNode from = JsonAST.toAST(fromS, true);
-			ASTNode to = JsonAST.toAST(toS, true);
+			// To keep backwards compatibility with older datasets, we strip out non-numeric
+			// literals (e.g. colors, menu dropdowns) when generating GS or training data
+			ASTNode from = JsonAST.toAST(fromS, true, true);
+			ASTNode to = JsonAST.toAST(toS, true, true);
 
 			if (from.equals(to)) {
 				// If the edit involves only changing literal values, we still exclude it, since the
