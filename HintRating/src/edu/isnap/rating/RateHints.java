@@ -104,6 +104,14 @@ public class RateHints {
 				// Create an initial list of hints that are not matched to a tutor hint
 				List<HintOutcome> unmatchedHints = new ArrayList<>(hintSet.getOutcomes(requestID));
 
+				// TODO: Make this a flag to use only the top-weighted hints
+//				double maxWeight = unmatchedHints.stream().mapToDouble(h -> h.weight()).max().orElse(0);
+//				unmatchedHints = unmatchedHints.stream().filter(h -> h.weight() == maxWeight).collect(Collectors.toList());
+//				int nHints = unmatchedHints.size();
+//				unmatchedHints = unmatchedHints.stream()
+//						.map(h -> new HintOutcome(h.result, h.assignmentID, h.requestID, 1.0 / nHints))
+//						.collect(Collectors.toList());
+
 				// First find full matches and remove any hints that match
 				for (int i = 0; i < unmatchedHints.size(); i++) {
 					HintOutcome hint = unmatchedHints.get(i);
