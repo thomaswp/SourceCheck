@@ -17,11 +17,16 @@ import edu.isnap.ctd.hint.Canonicalization.Rename;
 import edu.isnap.ctd.hint.Canonicalization.Reorder;
 import edu.isnap.ctd.hint.Canonicalization.SwapBinaryArgs;
 import edu.isnap.ctd.util.StringHashable;
+import edu.isnap.node.ASTNode;
+import edu.isnap.node.ASTSnapshot;
+import edu.isnap.node.INode;
+import edu.isnap.node.PrettyPrint;
 import util.LblTree;
 
 public abstract class Node extends StringHashable implements INode {
 
 	public static int PrettyPrintSpacing = 2;
+	public static boolean PrettyPrintUseColon = false;
 
 	private String type;
 	// Annotations used to specify that nodes have a non-concrete meaning, such as having a partial
@@ -130,16 +135,6 @@ public abstract class Node extends StringHashable implements INode {
 		tree.setUserObject(this);
 		for (Node node : children) tree.add(node.toTree());
 		return tree;
-	}
-
-	public int index() {
-		if (parent == null) return -1;
-		for (int i = 0; i < parent.children.size(); i++) {
-			if (parent.children.get(i) == this) {
-				return i;
-			}
-		}
-		return -1;
 	}
 
 	public void recurse(Action action) {
@@ -316,11 +311,8 @@ public abstract class Node extends StringHashable implements INode {
 		return a.equals(b);
 	}
 
-	public boolean hasType(String... types) {
-		for (String type : types) {
-			if (type.equals(this.type)) return true;
-		}
-		return false;
+	public String parentType() {
+		return parent == null ? null : parent.type;
 	}
 
 	public boolean parentHasType(String... types) {
@@ -399,12 +391,6 @@ public abstract class Node extends StringHashable implements INode {
 		return parent.children.get(index);
 	}
 
-	public int treeSize() {
-		int size = 1;
-		for (Node child : children) size += child.treeSize();
-		return size;
-	}
-
 	public String getTypeValueString() {
 		if (type.contains(":")) {
 			throw new RuntimeException("Illegal character in type: " + type);
@@ -429,65 +415,56 @@ public abstract class Node extends StringHashable implements INode {
 		return array;
 	}
 
+	protected static class Params extends PrettyPrint.Params {
+
+		Map<Node, String> prefixMap;
+
+		public Params(boolean showValues, Map<Node, String> prefixMap,
+				java.util.function.Predicate<String> isBodyType) {
+			this.showValues = showValues;
+			this.indent = PrettyPrintSpacing;
+			this.prefixMap = prefixMap;
+			this.isBodyType = isBodyType;
+			if (PrettyPrintUseColon) {
+				this.surroundValueAssignments = false;
+				this.valueAssignment = ":";
+			}
+		}
+
+		@Override
+		public String baseString(INode node) {
+			StringBuilder sb = new StringBuilder(super.baseString(node));
+			if (prefixMap != null) {
+				if (prefixMap.containsKey(node)) {
+					sb.insert(0, prefixMap.get(node) + ":");
+				}
+				String id = node.id();
+				if (id != null && !id.equals(node.type())) {
+					sb.append("[").append(id).append("]");
+				}
+			}
+			if (node instanceof Node) {
+				Annotations annotations = ((Node) node).annotations;
+				if (annotations != null) sb.append(annotations);
+			}
+			return sb.toString();
+		}
+	}
+
 	public String prettyPrint() {
-		return prettyPrint("", false, null);
+		return prettyPrint(false, null);
 	}
 
 	public String prettyPrint(boolean showValues) {
-		return prettyPrint("", showValues, null);
+		return prettyPrint(showValues, null);
 	}
 
 	public String prettyPrint(boolean showValues, Map<Node, String> prefixMap) {
-		return prettyPrint("", showValues, prefixMap);
+		return PrettyPrint.toString(this, new Params(showValues, prefixMap, this::nodeTypeHasBody));
 	}
 
 	public String prettyPrintWithIDs() {
 		return prettyPrint(false, new HashMap<Node, String>());
-	}
-
-	private String prettyPrint(String indent, boolean showValues, Map<Node, String> prefixMap) {
-		boolean inline = !nodeTypeHasBody(type);
-		String out = type;
-		if (showValues && value != null) {
-			out = "[" + out + "=" + value + "]";
-		}
-		if (prefixMap != null) {
-			if (prefixMap.containsKey(this)) out = prefixMap.get(this) + ":" + out;
-			if (id != null && !id.equals(type)) {
-				out += "[" + id + "]";
-			}
-		}
-		if (annotations != null) {
-			out += annotations;
-		}
-		if (children.size() > 0) {
-			if (inline) {
-				out += "(";
-				for (int i = 0; i < children.size(); i++) {
-					if (i > 0) out += ", ";
-					if (children.get(i) == null) {
-						out += "null";
-						continue;
-					}
-					out += children.get(i).prettyPrint(indent, showValues, prefixMap);
-				}
-				out += ")";
-			} else {
-				out += " {\n";
-				String indentMore = indent;
-				for (int i = 0; i < PrettyPrintSpacing; i++) indentMore += " ";
-				for (int i = 0; i < children.size(); i++) {
-					if (children.get(i) == null) {
-						out += indentMore + "null\n";
-						continue;
-					}
-					out += indentMore + children.get(i).prettyPrint(
-							indentMore, showValues, prefixMap) + "\n";
-				}
-				out += indent + "}";
-			}
-		}
-		return out;
 	}
 
 	public String[] depthFirstIteration() {
@@ -540,10 +517,13 @@ public abstract class Node extends StringHashable implements INode {
 				}
 				if (c instanceof Reorder) {
 					int[] reorderings = ((Reorder) c).reordering;
+					int originalIndex = index;
 					index = ArrayUtils.indexOf(reorderings, index);
 					if (index == -1) {
+						System.err.println(node.parent);
+						System.err.println(node.type);
 						throw new RuntimeException("Invalid reorder index: " +
-								index + ", " + Arrays.toString(reorderings));
+								originalIndex + ", " + Arrays.toString(reorderings));
 					}
 				}
 			}
@@ -630,5 +610,22 @@ public abstract class Node extends StringHashable implements INode {
 
 	public interface NodeConstructor {
 		Node constructNode(Node parent, String type, String value, String id);
+	}
+
+	public ASTSnapshot toASTSnapshot(boolean isCorrect, String source) {
+		ASTSnapshot node = new ASTSnapshot(type, value, id, isCorrect, source);
+		children.forEach(child -> node.addChild(child == null ? null : child.toASTNode()));
+		return node;
+	}
+
+	public ASTNode toASTNode() {
+		ASTNode node = new ASTNode(type, value, id);
+		children.forEach(child -> node.addChild(child == null ? null : child.toASTNode()));
+		return node;
+	}
+
+	@Override
+	public String toString() {
+		return prettyPrint(true);
 	}
 }

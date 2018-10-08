@@ -2,10 +2,8 @@ package pqgram.edits;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
 
 import astrecognition.model.Graph;
-import astrecognition.model.Tree;
 import edu.isnap.ctd.graph.Node;
 
 public class Insertion extends PositionalEdit {
@@ -39,43 +37,20 @@ public class Insertion extends PositionalEdit {
 		for (String inheritedChild : this.inheritedChildren) {
 			inheritedChildrenList += inheritedChild + ", ";
 		}
-		return String.format(INSERTION_STRING, this.lineNumber, this.b, this.a, this.start, this.end, inheritedChildrenList);
+		return String.format(INSERTION_STRING, this.lineNumber, this.bG.getUniqueLabel(), this.aG.getUniqueLabel(), this.start, this.end, inheritedChildrenList);
 	}
 
 	@Override
-	public Node outcome(Map<String, Tree> fromMap, Map<String, Tree> toMap) {
-		if (!fromMap.containsKey(a)) return null;
-		Node fromParent = fromMap.get(a).tag.copy();
-		Node to = toMap.get(b).tag;
-		Node toParent = to.parent;
-		if (fromParent == null || toParent == null) return null;
-		fromParent = fromParent.copy();
-
-		// Walk through the both parents' children
-		int toIndex = 0, fromIndex = 0;
-		while (true) {
-			if (fromIndex == fromParent.children.size()) {
-				// If we reach the end of from's children, we must break
-				break;
-			}
-			if (toParent.children.get(toIndex) == to) {
-				// If we reach the node we want to insert, we break
-				break;
-			}
-			if (toParent.children.get(toIndex).hasType(
-					fromParent.children.get(fromIndex).type())) {
-				// Otherwise, if the two nodes have the same label, increment both
-				fromIndex++;
-				toIndex++;
-			} else {
-				// Otherwise, skip one of the (presumably to be deleted) from children
-				fromIndex++;
-			}
+	public Node outcome(Node from) {
+		Node parent = aG.tag, inserted = bG.tag;
+		if (parent == null || parent.root() != from) {
+			// This can happen when an insertion has a missing parent.
+			// We can safely ignore those insertions.
+			return null;
 		}
-
-
-		Node insert = fromParent.constructNode(fromParent, to.type());
-		fromParent.children.add(fromIndex, insert);
-		return fromParent.root();
+		Node node = parent.copy();
+		int index = Math.min(this.start, node.children.size());
+		node.children.add(index, inserted.constructNode(node, inserted.type()));
+		return node.root();
 	}
 }

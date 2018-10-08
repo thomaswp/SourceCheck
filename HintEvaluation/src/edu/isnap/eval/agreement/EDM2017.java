@@ -5,14 +5,12 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -24,15 +22,13 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.json.JSONArray;
 
 import edu.isnap.ctd.graph.Node;
+import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.HintJSON;
 import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.hint.RuleSet;
 import edu.isnap.ctd.hint.edit.EditHint;
-import edu.isnap.ctd.util.Diff;
-import edu.isnap.ctd.util.Diff.ColorStyle;
 import edu.isnap.ctd.util.NullStream;
-import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
@@ -41,11 +37,15 @@ import edu.isnap.datasets.Fall2016;
 import edu.isnap.datasets.Spring2016;
 import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.agreement.EditComparer.EditDifference;
+import edu.isnap.hint.ConfigurableAssignment;
 import edu.isnap.hint.SnapHintBuilder;
-import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.Snapshot;
+import edu.isnap.util.Diff;
+import edu.isnap.util.Spreadsheet;
+import edu.isnap.util.Diff.ColorStyle;
+import edu.isnap.util.map.ListMap;
 
 public class EDM2017 {
 
@@ -90,12 +90,11 @@ public class EDM2017 {
 
 		HashMap<String, HintHighlighter> highlighters = new HashMap<>();
 		for (Assignment assignment : trainingAssignments) {
+			HintConfig config = ConfigurableAssignment.getConfig(assignment);
+			config.useRulesToFilter = false;
 			SnapHintBuilder builder = new SnapHintBuilder(assignment);
 			HintMap hintMap = builder.buildGenerator(Mode.Ignore, 1).hintMap;
-			List<Node> solutions = new ArrayList<>(hintMap.solutions);
-			highlighters.put(assignment.name, new HintHighlighter(
-					solutions, null, hintMap.nodePlacementTimes, hintMap.nodeOrderings,
-					hintMap.getHintConfig()));
+			highlighters.put(assignment.name, new HintHighlighter(hintMap));
 		}
 
 		// Since sometimes assignments are incorrect in the logs, we have to redirect prequel
@@ -309,18 +308,12 @@ public class EDM2017 {
 			spreadsheet.put("assignment", assignment.name);
 			spreadsheet.put("row", row);
 			spreadsheet.put("type", edit.action());
-			spreadsheet.put("consensus", edit.priority.consensus());
-			spreadsheet.put("consensusNum", edit.priority.consensusNumerator);
-			spreadsheet.put("consensusDen", edit.priority.consensusDenominator);
-			spreadsheet.put("prereqs", edit.priority.prereqs());
-			spreadsheet.put("prereqsNum", edit.priority.prereqsNumerator);
-			spreadsheet.put("prereqsDen", edit.priority.prereqsDenominator);
-			OptionalDouble creationTime = edit.priority.creationTime,
-					ordering = edit.priority.meanOrderingRank;
-			spreadsheet.put("creation",
-					creationTime.isPresent() ? creationTime.getAsDouble() : null);
-			spreadsheet.put("ordering",
-					ordering.isPresent() ? ordering.getAsDouble() : null);
+			if (edit.priority != null) {
+				Map<String, Object> props = edit.priority.getPropertiesMap();
+				for (String key : props.keySet()) {
+					spreadsheet.put(key, props.get(key));
+				}
+			}
 			spreadsheet.put("edit", edit.toString());
 			spreadsheet.put("category", category);
 			Diff.colorStyle = ColorStyle.ANSI;

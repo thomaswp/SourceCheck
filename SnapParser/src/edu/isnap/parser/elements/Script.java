@@ -59,6 +59,9 @@ public class Script extends Code implements IHasID, Comparable<Script> {
 
 	@Override
 	public String getID() {
+		// TODO: ID should really be a constant value across snapshots (ignoring renames), so
+		// scripts really shouldn't have an ID. When changing this, keep it for the compareTo method
+		// below, so we can keep consistent ordering with previous implementations.
 		if (customBlockID != null) return customBlockID;
 		if (blocks.size() == 0) return null;
 		String id = "script:";

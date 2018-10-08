@@ -77,7 +77,6 @@ public class HintMapBuilder {
 	public HintMap addAttempt(List<Node> solutionPath, boolean useIDs) {
 
 		HintMap hintMap = this.hintMap.instance();
-		if (solutionPath.size() <= 1) return hintMap;
 
 		if (useIDs) {
 			Map<String, Node> lastIDMap = null, cumulativeIDMap =

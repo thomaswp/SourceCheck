@@ -9,8 +9,6 @@ import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.RuleSet;
 import edu.isnap.ctd.hint.edit.EditHint;
-import edu.isnap.ctd.util.Diff;
-import edu.isnap.ctd.util.Diff.ColorStyle;
 import edu.isnap.ctd.util.NodeAlignment.Mapping;
 import edu.isnap.ctd.util.NullStream;
 import edu.isnap.dataset.Assignment;
@@ -23,6 +21,8 @@ import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
+import edu.isnap.util.Diff;
+import edu.isnap.util.Diff.ColorStyle;
 
 public class HintPrinter {
 

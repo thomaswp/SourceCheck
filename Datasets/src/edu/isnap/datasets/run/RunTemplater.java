@@ -4,15 +4,16 @@ import java.io.IOException;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.dataset.Assignment;
-import edu.isnap.datasets.CSC200Solutions;
+import edu.isnap.datasets.CampSolutions;
 import edu.isnap.template.parse.TemplateParser;
 
 public class RunTemplater {
 	public static void main(String[] args) throws IOException {
 		Node.PrettyPrintSpacing = 4;
-//		TemplateParser.parseTemplate(CSC200Solutions.GuessingGame2New);
-		for (Assignment assignment : CSC200Solutions.All) {
-			TemplateParser.parseTemplate(assignment);
+		Node.PrettyPrintUseColon = true;
+//		TemplateParser.parseSnapTemplate(CampSolutions.Asteroids);
+		for (Assignment assignment : CampSolutions.All) {
+			TemplateParser.parseSnapTemplate(assignment);
 		}
 	}
 }

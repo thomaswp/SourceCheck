@@ -134,14 +134,14 @@ public class HintServlet extends HttpServlet {
 			try {
 				HintHighlighter highlighter = new HintHighlighter(hintMap);
 				// TODO: Use an actual logging framework
-				highlighter.trace = NullStream.instance;
+//				highlighter.trace = System.out;
 
 				if (hintTypes.contains("debug")) {
 					HintDebugInfo info = highlighter.debugHighlight(node);
 					hints.addAll(info.edits);
 					array.put(info.toJSON());
 				} else {
-					hints.addAll(highlighter.highlight(node));
+					hints.addAll(highlighter.highlightWithPriorities(node));
 				}
 			} catch (Exception e) {
 				array.put(HintJSON.errorToJSON(e, true));

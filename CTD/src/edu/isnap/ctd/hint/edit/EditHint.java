@@ -7,7 +7,6 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.json.JSONArray;
@@ -17,10 +16,10 @@ import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.Canonicalization;
 import edu.isnap.ctd.hint.Canonicalization.SwapBinaryArgs;
 import edu.isnap.ctd.hint.Hint;
-import edu.isnap.ctd.util.Diff;
-import edu.isnap.ctd.util.Diff.ColorStyle;
 import edu.isnap.ctd.util.NodeAlignment.Mapping;
-import edu.isnap.ctd.util.map.BiMap;
+import edu.isnap.util.Diff;
+import edu.isnap.util.Diff.ColorStyle;
+import edu.isnap.util.map.BiMap;
 
 public abstract class EditHint implements Hint, Comparable<EditHint> {
 	protected abstract void editChildren(List<String> children);
@@ -45,7 +44,6 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 
 	public EditHint(Node parent) {
 		this.parent = parent;
-
 		boolean swap = false;
 		for (Canonicalization c : parent.canonicalizations) {
 			if (c instanceof SwapBinaryArgs) {
@@ -92,6 +90,9 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 		data.put("from", toJSONArray(items, argsCanonSwapped));
 		editChildren(items);
 		data.put("to", toJSONArray(items, argsCanonSwapped));
+		if (priority != null) {
+			data.put("priority", priority.consensus());
+		}
 		return data;
 	}
 
@@ -247,12 +248,20 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 	}
 
 	protected static boolean nodesIDEqual(Node a, Node b) {
-		return a == b || (a != null && b != null && StringUtils.equals(a.id, b.id));
+		if (a == b) return true;
+		if (a == null || b == null) return false;
+		if (a.id == null) return a == b;
+		return a.id.equals(b.id);
 	}
 
 	protected static int nodeIDHashCode(Node node) {
 		if (node.id != null) return node.id.hashCode();
 		return node.hashCode();
+	}
+
+
+	protected Object getParentForComparison() {
+		return parent;
 	}
 
 	@Override
@@ -270,7 +279,7 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 				return super.append(lhs, rhs);
 			}
 		};
-		builder.append(parent, rhs.parent);
+		builder.append(getParentForComparison(), rhs.getParentForComparison());
 		builder.append(argsCanonSwapped, rhs.argsCanonSwapped);
 		builder.append(subedits, rhs.subedits);
 		appendEqualsFieds(builder, rhs);
@@ -289,7 +298,7 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 			}
 		};
 		builder.append(getClass());
-		builder.append(parent);
+		builder.append(getParentForComparison());
 		builder.append(argsCanonSwapped);
 		builder.append(subedits);
 		appendHashCodeFieds(builder);

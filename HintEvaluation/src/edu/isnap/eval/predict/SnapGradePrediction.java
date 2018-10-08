@@ -14,9 +14,9 @@ import edu.isnap.datasets.Fall2016;
 import edu.isnap.hint.Configurable;
 import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.hint.util.SimpleNodeBuilder;
-import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
+import edu.isnap.util.Spreadsheet;
 
 public class SnapGradePrediction {
 

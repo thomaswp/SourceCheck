@@ -1,0 +1,24 @@
+Module(list {
+    Import(list {
+        alias:string(null)
+    })
+    FunctionDef:isPunctuation(arguments(list {
+        arg:s(null)
+    }, null, list, list, null, list), list {
+        @defBlock CONDITION {
+            Compare(Name:s(Load), list {
+                In
+            }, list {
+                Attribute:punctuation(Name:string(Load), Load)
+            })
+        }
+        @or {
+            Return(@block CONDITION)
+            If(@block CONDITION, list {
+                Return(NameConstant:True)
+            }, list {
+                Return(NameConstant:False)
+            })
+        }
+    }, list, null)
+})

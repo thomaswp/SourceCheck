@@ -4,9 +4,14 @@ import java.util.Arrays;
 import java.util.HashSet;
 
 import edu.isnap.ctd.graph.Node;
+import edu.isnap.ctd.graph.Node.NodeConstructor;
 import edu.isnap.ctd.hint.HintConfig;
+import edu.isnap.hint.util.SnapNode;
+import edu.isnap.rating.RatingConfig;
 
 public class SnapHintConfig extends HintConfig {
+	public boolean hasIDs = true;
+
 	private static final long serialVersionUID = 1L;
 
 	private final static String Script = "script";
@@ -16,8 +21,13 @@ public class SnapHintConfig extends HintConfig {
 		// In snap, we currently ignore literal values that aren't mapped
 		this.valuesPolicy = ValuesPolicy.MappedOnly;
 		// iSnap doesn't currently support displaying these, so they should not be used except in
-		// algorthm evaluation
+		// algorithm evaluation
 		this.createSubedits = false;
+	}
+
+	@Override
+	public NodeConstructor getNodeConstructor() {
+		return SnapNode::new;
 	}
 
 	@Override
@@ -32,21 +42,9 @@ public class SnapHintConfig extends HintConfig {
 		return Script.equals(type);
 	}
 
-	public final HashSet<String> haveFlexibleChildren = new HashSet<>(Arrays.asList(
-			new String[] {
-					// Note: we exclude list and reify blocks here, since (for now) we want to treat
-					// them as having fixed children
-					"snapshot",
-					"stage",
-					"sprite",
-					"script",
-					"customBlock",
-			}
-	));
-
 	@Override
 	public boolean hasFixedChildren(Node node) {
-		return node != null && !haveFlexibleChildren.contains(node.type());
+		return node != null && RatingConfig.Snap.hasFixedChildren(node.type(), node.parentType());
 	}
 
 	@Override
@@ -56,7 +54,9 @@ public class SnapHintConfig extends HintConfig {
 
 	@Override
 	public boolean isValueless(String type) {
-		return "literal".equals(type);
+		// Nodes inserted by Snap automatically are valueless
+		// TODO: Decide whether scripts and lists should have value
+		return "literal".equals(type); // || "script".equals(type) || "list".equals(type);
 	}
 
 	public final HashSet<String> haveSideScripts = new HashSet<>(Arrays.asList(
@@ -155,5 +155,10 @@ public class SnapHintConfig extends HintConfig {
 	@Deprecated
 	public boolean shouldGoStraightToGoal(String type) {
 		return straightToGoal.contains(type);
+	}
+
+	@Override
+	public boolean areNodeIDsConsistent() {
+		return hasIDs;
 	}
 }

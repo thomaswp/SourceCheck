@@ -41,6 +41,7 @@ public class HintSelection {
 //		printFall2016();
 //		printSpring2017EDM();
 		printHintRating2017();
+//		printFall2017Test();
 	}
 
 	protected static void printFall2016() {
@@ -88,23 +89,40 @@ public class HintSelection {
 		}
 	}
 
+
+	protected static void printFall2017Test() throws IOException {
+		Assignment[] assignments = {
+				Fall2017.Squiral,
+				Fall2017.GuessingGame1,
+		};
+		for (Assignment assignment : assignments) {
+			List<HintRequest> selected = selectEarlyLate(assignment, DEFAULT_FILTERS, false,
+					new Random(DEFAULT_SEED));
+			printSQL("handmade_hints", selected, "consensus");
+		}
+	}
+
 	protected static void printHintRating2017() throws IOException {
 		Assignment[][] assignments = {
 				new Assignment[] {
-						Fall2016.PolygonMaker,
+//						Fall2016.PolygonMaker,
 //						Spring2017.PolygonMaker,
+						Fall2017.PolygonMaker,
 				},
 				new Assignment[] {
-						Fall2016.Squiral,
+//						Fall2016.Squiral,
 //						Spring2017.Squiral,
+						Fall2017.Squiral,
 				},
 				new Assignment[] {
-						Fall2016.GuessingGame1,
+//						Fall2016.GuessingGame1,
 //						Spring2017.GuessingGame1,
+						Fall2017.GuessingGame1,
 				},
 				new Assignment[] {
-						Fall2016.GuessingGame2,
+//						Fall2016.GuessingGame2,
 //						Spring2017.GuessingGame2,
+						Fall2017.GuessingGame2,
 				},
 		};
 
@@ -208,12 +226,12 @@ public class HintSelection {
 					(req.assignment.dataset instanceof Fall2017 ? fall2017 : fall2016)).add(req);
 			}
 			// Be careful with this output, since it uses the USE directive
-			System.out.println("USE snap_fall2016;");
-			printSQL("handmade_hints", fall2016, users);
+//			System.out.println("USE snap_fall2016;");
+//			printSQL("handmade_hints", fall2016, users);
 //			System.out.println("USE snap_spring2017;");
 //			printSQL("handmade_hints", spring2017, users);
-//			System.out.println("USE snap;");
-//			printSQL("handmade_hints", fall2017, users);
+			System.out.println("USE snap_fall2017;");
+			printSQL("handmade_hints", fall2017, users);
 		}
 	}
 
@@ -341,7 +359,7 @@ public class HintSelection {
 		}
 	}
 
-	public static class HintRequest {
+	protected static class HintRequest {
 		public final Assignment assignment;
 		public final AssignmentAttempt attempt;
 		public final AttemptAction action;

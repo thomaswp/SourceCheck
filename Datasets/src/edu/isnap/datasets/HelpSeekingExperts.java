@@ -2,7 +2,6 @@ package edu.isnap.datasets;
 
 import java.util.Date;
 
-import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.hint.ConfigurableAssignment;
@@ -29,7 +28,7 @@ import edu.isnap.hint.SnapHintConfig;
 		public final static Assignment BrickWall = new ConfigurableAssignment(instance,
 				"brickWall", null, true) {
 			@Override
-			public HintConfig getConfig() {
+			public SnapHintConfig getConfig() {
 				return config;
 			};
 		};

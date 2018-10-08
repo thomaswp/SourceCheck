@@ -15,10 +15,10 @@ import java.util.stream.Collectors;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import edu.isnap.ctd.graph.INode;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.datasets.aggregate.CSC200;
+import edu.isnap.node.INode;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.BlockDefinition;
 
@@ -113,8 +113,8 @@ public class GrammarBuilder {
 				if (set == null) {
 					categories.put(category, set = new HashSet<>());
 				}
-				if (BlockDefinition.isTool(type)) {
-					type = BlockDefinition.getCustomBlockCall(type);
+				if (BlockDefinition.isImported(type)) {
+					type = BlockDefinition.getCustomBlockCall(type, true);
 				}
 				set.add(type);
 			}

@@ -1,7 +1,10 @@
 package edu.isnap.ctd.hint;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -11,8 +14,8 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.util.map.CountMap;
-import edu.isnap.ctd.util.map.MapFactory;
+import edu.isnap.util.map.CountMap;
+import edu.isnap.util.map.MapFactory;
 
 public class Ordering {
 
@@ -72,7 +75,10 @@ public class Ordering {
 
 	public static CountMap<String> countLabels(Node node) {
 		CountMap<String> labelCounts = new CountMap<>(MapFactory.LinkedHashMapFactory);
-		node.recurse(child -> labelCounts.increment(getLabel(child)));
+		node.recurse(child -> {
+			String label = getLabel(child);
+			if (label != null) labelCounts.increment(getLabel(child));
+		});
 		return labelCounts;
 	}
 
@@ -83,10 +89,32 @@ public class Ordering {
 		additions.retainAll(additions.stream()
 				.filter(t -> labels.contains(t.label))
 				.collect(Collectors.toSet()));
+//		int i = 0;
+//		for (Addition addition : additions) {
+//			System.out.printf("%s,%s,%d\n",
+//					node.id, addition, i++);
+//		}
+	}
+
+	private static boolean ignore(String type) {
+		// TODO: config
+		return "literal".equals(type) || "script".equals(type);
 	}
 
 	public static String getLabel(Node node) {
-		return node.rootPathString(MAX_RP_LENGTH);
+		if (ignore(node.type())) return null;
+		List<String> path = new LinkedList<>();
+		Node n = node;
+		int length = 0;
+		while (n != null && length < MAX_RP_LENGTH) {
+			String type = n.type();
+			if (!ignore(type)) {
+				path.add(0, type);
+				length++;
+			}
+			n = n.parent;
+		}
+		return String.join("->", path);
 	}
 
 	@Override
@@ -133,7 +161,60 @@ public class Ordering {
 
 		@Override
 		public String toString() {
-			return String.format("{%s, %d}", label, count);
+			return String.format("{%s:%d}", label, count);
+		}
+	}
+
+	public static class OrderMatrix {
+
+		private final List<Addition> additions;
+		private final double[][] matrix;
+
+		public List<Addition> additions() {
+			return Collections.unmodifiableList(additions);
+		}
+
+		public double getPercOrdered(int beforeIndex, int afterIndex) {
+			if (beforeIndex < 0 || beforeIndex >= additions.size()) return 0;
+			if (afterIndex < 0 || afterIndex >= additions.size()) return 0;
+			return matrix[beforeIndex][afterIndex];
+		}
+
+		@SuppressWarnings("unused")
+		private OrderMatrix() {
+			additions = null;
+			matrix = null;
+		}
+
+		public OrderMatrix(Collection<Ordering> orderings, double frequencyThreshhold) {
+			CountMap<Addition> additionCounts = new CountMap<>();
+			for (Ordering ordering : orderings) {
+				ordering.additions.forEach(addition -> additionCounts.increment(addition));
+			}
+			int minCount = (int) (orderings.size() * frequencyThreshhold);
+			additions = additionCounts.keySet().stream()
+				.filter(addition -> additionCounts.getCount(addition) >= minCount)
+				.collect(Collectors.toList());
+
+			int n = additions.size();
+			matrix = new double[n][n];
+			for (int i = 0; i < n; i++) {
+				for (int j = i + 1; j < n; j++) {
+					Addition a = additions.get(i);
+					Addition b = additions.get(j);
+					int count = 0;
+					int aFirst = 0;
+					for (Ordering ordering : orderings) {
+						int orderA = ordering.getOrder(a);
+						int orderB = ordering.getOrder(b);
+						if (orderA == -1 || orderB == -1) continue;
+						count++;
+						if (orderA < orderB) aFirst++;
+					}
+					matrix[i][j] = (double) aFirst / count;
+					matrix[j][i] = 1 - matrix[i][j];
+				}
+			}
 		}
 	}
 }

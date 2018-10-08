@@ -29,32 +29,33 @@ import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.dataset.Grade;
+import edu.isnap.datasets.CampHS2018;
 import edu.isnap.datasets.Fall2015;
-import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.AutoGrader;
 import edu.isnap.eval.AutoGrader.Grader;
 import edu.isnap.eval.util.Prune;
 import edu.isnap.hint.util.SimpleNodeBuilder;
-import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.Snapshot;
+import edu.isnap.util.Spreadsheet;
 import util.LblTree;
 
 public class CheckHintUsage {
 
-	private static final long MIN_DURATON = 5 * 60 * 1000;
+	private static final long MIN_DURATON_PS = 5 * 60;
+	private static final long MIN_DURATON_WE = 30;
 
 	public static void main(String[] args) throws IOException {
-		writeHints(Spring2017.instance);
+		writeHints(CampHS2018.instance);
 	}
 
 	private static boolean isValidSubmission(AssignmentAttempt attempt) {
-		if (attempt == null || !attempt.isLikelySubmitted() || attempt.size() == 0) return false;
+		if (attempt == null || attempt.size() == 0) return false;
 
 		// Also ignore any that are shorted than then minimum duration (5m)
-		long duration = attempt.rows.getLast().timestamp.getTime() -
-				attempt.rows.getFirst().timestamp.getTime();
-		if (duration < MIN_DURATON) return false;
+		long duration = attempt.totalActiveTime + attempt.totalIdleTime;
+		if (!attempt.hasWorkedExample && duration < MIN_DURATON_PS) return false;
+		if (attempt.hasWorkedExample && duration < MIN_DURATON_WE) return false;
 
 		return true;
 	}
@@ -86,7 +87,7 @@ public class CheckHintUsage {
 
 		// Get all submitted attempts at the assignment
 		Map<String, AssignmentAttempt> attempts =
-				assignment.loadAllSubmitted(Mode.Use, false, true);
+				assignment.loadAllLikelySubmitted(Mode.Use, false, true);
 
 		// Iterate over all submissions
 		for (String attemptID : attempts.keySet()) {
@@ -94,7 +95,8 @@ public class CheckHintUsage {
 			AssignmentAttempt attempt = attempts.get(attemptID);
 			Grade grade = attempt.grade;
 			if (grade != null && grade.outlier) continue;
-			String userIDShort = attempt.userID();
+			String userID = attempt.userID();
+			String userIDShort = userID;
 			if (userIDShort != null && userIDShort.length() > 8) {
 				userIDShort = userIDShort.substring(
 						userIDShort.length() - 8, userIDShort.length());
@@ -107,7 +109,8 @@ public class CheckHintUsage {
 			// For any that attempt for which we have no logs, we use an empty assignment
 			// attempt, which results in 0 for almost every column, but still includes the grades
 			if (!isValidSubmission(attempt)) {
-				attempt = new AssignmentAttempt(attemptID, attempt.grade);
+				attempt = new AssignmentAttempt(attemptID, attempt.loggedAssignmentID,
+						attempt.grade);
 				hasLogs = false;
 			}
 
@@ -271,7 +274,7 @@ public class CheckHintUsage {
 					hintsSheet.put("dataset", assignment.dataset.getName());
 					hintsSheet.put("assignment", assignment.name);
 					hintsSheet.put("attemptID", attemptID);
-					hintsSheet.put("userID", userIDShort);
+					hintsSheet.put("userID", userID);
 					hintsSheet.put("rowID", row.id);
 					hintsSheet.put("time", time);
 					hintsSheet.put("type", action.replace("SnapDisplay.show", "")
@@ -344,8 +347,9 @@ public class CheckHintUsage {
 			attemptsSheet.put("dataset", assignment.dataset.getName());
 			attemptsSheet.put("assignment", assignment.name);
 			attemptsSheet.put("id", attemptID);
-			attemptsSheet.put("userID", userIDShort);
+			attemptsSheet.put("userID", userID);
 			attemptsSheet.put("logs", hasLogs);
+			attemptsSheet.put("isWE", attempt.hasWorkedExample);
 			// Hint stats
 			attemptsSheet.put("hints", nHints);
 			attemptsSheet.put("duplicates", nDuplicateHints);

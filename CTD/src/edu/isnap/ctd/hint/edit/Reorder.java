@@ -8,7 +8,7 @@ import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.util.NodeAlignment.Mapping;
-import edu.isnap.ctd.util.map.BiMap;
+import edu.isnap.util.map.BiMap;
 
 public class Reorder extends EditHint {
 	public final Node node;

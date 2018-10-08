@@ -9,7 +9,8 @@ import org.json.JSONObject;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Predicate;
 import edu.isnap.ctd.util.NodeAlignment.Mapping;
-import edu.isnap.ctd.util.map.BiMap;
+import edu.isnap.node.ASTNode;
+import edu.isnap.util.map.BiMap;
 
 public class Insertion extends EditHint {
 	public final String type;
@@ -205,10 +206,13 @@ public class Insertion extends EditHint {
 					}
 				}
 
-				// In case this is a newly inserted parent, we pad with nulls
-				while (parent.children.size() < index) parent.children.add(null);
+				// In case this is a newly inserted parent, we pad with placeholder nodes
+				while (parent.children.size() < index) {
+					parent.children.add(parent.constructNode(parent, ASTNode.EMPTY_TYPE));
+				}
 				// and then remove them as children are inserted
-				if (index < parent.children.size() && parent.children.get(index) == null) {
+				if (index < parent.children.size() &&
+						parent.children.get(index).hasType(ASTNode.EMPTY_TYPE)) {
 					parent.children.remove(index);
 				}
 				parent.children.add(index, toInsert);
@@ -237,6 +241,16 @@ public class Insertion extends EditHint {
 		builder.append(keepChildrenInReplacement);
 		builder.append(replaced);
 		builder.append(candidate);
+	}
+
+	@Override
+	protected Object getParentForComparison() {
+		if (!missingParent) return super.getParentForComparison();
+		// We consider two moves (to a not-yet-existant parent) to be equivalent if the new parents
+		// have the same type, even if they're in different places. In iSnap these are simply
+		// displayed as highlights without indicating the destination. This might need to change
+		// later if more details from these hints are given.
+		return parent.type();
 	}
 
 	@Override

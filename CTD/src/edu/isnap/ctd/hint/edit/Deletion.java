@@ -8,7 +8,7 @@ import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.util.NodeAlignment.Mapping;
-import edu.isnap.ctd.util.map.BiMap;
+import edu.isnap.util.map.BiMap;
 
 public class Deletion extends EditHint {
 	public final Node node;
@@ -66,5 +66,10 @@ public class Deletion extends EditHint {
 	@Override
 	public Node getPriorityToNode(Mapping mapping) {
 		return null;
+	}
+
+	@Override
+	protected Object getParentForComparison() {
+		return parent;
 	}
 }

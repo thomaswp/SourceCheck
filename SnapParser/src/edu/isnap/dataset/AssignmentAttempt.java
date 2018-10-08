@@ -15,6 +15,8 @@ public class AssignmentAttempt implements Iterable<AttemptAction> {
 
 	public final String id;
 	public final ActionRows rows = new ActionRows();
+	/** The primary assignmentID of the logs (e.g. when the attempt was submitted). */
+	public final String loggedAssignmentID;
 	public final Grade grade;
 	/** Whether the attempt was ever exported from Snap. */
 	public boolean exported;
@@ -28,8 +30,8 @@ public class AssignmentAttempt implements Iterable<AttemptAction> {
 	public int totalIdleTime;
 	/** The number of work segments, divided by {@link SnapParser#SKIP_DURATION} */
 	public int timeSegments;
-	/** Whether the snapshots in this assignment have node IDs. Set by Assignment.load() */
-	public boolean hasIDs;
+	/** Should be true if this log belongs to a stand-alone worked example. */
+	public boolean hasWorkedExample;
 
 	/** Returns true if this attempt is known not to have been submitted for grading. */
 	public boolean isUnsubmitted() {
@@ -37,10 +39,12 @@ public class AssignmentAttempt implements Iterable<AttemptAction> {
 	}
 
 	/**
-	 * Returns true if this attempt is know to have been submitted for grading or this is unknown, but it was exported.
+	 * Returns true if this attempt is know to have been submitted for grading or this is unknown,
+	 * but it was exported.
 	 */
 	public boolean isLikelySubmitted() {
-		return submittedActionID >= 0 || (submittedActionID == UNKNOWN && exported);
+		return hasWorkedExample ||
+				submittedActionID >= 0 || (submittedActionID == UNKNOWN && exported);
 	}
 
 	public boolean isSubmitted() {
@@ -49,11 +53,12 @@ public class AssignmentAttempt implements Iterable<AttemptAction> {
 
 	@SuppressWarnings("unused")
 	private AssignmentAttempt() {
-		this(null, null);
+		this(null, null, null);
 	}
 
-	public AssignmentAttempt(String id, Grade grade) {
+	public AssignmentAttempt(String id, String loggedAssignmentID, Grade grade) {
 		this.id = id;
+		this.loggedAssignmentID = loggedAssignmentID;
 		this.grade = grade;
 	}
 

@@ -1,0 +1,37 @@
+Module(list {
+    FunctionDef:firstAndLast(arguments(list {
+        arg:s(null)
+    }, null, list, list, null, list), list {
+        @defVar(VARS) {
+            @defBlock FIRST {
+                Subscript(Name:s(Load), Index(Num:0), Load)
+            }
+            @defBlock LAST_INDEX {
+                @or {
+                    BinOp(Call(Name:len(Load), list {
+                        Name:s(Load)
+                    }, list), Sub, Num:1)
+                    // UnaryOp(USub, Num:1)
+                }
+            }
+            @defBlock LAST {
+                Subscript(Name:s(Load), Index(@block LAST_INDEX, Load), Load)
+            }
+            @if (VARS) {
+                @anyOrder {
+                    Assign(list {
+                        Name:firstLetter(Store)
+                    }, @block FIRST)
+                    Assign(list {
+                        Name:lastLetter(Store)
+                    }, @block LAST)
+                }
+                Return(BinOp(Name:firstLetter(Load), Add, Name:lastLetter(Load) LAST))
+            }
+            @unless (VARS) {
+                Return(BinOp(@block FIRST, Add, @block LAST))
+            }
+        }
+        
+    }, list, null)
+})

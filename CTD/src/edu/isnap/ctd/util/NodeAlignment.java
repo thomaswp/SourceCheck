@@ -21,11 +21,11 @@ import edu.isnap.ctd.graph.SimpleNode;
 import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.HintConfig.SimpleHintConfig;
 import edu.isnap.ctd.hint.HintConfig.ValuesPolicy;
+import edu.isnap.util.map.BiMap;
+import edu.isnap.util.map.CountMap;
+import edu.isnap.util.map.ListMap;
+import edu.isnap.util.map.MapFactory;
 import edu.isnap.ctd.hint.HintHighlighter;
-import edu.isnap.ctd.util.map.BiMap;
-import edu.isnap.ctd.util.map.CountMap;
-import edu.isnap.ctd.util.map.ListMap;
-import edu.isnap.ctd.util.map.MapFactory;
 
 public class NodeAlignment {
 
@@ -44,6 +44,7 @@ public class NodeAlignment {
 
 		private double cost;
 		private List<MappingCost> itemizedCost = new ArrayList<>();
+		private Set<String> mappedTypes = new HashSet<>();
 
 		public final Map<String, BiMap<String, String>> valueMappings = new LinkedHashMap<>();
 
@@ -65,6 +66,9 @@ public class NodeAlignment {
 			this.from = from;
 			this.to = to;
 			this.config = config;
+			for (String[] types : config.getValueMappedTypes()) {
+				for (String type : types) mappedTypes.add(type);
+			}
 		}
 
 		public double cost() {
@@ -114,14 +118,20 @@ public class NodeAlignment {
 		 * (or its match) will be returned. Otherwise, it will return null.
 		 */
 		public String getMappedValue(Node node, boolean isFrom) {
-			if (config.valuesPolicy == ValuesPolicy.MatchAllExactly) return node.value;
 			String type = node.type(), value = node.value;
+			// If we match values exactly, the we don't check the mapping
+			if (config.valuesPolicy == ValuesPolicy.MatchAllExactly) return value;
+			// If we match all values, we only use the mapping for those with a mapped type
+			if (config.valuesPolicy == ValuesPolicy.MatchAllWithMapping &&
+					!mappedTypes.contains(type)) {
+				return value;
+			}
+
 			BiMap<String,String> map = valueMappings.get(type);
 			if (map != null) {
-				if (isFrom &&  map.containsFrom(value)) return value;
+				if (isFrom && map.containsFrom(value)) return value;
 				if (!isFrom && map.containsTo(value)) return map.getTo(value);
 			}
-			if (config.valuesPolicy == ValuesPolicy.MatchAllWithMapping) return value;
 			return null;
 		}
 
@@ -286,7 +296,7 @@ public class NodeAlignment {
 			List<Node> toNodes = toMap.get(key);
 
 			if (toNodes == null) {
-				// Continue if we have to toNodes to match
+				// Continue if we have no toNodes to match
 				continue;
 			}
 
@@ -414,12 +424,13 @@ public class NodeAlignment {
 		}
 		for (int i = 0; i < fromStates.length; i++) {
 			for (int j = 0; j < toStates.length; j++) {
+				Node from = fromNodes.get(i), to = toNodes.get(j);
 				double cost = costMatrix[i][j];
 				// Only break ties for entries
 				if (costCounts.get(cost) <= 1) continue;
 				// For any matches, break ties based on the existing mappings
-				if (toNodes.get(j).readOnlyAnnotations().matchAnyChildren) {
-					if (mapping.getFrom(fromNodes.get(i)) == toNodes.get(j)) cost -= 1;
+				if (to.readOnlyAnnotations().matchAnyChildren) {
+					if (mapping.getFrom(from) == to) cost -= 1;
 					costMatrix[i][j] = cost;
 					continue;
 				}
@@ -431,12 +442,11 @@ public class NodeAlignment {
 //							.calculateCost(distanceMeasure);
 					// Instead of using the exact cost, we use an estimated cost based on a depth-
 					// first traversal of the children, which is usually a darn good estimate
-					double subCost = getSubCostEsitmate(fromNodes.get(i), toNodes.get(j),
-							distanceMeasure);
+					double subCost = getSubCostEsitmate(from, to, config, distanceMeasure);
 					cost += subCost * 0.001;
 				}
 				// Break further ties with existing mappings from parents
-				if (mapping.getFrom(fromNodes.get(i)) == toNodes.get(j)) cost -= 0.0001;
+				if (mapping.getFrom(from) == to) cost -= 0.0001;
 				costMatrix[i][j] = cost;
 				minCost = Math.min(minCost, cost);
 			}
@@ -602,10 +612,16 @@ public class NodeAlignment {
 		return needsReorder;
 	}
 
-	public static double getSubCostEsitmate(Node a, Node b, DistanceMeasure dm) {
+	public static double getSubCostEsitmate(Node a, Node b, HintConfig config, DistanceMeasure dm) {
 		String[] aDFI = a.depthFirstIteration();
 		String[] bDFI = b.depthFirstIteration();
-		return dm.measure(null, aDFI, bDFI, null);
+		if (config.useDeletionsInSubcost) {
+			return dm.measure(null, aDFI, bDFI, null);
+		} else {
+			for (int i = 0; i < aDFI.length; i++) if (config.isValueless(aDFI[i])) aDFI[i] = null;
+			for (int i = 0; i < bDFI.length; i++) if (config.isValueless(bDFI[i])) bDFI[i] = null;
+			return -Alignment.getProgress(aDFI, bDFI, 1, 0, 0);
+		}
 	}
 
 	private String[][] stateArray(List<Node> nodes, boolean isFrom) {

@@ -89,6 +89,7 @@ public class VectorHint extends StringHashable implements Hint {
 			List<Node> children = new ArrayList<>();
 			children.addAll(nRoot.children);
 
+			// TODO: Use some basic alignment to get the nodes right
 			nRoot.children.clear();
 			for (String type : to) {
 				boolean added = false;

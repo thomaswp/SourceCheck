@@ -16,6 +16,8 @@ import edu.isnap.ctd.graph.Node.Action;
 import edu.isnap.ctd.graph.vector.IndexedVectorState;
 import edu.isnap.ctd.graph.vector.VectorGraph;
 import edu.isnap.ctd.graph.vector.VectorState;
+import edu.isnap.ctd.hint.Ordering.OrderMatrix;
+import edu.isnap.ctd.hint.feature.Feature;
 
 /**
  * Class for handling the core logic of the CTD algorithm.
@@ -26,12 +28,16 @@ public class HintMap {
 	// TODO: should probably extract to a datastructure, rather than a list and some maps...
 	public final List<Node> solutions = new ArrayList<>();
 	public final Map<Node, Map<String, Double>> nodePlacementTimes = new IdentityHashMap<>();
-	public final Map<Node, Ordering> nodeOrderings = new IdentityHashMap<>();
+	private final Map<Node, Ordering> nodeOrderings = new IdentityHashMap<>();
+	public OrderMatrix orderMatrix;
+	public final List<Feature> features;
 
 	RuleSet ruleSet;
 	final HintConfig config;
 
 	private transient List<Node> currentHistory = new ArrayList<>();
+
+	protected final HashMap<Node, VectorGraph> map = new HashMap<>();
 
 	public HintConfig getHintConfig() {
 		return config;
@@ -47,11 +53,13 @@ public class HintMap {
 	}
 
 	public HintMap(HintConfig config) {
-		this.config = config;
+		this(config, null);
 	}
 
-	protected final HashMap<Node, VectorGraph> map =
-			new HashMap<>();
+	public HintMap(HintConfig config, List<Feature> features) {
+		this.config = config;
+		this.features = features;
+	}
 
 	/**
 	 * Gets the root path for the given Node, which contains only the nodes in the root path from
@@ -109,14 +117,16 @@ public class HintMap {
 		List<String> children = new ArrayList<>();
 		if (node == null) return children;
 		for (Node child : node.children) {
-			if ("null".equals(child.type())) continue;
+			// Not sure why this was here, but since it's use with node.index(), it needs to
+			// include all children so the list length matches the node's number of children
+//			if ("null".equals(child.type())) continue;
 			children.add(child.type());
 		}
 		return children;
 	}
 
 	public HintMap instance() {
-		return new HintMap(config);
+		return new HintMap(config, features);
 	}
 
 	public void setSolution(Node solution) {
@@ -210,6 +220,8 @@ public class HintMap {
 			graph.bellmanBackup(config.pruneGoals);
 		}
 		ruleSet = new RuleSet(solutions, config);
+		// TODO: config
+		orderMatrix = new OrderMatrix(nodeOrderings.values(), 0.3);
 	}
 
 	public void addMap(HintMap hintMap) {
@@ -245,14 +257,14 @@ public class HintMap {
 			Node child = node;
 			String dir = rootDir;
 			while (child.children.size() > 0) {
-				dir += child.type() + "/";
+				dir += child.type().replaceAll("\\W+", "_") + "/";
 				child = child.children.get(0);
 			}
 			new File(dir).mkdirs();
-			File file = new File(dir, child.type());
+			File file = new File(dir, child.type().replaceAll("\\W+", "_"));
 
 			graph.export(new PrintStream(new FileOutputStream(file + ".graphml")), true,
-					0, false, true);
+					0, false, true, false);
 			graph.exportGoals(new PrintStream(file + ".txt"));
 		}
 	}

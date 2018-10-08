@@ -9,8 +9,8 @@ import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.datasets.Spring2016;
-import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.parser.Store.Mode;
+import edu.isnap.util.Spreadsheet;
 
 public class CreateGradingBaseSpreadsheet {
 	public static void main(String[] args) throws FileNotFoundException, IOException {
@@ -38,7 +38,7 @@ public class CreateGradingBaseSpreadsheet {
 
 				String link = String.format(
 						"%s?id=%s&assignment=%s&start=%d#%d",
-						baseURL, attempt.id, assignment.name, start, lastSnapshotID);
+						baseURL, attempt.id, attempt.loggedAssignmentID, start, lastSnapshotID);
 				link = String.format("=hyperlink(\"%s\", \"%s\")", link, attempt.id);
 
 				spreadsheet.newRow();

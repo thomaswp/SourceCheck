@@ -1,0 +1,25 @@
+snapshot {
+    stage:Stage {
+        sprite:Sprite {
+            script {
+                receiveGo
+                evaluateCustomBlock(literal)
+            }
+        }
+    }
+    customBlock {
+        script {
+            doDeclareVariables(list(varMenu:length))
+            doSetVar(varMenu:length, literal)
+            down
+            doRepeat(reportProduct(literal:4, var:sides), script {
+                forward(var:length)
+                turn(literal:90)
+                doChangeVar(varMenu:length, literal)
+            })
+            up
+        }
+        varDec:sides
+    }
+    varDec:length
+}

@@ -2,24 +2,23 @@ package edu.isnap.eval.export;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.function.Function;
-import java.util.function.Predicate;
 
 import org.json.JSONObject;
 
-import edu.isnap.ctd.graph.ASTNode;
+import edu.isnap.ctd.graph.Node;
+import edu.isnap.ctd.graph.Node.NodeConstructor;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
-import edu.isnap.datasets.Fall2016;
 import edu.isnap.hint.util.SimpleNodeBuilder;
+import edu.isnap.node.ASTNode;
+import edu.isnap.node.ASTSnapshot;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.BlockDefinition;
@@ -30,9 +29,12 @@ import edu.isnap.parser.elements.LiteralBlock.Type;
 import edu.isnap.parser.elements.Snapshot;
 import edu.isnap.parser.elements.util.Canonicalization;
 import edu.isnap.parser.elements.util.IHasID;
+import edu.isnap.rating.data.Trace;
+import edu.isnap.rating.data.TraceDataset;
 
 public class JsonAST {
 
+	public final static String SNAPSHOT_TYPE = "Snap!shot";
 
 	public final static Set<String> values = new TreeSet<>();
 
@@ -49,9 +51,10 @@ public class JsonAST {
 		valueReplacements.put("Bryson", "name");
 		valueReplacements.put("Ellis", "name");
 		valueReplacements.put("Your name is Bruce", "Your name is name");
+		valueReplacements.put("Sabrina", "name");
 	}
 
-	public static void main(String[] args) throws IOException {
+//	public static void main(String[] args) throws IOException {
 //		Collection<AssignmentAttempt> attempts =
 //				Fall2016.GuessingGame1.load(Mode.Use, false, true,
 //						new SnapParser.LikelySubmittedOnly()).values();
@@ -62,14 +65,14 @@ public class JsonAST {
 //			break;
 //		}
 
-		exportDataset(Fall2016.instance, true, false, Fall2016.LightsCameraAction);
+//		exportDataset(Fall2016.instance, true, false, Fall2016.LightsCameraAction);
 //		exportAssignment(Fall2016.PolygonMaker);
 
 //		for (Assignment assignment : BJCSolutions2017.All) {
 //			Snapshot snapshot = Snapshot.parse(new File(assignment.templateFileBase() + ".xml"));
 //			exportSnapshot(assignment, snapshot);
 //		}
-	}
+//	}
 
 	protected static void exportDataset(Dataset dataset, boolean canon, boolean solutionsOnly,
 			Assignment... exclude) throws FileNotFoundException {
@@ -90,40 +93,43 @@ public class JsonAST {
 
 	public static void exportAllAssignmentTraces(Assignment assignment, boolean canon)
 			throws FileNotFoundException {
-		exportAssignmentTraces(assignment, canon, "all-traces" + (canon ? "-canon" : ""),
-				a -> true, a -> action -> true, a -> a.id);
-	}
-
-	public static void exportAssignmentTraces(Assignment assignment, boolean canon, String folder,
-			Predicate<AssignmentAttempt> attemptFilter,
-			Function<AssignmentAttempt, Predicate<AttemptAction>> actionFilter,
-			Function<AssignmentAttempt, String> namer)
-			throws FileNotFoundException {
-		System.out.println(assignment.name + ": " + folder);
+		TraceDataset dataset = new TraceDataset("all-traces");
 		for (AssignmentAttempt attempt : assignment.load(
 				Mode.Use, false, true, new SnapParser.LikelySubmittedOnly()).values()) {
-			if (!attemptFilter.test(attempt)) continue;
-			String lastJSON = "";
 			System.out.println(attempt.id);
-//			String last = "";
-			int order = 0;
-			Snapshot lastSnapshot = null;
-			for (AttemptAction action : attempt) {
-				if (!actionFilter.apply(attempt).test(action)) continue;
-				if (lastSnapshot == action.lastSnapshot) continue;
-				lastSnapshot = action.lastSnapshot;
-				String json = toJSON(action.lastSnapshot, canon).toString(2);
-				if (json.equals(lastJSON)) continue;
-				lastJSON = json;
-				write(String.format("%s/%s/%05d-%05d.json",
-						assignment.dir("export/" + folder),
-						namer.apply(attempt), order++, action.id), json);
-//				System.out.println(action.id);
-//				System.out.println(Diff.diff(last,
-//						last = SimpleNodeBuilder.toTree(action.snapshot, true).prettyPrint(), 1));
-			}
-//			System.out.println(SimpleNodeBuilder.toTree(attempt.submittedSnapshot, true).prettyPrint());
+			Trace trace = createTrace(attempt, assignment.name, canon, false, null);
+			dataset.addTrace(trace);
 		}
+		String dir = assignment.dir("export/all-traces" + (canon ? "-canon" : "") + "/");
+		dataset.writeToFolder(dir);
+	}
+
+	public static Trace createTrace(AssignmentAttempt attempt, String assignmentID, boolean canon,
+			boolean stripAllNonNumericLits, Integer stopID) {
+		Snapshot lastSnapshot = null;
+		ASTSnapshot lastNode = null;
+		boolean attemptCorrect = attempt.grade != null && attempt.grade.average() == 1;
+		String id = stopID == null ? attempt.id : String.valueOf(stopID);
+		Trace trace = new Trace(id, assignmentID);
+		boolean stop = false;
+		ASTNode correct = null;
+		if (attemptCorrect && attempt.submittedSnapshot != null) {
+			correct = JsonAST.toAST(attempt.submittedSnapshot, canon, stripAllNonNumericLits);
+		}
+		for (AttemptAction action : attempt) {
+			// Set the stop flag when we see the stopID, but only break on the next snapshot
+			if (stopID != null && action.id == stopID) stop = true;
+			if (stop && action.id != stopID) break;
+			if (lastSnapshot == action.lastSnapshot) continue;
+			lastSnapshot = action.lastSnapshot;
+			ASTNode astNode = JsonAST.toAST(action.lastSnapshot, canon, stripAllNonNumericLits);
+			boolean isCorrect = correct != null && astNode.equals(correct);
+			ASTSnapshot snapshot = astNode.toSnapshot(isCorrect, null);
+			if (snapshot.equals(lastNode, true, true)) continue;
+			lastNode = snapshot;
+			trace.add(snapshot);
+		}
+		return trace;
 	}
 
 	protected static void exportAssignmentSolutions(Assignment assignment, boolean canon)
@@ -157,15 +163,28 @@ public class JsonAST {
 	}
 
 	public static ASTNode toAST(Code code, boolean canon) {
+		return toAST(code, canon, false);
+	}
+
+	public static ASTNode toAST(Code code, boolean canon, boolean stripAllNonNumericLits) {
 		String type = code.type(canon);
 		String value = code.value();
 		String id = code instanceof IHasID ? ((IHasID) code).getID() : null;
 
 		if (type.equals("snapshot")) {
-			type = ASTNode.SNAPSHOT_TYPE;
+			type = SNAPSHOT_TYPE;
 		}
 
-		if (code instanceof LiteralBlock && ((LiteralBlock) code).type == Type.Text) {
+		// Scripts really shouldn't have an ID, since it doesn't stay constant over snapshots, but
+		// the current implementation does, and I'm afraid to break something, so we remove it here.
+		if (type.equals("script")) {
+			id = null;
+		}
+
+		// We strip non-numeric values for only text literals, or for all non-variable literals
+		// if the stripAll flag is true
+		if (code instanceof LiteralBlock && ((LiteralBlock) code).type != Type.VarMenu &&
+				(stripAllNonNumericLits || ((LiteralBlock) code).type == Type.Text)) {
 			// Only keep numeric text literal values
 			try {
 				Double.parseDouble(value);
@@ -203,10 +222,29 @@ public class JsonAST {
 					// Skip imported block definitions
 					if (((BlockDefinition) code).isImported) return;
 				}
-				node.addChild(toAST(code, canon));
+				node.addChild(toAST(code, canon, stripAllNonNumericLits));
 			}
 		});
 
+		return node;
+	}
+
+	public static Node toNode(Code code, boolean canon, NodeConstructor constructor) {
+		return toNode(toAST(code, canon), constructor);
+	}
+
+	public static Node toNode(ASTNode astNode, NodeConstructor constructor) {
+		return toNode(astNode, null, constructor);
+	}
+
+	public static Node toNode(ASTNode astNode, Node parent, NodeConstructor constructor) {
+		String type = astNode.type;
+		if (SNAPSHOT_TYPE.equals(type)) type = "snapshot";
+		Node node = constructor.constructNode(parent, type, astNode.value, astNode.id);
+		node.tag = astNode;
+		for (ASTNode child : astNode.children()) {
+			node.children.add(toNode(child, node, constructor));
+		}
 		return node;
 	}
 }

@@ -1,28 +1,17 @@
 package edu.isnap.eval.python;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 import edu.isnap.ctd.graph.Node;
+import edu.isnap.ctd.graph.Node.NodeConstructor;
 import edu.isnap.ctd.hint.HintConfig;
-import edu.isnap.eval.agreement.RateHints.RatingConfig;
+import edu.isnap.eval.python.PythonImport.PythonNode;
+import edu.isnap.rating.RatingConfig;
 
 public class PythonHintConfig extends HintConfig {
 	private static final long serialVersionUID = 1L;
-
-	public static RatingConfig PythongRatingConfig = new RatingConfig() {
-		@Override
-		public boolean useSpecificNumericLiterals() {
-			return true;
-		}
-
-		@Override
-		public boolean trimIfParentIsAdded(String type) {
-			return false;
-		}
-
-		@Override
-		public boolean trimIfChildless(String type) {
-			return false;
-		}
-	};
 
 	public PythonHintConfig() {
 		preprocessSolutions = false;
@@ -35,12 +24,29 @@ public class PythonHintConfig extends HintConfig {
 
 	@Override
 	public boolean hasFixedChildren(Node node) {
-		return node != null && !"list".equals(node.type());
+		return node != null && RatingConfig.Python.hasFixedChildren(node.type(), node.parentType());
 	}
+
+	// No hint should suggest moving lists or most literal types
+	private final Set<String> immobileTypes = new HashSet<>(Arrays.asList(
+			new String[] {
+					"null",
+					"list",
+					"Num",
+					"FormattedValue",
+					"JoinedStr",
+					"Bytes",
+					"Ellipsis",
+					"NamedConstant",
+					"Load",
+					"Store",
+					"Del",
+			}
+	));
 
 	@Override
 	public boolean canMove(Node node) {
-		return node != null && !"list".equals(node.type());
+		return node != null && !immobileTypes.contains(node.type());
 	}
 
 	@Override
@@ -67,19 +73,19 @@ public class PythonHintConfig extends HintConfig {
 				(parent.hasType("UnaryOp") && index == 0) ||
 				(parent.hasType("BoolOp") && index == 0) ||
 				(parent.hasType("Compare") && index == 1) ||
+				(parent.hasType("Call") && index == 0) ||
 				// Children of auto-added lists (e.g. in compare) should also be auto-added
 				(parent.hasType("list") && shouldAutoAdd(parent)) ||
 				node.hasType("Load", "Store", "Del");
 	}
 
-//	@Override
-//	public String getValueMappingClass(Node node) {
-//		if (node == null) return null;
-//		if (node.hasType("FunctionDef")) return node.type();
-//		if (node.hasType("Name", "arg")) {
-//			// Names are not interchangeable if they're values (e.g. foo in foo.bar)
-//			if (node.parentHasType("Attribute")) return null;
-//		}
-//		return null;
-//	}
+	@Override
+	public NodeConstructor getNodeConstructor() {
+		return PythonNode::new;
+	}
+
+	@Override
+	public boolean areNodeIDsConsistent() {
+		return false;
+	}
 }

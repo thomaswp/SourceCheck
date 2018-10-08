@@ -7,7 +7,6 @@ import java.util.List;
 
 import org.apache.commons.csv.CSVFormat;
 
-import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.hint.ConfigurableAssignment;
@@ -27,8 +26,8 @@ public class BJC2017 extends Dataset {
 		}
 
 		@Override
-		public HintConfig getConfig() {
-			HintConfig config = new SnapHintConfig();
+		public SnapHintConfig getConfig() {
+			SnapHintConfig config = new SnapHintConfig();
 			config.progressMissingFactor = 0.1;
 			return config;
 		}

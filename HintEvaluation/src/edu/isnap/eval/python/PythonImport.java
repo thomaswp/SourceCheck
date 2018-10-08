@@ -3,6 +3,7 @@ package edu.isnap.eval.python;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,14 +13,16 @@ import java.util.stream.Collectors;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.edit.EditHint;
-import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.NodeAlignment.Mapping;
 import edu.isnap.ctd.util.NullStream;
-import edu.isnap.ctd.util.map.ListMap;
+import edu.isnap.eval.export.GrammarBuilder;
+import edu.isnap.eval.export.JsonAST;
+import edu.isnap.node.ASTSnapshot;
+import edu.isnap.util.Diff;
+import edu.isnap.util.map.ListMap;
 
 public class PythonImport {
 
@@ -36,10 +39,10 @@ public class PythonImport {
 					nodes.get(assignment).size());
 			}
 		}
-//		GrammarBuilder builder = new GrammarBuilder("python", new HashMap<>());
-//		nodes.values().forEach(listMap -> listMap.values()
-//				.forEach(list -> list.forEach(n -> builder.add(n))));
-//		System.out.println(builder.toJSON());
+		GrammarBuilder builder = new GrammarBuilder("python", new HashMap<>());
+		nodes.values().forEach(listMap -> listMap.values()
+				.forEach(list -> list.forEach(n -> builder.add(n))));
+		System.out.println(builder.toJSON());
 	}
 
 	static void generateHints(String dataDir, String assignment) throws IOException {
@@ -80,7 +83,7 @@ public class PythonImport {
 
 	}
 
-	static Map<String, ListMap<String, PythonNode>> loadAllAssignments(String dataDir)
+	public static Map<String, ListMap<String, PythonNode>> loadAllAssignments(String dataDir)
 			throws IOException {
 		Map<String, ListMap<String, PythonNode>> map = new LinkedHashMap<>();
 		for (File dir : new File(dataDir).listFiles(f -> f.isDirectory())) {
@@ -100,21 +103,21 @@ public class PythonImport {
 				if (!file.getName().endsWith(".json")) continue;
 				PythonNode node;
 				try {
+					String source = null;
+					File sourceFile = new File(studentDir, file.getName().replace(".json", ".py"));
+					if (sourceFile.exists()) {
+						source = new String(Files.readAllBytes(sourceFile.toPath()));
+					}
 					String json = new String(Files.readAllBytes(file.toPath()));
 					JSONObject obj = new JSONObject(json);
-					ASTNode astNode = ASTNode.parse(obj);
-					astNode.autoID("");
-					node = (PythonNode) astNode.toNode(PythonNode::new);
+					ASTSnapshot astNode = ASTSnapshot.parse(obj, source);
+					node = (PythonNode) JsonAST.toNode(astNode, PythonNode::new);
 					if (obj.has("correct")) {
 						boolean correct = obj.getBoolean("correct");
 						node.correct = Optional.of(correct);
 						node.student = student;
 					}
-					File sourceFile = new File(studentDir, file.getName().replace(".json", ".py"));
-					if (sourceFile.exists()) {
-						String source = new String(Files.readAllBytes(sourceFile.toPath()));
-						node.source = source;
-					}
+					node.source = source;
 				} catch (JSONException e) {
 					System.out.println("Error parsing: " + file.getAbsolutePath());
 					e.printStackTrace();
@@ -134,6 +137,11 @@ public class PythonImport {
 		public String student;
 		public String source;
 
+		@SuppressWarnings("unused")
+		private PythonNode() {
+			this(null, null, null, null);
+		}
+
 		public PythonNode(Node parent, String type, String value, String id) {
 			super(parent, type, value, id);
 		}
@@ -143,10 +151,17 @@ public class PythonImport {
 			return new PythonNode(parent, type, value, id);
 		}
 
-		@Override
-		protected boolean nodeTypeHasBody(String type) {
+		public static boolean typeHasBody(String type) {
 			return "list".equals(type);
 		}
 
+		@Override
+		protected boolean nodeTypeHasBody(String type) {
+			return typeHasBody(type);
+		}
+
+		public ASTSnapshot toASTSnapshot() {
+			return super.toASTSnapshot(correct.orElse(false), source);
+		}
 	}
 }

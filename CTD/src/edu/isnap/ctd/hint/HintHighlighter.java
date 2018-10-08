@@ -2,7 +2,6 @@ package edu.isnap.ctd.hint;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -14,12 +13,12 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
 import edu.isnap.ctd.hint.Ordering.Addition;
+import edu.isnap.ctd.hint.Ordering.OrderMatrix;
 import edu.isnap.ctd.hint.debug.HintDebugInfo;
 import edu.isnap.ctd.hint.edit.Deletion;
 import edu.isnap.ctd.hint.edit.EditHint;
@@ -32,9 +31,10 @@ import edu.isnap.ctd.util.NodeAlignment;
 import edu.isnap.ctd.util.NodeAlignment.DistanceMeasure;
 import edu.isnap.ctd.util.NodeAlignment.Mapping;
 import edu.isnap.ctd.util.NodeAlignment.ProgressDistanceMeasure;
-import edu.isnap.ctd.util.map.BiMap;
-import edu.isnap.ctd.util.map.CountMap;
-import edu.isnap.ctd.util.map.ListMap;
+import edu.isnap.util.map.BiMap;
+import edu.isnap.util.map.CountMap;
+import edu.isnap.util.map.ListMap;
+import edu.isnap.ctd.util.NullStream;
 
 public class HintHighlighter {
 
@@ -42,38 +42,44 @@ public class HintHighlighter {
 		Good, Add, Delete, Order, Move, Replaced
 	}
 
-	public PrintStream trace = System.out;
+	public PrintStream trace = NullStream.instance;
 
 	private final List<Node> solutions;
 	private final HintConfig config;
-	private final RuleSet ruleSet;
+	private final HintMap hintMap;
+
 	private final Map<Node, Map<String, Double>> nodePlacementTimes;
-	private final Map<Node, Ordering> nodeOrderings;
 
 	public HintHighlighter(HintMap hintMap) {
-		this(hintMap.solutions, hintMap.ruleSet, hintMap.nodePlacementTimes, hintMap.nodeOrderings,
-				hintMap.config);
+		this(hintMap.solutions, hintMap.config, hintMap);
 	}
 
 	public HintHighlighter(List<Node> solutions, HintConfig config) {
-		this(solutions, null, null, null, config);
+		this(solutions, config, null);
 	}
 
-	public HintHighlighter(List<Node> solutions, RuleSet ruleSet,
-			Map<Node, Map<String, Double>> nodeCreationPercs, Map<Node, Ordering> nodeOrderings,
-			HintConfig config) {
+	public HintHighlighter(List<Node> solutions, HintConfig config, HintMap hintMap) {
+		// Make a copy of the nodePlacementTimes so we can modify them when we replace nodes in the
+		// preprocessSolutions method
+		this.nodePlacementTimes = hintMap == null ? null :
+			new IdentityHashMap<>(hintMap.nodePlacementTimes);
+		if (solutions.isEmpty()) throw new IllegalArgumentException("Solutions cannot be empty");
+		List<Node> solutionsCopy = new ArrayList<>();
+		synchronized (solutions) {
+			for (Node solution : solutions) {
+				solutionsCopy.add(solution.copy());
+			}
+		}
+		solutions = solutionsCopy;
 		this.solutions = config.preprocessSolutions ?
-				preprocessSolutions(solutions, nodeCreationPercs, nodeOrderings, config) :
-					solutions;
-		this.ruleSet = ruleSet;
-		this.nodePlacementTimes = nodeCreationPercs;
-		this.nodeOrderings = nodeOrderings;
+				preprocessSolutions(solutions, config, nodePlacementTimes) : solutions;
 		this.config = config;
+		this.hintMap = hintMap;
 	}
 
 	public HintDebugInfo debugHighlight(Node node) {
 		Mapping mapping = findSolutionMapping(node);
-		List<EditHint> edits = highlight(node, mapping);
+		List<EditHint> edits = highlightWithPriorities(node, mapping);
 		return new HintDebugInfo(mapping, edits);
 	}
 
@@ -84,6 +90,10 @@ public class HintHighlighter {
 
 	public List<EditHint> highlightWithPriorities(Node node) {
 		Mapping mapping = findSolutionMapping(node);
+		return highlightWithPriorities(node, mapping);
+	}
+
+	private List<EditHint> highlightWithPriorities(Node node, Mapping mapping) {
 		List<EditHint> hints = highlight(node, mapping);
 		assignPriorities(mapping, hints);
 		return hints;
@@ -126,40 +136,40 @@ public class HintHighlighter {
 				Highlight highlight = parentMatches ? Highlight.Good : Highlight.Move;
 				colors.put(node, highlight);
 
-				if (highlight == Highlight.Move) {
-					Node moveParent = mapping.getTo(pair.parent);
-					if (moveParent == null) {
-						Insertion insertion = new Insertion(pair.parent, pair, pair.index(),
-								mapping.getMappedValue(node, true), true);
-						insertion.candidate = node;
-						edits.add(insertion);
-					} else {
-						// For those with a matching parent, we need to insert them where
-						// they belong
-						int insertIndex = 0;
-						// Look back through your pair's earlier siblings...
-						for (int i = pair.index() - 1; i >= 0; i--) {
-							Node sibling = pair.parent.children.get(i);
-							// If you can find one with a pair in the moveParent
-							Node siblingPair = mapping.getTo(sibling);
-							if (siblingPair != null && siblingPair.parent == moveParent) {
-								// Set the insert index to right after it
-								insertIndex = siblingPair.index() + 1;
-								break;
-							}
-						}
+				if (!(highlight == Highlight.Move && config.canMove(node))) return;
 
-						Insertion insertion = new Insertion(moveParent, pair, insertIndex,
-								mapping.getMappedValue(node, true));
-						insertion.candidate = node;
-						// If this is a code element parent, inserting the node should replace
-						// the current node at this index
-						if (config.hasFixedChildren(moveParent) &&
-								insertIndex < moveParent.children.size()) {
-							insertion.replaced = moveParent.children.get(insertIndex);
+				Node moveParent = mapping.getTo(pair.parent);
+				if (moveParent == null) {
+					Insertion insertion = new Insertion(pair.parent, pair, pair.index(),
+							mapping.getMappedValue(node, true), true);
+					insertion.candidate = node;
+					edits.add(insertion);
+				} else {
+					// For those with a matching parent, we need to insert them where
+					// they belong
+					int insertIndex = 0;
+					// Look back through your pair's earlier siblings...
+					for (int i = pair.index() - 1; i >= 0; i--) {
+						Node sibling = pair.parent.children.get(i);
+						// If you can find one with a pair in the moveParent
+						Node siblingPair = mapping.getTo(sibling);
+						if (siblingPair != null && siblingPair.parent == moveParent) {
+							// Set the insert index to right after it
+							insertIndex = siblingPair.index() + 1;
+							break;
 						}
-						edits.add(insertion);
 					}
+
+					Insertion insertion = new Insertion(moveParent, pair, insertIndex,
+							mapping.getMappedValue(node, true));
+					insertion.candidate = node;
+					// If this is a code element parent, inserting the node should replace
+					// the current node at this index
+					if (config.hasFixedChildren(moveParent) &&
+							insertIndex < moveParent.children.size()) {
+						insertion.replaced = moveParent.children.get(insertIndex);
+					}
+					edits.add(insertion);
 				}
 			}
 		});
@@ -224,6 +234,7 @@ public class HintHighlighter {
 						pairOrders.put(childPair, index);
 						Node x = toChildren.put(childPair.index(), childPair);
 						if (x != null) {
+							// TODO: This keep happening!
 							// Check for multiple nodes mapped to a single one
 							System.err.println("two: " + childPair);
 						}
@@ -325,10 +336,6 @@ public class HintHighlighter {
 					// It's useful to list these insertions anyway, since it allows us to mark nodes
 					// as Move instead of Delete when they're used in not-yet-added parents
 
-					// This really only makes sense for code elements
-					if (!config.canMove(pair)) return;
-
-
 					Insertion insertion = new Insertion(pair.parent, pair, pair.index(),
 							mapping.getMappedValue(pair, false), true);
 					edits.add(insertion);
@@ -344,7 +351,7 @@ public class HintHighlighter {
 		// If any insert into a script should contain the children of the existing node at that
 		// index, we want to express that as a replacement
 		for (Insertion insertion : extractInsertions(edits)) {
-			addScriptReplacement(insertion, mapping, edits, colors);
+			inferReplacements(insertion, mapping, edits, colors);
 		}
 
 		extractSubedits(edits);
@@ -408,7 +415,7 @@ public class HintHighlighter {
 				if (child == null || child.parentPair != parent.pair) continue;
 
 				// We only use children as subedits if they have a candidate, since otherwise we
-				// would just every hint as a nested hint
+				// would just give every hint as a nested hint
 				boolean insertForCandidate = !parent.missingParent && child.candidate != null;
 				// Also add nodes that should be auto-inserted, but those without candidates
 				// TODO: Somehow insertions without a candidate get through here and show up later
@@ -431,55 +438,68 @@ public class HintHighlighter {
 		return insertions;
 	}
 
-	@SuppressWarnings("deprecation")
-	// TODO: Make not snap-specific
-	private void addScriptReplacement(Insertion insertion, BiMap<Node, Node> mapping,
+	private void inferReplacements(Insertion insertion, BiMap<Node, Node> mapping,
 			List<EditHint> edits, Map<Node, Highlight> colors) {
-
 		// To be eligible for a script replacement, an insertion must have no replacement and have a
 		// script parent with a child at the insertion index
-		if (insertion.replaced != null || !config.isScript(insertion.parent.type()) ||
+		if (insertion.replaced != null || config.hasFixedChildren(insertion.parent) ||
 				insertion.parent.children.size() <= insertion.index) return;
 
 		// Additionally the at the index of insert must be marked for deletion and be of a different
 		// type than the inserted node
 		Node deleted = insertion.parent.children.get(insertion.index);
+		EditHint deletion = edits.stream()
+				.filter(edit -> edit instanceof Deletion && ((Deletion) edit).node == deleted)
+				.findFirst().orElse(null);
 		if (colors.get(deleted) != Highlight.Delete) return;
 		if (deleted.type().equals(insertion.type)) return;
 
-		// Lastly, there must be at least one child node that is paired to a child of the pair node
-		// that is the cause for the insertion
-		List<Node> nodeChildren = deleted.allChildren();
-		List<Node> pairChildren = insertion.pair.allChildren();
-		// Because we're replacing in a script, we may want to keep the original node's children
-		// when we replace it, but it depends on where we find our matches
-		// TODO: This isn't a very comprehensive solution: we really need to deal with children of
-		// moved blocks in a more thorough manner
+//		System.out.println(deleted + " => " + insertion);
+//		edits.stream().filter(edit -> edit.parent == insertion.parent).forEach(System.out::println);
+//		System.out.println("-----");
+
+		// We have a fairly loose standard for children matching. We see if they share any immediate
+		// children with the same type, and if so we match them. (Note that this is a
+		boolean match = false;
 		boolean keepChildren = false;
-		int matches = 0;
-		for (Node n1 : nodeChildren) {
-			// Don't match literals
-			// TODO: This produces empty hints when working with lists or literals
-			if (config.isValueless(n1.type())) continue;
-			for (Node n2 : pairChildren) {
-				if (mapping.getFrom(n1) == n2) {
-					matches++;
-					if (n2.parent == insertion.pair ||
-							(n2.parent != null && config.isScript(n2.parent.type()))) {
-						// If the match comes from a direct child of the pair (or a script that is)
-						// we want to keep the children.
-						keepChildren = true;
-					}
-				}
+		for (Node n1 : deleted.children) {
+			String type1 = n1.type();
+			if (config.isValueless(type1)) continue;
+			for (Node n2 : insertion.pair.children) {
+				if (!n2.hasType(type1)) continue;
+				match = true;
+				keepChildren = true;
+				break;
 			}
 		}
-		if (matches == 0) {
-			return;
+
+		// If all children of the deleted node's parent should be deleted and that parent only
+		// has one child in the selected solution, we treat this as a replacement, under the notion
+		// that this will be more semantically meaningful than a separate insertion and deletion
+		List<Node> deletedSiblings = deleted.parent.children;
+		if (!match && insertion.pair.parent.children.size() == 1 &&
+				mapping.getFrom(deleted.parent) == insertion.pair.parent &&
+				deletedSiblings.stream().allMatch(sib -> colors.get(sib) == Highlight.Delete)) {
+			match = true;
 		}
+
+		// If there are no other edits for this parent besides the insertion and deletion to be
+		// combined, this is likely a replacement
+		if (config.createSingleLineReplacements) {
+			if (!edits.stream().anyMatch(edit ->
+					edit.parent == insertion.parent &&
+					!edit.equals(insertion) &&
+					!edit.equals(deletion))) {
+				match = true;
+			}
+		}
+
+		if (!match) return;
 
 		// In this case, we set the replacement, change the deleted node to replaced and remove the
 		// deletion
 		insertion.replaced = deleted;
+		// For now, we always keep the children, though this may not always be the best choice
 		insertion.keepChildrenInReplacement = keepChildren;
 		colors.put(deleted, Highlight.Replaced);
 
@@ -495,7 +515,7 @@ public class HintHighlighter {
 	}
 
 	public DistanceMeasure getDistanceMeasure() {
-		return new ProgressDistanceMeasure(config);
+		return getDistanceMeasure(config);
 	}
 
 	public static DistanceMeasure getDistanceMeasure(HintConfig config) {
@@ -503,15 +523,11 @@ public class HintHighlighter {
 	}
 
 	public Mapping findSolutionMapping(Node node) {
-		DistanceMeasure dm = getDistanceMeasure(config);
 		long startTime = System.currentTimeMillis();
-		List<Node> filteredSolutions = solutions;
-		if (ruleSet != null) {
-			RuleSet.trace = trace;
-			filteredSolutions = ruleSet.filterSolutions(solutions, node);
-		}
-		Mapping bestMatch = NodeAlignment.findBestMatch(node, filteredSolutions, dm, config);
-		if (bestMatch == null) throw new RuntimeException("No matches!");
+
+		List<Mapping> bestMatchList = findBestMappings(node, 1);
+		if (bestMatchList.size() == 0) throw new RuntimeException("No matches!");
+		Mapping bestMatch = bestMatchList.get(0);
 
 		if (trace != null) {
 			trace.println("------------------------------");
@@ -522,8 +538,18 @@ public class HintHighlighter {
 			trace.println(bestMatch.itemizedCostString());
 			bestMatch.printValueMappings(trace);
 		}
-
 		return bestMatch;
+	}
+
+	private List<Mapping> findBestMappings(Node node, int maxReturned) {
+		DistanceMeasure dm = getDistanceMeasure(config);
+		List<Node> filteredSolutions = solutions;
+		if (hintMap != null && hintMap.ruleSet != null) {
+			RuleSet.trace = trace;
+			filteredSolutions = hintMap.ruleSet.filterSolutions(solutions, node);
+			if (filteredSolutions.size() == 0) throw new RuntimeException("No solutions!");
+		}
+		return NodeAlignment.findBestMatches(node, filteredSolutions, dm, config, maxReturned);
 	}
 
 
@@ -533,10 +559,8 @@ public class HintHighlighter {
 	 */
 	@SuppressWarnings("deprecation")
 	// TODO: Rework to be not snap-specific
-	private static List<Node> preprocessSolutions(List<Node> allSolutions,
-			Map<Node, Map<String, Double>> nodeCreationPercs,
-			Map<Node, Ordering> nodeOrderings,
-			final HintConfig config) {
+	private static List<Node> preprocessSolutions(List<Node> allSolutions, HintConfig config,
+			Map<Node, Map<String, Double>> nodePlacementTimes) {
 
 		// TODO: This doesn't work well with multi-script and multi-sprite solutions
 
@@ -595,10 +619,10 @@ public class HintHighlighter {
 					}
 				}
 			});
-			if (nodeCreationPercs != null) {
+			if (nodePlacementTimes != null) {
 				// Update references to this node in the nodeCreationPercs map
-				nodeCreationPercs.put(copy, nodeCreationPercs.remove(node));
-				nodeOrderings.put(copy, nodeOrderings.remove(node));
+				// Really, we shouldn't be using the Node as the key, but rather some ID...
+				nodePlacementTimes.put(copy, nodePlacementTimes.remove(node));
 			}
 			solutions.add(copy);
 		}
@@ -608,9 +632,6 @@ public class HintHighlighter {
 
 	private void handleInsertionsAndMoves(final IdentityHashMap<Node, Highlight> colors,
 			final List<Insertion> insertions, List<EditHint> edits, Mapping mapping) {
-
-		DistanceMeasure dm = getDistanceMeasure(config);
-
 		List<Deletion> deletions = new LinkedList<>();
 		for (EditHint edit : edits) {
 			if (edit instanceof Deletion) deletions.add((Deletion) edit);
@@ -673,7 +694,8 @@ public class HintHighlighter {
 
 				// Moves are deletions that could be instead moved to perform a needed insertion
 				if (insertion.candidate == null) {
-					double cost = NodeAlignment.getSubCostEsitmate(deleted, insertion.pair, dm);
+					double cost = NodeAlignment.getSubCostEsitmate(
+							deleted, insertion.pair, config, getDistanceMeasure(config));
 					// Ensure that insertions with missing parents are paired last, giving priority
 					// to actionable inserts when assigning candidates
 					if (insertion.missingParent) cost += Double.MAX_VALUE / 2;
@@ -710,9 +732,11 @@ public class HintHighlighter {
 	public void assignPriorities(Mapping bestMatch, List<EditHint> hints) {
 		Node node = bestMatch.from;
 		// TODO: why completely recalculate this?
-		List<Mapping> bestMatches = NodeAlignment.findBestMatches(
-				// TODO: config
-				node, solutions, getDistanceMeasure(), config, 10);
+		List<Mapping> bestMatches = findBestMappings(node, config.votingK);
+
+		if (!bestMatches.stream().anyMatch(m -> m.to == bestMatch.to)) {
+			throw new IllegalArgumentException("bestMatch must be a member of hints");
+		}
 
 		// Get counts of how many times each edit appears in the top matches
 		CountMap<EditHint> hintCounts = new CountMap<>();
@@ -720,6 +744,19 @@ public class HintHighlighter {
 		// Use a set so duplicates from a single target solution don't get double-counted
 		.map(m -> new HashSet<>(highlight(node, m)))
 		.forEach(set -> hintCounts.incrementAll(set));
+
+		for (EditHint hint : hints) {
+			Priority priority = new Priority();
+			priority.consensusNumerator = hintCounts.getCount(hint);
+			priority.consensusDenominator = bestMatches.size();
+			// Numerators should be less than demoninators, and if there's only one best match,
+			// it should always match itself
+			if (priority.consensusNumerator > priority.consensusDenominator ||
+					(priority.consensusNumerator == 1 && priority.consensusNumerator != 1)) {
+				throw new RuntimeException("Inconsistent EditHint equality.");
+			}
+			hint.priority = priority;
+		}
 
 		Map<Mapping, Mapping> bestToGoodMappings = new HashMap<>();
 		if (nodePlacementTimes != null && nodePlacementTimes.containsKey(bestMatch.to)) {
@@ -734,10 +771,6 @@ public class HintHighlighter {
 		}
 
 		for (EditHint hint : hints) {
-			Priority priority = new Priority();
-			priority.consensusNumerator = hintCounts.get(hint);
-			priority.consensusDenominator = bestMatches.size();
-
 			if (nodePlacementTimes != null && nodePlacementTimes.containsKey(bestMatch.to)) {
 				Map<String, Double> creationPercs = nodePlacementTimes.get(bestMatch.to);
 				Node priorityToNode = hint.getPriorityToNode(bestMatch);
@@ -752,41 +785,44 @@ public class HintHighlighter {
 						percs.add(creationPercs.get(from.id));
 					}
 
-					priority.creationTime = percs.stream()
+					hint.priority.creationTime = percs.stream()
 							.filter(d -> d != null).mapToDouble(d -> d)
 							.average();
 				}
 			}
-
-			hint.priority = priority;
 		}
 
-
-		findOrderingPriority(hints, node, bestMatch, bestMatches);
-
+		findOrderingPriority(hints, node, bestMatch);
 	}
 
-	private void findOrderingPriority(List<EditHint> hints, Node node,
-			Mapping bestMatch, List<Mapping> bestMatches) {
-		if (nodeOrderings == null) return;
+	private void findOrderingPriority(List<EditHint> hints, Node node, Mapping bestMatch) {
+		if (hintMap == null || hintMap.orderMatrix == null) return;
 
 		CountMap<String> nodeLabelCounts = Ordering.countLabels(node);
 		CountMap<String> matchLabelCounts = Ordering.countLabels(bestMatch.to);
-		Map<Insertion, Addition> insertionLabels = new HashMap<>();
+		Map<Insertion, Addition> insertionAdditions = new HashMap<>();
 		for (EditHint hint : hints) {
 			if (hint instanceof Insertion) {
 				Insertion insertion = (Insertion) hint;
 				if (insertion.pair == null) {
-					System.out.println("Insertion w/o pair: " + insertion);
+					System.err.println("Insertion w/o pair: " + insertion);
 					continue;
 				}
 				String label = Ordering.getLabel(insertion.pair);
+				// If the label is null, this is not a meaningful node to track the ordering
+				if (label == null) continue;
+
+				if (insertion.replaced != null && insertion.replaced.hasType(insertion.type)) {
+					// If this insertion just replaces a node with the same type, it does not
+					// it will not change the index count
+					continue;
+				}
 
 				// Get the number of times this item appears in the student's code
 				int count = nodeLabelCounts.getCount(label);
 				// If we are inserting without a candidate, this node will increase that count by 1
 				if (insertion.candidate == null ||
-						!Ordering.getLabel(insertion.candidate).equals(label)) {
+						!label.equals(Ordering.getLabel(insertion.candidate))) {
 					count++;
 				}
 				// But do not increase the count beyond the number present in the target solution
@@ -794,84 +830,78 @@ public class HintHighlighter {
 				count = Math.min(count, matchLabelCounts.get(label));
 
 				Addition addition = new Addition(label, count);
-				insertionLabels.put(insertion, addition);
+				insertionAdditions.put(insertion, addition);
 			}
 		}
 
-		List<Insertion> insertions = new ArrayList<>(insertionLabels.keySet());
+		List<Insertion> insertions = new ArrayList<>(insertionAdditions.keySet());
 
+		OrderMatrix matrix = hintMap.orderMatrix;
 		for (Insertion insertion : insertions) {
-			CountMap<Addition> prereqs = new CountMap<>();
-			int total = 0;
-			for (Mapping match : bestMatches) {
-				Ordering ordering = nodeOrderings.get(match.to);
-				List<Addition> precedingAdditions =
-						ordering.getPrecedingAdditions(insertionLabels.get(insertion));
-				prereqs.incrementAll(precedingAdditions);
-				total += precedingAdditions.size();
+			if (!insertionAdditions.containsKey(insertion)) continue;
+
+			List<Addition> additions = matrix.additions();
+			Addition insertAddition = insertionAdditions.get(insertion);
+			int insertIndex = additions.indexOf(insertAddition);
+			if (insertIndex < 0) continue;
+
+			int satisfiedPrereqs = 0;
+			int totalPrereqs = 0;
+			int unsatisfiedPostreqs = 0;
+			int totalPostreqs = 0;
+
+			// TODO config;
+			double threshhold = 0.85;
+
+			for (int i = 0; i < additions.size(); i++) {
+				double percOrdered = matrix.getPercOrdered(i, insertIndex);
+				Addition addition = additions.get(i);
+				if (percOrdered >= threshhold) {
+					if (matchLabelCounts.getCount(addition.label) >= addition.count) {
+						totalPrereqs++;
+						if (nodeLabelCounts.getCount(addition.label) >= addition.count) {
+							satisfiedPrereqs++;
+						}
+					}
+				} else if (percOrdered < 1 - threshhold) {
+					totalPostreqs++;
+					if (nodeLabelCounts.getCount(addition.label) >= addition.count) {
+						unsatisfiedPostreqs++;
+					}
+				}
 			}
 
-			int satisfied = prereqs.keySet().stream()
-					.mapToInt(a -> nodeLabelCounts.getCount(a.label) >= a.count ?
-							prereqs.getCount(a) : 0)
-					.sum();
-
-			double thresh = bestMatches.size() * 0.6;
-			List<Addition> important = prereqs.keySet().stream()
-					.filter(a -> prereqs.getCount(a) >= thresh)
-					.collect(Collectors.toList());
-			total = important.size() + 1;
-			satisfied = important.stream()
-					.mapToInt(a -> nodeLabelCounts.getCount(a.label) >= a.count ? 1 : 0)
-					.sum() + 1;
-
-//			System.out.println(insertion);
-//			important.forEach(System.out::println);
-//			System.out.println();
-			insertion.priority.prereqsNumerator = satisfied;
-			insertion.priority.prereqsDenominator = total;
+			insertion.priority.prereqsNumerator = satisfiedPrereqs;
+			insertion.priority.prereqsDenominator = totalPrereqs;
+			insertion.priority.postreqsNumerator = unsatisfiedPostreqs;
+			insertion.priority.postreqsDenominator = totalPostreqs;
 		}
 
-		calculateOrderingRanks(insertions, bestMatches, insertionLabels);
+		calculateOrderingRanks(insertions, insertionAdditions);
 	}
 
-	private void calculateOrderingRanks(List<Insertion> insertions, List<Mapping> bestMatches,
+	private void calculateOrderingRanks(List<Insertion> insertions,
 			Map<Insertion, Addition> insertionMap) {
-		int n = insertionMap.size(), m = bestMatches.size();
-		int[][] orderings = new int[n][m];
-		double[][] rankings = new double[n][m];
+		if (hintMap == null || hintMap.orderMatrix == null) return;
 
-		for (int i = 0; i < n; i++) {
-			Insertion insertion = insertions.get(i);
-			Addition addition = insertionMap.get(insertion);
+		OrderMatrix matrix = hintMap.orderMatrix;
+		List<Addition> additions = matrix.additions();
+		List<Insertion> orderedInsertions = insertionMap.keySet().stream()
+				.filter(insertion -> additions.contains(insertionMap.get(insertion)))
+				.collect(Collectors.toList());
+		Collections.sort(orderedInsertions, (a, b) -> {
+			Addition additionA = insertionMap.get(a);
+			Addition additionB = insertionMap.get(b);
+			// TODO: I think this may be able to produce inconsistent orderings
+			return matrix.getPercOrdered(
+					additions.indexOf(additionA), additions.indexOf(additionB)) >= 0.50 ?
+							-1 : 1;
+		});
+		for (int i = 0; i < orderedInsertions.size(); i++) {
+			Priority priority = orderedInsertions.get(i).priority;
+			priority.orderingNumerator = i + 1;
+			priority.orderingDenominator = orderedInsertions.size();
 
-			for (int j = 0; j < m; j++) {
-				Mapping mapping = bestMatches.get(j);
-				Ordering ordering = nodeOrderings.get(mapping.to);
-				orderings[i][j] = ordering == null ? -1 : ordering.getOrder(addition);
-			}
-		}
-		for (int j = 0; j < m; j++) {
-			int[] orders = new int[n];
-			for (int i = 0; i < n; i++) {
-				orders[i] = orderings[i][j] == -1 ? Integer.MAX_VALUE : orderings[i][j];
-			}
-			Arrays.sort(orders);
-
-			// Count how many of the inserts were found for this match
-			int valid = ArrayUtils.indexOf(orders, Integer.MAX_VALUE);
-			if (valid == -1) valid = orders.length;
-
-			for (int i = 0; i < n; i++) {
-				int ordering = orderings[i][j];
-				rankings[i][j] = ordering == -1 ? -1 :
-					((double) ArrayUtils.indexOf(orders, ordering) / valid);
-			}
-		}
-		for (int i = 0; i < n; i++) {
-			insertions.get(i).priority.meanOrderingRank = Arrays.stream(rankings[i])
-					.filter(x -> x != -1)
-					.average();
 		}
 	}
 

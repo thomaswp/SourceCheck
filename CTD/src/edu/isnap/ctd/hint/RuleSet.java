@@ -14,8 +14,9 @@ import java.util.stream.Stream;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
-import edu.isnap.ctd.util.map.CountMap;
-import edu.isnap.ctd.util.map.ListMap;
+import edu.isnap.ctd.util.NullStream;
+import edu.isnap.util.map.CountMap;
+import edu.isnap.util.map.ListMap;
 
 public class RuleSet implements Serializable {
 	private static final long serialVersionUID = 1L;
@@ -23,7 +24,7 @@ public class RuleSet implements Serializable {
 	public final HintConfig config;
 	private final List<Disjunction> decisions;
 
-	public static PrintStream trace = System.out;
+	public static PrintStream trace = NullStream.instance;
 
 	@SuppressWarnings("unused")
 	private RuleSet() { this(null, null); }
@@ -179,13 +180,6 @@ public class RuleSet implements Serializable {
 	private void removeDuplicateRulesAndSort(List<Rule> rules) {
 		Collections.sort(rules);
 		int nRules = rules.size();
-		double[][] jaccardMatrix = new double[nRules][nRules];
-		for (int i = 0; i < nRules; i++) {
-			for (int j = i + 1; j < nRules; j++) {
-				jaccardMatrix[i][j] = jaccardMatrix[j][i] =
-						rules.get(i).jaccardDistance(rules.get(j));
-			}
-		}
 		List<Rule> toRemove = new ArrayList<>();
 		for (int i = 0; i < nRules; i++) {
 			for (int j = nRules - 1; j > i; j--) {

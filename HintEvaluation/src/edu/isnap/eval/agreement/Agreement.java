@@ -14,7 +14,6 @@ import edu.isnap.ctd.hint.HintConfig.ValuesPolicy;
 import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.edit.EditHint;
 import edu.isnap.ctd.hint.edit.Insertion;
-import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.NodeAlignment.Mapping;
 import edu.isnap.ctd.util.NullStream;
 import edu.isnap.hint.SnapHintConfig;
@@ -24,6 +23,7 @@ import edu.isnap.parser.elements.Code;
 import edu.isnap.parser.elements.Script;
 import edu.isnap.parser.elements.Snapshot;
 import edu.isnap.parser.elements.util.IHasID;
+import edu.isnap.util.Diff;
 
 public class Agreement {
 
@@ -124,7 +124,7 @@ public class Agreement {
 
 	// Nodes that might get auto-added as parameters to added nodes, which can be pruned away if
 	// they have no children to make comparison between trees simpler
-	final static HashSet<String> prunable = new HashSet<>();
+	private final static HashSet<String> prunable = new HashSet<>();
 	static {
 		for (String c : new String[] {
 				"literal",
@@ -136,25 +136,16 @@ public class Agreement {
 		}
 	}
 
+	public static boolean isPrunable(String type) {
+		return prunable.contains(type);
+	}
+
 	public static Node prune(Node node) {
 		for (int i = 0; i < node.children.size(); i++) {
 			Node child = node.children.get(i);
 			prune(child);
-			if (prunable.contains(child.type()) && child.children.isEmpty()) {
+			if (isPrunable(child.type()) && child.children.isEmpty()) {
 				node.children.remove(i--);
-			}
-		}
-		return node;
-	}
-
-	public static Node pruneImmediateChildren(Node node) {
-		for (int i = 0; i < node.children.size(); i++) {
-			Node child = node.children.get(i);
-			if (prunable.contains(child.type())) {
-				pruneImmediateChildren(child);
-				if (child.children.isEmpty()) {
-					node.children.remove(i--);
-				}
 			}
 		}
 		return node;

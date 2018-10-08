@@ -38,10 +38,10 @@
 	  <version>3.6</version>
 	</dependency>
 	<dependency>
-      <groupId>com.googlecode.java-diff-utils</groupId>
-      <artifactId>diffutils</artifactId>
-      <version>1.3.0</version>
-    </dependency>
+		<groupId>edu.isnap</groupId>
+		<artifactId>rating</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</dependency>
   <!--
   	<dependency>
   		<groupId>rted</groupId>

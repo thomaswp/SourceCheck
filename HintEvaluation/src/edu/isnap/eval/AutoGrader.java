@@ -1,5 +1,6 @@
 package edu.isnap.eval;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -11,8 +12,6 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Grade;
-import edu.isnap.datasets.Fall2015;
-import edu.isnap.datasets.Spring2016;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.Snapshot;
@@ -20,22 +19,40 @@ import edu.isnap.parser.elements.Snapshot;
 public class AutoGrader {
 
 	public static void main(String[] args) throws IOException {
-		Assignment assignments[] = new Assignment[] {
-				Fall2015.GuessingGame1,
-				Spring2016.GuessingGame1
-		};
 
-		for (Assignment assignment : assignments) {
-			System.out.println(assignment);
-			AutoGrader grader = new AutoGrader(assignment);
+		for (File xml : new File("tests").listFiles()) {
+			if (!xml.getName().endsWith(".xml")) return;
+			System.out.println(xml.getName() + ":");
 
-			for (Grader g : graders) {
-				System.out.println(g.name() + ": " + grader.verify(g));
+			Snapshot snapshot = Snapshot.parse(xml);
+			Node node = SimpleNodeBuilder.toTree(snapshot, false);
+
+			for (Grader grader : PolygonGraders) {
+				System.out.println(grader.name() + ": " + grader.pass(node));
 			}
-			System.out.println("\n---------------------\n");
+			System.out.println();
 		}
 
+//		Assignment assignments[] = new Assignment[] {
+//				Fall2015.GuessingGame1,
+//				Spring2016.GuessingGame1
+//		};
+//
+//		for (Assignment assignment : assignments) {
+//			System.out.println(assignment);
+//			AutoGrader grader = new AutoGrader(assignment);
+//
+//			for (Grader g : graders) {
+//				System.out.println(g.name() + ": " + grader.verify(g));
+//			}
+//			System.out.println("\n---------------------\n");
+//		}
+
 	}
+
+	public final static Grader[] PolygonGraders = new Grader[] {
+			new PolygonTest(),
+	};
 
 	public final static Grader[] graders = new Grader[] {
 		new WelcomePlayer(),
@@ -122,6 +139,20 @@ public class AutoGrader {
 	public interface Grader {
 		String name();
 		boolean pass(Node node);
+	}
+
+	public static class PolygonTest implements Grader {
+
+		@Override
+		public String name() {
+			return "test";
+		}
+
+		@Override
+		public boolean pass(Node node) {
+			return node.hasType("snapshot");
+		}
+
 	}
 
 	public static class WelcomePlayer implements Grader {

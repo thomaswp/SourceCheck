@@ -3,12 +3,26 @@ package edu.isnap.ctd.hint;
 import java.io.Serializable;
 
 import edu.isnap.ctd.graph.Node;
+import edu.isnap.ctd.graph.Node.NodeConstructor;
+import edu.isnap.ctd.graph.SimpleNode;
 
 public abstract class HintConfig implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	/**
-	 * Should return true if children of this type have no meaningful order
+	 * Should return true if the hint generator can expect traces to keep consistent node IDs
+	 * between snapshots, i.e. a node with ID 1 in two snapshots is the same node. If false, AST
+	 * diffs will be used to try to infer which nodes are the same between snapshots, which is more
+	 * expensive and less accurate.
+	 */
+	public abstract boolean areNodeIDsConsistent();
+
+	/**
+	 * Should return a constructor for the Node to be used with this config.
+	 */
+	public abstract NodeConstructor getNodeConstructor();
+	/**
+	 * Should return true if children with this type have no meaningful order
 	 */
 	public abstract boolean isOrderInvariant(String type);
 
@@ -95,6 +109,20 @@ public abstract class HintConfig implements Serializable {
 	 */
 	public boolean createSubedits = true;
 
+	// TODO: These two are temporarily configurable and a default should probably be chosen
+	/**
+	 * If true, any single line that has a single insertion and deletion will combine those
+	 * into one replacement.
+	 */
+	public boolean createSingleLineReplacements = false;
+
+	/**
+	 * If true, the distance measure is used to determine child alignment subcost for tie breaking;
+	 * otherwise, a special measure is used which has no cost for deletions and does not count
+	 * valueless nodes.
+	 */
+	public boolean useDeletionsInSubcost = true;
+
 	/**
 	 * Determines how Node values will be used when matching and hinting nodes
 	 */
@@ -102,9 +130,15 @@ public abstract class HintConfig implements Serializable {
 	public enum ValuesPolicy {
 		/** All values are ignored, and only types are used for matching */
 		IgnoreAll,
-		/** Only values in the {@link HintConfig#getValueMappedTypes()} list are used in matching */
+		/**
+		 * Only values in the {@link HintConfig#getValueMappedTypes()} list are used in matching.
+		 * Other values are ignored, with types used instead.
+		 */
 		MappedOnly,
-		/** All values are used when matching nodes, and mapping is used */
+		/**
+		 * All values are used when matching nodes, and a mapping is used for nodes in the
+		 *  {@link HintConfig#getValueMappedTypes()} list.
+		 */
 		MatchAllWithMapping,
 		/** All values are used exactly when matching nodes, and no mapping is used */
 		MatchAllExactly,
@@ -123,6 +157,14 @@ public abstract class HintConfig implements Serializable {
 	 * If true, these solutions came from students and should be preprocessed to remove side-scripts
 	 */
 	public boolean preprocessSolutions = true;
+	/**
+	 * If true, hint priorities will be calculated and used to prioritize more important hints
+	 */
+	public boolean usePriority = true;
+	/**
+	 * The k used when assigning a priority using k-nearest neighbors
+	 */
+	public int votingK = 10;
 
 	// BEGIN old CDT config attributes
 	// TODO: Remove these elements and clean up old CTD algorithm
@@ -238,6 +280,16 @@ public abstract class HintConfig implements Serializable {
 
 		@Override
 		public boolean shouldAutoAdd(Node node) {
+			return false;
+		}
+
+		@Override
+		public NodeConstructor getNodeConstructor() {
+			return SimpleNode::new;
+		}
+
+		@Override
+		public boolean areNodeIDsConsistent() {
 			return false;
 		}
 

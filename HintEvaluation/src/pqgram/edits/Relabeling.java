@@ -27,10 +27,14 @@ public class Relabeling extends Edit {
 	}
 
 	@Override
-	public Node outcome(Map<String, Tree> fromMap, Map<String, Tree> toMap) {
-		if (!fromMap.containsKey(a)) return null;
-		Node copy = fromMap.get(a).tag.copy();
-		copy.setType(bG.getLabel());
-		return copy.root();
+	public Node outcome(Node from) {
+		Node relabeled = aG.tag;
+		if (relabeled.root() != from) {
+			throw new RuntimeException("Relabeled node not in from");
+		}
+
+		Node node = relabeled.copy();
+		node.setType(bG.tag.type());
+		return node;
 	}
 }

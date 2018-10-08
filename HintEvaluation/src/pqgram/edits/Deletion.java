@@ -1,9 +1,6 @@
 package pqgram.edits;
 
-import java.util.Map;
-
 import astrecognition.model.Graph;
-import astrecognition.model.Tree;
 import edu.isnap.ctd.graph.Node;
 
 public class Deletion extends PositionalEdit {
@@ -16,14 +13,28 @@ public class Deletion extends PositionalEdit {
 
 	@Override
 	public String toString() {
-		return String.format(DELETION_STRING, this.lineNumber, this.b, this.a, this.start);
+		return String.format(DELETION_STRING, this.lineNumber, this.bG.getUniqueLabel(), this.aG.getUniqueLabel(), this.start);
+	}
+
+	public Node parentNode() {
+		return aG.tag;
+	}
+
+	public Node deletedNode() {
+		return bG.tag;
 	}
 
 	@Override
-	public Node outcome(Map<String, Tree> fromMap, Map<String, Tree> toMap) {
-		if (!fromMap.containsKey(b)) return null;
-		Node copy = fromMap.get(b).tag.copy();
-		copy.parent.children.remove(copy.index());
-		return copy.root();
+	public Node outcome(Node from) {
+		Node parent = parentNode(), deleted = deletedNode();
+		if (deleted.root() != from) {
+			throw new RuntimeException("Deleted node not in from");
+		}
+		if (deleted.parent != parent) {
+			throw new RuntimeException("Deleted node not child of parent");
+		}
+		Node node = parent.copy();
+		node.children.remove(deleted.index());
+		return node.root();
 	}
 }

@@ -1,6 +1,7 @@
 package edu.isnap.ctd.graph;
 
 import java.io.PrintStream;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -80,7 +81,7 @@ public class InteractionGraph<T> extends Graph<T, Void> {
 			if (edge.isLoop()) continue;
 			counted = true;
 			// Note: e.bR is always 0; we have no reward values on actions
-			newValue += edge.bRelativeWeight * (edge.bR + 0.99 * vertexMap.get(edge.to).bValue);
+			newValue += edge.bRelativeWeight * (0 + 0.99 * vertexMap.get(edge.to).bValue);
 		}
 		if (counted) {
 			v.bValue = Math.round(newValue * 64) / 64.0;
@@ -92,7 +93,8 @@ public class InteractionGraph<T> extends Graph<T, Void> {
 		return value != v.bValue;
 	}
 
-	public void export(PrintStream ps, boolean showLoops, int prune, boolean colorEdges, boolean yEd) {
+	public void export(PrintStream ps, boolean showLoops, int prune, boolean colorEdges,
+			boolean yEd, boolean useValueForArrows) {
 
 		ps.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
 		ps.print("<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\" "
@@ -112,15 +114,15 @@ public class InteractionGraph<T> extends Graph<T, Void> {
 		printAttr(ps, "prob", "edge", "probability", "double");
 		printAttr(ps, "value", "node", "value", "double");
 		printAttr(ps, "best", "edge", "best", "int");
-		printAttr(ps, "ideal", "node", "ideal", "int");
-		printAttr(ps, "start", "node", "start", "int");
+//		printAttr(ps, "ideal", "node", "ideal", "int");
+//		printAttr(ps, "start", "node", "start", "int");
 
 		if (yEd) {
 			ps.println("<key for='node' id='graphics' yfiles.type='nodegraphics'/>");
 			ps.println("<key for='edge' id='edges' yfiles.type='edgegraphics'/>");
 		}
 
-		Set<T> ignoreNs = new HashSet<T>();
+		Set<T> ignoreNs = new HashSet<>();
 		for (Vertex<T> v : vertexMap.values()) {
 			if (v.weight() < prune) ignoreNs.add(v.data);
 		}
@@ -179,11 +181,26 @@ public class InteractionGraph<T> extends Graph<T, Void> {
 
 			String color = "#000000";
 
+			Comparator<Edge<?,?>> edgeComparator;
+			double minValue;
+			if (useValueForArrows) {
+				edgeComparator = Comparator.comparing(e -> vertexMap.get(e.to).bValue);
+				minValue = vertexMap.get(edge.from).bValue;
+			} else {
+				edgeComparator = Comparator.comparing(e -> e.weight);
+				minValue = 0;
+			}
+
+			boolean best = fromMap.containsKey(edge.from) && fromMap.get(edge.from).stream()
+					.filter(e -> !ignoreNs.contains(e.to) && vertexMap.get(e.to).bValue >= minValue)
+					.max(edgeComparator)
+					.orElse(null) == edge;
+
 			String id = "" + i++;
 			ps.printf("<edge id='%s' source='%s' target='%s'>", id, edge.from.hashCode(), edge.to.hashCode());
 			ps.printf("<data key='weightE'>%d</data>", edge.weight);
 			ps.printf("<data key='prob'>%.04f</data>", edge.bRelativeWeight);
-			ps.printf("<data key='best'>%d</data>", edge.bBest ? 1 : 0);
+			ps.printf("<data key='best'>%d</data>", best ? 1 : 0);
 
 			if (yEd) {
 				ps.printf("<data key='edges'><y:PolyLineEdge><y:LineStyle color='%s' type='%s' width='%.02f'/>"
@@ -191,7 +208,7 @@ public class InteractionGraph<T> extends Graph<T, Void> {
 						color,
 						edge.synthetic ? "dashed" : "line",
 						Math.log(edge.weight) + 1,
-						edge.bBest ? "standard" : "transparent_circle");
+						best ? "standard" : "transparent_circle");
 			}
 
 			ps.println("</edge>");

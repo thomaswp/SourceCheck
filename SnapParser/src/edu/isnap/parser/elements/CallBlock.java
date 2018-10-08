@@ -29,12 +29,13 @@ public class CallBlock extends Block {
 	public final List<Block> parameters = new ArrayList<>();
 	public final List<Script> bodies = new ArrayList<>();
 	public final boolean isCustom;
+	public final boolean isImported;
 
 	@Override
 	public String type() {
 		if (isCustom) {
 			// If this is a tool, gets its simplified name; otherwise returns evaluateCustomBlock
-			return BlockDefinition.getCustomBlockCall(name);
+			return BlockDefinition.getCustomBlockCall(name, isImported);
 		}
 		// We treat all non-custom-block calls as unique types
 		return name;
@@ -52,7 +53,7 @@ public class CallBlock extends Block {
 
 	@Override
 	public String value() {
-		if (isCustom && !BlockDefinition.isTool(name)) {
+		if (isCustom && !isImported) {
 			// Only non-tool custom block calls have a value: the name of the custom block called
 			// Other calls return their name as their type
 			return name;
@@ -62,12 +63,13 @@ public class CallBlock extends Block {
 
 	@SuppressWarnings("unused")
 	private CallBlock() {
-		this(null, null, false);
+		this(null, null, false, false);
 	}
 
-	public CallBlock(String type, String id, boolean isCustom) {
+	public CallBlock(String type, String id, boolean isCustom, boolean isImported) {
 		super(type, id);
 		this.isCustom = isCustom;
+		this.isImported = isImported;
 	}
 
 	public static Block parse(Element element) {
@@ -77,10 +79,13 @@ public class CallBlock extends Block {
 					getID(element));
 		}
 
+		String selector = BlockDefinition.normalizeSelector(element.getAttribute("s"));
+		boolean isCustom = element.getTagName().equals("custom-block");
 		CallBlock block = new CallBlock(
-				element.getAttribute("s").replaceAll("%[^(\\s%)]*", "%s"),
+				selector,
 				getID(element),
-				element.getTagName().equals("custom-block"));
+				isCustom,
+				isCustom && BlockDefinition.isImported(selector));
 		for (Code code : XML.getCode(element)) {
 			if (code instanceof Block) {
 				block.parameters.add((Block) code);

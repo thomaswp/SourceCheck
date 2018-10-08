@@ -12,7 +12,7 @@ import edu.isnap.ctd.util.NodeAlignment;
 import edu.isnap.ctd.util.NodeAlignment.DistanceMeasure;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.hint.SnapHintConfig;
-import edu.isnap.hint.util.Spreadsheet;
+import edu.isnap.util.Spreadsheet;
 
 public class ProgressAttributes implements AttributeGenerator {
 
