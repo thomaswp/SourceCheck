@@ -18,8 +18,8 @@ import edu.isnap.eval.AutoGrader.Grader;
 import edu.isnap.eval.PolygonAutoGrader;
 import edu.isnap.eval.TriangleSeriesAutoGrader;
 import edu.isnap.hint.util.SimpleNodeBuilder;
-import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.parser.Store.Mode;
+import edu.isnap.util.Spreadsheet;
 
 public class MTurkProcess {
 	public static void main(String[] args) throws FileNotFoundException, IOException {
