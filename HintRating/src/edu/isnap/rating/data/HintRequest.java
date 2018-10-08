@@ -1,6 +1,6 @@
-package edu.isnap.rating;
+package edu.isnap.rating.data;
 
-import edu.isnap.ctd.graph.ASTSnapshot;
+import edu.isnap.node.ASTSnapshot;
 
 public class HintRequest {
 

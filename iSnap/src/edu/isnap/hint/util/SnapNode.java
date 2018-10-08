@@ -4,9 +4,9 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import edu.isnap.ctd.graph.INode;
 import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.graph.PrettyPrint;
+import edu.isnap.node.INode;
+import edu.isnap.node.PrettyPrint;
 import util.LblTree;
 
 public class SnapNode extends Node {

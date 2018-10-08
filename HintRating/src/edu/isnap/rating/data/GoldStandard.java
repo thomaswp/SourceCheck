@@ -1,4 +1,4 @@
-package edu.isnap.rating;
+package edu.isnap.rating.data;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -14,12 +14,13 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 
-import edu.isnap.ctd.graph.ASTNode;
-import edu.isnap.ctd.util.map.ListMap;
-import edu.isnap.ctd.util.map.MapFactory;
-import edu.isnap.hint.util.Spreadsheet;
-import edu.isnap.rating.TutorHint.Priority;
-import edu.isnap.rating.TutorHint.Validity;
+import edu.isnap.node.ASTNode;
+import edu.isnap.rating.RatingConfig;
+import edu.isnap.rating.data.TutorHint.Priority;
+import edu.isnap.rating.data.TutorHint.Validity;
+import edu.isnap.util.Spreadsheet;
+import edu.isnap.util.map.ListMap;
+import edu.isnap.util.map.MapFactory;
 
 public class GoldStandard {
 

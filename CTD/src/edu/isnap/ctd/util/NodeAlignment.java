@@ -21,11 +21,11 @@ import edu.isnap.ctd.graph.SimpleNode;
 import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.HintConfig.SimpleHintConfig;
 import edu.isnap.ctd.hint.HintConfig.ValuesPolicy;
+import edu.isnap.util.map.BiMap;
+import edu.isnap.util.map.CountMap;
+import edu.isnap.util.map.ListMap;
+import edu.isnap.util.map.MapFactory;
 import edu.isnap.ctd.hint.HintHighlighter;
-import edu.isnap.ctd.util.map.BiMap;
-import edu.isnap.ctd.util.map.CountMap;
-import edu.isnap.ctd.util.map.ListMap;
-import edu.isnap.ctd.util.map.MapFactory;
 
 public class NodeAlignment {
 

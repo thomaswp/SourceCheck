@@ -1,4 +1,4 @@
-package edu.isnap.ctd.util.map;
+package edu.isnap.util.map;
 
 import java.util.HashMap;
 import java.util.Map;

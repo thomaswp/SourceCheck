@@ -7,24 +7,24 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.ctd.hint.edit.EditHint;
 import edu.isnap.ctd.hint.edit.Insertion;
-import edu.isnap.ctd.util.Diff;
-import edu.isnap.ctd.util.Diff.ColorStyle;
 import edu.isnap.ctd.util.Tuple;
-import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.eval.tutor.TutorEdits.PrintableTutorHint;
-import edu.isnap.rating.GoldStandard;
-import edu.isnap.rating.HintOutcome;
-import edu.isnap.rating.HintRequest;
+import edu.isnap.node.ASTNode;
 import edu.isnap.rating.RatingConfig;
-import edu.isnap.rating.Trace;
+import edu.isnap.rating.data.GoldStandard;
+import edu.isnap.rating.data.HintOutcome;
+import edu.isnap.rating.data.HintRequest;
+import edu.isnap.rating.data.Trace;
+import edu.isnap.util.Diff;
+import edu.isnap.util.Diff.ColorStyle;
+import edu.isnap.util.map.ListMap;
 
 public abstract class HighlightHintSet extends HintMapHintSet {
 

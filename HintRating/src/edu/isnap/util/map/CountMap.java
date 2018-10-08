@@ -1,4 +1,4 @@
-package edu.isnap.ctd.util.map;
+package edu.isnap.util.map;
 
 import java.io.PrintStream;
 import java.util.Collection;

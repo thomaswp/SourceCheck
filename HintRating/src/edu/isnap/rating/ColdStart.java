@@ -6,9 +6,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.rating.RateHints.HintRatingSet;
-import edu.isnap.rating.TutorHint.Validity;
+import edu.isnap.rating.data.GoldStandard;
+import edu.isnap.rating.data.HintRequest;
+import edu.isnap.rating.data.HintRequestDataset;
+import edu.isnap.rating.data.HintSet;
+import edu.isnap.rating.data.Trace;
+import edu.isnap.rating.data.TrainingDataset;
+import edu.isnap.rating.data.TutorHint.Validity;
+import edu.isnap.util.Spreadsheet;
 
 public class ColdStart {
 

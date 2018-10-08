@@ -28,7 +28,6 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
 import distance.RTED_InfoTree_Opt;
-import edu.isnap.ctd.graph.ASTNode;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.feature.CodeShapeRule;
 import edu.isnap.ctd.hint.feature.DisjunctionRule;
@@ -36,7 +35,6 @@ import edu.isnap.ctd.hint.feature.Feature;
 import edu.isnap.ctd.hint.feature.PQGram;
 import edu.isnap.ctd.hint.feature.PQGramRule;
 import edu.isnap.ctd.util.Alignment;
-import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
@@ -44,9 +42,11 @@ import edu.isnap.datasets.Fall2016;
 import edu.isnap.datasets.aggregate.CSC200;
 import edu.isnap.eval.util.PrintUpdater;
 import edu.isnap.hint.util.SimpleNodeBuilder;
-import edu.isnap.hint.util.Spreadsheet;
+import edu.isnap.node.ASTNode;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
+import edu.isnap.util.Spreadsheet;
+import edu.isnap.util.map.ListMap;
 import util.LblTree;
 
 @SuppressWarnings("unused")

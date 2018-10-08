@@ -1,10 +1,11 @@
-package edu.isnap.rating;
+package edu.isnap.rating.data;
 
 import java.util.Comparator;
 import java.util.EnumSet;
 
-import edu.isnap.ctd.graph.ASTNode;
-import edu.isnap.ctd.util.Diff;
+import edu.isnap.node.ASTNode;
+import edu.isnap.rating.RatingConfig;
+import edu.isnap.util.Diff;
 
 public class TutorHint implements Comparable<TutorHint> {
 

@@ -13,16 +13,16 @@ import java.util.stream.Collectors;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import edu.isnap.ctd.graph.ASTSnapshot;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.edit.EditHint;
-import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.NodeAlignment.Mapping;
 import edu.isnap.ctd.util.NullStream;
-import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.eval.export.GrammarBuilder;
 import edu.isnap.eval.export.JsonAST;
+import edu.isnap.node.ASTSnapshot;
+import edu.isnap.util.Diff;
+import edu.isnap.util.map.ListMap;
 
 public class PythonImport {
 

@@ -10,7 +10,7 @@ public class RunParseSubmitted {
 //		for (Assignment assignment : Spring2017.All) {
 //			ParseSubmitted.parseSubmitted(assignment);
 //		}
-		ParseSubmitted.parseSubmitted(Spring2018.GuessingGame2Lab);
+		ParseSubmitted.parseSubmitted(Spring2018.SquiralObjectives);
 //		ParseSubmitted.printToGrade(Fall2015.GuessingGame1);
 	}
 }

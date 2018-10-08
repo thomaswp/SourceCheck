@@ -1,4 +1,4 @@
-package edu.isnap.ctd.util;
+package edu.isnap.util;
 
 import java.util.Arrays;
 import java.util.List;
@@ -61,7 +61,9 @@ public class Diff {
 					String added = revisedLines.get(i);
 					String[] s1 = split(deleted.trim(), splitRegex);
 					String[] s2 = split(added.trim(), splitRegex);
-					if (Alignment.alignCost(s1, s2) < deleted.trim().length() * 0.5) {
+					int changes = DiffUtils.diff(Arrays.asList(s1), Arrays.asList(s2))
+							.getDeltas().stream().mapToInt(d -> d.getOriginal().size()).sum();
+					if (changes <= s1.length * 0.5) {
 						out += "~ ";
 						for (int j = 0; j < added.length(); j++) {
 							char c = added.charAt(j);

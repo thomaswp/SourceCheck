@@ -8,13 +8,13 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.util.map.CountMap;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.datasets.aggregate.CSC200;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
+import edu.isnap.util.map.CountMap;
 
 public class Overlap {
 

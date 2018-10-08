@@ -9,8 +9,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import edu.isnap.ctd.hint.HintConfig;
-import edu.isnap.ctd.util.Diff;
-import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.datasets.CSC200Solutions;
@@ -19,19 +17,21 @@ import edu.isnap.datasets.Fall2017;
 import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.python.PythonHintConfig;
 import edu.isnap.hint.SnapHintConfig;
-import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.rating.ColdStart;
 import edu.isnap.rating.ColdStart.HintGenerator;
-import edu.isnap.rating.GoldStandard;
-import edu.isnap.rating.HintRequestDataset;
-import edu.isnap.rating.HintSet;
 import edu.isnap.rating.RateHints;
 import edu.isnap.rating.RateHints.HintRatingSet;
+import edu.isnap.rating.data.GoldStandard;
+import edu.isnap.rating.data.HintRequestDataset;
+import edu.isnap.rating.data.HintSet;
+import edu.isnap.rating.data.TraceDataset;
+import edu.isnap.rating.data.TrainingDataset;
+import edu.isnap.rating.data.TutorHint;
+import edu.isnap.rating.data.TutorHint.Validity;
 import edu.isnap.rating.RatingConfig;
-import edu.isnap.rating.TraceDataset;
-import edu.isnap.rating.TrainingDataset;
-import edu.isnap.rating.TutorHint;
-import edu.isnap.rating.TutorHint.Validity;
+import edu.isnap.util.Diff;
+import edu.isnap.util.Spreadsheet;
+import edu.isnap.util.map.ListMap;
 
 @SuppressWarnings("unused")
 public class RunTutorEdits extends TutorEdits {
@@ -51,13 +51,15 @@ public class RunTutorEdits extends TutorEdits {
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
 		RatingDataset dataset = iSnapF16F17;
-		dataset = ITAPS16;
+//		dataset = ITAPS16;
 		Source source = Source.StudentData;
 		HintAlgorithm algorithm = CTD;
 		boolean debug = false;
 		boolean writeHints = false;
 
 		writeAllHintSets(iSnapF16F17, ITAPS16);
+
+//		dataset.runHintRating(algorithm, source, debug, writeHints);
 
 //		dataset.exportTrainingAndTestData(true);
 //		dataset.writeGoldStandard();
@@ -68,7 +70,6 @@ public class RunTutorEdits extends TutorEdits {
 //		dataset.verifyGoldStandard();
 //		dataset.printData();
 
-//		dataset.runHintRating(algorithm, source, debug, writeHints);
 //		dataset.runTutorHintBenchmarks(debug);
 //		dataset.writeTutorHintBenchmark();
 

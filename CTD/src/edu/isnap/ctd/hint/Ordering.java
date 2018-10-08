@@ -14,8 +14,8 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.util.map.CountMap;
-import edu.isnap.ctd.util.map.MapFactory;
+import edu.isnap.util.map.CountMap;
+import edu.isnap.util.map.MapFactory;
 
 public class Ordering {
 

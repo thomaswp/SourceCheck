@@ -1,10 +1,10 @@
-package edu.isnap.ctd.graph;
+package edu.isnap.node;
 
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.function.Consumer;
 
-import edu.isnap.ctd.util.map.BiMap;
+import edu.isnap.util.map.BiMap;
 
 public class CodeAlignment {
 

@@ -11,9 +11,9 @@ import edu.isnap.ctd.graph.Node.Action;
 import edu.isnap.ctd.graph.vector.VectorState;
 import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.HintMap;
-import edu.isnap.ctd.util.map.ListMap;
 import edu.isnap.dataset.AssignmentAttempt;
-import edu.isnap.hint.util.Spreadsheet;
+import edu.isnap.util.Spreadsheet;
+import edu.isnap.util.map.ListMap;
 
 public class RootPathAttributes implements AttributeGenerator {
 

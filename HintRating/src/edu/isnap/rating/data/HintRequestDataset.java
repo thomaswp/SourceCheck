@@ -1,4 +1,4 @@
-package edu.isnap.rating;
+package edu.isnap.rating.data;
 
 import java.io.IOException;
 import java.util.ArrayList;

@@ -8,8 +8,8 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.datasets.Fall2017;
-import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.parser.Store.Mode;
+import edu.isnap.util.Spreadsheet;
 
 public class CreateStartTimesSpreadsheet {
 
