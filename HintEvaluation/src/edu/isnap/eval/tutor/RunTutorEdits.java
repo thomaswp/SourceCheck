@@ -50,7 +50,7 @@ public class RunTutorEdits extends TutorEdits {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
-		RatingDataset dataset = iSnapF16F17;
+		RatingDataset dataset = iSnapF16S17;
 //		dataset = ITAPS16;
 		Source source = Source.StudentData;
 		HintAlgorithm algorithm = CTD;
@@ -59,10 +59,10 @@ public class RunTutorEdits extends TutorEdits {
 
 //		writeAllHintSets(iSnapF16F17, ITAPS16);
 
-		dataset.runHintRating(algorithm, source, debug, writeHints);
+//		dataset.runHintRating(algorithm, source, debug, writeHints);
 
 //		dataset.exportTrainingAndTestData(true);
-//		dataset.writeGoldStandard();
+		dataset.writeGoldStandard();
 //		dataset.analyzeGoldStandard();
 //		dataset.writeHintSet(algorithm, source);
 
