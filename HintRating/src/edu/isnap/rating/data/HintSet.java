@@ -1,4 +1,4 @@
-package edu.isnap.rating;
+package edu.isnap.rating.data;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,9 +12,10 @@ import java.util.stream.Collectors;
 
 import org.json.JSONObject;
 
-import edu.isnap.ctd.graph.ASTNode;
-import edu.isnap.ctd.util.map.ListMap;
-import edu.isnap.rating.HintOutcome.HintWithError;
+import edu.isnap.node.ASTNode;
+import edu.isnap.rating.RatingConfig;
+import edu.isnap.rating.data.HintOutcome.HintWithError;
+import edu.isnap.util.map.ListMap;
 
 public class HintSet {
 

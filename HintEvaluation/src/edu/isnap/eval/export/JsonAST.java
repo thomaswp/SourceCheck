@@ -10,8 +10,6 @@ import java.util.TreeSet;
 
 import org.json.JSONObject;
 
-import edu.isnap.ctd.graph.ASTNode;
-import edu.isnap.ctd.graph.ASTSnapshot;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.NodeConstructor;
 import edu.isnap.dataset.Assignment;
@@ -19,6 +17,8 @@ import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.hint.util.SimpleNodeBuilder;
+import edu.isnap.node.ASTNode;
+import edu.isnap.node.ASTSnapshot;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.BlockDefinition;
@@ -29,8 +29,8 @@ import edu.isnap.parser.elements.LiteralBlock.Type;
 import edu.isnap.parser.elements.Snapshot;
 import edu.isnap.parser.elements.util.Canonicalization;
 import edu.isnap.parser.elements.util.IHasID;
-import edu.isnap.rating.Trace;
-import edu.isnap.rating.TraceDataset;
+import edu.isnap.rating.data.Trace;
+import edu.isnap.rating.data.TraceDataset;
 
 public class JsonAST {
 

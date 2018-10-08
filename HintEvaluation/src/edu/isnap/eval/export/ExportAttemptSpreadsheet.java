@@ -11,9 +11,9 @@ import edu.isnap.datasets.Fall2016;
 import edu.isnap.datasets.Fall2017;
 import edu.isnap.datasets.Spring2016;
 import edu.isnap.datasets.Spring2017;
-import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
+import edu.isnap.util.Spreadsheet;
 
 public class ExportAttemptSpreadsheet {
 

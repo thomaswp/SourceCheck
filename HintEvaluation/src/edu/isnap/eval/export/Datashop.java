@@ -13,7 +13,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.util.map.DoubleMap;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
@@ -33,6 +32,7 @@ import edu.isnap.parser.elements.Snapshot;
 import edu.isnap.parser.elements.VarBlock;
 import edu.isnap.parser.elements.util.Canonicalization;
 import edu.isnap.parser.elements.util.IHasID;
+import edu.isnap.util.map.DoubleMap;
 
 public class Datashop {
 

@@ -35,9 +35,9 @@ import edu.isnap.eval.AutoGrader;
 import edu.isnap.eval.AutoGrader.Grader;
 import edu.isnap.eval.util.Prune;
 import edu.isnap.hint.util.SimpleNodeBuilder;
-import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.Snapshot;
+import edu.isnap.util.Spreadsheet;
 import util.LblTree;
 
 public class CheckHintUsage {

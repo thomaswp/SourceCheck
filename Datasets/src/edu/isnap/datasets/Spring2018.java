@@ -19,10 +19,10 @@ import org.apache.commons.csv.CSVRecord;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.Dataset;
-import edu.isnap.hint.util.Spreadsheet;
 import edu.isnap.parser.SnapParser.Filter;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.Snapshot;
+import edu.isnap.util.Spreadsheet;
 
 //TODO: Check for students starting on different assignments
 public class Spring2018 extends Dataset {

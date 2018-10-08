@@ -1,4 +1,4 @@
-package edu.isnap.rating;
+package edu.isnap.rating.data;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,7 +10,8 @@ import java.util.Map;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.json.JSONObject;
 
-import edu.isnap.ctd.graph.ASTNode;
+import edu.isnap.node.ASTNode;
+import edu.isnap.rating.RatingConfig;
 
 public class HintOutcome implements Comparable<HintOutcome> {
 

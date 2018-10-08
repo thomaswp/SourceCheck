@@ -11,18 +11,18 @@ import org.apache.commons.collections4.Bag;
 
 import costmodel.CostModel;
 import distance.APTED;
-import edu.isnap.ctd.graph.ASTNode;
-import edu.isnap.ctd.graph.ASTSnapshot;
-import edu.isnap.ctd.util.map.ListMap;
-import edu.isnap.hint.util.Spreadsheet;
+import edu.isnap.node.ASTNode;
+import edu.isnap.node.ASTSnapshot;
 import edu.isnap.rating.EditExtractor;
 import edu.isnap.rating.EditExtractor.Edit;
-import edu.isnap.rating.GoldStandard;
-import edu.isnap.rating.HintRequestDataset;
+import edu.isnap.rating.data.GoldStandard;
+import edu.isnap.rating.data.HintRequestDataset;
+import edu.isnap.rating.data.Trace;
+import edu.isnap.rating.data.TrainingDataset;
+import edu.isnap.rating.data.TutorHint;
+import edu.isnap.util.Spreadsheet;
+import edu.isnap.util.map.ListMap;
 import edu.isnap.rating.RatingConfig;
-import edu.isnap.rating.Trace;
-import edu.isnap.rating.TrainingDataset;
-import edu.isnap.rating.TutorHint;
 import node.Node;
 
 public class GSAnalysis {

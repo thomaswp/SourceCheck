@@ -16,7 +16,7 @@ import edu.isnap.ctd.hint.HintMapBuilder;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.SnapHintConfig;
-import edu.isnap.rating.HintRequest;
+import edu.isnap.rating.data.HintRequest;
 import edu.isnap.template.parse.TemplateParser;
 
 public class TemplateHighlightHintSet extends HighlightHintSet {

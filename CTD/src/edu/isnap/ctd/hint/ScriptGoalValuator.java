@@ -8,8 +8,8 @@ import java.util.List;
 import edu.isnap.ctd.graph.vector.VectorState;
 import edu.isnap.ctd.util.KMedoids;
 import edu.isnap.ctd.util.KMedoids.DistanceMeasure;
-import edu.isnap.ctd.util.map.CountMap;
-import edu.isnap.ctd.util.map.ListMap;
+import edu.isnap.util.map.CountMap;
+import edu.isnap.util.map.ListMap;
 
 // Currently not using this since, while it adds some value, it also adds disproportionately more
 // complexity to the algorithm and it's just too much to maintain. Also, I think much of the

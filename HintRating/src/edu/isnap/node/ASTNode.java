@@ -1,4 +1,4 @@
-package edu.isnap.ctd.graph;
+package edu.isnap.node;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,9 +14,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import edu.isnap.ctd.graph.PrettyPrint.Params;
-import edu.isnap.ctd.util.Diff;
+import edu.isnap.node.PrettyPrint.Params;
 import edu.isnap.rating.RatingConfig;
+import edu.isnap.util.Diff;
 
 public class ASTNode implements INode {
 

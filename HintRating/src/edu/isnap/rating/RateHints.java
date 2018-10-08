@@ -16,14 +16,18 @@ import org.apache.commons.collections4.Bag;
 import org.apache.commons.collections4.bag.TreeBag;
 import org.apache.commons.lang.StringUtils;
 
-import edu.isnap.ctd.graph.ASTNode;
-import edu.isnap.ctd.util.Diff;
-import edu.isnap.ctd.util.Diff.ColorStyle;
-import edu.isnap.hint.util.Spreadsheet;
+import edu.isnap.node.ASTNode;
 import edu.isnap.rating.EditExtractor.Deletion;
 import edu.isnap.rating.EditExtractor.Edit;
-import edu.isnap.rating.TutorHint.Priority;
-import edu.isnap.rating.TutorHint.Validity;
+import edu.isnap.rating.data.GoldStandard;
+import edu.isnap.rating.data.HintOutcome;
+import edu.isnap.rating.data.HintSet;
+import edu.isnap.rating.data.TutorHint;
+import edu.isnap.rating.data.TutorHint.Priority;
+import edu.isnap.rating.data.TutorHint.Validity;
+import edu.isnap.util.Diff;
+import edu.isnap.util.Spreadsheet;
+import edu.isnap.util.Diff.ColorStyle;
 
 public class RateHints {
 
@@ -104,13 +108,18 @@ public class RateHints {
 				// Create an initial list of hints that are not matched to a tutor hint
 				List<HintOutcome> unmatchedHints = new ArrayList<>(hintSet.getOutcomes(requestID));
 
-				// TODO: Make this a flag to use only the top-weighted hints
-//				double maxWeight = unmatchedHints.stream().mapToDouble(h -> h.weight()).max().orElse(0);
-//				unmatchedHints = unmatchedHints.stream().filter(h -> h.weight() == maxWeight).collect(Collectors.toList());
-//				int nHints = unmatchedHints.size();
-//				unmatchedHints = unmatchedHints.stream()
-//						.map(h -> new HintOutcome(h.result, h.assignmentID, h.requestID, 1.0 / nHints))
-//						.collect(Collectors.toList());
+				// A config can specify that only the best hint(s) should be evaluated
+				if (config.rateOnlyTopWeightedHints()) {
+					double maxWeight = unmatchedHints.stream()
+							.mapToDouble(h -> h.weight()).max().orElse(0);
+					unmatchedHints = unmatchedHints.stream()
+							.filter(h -> h.weight() == maxWeight).collect(Collectors.toList());
+					int nHints = unmatchedHints.size();
+					unmatchedHints = unmatchedHints.stream()
+							.map(h -> new HintOutcome(
+									h.result, h.assignmentID, h.requestID, 1.0 / nHints))
+							.collect(Collectors.toList());
+				}
 
 				// First find full matches and remove any hints that match
 				for (int i = 0; i < unmatchedHints.size(); i++) {

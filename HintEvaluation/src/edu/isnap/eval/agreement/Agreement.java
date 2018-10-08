@@ -14,7 +14,6 @@ import edu.isnap.ctd.hint.HintConfig.ValuesPolicy;
 import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.edit.EditHint;
 import edu.isnap.ctd.hint.edit.Insertion;
-import edu.isnap.ctd.util.Diff;
 import edu.isnap.ctd.util.NodeAlignment.Mapping;
 import edu.isnap.ctd.util.NullStream;
 import edu.isnap.hint.SnapHintConfig;
@@ -24,6 +23,7 @@ import edu.isnap.parser.elements.Code;
 import edu.isnap.parser.elements.Script;
 import edu.isnap.parser.elements.Snapshot;
 import edu.isnap.parser.elements.util.IHasID;
+import edu.isnap.util.Diff;
 
 public class Agreement {
 

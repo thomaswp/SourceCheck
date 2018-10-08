@@ -1,4 +1,4 @@
-package edu.isnap.ctd.graph;
+package edu.isnap.node;
 
 import java.util.List;
 import java.util.function.Predicate;

@@ -1,4 +1,4 @@
-package edu.isnap.rating;
+package edu.isnap.rating.data;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -23,10 +23,11 @@ import org.apache.commons.csv.CSVRecord;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import edu.isnap.ctd.graph.ASTNode;
-import edu.isnap.ctd.graph.ASTSnapshot;
-import edu.isnap.ctd.util.map.ListMap;
-import edu.isnap.hint.util.Spreadsheet;
+import edu.isnap.node.ASTNode;
+import edu.isnap.node.ASTSnapshot;
+import edu.isnap.rating.RatingConfig;
+import edu.isnap.util.Spreadsheet;
+import edu.isnap.util.map.ListMap;
 
 public class TraceDataset {
 

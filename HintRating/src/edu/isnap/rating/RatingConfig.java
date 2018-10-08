@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import edu.isnap.ctd.graph.ASTNode;
+import edu.isnap.node.ASTNode;
 
 public interface RatingConfig {
 
@@ -47,6 +47,16 @@ public interface RatingConfig {
 	 * normalized value. Otherwise, it should return the given value.
 	 */
 	public String normalizeNodeValue(String type, String value);
+
+	/**
+	 * Should return true if the hint rating should consider only the algorithm's highest-weighted
+	 * hints and ignore all others. This essentially forces algorithms to choose a best hint, rather
+	 * than weighting all hints. However, if weights are even, multiple hints will still be
+	 * evaluated.
+	 */
+	public default boolean rateOnlyTopWeightedHints() {
+		return false;
+	}
 
 	public final static RatingConfig Default = new RatingConfig() {
 

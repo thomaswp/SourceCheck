@@ -2,31 +2,20 @@ package edu.isnap.rating;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.IdentityHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.Bag;
 import org.apache.commons.collections4.bag.TreeBag;
-import org.apache.commons.lang.ObjectUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
-import costmodel.CostModel;
-import distance.APTED;
-import edu.isnap.ctd.graph.ASTNode;
-import edu.isnap.ctd.graph.CodeAlignment;
-import edu.isnap.ctd.graph.CodeAlignment.NodePairs;
-import edu.isnap.ctd.util.map.BiMap;
-import edu.isnap.hint.util.Spreadsheet;
+import edu.isnap.node.ASTNode;
+import edu.isnap.node.CodeAlignment;
+import edu.isnap.node.CodeAlignment.NodePairs;
+import edu.isnap.util.Spreadsheet;
+import edu.isnap.util.map.BiMap;
 import node.Node;
 
 public class EditExtractor {
@@ -41,42 +30,8 @@ public class EditExtractor {
 	}
 
 	public Bag<Edit> getEdits(ASTNode from, ASTNode to) {
-		// TODO: would be good to reimplement caching
 		return extractEditsUsingCodeAlign(from, to);
 	}
-
-	private static CostModel<ASTNode> costModel = new CostModel<ASTNode>() {
-		@Override
-		public float ren(Node<ASTNode> nodeA, Node<ASTNode> nodeB) {
-			// If the nodes are equal, there is no cost to "rename"
-			if (nodeA.getNodeData().shallowEquals(nodeB.getNodeData(), false)) {
-				return 0;
-			}
-
-			// If the Nodes are not equal but of the same type, they should always be renamed, but
-			// it is not completely free
-			if (StringUtils.equals(nodeA.getNodeData().type(), nodeB.getNodeData().type())) {
-				return 0.1f;
-			}
-
-			// This was useful when comparing the ID-based and TED-based methods, but if we're using
-			// TED, the IDs aren't reliable, so they certainly shouldn't be used here
-//			if (StringUtils.equals(nodeA.getNodeData().id, nodeB.getNodeData().id)) return 0.1f;
-
-			// Otherwise, renaming should be more expensive than insertion/deletion
-			return 2.1f;
-		}
-
-		@Override
-		public float ins(Node<ASTNode> node) {
-			return 1f;
-		}
-
-		@Override
-		public float del(Node<ASTNode> node) {
-			return 1f;
-		}
-	};
 
 	public static Node<ASTNode> toNode(ASTNode astNode) {
 		Node<ASTNode> node = new Node<>(astNode);
@@ -86,17 +41,6 @@ public class EditExtractor {
 			}
 		}
 		return node;
-	}
-
-	private static List<ASTNode> postOrderList(ASTNode node, List<ASTNode> list) {
-		for (ASTNode child : node.children()) postOrderList(child, list);
-		list.add(node);
-		return list;
-	}
-
-	private static ASTNode readPair(List<ASTNode> list, int index) {
-		if (index == 0) return null;
-		return list.get(index - 1);
 	}
 
 	public static void printEditsComparison(Bag<Edit> editsA, Bag<Edit> editsB,
@@ -158,7 +102,7 @@ public class EditExtractor {
 	private static NodePairs getPairs(ASTNode from, ASTNode to) {
 		// Make renames as expensive as an insert/delete to require at least 1 child match
 		// before it will be cheaper to rename.
-		// TODO: There are some tradeoffs with using 1 or 2 in the second value
+		// TODO: There are some tradeoffs with using 1 or 2 in the second value; should explore
 		NodePairs pairs = new CodeAlignment(1, 2).align(from, to);
 		return pairs;
 	}
@@ -176,240 +120,6 @@ public class EditExtractor {
 		return inserted;
 	}
 
-	// TODO: Remove APTED, etc.
-	public static Set<Edit> extractEditsUsingTED(ASTNode fromAST, ASTNode toAST) {
-		Node<ASTNode> from = toNode(fromAST), to = toNode(toAST);
-		APTED<CostModel<ASTNode>, ASTNode> apted = new APTED<>(costModel);
-		apted.computeEditDistance(from, to);
-		LinkedList<int[]> editMapping = apted.computeEditMapping();
-		List<ASTNode> fromChildren = postOrderList(from.getNodeData(), new ArrayList<>());
-		List<ASTNode> toChildren = postOrderList(to.getNodeData(), new ArrayList<>());
-		Set<Edit> edits = new TreeSet<>();
-		BiMap<ASTNode, ASTNode> mapping = new BiMap<>(IdentityHashMap::new);
-		for (int[] pair : editMapping) {
-			ASTNode fromPair = readPair(fromChildren, pair[0]);
-			ASTNode toPair = readPair(toChildren, pair[1]);
-			if (fromPair != null && toPair != null) mapping.put(fromPair, toPair);
-		}
-		List<ASTNode> inserted = new ArrayList<>();
-		List<ASTNode> deleted = new ArrayList<>();
-		// First go through every pair and insert the new ones, delete the missing ones and do both
-		// for the relabeled ones
-		for (int[] pair : editMapping) {
-			ASTNode fromPair = readPair(fromChildren, pair[0]);
-			ASTNode toPair = readPair(toChildren, pair[1]);
-			if (fromPair == null) {
-				edits.add(new Insertion(getReferenceAsChildren(toPair)));
-				inserted.add(toPair);
-			} else if (toPair == null) {
-				edits.add(new Deletion(getReferenceAsChildren(fromPair)));
-				deleted.add(fromPair);
-			} else if (!fromPair.shallowEquals(toPair, false)) {
-				edits.add(new Deletion(getReferenceAsChildren(fromPair)));
-				edits.add(new Insertion(getReferenceAsChildren(toPair)));
-			}
-		}
-		// Next for through the children of any inserted node and mark them as inserted (and any
-		// pair as deleted). This will only effect nodes inserted in between two nodes, as TED
-		// insertions can do. Since AST edits rarely ever do this, we assume these matched children
-		// are not actually matched, and treat them as insertions/deletions, the same way we treat
-		// moves as insertions/deletions in the ID-based code below. The only danger here is that
-		// a deletion can match an insertion partially, but that is always a danger with partial
-		// matching.
-		for (ASTNode toNode : inserted) {
-			if (toNode.children().isEmpty()) continue;
-			toNode.recurse((child) -> {
-				if (child == toNode) return;
-				edits.add(new Insertion(getReferenceAsChildren(child)));
-				ASTNode fromChild = mapping.getTo(child);
-				if (fromChild != null) {
-					edits.add(new Deletion(getReferenceAsChildren(fromChild)));
-				}
-			});
-		}
-		// Similarly, the children of any deleted nodes should be considered deleted as well.
-		for (ASTNode fromNode : deleted) {
-			if (fromNode.children().isEmpty()) continue;
-			fromNode.recurse((child) -> {
-				if (child == fromNode) return;
-				edits.add(new Deletion(getReferenceAsChildren(child)));
-				ASTNode toChild = mapping.getFrom(child);
-				if (toChild != null) {
-					edits.add(new Insertion(getReferenceAsChildren(toChild)));
-				}
-			});
-		}
-		return edits;
-	}
-
-	public static Set<Edit> extractEditsUsingIDs(ASTNode from, ASTNode to) {
-		BiMap<ASTNode, ASTNode> mapping = new BiMap<>(IdentityHashMap::new);
-		Map<String, ASTNode> fromMap = getIDMap(from);
-		Map<String, ASTNode> toMap = getIDMap(to);
-		for (String id : fromMap.keySet()) {
-			ASTNode toNode = toMap.get(id);
-			if (toNode != null) {
-				mapping.put(fromMap.get(id), toNode);
-			}
-		}
-
-		return extractEdits(from, to, mapping);
-	}
-
-	private static Map<String, ASTNode> getIDMap(ASTNode node) {
-		Map<String, ASTNode> map = new HashMap<>();
-		node.recurse(child -> {
-			if (child.id != null) {
-				if (map.put(child.id, child) != null) {
-					System.err.println(node.prettyPrint(true, RatingConfig.Snap));
-					throw new RuntimeException("Duplicate ids in node: " + child.id);
-				}
-			}
-		});
-		return map;
-	}
-
-	private static Set<Edit> extractEdits(ASTNode from, ASTNode to,
-			BiMap<ASTNode, ASTNode> mapping) {
-
-		// First get sets of all references in the from and to AST
-		Set<NodeReference> fromRefs = new HashSet<>();
-		from.recurse(node -> {
-			NodeReference ref = getReference(node);
-			if (ref != null) fromRefs.add(ref);
-		});
-
-		Set<NodeReference> toRefs = new HashSet<>();
-		to.recurse(node -> {
-			NodeReference ref = getReferenceInPair(node, mapping);
-			if (ref != null) {
-				if (!toRefs.add(ref)) {
-					throw new RuntimeException("Duplicate references in node: " + ref);
-				}
-			}
-		});
-
-		// The removed refs are those present in from and not to, with added being the reverse
-		Set<NodeReference> removedRefs = new HashSet<>(fromRefs);
-		removedRefs.removeAll(toRefs);
-		Set<NodeReference> addedRefs = new HashSet<>(toRefs);
-		addedRefs.removeAll(fromRefs);
-
-		// Find all nodes that have been moved to a new parent and mark them as having been removed
-		// from their previous location and added to their new location
-		Map<ASTNode, Void> moved = new IdentityHashMap<>();
-		to.recurse(toNode -> {
-			if (toNode.parent() == null) return;
-			ASTNode fromMatch = mapping.getTo(toNode);
-			if (fromMatch == null) return;
-			NodeReference fromParentMatch = getReferenceInPair(toNode.parent(), mapping);
-			NodeReference fromMatchParent = getReference(fromMatch.parent());
-			// Only consider nodes whose parents have changed
-			if (ObjectUtils.equals(fromParentMatch, fromMatchParent)) return;
-			moved.put(toNode, null);
-
-			// Temporarily, we add these to the added and moved refs, so we know to differentiate
-			// between nodes which have been moved, and those which have earlier siblings
-			// added/deleted/moved
-			addedRefs.add(getReferenceInPair(toNode, mapping));
-			removedRefs.add(getReference(fromMatch));
-		});
-
-		Set<Edit> edits = new LinkedHashSet<>();
-
-		// We keep track of the refs that have been moved, so we don't double-count them as added
-		// and removed
-		Set<NodeReference> movedFrom = new HashSet<>();
-		Set<NodeReference> movedTo = new HashSet<>();
-
-		// Keep track of no-id nodes that have been displaced by earlier siblings being changed,
-		// so their references will have changed, but they have not actually been added/remvoed
-		Set<NodeReference> displacedFrom = new HashSet<>();
-		Set<NodeReference> displacedTo = new HashSet<>();
-
-		// Now we find all instances of node movement
-		to.recurse(toNode -> {
-			if (toNode.parent() == null) return;
-			ASTNode fromMatch = mapping.getTo(toNode);
-			if (fromMatch == null) return;
-
-			// First we check to make sure the node is actually moved and not that earlier siblings
-			// have been changed
-			if (!moved.containsKey(toNode)) {
-				NodeReference precederMatch = null;
-				for (int i = toNode.index() - 1; i >= 0; i--) {
-					NodeReference pm = getReferenceInPair(toNode.parent().children().get(i), mapping);
-					if (!addedRefs.contains(pm)) {
-						precederMatch = pm;
-						break;
-					}
-				}
-
-				NodeReference matchPreceder = null;
-				for (int i = fromMatch.index() - 1; i >= 0; i--) {
-					NodeReference pm = getReference(fromMatch.parent().children().get(i));
-					if (!removedRefs.contains(pm)) {
-						matchPreceder = pm;
-						break;
-					}
-				}
-
-				if (ObjectUtils.equals(precederMatch, matchPreceder)) {
-					if (toNode.shallowEquals(fromMatch, false)) {
-						displacedFrom.add(getReference(fromMatch));
-						displacedTo.add(getReferenceInPair(toNode, mapping));
-						return;
-					}
-				}
-			}
-
-			// Ignore no-id nodes which have moved according to the mapping, but for which
-			// there is still a node in the original position in the to-tree
-			if (toNode.id == null && toRefs.contains(getReference(fromMatch))) {
-				return;
-			}
-
-			NodeReference fromRef = getReference(fromMatch);
-			ChildNodeReference toRef = new ChildNodeReference(toNode,
-					getReferenceInPair(toNode.parent(), mapping));
-			if (StringUtils.equals(toNode.type, fromMatch.type)) {
-				edits.add(new Move(fromRef, toRef));
-			} else {
-				// For consistency, we represent relabels as insertions + deletions, rather than
-				// "moves", since we don't want to represent them differently
-				edits.add(new Deletion(fromRef));
-				edits.add(new Insertion(toRef));
-			}
-			movedFrom.add(fromRef);
-			movedTo.add(toRef);
-		});
-
-		// Reset the removed and added refs, since they were modified above
-		removedRefs.clear();
-		removedRefs.addAll(fromRefs);
-		removedRefs.removeAll(toRefs);
-		addedRefs.clear();
-		addedRefs.addAll(toRefs);
-		addedRefs.removeAll(fromRefs);
-
-		// Moving takes precedence over adding or removing, so remove the refs that were moved
-		removedRefs.removeAll(movedFrom);
-		addedRefs.removeAll(movedTo);
-
-		// Don't list nodes as removed/added if they have a pair and their index only changed due
-		// to modified earlier siblings
-		removedRefs.removeAll(displacedFrom);
-		addedRefs.removeAll(displacedTo);
-
-		removedRefs.forEach(removedRef -> edits.add(new Deletion(removedRef)));
-		addedRefs.forEach(addedRef -> edits.add(new Insertion(addedRef)));
-
-		// Remove any edits to NULL nodes, since these aren't really there to begin with
-		return edits.stream()
-				.filter(e -> !ASTNode.EMPTY_TYPE.equals(e.node.type))
-				.collect(Collectors.toSet());
-	}
-
 	public static NodeReference getReference(ASTNode node) {
 		if (node.id != null) return new IDNodeReference(node);
 		if (node.parent() == null) return new RootNodeReference(node);
@@ -424,10 +134,9 @@ public class EditExtractor {
 	private static NodeReference getReferenceAsChildren(ASTNode node) {
 		if (node.parent() == null) return new RootNodeReference(node);
 		return new ChildNodeReference(node, getReferenceAsChildren(node.parent()));
-
 	}
 
-	// TODO: This is problematic because we lose insert order (e.g. +(a, b) == +(b, a)) which
+	// TODO: This is problematic because we lose insert order (e.g. +(a, b) == +(b, a)), which
 	// allows the possibility of an exact match of edits without actually matching. This still
 	// constitutes a partial match. How can we make +(a, b) match +(b) but not +(a, b) == +(b, a)?
 	private NodeReference getInsertReference(ASTNode node, BiMap<ASTNode, ASTNode> map) {
@@ -459,19 +168,6 @@ public class EditExtractor {
 					getReferenceAsChildren(parentPair) :
 					getInsertReference(node.parent(), map);
 		return new ChildNodeReference(node, parentReference, index);
-	}
-
-	private static NodeReference getReferenceInPair(ASTNode toNode,
-			BiMap<ASTNode, ASTNode> mapping) {
-		ASTNode fromPair = mapping.getTo(toNode);
-		if (fromPair != null && fromPair.id != null) return new IDNodeReference(fromPair);
-		if (toNode.parent() == null) {
-			if (fromPair != null) return new RootNodeReference(fromPair);
-			System.err.println(toNode);
-			System.err.println(mapping);
-			throw new IllegalArgumentException("To root has no match in mapping!");
-		}
-		return new ChildNodeReference(toNode, getReferenceInPair(toNode.parent(), mapping));
 	}
 
 	public static abstract class Edit implements Comparable<Edit> {

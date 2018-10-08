@@ -3,7 +3,9 @@ package edu.isnap.rating;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
-import edu.isnap.rating.TutorHint.Validity;
+import edu.isnap.rating.data.GoldStandard;
+import edu.isnap.rating.data.HintSet;
+import edu.isnap.rating.data.TutorHint.Validity;
 
 @SuppressWarnings("unused")
 public class RunRateHints {

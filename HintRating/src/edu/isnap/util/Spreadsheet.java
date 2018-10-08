@@ -1,4 +1,4 @@
-package edu.isnap.hint.util;
+package edu.isnap.util;
 
 import java.io.File;
 import java.io.FileNotFoundException;

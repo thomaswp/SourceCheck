@@ -1,4 +1,4 @@
-package edu.isnap.ctd.graph;
+package edu.isnap.node;
 
 import org.json.JSONObject;
 

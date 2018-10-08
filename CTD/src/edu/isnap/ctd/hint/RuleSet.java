@@ -15,8 +15,8 @@ import java.util.stream.Stream;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.Node.Action;
 import edu.isnap.ctd.util.NullStream;
-import edu.isnap.ctd.util.map.CountMap;
-import edu.isnap.ctd.util.map.ListMap;
+import edu.isnap.util.map.CountMap;
+import edu.isnap.util.map.ListMap;
 
 public class RuleSet implements Serializable {
 	private static final long serialVersionUID = 1L;

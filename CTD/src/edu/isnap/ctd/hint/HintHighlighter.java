@@ -31,10 +31,10 @@ import edu.isnap.ctd.util.NodeAlignment;
 import edu.isnap.ctd.util.NodeAlignment.DistanceMeasure;
 import edu.isnap.ctd.util.NodeAlignment.Mapping;
 import edu.isnap.ctd.util.NodeAlignment.ProgressDistanceMeasure;
+import edu.isnap.util.map.BiMap;
+import edu.isnap.util.map.CountMap;
+import edu.isnap.util.map.ListMap;
 import edu.isnap.ctd.util.NullStream;
-import edu.isnap.ctd.util.map.BiMap;
-import edu.isnap.ctd.util.map.CountMap;
-import edu.isnap.ctd.util.map.ListMap;
 
 public class HintHighlighter {
 

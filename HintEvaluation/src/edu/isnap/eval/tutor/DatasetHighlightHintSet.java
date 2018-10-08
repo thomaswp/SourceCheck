@@ -11,7 +11,7 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.parser.Store.Mode;
-import edu.isnap.rating.HintRequest;
+import edu.isnap.rating.data.HintRequest;
 
 public class DatasetHighlightHintSet extends HighlightHintSet {
 

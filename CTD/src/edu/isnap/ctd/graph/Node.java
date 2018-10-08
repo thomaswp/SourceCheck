@@ -17,6 +17,10 @@ import edu.isnap.ctd.hint.Canonicalization.Rename;
 import edu.isnap.ctd.hint.Canonicalization.Reorder;
 import edu.isnap.ctd.hint.Canonicalization.SwapBinaryArgs;
 import edu.isnap.ctd.util.StringHashable;
+import edu.isnap.node.ASTNode;
+import edu.isnap.node.ASTSnapshot;
+import edu.isnap.node.INode;
+import edu.isnap.node.PrettyPrint;
 import util.LblTree;
 
 public abstract class Node extends StringHashable implements INode {

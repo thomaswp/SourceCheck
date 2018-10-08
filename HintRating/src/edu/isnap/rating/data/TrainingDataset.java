@@ -1,9 +1,10 @@
-package edu.isnap.rating;
+package edu.isnap.rating.data;
 
 import java.io.IOException;
 
-import edu.isnap.ctd.graph.ASTNode;
-import edu.isnap.ctd.util.map.CountMap;
+import edu.isnap.node.ASTNode;
+import edu.isnap.rating.RatingConfig;
+import edu.isnap.util.map.CountMap;
 
 public class TrainingDataset extends TraceDataset {
 

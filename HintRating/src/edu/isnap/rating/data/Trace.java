@@ -1,8 +1,8 @@
-package edu.isnap.rating;
+package edu.isnap.rating.data;
 
 import java.util.ArrayList;
 
-import edu.isnap.ctd.graph.ASTSnapshot;
+import edu.isnap.node.ASTSnapshot;
 
 @SuppressWarnings("serial")
 public class Trace extends ArrayList<ASTSnapshot> implements Comparable<Trace> {
