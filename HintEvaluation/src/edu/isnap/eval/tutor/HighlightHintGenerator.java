@@ -27,7 +27,7 @@ import edu.isnap.rating.data.Trace;
 import edu.isnap.rating.data.TrainingDataset;
 import edu.isnap.util.Spreadsheet;
 
-public class HighlightHintGenerator implements ColdStart.HintGenerator {
+public class HighlightHintGenerator implements ColdStart.IHintGenerator {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
@@ -75,7 +75,8 @@ public class HighlightHintGenerator implements ColdStart.HintGenerator {
 	}
 
 	@Override
-	public HintSet generateHints(String name, List<HintRequest> hintRequests) {
+	public HintSet generateHints(String name, RatingConfig ratingConfig,
+			List<HintRequest> hintRequests) {
 		HintHighlighter highlighter = getHighlighter();
 		return new HighlightHintSet(name, hintConfig) {
 			@Override

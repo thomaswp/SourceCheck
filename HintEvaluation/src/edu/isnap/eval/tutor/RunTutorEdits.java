@@ -18,7 +18,7 @@ import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.python.PythonHintConfig;
 import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.rating.ColdStart;
-import edu.isnap.rating.ColdStart.HintGenerator;
+import edu.isnap.rating.ColdStart.IHintGenerator;
 import edu.isnap.rating.RateHints;
 import edu.isnap.rating.RateHints.HintRatingSet;
 import edu.isnap.rating.RatingConfig;
@@ -309,7 +309,7 @@ public class RunTutorEdits extends TutorEdits {
 				boolean write) throws FileNotFoundException, IOException {
 			GoldStandard standard = getGoldStandard();
 			HintSet hintSet = getHintSet(algorithm, source, standard);
-			HintRatingSet rate = RateHints.rate(standard, hintSet, targetValidity, debug);
+			HintRatingSet rate = new RateHints(targetValidity, debug).rate(standard, hintSet);
 			if (write) {
 				String name = getSourceName(algorithm, source) + ".csv";
 				rate.writeAllHints(getDataDir() + RateHints.ALGORITHMS_DIR + "/" + name);
@@ -327,7 +327,7 @@ public class RunTutorEdits extends TutorEdits {
 				System.out.println("------ k = " + k + " ------");
 				hintConfig.votingK = k;
 				HintSet hintSet = getHintSet(algorithm, source, standard);
-				HintRatingSet rate = RateHints.rate(standard, hintSet, targetValidity, debug);
+				HintRatingSet rate = new RateHints(targetValidity, debug).rate(standard, hintSet);
 				if (write) {
 					spreadsheet.setHeader("k", k);
 					rate.writeAllRatings(spreadsheet);
@@ -405,9 +405,9 @@ public class RunTutorEdits extends TutorEdits {
 			GoldStandard standard = getGoldStandard();
 			TrainingDataset dataset = getTrainingDataset();
 			HintRequestDataset requests = getRequestDataset();
-			HintGenerator hintGenerator = algorithm.getHintGenerator(hintConfig);
+			IHintGenerator hintGenerator = algorithm.getHintGenerator(hintConfig);
 			ColdStart coldStart = new ColdStart(standard, dataset, requests, hintGenerator,
-					targetValidity);
+					targetValidity, HighlightHintSet.getRatingConfig(hintConfig));
 			return coldStart;
 		}
 
@@ -442,8 +442,8 @@ public class RunTutorEdits extends TutorEdits {
 		}
 
 		public void writeAllInAlgorithmsFolder() throws IOException {
-			RateHints.rateDir(getDataDir(), HighlightHintSet.getRatingConfig(hintConfig),
-					targetValidity, true);
+			new RateHints(targetValidity, false)
+			.rateDir(getDataDir(), HighlightHintSet.getRatingConfig(hintConfig), true);
 		}
 
 		public void runTutorHintBenchmarks(boolean debug) throws IOException {
@@ -451,10 +451,10 @@ public class RunTutorEdits extends TutorEdits {
 			GoldStandard standard = getGoldStandard();
 			for (String tutor : tutorHintSets.keySet()) {
 				System.out.println("#### " + tutor + " ####");
-				RateHints.rate(standard, tutorHintSets.get(tutor), targetValidity, debug);
+				new RateHints(targetValidity, debug).rate(standard, tutorHintSets.get(tutor));
 			}
 			TutorHintSet allTutors = createAllTutorsHintSet(tutorHintSets);
-			RateHints.rate(standard, allTutors, targetValidity, debug);
+			new RateHints(targetValidity, debug).rate(standard, allTutors);
 		}
 
 		public void writeTutorHintBenchmark() throws IOException {
@@ -485,7 +485,7 @@ public class RunTutorEdits extends TutorEdits {
 		}
 
 		@Override
-		public HintGenerator getHintGenerator(HintConfig config) {
+		public IHintGenerator getHintGenerator(HintConfig config) {
 			return new HighlightHintGenerator(config);
 		}
 
@@ -509,7 +509,7 @@ public class RunTutorEdits extends TutorEdits {
 		}
 
 		@Override
-		public HintGenerator getHintGenerator(HintConfig config) {
+		public IHintGenerator getHintGenerator(HintConfig config) {
 			// TODO: refactor HighlightHintGenerator to support both algorithms
 			throw new UnsupportedOperationException();
 		}
@@ -534,7 +534,7 @@ public class RunTutorEdits extends TutorEdits {
 		}
 
 		@Override
-		public HintGenerator getHintGenerator(HintConfig config) {
+		public IHintGenerator getHintGenerator(HintConfig config) {
 			// TODO: refactor HighlightHintGenerator to support both algorithms
 			throw new UnsupportedOperationException();
 		}
@@ -567,7 +567,7 @@ public class RunTutorEdits extends TutorEdits {
 		}
 
 		@Override
-		public HintGenerator getHintGenerator(HintConfig config) {
+		public IHintGenerator getHintGenerator(HintConfig config) {
 			throw new UnsupportedOperationException("ITAP does not a hint generator.");
 		}
 
@@ -581,7 +581,7 @@ public class RunTutorEdits extends TutorEdits {
 		HintSet getHintSetFromTrainingDataset(HintConfig config, TrainingDataset dataset)
 				throws IOException;
 		HintSet getHintSetFromTemplate(HintConfig config, String directory);
-		HintGenerator getHintGenerator(HintConfig config);
+		IHintGenerator getHintGenerator(HintConfig config);
 		String getName();
 	}
 
@@ -592,7 +592,7 @@ public class RunTutorEdits extends TutorEdits {
 		Map<String, TutorHintSet> hintSets = readTutorHintSetsSnap(dataset);
 		for (HintSet hintSet : hintSets.values()) {
 			System.out.println("------------ " + hintSet.name + " --------------");
-			RateHints.rate(standard, hintSet, targetValidity);
+			new RateHints(targetValidity, false).rate(standard, hintSet);
 		}
 	}
 
@@ -607,7 +607,7 @@ public class RunTutorEdits extends TutorEdits {
 		HighlightHintSet hintSet = new TemplateHighlightHintSet(
 				"template", CSC200Solutions.instance);
 		hintSet.addHints(standard);
-		RateHints.rate(standard, hintSet, targetValidity, true);
+		new RateHints(targetValidity, true).rate(standard, hintSet);
 //		runConsensus(Fall2016.instance, standard)
 //		.writeAllHints(Fall2017.GuessingGame1.exportDir() + "/fall2016-rating.csv");
 //		runConsensus(Spring2017.instance, standard);
@@ -629,7 +629,7 @@ public class RunTutorEdits extends TutorEdits {
 		HighlightHintSet hintSet = new DatasetHighlightHintSet(
 			trainingDataset.getName(), new SnapHintConfig(), trainingDataset)
 				.addHints(standard);
-		return RateHints.rate(standard, hintSet, targetValidity);
+		return new RateHints(targetValidity, false).rate(standard, hintSet);
 //		hintSet.toTutorEdits().forEach(e -> System.out.println(
 //				e.toSQLInsert("handmade_hints", "highlight", 20000, false, true)));
 	}
