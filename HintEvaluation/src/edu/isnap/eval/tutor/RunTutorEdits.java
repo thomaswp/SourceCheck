@@ -21,6 +21,7 @@ import edu.isnap.rating.ColdStart;
 import edu.isnap.rating.ColdStart.HintGenerator;
 import edu.isnap.rating.RateHints;
 import edu.isnap.rating.RateHints.HintRatingSet;
+import edu.isnap.rating.RatingConfig;
 import edu.isnap.rating.data.GoldStandard;
 import edu.isnap.rating.data.HintRequestDataset;
 import edu.isnap.rating.data.HintSet;
@@ -28,7 +29,6 @@ import edu.isnap.rating.data.TraceDataset;
 import edu.isnap.rating.data.TrainingDataset;
 import edu.isnap.rating.data.TutorHint;
 import edu.isnap.rating.data.TutorHint.Validity;
-import edu.isnap.rating.RatingConfig;
 import edu.isnap.util.Diff;
 import edu.isnap.util.Spreadsheet;
 import edu.isnap.util.map.ListMap;
@@ -57,9 +57,9 @@ public class RunTutorEdits extends TutorEdits {
 		boolean debug = false;
 		boolean writeHints = false;
 
-		writeAllHintSets(iSnapF16F17, ITAPS16);
+//		writeAllHintSets(iSnapF16F17, ITAPS16);
 
-//		dataset.runHintRating(algorithm, source, debug, writeHints);
+		dataset.runHintRating(algorithm, source, debug, writeHints);
 
 //		dataset.exportTrainingAndTestData(true);
 //		dataset.writeGoldStandard();
