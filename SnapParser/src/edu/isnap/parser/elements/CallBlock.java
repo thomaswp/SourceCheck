@@ -9,9 +9,10 @@ import java.util.List;
 import org.w3c.dom.Element;
 
 import edu.isnap.parser.elements.util.Canonicalization;
+import edu.isnap.parser.elements.util.IHasID;
 import edu.isnap.parser.elements.util.XML;
 
-public class CallBlock extends Block {
+public class CallBlock extends Block implements IHasID {
 	private static final long serialVersionUID = 1L;
 
 	public final static HashSet<String> SYMMETRIC = new HashSet<>();

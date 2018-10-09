@@ -20,6 +20,7 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	public final static String BLOCK_EDITOR_APPLY = "BlockEditor.apply";
 	public final static String BLOCK_EDITOR_OK = "BlockEditor.ok";
 	public final static String BLOCK_EDITOR_CANCEL = "BlockEditor.cancel";
+	public final static String BLOCK_EDITOR_CHANGE_TYPE = "BlockEditor.changeType";
 	public final static String BLOCK_GRABBED = "Block.grabbed";
 	public final static String BLOCK_DUPLICATE_ALL = "Block.duplicateAll";
 	public final static String BLOCK_DUPLICATE_BLOCK = "Block.duplicateBlock";
@@ -32,6 +33,8 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	public static final String IDE_SELECT_SPRITE = "IDE.selectSprite";
 	public static final String IDE_SET_SPRITE_TAB = "IDE.setSpriteTab";
 	public static final String IDE_TOGGLE_APP_MODE = "IDE.toggleAppMode";
+	public static final String IDE_DUPLICATE_SPRITE = "IDE.duplicateSprite";
+	public static final String IDE_PAINT_NEW_SPRITE = "IDE.paintNewSprite";
 	public final static String HELP_BUTTON_TOGGLED = "HelpButton.toggled";
 	public final static String HIGHLIGHT_CHECK_WORK = "HighlightDisplay.checkMyWork";
 	public final static String HIGHLIGHT_TOGGLE_INSERT = "HighlightDialogBoxMorph.toggleInsert";
@@ -46,6 +49,7 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	public final static String SHOW_STRUCTURE_HINT = "SnapDisplay.showStructureHint";
 	public static final String SPRITE_ADD_VARIABLE = "Sprite.addVariable";
 	public static final String SPRITE_DELETE_VARIABLE = "Sprite.deleteVariable";
+	public static final String SPRITE_SET_NAME = "Sprite.setName";
 	public final static String WE_START = "WE.Start";
 
 	public final static Set<String> SHOW_HINT_MESSAGES = new HashSet<>(Arrays.asList(new String[] {
@@ -53,7 +57,8 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	}));
 
 	public final static Set<String> SINGLE_ARG_MESSAGES = new HashSet<>(Arrays.asList(new String[] {
-			IDE_CHANGE_CATEGORY, IDE_SET_SPRITE_TAB, IDE_TOGGLE_APP_MODE, HELP_BUTTON_TOGGLED
+			IDE_CHANGE_CATEGORY, IDE_SET_SPRITE_TAB, IDE_TOGGLE_APP_MODE, HELP_BUTTON_TOGGLED,
+			BLOCK_EDITOR_CHANGE_TYPE, IDE_DUPLICATE_SPRITE, IDE_PAINT_NEW_SPRITE, SPRITE_SET_NAME
 	}));
 
 	private final static DateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
