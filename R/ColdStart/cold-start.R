@@ -205,20 +205,20 @@ getBaseline <- function(ratings) {
 }
 
 parseBaselines <- function(dir) {
-  template <- getBaseline(read_csv(paste("../../data/hint-rating", dir, "analysis/ratings-sourcecheck-template.csv", sep="/")))
+  template <- getBaseline(read_csv(paste("../../QualityScore/data", dir, "analysis/ratings-sourcecheck-template.csv", sep="/")))
   template$type <- "template"
   
-  single <- getBaseline(read_csv(paste("../../data/hint-rating", dir, "analysis/ratings-sourcecheck-expert1.csv", sep="/")))
+  single <- getBaseline(read_csv(paste("../../QualityScore/data", dir, "analysis/ratings-sourcecheck-expert1.csv", sep="/")))
   single$type <- "single"
   return(rbind(template,single))
 }
 
 read_hints <- function(dir) {
-  read_csv(paste0("../../data/hint-rating/", dir, "/analysis/", coldStartFile))
+  read_csv(paste0("../../QualityScore/data/", dir, "/analysis/", coldStartFile))
 }
 
 plotKs <- function(dir, full) {
-  ktest <- read_csv(paste0("../../data/hint-rating/", dir, "/analysis/k-test-sourcecheck.csv"))
+  ktest <- read_csv(paste0("../../QualityScore/data/", dir, "/analysis/k-test-sourcecheck.csv"))
   scores <- ddply(ktest, c("k", "assignmentID"), summarize, fullMean=mean(MultipleTutors_Full), partialMean=mean(MultipleTutors_Partial))
   scores$score <- if (full) scores$fullMean else scores$partialMean
   ggplot(scores, aes(x=k, y=score)) + geom_line() + facet_wrap(~ assignmentID)
@@ -298,7 +298,7 @@ aied2018 <- function() {
   wilcox.test(isnapRequests$fullMean, isnapRequests$fullEven, paired=T)
   cohen.d(isnapRequests$fullMean, isnapRequests$fullEven)
   
-  isnapTemplate <- read_csv(paste("../../data/hint-rating", isnapDir, "analysis/ratings-sourcecheck-template.csv", sep="/"))
+  isnapTemplate <- read_csv(paste("../../QualityScore/data", isnapDir, "analysis/ratings-sourcecheck-template.csv", sep="/"))
   isnapTemplate$template <- isnapTemplate$MultipleTutors_Full
   isnapRequests <- merge(isnapRequests, isnapTemplate[,c("requestID", "template")], by="requestID")
   
