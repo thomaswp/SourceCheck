@@ -20,7 +20,7 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
-import edu.isnap.datasets.Spring2016;
+import edu.isnap.datasets.Fall2017;
 import edu.isnap.eval.user.CheckHintUsage;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.node.ASTNode;
@@ -63,7 +63,7 @@ public class Datashop {
 	private static Set<String> unexportedMessages = new LinkedHashSet<>();
 
 	public static void main(String[] args) throws IOException {
-		export(Spring2016.instance);
+		export(Fall2017.instance);
 
 		System.out.println("\nUnexported messages:");
 		unexportedMessages.forEach(System.out::println);
@@ -127,7 +127,7 @@ public class Datashop {
 
 	private static void export(Assignment assignment, AssignmentAttempt attempt, CSVPrinter printer)
 			throws IOException {
-		// TODO: Use UserID as well
+		String userID = attempt.userID();
 		String attemptID = attempt.id;
 		String levelType = assignment.name.contains("HW") ? "HOMEWORK" : "IN-LAB";
 		String problemName = assignment.name;
@@ -135,7 +135,9 @@ public class Datashop {
 		Snapshot lastSnapshot = null;
 		String lastCode = "";
 
-		for (AttemptAction action : attempt) {
+		for (int i = 0; i < attempt.size(); i++) {
+			AttemptAction action = attempt.rows.get(i);
+
 			String message = action.message;
 			String data = action.data;
 
@@ -184,29 +186,18 @@ public class Datashop {
 				if (data.length() > 4) {
 					selection = data.substring(2, data.length() - 2);
 				}
-			} else if (AttemptAction.SHOW_HINT_MESSAGES.contains(message)) {
+			} else if (AttemptAction.SCRIPTS_UNDROP.equals(message) || AttemptAction.SCRIPTS_REDROP.equals(message)) {
+				JSONObject jsonData = new JSONObject(data);
+				selection = String.valueOf(jsonData.opt("block"));
+			} else if (message.matches("HighlightDisplay\\.((show)|(hide)).*Insert")) {
+				JSONObject jsonData = new JSONObject(data);
+				selection = String.valueOf(jsonData.opt("candidate"));
+			} else if (AttemptAction.SHOW_HINT_MESSAGES.contains(message) && lastSnapshot != null) {
 				studentResponse = "HINT_REQUEST";
 				feedbackClassification = message;
 
 				JSONObject jsonData = new JSONObject(data);
 				Node root = SimpleNodeBuilder.toTree(lastSnapshot, true);
-				Node parent = CheckHintUsage.findParent(message, lastSnapshot, root, jsonData);
-				if (parent == null) System.err.println("Null parent: " + data);
-				int scriptIndex = -1;
-				while (parent.tag instanceof Script || !(parent.tag instanceof IHasID)) {
-					if (parent.tag instanceof Script || parent.tag instanceof ListBlock) {
-						scriptIndex = parent.index();
-					} else {
-						System.out.println("No ID: " + parent.type());
-					}
-					parent = parent.parent;
-				}
-				String parentID = ((IHasID)parent.tag).getID();
-				if (parentID == null) {
-					System.err.println("No parentID: " + parent.type());
-				} else {
-					selection = parentID;
-				}
 
 				JSONArray toArray = jsonData.getJSONArray("to");
 				JSONArray fromArray;
@@ -221,21 +212,48 @@ public class Datashop {
 					}
 				}
 
-				JSONObject saveData = new JSONObject();
-				saveData.put("parentID", parentID);
-				saveData.put("parentType", parent.type());
-				if (scriptIndex >= 0) {
-					// Because scripts have no IDs, we use their parents' IDs, and mark which script
-					// was referenced
-					saveData.put("scriptIndex", scriptIndex);
-				}
-				saveData.put("from", fromArray);
-				saveData.put("to", toArray);
-				if (jsonData.has("message")) {
-					saveData.put("message", jsonData.get("message"));
-				}
+				String[] from = new String[fromArray.length()];
+				for (int j = 0; j < from.length; j++) from[j] = fromArray.getString(j);
 
-				feedbackText = saveData.toString();
+				Node parent = CheckHintUsage.findParent(
+						message, lastSnapshot, root, jsonData, from);
+				if (parent == null) {
+					parent = CheckHintUsage.checkForZombieHintParent(attempt, jsonData, from, i);
+				}
+				if (parent == null) System.err.println("Null parent: " + data);
+				if (parent != null) {
+					int scriptIndex = -1;
+					while (parent.tag instanceof Script || !(parent.tag instanceof IHasID)) {
+						if (parent.tag instanceof Script || parent.tag instanceof ListBlock) {
+							scriptIndex = parent.index();
+						} else {
+							System.out.println("No ID: " + parent.type());
+						}
+						parent = parent.parent;
+					}
+					String parentID = ((IHasID)parent.tag).getID();
+					if (parentID == null) {
+						System.err.println("No parentID: " + parent.type());
+					} else {
+						selection = parentID;
+					}
+
+					JSONObject saveData = new JSONObject();
+					saveData.put("parentID", parentID);
+					saveData.put("parentType", parent.type());
+					if (scriptIndex >= 0) {
+						// Because scripts have no IDs, we use their parents' IDs, and mark
+						// which script was referenced
+						saveData.put("scriptIndex", scriptIndex);
+					}
+					saveData.put("from", fromArray);
+					saveData.put("to", toArray);
+					if (jsonData.has("message")) {
+						saveData.put("message", jsonData.get("message"));
+					}
+
+					feedbackText = saveData.toString();
+				}
 			} else if (selection.length() == 0 && data.length() > 0) {
 //				System.out.println(message + ": " + data);
 				unexportedMessages.add(message);
@@ -251,8 +269,8 @@ public class Datashop {
 			String stepName = message + (stepTarget.length() > 0 ? "_" : "") + stepTarget;
 
 			printer.printRecord(new Object[] {
+					userID,
 					attemptID,
-					action.sessionID,
 					action.timestamp.getTime(),
 					studentResponse,
 					levelType,
@@ -335,7 +353,8 @@ public class Datashop {
 
 				JSONObject jsonData = new JSONObject(data);
 				Node root = SimpleNodeBuilder.toTree(lastSnapshot, true);
-				Node parent = CheckHintUsage.findParent(message, lastSnapshot, root, jsonData);
+				Node parent = CheckHintUsage.findParent(message, lastSnapshot, root, jsonData,
+						new String[0]);
 				if (parent == null) System.err.println("Null parent: " + data);
 				int scriptIndex = -1;
 				while (parent.tag instanceof Script || !(parent.tag instanceof IHasID)) {

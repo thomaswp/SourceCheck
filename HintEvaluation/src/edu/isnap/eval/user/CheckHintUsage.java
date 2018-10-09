@@ -1,6 +1,8 @@
 package edu.isnap.eval.user;
 
-import static edu.isnap.dataset.AttemptAction.*;
+import static edu.isnap.dataset.AttemptAction.HINT_DIALOG_DESTROY;
+import static edu.isnap.dataset.AttemptAction.HINT_DIALOG_LOG_FEEDBACK;
+import static edu.isnap.dataset.AttemptAction.SHOW_HINT_MESSAGES;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -14,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -29,8 +32,8 @@ import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.dataset.Grade;
-import edu.isnap.datasets.CampHS2018;
 import edu.isnap.datasets.Fall2015;
+import edu.isnap.datasets.Fall2017;
 import edu.isnap.eval.AutoGrader;
 import edu.isnap.eval.AutoGrader.Grader;
 import edu.isnap.eval.util.Prune;
@@ -46,7 +49,7 @@ public class CheckHintUsage {
 	private static final long MIN_DURATON_WE = 30;
 
 	public static void main(String[] args) throws IOException {
-		writeHints(CampHS2018.instance);
+		writeHints(Fall2017.instance);
 	}
 
 	private static boolean isValidSubmission(AssignmentAttempt attempt) {
@@ -115,6 +118,7 @@ public class CheckHintUsage {
 			}
 
 			Snapshot code = null;
+			long lastCodeUpdate = 0;
 			HashSet<String> uniqueHints = new HashSet<>();
 			String lastHintCode = "";
 
@@ -132,6 +136,7 @@ public class CheckHintUsage {
 				// If this row had an update to the code, update it
 				if (row.snapshot != null) {
 					code = row.snapshot;
+					lastCodeUpdate = row.timestamp.getTime();
 					edit++;
 				}
 
@@ -164,8 +169,22 @@ public class CheckHintUsage {
 					}
 					String[] from = toChildArray(fromArray);
 
+					long time = row.timestamp.getTime();
+
+					hintsSheet.newRow();
+					hintsSheet.put("dataset", assignment.dataset.getName());
+					hintsSheet.put("assignment", assignment.name);
+					hintsSheet.put("attemptID", attemptID);
+					hintsSheet.put("userID", userID);
+					hintsSheet.put("rowID", row.id);
+					hintsSheet.put("time", time);
+					hintsSheet.put("type", action.replace("SnapDisplay.show", "")
+							.replace("Hint", ""));
+					hintsSheet.put("editPerc", (double)edit / edits);
+					hintsSheet.put("timePerc", timePerc);
+
 					// Find the parent node that this hint affects
-					Node parent = findParent(row.message, code, node, data);
+					Node parent = findParent(row.message, code, node, data, from);
 
 					// Zombie hints are those that stuck around longer than they should have due to
 					// a client-side bug, fixed in b34fdab
@@ -173,33 +192,20 @@ public class CheckHintUsage {
 
 					// The parent shouldn't be null
 					if (parent == null) {
-						// Due to the zombie hint bug, if the parent is null, we can look back
-						// through previous snapshots for a version of the code compatible with
-						// this hint and use that node are the parent. Note that this zombie hint
-						// doesn't make sense for traditional analysis, since it may not match
-						// the student's current code
-						zombieHint = true;
-						for (int j = 1; j <= i; j++) {
-							Snapshot previous = attempt.rows.get(i - j).snapshot;
-							if (previous == null) continue;
-							Node potentialParent =
-									findParent(SimpleNodeBuilder.toTree(previous, true), data);
-							if (potentialParent != null) {
-								if (Arrays.equals(potentialParent.getChildArray(), from)) {
-									parent = potentialParent;
-									break;
-								}
-							}
-						}
+						parent = checkForZombieHintParent(attempt, data, from, i);
+						if (parent != null) zombieHint = true;
 					}
 
 					if (parent == null) {
+						// If this code is more than a minute out of date, suppress the error
+						// (There were probably logging issues)
+						if (time - lastCodeUpdate > 1000 * 60) continue;
 						System.out.println(node.prettyPrintWithIDs());
-						findParent(node, data);
+						findParent(row.message, code, node, data, from);
 						System.out.println(attempt.id + "/" + row.id + ": " + data);
-						throw new RuntimeException("Parent shouldn't be null :/");
+						System.err.println("Parent shouldn't be null :/");
+						continue;
 					}
-
 
 					// And apply the hint to the parent to get an outcome parent node
 					Node hintOutcome = VectorHint.applyHint(parent, to);
@@ -226,7 +232,6 @@ public class CheckHintUsage {
 					boolean gotCloser = false;
 					boolean followed = false;
 
-					long time = row.timestamp.getTime();
 					long nextActionTime = time;
 					long followTime = time;
 
@@ -270,17 +275,6 @@ public class CheckHintUsage {
 					boolean repeat = lastHintCode.equals(hintCode);
 					lastHintCode = hintCode;
 
-					hintsSheet.newRow();
-					hintsSheet.put("dataset", assignment.dataset.getName());
-					hintsSheet.put("assignment", assignment.name);
-					hintsSheet.put("attemptID", attemptID);
-					hintsSheet.put("userID", userID);
-					hintsSheet.put("rowID", row.id);
-					hintsSheet.put("time", time);
-					hintsSheet.put("type", action.replace("SnapDisplay.show", "")
-							.replace("Hint", ""));
-					hintsSheet.put("editPerc", (double)edit / edits);
-					hintsSheet.put("timePerc", timePerc);
 					hintsSheet.put("followed", followed);
 					hintsSheet.put("delete", delete);
 					hintsSheet.put("change", nodeChange);
@@ -624,6 +618,32 @@ public class CheckHintUsage {
 		return obj.get(key);
 	}
 
+	/**
+	 * Zombie hints are those that stuck around longer than they should have due to a client-side
+	 * bug, fixed in b34fdab. Due to the zombie hint bug, if the parent is null, we can look back
+	 * through previous snapshots for a version of the code compatible with
+	 * this hint and use that node are the parent. Note that this zombie hint
+	 * doesn't make sense for traditional analysis, since it may not match
+	 * the student's current code
+	 * @return The correct parent from a previous node, if present, or null if not.
+	 */
+	public static Node checkForZombieHintParent(AssignmentAttempt attempt, JSONObject data,
+			String[] from, int row) {
+
+		for (int j = 1; j <= row; j++) {
+			Snapshot previous = attempt.rows.get(row - j).snapshot;
+			if (previous == null) continue;
+			Node potentialParent =
+					findParent(SimpleNodeBuilder.toTree(previous, true), data);
+			if (potentialParent != null) {
+				if (Arrays.equals(potentialParent.getChildArray(), from)) {
+					return potentialParent;
+				}
+			}
+		}
+
+		return null;
+	}
 
 	/**
 	 * Finds the Node that was the parent for this hint, i.e. the hint
@@ -635,18 +655,42 @@ public class CheckHintUsage {
 	 * @return The node for the parent
 	 */
 	public static Node findParent(String message, Snapshot snapshot, Node root,
-			JSONObject data) {
+			JSONObject data, String[] from) {
 		Node parent = findParent(root, data);
+		if (parent != null) return parent;
 
 		// Hack for custom block structure hints that failed to log rootTypes
 		// TODO: does this work for multiple editing blocks?
-		if (parent == null && "SnapDisplay.showStructureHint".equals(message)) {
+		if ("SnapDisplay.showStructureHint".equals(message)) {
 			if (snapshot.editing.size() >= 1) {
-				parent = root.searchForNodeWithID(snapshot.editing.get(0).getID());
+				return root.searchForNodeWithID(snapshot.editing.get(0).getID());
 			}
 		}
 
-		return parent;
+		// There was a logging bug where any hints for the immediate children of a custom block
+		// script did not properly record a rootID (it used to be included in the exported XML but
+		// is not longer. This should be fixed after Fall 2018, but for not we can only try to
+		// guess which custom block the hint referred to.
+		if (data.optString("parentSelector").isEmpty() && data.optString("parentID").isEmpty() &&
+				data.has("rootID")) {
+			String rootID = String.valueOf(data.get("rootID"));
+			if (root.searchForNodeWithID(rootID) == null) {
+				Node.Predicate pred = new Node.BackbonePredicate("customBlock", "script");
+				List<Node> matches = root.searchAll(pred).stream()
+					.filter(script -> Arrays.equals(from, script.getChildArray()))
+					.collect(Collectors.toList());
+				if (matches.size() == 1) {
+					return matches.get(0);
+				} else if (matches.size() > 1) {
+					System.err.println("Multiple matches in missing parent :(");
+				} else {
+					System.err.println("No matching parents...");
+				}
+			}
+		}
+
+		return null;
+
 	}
 
 	private static Node findParent(Node root, JSONObject data) {

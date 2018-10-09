@@ -53,7 +53,8 @@ public class JsonAST {
 		for (String name : new String[] {
 				"Bill", "Bryson", "Collin", "Cory", "Ellis", "George", "Leslie", "Sabrina",
 				"Jeff", "John", "Kev", "M. Jordan", "MARK", "MARK\\", "Roger", "Ron", "Tim",
-				"Trey",
+				"Trey", "Sam", "amy", "savannah", "Charles", "Baxter", "Dillon", "Morty", "Rick",
+				"Zack",
 		}) {
 			valueReplacements.put(name, "name");
 		}

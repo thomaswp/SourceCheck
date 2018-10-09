@@ -44,6 +44,8 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	public final static String HINT_DIALOG_LOG_FEEDBACK = "HintDialogBox.logFeedback";
 	public final static String HINT_PROCESS_HINTS = "HintProvider.processHints";
 	public final static String LOGGER_STARTED = "Logger.started";
+	public final static String SCRIPTS_UNDROP = "Scripts.undrop";
+	public final static String SCRIPTS_REDROP = "Scripts.redrop";
 	public final static String SHOW_SCRIPT_HINT = "SnapDisplay.showScriptHint";
 	public final static String SHOW_BLOCK_HINT = "SnapDisplay.showBlockHint";
 	public final static String SHOW_STRUCTURE_HINT = "SnapDisplay.showStructureHint";
@@ -58,7 +60,8 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 
 	public final static Set<String> SINGLE_ARG_MESSAGES = new HashSet<>(Arrays.asList(new String[] {
 			IDE_CHANGE_CATEGORY, IDE_SET_SPRITE_TAB, IDE_TOGGLE_APP_MODE, HELP_BUTTON_TOGGLED,
-			BLOCK_EDITOR_CHANGE_TYPE, IDE_DUPLICATE_SPRITE, IDE_PAINT_NEW_SPRITE, SPRITE_SET_NAME
+			BLOCK_EDITOR_CHANGE_TYPE, IDE_DUPLICATE_SPRITE, IDE_PAINT_NEW_SPRITE, SPRITE_SET_NAME,
+			ASSIGNMENT_SET_ID_FROM, ASSIGNMENT_SET_ID,
 	}));
 
 	private final static DateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
