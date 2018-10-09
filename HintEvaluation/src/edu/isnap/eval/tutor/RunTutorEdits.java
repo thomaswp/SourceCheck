@@ -43,6 +43,7 @@ public class RunTutorEdits extends TutorEdits {
 
 	static {
 		Diff.colorStyle = ColorStyle.ANSI;
+		HintRater.DataRootDir = "../QualityScore/data/";
 	}
 
 	private final static Validity targetValidity = Validity.MultipleTutors;
@@ -55,7 +56,7 @@ public class RunTutorEdits extends TutorEdits {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
-		RatingDataset dataset = iSnapF16S17;
+		RatingDataset dataset = iSnapF16F17;
 //		dataset = ITAPS16;
 		Source source = Source.StudentData;
 		HintAlgorithm algorithm = CTD;
