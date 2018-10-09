@@ -15,6 +15,7 @@ import edu.isnap.node.ASTNode;
 import edu.isnap.node.ASTSnapshot;
 import edu.isnap.rating.EditExtractor;
 import edu.isnap.rating.EditExtractor.Edit;
+import edu.isnap.rating.RatingConfig;
 import edu.isnap.rating.data.GoldStandard;
 import edu.isnap.rating.data.HintRequestDataset;
 import edu.isnap.rating.data.Trace;
@@ -22,7 +23,6 @@ import edu.isnap.rating.data.TrainingDataset;
 import edu.isnap.rating.data.TutorHint;
 import edu.isnap.util.Spreadsheet;
 import edu.isnap.util.map.ListMap;
-import edu.isnap.rating.RatingConfig;
 import node.Node;
 
 public class GSAnalysis {
@@ -87,7 +87,7 @@ public class GSAnalysis {
 						.collect(Collectors.toList());
 				solutionMap.put(assignmentID, solutions);
 				solutions.forEach(solution ->
-					nodeMap.put(solution, EditExtractor.toNode(solution)));
+					nodeMap.put(solution, toNode(solution)));
 			}
 		}
 
@@ -97,6 +97,17 @@ public class GSAnalysis {
 			spreadsheet.put("medEdits", medEdits);
 			spreadsheet.put("minAPTED", minAPTED);
 			spreadsheet.put("medAPTED", medAPTED);
+		}
+
+
+		private static Node<ASTNode> toNode(ASTNode astNode) {
+			Node<ASTNode> node = new Node<>(astNode);
+			if (astNode != null) {
+				for (ASTNode child : astNode.children()) {
+					node.addChild(toNode(child));
+				}
+			}
+			return node;
 		}
 
 		private void update(TutorHint hint) {
@@ -113,7 +124,7 @@ public class GSAnalysis {
 						editCounts[editCounts.length / 2];
 			minEdits = editCounts[0];
 
-			Node<ASTNode> fromNode = EditExtractor.toNode(hint.from);
+			Node<ASTNode> fromNode = toNode(hint.from);
 			double[] apteds = solutions.stream()
 					.map(solution -> nodeMap.get(solution))
 					.mapToDouble(solution ->
