@@ -18,7 +18,7 @@ import edu.isnap.eval.export.JsonAST;
 import edu.isnap.hint.util.SnapNode;
 import edu.isnap.node.ASTNode;
 import edu.isnap.rating.ColdStart;
-import edu.isnap.rating.RateHints;
+import edu.isnap.rating.HintRater;
 import edu.isnap.rating.RatingConfig;
 import edu.isnap.rating.data.GoldStandard;
 import edu.isnap.rating.data.HintRequest;
@@ -32,7 +32,7 @@ public class HighlightHintGenerator implements ColdStart.IHintGenerator {
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 
 		TrainingDataset dataset = TrainingDataset.fromSpreadsheet("itap",
-				RunTutorEdits.ITAPS16.getDataDir() + RateHints.TRAINING_FILE);
+				RunTutorEdits.ITAPS16.getDataDir() + HintRater.TRAINING_FILE);
 		for (String assignmentID : dataset.getAssignmentIDs()) {
 			System.out.println(" ============= " + assignmentID + " ============= ");
 			dataset.printAllSolutions(assignmentID, RatingConfig.Python, true);
