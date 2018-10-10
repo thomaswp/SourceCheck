@@ -14,12 +14,12 @@ loadRatings <- function(dataset, threshold, names, dir="") {
   allRatings <- NULL
   if (dir != "") dir <- paste0(dir, "/")
   for (name in names) {
-    ratings <- read_csv(paste0("../../data/hint-rating/", dataset, "/ratings/", threshold, "/", dir, name, ".csv"))
+    ratings <- read_csv(paste0("../../QualityScore/data/", dataset, "/ratings/", threshold, "/", dir, name, ".csv"))
     ratings$source <- name
     if (is.null(allRatings)) allRatings <- ratings
     else allRatings <- rbind(allRatings, ratings)
   }
-  standard <- read_csv(paste0("../../data/hint-rating/", dataset, "/gold-standard.csv"))
+  standard <- read_csv(paste0("../../QualityScore/data/", dataset, "/gold-standard.csv"))
   years <- ddply(standard, c("requestID"), summarize, year=head(year, 1))
   allRatings <- merge(allRatings, years)
   if ("validity" %in% names(allRatings)) allRatings$validity[is.na(allRatings$validity)] <- 0
@@ -285,9 +285,9 @@ investigateHypotheses <- function() {
   matchedHints <- ddply(algRatings[algRatings$matched,], c("dataset", "matchID"), summarize, 
                         n=length(nEdits), delOnly=allSame(delOnly), nEdits=mean(nEdits))
   
-  goldStandardiSnap <- read_csv("../../data/hint-rating/isnapF16-F17/analysis/gold-standard-analysis.csv")
+  goldStandardiSnap <- read_csv("../../QualityScore/data/isnapF16-F17/analysis/gold-standard-analysis.csv")
   goldStandardiSnap$dataset <- "isnap"
-  goldStandardITAP <- read_csv("../../data/hint-rating/itapS16/analysis/gold-standard-analysis.csv")
+  goldStandardITAP <- read_csv("../../QualityScore/data/itapS16/analysis/gold-standard-analysis.csv")
   goldStandardITAP$dataset <- "itap"
   goldStandard <- rbind(goldStandardiSnap, goldStandardITAP)
   goldStandard$nEdits <- goldStandard$nInsertions + goldStandard$nDeletions + goldStandard$nRelabels - goldStandard$nValueInsertions

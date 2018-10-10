@@ -18,9 +18,9 @@ import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.python.PythonHintConfig;
 import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.rating.ColdStart;
-import edu.isnap.rating.ColdStart.HintGenerator;
-import edu.isnap.rating.RateHints;
-import edu.isnap.rating.RateHints.HintRatingSet;
+import edu.isnap.rating.ColdStart.IHintGenerator;
+import edu.isnap.rating.HintRater;
+import edu.isnap.rating.HintRater.HintRatingSet;
 import edu.isnap.rating.RatingConfig;
 import edu.isnap.rating.data.GoldStandard;
 import edu.isnap.rating.data.HintRequestDataset;
@@ -30,6 +30,7 @@ import edu.isnap.rating.data.TrainingDataset;
 import edu.isnap.rating.data.TutorHint;
 import edu.isnap.rating.data.TutorHint.Validity;
 import edu.isnap.util.Diff;
+import edu.isnap.util.Diff.ColorStyle;
 import edu.isnap.util.Spreadsheet;
 import edu.isnap.util.map.ListMap;
 
@@ -39,6 +40,11 @@ public class RunTutorEdits extends TutorEdits {
 	public final static String CONSENSUS_GG_SQ = "consensus-gg-sq.csv";
 	public static final String ITAP_DIR = "../data/itap/";
 	public static final String ANALYSIS_DIR = "analysis";
+
+	static {
+		Diff.colorStyle = ColorStyle.ANSI;
+		HintRater.DataRootDir = "../QualityScore/data/";
+	}
 
 	private final static Validity targetValidity = Validity.MultipleTutors;
 
@@ -108,7 +114,7 @@ public class RunTutorEdits extends TutorEdits {
 
 		@Override
 		String getDataDir() {
-			return RateHints.ISNAP_F16_F17_DATA_DIR;
+			return HintRater.isnapF16F17Dir();
 		}
 
 		@Override
@@ -125,7 +131,7 @@ public class RunTutorEdits extends TutorEdits {
 
 		@Override
 		String getDataDir() {
-			return RateHints.ISNAP_F16_S17_DATA_DIR;
+			return HintRater.isnapF16S17Dir();
 		}
 
 		@Override
@@ -214,7 +220,7 @@ public class RunTutorEdits extends TutorEdits {
 
 		@Override
 		String getDataDir() {
-			return RateHints.ITAP_S16_DATA_DIR;
+			return HintRater.itapS16Dir();
 		}
 
 		@Override
@@ -272,10 +278,10 @@ public class RunTutorEdits extends TutorEdits {
 			addTrainingAndTestData(training, requests);
 			String dataDir = getDataDir();
 			if (toSpreadsheet) {
-				training.writeToSpreadsheet(dataDir + RateHints.TRAINING_FILE,
-						RateHints.TRAINING_FILE.endsWith(".gz"));
-				requests.writeToSpreadsheet(dataDir + RateHints.REQUEST_FILE,
-						RateHints.REQUEST_FILE.endsWith(".gz"));
+				training.writeToSpreadsheet(dataDir + HintRater.TRAINING_FILE,
+						HintRater.TRAINING_FILE.endsWith(".gz"));
+				requests.writeToSpreadsheet(dataDir + HintRater.REQUEST_FILE,
+						HintRater.REQUEST_FILE.endsWith(".gz"));
 			} else {
 				training.writeToFolder(dataDir + "training");
 				requests.writeToFolder(dataDir + "requests");
@@ -285,7 +291,7 @@ public class RunTutorEdits extends TutorEdits {
 		public GoldStandard getGoldStandard() throws IOException {
 			if (goldStandard == null) {
 				goldStandard = GoldStandard.parseSpreadsheet(
-						getDataDir() + RateHints.GS_SPREADSHEET);
+						getDataDir() + HintRater.GS_SPREADSHEET);
 			}
 			return goldStandard;
 		}
@@ -309,10 +315,10 @@ public class RunTutorEdits extends TutorEdits {
 				boolean write) throws FileNotFoundException, IOException {
 			GoldStandard standard = getGoldStandard();
 			HintSet hintSet = getHintSet(algorithm, source, standard);
-			HintRatingSet rate = RateHints.rate(standard, hintSet, targetValidity, debug);
+			HintRatingSet rate = new HintRater(targetValidity, debug).rate(standard, hintSet);
 			if (write) {
 				String name = getSourceName(algorithm, source) + ".csv";
-				rate.writeAllHints(getDataDir() + RateHints.ALGORITHMS_DIR + "/" + name);
+				rate.writeAllHints(getDataDir() + HintRater.ALGORITHMS_DIR + "/" + name);
 				Spreadsheet spreadsheet = new Spreadsheet();
 				rate.writeAllRatings(spreadsheet);
 				spreadsheet.write(getAnalysisDir() + "ratings-" + name);
@@ -327,7 +333,7 @@ public class RunTutorEdits extends TutorEdits {
 				System.out.println("------ k = " + k + " ------");
 				hintConfig.votingK = k;
 				HintSet hintSet = getHintSet(algorithm, source, standard);
-				HintRatingSet rate = RateHints.rate(standard, hintSet, targetValidity, debug);
+				HintRatingSet rate = new HintRater(targetValidity, debug).rate(standard, hintSet);
 				if (write) {
 					spreadsheet.setHeader("k", k);
 					rate.writeAllRatings(spreadsheet);
@@ -351,12 +357,12 @@ public class RunTutorEdits extends TutorEdits {
 			GoldStandard standard = getGoldStandard();
 			HintSet hintSet = getHintSet(algorithm, source, standard);
 			String name = getSourceName(algorithm, source);
-			hintSet.writeToFolder(new File(getDataDir() + RateHints.ALGORITHMS_DIR,
+			hintSet.writeToFolder(new File(getDataDir() + HintRater.ALGORITHMS_DIR,
 					getSourceName(algorithm, source)).getPath(), true);
 		}
 
 		public void writeGoldStandard() throws FileNotFoundException, IOException {
-			generateGoldStandard().writeSpreadsheet(getDataDir() + RateHints.GS_SPREADSHEET);
+			generateGoldStandard().writeSpreadsheet(getDataDir() + HintRater.GS_SPREADSHEET);
 		}
 
 		public void analyzeGoldStandard() throws IOException {
@@ -388,7 +394,7 @@ public class RunTutorEdits extends TutorEdits {
 		protected TrainingDataset getTrainingDataset() throws IOException {
 			if (trainingDataset == null) {
 				trainingDataset = TrainingDataset.fromSpreadsheet("training",
-						getDataDir() + RateHints.TRAINING_FILE);
+						getDataDir() + HintRater.TRAINING_FILE);
 //				trainingDataset = TrainingDataset.fromDirectory("training",
 //					getDataDir() + "training/");
 			}
@@ -397,7 +403,7 @@ public class RunTutorEdits extends TutorEdits {
 
 		protected HintRequestDataset getRequestDataset() throws IOException {
 			return HintRequestDataset.fromSpreadsheet("requests",
-					getDataDir() + RateHints.REQUEST_FILE);
+					getDataDir() + HintRater.REQUEST_FILE);
 		}
 
 		private ColdStart getColdStart(HintAlgorithm algorithm)
@@ -405,9 +411,9 @@ public class RunTutorEdits extends TutorEdits {
 			GoldStandard standard = getGoldStandard();
 			TrainingDataset dataset = getTrainingDataset();
 			HintRequestDataset requests = getRequestDataset();
-			HintGenerator hintGenerator = algorithm.getHintGenerator(hintConfig);
+			IHintGenerator hintGenerator = algorithm.getHintGenerator(hintConfig);
 			ColdStart coldStart = new ColdStart(standard, dataset, requests, hintGenerator,
-					targetValidity);
+					targetValidity, HighlightHintSet.getRatingConfig(hintConfig));
 			return coldStart;
 		}
 
@@ -442,8 +448,8 @@ public class RunTutorEdits extends TutorEdits {
 		}
 
 		public void writeAllInAlgorithmsFolder() throws IOException {
-			RateHints.rateDir(getDataDir(), HighlightHintSet.getRatingConfig(hintConfig),
-					targetValidity, true);
+			new HintRater(targetValidity, false)
+			.rateDir(getDataDir(), HighlightHintSet.getRatingConfig(hintConfig), true);
 		}
 
 		public void runTutorHintBenchmarks(boolean debug) throws IOException {
@@ -451,16 +457,16 @@ public class RunTutorEdits extends TutorEdits {
 			GoldStandard standard = getGoldStandard();
 			for (String tutor : tutorHintSets.keySet()) {
 				System.out.println("#### " + tutor + " ####");
-				RateHints.rate(standard, tutorHintSets.get(tutor), targetValidity, debug);
+				new HintRater(targetValidity, debug).rate(standard, tutorHintSets.get(tutor));
 			}
 			TutorHintSet allTutors = createAllTutorsHintSet(tutorHintSets);
-			RateHints.rate(standard, allTutors, targetValidity, debug);
+			new HintRater(targetValidity, debug).rate(standard, allTutors);
 		}
 
 		public void writeTutorHintBenchmark() throws IOException {
 			Map<String, TutorHintSet> tutorHintSets = getTutorHintSets();
 			TutorHintSet allTutors = createAllTutorsHintSet(tutorHintSets);
-			allTutors.writeToFolder(new File(getDataDir() + RateHints.ALGORITHMS_DIR,
+			allTutors.writeToFolder(new File(getDataDir() + HintRater.ALGORITHMS_DIR,
 					allTutors.name).getPath(), true);
 		}
 
@@ -485,7 +491,7 @@ public class RunTutorEdits extends TutorEdits {
 		}
 
 		@Override
-		public HintGenerator getHintGenerator(HintConfig config) {
+		public IHintGenerator getHintGenerator(HintConfig config) {
 			return new HighlightHintGenerator(config);
 		}
 
@@ -509,7 +515,7 @@ public class RunTutorEdits extends TutorEdits {
 		}
 
 		@Override
-		public HintGenerator getHintGenerator(HintConfig config) {
+		public IHintGenerator getHintGenerator(HintConfig config) {
 			// TODO: refactor HighlightHintGenerator to support both algorithms
 			throw new UnsupportedOperationException();
 		}
@@ -534,7 +540,7 @@ public class RunTutorEdits extends TutorEdits {
 		}
 
 		@Override
-		public HintGenerator getHintGenerator(HintConfig config) {
+		public IHintGenerator getHintGenerator(HintConfig config) {
 			// TODO: refactor HighlightHintGenerator to support both algorithms
 			throw new UnsupportedOperationException();
 		}
@@ -567,7 +573,7 @@ public class RunTutorEdits extends TutorEdits {
 		}
 
 		@Override
-		public HintGenerator getHintGenerator(HintConfig config) {
+		public IHintGenerator getHintGenerator(HintConfig config) {
 			throw new UnsupportedOperationException("ITAP does not a hint generator.");
 		}
 
@@ -581,7 +587,7 @@ public class RunTutorEdits extends TutorEdits {
 		HintSet getHintSetFromTrainingDataset(HintConfig config, TrainingDataset dataset)
 				throws IOException;
 		HintSet getHintSetFromTemplate(HintConfig config, String directory);
-		HintGenerator getHintGenerator(HintConfig config);
+		IHintGenerator getHintGenerator(HintConfig config);
 		String getName();
 	}
 
@@ -592,7 +598,7 @@ public class RunTutorEdits extends TutorEdits {
 		Map<String, TutorHintSet> hintSets = readTutorHintSetsSnap(dataset);
 		for (HintSet hintSet : hintSets.values()) {
 			System.out.println("------------ " + hintSet.name + " --------------");
-			RateHints.rate(standard, hintSet, targetValidity);
+			new HintRater(targetValidity, false).rate(standard, hintSet);
 		}
 	}
 
@@ -607,7 +613,7 @@ public class RunTutorEdits extends TutorEdits {
 		HighlightHintSet hintSet = new TemplateHighlightHintSet(
 				"template", CSC200Solutions.instance);
 		hintSet.addHints(standard);
-		RateHints.rate(standard, hintSet, targetValidity, true);
+		new HintRater(targetValidity, true).rate(standard, hintSet);
 //		runConsensus(Fall2016.instance, standard)
 //		.writeAllHints(Fall2017.GuessingGame1.exportDir() + "/fall2016-rating.csv");
 //		runConsensus(Spring2017.instance, standard);
@@ -617,11 +623,11 @@ public class RunTutorEdits extends TutorEdits {
 			HintConfig hintConfig)
 			throws FileNotFoundException, IOException {
 		TrainingDataset dataset = TrainingDataset.fromSpreadsheet("",
-				new File(dataDirectory, RateHints.TRAINING_FILE).getPath());
+				new File(dataDirectory, HintRater.TRAINING_FILE).getPath());
 		HighlightHintSet hintSet = new ImportHighlightHintSet(name, hintConfig, dataset);
 		hintSet.addHints(standard);
 		hintSet.writeToFolder(new File(
-				dataDirectory, RateHints.ALGORITHMS_DIR + File.separator + name).getPath(), true);
+				dataDirectory, HintRater.ALGORITHMS_DIR + File.separator + name).getPath(), true);
 	}
 
 	protected static HintRatingSet runConsensus(Dataset trainingDataset, GoldStandard standard)
@@ -629,7 +635,7 @@ public class RunTutorEdits extends TutorEdits {
 		HighlightHintSet hintSet = new DatasetHighlightHintSet(
 			trainingDataset.getName(), new SnapHintConfig(), trainingDataset)
 				.addHints(standard);
-		return RateHints.rate(standard, hintSet, targetValidity);
+		return new HintRater(targetValidity, false).rate(standard, hintSet);
 //		hintSet.toTutorEdits().forEach(e -> System.out.println(
 //				e.toSQLInsert("handmade_hints", "highlight", 20000, false, true)));
 	}

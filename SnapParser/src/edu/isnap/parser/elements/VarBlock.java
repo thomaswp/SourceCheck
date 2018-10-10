@@ -1,7 +1,8 @@
 package edu.isnap.parser.elements;
 
+import edu.isnap.parser.elements.util.IHasID;
 
-public class VarBlock extends Block {
+public class VarBlock extends Block implements IHasID {
 	private static final long serialVersionUID = 1L;
 
 	@Override

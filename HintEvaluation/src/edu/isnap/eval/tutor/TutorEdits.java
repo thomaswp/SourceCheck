@@ -45,7 +45,7 @@ import edu.isnap.node.ASTSnapshot;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.Snapshot;
-import edu.isnap.rating.RateHints;
+import edu.isnap.rating.HintRater;
 import edu.isnap.rating.RatingConfig;
 import edu.isnap.rating.data.GoldStandard;
 import edu.isnap.rating.data.Trace;
@@ -239,8 +239,8 @@ public class TutorEdits {
 				edits.stream()
 				.filter(e -> e.requestID.equals(requestID))
 				.forEach(e -> givers.add(
-						RateHints.normalizeNewValuesTo(
-								RateHints.normalizeNodeValues(e.from, config),
+						HintRater.normalizeNewValuesTo(
+								HintRater.normalizeNodeValues(e.from, config),
 								e.to, config, null), e));
 
 				ASTNode from = givers.values().stream().findFirst().get().get(0).from;

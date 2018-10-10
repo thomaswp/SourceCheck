@@ -1,6 +1,6 @@
 # Datasets
 
-This data contains detailed log data of students' use of the [iSnap](http://go.ncsu.edu/isnap) programming environment for an introductory undergraduate computing course for non-majors. The course content focused largely on computer applications, but also included a once-per-week lab section where students learned to program, using a curriculum loosely based on the [Beauty and Joy of Computing](http://bjc.berkeley.edu/). The data includes data from both in-lab assignments, where students worked in the lab sections with a TA available for help, and independent homework assignments. 
+This data contains detailed log data of students' use of the [iSnap](http://go.ncsu.edu/isnap) programming environment for an introductory undergraduate computing course for non-majors. The course content focused on computer applications, but also included a once-per-week lab section where students learned to program, using a curriculum loosely based on the [Beauty and Joy of Computing](http://bjc.berkeley.edu/). The data includes data from both in-lab assignments, where students worked in the lab sections with a TA available for help, and independent homework assignments. 
 
 ## Assignments
 
@@ -37,11 +37,11 @@ Step 2:
 
 Perform these tests:
 
-1. # of sides = 4, size = length of 100, thickness = 5
+1. \# of sides = 4, size = length of 100, thickness = 5
   * This should draw a square
-2. # of sides = 10, size = length of 50, thickness = 6
+2. \# of sides = 10, size = length of 50, thickness = 6
   * This should draw a decagon
-3. # of sides = 50, size = length of 7, thickness = 2
+3. \# of sides = 50, size = length of 7, thickness = 2
   * What do you think this will draw?
 
 ### Squiral (Homework)
@@ -149,7 +149,7 @@ Additionally, some elements will have special attributes:
 
 ## Feedback Text
 
-All hints instruct the student to change the children under one node of the AST. When present, the Feedback Text colum will contain a JSON object with the following fields:
+All hints instruct the student to change the children under one node of the AST. When present, the Feedback Text column will contain a JSON object with the following fields:
 * parentID: the ID of the parent AST node, the children of which the hint directs the user to change. If the parent is a `script` node, it will not have an ID, in which case this refers to the script's parent node.
 * parentType: the type of the parent node in the AST (e.g. snapshot, callBlock, etc.).
 * scriptIndex: if the parent is a script, this gives the child index of that script under it's parent, so that the script can be exactly identified using this value and the parentID.

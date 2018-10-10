@@ -33,11 +33,7 @@ public class Script extends Code implements IHasID, Comparable<Script> {
 	}
 
 	public static Script parse(Element element) {
-		return parse(element, null);
-	}
-
-	public static Script parse(Element element, String customBlockID) {
-		Script script = new Script(customBlockID);
+		Script script = new Script(null);
 		for (Code code : XML.getCode(element)) {
 			script.blocks.add((Block) code);
 		}

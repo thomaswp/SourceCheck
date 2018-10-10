@@ -48,10 +48,16 @@ public class JsonAST {
 	static {
 		valueReplacements.put("catherines variable", "my variable");
 		valueReplacements.put("Answer is Kimberly", "Answer is name");
-		valueReplacements.put("Bryson", "name");
-		valueReplacements.put("Ellis", "name");
 		valueReplacements.put("Your name is Bruce", "Your name is name");
-		valueReplacements.put("Sabrina", "name");
+
+		for (String name : new String[] {
+				"Bill", "Bryson", "Collin", "Cory", "Ellis", "George", "Leslie", "Sabrina",
+				"Jeff", "John", "Kev", "M. Jordan", "MARK", "MARK\\", "Roger", "Ron", "Tim",
+				"Trey", "Sam", "amy", "savannah", "Charles", "Baxter", "Dillon", "Morty", "Rick",
+				"Zack",
+		}) {
+			valueReplacements.put(name, "name");
+		}
 	}
 
 //	public static void main(String[] args) throws IOException {
@@ -168,7 +174,7 @@ public class JsonAST {
 
 	public static ASTNode toAST(Code code, boolean canon, boolean stripAllNonNumericLits) {
 		String type = code.type(canon);
-		String value = code.value();
+		String value = getValue(code, code.value(), stripAllNonNumericLits);
 		String id = code instanceof IHasID ? ((IHasID) code).getID() : null;
 
 		if (type.equals("snapshot")) {
@@ -181,31 +187,13 @@ public class JsonAST {
 			id = null;
 		}
 
-		// We strip non-numeric values for only text literals, or for all non-variable literals
-		// if the stripAll flag is true
-		if (code instanceof LiteralBlock && ((LiteralBlock) code).type != Type.VarMenu &&
-				(stripAllNonNumericLits || ((LiteralBlock) code).type == Type.Text)) {
-			// Only keep numeric text literal values
-			try {
-				Double.parseDouble(value);
-			} catch (NumberFormatException e) {
-				value = null;
-			}
-		}
-		if (value != null) {
-			String trimmed = value.trim();
-			if (valueReplacements.containsKey(trimmed)) {
-				trimmed = value = valueReplacements.get(trimmed);
-			}
-			values.add(trimmed);
-		}
-
 		ASTNode node = new ASTNode(type, value, id);
 
 		code.addChildren(canon, new Accumulator() {
 			@Override
 			public void add(String type, String value) {
-				node.addChild(new ASTNode(type, value, null));
+				node.addChild(new ASTNode(
+						type, getValue(null, value, stripAllNonNumericLits), null));
 			}
 
 			@Override
@@ -227,6 +215,30 @@ public class JsonAST {
 		});
 
 		return node;
+	}
+
+	private static String getValue(Code code, String value, boolean stripAllNonNumericLits) {
+		if (value == null) return null;
+
+		// We strip non-numeric values for only text literals, or for all non-variable literals
+		// if the stripAll flag is true
+		if (code instanceof LiteralBlock && ((LiteralBlock) code).type != Type.VarMenu &&
+				(stripAllNonNumericLits || ((LiteralBlock) code).type == Type.Text)) {
+			// Only keep numeric text literal values
+			try {
+				Double.parseDouble(value);
+			} catch (NumberFormatException e) {
+				value = null;
+			}
+			return value;
+		}
+
+		String trimmed = value.trim();
+		if (valueReplacements.containsKey(trimmed)) {
+			trimmed = value = valueReplacements.get(trimmed);
+		}
+		values.add(trimmed);
+		return value;
 	}
 
 	public static Node toNode(Code code, boolean canon, NodeConstructor constructor) {
