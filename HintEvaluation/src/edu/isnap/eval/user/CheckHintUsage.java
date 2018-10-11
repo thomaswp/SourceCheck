@@ -33,7 +33,7 @@ import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.dataset.Grade;
 import edu.isnap.datasets.Fall2015;
-import edu.isnap.datasets.Fall2017;
+import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.AutoGrader;
 import edu.isnap.eval.AutoGrader.Grader;
 import edu.isnap.eval.util.Prune;
@@ -49,7 +49,7 @@ public class CheckHintUsage {
 	private static final long MIN_DURATON_WE = 30;
 
 	public static void main(String[] args) throws IOException {
-		writeHints(Fall2017.instance);
+		writeHints(Spring2017.instance);
 	}
 
 	private static boolean isValidSubmission(AssignmentAttempt attempt) {
@@ -682,9 +682,9 @@ public class CheckHintUsage {
 				if (matches.size() == 1) {
 					return matches.get(0);
 				} else if (matches.size() > 1) {
-					System.err.println("Multiple matches in missing parent :(");
+//					System.err.println("Multiple matches in missing parent :(");
 				} else {
-					System.err.println("No matching parents...");
+//					System.err.println("No matching parents...");
 				}
 			}
 		}

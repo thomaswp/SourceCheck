@@ -34,7 +34,7 @@ import edu.isnap.rating.data.TraceDataset;
 
 public class JsonAST {
 
-	public final static String SNAPSHOT_TYPE = "Snap!shot";
+	public final static String OLD_SNAPSHOT_TYPE = "Snap!shot";
 
 	public final static Set<String> values = new TreeSet<>();
 
@@ -177,10 +177,6 @@ public class JsonAST {
 		String value = getValue(code, code.value(), stripAllNonNumericLits);
 		String id = code instanceof IHasID ? ((IHasID) code).getID() : null;
 
-		if (type.equals("snapshot")) {
-			type = SNAPSHOT_TYPE;
-		}
-
 		// Scripts really shouldn't have an ID, since it doesn't stay constant over snapshots, but
 		// the current implementation does, and I'm afraid to break something, so we remove it here.
 		if (type.equals("script")) {
@@ -251,7 +247,7 @@ public class JsonAST {
 
 	public static Node toNode(ASTNode astNode, Node parent, NodeConstructor constructor) {
 		String type = astNode.type;
-		if (SNAPSHOT_TYPE.equals(type)) type = "snapshot";
+		if (OLD_SNAPSHOT_TYPE.equals(type)) type = "snapshot";
 		Node node = constructor.constructNode(parent, type, astNode.value, astNode.id);
 		node.tag = astNode;
 		for (ASTNode child : astNode.children()) {
