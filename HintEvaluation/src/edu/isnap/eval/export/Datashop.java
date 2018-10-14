@@ -20,7 +20,7 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
-import edu.isnap.datasets.Fall2017;
+import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.user.CheckHintUsage;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.node.ASTNode;
@@ -56,14 +56,14 @@ public class Datashop {
 			"Feedback Text",
 			"Feedback Classification",
 			"CF (AST)",
-			"CF (AST-Print)"
+			"CF (AST-Print)",
 	};
 
 
 	private static Set<String> unexportedMessages = new LinkedHashSet<>();
 
 	public static void main(String[] args) throws IOException {
-		export(Fall2017.instance);
+		export(Spring2017.instance);
 
 		System.out.println("\nUnexported messages:");
 		unexportedMessages.forEach(System.out::println);
@@ -128,6 +128,11 @@ public class Datashop {
 	private static void export(Assignment assignment, AssignmentAttempt attempt, CSVPrinter printer)
 			throws IOException {
 		String userID = attempt.userID();
+		if (userID == null || userID.isEmpty()) {
+			userID = attempt.id;
+		} else if (userID.length() > 16) {
+			userID = userID.substring(userID.length() - 16, userID.length());
+		}
 		String attemptID = attempt.id;
 		String levelType = assignment.name.contains("HW") ? "HOMEWORK" : "IN-LAB";
 		String problemName = assignment.name;
@@ -150,10 +155,10 @@ public class Datashop {
 
 			if (action.snapshot != null) {
 				ASTNode ast = JsonAST.toAST(action.snapshot, false);
-				code = ast.toJSON().toString();
 				String newCode = ast.prettyPrint(true, RatingConfig.Snap);
 				if (!newCode.equals(lastCode)) {
-					lastCode = humanReadableCode = newCode;
+					code = ast.toJSON().toString();
+					lastCode = humanReadableCode = newCode.replace("\n", "\\n");
 					lastSnapshot = action.snapshot;
 				}
 			}
@@ -191,7 +196,8 @@ public class Datashop {
 				selection = String.valueOf(jsonData.opt("block"));
 			} else if (message.matches("HighlightDisplay\\.((show)|(hide)).*Insert")) {
 				JSONObject jsonData = new JSONObject(data);
-				selection = String.valueOf(jsonData.opt("candidate"));
+				JSONObject candidate = jsonData.getJSONObject("candidate");
+				selection = candidate.getInt("id") + ";" + candidate.getString("selector");
 			} else if (AttemptAction.SHOW_HINT_MESSAGES.contains(message) && lastSnapshot != null) {
 				studentResponse = "HINT_REQUEST";
 				feedbackClassification = message;
@@ -221,8 +227,11 @@ public class Datashop {
 					parent = CheckHintUsage.checkForZombieHintParent(attempt, jsonData, from, i);
 				}
 				if (parent == null) System.err.println("Null parent: " + data);
+
+				Integer scriptIndex = -1;
+				String parentID = null;
 				if (parent != null) {
-					int scriptIndex = -1;
+					scriptIndex = -1;
 					while (parent.tag instanceof Script || !(parent.tag instanceof IHasID)) {
 						if (parent.tag instanceof Script || parent.tag instanceof ListBlock) {
 							scriptIndex = parent.index();
@@ -231,29 +240,29 @@ public class Datashop {
 						}
 						parent = parent.parent;
 					}
-					String parentID = ((IHasID)parent.tag).getID();
+					parentID = ((IHasID)parent.tag).getID();
 					if (parentID == null) {
 						System.err.println("No parentID: " + parent.type());
 					} else {
 						selection = parentID;
 					}
-
-					JSONObject saveData = new JSONObject();
-					saveData.put("parentID", parentID);
-					saveData.put("parentType", parent.type());
-					if (scriptIndex >= 0) {
-						// Because scripts have no IDs, we use their parents' IDs, and mark
-						// which script was referenced
-						saveData.put("scriptIndex", scriptIndex);
-					}
-					saveData.put("from", fromArray);
-					saveData.put("to", toArray);
-					if (jsonData.has("message")) {
-						saveData.put("message", jsonData.get("message"));
-					}
-
-					feedbackText = saveData.toString();
 				}
+
+				JSONObject saveData = new JSONObject();
+				saveData.put("parentID", parentID);
+				saveData.put("parentType", parent == null ? null : parent.type());
+				if (scriptIndex >= 0) {
+					// Because scripts have no IDs, we use their parents' IDs, and mark
+					// which script was referenced
+					saveData.put("scriptIndex", scriptIndex);
+				}
+				saveData.put("from", fromArray);
+				saveData.put("to", toArray);
+				if (jsonData.has("message")) {
+					saveData.put("message", jsonData.get("message"));
+				}
+
+				feedbackText = saveData.toString();
 			} else if (selection.length() == 0 && data.length() > 0) {
 //				System.out.println(message + ": " + data);
 				unexportedMessages.add(message);
@@ -265,12 +274,14 @@ public class Datashop {
 				}
 			}
 
-			String stepTarget = selection.replaceAll("[;0-9]", "");
+			String stepTarget = selection;
+			int stepSemi = stepTarget.indexOf(";");
+			if (stepSemi >= 0) stepTarget = stepTarget.substring(0, stepSemi);
 			String stepName = message + (stepTarget.length() > 0 ? "_" : "") + stepTarget;
 
 			printer.printRecord(new Object[] {
 					userID,
-					attemptID,
+					attemptID + "_" + action.sessionID,
 					action.timestamp.getTime(),
 					studentResponse,
 					levelType,
@@ -287,6 +298,7 @@ public class Datashop {
 		}
 	}
 
+	@Deprecated
 	protected static void exportOldFormat(Assignment assignment, AssignmentAttempt attempt,
 			CSVPrinter printer) throws IOException {
 		String attemptID = attempt.id;
@@ -400,7 +412,9 @@ public class Datashop {
 				unexportedMessages.add(message);
 			}
 
-			String stepTarget = selection.replaceAll("[,0-9]", "");
+			String stepTarget = selection;
+			int stepSemi = stepTarget.indexOf(";");
+			if (stepSemi >= 0) stepTarget = stepTarget.substring(0, stepSemi);
 			String stepName = message + (stepTarget.length() > 0 ? "_" : "") + stepTarget;
 
 			printer.printRecord(new Object[] {
