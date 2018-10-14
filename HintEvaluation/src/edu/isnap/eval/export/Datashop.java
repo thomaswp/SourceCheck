@@ -20,10 +20,11 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
-import edu.isnap.datasets.Spring2017;
+import edu.isnap.datasets.Fall2017;
 import edu.isnap.eval.user.CheckHintUsage;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.node.ASTNode;
+import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.BlockDefinition;
 import edu.isnap.parser.elements.CallBlock;
@@ -61,12 +62,15 @@ public class Datashop {
 
 
 	private static Set<String> unexportedMessages = new LinkedHashSet<>();
+	private static Set<String> users = new LinkedHashSet<>();
 
 	public static void main(String[] args) throws IOException {
-		export(Spring2017.instance);
+		export(Fall2017.instance);
 
 		System.out.println("\nUnexported messages:");
 		unexportedMessages.forEach(System.out::println);
+		System.out.println("\nUsers:");
+		users.forEach(System.out::println);
 	}
 
 	public static void export(Dataset dataset) {
@@ -117,7 +121,8 @@ public class Datashop {
 	private static void export(Assignment assignment, CSVPrinter printer) throws IOException {
 		System.out.println("---- Exporting: " + assignment + " ----");
 
-		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, false);
+		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, false, true,
+				new SnapParser.SubmittedOnly());
 		for (AssignmentAttempt attempt : attempts.values()) {
 			if (attempt.submittedActionID == AssignmentAttempt.NOT_SUBMITTED) continue;
 			System.out.println(attempt.id);
@@ -130,9 +135,12 @@ public class Datashop {
 		String userID = attempt.userID();
 		if (userID == null || userID.isEmpty()) {
 			userID = attempt.id;
+			System.out.println("No UID: " + attempt.id);
 		} else if (userID.length() > 16) {
 			userID = userID.substring(userID.length() - 16, userID.length());
 		}
+		users.add(userID);
+
 		String attemptID = attempt.id;
 		String levelType = assignment.name.contains("HW") ? "HOMEWORK" : "IN-LAB";
 		String problemName = assignment.name;
