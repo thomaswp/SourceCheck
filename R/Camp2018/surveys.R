@@ -1,6 +1,6 @@
 library(readr)
 
-users <- read_csv("data/camp_users.csv")
+users <- read_csv("data/hs/camp_users.csv")
 users <- users[users$hashedUserID != "NULL" & users$tester == 0,]
 
 # Two users had to leave early (one came back) and had to be excluded
@@ -15,10 +15,10 @@ loadSurvey <- function(users, path) {
   survey
 }
 
-preS <- loadSurvey(users, "data/pre-survey-N.csv")
-postS <- loadSurvey(users, "data/post-survey-N.csv")
-preT <- loadSurvey(users, "data/pre-test-N.csv")
-postT <- loadSurvey(users, "data/post-test-N.csv")
+preS <- loadSurvey(users, "data/hs/pre-survey-N.csv")
+postS <- loadSurvey(users, "data/hs/post-survey-N.csv")
+preT <- loadSurvey(users, "data/hs/pre-test-N.csv")
+postT <- loadSurvey(users, "data/hs/post-test-N.csv")
 
 # Names match, so they can be deleted soon
 # data.frame(preS$Name, postS$Name, preT$Name, postT$Name)
