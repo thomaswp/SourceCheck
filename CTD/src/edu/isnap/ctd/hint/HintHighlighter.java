@@ -2,6 +2,7 @@ package edu.isnap.ctd.hint;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -31,10 +32,10 @@ import edu.isnap.ctd.util.NodeAlignment;
 import edu.isnap.ctd.util.NodeAlignment.DistanceMeasure;
 import edu.isnap.ctd.util.NodeAlignment.Mapping;
 import edu.isnap.ctd.util.NodeAlignment.ProgressDistanceMeasure;
+import edu.isnap.ctd.util.NullStream;
 import edu.isnap.util.map.BiMap;
 import edu.isnap.util.map.CountMap;
 import edu.isnap.util.map.ListMap;
-import edu.isnap.ctd.util.NullStream;
 
 public class HintHighlighter {
 
@@ -51,14 +52,14 @@ public class HintHighlighter {
 	private final Map<Node, Map<String, Double>> nodePlacementTimes;
 
 	public HintHighlighter(HintMap hintMap) {
-		this(hintMap.solutions, hintMap.config, hintMap);
+		this(hintMap.solutions.keySet(), hintMap.config, hintMap);
 	}
 
-	public HintHighlighter(List<Node> solutions, HintConfig config) {
+	public HintHighlighter(Collection<Node> solutions, HintConfig config) {
 		this(solutions, config, null);
 	}
 
-	public HintHighlighter(List<Node> solutions, HintConfig config, HintMap hintMap) {
+	public HintHighlighter(Collection<Node> solutions, HintConfig config, HintMap hintMap) {
 		// Make a copy of the nodePlacementTimes so we can modify them when we replace nodes in the
 		// preprocessSolutions method
 		this.nodePlacementTimes = hintMap == null ? null :
@@ -72,7 +73,8 @@ public class HintHighlighter {
 		}
 		solutions = solutionsCopy;
 		this.solutions = config.preprocessSolutions ?
-				preprocessSolutions(solutions, config, nodePlacementTimes) : solutions;
+				preprocessSolutions(solutions, config, nodePlacementTimes) :
+					new ArrayList<>(solutions);
 		this.config = config;
 		this.hintMap = hintMap;
 	}
@@ -141,7 +143,7 @@ public class HintHighlighter {
 				Node moveParent = mapping.getTo(pair.parent);
 				if (moveParent == null) {
 					Insertion insertion = new Insertion(pair.parent, pair, pair.index(),
-							mapping.getMappedValue(node, true), true);
+							getInsertValue(pair, mapping), true);
 					insertion.candidate = node;
 					edits.add(insertion);
 				} else {
@@ -161,7 +163,7 @@ public class HintHighlighter {
 					}
 
 					Insertion insertion = new Insertion(moveParent, pair, insertIndex,
-							mapping.getMappedValue(node, true));
+							getInsertValue(pair, mapping));
 					insertion.candidate = node;
 					// If this is a code element parent, inserting the node should replace
 					// the current node at this index
@@ -312,7 +314,7 @@ public class HintHighlighter {
 						}
 
 						Insertion insertion = new Insertion(node, child, insertIndex,
-								mapping.getMappedValue(child, false));
+								getInsertValue(child, mapping));
 						edits.add(insertion);
 						// If the node is being inserted in a code element then it replaces
 						// whatever already exists at this index in the parent
@@ -337,7 +339,7 @@ public class HintHighlighter {
 					// as Move instead of Delete when they're used in not-yet-added parents
 
 					Insertion insertion = new Insertion(pair.parent, pair, pair.index(),
-							mapping.getMappedValue(pair, false), true);
+							getInsertValue(pair, mapping), true);
 					edits.add(insertion);
 				}
 			}
@@ -403,6 +405,14 @@ public class HintHighlighter {
 		return edits;
 	}
 
+	private String getInsertValue(Node pair, Mapping mapping) {
+		String value = mapping.getMappedValue(pair, false);
+		if (value == null && config.suggestNewMappedValues) {
+			value = pair.value;
+		}
+		return value;
+	}
+
 	private void extractSubedits(final List<EditHint> edits) {
 		if (!config.createSubedits) return;
 
@@ -410,6 +420,7 @@ public class HintHighlighter {
 		// Mark that as a subedit of the parent, so it will only be executed afterwards
 		List<Insertion> insertions = extractInsertions(edits);
 		for (Insertion parent : insertions) {
+			if (parent.keepChildrenInReplacement) continue;
 			for (int i = 0; i < edits.size(); i++) {
 				Insertion child = Cast.cast(edits.get(i), Insertion.class);
 				if (child == null || child.parentPair != parent.pair) continue;
@@ -452,15 +463,19 @@ public class HintHighlighter {
 				.filter(edit -> edit instanceof Deletion && ((Deletion) edit).node == deleted)
 				.findFirst().orElse(null);
 		if (colors.get(deleted) != Highlight.Delete) return;
-		if (deleted.type().equals(insertion.type)) return;
+		if (deleted.type().equals(insertion.type) &&
+				StringUtils.equals(deleted.value, insertion.value)) {
+			return;
+		}
 
 //		System.out.println(deleted + " => " + insertion);
 //		edits.stream().filter(edit -> edit.parent == insertion.parent).forEach(System.out::println);
 //		System.out.println("-----");
 
+		boolean match = deleted.type().equals(insertion.type);
+
 		// We have a fairly loose standard for children matching. We see if they share any immediate
 		// children with the same type, and if so we match them. (Note that this is a
-		boolean match = false;
 		boolean keepChildren = false;
 		for (Node n1 : deleted.children) {
 			String type1 = n1.type();
@@ -481,6 +496,7 @@ public class HintHighlighter {
 				mapping.getFrom(deleted.parent) == insertion.pair.parent &&
 				deletedSiblings.stream().allMatch(sib -> colors.get(sib) == Highlight.Delete)) {
 			match = true;
+			System.out.println("COMBINE");
 		}
 
 		// If there are no other edits for this parent besides the insertion and deletion to be
@@ -559,7 +575,7 @@ public class HintHighlighter {
 	 */
 	@SuppressWarnings("deprecation")
 	// TODO: Rework to be not snap-specific
-	private static List<Node> preprocessSolutions(List<Node> allSolutions, HintConfig config,
+	private static List<Node> preprocessSolutions(Collection<Node> allSolutions, HintConfig config,
 			Map<Node, Map<String, Double>> nodePlacementTimes) {
 
 		// TODO: This doesn't work well with multi-script and multi-sprite solutions

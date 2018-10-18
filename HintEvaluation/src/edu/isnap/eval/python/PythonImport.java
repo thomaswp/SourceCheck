@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.json.JSONException;
@@ -45,16 +46,16 @@ public class PythonImport {
 
 	static void generateHints(String dataDir, String assignment) throws IOException {
 		ListMap<String, PythonNode> attempts = loadAssignment(dataDir, assignment);
-		List<PythonNode> correct = attempts.values().stream()
+		Set<PythonNode> correct = attempts.values().stream()
 			.map(list -> list.get(list.size() - 1))
 			.filter(n -> n.correct.orElse(false))
-			.collect(Collectors.toList());
+			.collect(Collectors.toSet());
 		for (String student : attempts.keySet()) {
 			PythonNode firstAttempt = attempts.get(student).get(0);
 			if (firstAttempt.correct.orElse(false)) continue;
-			List<Node> subset = correct.stream()
+			Set<Node> subset = correct.stream()
 					.filter(n -> !student.equals(n.student))
-					.collect(Collectors.toList());
+					.collect(Collectors.toSet());
 			HintHighlighter highlighter = new HintHighlighter(subset, new PythonHintConfig());
 			highlighter.trace = NullStream.instance;
 
@@ -69,8 +70,7 @@ public class PythonImport {
 
 			System.out.println(student);
 			System.out.println(firstAttempt.source);
-			System.out.println("\nTarget (" + firstAttempt.student + "):");
-			// TODO: For some reason, this process is modifying the target solution... :<
+			System.out.println("\nTarget (" + target.student + "):");
 			System.out.println(Diff.diff(firstAttempt.source, target.source, 2));
 			mapping.printValueMappings(System.out);
 			System.out.println(Diff.diff(from, to));
@@ -116,11 +116,6 @@ public class PythonImport {
 						boolean correct = obj.getBoolean("correct");
 						node.correct = Optional.of(correct);
 						node.student = student;
-						if (node.student.equals("xppg3F91AitZ")) {
-							System.out.println(node);
-							System.out.println(node.copy());
-							System.out.println("--------");
-						}
 					}
 					node.source = source;
 				} catch (JSONException e) {

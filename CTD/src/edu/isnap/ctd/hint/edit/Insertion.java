@@ -211,7 +211,7 @@ public class Insertion extends EditHint {
 					parent.children.add(parent.constructNode(parent, ASTNode.EMPTY_TYPE));
 				}
 				// and then remove them as children are inserted
-				if (index < parent.children.size() &&
+				if (replaced == null && index < parent.children.size() &&
 						parent.children.get(index).hasType(ASTNode.EMPTY_TYPE)) {
 					parent.children.remove(index);
 				}

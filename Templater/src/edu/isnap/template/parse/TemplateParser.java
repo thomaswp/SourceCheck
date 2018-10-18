@@ -61,7 +61,7 @@ public class TemplateParser {
 		for (BNode variant : variants) {
 			Node n = variant.toNode(sample::constructNode);
 			verifyNode(n);
-			hintMap.solutions.add(n);
+			hintMap.solutions.increment(n);
 		}
 
 		printVariants(node.getVariants(Context.fromSample(sample).withOptional(false)),

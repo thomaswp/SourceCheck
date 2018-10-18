@@ -3,6 +3,7 @@ package edu.isnap.ctd.hint;
 import java.io.PrintStream;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -29,13 +30,13 @@ public class RuleSet implements Serializable {
 	@SuppressWarnings("unused")
 	private RuleSet() { this(null, null); }
 
-	public RuleSet(List<Node> solutions, HintConfig config) {
+	public RuleSet(Collection<Node> solutions, HintConfig config) {
 		this.config = config;
 		this.decisions = findDecisions(solutions);
 	}
 
-	public List<Node> filterSolutions(List<Node> solutions, Node node) {
-		if (!config.useRulesToFilter) return solutions;
+	public List<Node> filterSolutions(Collection<Node> solutions, Node node) {
+		if (!config.useRulesToFilter) return new ArrayList<>(solutions);
 
 		Map<String, Node> idMap = solutions.stream().collect(Collectors.toMap(n -> n.id, n -> n));
 
@@ -90,7 +91,7 @@ public class RuleSet implements Serializable {
 		return bestIDs.stream().map(id -> idMap.get(id)).collect(Collectors.toList());
 	}
 
-	private List<Disjunction> findDecisions(List<Node> solutions) {
+	private List<Disjunction> findDecisions(Collection<Node> solutions) {
 		if (solutions == null) return null;
 
 		int n = solutions.size();

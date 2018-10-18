@@ -150,6 +150,13 @@ public abstract class HintConfig implements Serializable {
 	}
 
 	/**
+	 * If set to true, when a target solution contains a mapped value with no pair in the student's
+	 * code, we suggest the target solution's value. So for example, rather than suggesting to
+	 * add "a variable," we would suggest adding "variable x".
+	 */
+	public boolean suggestNewMappedValues = false;
+
+	/**
 	 * If true, a HintMap build from this assignment will only include graded submissions.
 	 */
 	public boolean requireGrade = false;

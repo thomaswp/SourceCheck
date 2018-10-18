@@ -15,6 +15,7 @@ public class PythonHintConfig extends HintConfig {
 
 	public PythonHintConfig() {
 		preprocessSolutions = false;
+		suggestNewMappedValues = true;
 	}
 
 	@Override

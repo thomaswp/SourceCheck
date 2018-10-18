@@ -18,6 +18,7 @@ import edu.isnap.ctd.graph.vector.VectorGraph;
 import edu.isnap.ctd.graph.vector.VectorState;
 import edu.isnap.ctd.hint.Ordering.OrderMatrix;
 import edu.isnap.ctd.hint.feature.Feature;
+import edu.isnap.util.map.CountMap;
 
 /**
  * Class for handling the core logic of the CTD algorithm.
@@ -26,7 +27,7 @@ import edu.isnap.ctd.hint.feature.Feature;
 public class HintMap {
 
 	// TODO: should probably extract to a datastructure, rather than a list and some maps...
-	public final List<Node> solutions = new ArrayList<>();
+	public final CountMap<Node> solutions = new CountMap<>();
 	public final Map<Node, Map<String, Double>> nodePlacementTimes = new IdentityHashMap<>();
 	private final Map<Node, Ordering> nodeOrderings = new IdentityHashMap<>();
 	public OrderMatrix orderMatrix;
@@ -130,7 +131,7 @@ public class HintMap {
 	}
 
 	public void setSolution(Node solution) {
-		solutions.add(solution);
+		solutions.increment(solution);
 
 		Map<String, Double> currentNodeCreationPercs = new HashMap<>();
 
@@ -219,7 +220,7 @@ public class HintMap {
 			graph.generateAndRemoveEdges(config.maxEdgeAddDistance, config.maxEdgeDistance);
 			graph.bellmanBackup(config.pruneGoals);
 		}
-		ruleSet = new RuleSet(solutions, config);
+		ruleSet = new RuleSet(solutions.keySet(), config);
 		// TODO: config
 		orderMatrix = new OrderMatrix(nodeOrderings.values(), 0.3);
 	}
@@ -235,7 +236,7 @@ public class HintMap {
 			}
 			myGraph.addGraph(graph, true);
 		}
-		solutions.addAll(hintMap.solutions);
+		solutions.add(hintMap.solutions);
 		nodePlacementTimes.putAll(hintMap.nodePlacementTimes);
 		nodeOrderings.putAll(hintMap.nodeOrderings);
 	}
