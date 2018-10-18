@@ -20,7 +20,7 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
-import edu.isnap.datasets.Fall2017;
+import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.user.CheckHintUsage;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.node.ASTNode;
@@ -39,6 +39,7 @@ import edu.isnap.parser.elements.VarBlock;
 import edu.isnap.parser.elements.util.Canonicalization;
 import edu.isnap.parser.elements.util.IHasID;
 import edu.isnap.rating.RatingConfig;
+import edu.isnap.util.map.CountMap;
 import edu.isnap.util.map.DoubleMap;
 
 public class Datashop {
@@ -62,15 +63,15 @@ public class Datashop {
 
 
 	private static Set<String> unexportedMessages = new LinkedHashSet<>();
-	private static Set<String> users = new LinkedHashSet<>();
+	private static CountMap<String> users = new CountMap<>();
 
 	public static void main(String[] args) throws IOException {
-		export(Fall2017.instance);
+		export(Spring2017.instance);
 
 		System.out.println("\nUnexported messages:");
 		unexportedMessages.forEach(System.out::println);
 		System.out.println("\nUsers:");
-		users.forEach(System.out::println);
+		users.entrySet().forEach(System.out::println);
 	}
 
 	public static void export(Dataset dataset) {
@@ -139,7 +140,7 @@ public class Datashop {
 		} else if (userID.length() > 16) {
 			userID = userID.substring(userID.length() - 16, userID.length());
 		}
-		users.add(userID);
+		users.increment(userID);
 
 		String attemptID = attempt.id;
 		String levelType = assignment.name.contains("HW") ? "HOMEWORK" : "IN-LAB";
