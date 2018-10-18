@@ -31,10 +31,10 @@ import edu.isnap.ctd.util.NodeAlignment;
 import edu.isnap.ctd.util.NodeAlignment.DistanceMeasure;
 import edu.isnap.ctd.util.NodeAlignment.Mapping;
 import edu.isnap.ctd.util.NodeAlignment.ProgressDistanceMeasure;
+import edu.isnap.ctd.util.NullStream;
 import edu.isnap.util.map.BiMap;
 import edu.isnap.util.map.CountMap;
 import edu.isnap.util.map.ListMap;
-import edu.isnap.ctd.util.NullStream;
 
 public class HintHighlighter {
 
@@ -141,6 +141,7 @@ public class HintHighlighter {
 				Node moveParent = mapping.getTo(pair.parent);
 				if (moveParent == null) {
 					Insertion insertion = new Insertion(pair.parent, pair, pair.index(),
+							// TODO: Should this be pair? I think so - please test!
 							mapping.getMappedValue(node, true), true);
 					insertion.candidate = node;
 					edits.add(insertion);
@@ -161,6 +162,7 @@ public class HintHighlighter {
 					}
 
 					Insertion insertion = new Insertion(moveParent, pair, insertIndex,
+							// TODO: Should this be pair? I think so - please test!
 							mapping.getMappedValue(node, true));
 					insertion.candidate = node;
 					// If this is a code element parent, inserting the node should replace
