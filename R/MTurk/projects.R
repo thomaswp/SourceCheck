@@ -623,6 +623,9 @@ loadData <- function() {
   Anova(aov(Q10 ~ minute * helpNeededBin * mastery, data=postHelp[postHelp$assignmentID=="drawTriangles" & postHelp$codeHint,]), type=3)
   Anova(aov(Q10 ~ minute * helpNeededBin * mastery, data=postHelp[postHelp$assignmentID=="drawTriangles" & postHelp$textHint,]), type=3)
   Anova(aov(Q10 ~ minute * helpNeededBin * mastery, data=postHelp[postHelp$assignmentID=="drawTriangles" & postHelp$reflect,]), type=3)
+  
+  ## Time analysis
+  ggplot(actions, aes(y=duration, x=textHint)) + geom_boxplot() + scale_y_continuous(limits=c(0, 120)) + facet_wrap( ~ reflect)
 }
 
 

@@ -81,7 +81,9 @@ public class MTurkProcess {
 		String eventID = null;
 		boolean codeHint = false, textHint = false, reflect = false;
 
-		for (AttemptAction row : attempt.rows) {
+		for (int j = 0; j < attempt.size(); j++) {
+			AttemptAction row = attempt.rows.get(j);
+
 			long time = row.timestamp.getTime();
 			int relTime = (int) (time - start);
 
@@ -127,6 +129,19 @@ public class MTurkProcess {
 				actions.put("time", relTime);
 				actions.put("treeSize", node.treeSize());
 				actions.put("objs", objs);
+
+				Long duration = null;
+				for (int i = j + 1; i < attempt.size(); i++) {
+					AttemptAction nextAction = attempt.rows.get(i);
+					if (nextAction.message.equals("HintDialogBoxMorph.showPostHintSurvey") &&
+							nextAction.data.contains(eventID)) {
+						duration =
+								(nextAction.timestamp.getTime() - row.timestamp.getTime()) / 1000;
+						break;
+					}
+				}
+				actions.put("duration", duration);
+
 
 				break;
 			case AttemptAction.PROACTIVE_NO_HINT:
