@@ -626,6 +626,8 @@ loadData <- function() {
   
   ## Time analysis
   ggplot(actions, aes(y=duration, x=textHint)) + geom_boxplot() + scale_y_continuous(limits=c(0, 120)) + facet_wrap( ~ reflect)
+  median(actions$duration[actions$textHint == 1 & !actions$reflect])
+  median(actions$duration[actions$textHint == 0 & !actions$reflect])
 }
 
 
