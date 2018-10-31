@@ -130,6 +130,17 @@ public class MTurkProcess {
 				actions.put("treeSize", node.treeSize());
 				actions.put("objs", objs);
 
+				boolean noHint = false;
+				for (int i = j + 1; i < attempt.size() && i < j + 4; i++) {
+					AttemptAction nextAction = attempt.rows.get(i);
+					if (nextAction.message.equals("ProactiveDisplay.showNoHintToSee")) {
+						noHint = true;
+						break;
+					}
+				}
+				actions.put("noHint", noHint);
+
+
 				Long duration = null;
 				for (int i = j + 1; i < attempt.size(); i++) {
 					AttemptAction nextAction = attempt.rows.get(i);
@@ -149,7 +160,8 @@ public class MTurkProcess {
 				if (firstNoHints == 0) firstNoHints = (int) (time - start);
 				break;
 			case AttemptAction.HINT_DIALOG_LOG_FEEDBACK:
-				if (AttemptAction.HINT_DIALOG_DONE.equals(lastAction)) {
+				// TODO: Why was this line here to begin with!?
+//				if (AttemptAction.HINT_DIALOG_DONE.equals(lastAction)) {
 					JSONObject json = new JSONObject(row.data);
 					String explanation = json.optString("explanation");
 					if (explanation != null && explanation.length() > 0) {
@@ -159,7 +171,7 @@ public class MTurkProcess {
 						explanations.put("textHint", textHint);
 						explanations.put("explanation", explanation);
 					}
-				}
+//				}
 				break;
 			}
 
