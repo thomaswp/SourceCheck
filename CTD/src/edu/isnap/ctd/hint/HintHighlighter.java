@@ -143,7 +143,8 @@ public class HintHighlighter {
 				Node moveParent = mapping.getTo(pair.parent);
 				if (moveParent == null) {
 					Insertion insertion = new Insertion(pair.parent, pair, pair.index(),
-							getInsertValue(pair, mapping), true);
+							// When moving/reordering, we don't change the value of the node
+							mapping.getMappedValue(node, true), true);
 					insertion.candidate = node;
 					edits.add(insertion);
 				} else {
@@ -163,7 +164,8 @@ public class HintHighlighter {
 					}
 
 					Insertion insertion = new Insertion(moveParent, pair, insertIndex,
-							getInsertValue(pair, mapping));
+							// When moving/reordering, we don't change the value of the node
+							mapping.getMappedValue(node, true));
 					insertion.candidate = node;
 					// If this is a code element parent, inserting the node should replace
 					// the current node at this index

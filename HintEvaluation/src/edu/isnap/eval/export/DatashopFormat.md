@@ -98,7 +98,7 @@ The PSLC Datashop was designed to store interaction data from well-structured in
 ## Log Format
 The [full spec](https://pslcdatashop.web.cmu.edu/help?page=importFormatTd) can be found here, but here are the columns I've chosen to include:
 
-* Anon Student Id: A anonymous identifier for the "student id". This is consistent across assignments for the same student starting with the **Spring 2017** dataset. Before then (Fall 2015 - Fall 2016), this ID is *not* consistent across datasets, and is simply an ID for the project.
+* Anon Student Id: A anonymous identifier for the "student id". This should be consistent across assignments for the same student starting with the **Spring 2017** dataset, though since students input the ID, though occasionally students accidentally used different IDs (so the number of unique IDs will be greater than the number of students). Additionally, the ID may be "none" if a database error meant the student was unable to login, so we do not know who they were. Before Spring 2017, (Fall 2015 - Fall 2016), this ID is *not* consistent across datasets, and is simply an ID for the project.
 * Session Id: The session when the work was attempted. Here, this is just a GUID for project, appended to a GUID for the browser session when the work occurred.
 * Time: A unix timestamp (in milliseconds) for when a given event occurred.
 * Student Response Type: Either ATTEMPT or HINT_REQUEST. This isn't entirely applicable to an open programming problem, so I've just put ATTEMPT for all edits that aren't hint requests.
