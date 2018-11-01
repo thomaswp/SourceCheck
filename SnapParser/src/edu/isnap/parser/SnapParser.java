@@ -111,6 +111,7 @@ public class SnapParser {
 					DateFormat format = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
 					BlockIndex editingIndex = null;
 					Snapshot lastSnaphot = null;
+					boolean exportedUserID = false;
 
 					boolean hasUserIDs = parser.getHeaderMap().containsKey("userID");
 
@@ -145,8 +146,9 @@ public class SnapParser {
 
 						if (AttemptAction.IDE_EXPORT_PROJECT.equals(action)) {
 							if (userID != null && !userID.equals("none")) {
-								if (solution.userID == null) {
+								if (solution.userID == null || !exportedUserID) {
 									solution.userID = userID;
+									exportedUserID = true;
 								} else if (!solution.userID.equals(userID)) {
 									parser.close();
 									// TODO: Make this impossible by implementing the TODOs here and

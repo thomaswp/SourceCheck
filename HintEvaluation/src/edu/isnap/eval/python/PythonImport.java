@@ -3,11 +3,11 @@ package edu.isnap.eval.python;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.json.JSONException;
@@ -18,7 +18,6 @@ import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.edit.EditHint;
 import edu.isnap.ctd.util.NodeAlignment.Mapping;
 import edu.isnap.ctd.util.NullStream;
-import edu.isnap.eval.export.GrammarBuilder;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.node.ASTSnapshot;
 import edu.isnap.util.Diff;
@@ -27,36 +26,36 @@ import edu.isnap.util.map.ListMap;
 public class PythonImport {
 
 	public static void main(String[] args) throws IOException {
-//		generateHints("../../PythonAST/data", "howManyEggCartons");
+		generateHints("../../PythonAST/data/datacamp", "65692");
 
-		Map<String, ListMap<String, PythonNode>> nodes = loadAllAssignments("../../PythonAST/data");
-		for (String assignment : nodes.keySet()) {
-			long correct = nodes.get(assignment).values().stream()
-					.filter(list -> list.stream().anyMatch(n -> n.correct.orElse(false)))
-					.count();
-			if (correct > 0) {
-				System.out.println(assignment + ": " + correct + "/" +
-					nodes.get(assignment).size());
-			}
-		}
-		GrammarBuilder builder = new GrammarBuilder("python", new HashMap<>());
-		nodes.values().forEach(listMap -> listMap.values()
-				.forEach(list -> list.forEach(n -> builder.add(n))));
-		System.out.println(builder.toJSON());
+//		Map<String, ListMap<String, PythonNode>> nodes = loadAllAssignments("../../PythonAST/data");
+//		for (String assignment : nodes.keySet()) {
+//			long correct = nodes.get(assignment).values().stream()
+//					.filter(list -> list.stream().anyMatch(n -> n.correct.orElse(false)))
+//					.count();
+//			if (correct > 0) {
+//				System.out.println(assignment + ": " + correct + "/" +
+//					nodes.get(assignment).size());
+//			}
+//		}
+//		GrammarBuilder builder = new GrammarBuilder("python", new HashMap<>());
+//		nodes.values().forEach(listMap -> listMap.values()
+//				.forEach(list -> list.forEach(n -> builder.add(n))));
+//		System.out.println(builder.toJSON());
 	}
 
 	static void generateHints(String dataDir, String assignment) throws IOException {
 		ListMap<String, PythonNode> attempts = loadAssignment(dataDir, assignment);
-		List<PythonNode> correct = attempts.values().stream()
+		Set<PythonNode> correct = attempts.values().stream()
 			.map(list -> list.get(list.size() - 1))
 			.filter(n -> n.correct.orElse(false))
-			.collect(Collectors.toList());
+			.collect(Collectors.toSet());
 		for (String student : attempts.keySet()) {
 			PythonNode firstAttempt = attempts.get(student).get(0);
 			if (firstAttempt.correct.orElse(false)) continue;
-			List<Node> subset = correct.stream()
+			Set<Node> subset = correct.stream()
 					.filter(n -> !student.equals(n.student))
-					.collect(Collectors.toList());
+					.collect(Collectors.toSet());
 			HintHighlighter highlighter = new HintHighlighter(subset, new PythonHintConfig());
 			highlighter.trace = NullStream.instance;
 
@@ -71,7 +70,8 @@ public class PythonImport {
 
 			System.out.println(student);
 			System.out.println(firstAttempt.source);
-			System.out.println(target.source);
+			System.out.println("\nTarget (" + target.student + "):");
+			System.out.println(Diff.diff(firstAttempt.source, target.source, 2));
 			mapping.printValueMappings(System.out);
 			System.out.println(Diff.diff(from, to));
 			System.out.println(String.join("\n",
@@ -162,6 +162,16 @@ public class PythonImport {
 
 		public ASTSnapshot toASTSnapshot() {
 			return super.toASTSnapshot(correct.orElse(false), source);
+		}
+
+		@Override
+		public Node shallowCopy(Node parent) {
+			PythonNode copy = (PythonNode) super.shallowCopy(parent);
+			copy.source = this.source;
+			copy.student =this.student;
+			copy.correct = this.correct;
+			return copy;
+
 		}
 	}
 }

@@ -37,7 +37,7 @@ public class PQGramHintSet extends HintMapHintSet {
 		for (String assignmentID : dataset.getAssignmentIDs()) {
 			List<Trace> traces = dataset.getTraces(assignmentID);
 			HintMapBuilder builder = createHintBuilder(hintConfig, traces);
-			solutionsMap.put(assignmentID, builder.hintMap.solutions.stream()
+			solutionsMap.put(assignmentID, builder.hintMap.solutions.keySet().stream()
 					.map(this::treeToNode)
 					.collect(Collectors.toList()));
 		}
