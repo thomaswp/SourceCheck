@@ -9,9 +9,9 @@ import java.util.stream.Collectors;
 
 import astrecognition.model.Convert;
 import astrecognition.model.Tree;
+import edu.isnap.ctd.hint.CTDModel;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.hint.HintConfig;
-import edu.isnap.hint.HintMapBuilder;
 import edu.isnap.node.ASTNode;
 import edu.isnap.node.Node;
 import edu.isnap.rating.data.HintOutcome;
@@ -36,7 +36,7 @@ public class PQGramHintSet extends HintMapHintSet {
 		super(name, hintConfig);
 		for (String assignmentID : dataset.getAssignmentIDs()) {
 			List<Trace> traces = dataset.getTraces(assignmentID);
-			HintMapBuilder builder = createHintBuilder(hintConfig, traces);
+			CTDModel builder = createHintBuilder(hintConfig, traces);
 			solutionsMap.put(assignmentID, builder.hintMap.solutions.keySet().stream()
 					.map(this::treeToNode)
 					.collect(Collectors.toList()));

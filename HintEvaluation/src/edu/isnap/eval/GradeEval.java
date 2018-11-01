@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
+import edu.isnap.ctd.hint.CTDModel;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.datasets.Fall2015;
 import edu.isnap.eval.AutoGrader.Grader;
@@ -23,7 +24,6 @@ import edu.isnap.eval.policy.HintPolicy;
 import edu.isnap.eval.policy.StudentPolicy;
 import edu.isnap.eval.util.PrintUpdater;
 import edu.isnap.eval.util.Prune;
-import edu.isnap.hint.HintMapBuilder;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.SnapHintBuilder.LoadedAttempt;
 import edu.isnap.hint.util.SimpleNodeBuilder;
@@ -52,8 +52,8 @@ public class GradeEval {
 		eval(assignment, "grade", new ScoreConstructor() {
 			@Override
 			public Score[] construct(String student, List<Node> nodes, SnapHintBuilder subtree) {
-				HintMapBuilder builder0 = subtree.buildGenerator(student, 0);
-				HintMapBuilder builder1 = subtree.buildGenerator(student, 1);
+				CTDModel builder0 = subtree.buildGenerator(student, 0);
+				CTDModel builder1 = subtree.buildGenerator(student, 1);
 				Node studentLast = nodes.get(nodes.size() - 1);
 				return new Score[] {
 						new Score("Hint All", new HintFactoryPolicy(builder0)),

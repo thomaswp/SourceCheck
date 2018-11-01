@@ -11,13 +11,13 @@ import java.util.List;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 
+import edu.isnap.ctd.hint.CTDModel;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.datasets.aggregate.CSC200;
 import edu.isnap.feature.Feature;
 import edu.isnap.hint.ConfigurableAssignment;
 import edu.isnap.hint.HintConfig;
 import edu.isnap.hint.HintMap;
-import edu.isnap.hint.HintMapBuilder;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.parser.Store.Mode;
 
@@ -50,7 +50,7 @@ public class RunHintBuilder {
 
 
 	/**
-	 * Builds and caches a {@link HintMapBuilder} for the given assignment, using only data with
+	 * Builds and caches a {@link CTDModel} for the given assignment, using only data with
 	 * the supplied minGrade.
 	 */
 	@SuppressWarnings("unchecked")
@@ -73,7 +73,7 @@ public class RunHintBuilder {
 		subtree.nodeMap();
 		System.out.print("Building subtree: ");
 		long ms = System.currentTimeMillis();
-		HintMapBuilder builder = subtree.buildGenerator(Mode.Overwrite, minGrade);
+		CTDModel builder = subtree.buildGenerator(Mode.Overwrite, minGrade);
 		int nAttempts = builder.hintMap.solutions.size();
 		System.out.println((System.currentTimeMillis() - ms) + "ms; " + nAttempts + " attempts");
 		String dir = String.format("%s/graphs/%s-g%03d/", assignment.dataDir,

@@ -12,6 +12,7 @@ import edu.isnap.ctd.graph.Graph;
 import edu.isnap.ctd.graph.vector.IndexedVectorState;
 import edu.isnap.ctd.graph.vector.VectorGraph;
 import edu.isnap.ctd.graph.vector.VectorState;
+import edu.isnap.ctd.hint.CTDModel;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
@@ -72,7 +73,7 @@ public class SnapHintBuilder {
 	 * @param storeMode
 	 * @return
 	 */
-	public HintMapBuilder buildGenerator(Mode storeMode) {
+	public CTDModel buildGenerator(Mode storeMode) {
 		return buildGenerator(storeMode, 0);
 	}
 
@@ -83,13 +84,13 @@ public class SnapHintBuilder {
 	 * @param minGrade
 	 * @return
 	 */
-	public HintMapBuilder buildGenerator(Mode storeMode, final double minGrade) {
+	public CTDModel buildGenerator(Mode storeMode, final double minGrade) {
 		String storePath = getStorePath(assignment, minGrade);
-		HintMapBuilder builder = Store.getCachedObject(getKryo(),
-				storePath, HintMapBuilder.class, storeMode,
-				new Store.Loader<HintMapBuilder>() {
+		CTDModel builder = Store.getCachedObject(getKryo(),
+				storePath, CTDModel.class, storeMode,
+				new Store.Loader<CTDModel>() {
 			@Override
-			public HintMapBuilder load() {
+			public CTDModel load() {
 				return buildGenerator((String)null, minGrade);
 			}
 		});
@@ -120,9 +121,9 @@ public class SnapHintBuilder {
 	 * @param minGrade
 	 * @return
 	 */
-	public HintMapBuilder buildGenerator(String testAttempt, double minGrade) {
+	public CTDModel buildGenerator(String testAttempt, double minGrade) {
 		HintConfig config = hintMap.getHintConfig();
-		final HintMapBuilder builder = new HintMapBuilder(hintMap.instance(), minGrade,
+		final CTDModel builder = new CTDModel(hintMap.instance(), minGrade,
 				assignment.hasIDs);
 		builder.startBuilding();
 		for (String student : nodeMap().keySet()) {
@@ -180,7 +181,7 @@ public class SnapHintBuilder {
 
 	public static Kryo getKryo() {
 		Kryo kryo = new Kryo();
-		kryo.register(HintMapBuilder.class);
+		kryo.register(CTDModel.class);
 		kryo.register(StringHashable.class);
 		kryo.register(Node.class);
 		kryo.register(HintMap.class);

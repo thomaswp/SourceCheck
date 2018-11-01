@@ -17,8 +17,10 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
 import edu.isnap.hint.HintConfig;
+import edu.isnap.hint.HintData;
 import edu.isnap.hint.HintDebugInfo;
 import edu.isnap.hint.HintMap;
+import edu.isnap.hint.SolutionsModel;
 import edu.isnap.hint.util.Alignment;
 import edu.isnap.hint.util.Cast;
 import edu.isnap.hint.util.NullStream;
@@ -48,25 +50,31 @@ public class HintHighlighter {
 
 	public PrintStream trace = NullStream.instance;
 
+	public final HintConfig config;
+	public final HintData hintData;
 	private final List<Node> solutions;
-	private final HintConfig config;
-	private final HintMap hintMap;
 
+	// TODO: remove
+	private final HintMap hintMap;
 	private final Map<Node, Map<String, Double>> nodePlacementTimes;
 
-	public HintHighlighter(HintMap hintMap) {
-		this(hintMap.solutions.keySet(), hintMap.config, hintMap);
+	private static HintData fromSolutions(Collection<Node> solutions, HintConfig config) {
+		HintData data = new HintData(null, config, 1, new SolutionsModel());
+		for (Node solution : solutions) data.addTrace(null, Collections.singletonList(solution));
+		data.finished();
+		return data;
 	}
 
 	public HintHighlighter(Collection<Node> solutions, HintConfig config) {
-		this(solutions, config, null);
+		this(fromSolutions(solutions, config));
 	}
 
-	public HintHighlighter(Collection<Node> solutions, HintConfig config, HintMap hintMap) {
+	public HintHighlighter(HintData hintData) {
 		// Make a copy of the nodePlacementTimes so we can modify them when we replace nodes in the
 		// preprocessSolutions method
-		this.nodePlacementTimes = hintMap == null ? null :
-			new IdentityHashMap<>(hintMap.nodePlacementTimes);
+//		this.nodePlacementTimes = hintMap == null ? null :
+//			new IdentityHashMap<>(hintMap.nodePlacementTimes);
+		Collection<Node> solutions = hintData.getData(SolutionsModel.class).getSolutions();
 		if (solutions.isEmpty()) throw new IllegalArgumentException("Solutions cannot be empty");
 		List<Node> solutionsCopy = new ArrayList<>();
 		synchronized (solutions) {
@@ -75,11 +83,13 @@ public class HintHighlighter {
 			}
 		}
 		solutions = solutionsCopy;
+		this.config = hintData.config;
+		this.hintData = hintData;
+		this.hintMap = null;
+		this.nodePlacementTimes = new IdentityHashMap<>();
 		this.solutions = config.preprocessSolutions ?
-				preprocessSolutions(solutions, config, nodePlacementTimes) :
+				preprocessSolutions(solutions, config, null) :
 					new ArrayList<>(solutions);
-		this.config = config;
-		this.hintMap = hintMap;
 	}
 
 	public HintDebugInfo debugHighlight(Node node) {

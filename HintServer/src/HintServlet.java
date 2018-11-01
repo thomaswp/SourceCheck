@@ -18,12 +18,12 @@ import org.json.JSONObject;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 
+import edu.isnap.ctd.hint.CTDHintGenerator;
+import edu.isnap.ctd.hint.CTDModel;
 import edu.isnap.ctd.hint.Hint;
-import edu.isnap.ctd.hint.HintGenerator;
 import edu.isnap.ctd.hint.HintJSON;
 import edu.isnap.hint.HintDebugInfo;
 import edu.isnap.hint.HintMap;
-import edu.isnap.hint.HintMapBuilder;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.node.Node;
@@ -124,14 +124,15 @@ public class HintServlet extends HttpServlet {
 		if (hintTypes != null) hintTypes = hintTypes.toLowerCase();
 		if (hintTypes == null || hintTypes.contains("bubble")) {
 			try {
-				hints.addAll(new HintGenerator(hintMap).getHints(node));
+				hints.addAll(new CTDHintGenerator(hintMap).getHints(node));
 			} catch (Exception e) {
 				array.put(HintJSON.errorToJSON(e, true));
 			}
 		}
 		if (hintTypes != null && hintTypes.contains("highlight")){
 			try {
-				HintHighlighter highlighter = new HintHighlighter(hintMap);
+				HintHighlighter highlighter =
+						new HintHighlighter(hintMap.solutions.keySet(), hintMap.getHintConfig());
 				// TODO: Use an actual logging framework
 //				highlighter.trace = System.out;
 
@@ -167,7 +168,7 @@ public class HintServlet extends HttpServlet {
 			InputStream stream = getServletContext().getResourceAsStream(path);
 			if (stream == null) return null;
 			Input input = new Input(stream);
-			HintMapBuilder builder = kryo.readObject(input, HintMapBuilder.class);
+			CTDModel builder = kryo.readObject(input, CTDModel.class);
 			input.close();
 
 			hintMaps.put(key, hintMap = builder.hintMap);

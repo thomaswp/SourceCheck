@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.List;
 
-import edu.isnap.ctd.hint.HintGenerator;
+import edu.isnap.ctd.hint.CTDHintGenerator;
 import edu.isnap.ctd.hint.VectorHint;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.hint.util.SimpleNodeBuilder;
@@ -26,7 +26,7 @@ public class UnitTest {
 		this.hintJSON = hintJSON;
 	}
 
-	public boolean run(HintGenerator generator, PrintStream out) {
+	public boolean run(CTDHintGenerator generator, PrintStream out) {
 		TestHint correctHint = null;
 		try {
 			correctHint = new TestHint(hintJSON);
@@ -55,7 +55,7 @@ public class UnitTest {
 		return false;
 	}
 
-	public List<VectorHint> getHints(HintGenerator generator, PrintStream out) {
+	public List<VectorHint> getHints(CTDHintGenerator generator, PrintStream out) {
 		Snapshot snapshot = Snapshot.parse("test_" + id, xml);
 		if (snapshot == null) {
 			out.println("Cannot parse snapshot.");

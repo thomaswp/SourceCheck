@@ -1,4 +1,4 @@
-package edu.isnap.hint;
+package edu.isnap.ctd.hint;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -8,7 +8,8 @@ import java.util.List;
 import java.util.Map;
 
 import distance.RTED_InfoTree_Opt;
-import edu.isnap.ctd.hint.HintGenerator;
+import edu.isnap.hint.HintMap;
+import edu.isnap.hint.IDataModel;
 import edu.isnap.hint.util.Tuple;
 import edu.isnap.node.Node;
 import edu.isnap.sourcecheck.HintHighlighter;
@@ -17,18 +18,18 @@ import util.LblTree;
 /**
  * A data-structure that stores all information needed to generate hints for a given assignment.
  */
-public class HintMapBuilder implements IDataModel {
+public class CTDModel implements IDataModel {
 
 	public final HintMap hintMap;
 	public final double minGrade;
 	public final boolean useIDs;
 
 	@SuppressWarnings("unused")
-	private HintMapBuilder() {
+	private CTDModel() {
 		this(null, 0, false);
 	}
 
-	public HintMapBuilder(HintMap hintMap, double minGrade, boolean useIDs) {
+	public CTDModel(HintMap hintMap, double minGrade, boolean useIDs) {
 		this.hintMap = hintMap;
 		this.minGrade = minGrade;
 		this.useIDs = useIDs;
@@ -42,7 +43,7 @@ public class HintMapBuilder implements IDataModel {
 	}
 
 	/**
-	 * Adds an attempt map (returned by {@link HintMapBuilder#addAttempt(List, boolean)} to this
+	 * Adds an attempt map (returned by {@link CTDModel#addAttempt(List, boolean)} to this
 	 * generator. This can be useful if you want to cache the output of addAttempt and reconstruct
 	 * new generators from a subset of your data.
 	 */
@@ -61,12 +62,12 @@ public class HintMapBuilder implements IDataModel {
 		hintMap.finish();
 	}
 
-	public HintGenerator hintGenerator() {
-		return new HintGenerator(hintMap);
+	public CTDHintGenerator hintGenerator() {
+		return new CTDHintGenerator(hintMap);
 	}
 
 	public HintHighlighter hintHighlighter() {
-		return new HintHighlighter(hintMap);
+		return new HintHighlighter(hintMap.solutions.keySet(), hintMap.config);
 	}
 
 	/**

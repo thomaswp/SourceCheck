@@ -4,9 +4,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import edu.isnap.ctd.hint.CTDModel;
 import edu.isnap.hint.HintConfig;
 import edu.isnap.hint.HintMap;
-import edu.isnap.hint.HintMapBuilder;
 import edu.isnap.rating.data.HintRequest;
 import edu.isnap.rating.data.Trace;
 import edu.isnap.rating.data.TrainingDataset;
@@ -20,7 +20,7 @@ public class ImportHighlightHintSet extends HighlightHintSet {
 		super(name, hintConfig);
 		for (String assignmentID : dataset.getAssignmentIDs()) {
 			List<Trace> traces = dataset.getTraces(assignmentID);
-			HintMapBuilder builder = createHintBuilder(hintConfig, traces);
+			CTDModel builder = createHintBuilder(hintConfig, traces);
 			highlighters.put(assignmentID, builder.hintHighlighter());
 		}
 	}

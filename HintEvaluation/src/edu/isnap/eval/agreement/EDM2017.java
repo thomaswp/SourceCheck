@@ -32,7 +32,6 @@ import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.agreement.EditComparer.EditDifference;
 import edu.isnap.hint.ConfigurableAssignment;
 import edu.isnap.hint.HintConfig;
-import edu.isnap.hint.HintMap;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.util.NullStream;
 import edu.isnap.node.Node;
@@ -93,8 +92,8 @@ public class EDM2017 {
 			HintConfig config = ConfigurableAssignment.getConfig(assignment);
 			config.useRulesToFilter = false;
 			SnapHintBuilder builder = new SnapHintBuilder(assignment);
-			HintMap hintMap = builder.buildGenerator(Mode.Ignore, 1).hintMap;
-			highlighters.put(assignment.name, new HintHighlighter(hintMap));
+			highlighters.put(assignment.name,
+					builder.buildGenerator(Mode.Ignore, 1).hintHighlighter());
 		}
 
 		// Since sometimes assignments are incorrect in the logs, we have to redirect prequel

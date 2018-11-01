@@ -6,10 +6,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import edu.isnap.ctd.hint.CTDModel;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.hint.HintConfig;
 import edu.isnap.hint.HintMap;
-import edu.isnap.hint.HintMapBuilder;
 import edu.isnap.hint.util.SnapNode;
 import edu.isnap.node.ASTNode;
 import edu.isnap.node.Node;
@@ -42,7 +42,7 @@ public class HighlightHintGenerator implements ColdStart.IHintGenerator {
 
 	private final HintConfig hintConfig;
 
-	private HintMapBuilder builder;
+	private CTDModel builder;
 	private HintHighlighter highlighter;
 
 
@@ -61,7 +61,7 @@ public class HighlightHintGenerator implements ColdStart.IHintGenerator {
 
 	@Override
 	public void clearTraces() {
-		builder = new HintMapBuilder(new HintMap(hintConfig), 1, hintConfig.areNodeIDsConsistent());
+		builder = new CTDModel(new HintMap(hintConfig), 1, hintConfig.areNodeIDsConsistent());
 		highlighter = null;
 	}
 

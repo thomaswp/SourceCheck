@@ -18,11 +18,11 @@ import org.apache.commons.lang3.StringUtils;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
 
+import edu.isnap.ctd.hint.CTDModel;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.hint.ConfigurableAssignment;
 import edu.isnap.hint.HintConfig;
 import edu.isnap.hint.HintMap;
-import edu.isnap.hint.HintMapBuilder;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.node.Node;
@@ -77,7 +77,7 @@ public class TemplateParser {
 	public static void saveHintMap(HintMap hintMap, String basePath, String name)
 			throws FileNotFoundException {
 		new File(basePath).mkdirs();
-		HintMapBuilder hmb = new HintMapBuilder(hintMap, 1, true);
+		CTDModel hmb = new CTDModel(hintMap, 1, true);
 		Kryo kryo = SnapHintBuilder.getKryo();
 		String path = SnapHintBuilder.getStorePath(basePath, name, 1, DATASET);
 		Output output = new Output(new FileOutputStream(path));

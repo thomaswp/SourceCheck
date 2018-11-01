@@ -4,11 +4,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import edu.isnap.ctd.hint.HintGenerator;
+import edu.isnap.ctd.hint.CTDModel;
+import edu.isnap.ctd.hint.CTDHintGenerator;
 import edu.isnap.ctd.hint.VectorHint;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.hint.HintConfig;
-import edu.isnap.hint.HintMapBuilder;
 import edu.isnap.node.ASTNode;
 import edu.isnap.node.Node;
 import edu.isnap.rating.data.HintOutcome;
@@ -18,13 +18,13 @@ import edu.isnap.rating.data.TrainingDataset;
 
 public class CTDHintSet extends HintMapHintSet{
 
-	private final Map<String, HintGenerator> generators = new HashMap<>();
+	private final Map<String, CTDHintGenerator> generators = new HashMap<>();
 
 	public CTDHintSet(String name, HintConfig hintConfig, TrainingDataset dataset) {
 		super(name, hintConfig);
 		for (String assignmentID : dataset.getAssignmentIDs()) {
 			List<Trace> traces = dataset.getTraces(assignmentID);
-			HintMapBuilder builder = createHintBuilder(hintConfig, traces);
+			CTDModel builder = createHintBuilder(hintConfig, traces);
 			generators.put(assignmentID, builder.hintGenerator());
 		}
 	}
@@ -32,7 +32,7 @@ public class CTDHintSet extends HintMapHintSet{
 	@Override
 	public CTDHintSet addHints(List<HintRequest> requests) {
 		for (HintRequest request : requests) {
-			HintGenerator generator = generators.get(request.assignmentID);
+			CTDHintGenerator generator = generators.get(request.assignmentID);
 			Node code = JsonAST.toNode(request.code, hintConfig.getNodeConstructor());
 
 			code = hintConfig.areNodeIDsConsistent() ? code.copy() : copyWithIDs(code);

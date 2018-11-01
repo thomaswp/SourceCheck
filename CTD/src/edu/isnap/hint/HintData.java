@@ -22,6 +22,10 @@ public class HintData {
 		this.consumers = consumers;
 	}
 
+//	public HintHighlighter getHighlighter() {
+//		return new Hint
+//	}
+
 	public <T extends IDataModel> T getData(Class<T> clazz) {
 		for (IDataModel consumer : consumers) {
 			if (clazz.isInstance(consumer)) return clazz.cast(consumer);

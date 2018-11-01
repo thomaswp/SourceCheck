@@ -4,11 +4,11 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import edu.isnap.ctd.hint.CTDModel;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.eval.python.PythonHintConfig;
 import edu.isnap.hint.HintConfig;
 import edu.isnap.hint.HintMap;
-import edu.isnap.hint.HintMapBuilder;
 import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.hint.util.SnapNode;
 import edu.isnap.node.Node;
@@ -54,8 +54,8 @@ public abstract class HintMapHintSet extends HintSet {
 		return copy;
 	}
 
-	protected HintMapBuilder createHintBuilder(HintConfig hintConfig, List<Trace> traces) {
-		HintMapBuilder builder = new HintMapBuilder(new HintMap(hintConfig), 1,
+	protected CTDModel createHintBuilder(HintConfig hintConfig, List<Trace> traces) {
+		CTDModel builder = new CTDModel(new HintMap(hintConfig), 1,
 				hintConfig.areNodeIDsConsistent());
 		for (Trace trace : traces) {
 			List<Node> nodes = trace.stream()

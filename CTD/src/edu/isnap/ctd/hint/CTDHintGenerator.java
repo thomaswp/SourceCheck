@@ -15,11 +15,11 @@ import edu.isnap.hint.HintMap;
 import edu.isnap.node.Node;
 import edu.isnap.node.Node.Predicate;
 
-public class HintGenerator {
+public class CTDHintGenerator {
 
 	public final HintMap hintMap;
 
-	public HintGenerator(HintMap hintMap) {
+	public CTDHintGenerator(HintMap hintMap) {
 		this.hintMap = hintMap;
 	}
 
