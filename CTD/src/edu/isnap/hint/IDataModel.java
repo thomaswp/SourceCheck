@@ -7,4 +7,5 @@ import edu.isnap.node.Node;
 public interface IDataModel {
 	void addTrace(String id, List<Node> trace);
 	void finished();
+	default void postProcess(HintData data) { }
 }

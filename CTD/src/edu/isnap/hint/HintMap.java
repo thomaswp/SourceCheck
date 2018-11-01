@@ -17,9 +17,6 @@ import edu.isnap.ctd.graph.vector.VectorState;
 import edu.isnap.feature.Feature;
 import edu.isnap.node.Node;
 import edu.isnap.node.Node.Action;
-import edu.isnap.sourcecheck.priority.Ordering;
-import edu.isnap.sourcecheck.priority.RuleSet;
-import edu.isnap.sourcecheck.priority.Ordering.OrderMatrix;
 import edu.isnap.util.map.CountMap;
 
 /**
@@ -31,11 +28,8 @@ public class HintMap {
 	// TODO: should probably extract to a datastructure, rather than a list and some maps...
 	public final CountMap<Node> solutions = new CountMap<>();
 	public final Map<Node, Map<String, Double>> nodePlacementTimes = new IdentityHashMap<>();
-	private final Map<Node, Ordering> nodeOrderings = new IdentityHashMap<>();
-	public OrderMatrix orderMatrix;
 	public final List<Feature> features;
 
-	RuleSet ruleSet;
 	public final HintConfig config;
 
 	private transient List<Node> currentHistory = new ArrayList<>();
@@ -44,10 +38,6 @@ public class HintMap {
 
 	public HintConfig getHintConfig() {
 		return config;
-	}
-
-	public RuleSet getRuleSet() {
-		return ruleSet;
 	}
 
 	@SuppressWarnings("unused")
@@ -171,7 +161,6 @@ public class HintMap {
 
 		// Then save the current node creation percs, using the final solution as a key
 		nodePlacementTimes.put(solution, currentNodeCreationPercs);
-		nodeOrderings.put(solution, new Ordering(currentHistory));
 	}
 
 	public IndexedVectorState getContext(Node item) {
@@ -222,9 +211,6 @@ public class HintMap {
 			graph.generateAndRemoveEdges(config.maxEdgeAddDistance, config.maxEdgeDistance);
 			graph.bellmanBackup(config.pruneGoals);
 		}
-		ruleSet = new RuleSet(solutions.keySet(), config);
-		// TODO: config
-		orderMatrix = new OrderMatrix(nodeOrderings.values(), 0.3);
 	}
 
 	public void addMap(HintMap hintMap) {
@@ -240,7 +226,6 @@ public class HintMap {
 		}
 		solutions.add(hintMap.solutions);
 		nodePlacementTimes.putAll(hintMap.nodePlacementTimes);
-		nodeOrderings.putAll(hintMap.nodeOrderings);
 	}
 
 	/**

@@ -35,9 +35,10 @@ import edu.isnap.sourcecheck.edit.Insertion;
 import edu.isnap.sourcecheck.edit.Reorder;
 import edu.isnap.sourcecheck.priority.Ordering;
 import edu.isnap.sourcecheck.priority.Ordering.Addition;
-import edu.isnap.sourcecheck.priority.Ordering.OrderMatrix;
+import edu.isnap.sourcecheck.priority.OrderingModel;
 import edu.isnap.sourcecheck.priority.Priority;
 import edu.isnap.sourcecheck.priority.RuleSet;
+import edu.isnap.sourcecheck.priority.RulesModel;
 import edu.isnap.util.map.BiMap;
 import edu.isnap.util.map.CountMap;
 import edu.isnap.util.map.ListMap;
@@ -53,13 +54,13 @@ public class HintHighlighter {
 	public final HintConfig config;
 	public final HintData hintData;
 	private final List<Node> solutions;
+	private final RuleSet ruleSet;
 
 	// TODO: remove
-	private final HintMap hintMap;
 	private final Map<Node, Map<String, Double>> nodePlacementTimes;
 
 	private static HintData fromSolutions(Collection<Node> solutions, HintConfig config) {
-		HintData data = new HintData(null, config, 1, new SolutionsModel());
+		HintData data = new HintData(null, config, 1, new SolutionsModel(), new RulesModel());
 		for (Node solution : solutions) data.addTrace(null, Collections.singletonList(solution));
 		data.finished();
 		return data;
@@ -83,13 +84,17 @@ public class HintHighlighter {
 			}
 		}
 		solutions = solutionsCopy;
+
+		RulesModel rulesModel = hintData.getData(RulesModel.class);
+
 		this.config = hintData.config;
 		this.hintData = hintData;
-		this.hintMap = null;
-		this.nodePlacementTimes = new IdentityHashMap<>();
+		this.ruleSet = rulesModel == null ? null : rulesModel.getRuleSet();
 		this.solutions = config.preprocessSolutions ?
 				preprocessSolutions(solutions, config, null) :
 					new ArrayList<>(solutions);
+
+		this.nodePlacementTimes = new IdentityHashMap<>();
 	}
 
 	public HintDebugInfo debugHighlight(Node node) {
@@ -574,9 +579,9 @@ public class HintHighlighter {
 	private List<Mapping> findBestMappings(Node node, int maxReturned) {
 		DistanceMeasure dm = getDistanceMeasure(config);
 		List<Node> filteredSolutions = solutions;
-		if (hintMap != null && hintMap.getRuleSet() != null) {
+		if (ruleSet != null) {
 			RuleSet.trace = trace;
-			filteredSolutions = hintMap.getRuleSet().filterSolutions(solutions, node);
+			filteredSolutions = ruleSet.filterSolutions(solutions, node);
 			if (filteredSolutions.size() == 0) throw new RuntimeException("No solutions!");
 		}
 		return NodeAlignment.findBestMatches(node, filteredSolutions, dm, config, maxReturned);
@@ -826,7 +831,8 @@ public class HintHighlighter {
 	}
 
 	private void findOrderingPriority(List<EditHint> hints, Node node, Mapping bestMatch) {
-		if (hintMap == null || hintMap.orderMatrix == null) return;
+		OrderingModel orderMatrix = hintData.getData(OrderingModel.class);
+		if (orderMatrix == null) return;
 
 		CountMap<String> nodeLabelCounts = Ordering.countLabels(node);
 		CountMap<String> matchLabelCounts = Ordering.countLabels(bestMatch.to);
@@ -866,11 +872,10 @@ public class HintHighlighter {
 
 		List<Insertion> insertions = new ArrayList<>(insertionAdditions.keySet());
 
-		OrderMatrix matrix = hintMap.orderMatrix;
 		for (Insertion insertion : insertions) {
 			if (!insertionAdditions.containsKey(insertion)) continue;
 
-			List<Addition> additions = matrix.additions();
+			List<Addition> additions = orderMatrix.additions();
 			Addition insertAddition = insertionAdditions.get(insertion);
 			int insertIndex = additions.indexOf(insertAddition);
 			if (insertIndex < 0) continue;
@@ -884,7 +889,7 @@ public class HintHighlighter {
 			double threshhold = 0.85;
 
 			for (int i = 0; i < additions.size(); i++) {
-				double percOrdered = matrix.getPercOrdered(i, insertIndex);
+				double percOrdered = orderMatrix.getPercOrdered(i, insertIndex);
 				Addition addition = additions.get(i);
 				if (percOrdered >= threshhold) {
 					if (matchLabelCounts.getCount(addition.label) >= addition.count) {
@@ -907,15 +912,12 @@ public class HintHighlighter {
 			insertion.priority.postreqsDenominator = totalPostreqs;
 		}
 
-		calculateOrderingRanks(insertions, insertionAdditions);
+		calculateOrderingRanks(insertions, insertionAdditions, orderMatrix);
 	}
 
 	private void calculateOrderingRanks(List<Insertion> insertions,
-			Map<Insertion, Addition> insertionMap) {
-		if (hintMap == null || hintMap.orderMatrix == null) return;
-
-		OrderMatrix matrix = hintMap.orderMatrix;
-		List<Addition> additions = matrix.additions();
+			Map<Insertion, Addition> insertionMap, OrderingModel orderMatrix) {
+		List<Addition> additions = orderMatrix.additions();
 		List<Insertion> orderedInsertions = insertionMap.keySet().stream()
 				.filter(insertion -> additions.contains(insertionMap.get(insertion)))
 				.collect(Collectors.toList());
@@ -923,7 +925,7 @@ public class HintHighlighter {
 			Addition additionA = insertionMap.get(a);
 			Addition additionB = insertionMap.get(b);
 			// TODO: I think this may be able to produce inconsistent orderings
-			return matrix.getPercOrdered(
+			return orderMatrix.getPercOrdered(
 					additions.indexOf(additionA), additions.indexOf(additionB)) >= 0.50 ?
 							-1 : 1;
 		});

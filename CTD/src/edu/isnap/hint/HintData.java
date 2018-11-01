@@ -43,5 +43,8 @@ public class HintData {
 		for (IDataModel consumer : consumers) {
 			consumer.finished();
 		}
+		for (IDataModel consumer : consumers) {
+			consumer.postProcess(this);
+		}
 	}
 }
