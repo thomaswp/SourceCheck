@@ -252,14 +252,14 @@ public class TreeUtils {
 	}
 
 	private static int getPairedIndex(LinkedList<int[]> editMapping, TreeNode item, 
-			List<LblTree> list2, boolean itemInTree2) {
+			List<LblTree> itemList, boolean itemInTree2) {
 		
 		int fromIndex = itemInTree2 ? 1 : 0;
 		int toIndex = itemInTree2 ? 0 : 1;
 		
 		int index = 0;
-		for (; index < list2.size(); index++) {
-			if (list2.get(index) == item) break;
+		for (; index < itemList.size(); index++) {
+			if (itemList.get(index) == item) break;
 		}
 		for (int[] a : editMapping) {
 			if (a[fromIndex] == index + 1) {
@@ -270,13 +270,13 @@ public class TreeUtils {
 	}
 	
 	private static TreeAction insert(LinkedList<int[]> editMapping, LblTree toInsert, 
-			List<LblTree> list2, List<LblTree> list1) {
+			List<LblTree> insertList, List<LblTree> otherList) {
 		TreeNode parent = toInsert.getParent();
 		
-		int parentPairIndex = getPairedIndex(editMapping, parent, list2, true);
+		int parentPairIndex = getPairedIndex(editMapping, parent, insertList, true);
 		
 		if (parentPairIndex >= 0) {
-			LblTree parentPair = list1.get(parentPairIndex);
+			LblTree parentPair = otherList.get(parentPairIndex);
 			int i0 = 0, i1 = 0;
 			while (true) {
 				if (i1 == parentPair.getChildCount()) {
@@ -301,9 +301,9 @@ public class TreeUtils {
 				TreeNode childPair = parentPair.getChildAt(i);
 				if (childPair == added) continue;
 				
-				int childIndex = getPairedIndex(editMapping, childPair, list1, false);
+				int childIndex = getPairedIndex(editMapping, childPair, otherList, false);
 				if (childIndex < 0) continue;
-				TreeNode child = list2.get(childIndex);
+				TreeNode child = insertList.get(childIndex);
 				while (child != parent) {
 					child = child.getParent();
 					if (child == toInsert) {
@@ -315,7 +315,7 @@ public class TreeUtils {
 				}
 			}
 			
-			return new InsertAction(list1.get(list1.size() - 1),
+			return new InsertAction(otherList.get(otherList.size() - 1),
 					toInsert.getLabel(), i0, parentPair.getLabel(), parentPairIndex);
 		}
 		

@@ -26,7 +26,6 @@ public class AutoGrader {
 
 			Snapshot snapshot = Snapshot.parse(xml);
 			Node node = SimpleNodeBuilder.toTree(snapshot, false);
-			System.out.println(node); // print whole tree
 
 			for (Grader grader : PolygonGraders) {
 				System.out.println(grader.name() + ": " + grader.pass(node));
@@ -137,7 +136,7 @@ public class AutoGrader {
 
 	public interface Grader {
 		String name();
-	
+
 		boolean pass(Node node);
 	}
 

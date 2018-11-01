@@ -77,7 +77,7 @@ public class MTurkProcess {
 
 		Node lastCode = null;
 
-		String lastAction = null;
+//		String lastAction = null;
 		String eventID = null;
 		boolean codeHint = false, textHint = false, reflect = false;
 
@@ -179,7 +179,7 @@ public class MTurkProcess {
 				midSurveyTime = relTime;
 				break;
 			}
-			lastAction = row.message;
+//			lastAction = row.message;
 		}
 //		if (lastCode != null) {
 //			System.out.println(attempt.id);

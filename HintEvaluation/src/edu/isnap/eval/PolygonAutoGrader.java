@@ -60,12 +60,12 @@ public class PolygonAutoGrader {
 	public static void analyzeSyntaxTree(Assignment assignment) throws FileNotFoundException, IOException
 	{
 		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Ignore, false, true);
-		int attemptCount = 0;
-		int snapshotCount = 0;
-		int i=0;
+//		int attemptCount = 0;
+//		int snapshotCount = 0;
+//		int i=0;
 		for (AssignmentAttempt attempt: attempts.values())
 		{
-			++attemptCount;
+//			++attemptCount;
 		 AttemptAction lastRow = attempt.rows.get(attempt.rows.size()-1);
 		 if(lastRow.lastSnapshot!=null)
 		 {
@@ -78,10 +78,10 @@ public class PolygonAutoGrader {
 						}
 			 }
 		 }
-		 i++;
+//		 i++;
 
 		}
-	
+
 	}
 
 
@@ -124,7 +124,7 @@ public class PolygonAutoGrader {
 			return node.exists(test);
 		}
 	}
-	
+
 	// "Draws something"
 	public static class PolygonGraderDrawSomething implements Grader {
 
@@ -144,7 +144,7 @@ public class PolygonAutoGrader {
 					return false;
 				Node forwardNode = node.parent().search(new Node.BackbonePredicate("forward"));
 				if (forwardNode == null) return false;
-				
+
 				if (forwardNode.parent() == node.parent()) {
 					return forwardNode.index() > downIndex;
 				}
@@ -159,7 +159,7 @@ public class PolygonAutoGrader {
 			return node.exists(test);
 		}
 	}
-	
+
 	// "Move Shape"
 	public static class PolygonGraderMovesShape implements Grader {
 		@Override
@@ -191,10 +191,10 @@ public class PolygonAutoGrader {
 					// exist then return false
 					if(scriptNode.searchChildren(new Node.TypePredicate("forward"))==-1
 							&& (scriptNode.searchChildren(new Node.TypePredicate("turn"))==-1|| scriptNode.searchChildren(new Node.TypePredicate("turnLeft"))==-1))
-						return false;	
+						return false;
 				}
 
-				return true; 
+				return true;
 			}
 		};
 
@@ -205,7 +205,7 @@ public class PolygonAutoGrader {
 			return node.exists(test);
 		}
 	}
-	
+
 	// "Turn Correctly"
 	public static class PolygonGraderTurnCorrectly implements Grader {
 
@@ -223,7 +223,7 @@ public class PolygonAutoGrader {
 				int turnIndex = node.index();
 				if(turnIndex<0)
 					return false;
-				
+
 			  // turn node must have only one child (the Quotient block)
 					if (node.children.size() != 1)
 						return false;
@@ -257,5 +257,5 @@ public class PolygonAutoGrader {
 		}
 	}
 
-	
+
 }

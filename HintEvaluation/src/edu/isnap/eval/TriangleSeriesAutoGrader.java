@@ -370,7 +370,7 @@ public class TriangleSeriesAutoGrader {
 						if (iterativeRepeats) // if it has an iterative repeat, check the extra forward
 						{
 							return checkExtraForward(scriptNodeFirstRepeat);
-//							
+//
 						}
 					} // there exist a nested repeatblock, and then there must be forward block
 					else if (scriptNodeFirstRepeat.searchChildren(new Node.TypePredicate("doRepeat")) > -1

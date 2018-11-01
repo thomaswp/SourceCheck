@@ -17,11 +17,11 @@ public class MTurk2018 extends Dataset {
 	public boolean onlyLogExportedCode() {
 		return false;
 	}
-	
+
 	public final static Assignment PolygonMakerSimple = new Assignment(instance,
 			"polygonMakerSimple", null, true) {
 	};
-	
+
 	public final static Assignment DrawTriangles = new Assignment(instance,
 			"drawTriangles", null, true) {
 	};
