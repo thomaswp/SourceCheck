@@ -2,7 +2,7 @@ package edu.isnap.eval.user;
 
 import java.util.HashSet;
 
-import edu.isnap.ctd.graph.Node;
+import edu.isnap.node.Node;
 import edu.isnap.util.Diff;
 
 public class HintPrinter {

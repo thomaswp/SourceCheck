@@ -2,8 +2,8 @@ package edu.isnap.eval.policy;
 
 import java.util.Set;
 
-import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.util.Tuple;
+import edu.isnap.hint.util.Tuple;
+import edu.isnap.node.Node;
 
 public interface HintPolicy {
 	Set<Node> nextSteps(Node node);

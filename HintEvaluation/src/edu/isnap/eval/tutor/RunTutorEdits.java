@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.datasets.CSC200Solutions;
@@ -16,6 +15,7 @@ import edu.isnap.datasets.Fall2016;
 import edu.isnap.datasets.Fall2017;
 import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.python.PythonHintConfig;
+import edu.isnap.hint.HintConfig;
 import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.rating.ColdStart;
 import edu.isnap.rating.ColdStart.IHintGenerator;
@@ -59,8 +59,8 @@ public class RunTutorEdits extends TutorEdits {
 		RatingDataset dataset = iSnapF16F17;
 //		dataset = ITAPS16;
 		Source source = Source.StudentData;
-		HintAlgorithm algorithm = CTD;
-		boolean debug = false;
+		HintAlgorithm algorithm = SourceCheck;
+		boolean debug = true;
 		boolean writeHints = false;
 
 //		writeAllHintSets(iSnapF16F17, ITAPS16);

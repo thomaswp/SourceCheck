@@ -4,8 +4,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import edu.isnap.ctd.graph.Node;
 import edu.isnap.node.INode;
+import edu.isnap.node.Node;
 import edu.isnap.node.PrettyPrint;
 import util.LblTree;
 

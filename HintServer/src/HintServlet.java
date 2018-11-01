@@ -18,17 +18,17 @@ import org.json.JSONObject;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 
-import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.Hint;
-import edu.isnap.ctd.hint.HintGenerator;
-import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.HintJSON;
-import edu.isnap.ctd.hint.HintMap;
-import edu.isnap.ctd.hint.HintMapBuilder;
-import edu.isnap.ctd.hint.debug.HintDebugInfo;
+import edu.isnap.hint.HintDebugInfo;
+import edu.isnap.hint.HintGenerator;
+import edu.isnap.hint.HintMap;
+import edu.isnap.hint.HintMapBuilder;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.util.SimpleNodeBuilder;
+import edu.isnap.node.Node;
 import edu.isnap.parser.elements.Snapshot;
+import edu.isnap.sourcecheck.HintHighlighter;
 import edu.isnap.unittest.UnitTest;
 
 

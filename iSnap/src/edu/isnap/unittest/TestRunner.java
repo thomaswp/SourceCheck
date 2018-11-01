@@ -8,9 +8,9 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-import edu.isnap.ctd.hint.HintGenerator;
-import edu.isnap.ctd.hint.HintMapBuilder;
 import edu.isnap.dataset.Assignment;
+import edu.isnap.hint.HintGenerator;
+import edu.isnap.hint.HintMapBuilder;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.parser.Store;
 

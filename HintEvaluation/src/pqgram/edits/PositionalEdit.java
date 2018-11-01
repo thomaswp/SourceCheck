@@ -4,7 +4,7 @@ import java.util.Map;
 
 import astrecognition.model.Graph;
 import astrecognition.model.Tree;
-import edu.isnap.ctd.graph.Node;
+import edu.isnap.node.Node;
 
 /**
  * An edit which requires some positional description

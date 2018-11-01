@@ -3,7 +3,7 @@ package edu.isnap.template.data;
 import java.util.LinkedList;
 import java.util.List;
 
-import edu.isnap.ctd.hint.TextHint;
+import edu.isnap.hint.TextHint;
 
 public class DefHintNode extends DefaultNode {
 

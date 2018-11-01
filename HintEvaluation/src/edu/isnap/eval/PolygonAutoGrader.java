@@ -5,13 +5,13 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Map;
 
-import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.graph.Node.Predicate;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.eval.AutoGrader.Grader;
 import edu.isnap.hint.util.SimpleNodeBuilder;
+import edu.isnap.node.Node;
+import edu.isnap.node.Node.Predicate;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.Snapshot;
 

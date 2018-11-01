@@ -2,7 +2,6 @@ package edu.isnap.hint;
 
 import java.util.Date;
 
-import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
 

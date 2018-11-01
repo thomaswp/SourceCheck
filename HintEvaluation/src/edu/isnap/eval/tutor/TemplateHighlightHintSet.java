@@ -9,14 +9,14 @@ import java.util.Map;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 
-import edu.isnap.ctd.hint.HintConfig;
-import edu.isnap.ctd.hint.HintHighlighter;
-import edu.isnap.ctd.hint.HintMap;
-import edu.isnap.ctd.hint.HintMapBuilder;
 import edu.isnap.dataset.Dataset;
+import edu.isnap.hint.HintConfig;
+import edu.isnap.hint.HintMap;
+import edu.isnap.hint.HintMapBuilder;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.rating.data.HintRequest;
+import edu.isnap.sourcecheck.HintHighlighter;
 import edu.isnap.template.parse.TemplateParser;
 
 public class TemplateHighlightHintSet extends HighlightHintSet {

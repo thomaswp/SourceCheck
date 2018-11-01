@@ -14,8 +14,6 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
 import distance.RTED_InfoTree_Opt;
-import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.util.Tuple;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.datasets.Fall2015;
 import edu.isnap.eval.policy.DirectEditPolicy;
@@ -26,6 +24,8 @@ import edu.isnap.eval.util.Prune;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.SnapHintBuilder.LoadedAttempt;
 import edu.isnap.hint.util.SimpleNodeBuilder;
+import edu.isnap.hint.util.Tuple;
+import edu.isnap.node.Node;
 import edu.isnap.parser.elements.Snapshot;
 
 public class CompleteEval {

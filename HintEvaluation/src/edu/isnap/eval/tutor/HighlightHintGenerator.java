@@ -6,17 +6,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.hint.HintConfig;
-import edu.isnap.ctd.hint.HintHighlighter;
-import edu.isnap.ctd.hint.HintMap;
-import edu.isnap.ctd.hint.HintMapBuilder;
-import edu.isnap.ctd.util.NodeAlignment;
-import edu.isnap.ctd.util.NodeAlignment.DistanceMeasure;
-import edu.isnap.ctd.util.NodeAlignment.Mapping;
 import edu.isnap.eval.export.JsonAST;
+import edu.isnap.hint.HintConfig;
+import edu.isnap.hint.HintMap;
+import edu.isnap.hint.HintMapBuilder;
 import edu.isnap.hint.util.SnapNode;
 import edu.isnap.node.ASTNode;
+import edu.isnap.node.Node;
 import edu.isnap.rating.ColdStart;
 import edu.isnap.rating.HintRater;
 import edu.isnap.rating.RatingConfig;
@@ -25,6 +21,10 @@ import edu.isnap.rating.data.HintRequest;
 import edu.isnap.rating.data.HintSet;
 import edu.isnap.rating.data.Trace;
 import edu.isnap.rating.data.TrainingDataset;
+import edu.isnap.sourcecheck.HintHighlighter;
+import edu.isnap.sourcecheck.NodeAlignment;
+import edu.isnap.sourcecheck.NodeAlignment.DistanceMeasure;
+import edu.isnap.sourcecheck.NodeAlignment.Mapping;
 import edu.isnap.util.Spreadsheet;
 
 public class HighlightHintGenerator implements ColdStart.IHintGenerator {

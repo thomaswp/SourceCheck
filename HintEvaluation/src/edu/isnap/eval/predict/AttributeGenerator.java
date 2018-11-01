@@ -2,9 +2,9 @@ package edu.isnap.eval.predict;
 
 import java.util.Map;
 
-import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.dataset.AssignmentAttempt;
+import edu.isnap.hint.HintConfig;
+import edu.isnap.node.Node;
 import edu.isnap.util.Spreadsheet;
 
 public interface AttributeGenerator {

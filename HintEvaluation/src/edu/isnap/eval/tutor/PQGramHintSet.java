@@ -9,11 +9,11 @@ import java.util.stream.Collectors;
 
 import astrecognition.model.Convert;
 import astrecognition.model.Tree;
-import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.hint.HintConfig;
-import edu.isnap.ctd.hint.HintMapBuilder;
 import edu.isnap.eval.export.JsonAST;
+import edu.isnap.hint.HintConfig;
+import edu.isnap.hint.HintMapBuilder;
 import edu.isnap.node.ASTNode;
+import edu.isnap.node.Node;
 import edu.isnap.rating.data.HintOutcome;
 import edu.isnap.rating.data.HintRequest;
 import edu.isnap.rating.data.Trace;

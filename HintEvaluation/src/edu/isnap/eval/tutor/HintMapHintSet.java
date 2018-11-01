@@ -4,14 +4,14 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.hint.HintConfig;
-import edu.isnap.ctd.hint.HintMap;
-import edu.isnap.ctd.hint.HintMapBuilder;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.eval.python.PythonHintConfig;
+import edu.isnap.hint.HintConfig;
+import edu.isnap.hint.HintMap;
+import edu.isnap.hint.HintMapBuilder;
 import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.hint.util.SnapNode;
+import edu.isnap.node.Node;
 import edu.isnap.rating.RatingConfig;
 import edu.isnap.rating.data.HintRequest;
 import edu.isnap.rating.data.HintRequestDataset;

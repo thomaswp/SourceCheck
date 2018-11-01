@@ -4,13 +4,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import edu.isnap.ctd.hint.HintConfig;
-import edu.isnap.ctd.hint.HintHighlighter;
-import edu.isnap.ctd.hint.HintMap;
-import edu.isnap.ctd.hint.HintMapBuilder;
+import edu.isnap.hint.HintConfig;
+import edu.isnap.hint.HintMap;
+import edu.isnap.hint.HintMapBuilder;
 import edu.isnap.rating.data.HintRequest;
 import edu.isnap.rating.data.Trace;
 import edu.isnap.rating.data.TrainingDataset;
+import edu.isnap.sourcecheck.HintHighlighter;
 
 public class ImportHighlightHintSet extends HighlightHintSet {
 

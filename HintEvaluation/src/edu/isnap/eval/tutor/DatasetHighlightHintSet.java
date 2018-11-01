@@ -3,15 +3,15 @@ package edu.isnap.eval.tutor;
 import java.util.HashMap;
 import java.util.Map;
 
-import edu.isnap.ctd.hint.HintConfig;
-import edu.isnap.ctd.hint.HintHighlighter;
-import edu.isnap.ctd.hint.HintMap;
-import edu.isnap.ctd.util.NullStream;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
+import edu.isnap.hint.HintConfig;
+import edu.isnap.hint.HintMap;
 import edu.isnap.hint.SnapHintBuilder;
+import edu.isnap.hint.util.NullStream;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.rating.data.HintRequest;
+import edu.isnap.sourcecheck.HintHighlighter;
 
 public class DatasetHighlightHintSet extends HighlightHintSet {
 

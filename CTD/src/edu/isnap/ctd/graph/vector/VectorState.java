@@ -6,9 +6,9 @@ import java.util.List;
 
 import org.json.JSONArray;
 
-import edu.isnap.ctd.util.Alignment;
-import edu.isnap.ctd.util.StringHashable;
-import edu.isnap.ctd.util.Tuple;
+import edu.isnap.hint.util.Alignment;
+import edu.isnap.hint.util.StringHashable;
+import edu.isnap.hint.util.Tuple;
 
 public class VectorState extends StringHashable {
 

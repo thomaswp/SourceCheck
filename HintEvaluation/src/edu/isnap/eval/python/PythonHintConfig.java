@@ -4,10 +4,10 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.graph.Node.NodeConstructor;
-import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.eval.python.PythonImport.PythonNode;
+import edu.isnap.hint.HintConfig;
+import edu.isnap.node.Node;
+import edu.isnap.node.Node.NodeConstructor;
 import edu.isnap.rating.RatingConfig;
 
 public class PythonHintConfig extends HintConfig {

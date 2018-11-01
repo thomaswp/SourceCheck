@@ -11,13 +11,13 @@ import java.util.List;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 
-import edu.isnap.ctd.hint.HintConfig;
-import edu.isnap.ctd.hint.HintMap;
-import edu.isnap.ctd.hint.HintMapBuilder;
-import edu.isnap.ctd.hint.feature.Feature;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.datasets.aggregate.CSC200;
+import edu.isnap.feature.Feature;
 import edu.isnap.hint.ConfigurableAssignment;
+import edu.isnap.hint.HintConfig;
+import edu.isnap.hint.HintMap;
+import edu.isnap.hint.HintMapBuilder;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.parser.Store.Mode;
 

@@ -4,12 +4,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.graph.Node.Predicate;
-import edu.isnap.ctd.hint.HintGenerator;
-import edu.isnap.ctd.hint.HintMapBuilder;
 import edu.isnap.ctd.hint.VectorHint;
-import edu.isnap.ctd.util.Tuple;
+import edu.isnap.hint.HintGenerator;
+import edu.isnap.hint.HintMapBuilder;
+import edu.isnap.hint.util.Tuple;
+import edu.isnap.node.Node;
+import edu.isnap.node.Node.Predicate;
 
 public class HintFactoryPolicy implements HintPolicy {
 

@@ -3,7 +3,7 @@ package edu.isnap.ctd.graph.vector;
 import java.util.Arrays;
 import java.util.Collection;
 
-import edu.isnap.ctd.util.Alignment;
+import edu.isnap.hint.util.Alignment;
 
 public class IndexedVectorState extends VectorState {
 

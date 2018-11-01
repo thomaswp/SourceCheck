@@ -4,8 +4,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.util.Tuple;
+import edu.isnap.hint.util.Tuple;
+import edu.isnap.node.Node;
 
 public class StudentPolicy implements HintPolicy {
 	
