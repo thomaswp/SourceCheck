@@ -498,7 +498,6 @@ public class HintHighlighter {
 				mapping.getFrom(deleted.parent) == insertion.pair.parent &&
 				deletedSiblings.stream().allMatch(sib -> colors.get(sib) == Highlight.Delete)) {
 			match = true;
-			System.out.println("COMBINE");
 		}
 
 		// If there are no other edits for this parent besides the insertion and deletion to be

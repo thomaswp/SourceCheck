@@ -59,8 +59,8 @@ public class RunTutorEdits extends TutorEdits {
 		RatingDataset dataset = iSnapF16F17;
 //		dataset = ITAPS16;
 		Source source = Source.StudentData;
-		HintAlgorithm algorithm = CTD;
-		boolean debug = false;
+		HintAlgorithm algorithm = SourceCheck;
+		boolean debug = true;
 		boolean writeHints = false;
 
 //		writeAllHintSets(iSnapF16F17, ITAPS16);
