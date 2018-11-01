@@ -4,10 +4,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import edu.isnap.ctd.hint.HintGenerator;
 import edu.isnap.ctd.hint.VectorHint;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.hint.HintConfig;
-import edu.isnap.hint.HintGenerator;
 import edu.isnap.hint.HintMapBuilder;
 import edu.isnap.node.ASTNode;
 import edu.isnap.node.Node;

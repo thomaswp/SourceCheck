@@ -53,7 +53,7 @@ public class HighlightHintGenerator implements ColdStart.IHintGenerator {
 
 	public HintHighlighter getHighlighter() {
 		if (highlighter == null) {
-			builder.finishedAdding();
+			builder.finished();
 			highlighter = builder.hintHighlighter();
 		}
 		return highlighter;
@@ -61,7 +61,7 @@ public class HighlightHintGenerator implements ColdStart.IHintGenerator {
 
 	@Override
 	public void clearTraces() {
-		builder = new HintMapBuilder(new HintMap(hintConfig), 1);
+		builder = new HintMapBuilder(new HintMap(hintConfig), 1, hintConfig.areNodeIDsConsistent());
 		highlighter = null;
 	}
 
@@ -70,7 +70,7 @@ public class HighlightHintGenerator implements ColdStart.IHintGenerator {
 		List<Node> nodes = trace.stream()
 				.map(node -> JsonAST.toNode(node, SnapNode::new))
 				.collect(Collectors.toList());
-		builder.addAttempt(nodes, hintConfig.areNodeIDsConsistent());
+		builder.addTrace(trace.id, nodes);
 		highlighter = null;
 	}
 

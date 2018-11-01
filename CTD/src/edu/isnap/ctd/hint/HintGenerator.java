@@ -1,4 +1,4 @@
-package edu.isnap.hint;
+package edu.isnap.ctd.hint;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -10,8 +10,8 @@ import java.util.Map;
 import edu.isnap.ctd.graph.vector.IndexedVectorState;
 import edu.isnap.ctd.graph.vector.VectorGraph;
 import edu.isnap.ctd.graph.vector.VectorState;
-import edu.isnap.ctd.hint.LinkHint;
-import edu.isnap.ctd.hint.VectorHint;
+import edu.isnap.hint.HintConfig;
+import edu.isnap.hint.HintMap;
 import edu.isnap.node.Node;
 import edu.isnap.node.Node.Predicate;
 

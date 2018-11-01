@@ -19,9 +19,9 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 
 import edu.isnap.ctd.hint.Hint;
+import edu.isnap.ctd.hint.HintGenerator;
 import edu.isnap.ctd.hint.HintJSON;
 import edu.isnap.hint.HintDebugInfo;
-import edu.isnap.hint.HintGenerator;
 import edu.isnap.hint.HintMap;
 import edu.isnap.hint.HintMapBuilder;
 import edu.isnap.hint.SnapHintBuilder;

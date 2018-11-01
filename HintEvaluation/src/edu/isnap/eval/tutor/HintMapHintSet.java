@@ -55,14 +55,15 @@ public abstract class HintMapHintSet extends HintSet {
 	}
 
 	protected HintMapBuilder createHintBuilder(HintConfig hintConfig, List<Trace> traces) {
-		HintMapBuilder builder = new HintMapBuilder(new HintMap(hintConfig), 1);
+		HintMapBuilder builder = new HintMapBuilder(new HintMap(hintConfig), 1,
+				hintConfig.areNodeIDsConsistent());
 		for (Trace trace : traces) {
 			List<Node> nodes = trace.stream()
 					.map(node -> JsonAST.toNode(node, SnapNode::new))
 					.collect(Collectors.toList());
-			builder.addAttempt(nodes, hintConfig.areNodeIDsConsistent());
+			builder.addTrace(trace.id, nodes);
 		}
-		builder.finishedAdding();
+		builder.finished();
 		return builder;
 	}
 }

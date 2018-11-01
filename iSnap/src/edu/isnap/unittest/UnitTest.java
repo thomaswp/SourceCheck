@@ -7,9 +7,9 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.List;
 
+import edu.isnap.ctd.hint.HintGenerator;
 import edu.isnap.ctd.hint.VectorHint;
 import edu.isnap.dataset.Assignment;
-import edu.isnap.hint.HintGenerator;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.node.Node;
 import edu.isnap.parser.elements.Snapshot;

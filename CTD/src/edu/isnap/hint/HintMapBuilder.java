@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import distance.RTED_InfoTree_Opt;
+import edu.isnap.ctd.hint.HintGenerator;
 import edu.isnap.hint.util.Tuple;
 import edu.isnap.node.Node;
 import edu.isnap.sourcecheck.HintHighlighter;
@@ -16,19 +17,21 @@ import util.LblTree;
 /**
  * A data-structure that stores all information needed to generate hints for a given assignment.
  */
-public class HintMapBuilder {
+public class HintMapBuilder implements IDataModel {
 
 	public final HintMap hintMap;
 	public final double minGrade;
+	public final boolean useIDs;
 
 	@SuppressWarnings("unused")
 	private HintMapBuilder() {
-		this(null, 0);
+		this(null, 0, false);
 	}
 
-	public HintMapBuilder(HintMap hintMap, double minGrade) {
+	public HintMapBuilder(HintMap hintMap, double minGrade, boolean useIDs) {
 		this.hintMap = hintMap;
 		this.minGrade = minGrade;
+		this.useIDs = useIDs;
 	}
 
 	/**
@@ -53,7 +56,8 @@ public class HintMapBuilder {
 	 * Call this methods when you are finished adding data to the generator so that it can perform
 	 * finalization.
 	 */
-	public void finishedAdding() {
+	@Override
+	public void finished() {
 		hintMap.finish();
 	}
 
@@ -75,7 +79,8 @@ public class HintMapBuilder {
 	 * case, the RTED algorithm will be used to guess which Nodes are the same across snapshots.
 	 * @return The individual HintMap for this attempt, which has now been added to the generator.
 	 */
-	public HintMap addAttempt(List<Node> solutionPath, boolean useIDs) {
+	@Override
+	public void addTrace(String traceID, List<Node> solutionPath) {
 
 		HintMap hintMap = this.hintMap.instance();
 
@@ -175,8 +180,6 @@ public class HintMapBuilder {
 		Node submission = solutionPath.get(solutionPath.size() - 1);
 		hintMap.setSolution(submission);
 		addAttemptMap(hintMap);
-
-		return hintMap;
 	}
 
 	// Given a node, finds the closest ancestor in pairMap that has a matching ID in

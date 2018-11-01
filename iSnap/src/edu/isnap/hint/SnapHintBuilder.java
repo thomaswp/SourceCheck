@@ -3,10 +3,8 @@ package edu.isnap.hint;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import com.esotericsoftware.kryo.Kryo;
 
@@ -33,8 +31,6 @@ public class SnapHintBuilder {
 
 	public final Assignment assignment;
 	private final HintMap hintMap;
-	private final HashMap<String, HintMap> studentSubtreeCache =
-			new HashMap<>();
 
 	private Map<String, LoadedAttempt> nodeMapCache;
 
@@ -126,9 +122,9 @@ public class SnapHintBuilder {
 	 */
 	public HintMapBuilder buildGenerator(String testAttempt, double minGrade) {
 		HintConfig config = hintMap.getHintConfig();
-		final HintMapBuilder builder = new HintMapBuilder(hintMap.instance(), minGrade);
+		final HintMapBuilder builder = new HintMapBuilder(hintMap.instance(), minGrade,
+				assignment.hasIDs);
 		builder.startBuilding();
-		final AtomicInteger count = new AtomicInteger();
 		for (String student : nodeMap().keySet()) {
 			if (student.equals(testAttempt)) continue;
 
@@ -137,37 +133,10 @@ public class SnapHintBuilder {
 			if (config.requireGrade && nodes.grade == null) continue;
 			if (nodes.grade != null && nodes.grade.average() < minGrade) continue;
 
-			final String fStudent = student;
+			builder.addTrace(nodes.id, nodes);
 
-			count.incrementAndGet();
-			new Thread(new Runnable() {
-				@Override
-				public void run() {
-					HintMap studentMap;
-					synchronized (studentSubtreeCache) {
-						studentMap = studentSubtreeCache.get(fStudent);
-					}
-					if (studentMap == null) {
-//						System.out.println(fStudent);
-						studentMap = builder.addAttempt(nodes, nodes.hasIDs);
-						synchronized (studentSubtreeCache) {
-							studentSubtreeCache.put(fStudent, studentMap);
-						}
-					} else {
-						builder.addAttemptMap(studentMap);
-					}
-					count.decrementAndGet();
-				}
-			}).run(); // Threading this causes bugs
 		}
-		while (count.get() != 0) {
-			try {
-				Thread.sleep(100);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-		builder.finishedAdding();
+		builder.finished();
 		return builder;
 	}
 
@@ -185,7 +154,7 @@ public class SnapHintBuilder {
 				System.err.println("No grade for: " + attemptID);
 			}
 
-			LoadedAttempt nodes = new LoadedAttempt(assignment.hasIDs, attempt.grade);
+			LoadedAttempt nodes = new LoadedAttempt(attempt.id, attempt.grade);
 			for (AttemptAction row : attempt) {
 				Node node = SimpleNodeBuilder.toTree(row.snapshot, true);
 				nodes.add(node);
@@ -200,11 +169,11 @@ public class SnapHintBuilder {
 	public static class LoadedAttempt extends ArrayList<Node> {
 		private static final long serialVersionUID = 1L;
 
-		public final boolean hasIDs;
+		public final String id;
 		public final Grade grade;
 
-		public LoadedAttempt(boolean hasIDs, Grade grade) {
-			this.hasIDs = hasIDs;
+		public LoadedAttempt(String id, Grade grade) {
+			this.id = id;
 			this.grade = grade;
 		}
 	}
