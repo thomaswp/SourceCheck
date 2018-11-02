@@ -11,6 +11,13 @@ public class RulesModel implements IDataModel {
 
 	private RuleSet ruleSet;
 
+	@Override
+	public IDataModel[] getDependencies(HintData data) {
+		return new IDataModel[] {
+				 new SolutionsModel(),
+		};
+	}
+
 	public RuleSet getRuleSet() {
 		return ruleSet;
 	}

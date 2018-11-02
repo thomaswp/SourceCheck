@@ -13,6 +13,7 @@ import edu.isnap.ctd.graph.vector.IndexedVectorState;
 import edu.isnap.ctd.graph.vector.VectorGraph;
 import edu.isnap.ctd.graph.vector.VectorState;
 import edu.isnap.ctd.hint.CTDModel;
+import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
@@ -179,6 +180,7 @@ public class SnapHintBuilder {
 		kryo.register(StringHashable.class);
 		kryo.register(Node.class);
 		kryo.register(HintMap.class);
+		kryo.register(HintData.class);
 		kryo.register(VectorState.class);
 		kryo.register(IndexedVectorState.class);
 		kryo.register(VectorGraph.class);

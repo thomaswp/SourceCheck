@@ -1,9 +1,7 @@
 package edu.isnap.hint;
 
-import java.util.Arrays;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import edu.isnap.node.Node;
 
@@ -15,7 +13,7 @@ public class HintData {
 	public String assignment;
 	public double minGrade;
 	public HintConfig config;
-	private final IDataModel[] dataModels;
+	private final List<IDataModel> dataModels;
 
 	public HintData(String assignment, HintConfig config, double minGrade,
 			IDataConsumer... consumers) {
@@ -23,12 +21,17 @@ public class HintData {
 		this.config = config;
 		this.assignment = assignment;
 
-		Set<IDataModel> models = new HashSet<>();
+		this.dataModels = new ArrayList<>();
 		for (IDataConsumer consumer : consumers) {
-			Arrays.stream(consumer.getRequiredData(this)).forEach(models::add);
+			addDataModels(consumer.getRequiredData(this));
 		}
-		dataModels = models.toArray(new IDataModel[models.size()]);
+	}
 
+	private void addDataModels(IDataModel[] models) {
+		for (IDataModel model : models) {
+			addDataModels(model.getDependencies(this));
+			this.dataModels.add(model);
+		}
 	}
 
 	public <T extends IDataModel> T getData(Class<T> clazz) {
