@@ -12,7 +12,6 @@ import edu.isnap.hint.HintConfig;
 import edu.isnap.hint.IDataModel;
 import edu.isnap.hint.util.Tuple;
 import edu.isnap.node.Node;
-import edu.isnap.sourcecheck.HintHighlighter;
 import util.LblTree;
 
 /**
@@ -32,7 +31,7 @@ public class CTDModel implements IDataModel {
 	public CTDModel(HintConfig config, double minGrade) {
 		this.hintMap = new HintMap(config);
 		this.minGrade = minGrade;
-		this.useIDs = config.areNodeIDsConsistent();
+		this.useIDs = config != null && config.areNodeIDsConsistent();
 	}
 
 	/**
@@ -60,14 +59,6 @@ public class CTDModel implements IDataModel {
 	@Override
 	public void finished() {
 		hintMap.finish();
-	}
-
-	public CTDHintGenerator hintGenerator() {
-		return new CTDHintGenerator(hintMap);
-	}
-
-	public HintHighlighter hintHighlighter() {
-		return new HintHighlighter(hintMap.solutions.keySet(), hintMap.config);
 	}
 
 	/**

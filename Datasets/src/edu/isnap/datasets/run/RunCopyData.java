@@ -21,7 +21,7 @@ public class RunCopyData {
 			throws IOException {
 		if (datasetSuffix.length() > 0) datasetSuffix = "-" + datasetSuffix;
 		String toDir = "../HintServer/WebContent/WEB-INF/data";
-		String ext = ".cached";
+		String ext = ".hdata";
 		for (String file : new File(fromDir).list()) {
 			if (file.endsWith(ext)) {
 				Path fromPath = new File(fromDir, file).toPath();

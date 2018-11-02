@@ -9,9 +9,9 @@ import java.util.Map;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 
-import edu.isnap.ctd.hint.CTDModel;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.hint.HintConfig;
+import edu.isnap.hint.HintData;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.rating.data.HintRequest;
@@ -43,7 +43,7 @@ public class TemplateHighlightHintSet extends HighlightHintSet {
 			try {
 				InputStream stream = new FileInputStream(path);
 				Input input = new Input(stream);
-				CTDModel builder = kryo.readObject(input, CTDModel.class);
+				HintData builder = kryo.readObject(input, HintData.class);
 				highlighter = builder.hintHighlighter();
 				highlighters.put(request.assignmentID, highlighter);
 			} catch (FileNotFoundException e) {

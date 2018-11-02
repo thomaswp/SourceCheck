@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,11 +19,10 @@ import org.apache.commons.lang3.StringUtils;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
 
-import edu.isnap.ctd.hint.CTDModel;
-import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.hint.ConfigurableAssignment;
 import edu.isnap.hint.HintConfig;
+import edu.isnap.hint.HintData;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.node.Node;
@@ -30,6 +30,7 @@ import edu.isnap.node.Node.Action;
 import edu.isnap.node.Node.NodeConstructor;
 import edu.isnap.parser.elements.CallBlock;
 import edu.isnap.parser.elements.Snapshot;
+import edu.isnap.sourcecheck.HintHighlighter;
 import edu.isnap.template.data.BNode;
 import edu.isnap.template.data.Context;
 import edu.isnap.template.data.DefaultNode;
@@ -43,26 +44,29 @@ public class TemplateParser {
 		String baseFile = assignment.templateFileBase();
 		HintConfig config = ConfigurableAssignment.getConfig(assignment);
 		Node sample = SimpleNodeBuilder.toTree(Snapshot.parse(new File(baseFile + ".xml")), true);
-		HintMap hintMap = parseTemplate(baseFile, sample, config);
+		HintData hintData = parseTemplate(assignment.name, baseFile, sample, config);
 
 
-		saveHintMap(hintMap, "../HintServer/WebContent/WEB-INF/data", assignment.name);
-		saveHintMap(hintMap, assignment.dataset.dataDir, assignment.name);
+		saveHintMap(hintData, "../HintServer/WebContent/WEB-INF/data", assignment.name);
+		saveHintMap(hintData, assignment.dataset.dataDir, assignment.name);
 	}
 
-	public static HintMap parseTemplate(String baseFile, Node sample, HintConfig config)
-			throws IOException {
+	public static HintData parseTemplate(String assignment, String baseFile, Node sample,
+			HintConfig config) throws IOException {
 		byte[] encoded = Files.readAllBytes(Paths.get(baseFile + ".snap"));
 		String template = new String(encoded);
 		DefaultNode node = new TemplateParser(template).parse();
 
 		List<BNode> variants = node.getVariants(Context.fromSample(sample));
 
-		HintMap hintMap = new HintMap(config);
+		HintData hintData = new HintData(assignment, config, 1,
+//				CTDHintGenerator.DataConsumer,
+				HintHighlighter.DataConsumer);
 		for (BNode variant : variants) {
 			Node n = variant.toNode(sample::constructNode);
+			n.cache();
 			verifyNode(n);
-			hintMap.solutions.increment(n);
+			hintData.addTrace(null, Collections.singletonList(n));
 		}
 
 		printVariants(node.getVariants(Context.fromSample(sample).withOptional(false)),
@@ -71,17 +75,16 @@ public class TemplateParser {
 		System.out.println(variants.size());
 		System.out.println(sample.prettyPrint(true));
 
-		return hintMap;
+		return hintData;
 	}
 
-	public static void saveHintMap(HintMap hintMap, String basePath, String name)
+	public static void saveHintMap(HintData hintData, String basePath, String name)
 			throws FileNotFoundException {
 		new File(basePath).mkdirs();
-		CTDModel hmb = new CTDModel(hintMap.config, 1);
 		Kryo kryo = SnapHintBuilder.getKryo();
 		String path = SnapHintBuilder.getStorePath(basePath, name, 1, DATASET);
 		Output output = new Output(new FileOutputStream(path));
-		kryo.writeObject(output, hmb);
+		kryo.writeObject(output, hintData);
 		output.close();
 	}
 

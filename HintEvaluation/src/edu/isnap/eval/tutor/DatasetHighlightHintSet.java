@@ -27,10 +27,8 @@ public class DatasetHighlightHintSet extends HighlightHintSet {
 		Assignment assignment = assignmentMap.get(request.assignmentID);
 		HintHighlighter highlighter = highlighters.get(request.assignmentID);
 		if (highlighter == null) {
-//			HintData hintData = new HintData(assignment.name, hintConfig, 1,
-//					HintHighlighter.getConsumers());
 			SnapHintBuilder builder = new SnapHintBuilder(assignment, hintConfig);
-			highlighter = builder.buildGenerator(Mode.Ignore, 1).hintHighlighter();
+			highlighter = new HintHighlighter(builder.buildGenerator(Mode.Ignore, 1));
 			highlighter.trace = NullStream.instance;
 			highlighters.put(request.assignmentID, highlighter);
 		}

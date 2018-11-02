@@ -78,7 +78,7 @@ public abstract class StringHashable implements Comparable<StringHashable> {
 
 	protected static String toCannonicalString(
 			Collection<? extends StringHashable> collection) {
-		List<String> strings = new ArrayList<String>();
+		List<String> strings = new ArrayList<>();
 		for (StringHashable s : collection) strings.add(s == null ? null : s.toCanonicalString());
 		return strings.toString();
 	}

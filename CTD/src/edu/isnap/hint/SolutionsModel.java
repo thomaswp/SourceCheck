@@ -11,6 +11,10 @@ public class SolutionsModel implements IDataModel {
 
 	private final CountMap<Node> solutions = new CountMap<>();
 
+	public int getSolutionCount() {
+		return solutions.values().stream().mapToInt(x -> x).sum();
+	}
+
 	@Override
 	public void addTrace(String id, List<Node> trace) {
 		if (trace.size() > 0) {

@@ -8,9 +8,9 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-import edu.isnap.ctd.hint.CTDModel;
 import edu.isnap.ctd.hint.CTDHintGenerator;
 import edu.isnap.dataset.Assignment;
+import edu.isnap.hint.HintData;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.parser.Store;
 
@@ -29,7 +29,7 @@ public class TestRunner {
 		if (!testDir.exists()) return;
 		out.println("Testing assignment: " + assignment.name);
 
-		CTDModel builder = new SnapHintBuilder(assignment)
+		HintData builder = new SnapHintBuilder(assignment)
 				.buildGenerator(Store.Mode.Ignore, 1);
 		CTDHintGenerator generator = builder.hintGenerator();
 

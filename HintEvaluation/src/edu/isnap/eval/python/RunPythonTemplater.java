@@ -4,9 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
-import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.eval.python.PythonImport.PythonNode;
+import edu.isnap.hint.HintData;
 import edu.isnap.node.ASTNode;
 import edu.isnap.node.Node;
 import edu.isnap.template.parse.TemplateParser;
@@ -33,8 +33,8 @@ public class RunPythonTemplater {
 				new File(baseDir, assignment + ".json").toPath()));
 		Node sample = JsonAST.toNode(ASTNode.parse(source), PythonNode::new);
 		String templatePath = new File(baseDir, assignment).getPath();
-		HintMap hintMap = TemplateParser.parseTemplate(
-				templatePath, sample, new PythonHintConfig());
-		TemplateParser.saveHintMap(hintMap, baseDir, assignment);
+		HintData hintData = TemplateParser.parseTemplate(
+				assignment, templatePath, sample, new PythonHintConfig());
+		TemplateParser.saveHintMap(hintData, baseDir, assignment);
 	}
 }

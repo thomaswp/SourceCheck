@@ -30,8 +30,8 @@ public class CTDHintGenerator {
 		}
 	};
 
-	public CTDHintGenerator(HintMap hintMap) {
-		this.hintMap = hintMap;
+	public CTDHintGenerator(HintData hintData) {
+		this.hintMap = hintData.getData(CTDModel.class).hintMap;
 	}
 
 	/**

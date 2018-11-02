@@ -12,6 +12,7 @@ import edu.isnap.ctd.graph.Graph;
 import edu.isnap.ctd.graph.vector.IndexedVectorState;
 import edu.isnap.ctd.graph.vector.VectorGraph;
 import edu.isnap.ctd.graph.vector.VectorState;
+import edu.isnap.ctd.hint.CTDHintGenerator;
 import edu.isnap.ctd.hint.CTDModel;
 import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.dataset.Assignment;
@@ -24,6 +25,7 @@ import edu.isnap.node.Node;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store;
 import edu.isnap.parser.Store.Mode;
+import edu.isnap.sourcecheck.HintHighlighter;
 
 
 /**
@@ -70,7 +72,7 @@ public class SnapHintBuilder {
 	 * @param storeMode
 	 * @return
 	 */
-	public CTDModel buildGenerator(Mode storeMode) {
+	public HintData buildGenerator(Mode storeMode) {
 		return buildGenerator(storeMode, 0);
 	}
 
@@ -81,13 +83,13 @@ public class SnapHintBuilder {
 	 * @param minGrade
 	 * @return
 	 */
-	public CTDModel buildGenerator(Mode storeMode, final double minGrade) {
+	public HintData buildGenerator(Mode storeMode, final double minGrade) {
 		String storePath = getStorePath(assignment, minGrade);
-		CTDModel builder = Store.getCachedObject(getKryo(),
-				storePath, CTDModel.class, storeMode,
-				new Store.Loader<CTDModel>() {
+		HintData builder = Store.getCachedObject(getKryo(),
+				storePath, HintData.class, storeMode,
+				new Store.Loader<HintData>() {
 			@Override
-			public CTDModel load() {
+			public HintData load() {
 				return buildGenerator((String)null, minGrade);
 			}
 		});
@@ -104,9 +106,15 @@ public class SnapHintBuilder {
 
 	public static String getStorePath(String baseDir, String assignmentName, double minGrade,
 			String dataset) {
-		return new File(baseDir, String.format("%s-g%03d%s.cached",
+		return new File(baseDir, String.format("%s-g%03d%s.hdata",
 				assignmentName, Math.round(minGrade * 100),
 				dataset == null ? "" : ("-" + dataset))).getAbsolutePath();
+	}
+
+	public static String getStorePath(String assignmentName, double minGrade, String dataset) {
+		return String.format("%s-g%03d%s.hdata",
+				assignmentName, Math.round(minGrade * 100),
+				dataset == null ? "" : ("-" + dataset));
 	}
 
 	/**
@@ -118,9 +126,9 @@ public class SnapHintBuilder {
 	 * @param minGrade
 	 * @return
 	 */
-	public CTDModel buildGenerator(String testAttempt, double minGrade) {
-		final CTDModel builder = new CTDModel(config, minGrade);
-		builder.startBuilding();
+	public HintData buildGenerator(String testAttempt, double minGrade) {
+		final HintData builder = new HintData(assignment.name, config, minGrade,
+				HintHighlighter.DataConsumer, CTDHintGenerator.DataConsumer);
 		for (String student : nodeMap().keySet()) {
 			if (student.equals(testAttempt)) continue;
 
@@ -130,7 +138,6 @@ public class SnapHintBuilder {
 			if (nodes.grade != null && nodes.grade.average() < minGrade) continue;
 
 			builder.addTrace(nodes.id, nodes);
-
 		}
 		builder.finished();
 		return builder;

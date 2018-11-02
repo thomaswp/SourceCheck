@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 
 import edu.isnap.ctd.hint.CTDHintGenerator;
-import edu.isnap.ctd.hint.CTDModel;
 import edu.isnap.ctd.hint.VectorHint;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.hint.HintConfig;
@@ -32,7 +31,7 @@ public class CTDHintSet extends HintDataHintSet{
 		for (String assignmentID : dataset.getAssignmentIDs()) {
 			List<Trace> traces = dataset.getTraces(assignmentID);
 			HintData hintData = createHintData(assignmentID, hintConfig, traces);
-			generators.put(assignmentID, hintData.getData(CTDModel.class).hintGenerator());
+			generators.put(assignmentID, new CTDHintGenerator(hintData));
 		}
 	}
 

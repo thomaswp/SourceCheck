@@ -9,7 +9,9 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.datasets.aggregate.CSC200;
 import edu.isnap.hint.ConfigurableAssignment;
 import edu.isnap.hint.HintConfig;
+import edu.isnap.hint.HintData;
 import edu.isnap.hint.SnapHintBuilder;
+import edu.isnap.hint.SolutionsModel;
 import edu.isnap.parser.Store.Mode;
 
 /**
@@ -64,11 +66,16 @@ public class RunHintBuilder {
 		subtree.nodeMap();
 		System.out.print("Building subtree: ");
 		long ms = System.currentTimeMillis();
-		CTDModel builder = subtree.buildGenerator(Mode.Overwrite, minGrade);
-		int nAttempts = builder.hintMap.solutions.size();
+		HintData builder = subtree.buildGenerator(Mode.Overwrite, minGrade);
+
+		int nAttempts = builder.getData(SolutionsModel.class).getSolutionCount();
 		System.out.println((System.currentTimeMillis() - ms) + "ms; " + nAttempts + " attempts");
-		String dir = String.format("%s/graphs/%s-g%03d/", assignment.dataDir,
-				assignment.name, Math.round(minGrade * 100));
-		builder.hintMap.saveGraphs(dir, 1);
+
+		CTDModel ctdModel = builder.getData(CTDModel.class);
+		if (ctdModel != null) {
+			String dir = String.format("%s/graphs/%s-g%03d/", assignment.dataDir,
+					assignment.name, Math.round(minGrade * 100));
+			ctdModel.hintMap.saveGraphs(dir, 1);
+		}
 	}
 }

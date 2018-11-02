@@ -4,9 +4,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import edu.isnap.ctd.hint.CTDModel;
 import edu.isnap.ctd.hint.CTDHintGenerator;
 import edu.isnap.ctd.hint.VectorHint;
+import edu.isnap.hint.HintData;
 import edu.isnap.hint.util.Tuple;
 import edu.isnap.node.Node;
 import edu.isnap.node.Node.Predicate;
@@ -19,7 +19,7 @@ public class HintFactoryPolicy implements HintPolicy {
 	private final static Predicate ignoreHints = new Node.TypePredicate("stage", "sprite", "customBlock");
 
 
-	public HintFactoryPolicy(CTDModel builder) {
+	public HintFactoryPolicy(HintData builder) {
 		this.generator = builder.hintGenerator();
 	}
 
