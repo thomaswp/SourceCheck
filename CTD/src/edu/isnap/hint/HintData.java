@@ -1,6 +1,9 @@
 package edu.isnap.hint;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import edu.isnap.node.Node;
 
@@ -12,39 +15,41 @@ public class HintData {
 	public String assignment;
 	public double minGrade;
 	public HintConfig config;
-	private final IDataModel[] consumers;
+	private final IDataModel[] dataModels;
 
 	public HintData(String assignment, HintConfig config, double minGrade,
-			IDataModel... consumers) {
+			IDataConsumer... consumers) {
 		this.assignment = assignment;
 		this.config = config;
 		this.assignment = assignment;
-		this.consumers = consumers;
+
+		Set<IDataModel> models = new HashSet<>();
+		for (IDataConsumer consumer : consumers) {
+			Arrays.stream(consumer.getRequiredData(this)).forEach(models::add);
+		}
+		dataModels = models.toArray(new IDataModel[models.size()]);
+
 	}
 
-//	public HintHighlighter getHighlighter() {
-//		return new Hint
-//	}
-
 	public <T extends IDataModel> T getData(Class<T> clazz) {
-		for (IDataModel consumer : consumers) {
-			if (clazz.isInstance(consumer)) return clazz.cast(consumer);
+		for (IDataModel model : dataModels) {
+			if (clazz.isInstance(model)) return clazz.cast(model);
 		}
 		return null;
 	}
 
 	public void addTrace(String id, List<Node> trace) {
-		for (IDataModel consumer : consumers) {
-			consumer.addTrace(id, trace);
+		for (IDataModel model : dataModels) {
+			model.addTrace(id, trace);
 		}
 	}
 
 	public void finished() {
-		for (IDataModel consumer : consumers) {
-			consumer.finished();
+		for (IDataModel model : dataModels) {
+			model.finished();
 		}
-		for (IDataModel consumer : consumers) {
-			consumer.postProcess(this);
+		for (IDataModel model : dataModels) {
+			model.postProcess(this);
 		}
 	}
 }

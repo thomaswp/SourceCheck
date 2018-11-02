@@ -19,10 +19,10 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
 
 import edu.isnap.ctd.hint.CTDModel;
+import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.hint.ConfigurableAssignment;
 import edu.isnap.hint.HintConfig;
-import edu.isnap.hint.HintMap;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.node.Node;

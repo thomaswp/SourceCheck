@@ -10,7 +10,7 @@ import edu.isnap.ctd.hint.VectorHint;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.hint.HintConfig;
 import edu.isnap.hint.HintData;
-import edu.isnap.hint.IDataModel;
+import edu.isnap.hint.IDataConsumer;
 import edu.isnap.node.ASTNode;
 import edu.isnap.node.Node;
 import edu.isnap.rating.data.HintOutcome;
@@ -18,13 +18,13 @@ import edu.isnap.rating.data.HintRequest;
 import edu.isnap.rating.data.Trace;
 import edu.isnap.rating.data.TrainingDataset;
 
-public class CTDHintSet extends HintMapHintSet{
+public class CTDHintSet extends HintDataHintSet{
 
 	private final Map<String, CTDHintGenerator> generators = new HashMap<>();
 
 	@Override
-	public IDataModel[] getConsumers(HintConfig hintConfig) {
-		return CTDHintGenerator.getConsumers(hintConfig);
+	public IDataConsumer getDataConsumer() {
+		return CTDHintGenerator.DataConsumer;
 	}
 
 	public CTDHintSet(String name, HintConfig hintConfig, TrainingDataset dataset) {

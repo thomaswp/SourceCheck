@@ -60,7 +60,7 @@ public class HighlightHintGenerator implements ColdStart.IHintGenerator {
 
 	@Override
 	public void clearTraces() {
-		hintData = new HintData(null, hintConfig, 1, HintHighlighter.getConsumers());
+		hintData = new HintData(null, hintConfig, 1, HintHighlighter.DataConsumer);
 		highlighter = null;
 	}
 

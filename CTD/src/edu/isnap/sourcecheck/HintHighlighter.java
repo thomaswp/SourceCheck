@@ -16,10 +16,11 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
+import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.hint.HintConfig;
 import edu.isnap.hint.HintData;
 import edu.isnap.hint.HintDebugInfo;
-import edu.isnap.hint.HintMap;
+import edu.isnap.hint.IDataConsumer;
 import edu.isnap.hint.IDataModel;
 import edu.isnap.hint.SolutionsModel;
 import edu.isnap.hint.util.Alignment;
@@ -60,15 +61,18 @@ public class HintHighlighter {
 	// TODO: remove
 	private final Map<Node, Map<String, Double>> nodePlacementTimes;
 
-	public static IDataModel[] getConsumers() {
-		return new IDataModel[] {
-				new SolutionsModel(),
-				new RulesModel(),
-		};
-	}
+	public final static IDataConsumer DataConsumer = new IDataConsumer() {
+		@Override
+		public IDataModel[] getRequiredData(HintData data) {
+			return new IDataModel[] {
+					new SolutionsModel(),
+					new RulesModel(),
+			};
+		}
+	};
 
 	private static HintData fromSolutions(Collection<Node> solutions, HintConfig config) {
-		HintData data = new HintData(null, config, 1, getConsumers());
+		HintData data = new HintData(null, config, 1, DataConsumer);
 		for (Node solution : solutions) data.addTrace(null, Collections.singletonList(solution));
 		data.finished();
 		return data;

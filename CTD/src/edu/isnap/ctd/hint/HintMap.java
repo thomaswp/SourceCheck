@@ -1,4 +1,4 @@
-package edu.isnap.hint;
+package edu.isnap.ctd.hint;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -15,6 +15,7 @@ import edu.isnap.ctd.graph.vector.IndexedVectorState;
 import edu.isnap.ctd.graph.vector.VectorGraph;
 import edu.isnap.ctd.graph.vector.VectorState;
 import edu.isnap.feature.Feature;
+import edu.isnap.hint.HintConfig;
 import edu.isnap.node.Node;
 import edu.isnap.node.Node.Action;
 import edu.isnap.util.map.CountMap;

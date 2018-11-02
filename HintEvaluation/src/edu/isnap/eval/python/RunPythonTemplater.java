@@ -4,9 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
+import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.eval.python.PythonImport.PythonNode;
-import edu.isnap.hint.HintMap;
 import edu.isnap.node.ASTNode;
 import edu.isnap.node.Node;
 import edu.isnap.template.parse.TemplateParser;

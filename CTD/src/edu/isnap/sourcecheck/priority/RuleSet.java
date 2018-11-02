@@ -13,8 +13,8 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.hint.HintConfig;
-import edu.isnap.hint.HintMap;
 import edu.isnap.hint.util.NullStream;
 import edu.isnap.node.Node;
 import edu.isnap.node.Node.Action;

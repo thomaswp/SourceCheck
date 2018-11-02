@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.eval.tutor.TutorEdits.PrintableTutorHint;
 import edu.isnap.hint.HintConfig;
-import edu.isnap.hint.IDataModel;
+import edu.isnap.hint.IDataConsumer;
 import edu.isnap.hint.util.Tuple;
 import edu.isnap.node.ASTNode;
 import edu.isnap.node.Node;
@@ -26,13 +26,13 @@ import edu.isnap.util.Diff;
 import edu.isnap.util.Diff.ColorStyle;
 import edu.isnap.util.map.ListMap;
 
-public abstract class HighlightHintSet extends HintMapHintSet {
+public abstract class HighlightHintSet extends HintDataHintSet {
 
 	protected abstract HintHighlighter getHighlighter(HintRequest request);
 
 	@Override
-	public IDataModel[] getConsumers(HintConfig hintConfig) {
-		return HintHighlighter.getConsumers();
+	public IDataConsumer getDataConsumer() {
+		return HintHighlighter.DataConsumer;
 	}
 
 	public HighlightHintSet(String name, HintConfig hintConfig) {

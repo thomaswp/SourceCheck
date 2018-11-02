@@ -9,7 +9,6 @@ import java.util.Map;
 
 import distance.RTED_InfoTree_Opt;
 import edu.isnap.hint.HintConfig;
-import edu.isnap.hint.HintMap;
 import edu.isnap.hint.IDataModel;
 import edu.isnap.hint.util.Tuple;
 import edu.isnap.node.Node;

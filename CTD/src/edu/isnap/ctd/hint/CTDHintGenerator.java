@@ -11,7 +11,8 @@ import edu.isnap.ctd.graph.vector.IndexedVectorState;
 import edu.isnap.ctd.graph.vector.VectorGraph;
 import edu.isnap.ctd.graph.vector.VectorState;
 import edu.isnap.hint.HintConfig;
-import edu.isnap.hint.HintMap;
+import edu.isnap.hint.HintData;
+import edu.isnap.hint.IDataConsumer;
 import edu.isnap.hint.IDataModel;
 import edu.isnap.node.Node;
 import edu.isnap.node.Node.Predicate;
@@ -20,9 +21,14 @@ public class CTDHintGenerator {
 
 	public final HintMap hintMap;
 
-	public static IDataModel[] getConsumers(HintConfig config) {
-		return new IDataModel[] { new CTDModel(config, 1) };
-	}
+	public final static IDataConsumer DataConsumer = new IDataConsumer() {
+		@Override
+		public IDataModel[] getRequiredData(HintData data) {
+			return new IDataModel[] {
+					new CTDModel(data.config, data.minGrade),
+			};
+		}
+	};
 
 	public CTDHintGenerator(HintMap hintMap) {
 		this.hintMap = hintMap;

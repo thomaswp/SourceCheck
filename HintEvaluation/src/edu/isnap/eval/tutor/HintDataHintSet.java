@@ -8,7 +8,7 @@ import edu.isnap.eval.export.JsonAST;
 import edu.isnap.eval.python.PythonHintConfig;
 import edu.isnap.hint.HintConfig;
 import edu.isnap.hint.HintData;
-import edu.isnap.hint.IDataModel;
+import edu.isnap.hint.IDataConsumer;
 import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.hint.util.SnapNode;
 import edu.isnap.node.Node;
@@ -18,14 +18,14 @@ import edu.isnap.rating.data.HintRequestDataset;
 import edu.isnap.rating.data.HintSet;
 import edu.isnap.rating.data.Trace;
 
-public abstract class HintMapHintSet extends HintSet {
+public abstract class HintDataHintSet extends HintSet {
 
 	protected final HintConfig hintConfig;
 
-	public abstract HintMapHintSet addHints(List<HintRequest> requests);
-	public abstract IDataModel[] getConsumers(HintConfig hintConfig);
+	public abstract HintDataHintSet addHints(List<HintRequest> requests);
+	public abstract IDataConsumer getDataConsumer();
 
-	public HintMapHintSet(String name, HintConfig hintConfig) {
+	public HintDataHintSet(String name, HintConfig hintConfig) {
 		super(name, getRatingConfig(hintConfig));
 		this.hintConfig = hintConfig;
 	}
@@ -37,7 +37,7 @@ public abstract class HintMapHintSet extends HintSet {
 		return RatingConfig.Default;
 	}
 
-	public HintMapHintSet addHints(HintRequestDataset requestDataset) {
+	public HintDataHintSet addHints(HintRequestDataset requestDataset) {
 		return addHints(requestDataset.getAllRequests());
 	}
 
@@ -57,7 +57,7 @@ public abstract class HintMapHintSet extends HintSet {
 
 	protected HintData createHintData(String assignmentID, HintConfig hintConfig,
 			List<Trace> traces) {
-		HintData hintData = new HintData(assignmentID, hintConfig, 1, getConsumers(hintConfig));
+		HintData hintData = new HintData(assignmentID, hintConfig, 1, getDataConsumer());
 		for (Trace trace : traces) {
 			List<Node> nodes = trace.stream()
 					.map(node -> JsonAST.toNode(node, SnapNode::new))

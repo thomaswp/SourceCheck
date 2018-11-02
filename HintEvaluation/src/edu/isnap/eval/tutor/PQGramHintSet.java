@@ -12,6 +12,7 @@ import astrecognition.model.Tree;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.hint.HintConfig;
 import edu.isnap.hint.HintData;
+import edu.isnap.hint.IDataConsumer;
 import edu.isnap.hint.IDataModel;
 import edu.isnap.hint.SolutionsModel;
 import edu.isnap.node.ASTNode;
@@ -27,16 +28,25 @@ import pqgram.Profile;
 import pqgram.edits.Deletion;
 import pqgram.edits.Edit;
 
-public class PQGramHintSet extends HintMapHintSet {
+public class PQGramHintSet extends HintDataHintSet {
 
 	private final static int P = 2, Q = 3;
 
 	private final Map<String, List<Tree>> solutionsMap = new HashMap<>();
 	private final HashMap<String, Integer> labelMap = new HashMap<>();
 
+	private final static IDataConsumer DataConsumer = new IDataConsumer() {
+		@Override
+		public IDataModel[] getRequiredData(HintData data) {
+			return new IDataModel[] {
+					new SolutionsModel(),
+			};
+		}
+	};
+
 	@Override
-	public IDataModel[] getConsumers(HintConfig hintConfig) {
-		return new IDataModel[] { new SolutionsModel() };
+	public IDataConsumer getDataConsumer() {
+		return DataConsumer;
 	}
 
 	public PQGramHintSet(String name, HintConfig hintConfig, TrainingDataset dataset) {
@@ -52,7 +62,7 @@ public class PQGramHintSet extends HintMapHintSet {
 	}
 
 	@Override
-	public HintMapHintSet addHints(List<HintRequest> requests) {
+	public HintDataHintSet addHints(List<HintRequest> requests) {
 		for (HintRequest request : requests) {
 			List<Tree> solutions = this.solutionsMap.get(request.assignmentID);
 			Node code = JsonAST.toNode(request.code, hintConfig.getNodeConstructor());
