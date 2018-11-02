@@ -6,7 +6,6 @@ import java.util.Map;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.hint.HintConfig;
-import edu.isnap.hint.HintMap;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.util.NullStream;
 import edu.isnap.parser.Store.Mode;
@@ -14,7 +13,6 @@ import edu.isnap.rating.data.HintRequest;
 import edu.isnap.sourcecheck.HintHighlighter;
 
 public class DatasetHighlightHintSet extends HighlightHintSet {
-
 
 	private final Map<String, HintHighlighter> highlighters = new HashMap<>();
 	private final Map<String, Assignment> assignmentMap;
@@ -25,11 +23,13 @@ public class DatasetHighlightHintSet extends HighlightHintSet {
 	}
 
 	@Override
-	protected HintHighlighter getHighlighter(HintRequest request, HintMap baseMap) {
+	protected HintHighlighter getHighlighter(HintRequest request) {
 		Assignment assignment = assignmentMap.get(request.assignmentID);
 		HintHighlighter highlighter = highlighters.get(request.assignmentID);
 		if (highlighter == null) {
-			SnapHintBuilder builder = new SnapHintBuilder(assignment, baseMap);
+//			HintData hintData = new HintData(assignment.name, hintConfig, 1,
+//					HintHighlighter.getConsumers());
+			SnapHintBuilder builder = new SnapHintBuilder(assignment, hintConfig);
 			highlighter = builder.buildGenerator(Mode.Ignore, 1).hintHighlighter();
 			highlighter.trace = NullStream.instance;
 			highlighters.put(request.assignmentID, highlighter);

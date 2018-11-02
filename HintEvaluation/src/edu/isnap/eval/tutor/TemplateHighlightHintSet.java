@@ -12,7 +12,6 @@ import com.esotericsoftware.kryo.io.Input;
 import edu.isnap.ctd.hint.CTDModel;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.hint.HintConfig;
-import edu.isnap.hint.HintMap;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.rating.data.HintRequest;
@@ -35,7 +34,7 @@ public class TemplateHighlightHintSet extends HighlightHintSet {
 	}
 
 	@Override
-	protected HintHighlighter getHighlighter(HintRequest request, HintMap baseMap) {
+	protected HintHighlighter getHighlighter(HintRequest request) {
 		HintHighlighter highlighter = highlighters.get(request.assignmentID);
 		if (highlighter == null) {
 			Kryo kryo = SnapHintBuilder.getKryo();

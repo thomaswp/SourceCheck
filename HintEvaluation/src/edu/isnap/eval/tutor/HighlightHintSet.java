@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.eval.tutor.TutorEdits.PrintableTutorHint;
 import edu.isnap.hint.HintConfig;
-import edu.isnap.hint.HintMap;
+import edu.isnap.hint.IDataModel;
 import edu.isnap.hint.util.Tuple;
 import edu.isnap.node.ASTNode;
 import edu.isnap.node.Node;
@@ -28,7 +28,12 @@ import edu.isnap.util.map.ListMap;
 
 public abstract class HighlightHintSet extends HintMapHintSet {
 
-	protected abstract HintHighlighter getHighlighter(HintRequest request, HintMap baseMap);
+	protected abstract HintHighlighter getHighlighter(HintRequest request);
+
+	@Override
+	public IDataModel[] getConsumers(HintConfig hintConfig) {
+		return HintHighlighter.getConsumers();
+	}
 
 	public HighlightHintSet(String name, HintConfig hintConfig) {
 		super(name, hintConfig);
@@ -49,10 +54,8 @@ public abstract class HighlightHintSet extends HintMapHintSet {
 
 	@Override
 	public HighlightHintSet addHints(List<HintRequest> requests) {
-		HintMap baseMap = new HintMap(hintConfig);
-
 		for (HintRequest request : requests) {
-			HintHighlighter highlighter = getHighlighter(request, baseMap);
+			HintHighlighter highlighter = getHighlighter(request);
 			Node code = JsonAST.toNode(request.code, hintConfig.getNodeConstructor());
 			// Applying edits requires nodes to have meaningful IDs, so if they don't by default, we
 			// generate them. We don't otherwise, since the generated IDs won't be consistent.

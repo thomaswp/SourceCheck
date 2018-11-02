@@ -31,7 +31,7 @@ import edu.isnap.parser.Store.Mode;
 public class SnapHintBuilder {
 
 	public final Assignment assignment;
-	private final HintMap hintMap;
+	private final HintConfig config;
 
 	private Map<String, LoadedAttempt> nodeMapCache;
 
@@ -56,16 +56,12 @@ public class SnapHintBuilder {
 	 * @param assignment
 	 */
 	public SnapHintBuilder(Assignment assignment) {
-		this(assignment, new HintMap(ConfigurableAssignment.getConfig(assignment)));
+		this(assignment, ConfigurableAssignment.getConfig(assignment));
 	}
 
-	public SnapHintBuilder(Assignment assignment, SnapHintConfig config) {
-		this(assignment, new HintMap(config));
-	}
-
-	public SnapHintBuilder(Assignment assignment, HintMap hintMap) {
+	public SnapHintBuilder(Assignment assignment, HintConfig config) {
 		this.assignment = assignment;
-		this.hintMap = hintMap;
+		this.config = config;
 	}
 
 	/**
@@ -122,9 +118,7 @@ public class SnapHintBuilder {
 	 * @return
 	 */
 	public CTDModel buildGenerator(String testAttempt, double minGrade) {
-		HintConfig config = hintMap.getHintConfig();
-		final CTDModel builder = new CTDModel(hintMap.instance(), minGrade,
-				assignment.hasIDs);
+		final CTDModel builder = new CTDModel(config, minGrade);
 		builder.startBuilding();
 		for (String student : nodeMap().keySet()) {
 			if (student.equals(testAttempt)) continue;

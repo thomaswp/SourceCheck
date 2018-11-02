@@ -4,11 +4,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import edu.isnap.ctd.hint.CTDModel;
 import edu.isnap.ctd.hint.CTDHintGenerator;
+import edu.isnap.ctd.hint.CTDModel;
 import edu.isnap.ctd.hint.VectorHint;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.hint.HintConfig;
+import edu.isnap.hint.HintData;
+import edu.isnap.hint.IDataModel;
 import edu.isnap.node.ASTNode;
 import edu.isnap.node.Node;
 import edu.isnap.rating.data.HintOutcome;
@@ -20,12 +22,17 @@ public class CTDHintSet extends HintMapHintSet{
 
 	private final Map<String, CTDHintGenerator> generators = new HashMap<>();
 
+	@Override
+	public IDataModel[] getConsumers(HintConfig hintConfig) {
+		return CTDHintGenerator.getConsumers(hintConfig);
+	}
+
 	public CTDHintSet(String name, HintConfig hintConfig, TrainingDataset dataset) {
 		super(name, hintConfig);
 		for (String assignmentID : dataset.getAssignmentIDs()) {
 			List<Trace> traces = dataset.getTraces(assignmentID);
-			CTDModel builder = createHintBuilder(hintConfig, traces);
-			generators.put(assignmentID, builder.hintGenerator());
+			HintData hintData = createHintData(assignmentID, hintConfig, traces);
+			generators.put(assignmentID, hintData.getData(CTDModel.class).hintGenerator());
 		}
 	}
 

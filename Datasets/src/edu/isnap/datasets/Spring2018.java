@@ -19,6 +19,7 @@ import org.apache.commons.csv.CSVRecord;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.Dataset;
+import edu.isnap.hint.ConfigurableAssignment;
 import edu.isnap.parser.SnapParser.Filter;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.Snapshot;
@@ -32,11 +33,11 @@ public class Spring2018 extends Dataset {
 	public final static String dataFile = dataDir + ".csv";
 	public final static Spring2018 instance = new Spring2018();
 
-	public final static Assignment LightsCameraAction = new Assignment(instance,
+	public final static Assignment LightsCameraAction = new ConfigurableAssignment(instance,
 			"lightsCameraActionHW", Assignment.date(2018, 1, 24), true) {
 	};
 
-	public final static Assignment PolygonMaker = new Assignment(instance,
+	public final static Assignment PolygonMaker = new ConfigurableAssignment(instance,
 			"polygonMakerLab", Assignment.date(2018, 1, 24), true, false, null) {
 
 		@Override
@@ -48,7 +49,7 @@ public class Spring2018 extends Dataset {
 		}
 	};
 
-	public final static Assignment SquiralObjectives = new Assignment(instance,
+	public final static Assignment SquiralObjectives = new ConfigurableAssignment(instance,
 			"squiralHW", Assignment.date(2018, 1, 30), true, false, null) {
 		@Override
 		public Assignment getLocationAssignment(String attemptID) {
@@ -245,15 +246,15 @@ public class Spring2018 extends Dataset {
 		}
 	};
 
-	public final static Assignment Pong1 = new Assignment(instance,
+	public final static Assignment Pong1 = new ConfigurableAssignment(instance,
 			"pong1Lab", Assignment.date(2018, 1, 30), true, false, null) {
 	};
 
-	public final static Assignment Pong2 = new Assignment(instance,
+	public final static Assignment Pong2 = new ConfigurableAssignment(instance,
 			"pong2HW", Assignment.date(2018, 2, 2), true, false, Pong1) {
 	};
 
-	public final static Assignment GuessingGame1 = new Assignment(instance,
+	public final static Assignment GuessingGame1 = new ConfigurableAssignment(instance,
 			"guess1Lab", Assignment.date(2018, 2, 2), true, false, null) {
 		@Override
 		public Assignment getLocationAssignment(String attemptID) {
@@ -272,11 +273,11 @@ public class Spring2018 extends Dataset {
 	/**
 	 * The assignment changed in Spring 2018, so we've changed the name to GG2 Lab
 	 */
-	public final static Assignment GuessingGame2Lab = new Assignment(instance,
+	public final static Assignment GuessingGame2Lab = new ConfigurableAssignment(instance,
 			"guess2Lab", Assignment.date(2018, 2, 14), true, false, GuessingGame1) {
 	};
 
-	public final static Assignment Project = new Assignment(instance,
+	public final static Assignment Project = new ConfigurableAssignment(instance,
 			"project", Assignment.date(2018, 2, 26), true, false, null) {
 	};
 

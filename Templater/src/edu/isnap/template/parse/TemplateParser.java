@@ -77,7 +77,7 @@ public class TemplateParser {
 	public static void saveHintMap(HintMap hintMap, String basePath, String name)
 			throws FileNotFoundException {
 		new File(basePath).mkdirs();
-		CTDModel hmb = new CTDModel(hintMap, 1, true);
+		CTDModel hmb = new CTDModel(hintMap.config, 1);
 		Kryo kryo = SnapHintBuilder.getKryo();
 		String path = SnapHintBuilder.getStorePath(basePath, name, 1, DATASET);
 		Output output = new Output(new FileOutputStream(path));

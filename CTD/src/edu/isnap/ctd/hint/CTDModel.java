@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import distance.RTED_InfoTree_Opt;
+import edu.isnap.hint.HintConfig;
 import edu.isnap.hint.HintMap;
 import edu.isnap.hint.IDataModel;
 import edu.isnap.hint.util.Tuple;
@@ -26,13 +27,13 @@ public class CTDModel implements IDataModel {
 
 	@SuppressWarnings("unused")
 	private CTDModel() {
-		this(null, 0, false);
+		this(null, 0);
 	}
 
-	public CTDModel(HintMap hintMap, double minGrade, boolean useIDs) {
-		this.hintMap = hintMap;
+	public CTDModel(HintConfig config, double minGrade) {
+		this.hintMap = new HintMap(config);
 		this.minGrade = minGrade;
-		this.useIDs = useIDs;
+		this.useIDs = config.areNodeIDsConsistent();
 	}
 
 	/**

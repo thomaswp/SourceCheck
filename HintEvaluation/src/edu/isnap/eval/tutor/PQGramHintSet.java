@@ -9,9 +9,11 @@ import java.util.stream.Collectors;
 
 import astrecognition.model.Convert;
 import astrecognition.model.Tree;
-import edu.isnap.ctd.hint.CTDModel;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.hint.HintConfig;
+import edu.isnap.hint.HintData;
+import edu.isnap.hint.IDataModel;
+import edu.isnap.hint.SolutionsModel;
 import edu.isnap.node.ASTNode;
 import edu.isnap.node.Node;
 import edu.isnap.rating.data.HintOutcome;
@@ -32,12 +34,18 @@ public class PQGramHintSet extends HintMapHintSet {
 	private final Map<String, List<Tree>> solutionsMap = new HashMap<>();
 	private final HashMap<String, Integer> labelMap = new HashMap<>();
 
+	@Override
+	public IDataModel[] getConsumers(HintConfig hintConfig) {
+		return new IDataModel[] { new SolutionsModel() };
+	}
+
 	public PQGramHintSet(String name, HintConfig hintConfig, TrainingDataset dataset) {
 		super(name, hintConfig);
 		for (String assignmentID : dataset.getAssignmentIDs()) {
 			List<Trace> traces = dataset.getTraces(assignmentID);
-			CTDModel builder = createHintBuilder(hintConfig, traces);
-			solutionsMap.put(assignmentID, builder.hintMap.solutions.keySet().stream()
+			HintData data = createHintData(assignmentID, hintConfig, traces);
+			solutionsMap.put(assignmentID,
+					data.getData(SolutionsModel.class).getSolutions().stream()
 					.map(this::treeToNode)
 					.collect(Collectors.toList()));
 		}

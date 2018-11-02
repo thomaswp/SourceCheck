@@ -20,6 +20,7 @@ import edu.isnap.hint.HintConfig;
 import edu.isnap.hint.HintData;
 import edu.isnap.hint.HintDebugInfo;
 import edu.isnap.hint.HintMap;
+import edu.isnap.hint.IDataModel;
 import edu.isnap.hint.SolutionsModel;
 import edu.isnap.hint.util.Alignment;
 import edu.isnap.hint.util.Cast;
@@ -59,8 +60,15 @@ public class HintHighlighter {
 	// TODO: remove
 	private final Map<Node, Map<String, Double>> nodePlacementTimes;
 
+	public static IDataModel[] getConsumers() {
+		return new IDataModel[] {
+				new SolutionsModel(),
+				new RulesModel(),
+		};
+	}
+
 	private static HintData fromSolutions(Collection<Node> solutions, HintConfig config) {
-		HintData data = new HintData(null, config, 1, new SolutionsModel(), new RulesModel());
+		HintData data = new HintData(null, config, 1, getConsumers());
 		for (Node solution : solutions) data.addTrace(null, Collections.singletonList(solution));
 		data.finished();
 		return data;
