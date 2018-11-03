@@ -32,6 +32,6 @@ public class RulesModel implements IDataModel {
 
 	@Override
 	public void postProcess(HintData data) {
-		ruleSet = new RuleSet(data.getData(SolutionsModel.class).getSolutions(), data.config);
+		ruleSet = new RuleSet(data.getModel(SolutionsModel.class).getSolutions(), data.config);
 	}
 }

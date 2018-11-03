@@ -55,7 +55,7 @@ public class PQGramHintSet extends HintDataHintSet {
 			List<Trace> traces = dataset.getTraces(assignmentID);
 			HintData data = createHintData(assignmentID, hintConfig, traces);
 			solutionsMap.put(assignmentID,
-					data.getData(SolutionsModel.class).getSolutions().stream()
+					data.getModel(SolutionsModel.class).getSolutions().stream()
 					.map(this::treeToNode)
 					.collect(Collectors.toList()));
 		}

@@ -43,7 +43,7 @@ public class HintData {
 		}
 	}
 
-	public <T extends IDataModel> T getData(Class<T> clazz) {
+	public <T extends IDataModel> T getModel(Class<T> clazz) {
 		for (IDataModel model : dataModels) {
 			if (clazz.isInstance(model)) return clazz.cast(model);
 		}

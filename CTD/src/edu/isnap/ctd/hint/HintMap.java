@@ -6,19 +6,15 @@ import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import edu.isnap.ctd.graph.vector.IndexedVectorState;
 import edu.isnap.ctd.graph.vector.VectorGraph;
 import edu.isnap.ctd.graph.vector.VectorState;
-import edu.isnap.feature.Feature;
 import edu.isnap.hint.HintConfig;
 import edu.isnap.node.Node;
 import edu.isnap.node.Node.Action;
-import edu.isnap.util.map.CountMap;
 
 /**
  * Class for handling the core logic of the CTD algorithm.
@@ -26,14 +22,7 @@ import edu.isnap.util.map.CountMap;
 @SuppressWarnings("deprecation")
 public class HintMap {
 
-	// TODO: should probably extract to a datastructure, rather than a list and some maps...
-	public final CountMap<Node> solutions = new CountMap<>();
-	public final Map<Node, Map<String, Double>> nodePlacementTimes = new IdentityHashMap<>();
-	public final List<Feature> features;
-
 	public final HintConfig config;
-
-	private transient List<Node> currentHistory = new ArrayList<>();
 
 	protected final HashMap<Node, VectorGraph> map = new HashMap<>();
 
@@ -47,12 +36,7 @@ public class HintMap {
 	}
 
 	public HintMap(HintConfig config) {
-		this(config, null);
-	}
-
-	public HintMap(HintConfig config, List<Feature> features) {
 		this.config = config;
-		this.features = features;
 	}
 
 	/**
@@ -85,7 +69,7 @@ public class HintMap {
 	}
 
 	public void addVertex(Node node, double perc) {
-		currentHistory.add(node);
+
 	}
 
 	public VectorGraph getGraph(Node node) {
@@ -120,14 +104,10 @@ public class HintMap {
 	}
 
 	public HintMap instance() {
-		return new HintMap(config, features);
+		return new HintMap(config);
 	}
 
 	public void setSolution(Node solution) {
-		solutions.increment(solution);
-
-		Map<String, Double> currentNodeCreationPercs = new HashMap<>();
-
 		solution.recurse(new Action() {
 			@Override
 			public void run(Node item) {
@@ -138,30 +118,8 @@ public class HintMap {
 					graph.addVertex(children);
 				}
 				graph.setGoal(children, getContext(item));
-
-				if (item.id != null) {
-					// If this node has an ID, look for the first time a node with same ID has the
-					// same root path in the history, and declare that as its placement time perc
-					String rootPath = item.rootPathString();
-					for (int i = 0; i < currentHistory.size(); i++) {
-						Node node = currentHistory.get(i);
-						Node match = node.searchForNodeWithID(item.id);
-						if (match == null) continue;
-						if (rootPath.equals(match.rootPathString())) {
-							currentNodeCreationPercs.put(item.id,
-									(double) i / currentHistory.size());
-							break;
-						}
-					}
-					if (!currentNodeCreationPercs.containsKey(item.id)) {
-						System.out.println("!!!!");
-					}
-				}
 			}
 		});
-
-		// Then save the current node creation percs, using the final solution as a key
-		nodePlacementTimes.put(solution, currentNodeCreationPercs);
 	}
 
 	public IndexedVectorState getContext(Node item) {
@@ -225,8 +183,6 @@ public class HintMap {
 			}
 			myGraph.addGraph(graph, true);
 		}
-		solutions.add(hintMap.solutions);
-		nodePlacementTimes.putAll(hintMap.nodePlacementTimes);
 	}
 
 	/**

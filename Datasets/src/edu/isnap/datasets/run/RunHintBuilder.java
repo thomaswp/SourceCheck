@@ -68,10 +68,10 @@ public class RunHintBuilder {
 		long ms = System.currentTimeMillis();
 		HintData builder = subtree.buildGenerator(Mode.Overwrite, minGrade);
 
-		int nAttempts = builder.getData(SolutionsModel.class).getSolutionCount();
+		int nAttempts = builder.getModel(SolutionsModel.class).getSolutionCount();
 		System.out.println((System.currentTimeMillis() - ms) + "ms; " + nAttempts + " attempts");
 
-		CTDModel ctdModel = builder.getData(CTDModel.class);
+		CTDModel ctdModel = builder.getModel(CTDModel.class);
 		if (ctdModel != null) {
 			String dir = String.format("%s/graphs/%s-g%03d/", assignment.dataDir,
 					assignment.name, Math.round(minGrade * 100));

@@ -5,8 +5,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -35,10 +33,7 @@ import edu.isnap.sourcecheck.edit.Deletion;
 import edu.isnap.sourcecheck.edit.EditHint;
 import edu.isnap.sourcecheck.edit.Insertion;
 import edu.isnap.sourcecheck.edit.Reorder;
-import edu.isnap.sourcecheck.priority.Ordering;
-import edu.isnap.sourcecheck.priority.Ordering.Addition;
-import edu.isnap.sourcecheck.priority.OrderingModel;
-import edu.isnap.sourcecheck.priority.Priority;
+import edu.isnap.sourcecheck.priority.HintPrioritizer;
 import edu.isnap.sourcecheck.priority.RuleSet;
 import edu.isnap.sourcecheck.priority.RulesModel;
 import edu.isnap.util.map.BiMap;
@@ -56,10 +51,6 @@ public class HintHighlighter {
 	public final HintConfig config;
 	public final HintData hintData;
 	private final List<Node> solutions;
-	private final RuleSet ruleSet;
-
-	// TODO: remove
-	private final Map<Node, Map<String, Double>> nodePlacementTimes;
 
 	public final static IDataConsumer DataConsumer = new IDataConsumer() {
 		@Override
@@ -87,7 +78,7 @@ public class HintHighlighter {
 		// preprocessSolutions method
 //		this.nodePlacementTimes = hintMap == null ? null :
 //			new IdentityHashMap<>(hintMap.nodePlacementTimes);
-		Collection<Node> solutions = hintData.getData(SolutionsModel.class).getSolutions();
+		Collection<Node> solutions = hintData.getModel(SolutionsModel.class).getSolutions();
 		if (solutions.isEmpty()) throw new IllegalArgumentException("Solutions cannot be empty");
 		List<Node> solutionsCopy = new ArrayList<>();
 		synchronized (solutions) {
@@ -97,16 +88,11 @@ public class HintHighlighter {
 		}
 		solutions = solutionsCopy;
 
-		RulesModel rulesModel = hintData.getData(RulesModel.class);
-
 		this.config = hintData.config;
 		this.hintData = hintData;
-		this.ruleSet = rulesModel == null ? null : rulesModel.getRuleSet();
 		this.solutions = config.preprocessSolutions ?
 				preprocessSolutions(solutions, config, null) :
 					new ArrayList<>(solutions);
-
-		this.nodePlacementTimes = new IdentityHashMap<>();
 	}
 
 	public HintDebugInfo debugHighlight(Node node) {
@@ -127,7 +113,7 @@ public class HintHighlighter {
 
 	private List<EditHint> highlightWithPriorities(Node node, Mapping mapping) {
 		List<EditHint> hints = highlight(node, mapping);
-		assignPriorities(mapping, hints);
+		new HintPrioritizer(this).assignPriorities(mapping, hints);
 		return hints;
 	}
 
@@ -588,9 +574,13 @@ public class HintHighlighter {
 		return bestMatch;
 	}
 
-	private List<Mapping> findBestMappings(Node node, int maxReturned) {
+	public List<Mapping> findBestMappings(Node node, int maxReturned) {
 		DistanceMeasure dm = getDistanceMeasure(config);
 		List<Node> filteredSolutions = solutions;
+
+		RulesModel rulesModel = hintData.getModel(RulesModel.class);
+		RuleSet ruleSet = rulesModel == null ? null : rulesModel.getRuleSet();
+
 		if (ruleSet != null) {
 			RuleSet.trace = trace;
 			filteredSolutions = ruleSet.filterSolutions(solutions, node);
@@ -774,179 +764,6 @@ public class HintHighlighter {
 		edits.addAll(toAdd);
 
 
-	}
-
-	public void assignPriorities(Mapping bestMatch, List<EditHint> hints) {
-		Node node = bestMatch.from;
-		// TODO: why completely recalculate this?
-		List<Mapping> bestMatches = findBestMappings(node, config.votingK);
-
-		if (!bestMatches.stream().anyMatch(m -> m.to == bestMatch.to)) {
-			throw new IllegalArgumentException("bestMatch must be a member of hints");
-		}
-
-		// Get counts of how many times each edit appears in the top matches
-		CountMap<EditHint> hintCounts = new CountMap<>();
-		bestMatches.stream()
-		// Use a set so duplicates from a single target solution don't get double-counted
-		.map(m -> new HashSet<>(highlight(node, m)))
-		.forEach(set -> hintCounts.incrementAll(set));
-
-		for (EditHint hint : hints) {
-			Priority priority = new Priority();
-			priority.consensusNumerator = hintCounts.getCount(hint);
-			priority.consensusDenominator = bestMatches.size();
-			// Numerators should be less than demoninators, and if there's only one best match,
-			// it should always match itself
-			if (priority.consensusNumerator > priority.consensusDenominator ||
-					(priority.consensusNumerator == 1 && priority.consensusNumerator != 1)) {
-				throw new RuntimeException("Inconsistent EditHint equality.");
-			}
-			hint.priority = priority;
-		}
-
-		Map<Mapping, Mapping> bestToGoodMappings = new HashMap<>();
-		if (nodePlacementTimes != null && nodePlacementTimes.containsKey(bestMatch.to)) {
-			for (Mapping match : bestMatches) {
-				if (bestMatch.to == match.to) continue;
-				Map<String, Double> creationPercs = nodePlacementTimes.get(match.to);
-				if (creationPercs == null) continue;
-				Mapping mapping = new NodeAlignment(bestMatch.to, match.to, config)
-						.calculateMapping(getDistanceMeasure());
-				bestToGoodMappings.put(match, mapping);
-			}
-		}
-
-		for (EditHint hint : hints) {
-			if (nodePlacementTimes != null && nodePlacementTimes.containsKey(bestMatch.to)) {
-				Map<String, Double> creationPercs = nodePlacementTimes.get(bestMatch.to);
-				Node priorityToNode = hint.getPriorityToNode(bestMatch);
-				if (creationPercs != null && priorityToNode != null) {
-					List<Double> percs = new ArrayList<>();
-					percs.add(creationPercs.get(priorityToNode.id));
-
-					for (Mapping match : bestToGoodMappings.keySet()) {
-						Node from = bestToGoodMappings.get(match).getFrom(priorityToNode);
-						if (from == null) continue;
-						creationPercs = nodePlacementTimes.get(match.to);
-						percs.add(creationPercs.get(from.id));
-					}
-
-					hint.priority.creationTime = percs.stream()
-							.filter(d -> d != null).mapToDouble(d -> d)
-							.average();
-				}
-			}
-		}
-
-		findOrderingPriority(hints, node, bestMatch);
-	}
-
-	private void findOrderingPriority(List<EditHint> hints, Node node, Mapping bestMatch) {
-		OrderingModel orderMatrix = hintData.getData(OrderingModel.class);
-		if (orderMatrix == null) return;
-
-		CountMap<String> nodeLabelCounts = Ordering.countLabels(node);
-		CountMap<String> matchLabelCounts = Ordering.countLabels(bestMatch.to);
-		Map<Insertion, Addition> insertionAdditions = new HashMap<>();
-		for (EditHint hint : hints) {
-			if (hint instanceof Insertion) {
-				Insertion insertion = (Insertion) hint;
-				if (insertion.pair == null) {
-					System.err.println("Insertion w/o pair: " + insertion);
-					continue;
-				}
-				String label = Ordering.getLabel(insertion.pair);
-				// If the label is null, this is not a meaningful node to track the ordering
-				if (label == null) continue;
-
-				if (insertion.replaced != null && insertion.replaced.hasType(insertion.type)) {
-					// If this insertion just replaces a node with the same type, it does not
-					// it will not change the index count
-					continue;
-				}
-
-				// Get the number of times this item appears in the student's code
-				int count = nodeLabelCounts.getCount(label);
-				// If we are inserting without a candidate, this node will increase that count by 1
-				if (insertion.candidate == null ||
-						!label.equals(Ordering.getLabel(insertion.candidate))) {
-					count++;
-				}
-				// But do not increase the count beyond the number present in the target solution
-				// This ensures at least one ordering should always be found in the below code
-				count = Math.min(count, matchLabelCounts.get(label));
-
-				Addition addition = new Addition(label, count);
-				insertionAdditions.put(insertion, addition);
-			}
-		}
-
-		List<Insertion> insertions = new ArrayList<>(insertionAdditions.keySet());
-
-		for (Insertion insertion : insertions) {
-			if (!insertionAdditions.containsKey(insertion)) continue;
-
-			List<Addition> additions = orderMatrix.additions();
-			Addition insertAddition = insertionAdditions.get(insertion);
-			int insertIndex = additions.indexOf(insertAddition);
-			if (insertIndex < 0) continue;
-
-			int satisfiedPrereqs = 0;
-			int totalPrereqs = 0;
-			int unsatisfiedPostreqs = 0;
-			int totalPostreqs = 0;
-
-			// TODO config;
-			double threshhold = 0.85;
-
-			for (int i = 0; i < additions.size(); i++) {
-				double percOrdered = orderMatrix.getPercOrdered(i, insertIndex);
-				Addition addition = additions.get(i);
-				if (percOrdered >= threshhold) {
-					if (matchLabelCounts.getCount(addition.label) >= addition.count) {
-						totalPrereqs++;
-						if (nodeLabelCounts.getCount(addition.label) >= addition.count) {
-							satisfiedPrereqs++;
-						}
-					}
-				} else if (percOrdered < 1 - threshhold) {
-					totalPostreqs++;
-					if (nodeLabelCounts.getCount(addition.label) >= addition.count) {
-						unsatisfiedPostreqs++;
-					}
-				}
-			}
-
-			insertion.priority.prereqsNumerator = satisfiedPrereqs;
-			insertion.priority.prereqsDenominator = totalPrereqs;
-			insertion.priority.postreqsNumerator = unsatisfiedPostreqs;
-			insertion.priority.postreqsDenominator = totalPostreqs;
-		}
-
-		calculateOrderingRanks(insertions, insertionAdditions, orderMatrix);
-	}
-
-	private void calculateOrderingRanks(List<Insertion> insertions,
-			Map<Insertion, Addition> insertionMap, OrderingModel orderMatrix) {
-		List<Addition> additions = orderMatrix.additions();
-		List<Insertion> orderedInsertions = insertionMap.keySet().stream()
-				.filter(insertion -> additions.contains(insertionMap.get(insertion)))
-				.collect(Collectors.toList());
-		Collections.sort(orderedInsertions, (a, b) -> {
-			Addition additionA = insertionMap.get(a);
-			Addition additionB = insertionMap.get(b);
-			// TODO: I think this may be able to produce inconsistent orderings
-			return orderMatrix.getPercOrdered(
-					additions.indexOf(additionA), additions.indexOf(additionB)) >= 0.50 ?
-							-1 : 1;
-		});
-		for (int i = 0; i < orderedInsertions.size(); i++) {
-			Priority priority = orderedInsertions.get(i).priority;
-			priority.orderingNumerator = i + 1;
-			priority.orderingDenominator = orderedInsertions.size();
-
-		}
 	}
 
 	private static String[] toArray(List<String> items) {
