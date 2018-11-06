@@ -274,6 +274,13 @@ public class Spring2018 extends Dataset {
 	 */
 	public final static Assignment GuessingGame2Lab = new Assignment(instance,
 			"guess2Lab", Assignment.date(2018, 2, 14), true, false, GuessingGame1) {
+		@Override
+		public Assignment getLocationAssignment(String attemptID) {
+			if ("b86cf4d7-8352-45f6-baba-cad302acc8bc".equals(attemptID)) {
+				return Pong1;
+			}
+			return super.getLocationAssignment(attemptID);
+		}
 	};
 
 	public final static Assignment Project = new Assignment(instance,
