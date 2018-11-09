@@ -6,7 +6,7 @@ library(readr)
 first <- function(x) head(x, 1)
 last <- function(x) tail(x, 1)
 
-itap <- read_delim("~/GitHub/SnapHints/R/ITAP/data/itap_pslc.tsv", "\t", escape_double = FALSE, trim_ws = TRUE)
+itap <- read_delim("data/itap_pslc.tsv", "\t", escape_double = FALSE, trim_ws = TRUE)
 hintRows <- itap[itap$`Student Response Type` == "HINT_REQUEST" & !is.na(itap$Input) & nchar(itap$Input) < 400,]
 
 hints <- ddply(hintRows, c("`Anon Student Id`", "`Problem Name`", "`Time`", "`Input`", "`Feedback Text`"), summarize, id=first(`Transaction Id`), count=length(Time))
