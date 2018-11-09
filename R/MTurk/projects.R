@@ -38,7 +38,7 @@ loadData <- function() {
   
   usersUF <- Reduce(intersect, list(
     consentUF$userID, 
-    preHelpUF$userID, postHelpUF$userID, 
+    preHelpUF$userID, postHelpUF$userID,
     attemptsUF$userID
   ))
   

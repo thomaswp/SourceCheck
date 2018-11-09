@@ -77,7 +77,7 @@ public class MTurkProcess {
 
 		Node lastCode = null;
 
-//		String lastAction = null;
+		String lastAction = null;
 		String eventID = null;
 		boolean codeHint = false, textHint = false, reflect = false;
 
@@ -160,8 +160,7 @@ public class MTurkProcess {
 				if (firstNoHints == 0) firstNoHints = (int) (time - start);
 				break;
 			case AttemptAction.HINT_DIALOG_LOG_FEEDBACK:
-				// TODO: Why was this line here to begin with!?
-//				if (AttemptAction.HINT_DIALOG_DONE.equals(lastAction)) {
+				if (AttemptAction.HINT_DIALOG_NEXT.equals(lastAction)) {
 					JSONObject json = new JSONObject(row.data);
 					String explanation = json.optString("explanation");
 					if (explanation != null && explanation.length() > 0) {
@@ -171,7 +170,7 @@ public class MTurkProcess {
 						explanations.put("textHint", textHint);
 						explanations.put("explanation", explanation);
 					}
-//				}
+				}
 				break;
 			}
 
@@ -179,7 +178,7 @@ public class MTurkProcess {
 				midSurveyTime = relTime;
 				break;
 			}
-//			lastAction = row.message;
+			lastAction = row.message;
 		}
 //		if (lastCode != null) {
 //			System.out.println(attempt.id);
