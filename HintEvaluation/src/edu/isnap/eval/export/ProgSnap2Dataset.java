@@ -4,7 +4,14 @@ import java.io.Closeable;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -79,29 +86,33 @@ public class ProgSnap2Dataset implements Closeable {
 //			"Interpretability",
 //	};
 
+	public static void main(String[] args) throws IOException {
+		exportAndWrite(Spring2017.GuessingGame1);
+	}
+
 	private final String dir;
 	private final Spreadsheet mainTable;
+	private final Spreadsheet codeStateTable;
 	private final Spreadsheet assignmentLinkTable;
 
 	private final Set<String> unexportedMessages = new LinkedHashSet<>();
 	private final CountMap<String> users = new CountMap<>();
 
-	public PrintStream out = System.out;
+	private final List<Event> rows = new ArrayList<>();
+	private final Map<String, Integer> codeStates = new HashMap<>();
 
-	public static void main(String[] args) throws IOException {
-		exportAndWrite(Spring2017.instance);
-	}
+	public PrintStream out = System.out;
 
 	public static void exportAndWrite(Assignment assignment)
 			throws FileNotFoundException, IOException {
-		ProgSnap2Dataset progsnap = new ProgSnap2Dataset(assignment.dataDir);
+		ProgSnap2Dataset progsnap = new ProgSnap2Dataset(assignment.exportDir());
 		progsnap.export(assignment);
 		progsnap.close();
 	}
 
 	public static void exportAndWrite(Dataset dataset)
 			throws FileNotFoundException, IOException {
-		ProgSnap2Dataset progsnap = new ProgSnap2Dataset(dataset.dataDir);
+		ProgSnap2Dataset progsnap = new ProgSnap2Dataset(dataset.exportDir());
 		progsnap.export(dataset);
 		progsnap.close();
 	}
@@ -114,11 +125,20 @@ public class ProgSnap2Dataset implements Closeable {
 
 		assignmentLinkTable = new Spreadsheet(CSVFormat.RFC4180);
 		assignmentLinkTable.beginWrite(dir + "/ProgSnap2/LinkTables/Assignment.csv");
+
+		codeStateTable = new Spreadsheet(CSVFormat.RFC4180);
+		codeStateTable.beginWrite(dir + "/ProgSnap2/CodeStates/CodeStates.csv");
 	}
 
 	@Override
 	public void close() throws IOException {
+		Collections.sort(rows);
+		for (int order = 0; order < rows.size(); order++) {
+			rows.get(order).write(mainTable, order);
+		}
+
 		mainTable.endWrite();
+		codeStateTable.endWrite();
 		assignmentLinkTable.endWrite();
 
 		try {
@@ -143,14 +163,10 @@ public class ProgSnap2Dataset implements Closeable {
 	public void export(Assignment assignment) throws IOException {
 		out.println("---- Exporting: " + assignment + " ----");
 
-
 		assignmentLinkTable.newRow();
-		assignmentLinkTable.put("ID", assignment.name);
+		assignmentLinkTable.put("AssignmentID", assignment.name);
 		assignmentLinkTable.put("URL", "file:///Resources/Assignments.pdf");
 		assignmentLinkTable.put("Type", assignment.name.contains("HW") ? "Homework" : "In-Lab");
-
-		mainTable.setHeader("AssignmentID", assignment.name);
-		mainTable.setHeader("ToolInstances", assignment.dataset.getToolInstances());
 
 		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, false, true,
 				new SnapParser.SubmittedOnly());
@@ -161,22 +177,97 @@ public class ProgSnap2Dataset implements Closeable {
 		}
 	}
 
+	private class Event implements Comparable<Event> {
+		private final DateFormat DateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
+		private final DateFormat TimeZoneFormat = new SimpleDateFormat("Z");
+
+		private final Assignment assignment;
+		private final AttemptAction action;
+		private Integer EventID = null;
+
+		// Required columns
+		public final String EventType;
+		public final String SubjectID;
+		public final Integer CodeStateID;
+
+		// Optional columns
+		public Event ParentEvent = null;
+		public String CodeStateSection = null;
+		public String EventInitiator = null;
+		public String EditType = null;
+		public String InterventionType = null;
+		public String InterventionMessage = null;
+
+		public Event(Assignment assignment, AssignmentAttempt attempt, AttemptAction action,
+				String eventType, String code, String pseudocode) {
+			this.assignment = assignment;
+			this.action = action;
+			this.EventType = eventType;
+
+			String subjectID = attempt.userID();
+			if (subjectID == null || subjectID.isEmpty()) {
+				subjectID = "PROJECT_ONLY_" + attempt.id;
+				out.println("No UID: " + attempt.id);
+			} if (subjectID.length() > 16) {
+				subjectID = subjectID.substring(subjectID.length() - 16, subjectID.length());
+			}
+			users.increment(subjectID);
+			this.SubjectID = subjectID;
+
+			Integer codeStateID = codeStates.get(code);
+			if (codeStateID == null) {
+				codeStateID = codeStates.size();
+				codeStates.put(code, codeStateID);
+
+				codeStateTable.newRow();
+				codeStateTable.put("CodeStateID", codeStateID);
+				codeStateTable.put("Code", code);
+				codeStateTable.put("Pseudocode", pseudocode);
+			}
+			this.CodeStateID = codeStateID;
+		}
+
+		public void write(Spreadsheet spreadsheet, int order) {
+			if (ParentEvent != null && ParentEvent.EventID == null) {
+				throw new RuntimeException("Parents should always be logged before children!");
+			}
+
+			EventID = order;
+
+			spreadsheet.newRow();
+			spreadsheet.put("EventType", EventType);
+			spreadsheet.put("EventID", EventID);
+			spreadsheet.put("Order", order);
+			spreadsheet.put("SubjectID", SubjectID);
+			spreadsheet.put("Toolnstances", assignment.dataset.getToolInstances());
+			spreadsheet.put("CodeStateID", CodeStateID);
+			spreadsheet.put("ParentEventID", ParentEvent == null ? null : ParentEvent.EventID);
+			spreadsheet.put("ClientTimestamp", DateFormat.format(action.timestamp));
+			spreadsheet.put("ClientTimezone", TimeZoneFormat.format(action.timestamp));
+			spreadsheet.put("SessionID", action.sessionID);
+			spreadsheet.put("CourseID", "UnivNonMajorsIntro"); // TODO: Don't hard code
+			spreadsheet.put("TermID", assignment.dataset.getName());
+			spreadsheet.put("AssignmentID", assignment.name);
+			spreadsheet.put("CodeStateSection", CodeStateSection);
+			spreadsheet.put("EventInitiator", EventInitiator);
+			spreadsheet.put("EditType", EditType);
+			spreadsheet.put("InterventionType", InterventionType);
+			spreadsheet.put("InterventionMessage", InterventionMessage);
+		}
+
+		private Comparator<Event> comparator =
+				Comparator.comparing((Event e) -> e.action.timestamp)
+					.thenComparing(e -> e.action.id)
+					.thenComparing(e -> e.ParentEvent == null ? -1 : 1);
+
+		@Override
+		public int compareTo(Event o) {
+			return comparator.compare(this, o);
+		}
+	}
+
 	private void export(Assignment assignment, AssignmentAttempt attempt, Spreadsheet spreadsheet)
 			throws IOException {
-
-
-		String userID = attempt.userID();
-		if (userID == null || userID.isEmpty()) {
-			userID = attempt.id;
-			out.println("No UID: " + attempt.id);
-		} else if (userID.length() > 16) {
-			userID = userID.substring(userID.length() - 16, userID.length());
-		}
-		users.increment(userID);
-
-		mainTable.setHeader("SubjectID", userID);
-		mainTable.setHeader("AttemptID", attempt.id);
-
 
 		Snapshot lastSnapshot = null;
 		String lastCode = "";
@@ -184,45 +275,27 @@ public class ProgSnap2Dataset implements Closeable {
 		for (int i = 0; i < attempt.size(); i++) {
 			AttemptAction action = attempt.rows.get(i);
 
-			String EventType = null;
-			String EventID = null;
-			Integer Order = null;
-			String CodeStateID = null;
-			String ParentEventID = null;
-			String ClientTimestamp = null;
-			String ClientTimezone = null;
-			String SessionID = null;
-			String CourseID = null;
-			String TermID = null;
-			String AssignmentID = null;
-			String ExperimentalCondition = null;
-			String CodeStateSection = null;
-			String EventInitiator = null;
-			String EditType = null;
-			String InterventionType = null;
-			String InterventionMessage = null;
-
-
-
 			String message = action.message;
 			String data = action.data;
 
-			String studentResponse = "ATTEMPT";
 			String selection = "";
-			String feedbackText = "";
-			String feedbackClassification = "";
-			String code = "";
+
 			String humanReadableCode = "";
 
 			if (action.snapshot != null) {
 				ASTNode ast = JsonAST.toAST(action.snapshot, false);
 				String newCode = ast.prettyPrint(true, RatingConfig.Snap);
 				if (!newCode.equals(lastCode)) {
-					code = ast.toJSON().toString();
-					lastCode = humanReadableCode = newCode.replace("\n", "\\n");
+					lastCode = ast.toJSON().toString();
+					humanReadableCode = newCode;
 					lastSnapshot = action.snapshot;
 				}
 			}
+
+			String EventType = action.message; // TODO: Change
+			Event mainEvent = new Event(assignment, attempt, action, EventType, lastCode,
+					humanReadableCode);
+			rows.add(mainEvent);
 
 			if (action.data != null && data.startsWith("{")) {
 				JSONObject jsonData = new JSONObject(data);
@@ -260,8 +333,8 @@ public class ProgSnap2Dataset implements Closeable {
 				JSONObject candidate = jsonData.getJSONObject("candidate");
 				selection = candidate.getInt("id") + ";" + candidate.getString("selector");
 			} else if (AttemptAction.SHOW_HINT_MESSAGES.contains(message) && lastSnapshot != null) {
-				studentResponse = "HINT_REQUEST";
-				feedbackClassification = message;
+
+				mainEvent.InterventionType = message.replace("SnapDisplay.", "");
 
 				JSONObject jsonData = new JSONObject(data);
 				Node root = SimpleNodeBuilder.toTree(lastSnapshot, true);
@@ -323,7 +396,7 @@ public class ProgSnap2Dataset implements Closeable {
 					saveData.put("message", jsonData.get("message"));
 				}
 
-				feedbackText = saveData.toString();
+				mainEvent.InterventionMessage = saveData.toString();
 			} else if (selection.length() == 0 && data.length() > 0) {
 //				out.println(message + ": " + data);
 				unexportedMessages.add(message);
@@ -335,27 +408,10 @@ public class ProgSnap2Dataset implements Closeable {
 				}
 			}
 
-			String stepTarget = selection;
-			int stepSemi = stepTarget.indexOf(";");
-			if (stepSemi >= 0) stepTarget = stepTarget.substring(0, stepSemi);
-			String stepName = message + (stepTarget.length() > 0 ? "_" : "") + stepTarget;
-
-//			printer.printRecord(new Object[] {
-//					userID,
-//					attemptID + "_" + action.sessionID,
-//					action.timestamp.getTime(),
-//					studentResponse,
-//					levelType,
-//					problemName,
-//					stepName,
-//					selection,
-//					message,
-//					message,
-//					feedbackText,
-//					feedbackClassification,
-//					code,
-//					humanReadableCode,
-//			});
+			mainEvent.ParentEvent = null;
+			mainEvent.CodeStateSection = selection;
+			mainEvent.EventInitiator = null;
+			mainEvent.EditType = null;
 		}
 	}
 }
