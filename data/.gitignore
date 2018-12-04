@@ -1,5 +1,6 @@
 *.csv
 *.cached
+*.hdata
 *.json
 *.json.js
 *.txt
