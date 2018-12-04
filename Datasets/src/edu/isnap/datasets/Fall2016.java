@@ -159,4 +159,9 @@ public class Fall2016 extends Dataset {
 	public Assignment[] all() {
 		return All;
 	}
+
+	@Override
+	public String getToolInstances() {
+		return "iSnap v1.1; CTD v1.1";
+	}
 }

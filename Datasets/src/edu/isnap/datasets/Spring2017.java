@@ -117,4 +117,9 @@ public class Spring2017 extends Dataset {
 	public Assignment[] all() {
 		return All;
 	}
+
+	@Override
+	public String getToolInstances() {
+		return "iSnap v2.1.0; SourceCheck v1.2.1";
+	}
 }

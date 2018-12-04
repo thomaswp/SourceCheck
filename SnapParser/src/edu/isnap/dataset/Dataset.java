@@ -49,4 +49,12 @@ public abstract class Dataset {
 		}
 		return map;
 	}
+
+	/**
+	 * Used when outputting a dataset for analysis. This should really be overwritten with the
+	 * version of both iSnap and CTD/SourceCheck at the time.
+	 */
+	public String getToolInstances() {
+		return "iSnap (Unknown Version)";
+	}
 }

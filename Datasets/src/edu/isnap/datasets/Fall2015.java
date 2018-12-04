@@ -104,4 +104,9 @@ public class Fall2015 extends Dataset {
 				return new TreeMap<>();
 			}
 		}
+
+		@Override
+		public String getToolInstances() {
+			return "iSnap v0.1";
+		}
 	}

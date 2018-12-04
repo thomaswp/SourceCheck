@@ -42,7 +42,7 @@ import edu.isnap.rating.RatingConfig;
 import edu.isnap.util.map.CountMap;
 import edu.isnap.util.map.DoubleMap;
 
-public class Datashop {
+public class DatashopExporter {
 
 	private final static String[] HEADER = {
 			"Anon Student Id",

@@ -300,4 +300,9 @@ public class Spring2018 extends Dataset {
 	public Assignment[] all() {
 		return All;
 	}
+
+	@Override
+	public String getToolInstances() {
+		return "iSnap v2.5.0; SourceCheck/Templates v1.3.1";
+	}
 }

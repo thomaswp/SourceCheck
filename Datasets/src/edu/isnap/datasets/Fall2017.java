@@ -92,4 +92,9 @@ public class Fall2017 extends Dataset {
 	public Assignment[] all() {
 		return All;
 	}
+
+	@Override
+	public String getToolInstances() {
+		return "iSnap v2.4.3; SourceCheck v1.3.0";
+	}
 }
