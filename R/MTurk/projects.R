@@ -475,6 +475,11 @@ loadData <- function() {
   # But NS less likely on task 2... so maybe it's a cumulative effect?
   fisher.test(codeHinted$followedHint[codeHinted$assignmentID == "drawTriangles"], codeHinted$textHint[codeHinted$assignmentID == "drawTriangles"]==1)
   
+  # TODO: Use this instead!
+  codeHintedByUser <- ddply(codeHinted, c("textHint", "userID"), summarize, pFollowed=mean(followedHint))
+  wilcox.test(codeHintedByUser$pFollowed[codeHintedByUser$textHint], codeHintedByUser$pFollowed[!codeHintedByUser$textHint])
+  ggplot(codeHintedByUser, aes(x=textHint==1, y=pFollowed)) + geom_violin() + stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE)
+  
   # But no difference in percieved quality
   condCompare(codeHinted$Q12_1, codeHinted$textHint==1, filter=codeHinted$assignmentID=="polygonMakerSimple")
   condCompare(codeHinted$Q12_2, codeHinted$textHint==1, filter=codeHinted$assignmentID=="polygonMakerSimple")
