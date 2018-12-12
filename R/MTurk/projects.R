@@ -73,6 +73,7 @@ loadData <- function() {
   attempts <- attempts[!(attempts$userID %in% attempts$userID[duplicated(attempts[,c("assignmentID", "userID")])]),]
   actions <- actionsUF
   actions <- actions[actions$projectID %in% attempts$projectID,]
+  explanations <- read.csv("../../data/mturk/mturk2018/analysis/explanations.csv")
   
   users <- Reduce(intersect, list(
     consent$userID, 
@@ -92,6 +93,7 @@ loadData <- function() {
   postHelp <- postHelp[postHelp$eventID %in% preHelp$eventID,]
   attempts <- attempts[attempts$userID %in% users, ]
   actions <- actions[actions$userID %in% users, ]
+  explanations <- explanations[explanations$userID %in% users,]
   
   preHelp <- merge(preHelp, actions)
   preHelp <- preHelp[order(preHelp$userID, preHelp$time),]
