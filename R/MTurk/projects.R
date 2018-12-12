@@ -134,6 +134,33 @@ loadData <- function() {
                       nCodeHintOnly=sum(codeHint&!textHint), nTextHintOnly=sum(!codeHint&textHint), nBothHints=sum(codeHint&textHint), nNoHints=sum(!codeHint&!textHint))
   task2 <- merge(task2, task2Hints, all.X=T)
   
+  postHelp$followedHint <- postHelp$Q14 < 3
+  postHelpUsers <- ddply(postHelp, c("assignmentID", "userID", "groupCT", "codeHint", "textHint", "reflect"), summarize,
+                         meanFollowed = mean(followedHint))
+
+  
+  ### ITiCSE paper
+  
+  # On Task 1, students perceived iSnap's actions as significantly more helpful with code+text than just code
+  compareStats(post1$Q30[post1$groupCT=="11"], post1$Q30[post1$groupCT=="10"])
+  
+  # On Task 1, students completed no more objectives with code+text than just code
+  compareStats(task1$objs[task1$groupCT=="11"], task1$objs[task1$groupCT=="10"])
+  # On Task 2, students completed no more objectives with code+text than just code
+  compareStats(task2$objs[task1$groupCT=="11"], task2$objs[task1$groupCT=="10"])
+  
+  task1PostCodeUsers <- postHelpUsers[postHelpUsers$assignmentID == "polygonMakerSimple" & postHelpUsers$codeHint, ]
+  # Averaged over users, the difference in percentage of hints followed is not significant
+  compareStats(task1PostCodeUsers$meanFollowed[task1PostCodeUsers$groupCT=="11"], 
+               task1PostCodeUsers$meanFollowed[task1PostCodeUsers$groupCT=="10"])
+  
+  
+  table(task1PostCodeUsers$groupCT, task1PostCodeUsers$meanFollowed==1)
+  fisher.test(task1PostCodeUsers$meanFollowed==1, task1PostCodeUsers$textHint)
+  postHelpT1CodeHint <- postHelp[postHelp$codeHint == 1 & postHelp$assignmentID=="polygonMakerSimple",]
+  fisher.test(postHelpT1CodeHint$followedHint, postHelpT1CodeHint$textHint)
+  
+  
   ### Hint per user
   postHelpPerUser <- ddply(postHelp, c("assignmentID", "userID"), summarize, n=length(Q10))
   table(postHelpPerUser$assignmentID, postHelpPerUser$n)
@@ -143,6 +170,7 @@ loadData <- function() {
   helpDurations <- as.numeric(postHelp$EndDate[order(postHelp$eventID)] - preHelp$StartDate[order(preHelp$eventID)])
   summary(helpDurations)
   hist(helpDurations[helpDurations < 300])
+  
   
   #### How does hint type impact perceived usefulness?
   
@@ -447,9 +475,6 @@ loadData <- function() {
   # TODO: Use ANOVA, not wilcox
   
   
-  
-  
-  
   condCompare(postHelpT2$Q10, postHelpT2$codeHint==1, filter=postHelpT2$codeHint+postHelpT2$textHint==1)
   
   postHelp$goodness <- ifelse(postHelp$Q10 == 1, 0, ifelse(postHelp$Q10 < 11, 1, 2))
@@ -469,7 +494,6 @@ loadData <- function() {
     lower=lm(Q10 ~ 1, data=postHelpT2), 
     upper=lm(Q10 ~ codeHint * textHint * reflect, data=postHelpT2)), direction="forward")
   
-  postHelp$followedHint <- postHelp$Q14 < 3
   table(postHelp$followedHint, postHelp$textHint, postHelp$assignmentID)
   codeHinted <- postHelp[postHelp$codeHint == 1, ]
   # Text hints make you significantly more likely to follow a code hint (2x) on task1
