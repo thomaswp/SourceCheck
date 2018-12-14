@@ -29,7 +29,7 @@ loadData <- function() {
   consentUF <- read.qualtrics("data/consent.csv")
   post1UF <- read.qualtrics("data/post1.csv")
   post2UF <- read.qualtrics("data/post2.csv")
-  post2UF <- post2UF[post2$assignmentID == "drawTriangles",]
+  post2UF <- post2UF[post2UF$assignmentID == "drawTriangles",]
   preHelpUF <- read.qualtrics("data/pre-help.csv")
   postHelpUF <- read.qualtrics("data/post-help.csv")
   attemptsUF <- read.csv("../../data/mturk/mturk2018/analysis/attempts.csv")
@@ -139,7 +139,7 @@ loadData <- function() {
                          meanFollowed = mean(followedHint))
 
   
-  ### ITiCSE paper
+  #### ITiCSE paper
   
   # On Task 1, students perceived iSnap's actions as significantly more helpful with code+text than just code
   compareStats(post1$Q30[post1$groupCT=="11"], post1$Q30[post1$groupCT=="10"])
@@ -159,6 +159,18 @@ loadData <- function() {
   fisher.test(task1PostCodeUsers$meanFollowed==1, task1PostCodeUsers$textHint)
   postHelpT1CodeHint <- postHelp[postHelp$codeHint == 1 & postHelp$assignmentID=="polygonMakerSimple",]
   fisher.test(postHelpT1CodeHint$followedHint, postHelpT1CodeHint$textHint)
+  
+  
+  #### CSEDM Paper
+  
+  Anova(aov(Q30 ~ codeHint * textHint, data=post1), type=3)
+  compareStats(post1$Q30[post1$groupCT=="10"] - 1, post1$Q30[post1$groupCT=="11"] - 1)
+
+  Anova(aov(objs ~ hadCodeHints * hadTextHints, data=task1), type=3)
+  condCompare(task1$objs, task1$hadCodeHints)
+  condCompare(task1$objs, task1$hadTextHints)
+  Anova(aov(objs ~ t1HadCodeHints * t1HadTextHints, data=task2), type=3)
+  condCompare(task2$objs, task1$hadCodeHints)
   
   
   ### Hint per user
@@ -196,10 +208,10 @@ loadData <- function() {
   # Seems all help is useful and somewhat additive
   ggplot(post1, aes(y=Q30-1, x=groupCT)) + geom_boxplot() + 
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) +
-    stat_summary(fun.data = mean_se, geom = "errorbar", width=0.4) +
+    stat_summary(fun.data = mean_se, geom = "errorbar", width=0.4, color="red") +
     scale_x_discrete(labels=c("None", "Text", "Code", "Code+Text")) +
     #scale_y_continuous(breaks = 0:10) +
-    labs(x="Hint Type", y="User Rating") + theme_bw(base_size = 14)
+    labs(x="Hint Type", y="User Rating") + theme_bw(base_size = 16)
 
   # code == text
   compareStats(post1$Q30[post1$groupCT=="10"], post1$Q30[post1$groupCT=="01"])
@@ -382,8 +394,8 @@ loadData <- function() {
   ggplot(task1Melted, aes(y=value, x=groupCT)) + geom_boxplot() + 
     stat_summary(fun.data = mean_se, geom = "errorbar", width=0.3, color="#ff3333") +
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) +
-    scale_x_discrete(labels=c("None", "Text", "Code", "Code + Text")) +
-    labs(x="Hint Type (Task 1)", y="Objectives Completed") + theme_bw(base_size = 16) +
+    scale_x_discrete(labels=c("None", "Text", "Code", "Code+Text")) +
+    labs(x="Hint Type (Task 1)", y="Objectives Completed") + theme_bw(base_size = 18) +
     facet_wrap(~assignmentLabel)
   ggplot(task1Melted, aes(y=value, x=groupR)) + geom_boxplot() +
     stat_summary(fun.data = mean_se, geom = "errorbar", width=0.3, color="#ff3333") +
