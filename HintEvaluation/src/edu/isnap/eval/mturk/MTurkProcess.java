@@ -71,6 +71,7 @@ public class MTurkProcess {
 		int firstEditTime = 0, midSurveyTime = 0, firstNoHints = 0;
 		int[] objectiveTimes = new int[graders.length];
 		int objs = 0;
+		int blockCreates = 0, blockSnaps = 0;
 
 		long start = attempt.rows.get(0).timestamp.getTime();
 		long lastEdit = start;
@@ -172,6 +173,12 @@ public class MTurkProcess {
 					}
 				}
 				break;
+			case AttemptAction.BLOCK_CREATED:
+				blockCreates++;
+				break;
+			case AttemptAction.BLOCK_SNAPPED:
+				blockSnaps++;
+				break;
 			}
 
 			if (AttemptAction.PROACTIVE_MIDSURVEY.equals(row.message)) {
@@ -221,6 +228,8 @@ public class MTurkProcess {
 				(uniqueTypes.contains("forward") ? 1 : 0) +
 				(uniqueTypes.contains("turn") || uniqueTypes.contains("turnLeft") ? 1 : 0) +
 				(uniqueTypes.contains("doAsk") ? 1 : 0));
+		attempts.put("nBlockCreates", blockCreates);
+		attempts.put("nBlockSnaps", blockSnaps);
 		attempts.put("lastCode", lastCode.prettyPrint(true));
 	}
 }

@@ -71,6 +71,7 @@ loadData <- function() {
   attempts <- attemptsUF
   attempts <- attempts[!is.na(attempts$midSurveyTime),]
   attempts <- attempts[!(attempts$userID %in% attempts$userID[duplicated(attempts[,c("assignmentID", "userID")])]),]
+  attempts <- attempts[attempts$nBlockSnaps > 0,]
   actions <- actionsUF
   actions <- actions[actions$projectID %in% attempts$projectID,]
   explanations <- read.csv("../../data/mturk/mturk2018/analysis/explanations.csv")
