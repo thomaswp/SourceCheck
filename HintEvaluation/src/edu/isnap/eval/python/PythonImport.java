@@ -15,10 +15,13 @@ import org.json.JSONObject;
 
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.HintHighlighter;
+import edu.isnap.ctd.hint.edit.Deletion;
 import edu.isnap.ctd.hint.edit.EditHint;
+import edu.isnap.ctd.hint.edit.Insertion;
 import edu.isnap.ctd.util.NodeAlignment.Mapping;
 import edu.isnap.ctd.util.NullStream;
 import edu.isnap.eval.export.JsonAST;
+import edu.isnap.node.ASTNode;
 import edu.isnap.node.ASTSnapshot;
 import edu.isnap.util.Diff;
 import edu.isnap.util.map.ListMap;
@@ -26,7 +29,8 @@ import edu.isnap.util.map.ListMap;
 public class PythonImport {
 
 	public static void main(String[] args) throws IOException {
-		generateHints("../../PythonAST/data/datacamp", "65692");
+//		generateHints("../../PythonAST/data/datacamp", "65692");
+		generateHints("../../PythonAST/data/itap", "firstAndLast");
 
 //		Map<String, ListMap<String, PythonNode>> nodes = loadAllAssignments("../../PythonAST/data");
 //		for (String assignment : nodes.keySet()) {
@@ -73,11 +77,30 @@ public class PythonImport {
 			System.out.println("\nTarget (" + target.student + "):");
 			System.out.println(Diff.diff(firstAttempt.source, target.source, 2));
 			mapping.printValueMappings(System.out);
-			System.out.println(Diff.diff(from, to));
-			System.out.println(String.join("\n",
-					edits.stream().map(e -> e.toString()).collect(Collectors.toList())));
-			System.out.println("------------------------");
 			System.out.println();
+
+			for (EditHint hint : edits) {
+				ASTNode toDelete = null;
+				if (hint instanceof Deletion) {
+					Deletion del = (Deletion) hint;
+					toDelete = (ASTNode) del.node.tag;
+				}
+				if (hint instanceof Insertion) {
+					Insertion ins = (Insertion) hint;
+					if (ins.replaced != null) toDelete = (ASTNode) ins.replaced.tag;
+				}
+				if (toDelete == null || toDelete.hasType("null")) continue;
+				System.out.println(hint);
+				System.out.println(toDelete);
+				System.out.println(toDelete.getSourceLocation());
+				System.out.println(toDelete.getSourceLocation().markSource(firstAttempt.source));
+			}
+
+//			System.out.println(Diff.diff(from, to));
+//			System.out.println(String.join("\n",
+//					edits.stream().map(e -> e.toString()).collect(Collectors.toList())));
+//			System.out.println("------------------------");
+//			System.out.println();
 
 		}
 
