@@ -137,7 +137,7 @@ loadData <- function() {
   
   postHelp$followedHint <- postHelp$Q14 < 3
   postHelpUsers <- ddply(postHelp, c("assignmentID", "userID", "groupCT", "codeHint", "textHint", "reflect"), summarize,
-                         meanFollowed = mean(followedHint))
+                         meanFollowed = mean(followedHint[!noHint]))
 
   
   #### ITiCSE paper
