@@ -76,6 +76,7 @@ public class PythonImport {
 			System.out.println(firstAttempt.source);
 			System.out.println("\nTarget (" + target.student + "):");
 			System.out.println(Diff.diff(firstAttempt.source, target.source, 2));
+			System.out.println(from);
 			mapping.printValueMappings(System.out);
 			System.out.println();
 
@@ -92,8 +93,18 @@ public class PythonImport {
 				if (toDelete == null || toDelete.hasType("null")) continue;
 				System.out.println(hint);
 				System.out.println(toDelete);
-				System.out.println(toDelete.getSourceLocation());
-				System.out.println(toDelete.getSourceLocation().markSource(firstAttempt.source));
+				System.out.println(toDelete.getSourceLocationStart() + " --> " +
+						toDelete.getSourceLocationEnd());
+				String marked = firstAttempt.source;
+				String start = "\u001b[31m";
+				String end = "\u001b[0m";
+				if (toDelete.getSourceLocationEnd() == null) {
+					marked += end;
+				} else {
+					marked = toDelete.getSourceLocationEnd().markSource(marked, end);
+				}
+				marked = toDelete.getSourceLocationStart().markSource(marked, start);
+				System.out.println(marked);
 			}
 
 //			System.out.println(Diff.diff(from, to));
