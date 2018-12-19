@@ -1,6 +1,7 @@
 library(plyr)
 library(ggplot2)
 library(car)
+library(coin)
 
 source("../Hints Comparison/util.R")
 
@@ -148,11 +149,17 @@ loadData <- function() {
   postHelp1UserCH <- ddply(postHelp[postHelp$codeHint & !postHelp$noHint & postHelp$assignmentID == "polygonMakerSimple",], 
                            c("assignmentID", "userID", "codeHint", "textHint", "reflect"), summarize, 
                            mUseful=mean(Q10-1), mRelevant=mean(Q12_1-1), mProgress=mean(Q12_2-1), mInterpret=mean(Q12_3-1))
+  postHelp1UserCH$textHint = postHelp1UserCH$textHint == 1
+  postHelp1UserCH$textHintF = as.factor(postHelp1UserCH$textHint)
   # Code+text > text for all except for progress
-  condCompare(postHelp1UserCH$mUseful, postHelp1UserCH$textHint==1)
-  condCompare(postHelp1UserCH$mRelevant, postHelp1UserCH$textHint==1)
-  condCompare(postHelp1UserCH$mProgress, postHelp1UserCH$textHint==1)
-  condCompare(postHelp1UserCH$mInterpret, postHelp1UserCH$textHint==1)
+  condCompare(postHelp1UserCH$mUseful, postHelp1UserCH$textHint)
+  # Effect size calculation
+  wilcox_test(mUseful ~ textHintF, data=postHelp1UserCH, distribution="exact")
+  2.3106/sqrt(nrow(postHelp1UserCH))
+  
+  condCompare(postHelp1UserCH$mRelevant, postHelp1UserCH$textHint)
+  condCompare(postHelp1UserCH$mProgress, postHelp1UserCH$textHint)
+  condCompare(postHelp1UserCH$mInterpret, postHelp1UserCH$textHint)
   ggplot(melt(postHelp1UserCH, c("assignmentID", "userID", "codeHint", "textHint", "reflect")), aes(x=textHint==1,y=value)) + 
     geom_boxplot() + 
     stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) +
