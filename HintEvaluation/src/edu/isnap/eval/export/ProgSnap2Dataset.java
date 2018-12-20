@@ -178,7 +178,7 @@ public class ProgSnap2Dataset implements Closeable {
 	}
 
 	private class Event implements Comparable<Event> {
-		private final DateFormat DateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
+		private final DateFormat DateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 		private final DateFormat TimeZoneFormat = new SimpleDateFormat("Z");
 
 		private final Assignment assignment;
