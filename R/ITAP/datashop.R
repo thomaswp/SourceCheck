@@ -6,7 +6,12 @@ library(readr)
 first <- function(x) head(x, 1)
 last <- function(x) tail(x, 1)
 
-itap <- read_delim("data/itap_pslc.tsv", "\t", escape_double = FALSE, trim_ws = TRUE)
+# itap <- read_delim("data/itap_pslc.tsv", "\t", escape_double = FALSE, trim_ws = TRUE)
+# There's a bug in the original data where some program code didn't get properly terminated w/ a quote
+# You have to replace theis string: ((CORRECT|HINT)\t\t\t"([^"\t]+))\t
+# with this: $1"\t
+itap <- read_delim("data/itap_pslc_corrected.tsv", "\t", escape_double = FALSE, trim_ws = TRUE)
+
 hintRows <- itap[itap$`Student Response Type` == "HINT_REQUEST" & !is.na(itap$Input) & nchar(itap$Input) < 400,]
 
 hints <- ddply(hintRows, c("`Anon Student Id`", "`Problem Name`", "`Time`", "`Input`", "`Feedback Text`"), summarize, id=first(`Transaction Id`), count=length(Time))
@@ -76,7 +81,9 @@ attempts$order <- 1:nrow(attempts)
 codeStates <- unique(attempts$Input)
 codeStates <- data.frame(CodeStateID=1:length(codeStates), Code=codeStates)
 library(stringr)
-test <- str_replace_all(codeStates$Code, "\\n", "\n")
+codeStates$Code <- str_replace_all(codeStates$Code, "\\\\n", "\n")
+codeStates$Code <- str_replace_all(codeStates$Code, "\\\\t", "\t")
+
 
 attempts <- merge(attempts, codeStates, by.x="Input", by.y="Code")
 attempts <- attempts[order(attempts$order),]
@@ -90,6 +97,12 @@ names(attempts) <- c("EventType", "EventID", "Order", "SubjectID", "ToolInstance
 attempts$Correct <- attempts$Correct == 1
 test <- strptime(attempts$ServerTimestamp, "%Y-%m-%d %H:%M:%S")
 attempts$ServerTimestamp <- strftime(test, "%Y-%m-%dT%H:%M:%S")
+
+metadata <- data.frame(Property=c("Version", "AreEventsOrdered", "IsEventOrderingConsistent", "CodeStateRepresentation"), c(3,T,T,"Table"))
+
+write.csv(attempts, "data/DataChallenge/MainTable.csv", row.names = F)
+write.csv(metadata, "data/DataChallenge/DatasetMetadata.csv", row.names = F)
+write.csv(codeStates, "data/DataChallenge/CodeStates/CodeState.csv", row.names = F)
 
 last <- function(x) tail(x, 1)
 lastAttempts <- ddply(attempts, c("`Anon Student Id`", "`Problem Name`"), summarize, correct=last(pCorrect==1), pCorrect=last(pCorrect), code=last(Input))
