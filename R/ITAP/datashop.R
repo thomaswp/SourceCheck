@@ -63,3 +63,33 @@ testReqs <- filtered[!(filtered$id %in% selected$id) & filtered$problem %in% pro
 testReqs <- ddply(testReqs, "problem", summarize, i=sample(1:length(time), min(3, length(time))), sid=sid[i], code=code[i], hint=hint[i], id=id[i])
 write.csv(testReqs[,-2], "data/test-requests.csv", row.names = F)
 writeSQL(testReqs, c("twprice", "vmcatete", "nalytle"), "data/test-requests.sql")
+
+
+##### Data Challenge
+
+attempts <- ddply(itap, c("`Anon Student Id`", "`Time`", "`Duration (sec)`", "`Student Response Type`", "`Problem Name`", "Input"), 
+                  summarize, n=length(`Anon Student Id`), dups=n/length(unique(`KC (Tokens)`)), 
+                  pCorrect=mean(Outcome=="CORRECT"), EventID=head(`Transaction Id`, 1))
+attempts <- attempts[order(attempts$Time),]
+attempts$order <- 1:nrow(attempts)
+
+codeStates <- unique(attempts$Input)
+codeStates <- data.frame(CodeStateID=1:length(codeStates), Code=codeStates)
+library(stringr)
+test <- str_replace_all(codeStates$Code, "\\n", "\n")
+
+attempts <- merge(attempts, codeStates, by.x="Input", by.y="Code")
+attempts <- attempts[order(attempts$order),]
+
+attempts$EventType <- ifelse(attempts$`Student Response Type` == "ATTEMPT", "Submit", "X-HintRequest")
+attempts$ToolInstances <- "ITAP; Python"
+
+attempts <- attempts[,c(13, 10, 11, 2, 14, 12, 3, 6, 9)]
+names(attempts) <- c("EventType", "EventID", "Order", "SubjectID", "ToolInstances", "CodeStateID", "ServerTimestamp", "ProblemID", "Correct")
+
+attempts$Correct <- attempts$Correct == 1
+test <- strptime(attempts$ServerTimestamp, "%Y-%m-%d %H:%M:%S")
+attempts$ServerTimestamp <- strftime(test, "%Y-%m-%dT%H:%M:%S")
+
+last <- function(x) tail(x, 1)
+lastAttempts <- ddply(attempts, c("`Anon Student Id`", "`Problem Name`"), summarize, correct=last(pCorrect==1), pCorrect=last(pCorrect), code=last(Input))
