@@ -80,13 +80,14 @@ attempts$order <- 1:nrow(attempts)
 
 codeStates <- unique(attempts$Input)
 codeStates <- data.frame(CodeStateID=1:length(codeStates), Code=codeStates)
+
+attempts <- merge(attempts, codeStates, by.x="Input", by.y="Code")
+attempts <- attempts[order(attempts$order),]
+
 library(stringr)
 codeStates$Code <- str_replace_all(codeStates$Code, "\\\\n", "\n")
 codeStates$Code <- str_replace_all(codeStates$Code, "\\\\t", "\t")
 
-
-attempts <- merge(attempts, codeStates, by.x="Input", by.y="Code")
-attempts <- attempts[order(attempts$order),]
 
 attempts$EventType <- ifelse(attempts$`Student Response Type` == "ATTEMPT", "Submit", "X-HintRequest")
 attempts$ToolInstances <- "ITAP; Python"
@@ -106,3 +107,8 @@ write.csv(codeStates, "data/DataChallenge/CodeStates/CodeState.csv", row.names =
 
 last <- function(x) tail(x, 1)
 lastAttempts <- ddply(attempts, c("`Anon Student Id`", "`Problem Name`"), summarize, correct=last(pCorrect==1), pCorrect=last(pCorrect), code=last(Input))
+
+byProblem <- ddply(attempts, c("ProblemID"), summarize, n=length(unique(SubjectID)))
+byProblem <- byProblem[order(-byProblem$n),]
+plot(byProblem$n)
+mean(byProblem$n > 20)
