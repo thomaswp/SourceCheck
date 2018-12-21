@@ -17,10 +17,12 @@ public class Fall2018 extends Dataset {
 			"lightsCameraActionHW", null, true) {
 	};
 
+	/** Actually a lab */
 	public final static Assignment Squiral = new Assignment(instance,
 			"squiralHW", null, true, false, null) {
 	};
 
+	/** Actually a homework */
 	public final static Assignment PolygonMaker = new Assignment(instance,
 			"polygonMakerLab", null, true, false, null) {
 	};
@@ -29,6 +31,7 @@ public class Fall2018 extends Dataset {
 			"pong1Lab", null, true, false, null) {
 	};
 
+	/** Snowstorm disrupted much of data collection */
 	public final static Assignment Pong2 = new Assignment(instance,
 			"pong2HW", null, true, false, Pong1) {
 	};
@@ -37,6 +40,7 @@ public class Fall2018 extends Dataset {
 			"guess1Lab", null, true, false, null) {
 	};
 
+	/** Actually a homework */
 	public final static Assignment GuessingGame2 = new Assignment(instance,
 			"guess2Lab", null, true, false, GuessingGame1) {
 	};
