@@ -98,17 +98,56 @@ names(attempts) <- c("EventType", "EventID", "Order", "SubjectID", "ToolInstance
 attempts$Correct <- attempts$Correct == 1
 test <- strptime(attempts$ServerTimestamp, "%Y-%m-%d %H:%M:%S")
 attempts$ServerTimestamp <- strftime(test, "%Y-%m-%dT%H:%M:%S")
+attempts <- attempts[order(attempts$SubjectID, attempts$Order),]
 
-metadata <- data.frame(Property=c("Version", "AreEventsOrdered", "IsEventOrderingConsistent", "CodeStateRepresentation"), c(3,T,T,"Table"))
+metadata <- data.frame(Property=c("Version", "AreEventsOrdered", "IsEventOrderingConsistent", "CodeStateRepresentation"), Value=c(3,T,T,"Table"))
 
 write.csv(attempts, "data/DataChallenge/MainTable.csv", row.names = F)
 write.csv(metadata, "data/DataChallenge/DatasetMetadata.csv", row.names = F)
 write.csv(codeStates, "data/DataChallenge/CodeStates/CodeState.csv", row.names = F)
 
-last <- function(x) tail(x, 1)
-lastAttempts <- ddply(attempts, c("`Anon Student Id`", "`Problem Name`"), summarize, correct=last(pCorrect==1), pCorrect=last(pCorrect), code=last(Input))
+attemptsWithCode <- merge(attempts, codeStates)
+write.csv(attemptsWithCode, "data/attempts.csv", row.names = F)
+
+##### Problem Stats
+
 
 byProblem <- ddply(attempts, c("ProblemID"), summarize, n=length(unique(SubjectID)))
 byProblem <- byProblem[order(-byProblem$n),]
 plot(byProblem$n)
-mean(byProblem$n > 20)
+sum(byProblem$n >= 20)
+testProblems <- byProblem$ProblemID[byProblem$n >= 20]
+
+##### Cross Validation
+
+createDir <- function(mainDir, subDir) ifelse(!dir.exists(file.path(mainDir, subDir)), dir.create(file.path(mainDir, subDir)), FALSE)
+
+userIDs <- unique(attempts$SubjectID)
+splits <- data.frame(SubjectID=userIDs)
+set.seed(1234)
+nSplits <- 10
+for (i in 1:4) {
+  splits[,paste0("Split", i)] <- sample(1:length(userIDs), replace=F) %% nSplits
+}
+write.csv(splits, "data/DataChallenge/Splits.csv", row.names = F)
+createDir("data/DataChallenge", "CV")
+
+predict <- ddply(attempts, c("SubjectID", "ProblemID"), summarize, 
+                 StartOrder=first(Order),
+                 FirstCorrect=first(Correct), 
+                 EverCorrect=sum(Correct)>0,
+                 UsedHint=sum(EventType=="X-HintRequest")>0,
+                 Attempts=min(first(which(Correct)), sum(EventType=="Submit"))
+)
+predict <- predict[order(predict$SubjectID, predict$StartOrder),]
+predict <- predict[predict $ProblemID %in% testProblems,]
+write.csv(predict, "data/DataChallenge/Predict.csv", row.names = F)
+
+for (fold in 0:(nSplits-1)) {
+  trainingIDs <- splits$SubjectID[splits$Split1 != fold]
+  training <- predict[predict$SubjectID %in% trainingIDs,]
+  test <- predict[!(predict$SubjectID %in% trainingIDs),]
+  createDir("data/DataChallenge/CV", paste0("Fold", fold))
+  write.csv(training, paste0("data/DataChallenge/CV/Fold", fold, "/Training.csv"), row.names = F)
+  write.csv(test, paste0("data/DataChallenge/CV/Fold", fold, "/Test.csv"), row.names = F)
+}
