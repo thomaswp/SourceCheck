@@ -102,12 +102,32 @@ attempts <- attempts[order(attempts$SubjectID, attempts$Order),]
 
 metadata <- data.frame(Property=c("Version", "AreEventsOrdered", "IsEventOrderingConsistent", "CodeStateRepresentation"), Value=c(3,T,T,"Table"))
 
+##### Add manual testing for correctness
+
+attemptsWithCode <- merge(attempts, codeStates)
+write.csv(attemptsWithCode, "data/attempts.csv", row.names = F)
+
+# Do Python magic
+
+attempts_tests <- read.csv("~/GitHub/SnapHints/R/ITAP/data/attempts_tests.csv")
+attempts_tests$Test[attempts_tests$Test == ''] <- NA
+attempts_tests$Test <- attempts_tests$Test == 'True'
+byProblemTest <- ddply(attempts_tests, "ProblemID", summarize, n=length(unique(SubjectID)), pCorrect=mean(Correct), pTest=mean(Test, na.rm=T), cor=cor(Correct,Test))
+plot(byProblemTest$pCorrect, byProblemTest$pTest)
+View(byProblemTest)
+
+attempts_tests <- attempts_tests[order(attempts_tests$SubjectID, attempts_tests$Order),]
+mean(as.character(attempts$EventID) == attempts_tests$EventID)
+attempts$Correct <- attempts_tests$Correct
+
+### Write files
+
+
 write.csv(attempts, "data/DataChallenge/MainTable.csv", row.names = F)
 write.csv(metadata, "data/DataChallenge/DatasetMetadata.csv", row.names = F)
 write.csv(codeStates, "data/DataChallenge/CodeStates/CodeState.csv", row.names = F)
 
-attemptsWithCode <- merge(attempts, codeStates)
-write.csv(attemptsWithCode, "data/attempts.csv", row.names = F)
+
 
 ##### Problem Stats
 
@@ -151,3 +171,4 @@ for (fold in 0:(nSplits-1)) {
   write.csv(training, paste0("data/DataChallenge/CV/Fold", fold, "/Training.csv"), row.names = F)
   write.csv(test, paste0("data/DataChallenge/CV/Fold", fold, "/Test.csv"), row.names = F)
 }
+

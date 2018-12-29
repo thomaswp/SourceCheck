@@ -12,6 +12,38 @@ For any questions on the Data Challenge, please contact Thomas Price at twprice@
 The goal of this Data Challenge is to use previous students' programming process data to predict whether future students will succeed at a given programming task. This is a central challenge of student modeling, often called Knowledge Tracing.
 
 
+## Evaluation
+
+Each classifier submitted to the Data Challenge should be evaluated based on its ability to predict students' success on their first attempt at a given problem, given their history of performance on previous problems. Participants are responsible for evaluating their classifier, but we may verify results. Participants should evaluate classifier performance on 19 problems (detailed below) separately, as well as overall performance for all problems. Performance should be measured using the standard metrics of Precision, Recall, F1 score and Cohen's kappa.
+
+The challenge only includes predictions for the first 19 problems, for which at least 20 students made attempts at the problem. These problems, in order of most attempts are:
+
+1) helloWorld
+2) doubleX
+3) raiseToPower
+4) convertToDegrees
+5) leftoverCandy
+6) intToFloat
+7) findRoot
+8) howManyEggCartons
+9) kthDigit
+10) nearestBusStop
+11) hasTwoDigits
+12) overNineThousand
+13) canDrinkAlcohol
+14) isPunctuation
+15) oneToN
+16) backwardsCombine
+17) isEvenPositiveInt
+18) firstAndLast
+19) singlePigLatin
+
+Evaluation metrics should be calculated using [10-fold cross validation](https://en.wikipedia.org/wiki/Cross-validation_(statistics)#k-fold_cross-validation). To ensure consistent evaluation, we have preselected the 10 folds, split by student. They can be found under the CV folder, where each fold is defined by a training dataset (consisting of 90% of the data) and a test dataset (consisting of the remaining 10). Evaluation metrics (precision, recall, etc.) should be calculated across all 10 test datasets, which collectively include all students.
+
+### An Example
+
+The Example folder contains an example classifier, written in R, along with code for performing crossvalidation and calculating the evaluation metrics.
+
 ## The Data
 
 The dataset used in the challenge comes from a study of novice Python programmers working with the ITAP intelligent tutoring system []. For more information on the original experiment, see []. There are 89 total students represented, and they worked on 38 problems over time. The study lasted over 7 weeks. The students could attempt the problems in any order, though there was a default order. Students could attempt the problem any number of times, receiving feedback from test cases each time, and they could also request hints from ITAP (though access was limited for students, depending on the week and their experimental condition). The dataset itself contains a record for each attempt and hint request that students made while working.
@@ -24,16 +56,17 @@ The dataset is organized as follows:
 DataChallenge
     DatasetMetadata.csv
     MainTable.csv
-    CodeStates
+    CodeStates/
         CodeState.csv
     Predict.csv
-    CV
+    CV/
         Fold0
             Test.csv
             Training.csv
         Fold1
         ...
         Fold9
+    Example/
 
 **DatasetMetadata.csv**: Required metadata information for the ProgSnap 2 format.
 
@@ -59,6 +92,18 @@ DataChallenge
 * UsedHint: Whether the student used a hint on this problem.
 * Attempts: The total number of attempts the student made at this problem.
 
-**Note**: The challege only includes predictions
+*Note*: The Predict.csv file only contains rows for the 19 problems being evaluated in the challenge, but there are more problems included in the Main Event Table.
 
-helloWorld doubleX raiseToPower convertToDegrees leftoverCandy intToFloat findRoot howManyEggCartons kthDigit nearestBusStop hasTwoDigits overNineThousand canDrinkAlcohol isPunctuation oneToN backwardsCombine isEvenPositiveInt firstAndLast singlePigLatin
+**CV/FoldX/[Training|Test].csv**: The CV (CrossValidation) folder contains 10 "FoldX" subfolders, for X = 1..10. In each folder is a Training.csv and Test.csv file. The two file represent the Predict.csv file, split into a training and test set for the given fold of crossvalidation. See the Evaluation section for more on how to evaluate your classifier using 10-fold crossvalidation.
+
+**Example**: Contains an example classifier, written in R, along with crossvalidation code.
+
+## Caveats
+
+A few important notes for the dataset:
+* Remember that the problems can be completed in any order
+* Each attempt is assigned correctness based on whether it passes a set of unit tests withing 0.5 seconds. Note that the original dataset on PSLC did not contain accurate information on whether each attempt was correct, and these values have been generated post hoc. The "Correct" value may therefore not align perfectly with the feedback the student actually received.
+* Three problems do not have "Correct" values: `treasureHunt`, `mostAnagrams` and `findTheCircle`. These problems had few attempts and occurred after the problems for which predictions are being evaluated.
+
+## References
+
