@@ -1,23 +1,27 @@
-Call:
-lm(formula = FirstCorrect ~ pCorrectForProblem + medAttemptsForProblem + 
+﻿Call:
+glm(formula = FirstCorrect ~ pCorrectForProblem + medAttemptsForProblem + 
     priorAttempts + priorPercentCorrect + priorPercentCompleted, 
-    data = training)
+    family = "binomial", data = training)
 
-Residuals:
-     Min       1Q   Median       3Q      Max 
--0.97147 -0.24765  0.00085  0.23851  0.90284 
+Deviance Residuals: 
+    Min       1Q   Median       3Q      Max  
+-2.3921  -0.8292   0.2825   0.7212   2.1827  
 
 Coefficients:
-                       Estimate Std. Error t value Pr(>|t|)    
-(Intercept)           -0.064206   0.081250  -0.790    0.430    
-pCorrectForProblem     1.020657   0.057222  17.837   <2e-16 ***
-medAttemptsForProblem -0.002209   0.014326  -0.154    0.877    
-priorAttempts          0.004241   0.003432   1.236    0.217    
-priorPercentCorrect    0.107388   0.075465   1.423    0.155    
-priorPercentCompleted -0.045848   0.091778  -0.500    0.618    
+                      Estimate Std. Error z value Pr(>|z|)    
+(Intercept)           -4.30367    0.56173  -7.662 1.84e-14 ***
+pCorrectForProblem     5.54136    0.52314  10.593  < 2e-16 ***
+medAttemptsForProblem  0.05056    0.09807   0.516 0.606187    
+priorAttempts          0.01358    0.02090   0.650 0.515803    
+priorPercentCorrect    1.60598    0.45591   3.523 0.000427 ***
+priorPercentCompleted  0.54944    0.54147   1.015 0.310243    
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
-Residual standard error: 0.3966 on 723 degrees of freedom
-Multiple R-squared:  0.3757,	Adjusted R-squared:  0.3714 
-F-statistic: 87.03 on 5 and 723 DF,  p-value: < 2.2e-16
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 1009.88  on 728  degrees of freedom
+Residual deviance:  733.15  on 723  degrees of freedom
+AIC: 745.15
+
+Number of Fisher Scoring iterations: 5

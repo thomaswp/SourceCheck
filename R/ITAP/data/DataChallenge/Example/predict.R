@@ -84,14 +84,15 @@ addAttributes <- function(data) {
   return (data)
 }
 
-# Build a simple linear model with the given training data
+# Build a simple logistic model with the given training data
 buildModel <- function(training) {
   # Add the needed attributes to both datasets
   training <- addAttributes(training)
   
-  # Build a simple linear model
-  model <- lm(FirstCorrect ~ pCorrectForProblem + medAttemptsForProblem + 
-                priorAttempts + priorPercentCorrect + priorPercentCompleted, data=training)
+  # Build a simple logistic model
+  model <- glm(FirstCorrect ~ pCorrectForProblem + medAttemptsForProblem + 
+               priorAttempts + priorPercentCorrect + priorPercentCompleted, 
+               data=training, family = "binomial")
   
   return (model)
 }
@@ -100,6 +101,7 @@ buildModel <- function(training) {
 makePredictions <- function(training, test) {
   model <- buildModel(training)
   test <- addAttributes(test)
+  print(predict(model, test))
   test$prediction <- predict(model, test) > 0.5
   return (test)
 }

@@ -118,7 +118,7 @@ View(byProblemTest)
 
 attempts_tests <- attempts_tests[order(attempts_tests$SubjectID, attempts_tests$Order),]
 mean(as.character(attempts$EventID) == attempts_tests$EventID)
-attempts$Correct <- attempts_tests$Correct
+attempts$Correct <- attempts_tests$Test
 
 ### Write files
 

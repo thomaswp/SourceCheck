@@ -9,7 +9,7 @@ For any questions on the Data Challenge, please contact Thomas Price at twprice@
 
 ## Challenge Summary
 
-The goal of this Data Challenge is to use previous students' programming process data to predict whether future students will succeed at a given programming task. This is a central challenge of student modeling, often called Knowledge Tracing [1]. Such a predictive model can be used to enable Mastery Learning [2], to make adaptive or feedback that targets struggling students [5], or to encourage students through an open learner model [4]. You will be given a dataset containing records of students' attempts a set of programming problems, including whether each attempt was correct or incorrect, and the code submitted. Your task is to build a model that can predict, given a student's performance up until a given problem, whether or not that student will succeed at their first attempt at that problem. While similar knowledge tracing tasks have been attempted in many domains, they rely on tasks that are pre-labeled with Knowledge Components (KC), describing the domain concepts required by that task. The goal of this Data Challenge is to leverage CS-specific aspects of the data, namely the source code, to build a model without these KC labels, as was attempted in [6] and [7].
+The goal of this Data Challenge is to use previous students' programming process data to predict whether future students will succeed at a given programming task. This is a central challenge of student modeling, often called Knowledge Tracing [1]. Such a predictive model can be used to enable Mastery Learning [2], to make adaptive or feedback that targets struggling students [3], or to encourage students through an open learner model [4]. You will be given a dataset containing records of students' attempts a set of programming problems, including whether each attempt was correct or incorrect, and the code submitted. Your task is to build a model that can predict, given a student's performance up until a given problem, whether or not that student will succeed at their first attempt at that problem. While similar knowledge tracing tasks have been attempted in many domains (including programming), they usually rely on labels for each problem, identifying which Knowledge Componentss (KCs), or domain concepts, are required by that problem (e.g. in [5]). The goal of this Data Challenge is to leverage CS-specific aspects of the data, namely the source code, to build a model without these KC labels, as was attempted in [6-7]. For example, one approach is to automatically extract concepts from code (e.g. "loop", "conditional") to use in a model of student knowledge, as in [7-9].
 
 
 ## Evaluation
@@ -42,10 +42,10 @@ Evaluation metrics should be calculated using [10-fold cross validation](https:/
 
 ## The Data
 
-The dataset used in the challenge comes from a study of novice Python programmers working with the ITAP intelligent tutoring system []. For more information on the original experiment, see []. There are 89 total students represented, and they worked on 38 problems over time. The study lasted over 7 weeks. The students could attempt the problems in any order, though there was a default order. Students could attempt the problem any number of times, receiving feedback from test cases each time, and they could also request hints from ITAP (though access was limited for students, depending on the week and their experimental condition). The dataset itself contains a record for each attempt and hint request that students made while working.
+The dataset used in the challenge comes from a study of novice Python programmers working with the ITAP intelligent tutoring system [10]. For more information on the original experiment, see [7]. There are 89 total students represented, and they worked on 38 problems over time. The study lasted over 7 weeks. The students could attempt the problems in any order, though there was a default order. Students could attempt the problem any number of times, receiving feedback from test cases each time, and they could also request hints from ITAP (though access was limited for students, depending on the week and their experimental condition). The dataset itself contains a record for each attempt and hint request that students made while working.
 
 The original data is available at the PSLC Datashop
-[] [here](https://pslcdatashop.web.cmu.edu/DatasetInfo?datasetId=1798). The data used for the challenge has been processed to make it easier to work with. The data is organized using the ProgSnap 2 format for programming process data [], with some additional files included specifically for this challenge.
+[11] [here](https://pslcdatashop.web.cmu.edu/DatasetInfo?datasetId=1798). The data used for the challenge has been processed to make it easier to work with. The data is organized using the ProgSnap 2 format for programming process data [12], with some additional files included specifically for this challenge.
 
 The dataset is organized as follows:
 
@@ -135,3 +135,24 @@ A few important notes for the dataset:
 
 ## References
 
+[1] A. T. Corbett and J. R. Anderson, “Knowledge tracing: Modeling the acquisition of procedural knowledge,” User Model. User-adapt. Interact., vol. 4, no. 4, pp. 253–278, 1994.
+
+[2] A. Corbett and J. Anderson, “Student modeling and mastery learning in a computer-based programming tutor,” in Proceedings of the International Conference on Intelligent Tutoring Systems, 1992, pp. 413–420.
+
+[3] V. K. Murray R.C., “A comparison of decision-theoretic, fixed-policy and random tutorial action selection,” Lect. Notes Comput. Sci. (including Subser. Lect. Notes Artif. Intell. Lect. Notes Bioinformatics), vol. 4053 LNCS, pp. 114–123, 2006.
+
+[4] P. Brusilovsky, S. Somyurek, J. Guerra, R. Hosseini, V. Zadorozhny, and P. J. Durlach, “Open Social Student Modeling for Personalized Learning,” IEEE Trans. Emerg. Top. Comput., vol. 4, no. 3, pp. 450–461, 2016.
+
+[5] J. Kasurinen and U. Nikula, “Estimating programming knowledge with Bayesian knowledge tracing,” in ACM SIGCSE Bulletin, 2009, vol. 41, no. 3, pp. 313–317.
+
+[6] M. Yudelson, R. Hosseini, A. Vihavainen, and P. Brusilovsky, “Investigating Automated Student Modeling in a Java MOOC,” in Proceedings of the International Conference on Educational Data Mining, 2014, pp. 261–264.
+
+[7] K. Rivers, E. Harpstead, and K. Koedinger, “Learning Curve Analysis for Programming: Which Concepts do Students Struggle With?,” in Proceedings of the International Computing Education Research Conference, 2016, pp. 143–151.
+
+[8] M. Berges and P. Hubwieser, “Evaluation of Source Code with Item Response Theory,” in Proceedings of the 2015 ACM Conference on Innovation and Technology in Computer Science Education, 2015, pp. 51–56.
+
+[9] R. Hosseini and P. Brusilovsky, “JavaParser: A fine-grain concept indexing tool for java problems,” CEUR Workshop Proc., vol. 1009, pp. 60–63, 2013.
+
+[10] K. Rivers and K. R. Koedinger, “Data-Driven Hint Generation in Vast Solution Spaces: a Self-Improving Python Programming Tutor,” Int. J. Artif. Intell. Educ., vol. 27, no. 1, pp. 37–64, 2017.
+
+[11] K. R. Koedinger, R. S. J. Baker, K. Cunningham, and A. Skogsholm, “A Data Repository for the EDM community: The PSLC DataShop,” in Handbook of Educational Data Mining, C. Romero, S. Ventura, M. Pechenizkiy, and R. Sj. Baker, Eds. CRC Press, 2010, pp. 43–55.
