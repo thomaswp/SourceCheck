@@ -14,6 +14,7 @@ public class TutorHintSet extends HintSet {
 
 	public TutorHintSet(String name, RatingConfig config, List<? extends TutorHint> hints) {
 		super(name, config);
+		// TODO: Should rename snapshot -> Snap!shot
 		this.tutorHints = hints.stream().map(e -> (TutorHint) e).collect(Collectors.toList());
 		hints.forEach(hint -> add(hint.toOutcome()));
 	}
