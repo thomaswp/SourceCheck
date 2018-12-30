@@ -9,7 +9,7 @@ For any questions on the Data Challenge, please contact Thomas Price at twprice@
 
 ## Challenge Summary
 
-The goal of this Data Challenge is to use previous students' programming process data to predict whether future students will succeed at a given programming task. This is a central challenge of student modeling, often called Knowledge Tracing.
+The goal of this Data Challenge is to use previous students' programming process data to predict whether future students will succeed at a given programming task. This is a central challenge of student modeling, often called Knowledge Tracing [1]. Such a predictive model can be used to enable Mastery Learning [2], to make adaptive or feedback that targets struggling students [5], or to encourage students through an open learner model [4]. You will be given a dataset containing records of students' attempts a set of programming problems, including whether each attempt was correct or incorrect, and the code submitted. Your task is to build a model that can predict, given a student's performance up until a given problem, whether or not that student will succeed at their first attempt at that problem. While similar knowledge tracing tasks have been attempted in many domains, they rely on tasks that are pre-labeled with Knowledge Components (KC), describing the domain concepts required by that task. The goal of this Data Challenge is to leverage CS-specific aspects of the data, namely the source code, to build a model without these KC labels, as was attempted in [6] and [7].
 
 
 ## Evaluation
