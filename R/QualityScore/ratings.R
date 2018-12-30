@@ -371,7 +371,15 @@ investigateHypotheses <- function() {
   anova(emptyModel, m1, m2)
   summary(m2)
   shapiro.test(m2$residuals)
-    
+
+### Per-algorithm calculations:
+  
+  algRequests <- merge(algRequests, gsRequests)
+  ddply(algRequests, c("dataset", "source"), summarize, 
+        csSize=cor(requestTreeSize, scorePartial, method="spearman"),
+        csDiverge=cor(medTED, scorePartial, method="spearman"),
+        csGSHints=cor(nHints, scorePartial, method="spearman"))
+  
 ### Too Much Code
   
   # Positive correlation between tree size and difficulty
@@ -546,16 +554,61 @@ loadRequests <- function(ratings) {
   requests <- ddply(ratings, c("dataset", "year", "source", "assignmentID", "requestID"), summarize, 
                     treeSize=mean(requestTreeSize),
                     hintCount=length(scoreFull),
+                    countFull=sum(scoreFull>0), countPartial=sum(scorePartial>0),
                     scoreFull=sum(scoreFull), scorePartial=sum(scorePartial),
-                    priorityFull=sum(priorityFull), priorityPartial=sum(priorityPartial))
+                    priorityFull=sum(priorityFull), priorityPartial=sum(priorityPartial)
+                    )
   requests <- requests[requests$source != "chf_without_past",]
   requests
+}
+
+detailedStats <- function(requests, groupings) {
+  ddply(requests, groupings, summarize,
+        pAnyValid=mean(scoreFull>0), pAnyPartial=mean(scorePartial>0),
+        meanValid=mean(countFull), meanPartial=mean(countPartial),
+        medHints=median(hintCount), meanHints=mean(hintCount))
+}
+
+getStatsTable <- function(stats, rows, rowName) {
+  statsTable <- sapply(rows, function(rowValue) {
+    sapply(unique(stats$source), function(source) {
+      row <- stats[stats$source == source & stats[,rowName] == rowValue,]
+      # return (sprintf("%.02f (%.02f/%.02f)", row$pAnyValid, row$meanValid, row$meanHints))
+      return (sprintf("%.02f (%.02f)", row$pAnyValid, row$pAnyPartial))
+    })
+  })
+  statsTable <- t(statsTable)
+  statsTable <- data.frame(statsTable)
+  for (j in 1:ncol(statsTable)) statsTable[,j] <- as.character(statsTable[,j])
+  colnames(statsTable) <- unique(stats$source)
+  rownames(statsTable) <- rows
+  #statsTable[c("ITAP"),1:2] <- NA
+  statsTable
+}
+
+detailedTables <- function(requests) {
+  stats <- detailedStats(requests, c("dataset", "source", "assignmentID"))
+  stats <- stats[stats$source != "chf_without_past" & stats$source != "AllTutors",]
+  
+  statsTableAssignment <- getStatsTable(stats, unique(stats$assignmentID), "assignmentID")
+  
+  stats <- detailedStats(requests, c("dataset", "source"))
+  stats <- stats[stats$source != "chf_without_past" & stats$source != "AllTutors",]
+  
+  statsTableDataset <- getStatsTable(stats, unique(stats$dataset), "dataset")
+  write.csv(rbind(statsTableAssignment, statsTableDataset), "data/stats.csv")
+  
+  stats$mScoreFull <- stats$pAnyValid
+  stats$mScorePartialPlus <- stats$pAnyPartial - stats$pAnyValid
+  plotComparisonTogetherStacked1(stats, 1, 1)
+  stats$mScoreFull <- stats$meanValid
+  stats$mScorePartialPlus <- stats$meanPartial - stats$meanValid
+  plotComparisonTogetherStacked1(stats, 1, 1, F)
 }
 
 compare <- function() {
   ratings <- loadAllRatings()
   requests <- loadRequests(ratings)
-  algRequests <-  requests[requests$source != "AllTutors",]
   
   assignments <- ddply(requests, c("dataset", "source", "assignmentID"), summarize, 
                        mScoreFull=mean(scoreFull), mScorePartial=mean(scorePartial),
@@ -582,6 +635,8 @@ compare <- function() {
   plotComparisonTogetherStacked(requests)
   
   # Getting slightly inconsistent results for these on different machines:
+  
+  algRequests <-  requests[requests$source != "AllTutors",]
   
   kruskal.test(scoreFull ~ source, algRequests[algRequests$dataset=="isnap",])
   summary(aov(scoreFull ~ source + assignmentID + source * assignmentID, algRequests[algRequests$dataset=="isnap",]))
@@ -660,20 +715,29 @@ plotComparisonTogether <- function(requests) {
 }
 
 plotComparisonTogetherStacked <- function(requests) {
+  requests <- requests[requests$source != "chf_without_past",]
   niSnap <- length(unique(requests$requestID[requests$dataset=="isnap"]))
   nITAP <- length(unique(requests$requestID[requests$dataset=="itap"]))
-  requests <- requests[requests$source != "chf_without_past",]
   together <- ddply(requests, c("dataset", "source"), summarize, mScorePartialPlus=mean(scorePartial)-mean(scoreFull), mScoreFull=mean(scoreFull))
   #print(together)
-  ggplot(melt(together, id=c("dataset", "source")),aes(x=source, y=value, fill=variable)) + geom_bar(stat="identity") +
+  plotComparisonTogetherStacked1(together, niSnap, nITAP)
+}
+  
+plotComparisonTogetherStacked1 <- function(together, niSnap, nITAP, lockXAxis=T) {
+  together <- together[c("dataset", "source", "mScorePartialPlus", "mScoreFull")]
+  #return (together)
+  plot <- ggplot(melt(together, id=c("dataset", "source")),aes(x=source, y=value, fill=variable)) + geom_bar(stat="identity") +
     suppressWarnings(geom_text(aes(x=source, y=mScoreFull+mScorePartialPlus+0.15, label = sprintf("%.02f (%.02f)", mScoreFull, mScoreFull+mScorePartialPlus), fill=NULL), data = together)) +
     scale_fill_manual(labels=c("Partial", "Full"), values=twoColors) + 
     scale_x_discrete(labels=rev(c("Tutors", "ITAP", "SourceCheck", "CTD", "CHF", "NSNLS", "TR-ER"))) +
-    scale_y_continuous(limits=c(0, 1.15), breaks = c(0, 0.25, 0.5, 0.75, 1.0)) +
     labs(fill="Match", x="Algorithm", y="QualityScore", title="QualityScore Ratings") +
     theme_bw(base_size = 17) +
     theme(plot.title = element_text(hjust = 0.5)) +
     coord_flip() + facet_wrap(~dataset, labeller = as_labeller(c(`isnap` = paste0("iSnap (n=", niSnap, ")"), `itap` = paste0("ITAP (n=", nITAP, ")")))) 
+  if (lockXAxis) {
+    plot <- plot + scale_y_continuous(limits=c(0, 1.15), breaks = c(0, 0.25, 0.5, 0.75, 1.0))
+  }
+  return (plot)
 }
 
 comp <- function(requests, partial, dataset, source1, source2) {
