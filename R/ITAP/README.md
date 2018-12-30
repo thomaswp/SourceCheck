@@ -14,7 +14,7 @@ The goal of this Data Challenge is to use previous students' programming process
 
 ## Evaluation
 
-Each classifier submitted to the Data Challenge should be evaluated based on its ability to predict students' success on their first attempt at a given problem, given their history of performance on previous problems. Participants are responsible for evaluating their classifier, but we may verify results. Participants should evaluate classifier performance on 19 problems (detailed below) separately, as well as overall performance for all problems. Performance should be measured using the standard metrics of Precision, Recall, F1 score and Cohen's kappa.
+Each classifier submitted to the Data Challenge should be evaluated based on its ability to predict students' success on their first attempt at a given problem, given their history of performance on previous problems. Participants are responsible for evaluating their classifier, but we may verify results. Participants should evaluate classifier performance on 19 problems (detailed below) separately, as well as overall performance for all problems. Performance should be measured using the standard metrics of Precision, Recall, F1 score and Cohen's kappa (measuring "agreement" between the classifier and the ground truth).
 
 The challenge only includes predictions for the first 19 problems, for which at least 20 students made attempts at the problem. These problems, in order of most attempts are:
 
@@ -38,11 +38,7 @@ The challenge only includes predictions for the first 19 problems, for which at 
 18) firstAndLast
 19) singlePigLatin
 
-Evaluation metrics should be calculated using [10-fold cross validation](https://en.wikipedia.org/wiki/Cross-validation_(statistics)#k-fold_cross-validation). To ensure consistent evaluation, we have preselected the 10 folds, split by student. They can be found under the CV folder, where each fold is defined by a training dataset (consisting of 90% of the data) and a test dataset (consisting of the remaining 10). Evaluation metrics (precision, recall, etc.) should be calculated across all 10 test datasets, which collectively include all students.
-
-### An Example
-
-The Example folder contains an example classifier, written in R, along with code for performing crossvalidation and calculating the evaluation metrics.
+Evaluation metrics should be calculated using [10-fold cross validation](https://en.wikipedia.org/wiki/Cross-validation_(statistics)#k-fold_cross-validation). To ensure consistent evaluation, we have preselected the 10 folds, split by student. They can be found under the CV folder, where each fold is defined by a training dataset (consisting of 90% of the data) and a test dataset (consisting of the remaining 10%). Evaluation metrics (precision, recall, etc.) should be calculated across all 10 test datasets, which collectively include all students. They should be caculated both per-problem and across all predictions. See the Example section for how evaluation metrics should be calcuated.
 
 ## The Data
 
@@ -92,11 +88,42 @@ DataChallenge
 * UsedHint: Whether the student used a hint on this problem.
 * Attempts: The total number of attempts the student made at this problem.
 
-*Note*: The Predict.csv file only contains rows for the 19 problems being evaluated in the challenge, but there are more problems included in the Main Event Table.
+*Note*: The Predict.csv file only contains rows for the 19 problems being evaluated in the challenge, but there are more problems included in the Main Event Table. These may still be useful for determining, for example, how well a student performs overall.
 
-**CV/FoldX/[Training|Test].csv**: The CV (CrossValidation) folder contains 10 "FoldX" subfolders, for X = 1..10. In each folder is a Training.csv and Test.csv file. The two file represent the Predict.csv file, split into a training and test set for the given fold of crossvalidation. See the Evaluation section for more on how to evaluate your classifier using 10-fold crossvalidation.
+**CV/FoldX/[Training|Test].csv**: The CV (CrossValidation) folder contains 10 "FoldX" subfolders, for X = 1..10. In each folder is a Training.csv and Test.csv file. The two files represent a division of the Predict.csv file, split into a training and test set for the given fold of crossvalidation. See the Evaluation section for more on how to evaluate your classifier using 10-fold crossvalidation.
 
-**Example**: Contains an example classifier, written in R, along with crossvalidation code.
+**Example/**: A folder containing an example classifier, written in R, along with crossvalidation code. See the Example section below for more details
+
+
+## An Example
+
+The Example folder contains an example classifier, written in R, along with code for performing crossvalidation and calculating the evaluation metrics.
+
+In this simple example classifier, we use only the data from the Predict table, without using any of the information in the MainEvents table or the students' code snapshots. The classifier contains two main pieces of logic. The first, found in the `addAttributes` function, iterates through the rows in given subset of the Predict table and calculates cumulative attributes for each student, such as their `priorPercentCorrect` for each problem - the percent of problems *before* this one that the student has gotten correct. We only use data about a student's performance on *previous* problems, since this is the only information that will be available at the time of the prediction.
+
+> **Note**: If you plan to use the MainEvents table to calculate other attriutes, you can use the `StartOrder` column in the Predict table, which indicates the `Order` value in the MainEvents table when the prediciton should occur. Any prediction should be based only on events that occur stricly before this in the MainEvents table (`Order < StartOrder`).
+
+Once the `addAttributes` function calculates the cumulative statistics for each student's attempt at each problem, the second piece of logic, found in the `buildModel` function, builds a simple linear model to predict whether the student will get that attempt correct on their first try (`FirstCorrect`), using these attributes (this is an intentionally simple model, meant only for demmonstration). The `makePredictions` function builds a model for a given training dataset and then makes predictions for the given test dataset. Note that this funciton calculates the same cumulative attributes for the test dataset, so the model can use them in prediction.
+
+> **Note**: We could also predict other attributes of the student's attempt, such as whether they used a hint `UsedHint`, how many attempts they made `Attempts` or whether they ever got it right `EverCorrect`, but the Data Challenge centers on the `FirstCorrect` variable.
+
+The `crossValidate` function demonstrates how to load the various training and tests datasets from the `CV` folder to perform crossvalidation. Finally the `evaluatePerformace` function calculates performance metrics for the classifier, including the percentage of true positives (`tp`), true negatives (`tn`), false positives (`fp`) and false negatives (`fn`), the accuracy, precision, recall, F1 score (`f1`) and Cohen's kappa (`kappa`).
+
+The code produces the following files:
+
+1) **cv_predict.csv**: Contains predictions for each problem attempt (in the `prediction` columns) for whether the student will get the problem right on the first attempt, based on the 10-fold crossvalidation training/test splits in the CV folder.
+2) **evaluation_by_problem.csv**: Evaluation metrics for the classifier, split by problem, including precision, recall, F1-score and Cohen's kappa.
+3) **evaluation_overall.csv**: Evaluation metrics for the classifier over all problem attempts.
+
+
+## Submissions
+
+Submissions to the contest should include the following files:
+
+1) A 2-6 page short paper detailing the methods used to make the predictions.
+2) All code used to make the predictions, including a README file explaining how to run the code, using the challenge dataset. If it is not possible to provide a runnable version of the code (e.g. because it has closed-source dependencies), please include as much code as possible, and explain the missing parts in the README.
+3) For each classifier (or variant) that you evaluated, include the 3 output files, cv_predict, evaluation_by_problem, and evaluation_overall, as explained in the Example section above. These files should respectively contain the actual predictions made by the classifier, the evaluation metrics for each problem, and the evaluation metrics for the classifier overall.
+
 
 ## Caveats
 
@@ -104,6 +131,7 @@ A few important notes for the dataset:
 * Remember that the problems can be completed in any order
 * Each attempt is assigned correctness based on whether it passes a set of unit tests withing 0.5 seconds. Note that the original dataset on PSLC did not contain accurate information on whether each attempt was correct, and these values have been generated post hoc. The "Correct" value may therefore not align perfectly with the feedback the student actually received.
 * Three problems do not have "Correct" values: `treasureHunt`, `mostAnagrams` and `findTheCircle`. These problems had few attempts and occurred after the problems for which predictions are being evaluated.
+
 
 ## References
 
