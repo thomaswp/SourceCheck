@@ -282,7 +282,7 @@ investigateHypotheses <- function() {
   algRatings$delOnly <- algRatings$nDeletions == algRatings$nEdits
   algRatings$delMostly <- algRatings$nDeletions > algRatings$nEdits / 2
   allSame <- function(x) if (length(unique(x)) == 1) head(x, 1) else NA
-  matchedHints <- ddply(algRatings[algRatings$matched,], c("dataset", "matchID"), summarize, 
+  matchedHints <- ddply(algRatfings[algRatings$matched,], c("dataset", "matchID"), summarize, 
                         n=length(nEdits), delOnly=allSame(delOnly), nEdits=mean(nEdits))
   
   goldStandardiSnap <- read_csv("../../QualityScore/data/isnapF16-F17/analysis/gold-standard-analysis.csv")
@@ -378,7 +378,9 @@ investigateHypotheses <- function() {
   ddply(algRequests, c("dataset", "source"), summarize, 
         csSize=cor(requestTreeSize, scorePartial, method="spearman"),
         csDiverge=cor(medTED, scorePartial, method="spearman"),
-        csGSHints=cor(nHints, scorePartial, method="spearman"))
+        csGSHints=cor(nHints, scorePartial, method="spearman"),
+        csAlgHints=cor(hintCount, scorePartial, method="spearman"),
+        csDeletion=cor(deletion, scorePartial, method="spearman"))
   
 ### Too Much Code
   
@@ -556,8 +558,8 @@ loadRequests <- function(ratings) {
                     hintCount=length(scoreFull),
                     countFull=sum(scoreFull>0), countPartial=sum(scorePartial>0),
                     scoreFull=sum(scoreFull), scorePartial=sum(scorePartial),
-                    priorityFull=sum(priorityFull), priorityPartial=sum(priorityPartial)
-                    )
+                    priorityFull=sum(priorityFull), priorityPartial=sum(priorityPartial),
+                    pDelOnly=mean(nInsertions+nRelabels==0))
   requests <- requests[requests$source != "chf_without_past",]
   requests
 }
@@ -609,6 +611,7 @@ detailedTables <- function(requests) {
 compare <- function() {
   ratings <- loadAllRatings()
   requests <- loadRequests(ratings)
+  algRequests <-  requests[requests$source != "AllTutors",]
   
   assignments <- ddply(requests, c("dataset", "source", "assignmentID"), summarize, 
                        mScoreFull=mean(scoreFull), mScorePartial=mean(scorePartial),
@@ -635,8 +638,6 @@ compare <- function() {
   plotComparisonTogetherStacked(requests)
   
   # Getting slightly inconsistent results for these on different machines:
-  
-  algRequests <-  requests[requests$source != "AllTutors",]
   
   kruskal.test(scoreFull ~ source, algRequests[algRequests$dataset=="isnap",])
   summary(aov(scoreFull ~ source + assignmentID + source * assignmentID, algRequests[algRequests$dataset=="isnap",]))
