@@ -375,12 +375,26 @@ investigateHypotheses <- function() {
 ### Per-algorithm calculations:
   
   algRequests <- merge(algRequests, gsRequests)
-  ddply(algRequests, c("dataset", "source"), summarize, 
+  cors <- ddply(algRequests, c("source", "dataset"), summarize, 
         csSize=cor(requestTreeSize, scorePartial, method="spearman"),
         csDiverge=cor(medTED, scorePartial, method="spearman"),
         csGSHints=cor(nHints, scorePartial, method="spearman"),
         csAlgHints=cor(hintCount, scorePartial, method="spearman"),
-        csDeletion=cor(deletion, scorePartial, method="spearman"))
+        csDeletion=cor(pDelOnly, scorePartial, method="spearman"))
+  write.csv(cors, "data/cors.csv")
+  
+  pValues <- ddply(algRequests, c("source", "dataset"), summarize, 
+        pSize=cor.test(requestTreeSize, scorePartial, method="spearman")$p.value,
+        pDiverge=cor.test(medTED, scorePartial, method="spearman")$p.value,
+        pGSHints=cor.test(nHints, scorePartial, method="spearman")$p.value,
+        pAlgHints=cor.test(hintCount, scorePartial, method="spearman")$p.value,
+        pDeletion=cor.test(pDelOnly, scorePartial, method="spearman")$p.value)
+  
+  pValues < 0.05
+  
+  ddply(algRatings, c("source", "dataset"), summarize,
+        csDeletion=cor(delOnly, valid, method="spearman")
+        )
   
 ### Too Much Code
   
