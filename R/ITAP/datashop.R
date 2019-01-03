@@ -123,6 +123,11 @@ attempts$Correct <- attempts_tests$Test
 ### Write files
 
 
+createDir <- function(mainDir, subDir) ifelse(!dir.exists(file.path(mainDir, subDir)), dir.create(file.path(mainDir, subDir)), FALSE)
+
+createDir("data", "DataChallenge")
+createDir("data/DataChallenge", "CodeStates")
+
 write.csv(attempts, "data/DataChallenge/MainTable.csv", row.names = F)
 write.csv(metadata, "data/DataChallenge/DatasetMetadata.csv", row.names = F)
 write.csv(codeStates, "data/DataChallenge/CodeStates/CodeState.csv", row.names = F)
@@ -130,7 +135,6 @@ write.csv(codeStates, "data/DataChallenge/CodeStates/CodeState.csv", row.names =
 
 
 ##### Problem Stats
-
 
 byProblem <- ddply(attempts, c("ProblemID"), summarize, n=length(unique(SubjectID)))
 byProblem <- byProblem[order(-byProblem$n),]
@@ -140,8 +144,6 @@ testProblems <- byProblem$ProblemID[byProblem$n >= 20]
 
 ##### Cross Validation
 
-createDir <- function(mainDir, subDir) ifelse(!dir.exists(file.path(mainDir, subDir)), dir.create(file.path(mainDir, subDir)), FALSE)
-
 userIDs <- unique(attempts$SubjectID)
 splits <- data.frame(SubjectID=userIDs)
 set.seed(1234)
@@ -149,7 +151,7 @@ nSplits <- 10
 for (i in 1:4) {
   splits[,paste0("Split", i)] <- sample(1:length(userIDs), replace=F) %% nSplits
 }
-write.csv(splits, "data/DataChallenge/Splits.csv", row.names = F)
+# write.csv(splits, "data/DataChallenge/Splits.csv", row.names = F)
 createDir("data/DataChallenge", "CV")
 
 predict <- ddply(attempts, c("SubjectID", "ProblemID"), summarize, 

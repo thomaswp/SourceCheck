@@ -3,9 +3,34 @@
 As part of the 2nd [Educational Data Mining in Computer Science Education](https://sites.google.com/asu.edu/csedm-ws-lak-2019/) (CSEDM) Workshop at [LAK 2019](https://lak19.solaresearch.org), we are releasing a **Data Challenge**. The goal of this challenge is to bring researchers together to tackle a common data mining task that is specific to CS Education. This year, we are focusing on the task of modeling students' programming knowledge in order to predict their performance on future tasks.
 The rest of this document contains a summary of the task itself and documentation of the dataset used in the challenge.
 
+For the most up-to-date version of this README, please see the version [hosted on GitHub](https://github.com/thomaswp/CSEDM2019-Data-Challenge).
+
 For the most up-to-date information on the challenge and the workshop, see the workshop's [call for papers](https://sites.google.com/asu.edu/csedm-ws-lak-2019/call-for-papers).
 
 For any questions on the Data Challenge, please contact Thomas Price at twprice@ncsu.edu.
+
+
+## Accessing the Data
+
+The dataset used in the challenge is hosted on the [PSLC Datashop](https://pslcdatashop.web.cmu.edu) at: https://pslcdatashop.web.cmu.edu/Files?datasetId=2865.
+
+To access the data, you must create an account, and then send your account username to Thomas Price at twprice@ncsu.edu. 
+
+We **strongly recommend** signing up for the [CSEDM data challenge email list here]([https://goo.gl/forms/8atiAOek8nJHtBSo2]. This will enable us to contact you if there are known issues or updates to the data.
+
+
+## Submissions
+
+Submissions to the contest should include the following files:
+
+1) A 2-6 page short paper detailing the methods used to make the predictions.
+2) All code used to make the predictions, including a README file explaining how to run the code, using the challenge dataset. If it is not possible to provide a runnable version of the code (e.g. because it has closed-source dependencies), please include as much code as possible, and explain the missing parts in the README.
+3) For each classifier (or variant) that you evaluated, include the 3 output files, cv_predict, evaluation_by_problem, and evaluation_overall, as explained in the Example section above. These files should respectively contain the actual predictions made by the classifier, the evaluation metrics for each problem, and the evaluation metrics for the classifier overall.
+
+Submissions can be made on the [CSEDM Easychair page](https://easychair.org/conferences/?conf=csedm2019).
+
+Please see the CSEDM 2019 [call for papers](https://sites.google.com/asu.edu/csedm-ws-lak-2019/call-for-papers) for up-to-date information on submission deadlines.
+
 
 ## Challenge Summary
 
@@ -38,7 +63,7 @@ The challenge only includes predictions for the first 19 problems, for which at 
 18) firstAndLast
 19) singlePigLatin
 
-Evaluation metrics should be calculated using [10-fold cross validation](https://en.wikipedia.org/wiki/Cross-validation_(statistics)#k-fold_cross-validation). To ensure consistent evaluation, we have preselected the 10 folds, split by student. They can be found under the CV folder, where each fold is defined by a training dataset (consisting of 90% of the data) and a test dataset (consisting of the remaining 10%). Evaluation metrics (precision, recall, etc.) should be calculated across all 10 test datasets, which collectively include all students. They should be caculated both per-problem and across all predictions. See the Example section for how evaluation metrics should be calcuated.
+Evaluation metrics should be calculated using [10-fold cross validation](https://en.wikipedia.org/wiki/Cross-validation_(statistics)#k-fold_cross-validation). To ensure consistent evaluation, we have preselected the 10 folds, split by student. They can be found under the CV folder, where each fold is defined by a training dataset (consisting of 90% of the data) and a test dataset (consisting of the remaining 10%). Evaluation metrics (precision, recall, etc.) should be calculated across all 10 test datasets, which collectively include all students. They should be caculated both per-problem and across all predictions. See the Example section for how evaluation metrics should be calcuated and how crossvalidation can be performed.
 
 ## The Data
 
@@ -49,6 +74,7 @@ The original data is available at the PSLC Datashop
 
 The dataset is organized as follows:
 
+```
 DataChallenge
     DatasetMetadata.csv
     MainTable.csv
@@ -63,6 +89,7 @@ DataChallenge
         ...
         Fold9
     Example/
+```
 
 **DatasetMetadata.csv**: Required metadata information for the ProgSnap 2 format.
 
@@ -103,7 +130,7 @@ In this simple example classifier, we use only the data from the Predict table, 
 
 > **Note**: If you plan to use the MainEvents table to calculate other attriutes, you can use the `StartOrder` column in the Predict table, which indicates the `Order` value in the MainEvents table when the prediciton should occur. Any prediction should be based only on events that occur stricly before this in the MainEvents table (`Order < StartOrder`).
 
-Once the `addAttributes` function calculates the cumulative statistics for each student's attempt at each problem, the second piece of logic, found in the `buildModel` function, builds a simple linear model to predict whether the student will get that attempt correct on their first try (`FirstCorrect`), using these attributes (this is an intentionally simple model, meant only for demmonstration). The `makePredictions` function builds a model for a given training dataset and then makes predictions for the given test dataset. Note that this funciton calculates the same cumulative attributes for the test dataset, so the model can use them in prediction.
+Once the `addAttributes` function calculates the cumulative statistics for each student's attempt at each problem, the second piece of logic, found in the `buildModel` function, builds a simple logistic regression model to predict whether the student will get that attempt correct on their first try (`FirstCorrect`), using these attributes (this is an intentionally simple model, meant only for demmonstration). The `makePredictions` function builds a model for a given training dataset and then makes predictions for the given test dataset. Note that this funciton calculates the same cumulative attributes for the test dataset, so the model can use them in prediction.
 
 > **Note**: We could also predict other attributes of the student's attempt, such as whether they used a hint `UsedHint`, how many attempts they made `Attempts` or whether they ever got it right `EverCorrect`, but the Data Challenge centers on the `FirstCorrect` variable.
 
@@ -115,14 +142,7 @@ The code produces the following files:
 2) **evaluation_by_problem.csv**: Evaluation metrics for the classifier, split by problem, including precision, recall, F1-score and Cohen's kappa.
 3) **evaluation_overall.csv**: Evaluation metrics for the classifier over all problem attempts.
 
-
-## Submissions
-
-Submissions to the contest should include the following files:
-
-1) A 2-6 page short paper detailing the methods used to make the predictions.
-2) All code used to make the predictions, including a README file explaining how to run the code, using the challenge dataset. If it is not possible to provide a runnable version of the code (e.g. because it has closed-source dependencies), please include as much code as possible, and explain the missing parts in the README.
-3) For each classifier (or variant) that you evaluated, include the 3 output files, cv_predict, evaluation_by_problem, and evaluation_overall, as explained in the Example section above. These files should respectively contain the actual predictions made by the classifier, the evaluation metrics for each problem, and the evaluation metrics for the classifier overall.
+We have also included a model.txt file with the logistic regression model, showing that both the average difficulty of the problem itself, and a given student's prior percent of correct first attempts are significantly predictive of students' success on future problems. Of course, this model does not consider any information about the programming concepts in each problem, so it serves as a naive baseline against which to compare more interesting models.
 
 
 ## Caveats
