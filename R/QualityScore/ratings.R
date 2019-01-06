@@ -587,8 +587,11 @@ loadRequests <- function(ratings) {
 detailedStats <- function(requests, groupings) {
   ddply(requests, groupings, summarize,
         pAnyValid=mean(scoreFull>0), pAnyPartial=mean(scorePartial>0),
-        meanValid=mean(countFull), meanPartial=mean(countPartial),
-        medHints=median(hintCount), meanHints=mean(hintCount))
+        meanValid=mean(countFull), sdValid=sd(countFull), 
+        meanPartial=mean(countPartial), sdPartial=sd(countPartial),
+        meanHints=mean(hintCount), sdHints=sd(hintCount),
+        medValid=median(countFull), medPartial=median(countPartial),
+        medHints=median(hintCount))
 }
 
 getStatsTable <- function(stats, rows, rowName) {
@@ -614,11 +617,13 @@ detailedTables <- function(requests) {
   
   statsTableAssignment <- getStatsTable(stats, unique(stats$assignmentID), "assignmentID")
   
-  stats <- detailedStats(requests, c("dataset", "source"))
+  stats <- detailedStats(requests, c("source", "dataset"))
   stats <- stats[stats$source != "chf_without_past" & stats$source != "AllTutors",]
   
+  write.csv(stats, "data/stats.csv")
+  
   statsTableDataset <- getStatsTable(stats, unique(stats$dataset), "dataset")
-  write.csv(rbind(statsTableAssignment, statsTableDataset), "data/stats.csv")
+  write.csv(rbind(statsTableAssignment, statsTableDataset), "data/stats-agg.csv")
   
   stats$mScoreFull <- stats$pAnyValid
   stats$mScorePartialPlus <- stats$pAnyPartial - stats$pAnyValid
