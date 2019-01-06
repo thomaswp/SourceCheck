@@ -380,7 +380,8 @@ investigateHypotheses <- function() {
         csDiverge=cor(medTED, scorePartial, method="spearman"),
         csGSHints=cor(nHints, scorePartial, method="spearman"),
         csAlgHints=cor(hintCount, scorePartial, method="spearman"),
-        csDeletion=cor(pDelOnly, scorePartial, method="spearman"))
+        csDeletion=cor(pDelOnly, scorePartial, method="spearman")
+        )
   write.csv(cors, "data/cors.csv")
   
   pValues <- ddply(algRequests, c("source", "dataset"), summarize, 
@@ -388,13 +389,18 @@ investigateHypotheses <- function() {
         pDiverge=cor.test(medTED, scorePartial, method="spearman")$p.value,
         pGSHints=cor.test(nHints, scorePartial, method="spearman")$p.value,
         pAlgHints=cor.test(hintCount, scorePartial, method="spearman")$p.value,
-        pDeletion=cor.test(pDelOnly, scorePartial, method="spearman")$p.value)
+        pDeletion=cor.test(pDelOnly, scorePartial, method="spearman")$p.value
+        )
   
   pValues < 0.05
   
   ddply(algRatings, c("source", "dataset"), summarize,
-        csDeletion=cor(delOnly, valid, method="spearman")
-        )
+        csDeletion=cor(delOnly, valid, method="spearman"),
+        pDelValid = mean(valid[delOnly]),
+        pNDelValid = mean(valid[!delOnly]),
+        delOdds = pNDelValid / pDelValid,
+        nDel=sum(delOnly)
+        )$delOdds
   
 ### Too Much Code
   
