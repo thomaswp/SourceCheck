@@ -1,6 +1,7 @@
 library(plyr)
 library(ggplot2)
 library(car)
+library(coin)
 
 source("../Hints Comparison/util.R")
 
@@ -71,6 +72,7 @@ loadData <- function() {
   attempts <- attemptsUF
   attempts <- attempts[!is.na(attempts$midSurveyTime),]
   attempts <- attempts[!(attempts$userID %in% attempts$userID[duplicated(attempts[,c("assignmentID", "userID")])]),]
+  attempts <- attempts[attempts$nBlockSnaps > 0,]
   actions <- actionsUF
   actions <- actions[actions$projectID %in% attempts$projectID,]
   explanations <- read.csv("../../data/mturk/mturk2018/analysis/explanations.csv")
@@ -136,13 +138,33 @@ loadData <- function() {
   
   postHelp$followedHint <- postHelp$Q14 < 3
   postHelpUsers <- ddply(postHelp, c("assignmentID", "userID", "groupCT", "codeHint", "textHint", "reflect"), summarize,
-                         meanFollowed = mean(followedHint))
-
+                         meanFollowed = mean(followedHint[!noHint]))
   
   #### ITiCSE paper
   
-  # On Task 1, students perceived iSnap's actions as significantly more helpful with code+text than just code
+  # On Task 1, students perceived iSnap's actions as significantly more helpful with code+text than just code, but not _quite_ significant
   compareStats(post1$Q30[post1$groupCT=="11"], post1$Q30[post1$groupCT=="10"])
+  
+  # Average users ratings for overall usefulness, relevance, progress and interpretability
+  postHelp1UserCH <- ddply(postHelp[postHelp$codeHint & !postHelp$noHint & postHelp$assignmentID == "polygonMakerSimple",], 
+                           c("assignmentID", "userID", "codeHint", "textHint", "reflect"), summarize, 
+                           mUseful=mean(Q10-1), mRelevant=mean(Q12_1-1), mProgress=mean(Q12_2-1), mInterpret=mean(Q12_3-1))
+  postHelp1UserCH$textHint = postHelp1UserCH$textHint == 1
+  postHelp1UserCH$textHintF = as.factor(postHelp1UserCH$textHint)
+  # Code+text > text for all except for progress
+  condCompare(postHelp1UserCH$mUseful, postHelp1UserCH$textHint)
+  # Effect size calculation
+  wilcox_test(mUseful ~ textHintF, data=postHelp1UserCH, distribution="exact")
+  2.3106/sqrt(nrow(postHelp1UserCH))
+  
+  condCompare(postHelp1UserCH$mRelevant, postHelp1UserCH$textHint)
+  condCompare(postHelp1UserCH$mProgress, postHelp1UserCH$textHint)
+  condCompare(postHelp1UserCH$mInterpret, postHelp1UserCH$textHint)
+  ggplot(melt(postHelp1UserCH, c("assignmentID", "userID", "codeHint", "textHint", "reflect")), aes(x=textHint==1,y=value)) + 
+    geom_boxplot() + 
+    stat_summary(fun.y=mean, colour="darkred", geom="point", shape=18, size=3,show.legend = FALSE) +
+    stat_summary(fun.data = mean_se, geom = "errorbar", width=0.4, color="red") + 
+    facet_grid(~variable)
   
   # On Task 1, students completed no more objectives with code+text than just code
   compareStats(task1$objs[task1$groupCT=="11"], task1$objs[task1$groupCT=="10"])

@@ -25,6 +25,8 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	public final static String BLOCK_GRABBED = "Block.grabbed";
 	public final static String BLOCK_DUPLICATE_ALL = "Block.duplicateAll";
 	public final static String BLOCK_DUPLICATE_BLOCK = "Block.duplicateBlock";
+	public final static String BLOCK_CREATED = "Block.created";
+	public final static String BLOCK_SNAPPED = "Block.snapped";
 	public static final String IDE_ADD_SPRITE = "IDE.addSprite";
 	public static final String IDE_CHANGE_CATEGORY = "IDE.changeCategory";
 	public final static String IDE_GREEN_FLAG_RUN = "IDE.greenFlag";

@@ -76,90 +76,85 @@ public class ParseSubmitted {
 				System.err.println("Unknown file in submitted folder: " + file.getAbsolutePath());
 				continue;
 			}
-			try {
-				Snapshot snapshot = Snapshot.parse(file);
-				if (snapshot == null) {
-					System.err.println("Failed to parse: " + file.getPath());
-					continue;
+			Snapshot snapshot = Snapshot.parse(file);
+			if (snapshot == null) {
+				System.err.println("Failed to parse: " + file.getPath());
+				continue;
+			}
+			String guid = snapshot.guid;
+			boolean noGUID = false;
+			if (guid == null || guid.length() == 0) {
+				guid = file.getName();
+				guid = guid.substring(0, guid.length() - 4).replaceAll(NO_LOG_PREFIX, "");
+				guid = NO_LOG_PREFIX + guid;
+				noGUID = true;
+			}
+
+			String previousFile = submitted.put(guid, file.getName());
+			if (previousFile != null) {
+				throw new RuntimeException(String.format(
+						"Duplicate submission (%s): (%s vs %s)\n",
+						guid, file.getName(), previousFile));
+			}
+
+			String goodName = guid + ".xml";
+			if (!file.getName().equals(goodName)) {
+				boolean success = file.renameTo(new File(file.getParent(), guid + ".xml"));
+				if (!success) {
+					System.err.println("Failed to rename: " + file.getPath());
 				}
-				String guid = snapshot.guid;
-				boolean noGUID = false;
-				if (guid == null || guid.length() == 0) {
-					guid = file.getName();
-					guid = guid.substring(0, guid.length() - 4).replaceAll(NO_LOG_PREFIX, "");
-					guid = NO_LOG_PREFIX + guid;
-					noGUID = true;
+			}
+
+			String submittedCode = snapshot.toCode();
+
+			// Get all the assignments to check for this submission
+			List<Assignment> possibleAssignments = new LinkedList<>();
+			// Don't do this for ignored assignments (but we still want to write a row for
+			// completion and grading purposes)
+			if (!assignment.ignore(guid)) {
+				Assignment locationAssignment = assignment.getLocationAssignment(guid);
+				possibleAssignments.add(locationAssignment);
+				// Only add other assignments if this submission's location isn't hard-coded
+				if (locationAssignment == assignment) {
+					possibleAssignments.add(assignment.prequel);
+					possibleAssignments.add(assignment.None);
 				}
+			}
 
-				String previousFile = submitted.put(guid, file.getName());
-				if (previousFile != null) {
-					throw new RuntimeException(String.format(
-							"Duplicate submission (%s): (%s vs %s)\n",
-							guid, file.getName(), previousFile));
+			Integer overrideRowID = assignment.getSubmittedRow(guid);
+
+			Integer rowID = null;
+			String location = "";
+			for (Assignment toCheck : possibleAssignments) {
+				// Look for a valid submission for this assignment
+				if (toCheck == null) continue;
+				AssignmentAttempt attempt = getCachedAttempt(guid, toCheck);
+				if (attempt == null || attempt.size() < MIN_LOG_LENGTH) continue;
+
+				// If this is the first valid assignment, we set the location
+				if (location.isEmpty()) location = toCheck.name;
+
+				// We then check for a matching row
+				rowID = findMatchingRow(attempt, guid, submittedCode, overrideRowID);
+				if (rowID != null) {
+					location = toCheck.name;
+					break;
 				}
+			}
+			output.put(guid, String.format("%s,%s,%d",
+					guid, location, rowID == null ? -1 : rowID));
 
-				String goodName = guid + ".xml";
-				if (!file.getName().equals(goodName)) {
-					boolean success = file.renameTo(new File(file.getParent(), guid + ".xml"));
-					if (!success) {
-						System.err.println("Failed to rename: " + file.getPath());
-					}
-				}
-
-				String submittedCode = snapshot.toCode();
-
-				// Get all the assignments to check for this submission
-				List<Assignment> possibleAssignments = new LinkedList<>();
-				// Don't do this for ignored assignments (but we still want to write a row for
-				// completion and grading purposes)
-				if (!assignment.ignore(guid)) {
-					Assignment locationAssignment = assignment.getLocationAssignment(guid);
-					possibleAssignments.add(locationAssignment);
-					// Only add other assignments if this submission's location isn't hard-coded
-					if (locationAssignment == assignment) {
-						possibleAssignments.add(assignment.prequel);
-						possibleAssignments.add(assignment.None);
-					}
-				}
-
-				Integer overrideRowID = assignment.getSubmittedRow(guid);
-
-				Integer rowID = null;
-				String location = "";
-				for (Assignment toCheck : possibleAssignments) {
-					// Look for a valid submission for this assignment
-					if (toCheck == null) continue;
-					AssignmentAttempt attempt = getCachedAttempt(guid, toCheck);
-					if (attempt == null || attempt.size() < MIN_LOG_LENGTH) continue;
-
-					// If this is the first valid assignment, we set the location
-					if (location.isEmpty()) location = toCheck.name;
-
-					// We then check for a matching row
-					rowID = findMatchingRow(attempt, guid, submittedCode, overrideRowID);
-					if (rowID != null) {
-						location = toCheck.name;
-						break;
-					}
-				}
-				output.put(guid, String.format("%s,%s,%d",
-						guid, location, rowID == null ? -1 : rowID));
-
-				// Check for undesirable outcomes
-				if (!location.isEmpty()) {
-					if (rowID == null) {
-						// We at least one found a valid attempt, but no matching row
-						System.out.printf("Submitted code not found for: %s/%s (%s)\n",
-								location, guid, file.getPath());
-					}
-				} else if (!noGUID && !assignment.ignore(guid)) {
-					// We found no matching attempt, but there was a GUID in the submission
-					System.err.printf("No logs found for: %s/%s (%s)\n",
+			// Check for undesirable outcomes
+			if (!location.isEmpty()) {
+				if (rowID == null) {
+					// We at least one found a valid attempt, but no matching row
+					System.out.printf("Submitted code not found for: %s/%s (%s)\n",
 							location, guid, file.getPath());
 				}
-
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
+			} else if (!noGUID && !assignment.ignore(guid)) {
+				// We found no matching attempt, but there was a GUID in the submission
+				System.err.printf("No logs found for: %s/%s (%s)\n",
+						location, guid, file.getPath());
 			}
 		}
 

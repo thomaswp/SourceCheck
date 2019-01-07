@@ -1,12 +1,13 @@
 package edu.isnap.parser.elements;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.StringReader;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -62,13 +63,16 @@ public class Snapshot extends Code implements IHasID {
 		this.blocks = new BlockDefinitionGroup(getID());
 	}
 
-	public static Snapshot parse(File file) throws FileNotFoundException {
+	public static Snapshot parse(File file) {
 		if (!file.exists()) return null;
-		Scanner sc = new Scanner(file);
-		String xmlSource = "";
-		while (sc.hasNext()) xmlSource += sc.nextLine();
-		sc.close();
-		return parse(file.getName(), xmlSource);
+		try {
+			byte[] encoded = Files.readAllBytes(file.toPath());
+			String xmlSource = new String(encoded, Charset.forName("UTF-8"));
+			return parse(file.getName(), xmlSource);
+		} catch (IOException e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 
 	public static Snapshot parse(String name, String xmlSource) {
