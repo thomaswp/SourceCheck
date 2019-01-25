@@ -26,7 +26,8 @@ import edu.isnap.util.map.ListMap;
 public class PythonImport {
 
 	public static void main(String[] args) throws IOException {
-		generateHints("../../PythonAST/data/datacamp", "65692");
+		generateHints("../../PythonAST/data/itap", "firstAndLast");
+//		generateHints("../../PythonAST/data/datacamp", "65692");
 
 //		Map<String, ListMap<String, PythonNode>> nodes = loadAllAssignments("../../PythonAST/data");
 //		for (String assignment : nodes.keySet()) {
