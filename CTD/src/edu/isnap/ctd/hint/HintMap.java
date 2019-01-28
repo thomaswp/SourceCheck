@@ -6,19 +6,15 @@ import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
-import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.graph.Node.Action;
 import edu.isnap.ctd.graph.vector.IndexedVectorState;
 import edu.isnap.ctd.graph.vector.VectorGraph;
 import edu.isnap.ctd.graph.vector.VectorState;
-import edu.isnap.ctd.hint.Ordering.OrderMatrix;
-import edu.isnap.ctd.hint.feature.Feature;
-import edu.isnap.util.map.CountMap;
+import edu.isnap.hint.HintConfig;
+import edu.isnap.node.Node;
+import edu.isnap.node.Node.Action;
 
 /**
  * Class for handling the core logic of the CTD algorithm.
@@ -26,26 +22,12 @@ import edu.isnap.util.map.CountMap;
 @SuppressWarnings("deprecation")
 public class HintMap {
 
-	// TODO: should probably extract to a datastructure, rather than a list and some maps...
-	public final CountMap<Node> solutions = new CountMap<>();
-	public final Map<Node, Map<String, Double>> nodePlacementTimes = new IdentityHashMap<>();
-	private final Map<Node, Ordering> nodeOrderings = new IdentityHashMap<>();
-	public OrderMatrix orderMatrix;
-	public final List<Feature> features;
-
-	RuleSet ruleSet;
-	final HintConfig config;
-
-	private transient List<Node> currentHistory = new ArrayList<>();
+	public final HintConfig config;
 
 	protected final HashMap<Node, VectorGraph> map = new HashMap<>();
 
 	public HintConfig getHintConfig() {
 		return config;
-	}
-
-	public RuleSet getRuleSet() {
-		return ruleSet;
 	}
 
 	@SuppressWarnings("unused")
@@ -54,12 +36,7 @@ public class HintMap {
 	}
 
 	public HintMap(HintConfig config) {
-		this(config, null);
-	}
-
-	public HintMap(HintConfig config, List<Feature> features) {
 		this.config = config;
-		this.features = features;
 	}
 
 	/**
@@ -92,7 +69,7 @@ public class HintMap {
 	}
 
 	public void addVertex(Node node, double perc) {
-		currentHistory.add(node);
+
 	}
 
 	public VectorGraph getGraph(Node node) {
@@ -127,14 +104,10 @@ public class HintMap {
 	}
 
 	public HintMap instance() {
-		return new HintMap(config, features);
+		return new HintMap(config);
 	}
 
 	public void setSolution(Node solution) {
-		solutions.increment(solution);
-
-		Map<String, Double> currentNodeCreationPercs = new HashMap<>();
-
 		solution.recurse(new Action() {
 			@Override
 			public void run(Node item) {
@@ -145,31 +118,8 @@ public class HintMap {
 					graph.addVertex(children);
 				}
 				graph.setGoal(children, getContext(item));
-
-				if (item.id != null) {
-					// If this node has an ID, look for the first time a node with same ID has the
-					// same root path in the history, and declare that as its placement time perc
-					String rootPath = item.rootPathString();
-					for (int i = 0; i < currentHistory.size(); i++) {
-						Node node = currentHistory.get(i);
-						Node match = node.searchForNodeWithID(item.id);
-						if (match == null) continue;
-						if (rootPath.equals(match.rootPathString())) {
-							currentNodeCreationPercs.put(item.id,
-									(double) i / currentHistory.size());
-							break;
-						}
-					}
-					if (!currentNodeCreationPercs.containsKey(item.id)) {
-						System.out.println("!!!!");
-					}
-				}
 			}
 		});
-
-		// Then save the current node creation percs, using the final solution as a key
-		nodePlacementTimes.put(solution, currentNodeCreationPercs);
-		nodeOrderings.put(solution, new Ordering(currentHistory));
 	}
 
 	public IndexedVectorState getContext(Node item) {
@@ -220,9 +170,6 @@ public class HintMap {
 			graph.generateAndRemoveEdges(config.maxEdgeAddDistance, config.maxEdgeDistance);
 			graph.bellmanBackup(config.pruneGoals);
 		}
-		ruleSet = new RuleSet(solutions.keySet(), config);
-		// TODO: config
-		orderMatrix = new OrderMatrix(nodeOrderings.values(), 0.3);
 	}
 
 	public void addMap(HintMap hintMap) {
@@ -236,9 +183,6 @@ public class HintMap {
 			}
 			myGraph.addGraph(graph, true);
 		}
-		solutions.add(hintMap.solutions);
-		nodePlacementTimes.putAll(hintMap.nodePlacementTimes);
-		nodeOrderings.putAll(hintMap.nodeOrderings);
 	}
 
 	/**

@@ -13,16 +13,16 @@ import java.util.stream.Collectors;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.hint.HintHighlighter;
-import edu.isnap.ctd.hint.edit.Deletion;
-import edu.isnap.ctd.hint.edit.EditHint;
-import edu.isnap.ctd.hint.edit.Insertion;
-import edu.isnap.ctd.util.NodeAlignment.Mapping;
-import edu.isnap.ctd.util.NullStream;
 import edu.isnap.eval.export.JsonAST;
+import edu.isnap.hint.util.NullStream;
 import edu.isnap.node.ASTNode;
 import edu.isnap.node.ASTSnapshot;
+import edu.isnap.node.Node;
+import edu.isnap.sourcecheck.HintHighlighter;
+import edu.isnap.sourcecheck.NodeAlignment.Mapping;
+import edu.isnap.sourcecheck.edit.Deletion;
+import edu.isnap.sourcecheck.edit.EditHint;
+import edu.isnap.sourcecheck.edit.Insertion;
 import edu.isnap.util.Diff;
 import edu.isnap.util.map.ListMap;
 

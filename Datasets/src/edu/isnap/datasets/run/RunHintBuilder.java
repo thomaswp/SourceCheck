@@ -1,24 +1,17 @@
 package edu.isnap.datasets.run;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
-
-import edu.isnap.ctd.hint.HintConfig;
-import edu.isnap.ctd.hint.HintMap;
-import edu.isnap.ctd.hint.HintMapBuilder;
-import edu.isnap.ctd.hint.feature.Feature;
+import edu.isnap.ctd.hint.CTDModel;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.datasets.aggregate.CSC200;
 import edu.isnap.hint.ConfigurableAssignment;
+import edu.isnap.hint.HintConfig;
+import edu.isnap.hint.HintData;
 import edu.isnap.hint.SnapHintBuilder;
+import edu.isnap.hint.SolutionsModel;
 import edu.isnap.parser.Store.Mode;
 
 /**
@@ -50,34 +43,39 @@ public class RunHintBuilder {
 
 
 	/**
-	 * Builds and caches a {@link HintMapBuilder} for the given assignment, using only data with
+	 * Builds and caches a {@link CTDModel} for the given assignment, using only data with
 	 * the supplied minGrade.
 	 */
-	@SuppressWarnings("unchecked")
+//	@SuppressWarnings("unchecked")
 	public static void buildHints(Assignment assignment, double minGrade)
 			throws FileNotFoundException {
 		System.out.println("Loading: " + assignment.name);
 		HintConfig config = ConfigurableAssignment.getConfig(assignment);
 
-		File featuresFile = new File(assignment.featuresFile());
-		List<Feature> features = null;
-		if (featuresFile.exists()) {
-			Kryo kryo = new Kryo();
-			Input input = new Input(new FileInputStream(featuresFile));
-			features = kryo.readObject(input, ArrayList.class);
-			input.close();
-		}
+//		File featuresFile = new File(assignment.featuresFile());
+//		List<Feature> features = null;
+//		if (featuresFile.exists()) {
+//			Kryo kryo = new Kryo();
+//			Input input = new Input(new FileInputStream(featuresFile));
+//			features = kryo.readObject(input, ArrayList.class);
+//			input.close();
+//		}
 
-		SnapHintBuilder subtree = new SnapHintBuilder(assignment, new HintMap(config, features));
+		SnapHintBuilder subtree = new SnapHintBuilder(assignment, config);
 		// Load the nodeMap so as no to throw off timing
 		subtree.nodeMap();
 		System.out.print("Building subtree: ");
 		long ms = System.currentTimeMillis();
-		HintMapBuilder builder = subtree.buildGenerator(Mode.Overwrite, minGrade);
-		int nAttempts = builder.hintMap.solutions.size();
+		HintData builder = subtree.buildGenerator(Mode.Overwrite, minGrade);
+
+		int nAttempts = builder.getModel(SolutionsModel.class).getSolutionCount();
 		System.out.println((System.currentTimeMillis() - ms) + "ms; " + nAttempts + " attempts");
-		String dir = String.format("%s/graphs/%s-g%03d/", assignment.dataDir,
-				assignment.name, Math.round(minGrade * 100));
-		builder.hintMap.saveGraphs(dir, 1);
+
+		CTDModel ctdModel = builder.getModel(CTDModel.class);
+		if (ctdModel != null) {
+			String dir = String.format("%s/graphs/%s-g%03d/", assignment.dataDir,
+					assignment.name, Math.round(minGrade * 100));
+			ctdModel.hintMap.saveGraphs(dir, 1);
+		}
 	}
 }

@@ -4,6 +4,7 @@ import java.util.Date;
 
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
+import edu.isnap.hint.ConfigurableAssignment;
 
 public class Fall2018 extends Dataset {
 
@@ -13,17 +14,17 @@ public class Fall2018 extends Dataset {
 	public final static Fall2018 instance = new Fall2018();
 
 	// TODO: Add due dates
-	public final static Assignment LightsCameraAction = new Assignment(instance,
+	public final static Assignment LightsCameraAction = new ConfigurableAssignment(instance,
 			"lightsCameraActionHW", null, true) {
 	};
 
 	/** Actually a lab */
-	public final static Assignment Squiral = new Assignment(instance,
+	public final static Assignment Squiral = new ConfigurableAssignment(instance,
 			"squiralHW", null, true, false, null) {
 	};
 
 	/** Actually a homework */
-	public final static Assignment PolygonMaker = new Assignment(instance,
+	public final static Assignment PolygonMaker = new ConfigurableAssignment(instance,
 			"polygonMakerLab", null, true, false, Squiral) {
 
 		@Override
@@ -42,7 +43,7 @@ public class Fall2018 extends Dataset {
 		};
 	};
 
-	public final static Assignment Pong1 = new Assignment(instance,
+	public final static Assignment Pong1 = new ConfigurableAssignment(instance,
 			"pong1Lab", null, true, false, null) {
 
 		@Override
@@ -53,7 +54,7 @@ public class Fall2018 extends Dataset {
 	};
 
 	/** Snowstorm disrupted much of data collection: at least 6 submissions not done in iSnap */
-	public final static Assignment Pong2 = new Assignment(instance,
+	public final static Assignment Pong2 = new ConfigurableAssignment(instance,
 			"pong2HW", null, true, false, Pong1) {
 
 		// TODO: The project b300be20-adfb-4488-82eb-d5f4f783b6cc has two differnt submissions by
@@ -63,12 +64,12 @@ public class Fall2018 extends Dataset {
 		// we need to reparse this assignment to include both
 	};
 
-	public final static Assignment GuessingGame1 = new Assignment(instance,
+	public final static Assignment GuessingGame1 = new ConfigurableAssignment(instance,
 			"guess1Lab", null, true, false, null) {
 	};
 
 	/** Actually a homework */
-	public final static Assignment GuessingGame2 = new Assignment(instance,
+	public final static Assignment GuessingGame2 = new ConfigurableAssignment(instance,
 			"guess2Lab", null, true, false, GuessingGame1) {
 		@Override
 		public Assignment getLocationAssignment(String attemptID) {
@@ -77,7 +78,7 @@ public class Fall2018 extends Dataset {
 		};
 	};
 
-	public final static Assignment Project = new Assignment(instance,
+	public final static Assignment Project = new ConfigurableAssignment(instance,
 			"project", null, true, false, null) {
 	};
 

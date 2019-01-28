@@ -4,6 +4,7 @@ import java.util.Date;
 
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
+import edu.isnap.hint.ConfigurableAssignment;
 
 // TODO: Check for students starting on different assignments
 public class MTurk2018 extends Dataset {
@@ -18,11 +19,11 @@ public class MTurk2018 extends Dataset {
 		return false;
 	}
 
-	public final static Assignment PolygonMakerSimple = new Assignment(instance,
+	public final static Assignment PolygonMakerSimple = new ConfigurableAssignment(instance,
 			"polygonMakerSimple", null, true) {
 	};
 
-	public final static Assignment DrawTriangles = new Assignment(instance,
+	public final static Assignment DrawTriangles = new ConfigurableAssignment(instance,
 			"drawTriangles", null, true) {
 	};
 

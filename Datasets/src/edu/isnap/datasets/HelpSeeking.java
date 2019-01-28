@@ -4,6 +4,7 @@ import java.util.Date;
 
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
+import edu.isnap.hint.ConfigurableAssignment;
 
 	public class HelpSeeking extends Dataset {
 
@@ -12,11 +13,11 @@ import edu.isnap.dataset.Dataset;
 		public final static String dataFile = dataDir + ".csv";
 		public final static HelpSeeking instance = new HelpSeeking();
 
-		public final static Assignment BrickWall = new Assignment(instance,
+		public final static Assignment BrickWall = new ConfigurableAssignment(instance,
 				"brickWall", null, true);
-		public final static Assignment GuessingGame1 = new Assignment(instance,
+		public final static Assignment GuessingGame1 = new ConfigurableAssignment(instance,
 				"guess1Lab", null, true);
-		public final static Assignment Tutorial = new Assignment(instance,
+		public final static Assignment Tutorial = new ConfigurableAssignment(instance,
 				"tutorial", null, true);
 
 		public final static Assignment[] All = {

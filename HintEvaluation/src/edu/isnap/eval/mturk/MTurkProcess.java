@@ -8,7 +8,6 @@ import java.util.Set;
 
 import org.json.JSONObject;
 
-import edu.isnap.ctd.graph.Node;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
@@ -18,6 +17,7 @@ import edu.isnap.eval.AutoGrader.Grader;
 import edu.isnap.eval.PolygonAutoGrader;
 import edu.isnap.eval.TriangleSeriesAutoGrader;
 import edu.isnap.hint.util.SimpleNodeBuilder;
+import edu.isnap.node.Node;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.util.Spreadsheet;
 

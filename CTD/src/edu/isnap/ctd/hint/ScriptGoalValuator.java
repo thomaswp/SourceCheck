@@ -6,8 +6,8 @@ import java.util.LinkedList;
 import java.util.List;
 
 import edu.isnap.ctd.graph.vector.VectorState;
-import edu.isnap.ctd.util.KMedoids;
-import edu.isnap.ctd.util.KMedoids.DistanceMeasure;
+import edu.isnap.hint.util.KMedoids;
+import edu.isnap.hint.util.KMedoids.DistanceMeasure;
 import edu.isnap.util.map.CountMap;
 import edu.isnap.util.map.ListMap;
 

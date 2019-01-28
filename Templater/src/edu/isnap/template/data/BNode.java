@@ -7,9 +7,9 @@ import java.util.Set;
 
 import org.apache.commons.lang3.mutable.MutableInt;
 
-import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.graph.Node.NodeConstructor;
-import edu.isnap.ctd.hint.TextHint;
+import edu.isnap.hint.TextHint;
+import edu.isnap.node.Node;
+import edu.isnap.node.Node.NodeConstructor;
 
 public class BNode {
 	public final String type;

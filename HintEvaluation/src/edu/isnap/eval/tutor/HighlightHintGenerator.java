@@ -6,17 +6,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.hint.HintConfig;
-import edu.isnap.ctd.hint.HintHighlighter;
-import edu.isnap.ctd.hint.HintMap;
-import edu.isnap.ctd.hint.HintMapBuilder;
-import edu.isnap.ctd.util.NodeAlignment;
-import edu.isnap.ctd.util.NodeAlignment.DistanceMeasure;
-import edu.isnap.ctd.util.NodeAlignment.Mapping;
 import edu.isnap.eval.export.JsonAST;
+import edu.isnap.hint.HintConfig;
+import edu.isnap.hint.HintData;
 import edu.isnap.hint.util.SnapNode;
 import edu.isnap.node.ASTNode;
+import edu.isnap.node.Node;
 import edu.isnap.rating.ColdStart;
 import edu.isnap.rating.HintRater;
 import edu.isnap.rating.RatingConfig;
@@ -25,6 +20,10 @@ import edu.isnap.rating.data.HintRequest;
 import edu.isnap.rating.data.HintSet;
 import edu.isnap.rating.data.Trace;
 import edu.isnap.rating.data.TrainingDataset;
+import edu.isnap.sourcecheck.HintHighlighter;
+import edu.isnap.sourcecheck.NodeAlignment;
+import edu.isnap.sourcecheck.NodeAlignment.DistanceMeasure;
+import edu.isnap.sourcecheck.NodeAlignment.Mapping;
 import edu.isnap.util.Spreadsheet;
 
 public class HighlightHintGenerator implements ColdStart.IHintGenerator {
@@ -42,7 +41,7 @@ public class HighlightHintGenerator implements ColdStart.IHintGenerator {
 
 	private final HintConfig hintConfig;
 
-	private HintMapBuilder builder;
+	private HintData hintData;
 	private HintHighlighter highlighter;
 
 
@@ -53,15 +52,15 @@ public class HighlightHintGenerator implements ColdStart.IHintGenerator {
 
 	public HintHighlighter getHighlighter() {
 		if (highlighter == null) {
-			builder.finishedAdding();
-			highlighter = builder.hintHighlighter();
+			hintData.finished();
+			highlighter = new HintHighlighter(hintData);
 		}
 		return highlighter;
 	}
 
 	@Override
 	public void clearTraces() {
-		builder = new HintMapBuilder(new HintMap(hintConfig), 1);
+		hintData = new HintData(null, hintConfig, 1, HintHighlighter.DataConsumer);
 		highlighter = null;
 	}
 
@@ -70,7 +69,7 @@ public class HighlightHintGenerator implements ColdStart.IHintGenerator {
 		List<Node> nodes = trace.stream()
 				.map(node -> JsonAST.toNode(node, SnapNode::new))
 				.collect(Collectors.toList());
-		builder.addAttempt(nodes, hintConfig.areNodeIDsConsistent());
+		hintData.addTrace(trace.id, nodes);
 		highlighter = null;
 	}
 
@@ -80,7 +79,7 @@ public class HighlightHintGenerator implements ColdStart.IHintGenerator {
 		HintHighlighter highlighter = getHighlighter();
 		return new HighlightHintSet(name, hintConfig) {
 			@Override
-			protected HintHighlighter getHighlighter(HintRequest request, HintMap baseMap) {
+			protected HintHighlighter getHighlighter(HintRequest request) {
 				return highlighter;
 			}
 		}.addHints(hintRequests);

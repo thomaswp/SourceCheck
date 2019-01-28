@@ -3,10 +3,9 @@ package edu.isnap.hint;
 import java.util.Arrays;
 import java.util.HashSet;
 
-import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.graph.Node.NodeConstructor;
-import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.hint.util.SnapNode;
+import edu.isnap.node.Node;
+import edu.isnap.node.Node.NodeConstructor;
 import edu.isnap.rating.RatingConfig;
 
 public class SnapHintConfig extends HintConfig {

@@ -3,10 +3,10 @@ package edu.isnap.eval;
 import java.io.File;
 import java.io.IOException;
 
-import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.graph.Node.Predicate;
 import edu.isnap.eval.AutoGrader.Grader;
 import edu.isnap.hint.util.SimpleNodeBuilder;
+import edu.isnap.node.Node;
+import edu.isnap.node.Node.Predicate;
 import edu.isnap.parser.elements.Snapshot;
 
 public class TriangleSeriesAutoGrader {

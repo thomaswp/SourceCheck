@@ -7,28 +7,33 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.hint.HintConfig;
-import edu.isnap.ctd.hint.HintHighlighter;
-import edu.isnap.ctd.hint.HintMap;
-import edu.isnap.ctd.hint.edit.EditHint;
-import edu.isnap.ctd.hint.edit.Insertion;
-import edu.isnap.ctd.util.Tuple;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.eval.tutor.TutorEdits.PrintableTutorHint;
+import edu.isnap.hint.HintConfig;
+import edu.isnap.hint.IDataConsumer;
+import edu.isnap.hint.util.Tuple;
 import edu.isnap.node.ASTNode;
+import edu.isnap.node.Node;
 import edu.isnap.rating.RatingConfig;
 import edu.isnap.rating.data.GoldStandard;
 import edu.isnap.rating.data.HintOutcome;
 import edu.isnap.rating.data.HintRequest;
 import edu.isnap.rating.data.Trace;
+import edu.isnap.sourcecheck.HintHighlighter;
+import edu.isnap.sourcecheck.edit.EditHint;
+import edu.isnap.sourcecheck.edit.Insertion;
 import edu.isnap.util.Diff;
 import edu.isnap.util.Diff.ColorStyle;
 import edu.isnap.util.map.ListMap;
 
-public abstract class HighlightHintSet extends HintMapHintSet {
+public abstract class HighlightHintSet extends HintDataHintSet {
 
-	protected abstract HintHighlighter getHighlighter(HintRequest request, HintMap baseMap);
+	protected abstract HintHighlighter getHighlighter(HintRequest request);
+
+	@Override
+	public IDataConsumer getDataConsumer() {
+		return HintHighlighter.DataConsumer;
+	}
 
 	public HighlightHintSet(String name, HintConfig hintConfig) {
 		super(name, hintConfig);
@@ -49,10 +54,8 @@ public abstract class HighlightHintSet extends HintMapHintSet {
 
 	@Override
 	public HighlightHintSet addHints(List<HintRequest> requests) {
-		HintMap baseMap = new HintMap(hintConfig);
-
 		for (HintRequest request : requests) {
-			HintHighlighter highlighter = getHighlighter(request, baseMap);
+			HintHighlighter highlighter = getHighlighter(request);
 			Node code = JsonAST.toNode(request.code, hintConfig.getNodeConstructor());
 			// Applying edits requires nodes to have meaningful IDs, so if they don't by default, we
 			// generate them. We don't otherwise, since the generated IDs won't be consistent.

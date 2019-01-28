@@ -6,12 +6,12 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
-import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.graph.Node.Action;
 import edu.isnap.ctd.graph.vector.VectorState;
-import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.HintMap;
 import edu.isnap.dataset.AssignmentAttempt;
+import edu.isnap.hint.HintConfig;
+import edu.isnap.node.Node;
+import edu.isnap.node.Node.Action;
 import edu.isnap.util.Spreadsheet;
 import edu.isnap.util.map.ListMap;
 

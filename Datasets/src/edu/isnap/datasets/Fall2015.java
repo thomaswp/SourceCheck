@@ -7,6 +7,7 @@ import java.util.TreeMap;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.Dataset;
+import edu.isnap.hint.ConfigurableAssignment;
 import edu.isnap.parser.SnapParser.Filter;
 import edu.isnap.parser.Store.Mode;
 
@@ -30,7 +31,7 @@ public class Fall2015 extends Dataset {
 		public final static Assignment Squiral = new FakeAssignment(instance,
 				"squiralHW", Assignment.date(2015, 9, 13), true);
 
-		public final static Assignment GuessingGame1 = new Assignment(instance,
+		public final static Assignment GuessingGame1 = new ConfigurableAssignment(instance,
 				"guess1Lab", Assignment.date(2015, 9, 18), false, true, null) {
 			@Override
 			public Assignment getLocationAssignment(String attemptID) {
@@ -43,7 +44,7 @@ public class Fall2015 extends Dataset {
 			}
 		};
 
-		public final static Assignment GuessingGame2 = new Assignment(instance,
+		public final static Assignment GuessingGame2 = new ConfigurableAssignment(instance,
 				"guess2HW", Assignment.date(2015, 9, 25), false, true, GuessingGame1) {
 			@Override
 			public Assignment getLocationAssignment(String attemptID) {
@@ -72,7 +73,7 @@ public class Fall2015 extends Dataset {
 			};
 		};
 
-		public final static Assignment GuessingGame3 = new Assignment(instance,
+		public final static Assignment GuessingGame3 = new ConfigurableAssignment(instance,
 				"guess3Lab", Assignment.date(2015, 10, 2), false, true, null);
 
 		public final static Assignment[] All = {
@@ -93,7 +94,7 @@ public class Fall2015 extends Dataset {
 			return All;
 		}
 
-		private static class FakeAssignment extends Assignment {
+		private static class FakeAssignment extends ConfigurableAssignment {
 			FakeAssignment(Dataset dataset, String name, Date end, boolean graded) {
 				super(dataset, name, end, false, graded, null);
 			}

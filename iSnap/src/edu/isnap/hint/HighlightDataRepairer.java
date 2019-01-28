@@ -9,15 +9,15 @@ import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.HintJSON;
-import edu.isnap.ctd.hint.edit.EditHint;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.Store.Mode;
+import edu.isnap.sourcecheck.HintHighlighter;
+import edu.isnap.sourcecheck.edit.EditHint;
 
 /**
  * In Spring 2017 there was a in the javascript logger that cause the HintProvider.ProcessHints

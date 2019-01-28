@@ -21,14 +21,7 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.json.JSONArray;
 
-import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.hint.HintConfig;
-import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.HintJSON;
-import edu.isnap.ctd.hint.HintMap;
-import edu.isnap.ctd.hint.RuleSet;
-import edu.isnap.ctd.hint.edit.EditHint;
-import edu.isnap.ctd.util.NullStream;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
@@ -38,13 +31,19 @@ import edu.isnap.datasets.Spring2016;
 import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.agreement.EditComparer.EditDifference;
 import edu.isnap.hint.ConfigurableAssignment;
+import edu.isnap.hint.HintConfig;
 import edu.isnap.hint.SnapHintBuilder;
+import edu.isnap.hint.util.NullStream;
+import edu.isnap.node.Node;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.Snapshot;
+import edu.isnap.sourcecheck.HintHighlighter;
+import edu.isnap.sourcecheck.edit.EditHint;
+import edu.isnap.sourcecheck.priority.RuleSet;
 import edu.isnap.util.Diff;
-import edu.isnap.util.Spreadsheet;
 import edu.isnap.util.Diff.ColorStyle;
+import edu.isnap.util.Spreadsheet;
 import edu.isnap.util.map.ListMap;
 
 public class EDM2017 {
@@ -93,8 +92,8 @@ public class EDM2017 {
 			HintConfig config = ConfigurableAssignment.getConfig(assignment);
 			config.useRulesToFilter = false;
 			SnapHintBuilder builder = new SnapHintBuilder(assignment);
-			HintMap hintMap = builder.buildGenerator(Mode.Ignore, 1).hintMap;
-			highlighters.put(assignment.name, new HintHighlighter(hintMap));
+			highlighters.put(assignment.name,
+					builder.buildGenerator(Mode.Ignore, 1).hintHighlighter());
 		}
 
 		// Since sometimes assignments are incorrect in the logs, we have to redirect prequel

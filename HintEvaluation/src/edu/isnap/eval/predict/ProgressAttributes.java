@@ -5,13 +5,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.hint.HintConfig;
-import edu.isnap.ctd.hint.HintHighlighter;
-import edu.isnap.ctd.util.NodeAlignment;
-import edu.isnap.ctd.util.NodeAlignment.DistanceMeasure;
 import edu.isnap.dataset.AssignmentAttempt;
+import edu.isnap.hint.HintConfig;
 import edu.isnap.hint.SnapHintConfig;
+import edu.isnap.node.Node;
+import edu.isnap.sourcecheck.HintHighlighter;
+import edu.isnap.sourcecheck.NodeAlignment;
+import edu.isnap.sourcecheck.NodeAlignment.DistanceMeasure;
 import edu.isnap.util.Spreadsheet;
 
 public class ProgressAttributes implements AttributeGenerator {

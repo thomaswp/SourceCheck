@@ -11,9 +11,9 @@ import java.util.List;
 import java.util.TreeMap;
 
 import edu.isnap.ctd.graph.InteractionGraph;
-import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.hint.HintConfig;
-import edu.isnap.ctd.util.Alignment;
+import edu.isnap.hint.HintConfig;
+import edu.isnap.hint.util.Alignment;
+import edu.isnap.node.Node;
 
 @SuppressWarnings("deprecation")
 public class VectorGraph extends InteractionGraph<VectorState> {

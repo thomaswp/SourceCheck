@@ -9,11 +9,11 @@ import java.util.Set;
 
 import astrecognition.model.Convert;
 import astrecognition.model.Tree;
-import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.util.Tuple;
 import edu.isnap.datasets.Fall2015;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.SnapHintBuilder.LoadedAttempt;
+import edu.isnap.hint.util.Tuple;
+import edu.isnap.node.Node;
 import pqgram.PQGram;
 import pqgram.PQGramRecommendation;
 import pqgram.Profile;
