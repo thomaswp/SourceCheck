@@ -163,7 +163,6 @@ public class HintServlet extends HttpServlet {
 			Kryo kryo = SnapHintBuilder.getKryo();
 			String path = "/WEB-INF/data/" + SnapHintBuilder.getStorePath(
 					assignment, minGrade, dataset);
-			System.out.println(path);
 			InputStream stream = getServletContext().getResourceAsStream(path);
 			if (stream == null) return null;
 			Input input = new Input(stream);

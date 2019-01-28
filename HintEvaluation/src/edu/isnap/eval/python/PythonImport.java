@@ -7,13 +7,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import edu.isnap.eval.export.JsonAST;
+import edu.isnap.hint.HintData;
 import edu.isnap.hint.util.NullStream;
 import edu.isnap.node.ASTNode;
 import edu.isnap.node.ASTSnapshot;
@@ -30,8 +30,8 @@ public class PythonImport {
 
 	public static void main(String[] args) throws IOException {
 //		generateHints("../../PythonAST/data/datacamp", "65692");
-//		generateHints("../../PythonAST/data/itap", "firstAndLast");
-		generateHints("../data/", "test");
+		generateHints("../../PythonAST/data/itap", "firstAndLast");
+//		generateHints("../data/", "test");
 
 //		Map<String, ListMap<String, PythonNode>> nodes = loadAllAssignments("../../PythonAST/data");
 //		for (String assignment : nodes.keySet()) {
@@ -49,19 +49,38 @@ public class PythonImport {
 //		System.out.println(builder.toJSON());
 	}
 
+	static HintData createHintData(String dataDir, String assignment) throws IOException {
+		ListMap<String, PythonNode> attempts = loadAssignment(dataDir, assignment);
+		return createHintData(assignment, attempts);
+	}
+
+	static HintData createHintData(String assignmentID, ListMap<String, PythonNode> attempts) {
+		PythonHintConfig config = new PythonHintConfig();
+		HintData hintData = new HintData(assignmentID, config, 1, HintHighlighter.DataConsumer);
+		for (String attemptID : attempts.keySet()) {
+			List<Node> trace = attempts.get(attemptID).stream()
+					.map(node -> (Node) node)
+					.collect(Collectors.toList());
+			// Only needed for LOOCV
+			hintData.addTrace(attemptID, trace);
+		}
+		return hintData;
+	}
+
 	static void generateHints(String dataDir, String assignment) throws IOException {
 		ListMap<String, PythonNode> attempts = loadAssignment(dataDir, assignment);
-		Set<PythonNode> correct = attempts.values().stream()
-			.map(list -> list.get(list.size() - 1))
-			.filter(n -> n.correct.orElse(false))
-			.collect(Collectors.toSet());
 		for (String student : attempts.keySet()) {
 			PythonNode firstAttempt = attempts.get(student).get(0);
 			if (firstAttempt.correct.orElse(false)) continue;
-			Set<Node> subset = correct.stream()
-					.filter(n -> !student.equals(n.student))
-					.collect(Collectors.toSet());
-			HintHighlighter highlighter = new HintHighlighter(subset, new PythonHintConfig());
+
+			ListMap<String, PythonNode> subset = new ListMap<>();
+			for (String attemptID : attempts.keySet()) {
+				subset.put(attemptID, attempts.get(attemptID));
+			}
+			subset.remove(student);
+			HintData hintData = createHintData(assignment, subset);
+			HintHighlighter highlighter = hintData.hintHighlighter();
+
 			highlighter.trace = NullStream.instance;
 
 			String from = firstAttempt.prettyPrint(true);
@@ -80,6 +99,7 @@ public class PythonImport {
 			System.out.println(from);
 			mapping.printValueMappings(System.out);
 			System.out.println();
+
 
 			for (EditHint hint : edits) {
 				ASTNode toDelete = null;
