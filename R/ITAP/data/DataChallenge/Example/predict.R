@@ -27,12 +27,15 @@ runMe <- function() {
   write.csv(evaluateOverall, "evaluation_overall.csv", row.names = F)
 }
 
-# Calculate some additional attributes to use in prediction
-addAttributes <- function(data) {
-  
+getProblemStats <- function(data) {
   # Calculate the average success rate on each problem and merge it into the data
   problemStats <- ddply(data, c("ProblemID"), summarize, 
                         pCorrectForProblem=mean(FirstCorrect), medAttemptsForProblem=median(Attempts))
+  return (problemStats)
+}
+
+# Calculate some additional attributes to use in prediction
+addAttributes <- function(data, problemStats) {
   data <- merge(data, problemStats)
   
   # Now we want to calculate the *prior* rate of success/completion for each
@@ -87,7 +90,7 @@ addAttributes <- function(data) {
 # Build a simple logistic model with the given training data
 buildModel <- function(training) {
   # Add the needed attributes to both datasets
-  training <- addAttributes(training)
+  training <- addAttributes(training, getProblemStats(training))
   
   # Build a simple logistic model
   model <- glm(FirstCorrect ~ pCorrectForProblem + medAttemptsForProblem + 
@@ -100,8 +103,9 @@ buildModel <- function(training) {
 # Build a model with the training data and make predictions for the test data
 makePredictions <- function(training, test) {
   model <- buildModel(training)
-  test <- addAttributes(test)
-  print(predict(model, test))
+  # Add attributes to the test dataset, but use the per-problem performance statistics from the test dataset
+  # (since we would not actually know these for a real test dataset)
+  test <- addAttributes(test, getProblemStats(training))
   test$prediction <- predict(model, test) > 0.5
   return (test)
 }
