@@ -23,17 +23,13 @@ runMe <- function() {
   predict$time <- predict$time - min(predict$time)
   
   allAttrs <- addAttributes(predict, getProblemStats(predict))
-  simpleModel <- lm(FirstCorrect ~ pCorrectForProblem + priorPercentCorrect, data=allAttrs)
-  allAttrs$pred <- predict(simpleModel, allAttrs)
-  allAttrs$pred <- pmin(pmax(allAttrs$pred, 0), 1)
-  allAttrs$perf <- allAttrs$FirstCorrect - allAttrs$pred
-  allAttrs$perf <- allAttrs$FirstCorrect - allAttrs$pCorrectForProblem
-  hist(allAttrs$perf)
-  performance <- dcast(allAttrs[,c("SubjectID", "ProblemID", "perf")], SubjectID ~ ProblemID)
+  #simpleModel <- lm(FirstCorrect ~ pCorrectForProblem + priorPercentCorrect, data=allAttrs)
+  #allAttrs$pred <- predict(simpleModel, allAttrs)
+  #allAttrs$pred <- pmin(pmax(allAttrs$pred, 0), 1)
+  #allAttrs$perf <- allAttrs$FirstCorrect - allAttrs$pred
+  allAttrs$perf <- allAttrs$FirstCorrect
+  #hist(allAttrs$perf)
   problems <- sort(unique(predict$ProblemID))
-  coincidence <- sapply(problems, function(prob1) sapply(problems, function(prob2) {
-    sum(!is.na(performance[,prob1]) & !is.na(performance[,prob2]))
-  }))
   pred <- sapply(problems, function(prob1) sapply(problems, function(prob2) {
     p1 <- allAttrs[allAttrs$ProblemID==prob1,]
     p2 <- allAttrs[allAttrs$ProblemID==prob2,]
@@ -49,8 +45,6 @@ runMe <- function() {
   }))
   rownames(pred) <- colnames(pred) <- problems
   corrplot(pred)
-  cMat <- cor(performance[,-1], use="complete.obs")
-  corrplot(cMat)
   
   # Build a model using full dataset for training
   model <- buildModel(predict)
