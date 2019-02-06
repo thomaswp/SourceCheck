@@ -12,6 +12,14 @@ library(plyr)
 runMe <- function() {
   # Get all data
   predict <- read.csv("../Predict.csv")
+  
+  events <- read.csv("../MainTable.csv")
+  events$ServerTimestamp <- strptime(events$ServerTimestamp, format="%Y-%m-%dT%H:%M:%S")
+  predict <- merge(predict, events[,c("Order", "ServerTimestamp")], by.x="StartOrder", by.y = "Order")
+  predict <- predict[order(predict$SubjectID, predict$StartOrder),]
+  predict$time <- as.numeric(predict$ServerTimestamp)
+  predict$time <- predict$time - min(predict$time)
+  
   # Build a model using full dataset for training
   model <- buildModel(predict)
   summary(model)
@@ -35,12 +43,10 @@ getProblemStats <- function(data) {
 }
 
 # Calculate some additional attributes to use in prediction
-addAttributes <- function(data, problemStats) {
-  data <- merge(data, problemStats)
+addAttributes <- function(data, problemStats=NULL) {
+  #data <- merge(data, problemStats)
   
-  #studentStats <- ddply(data, c("SubjectID"), summarize, 
-  #                      pStudentCorrect = mean(FirstCorrect))
-  #data <- merge(data, studentStats)
+  
   
   # Now we want to calculate the *prior* rate of success/completion for each
   # student before they attempted each problem
@@ -55,6 +61,7 @@ addAttributes <- function(data, problemStats) {
   data$priorPercentCompleted <- 0.5
   data$priorAttempts <- 0
   data$pStudentCorrect <- 0
+  data$elapsed <- 0
   
   lastStudent <- ""
   # Go through each row in the data...
@@ -65,8 +72,12 @@ addAttributes <- function(data, problemStats) {
       attempts <- 0
       firstCorrectAttempts <- 0
       completedAttempts <- 0
+      lastTime <- data$time[i]
     }
     lastStudent <- student
+    
+    data$elapsed[i] <- data$time[i] - lastTime
+    lastTime <- data$time[i]
     
     data$priorAttempts[i] <- attempts
     # If this isn't their first attempt, calculate their prior percent correct and completed
@@ -97,16 +108,18 @@ addAttributes <- function(data, problemStats) {
 }
 
 # Build a simple logistic model with the given training data
-buildModel <- function(training) {
+buildModel <- function(training, subset=1:nrow(training)) {
   # Add the needed attributes to both datasets
   training <- addAttributes(training, getProblemStats(training))
   
   # Build a simple logistic model
   model <- glm(FirstCorrect ~ #pCorrectForProblem + medAttemptsForProblem + 
-               ProblemID +
+               #ProblemID +
+               time + elapsed + 
                #priorAttempts + priorPercentCorrect + priorPercentCompleted, 
-               pStudentCorrect,
-               data=training, family = "binomial")
+               priorPercentCorrect + pStudentCorrect
+               ,
+               data=training[subset,], family = "binomial")
   
   return (model)
 }
