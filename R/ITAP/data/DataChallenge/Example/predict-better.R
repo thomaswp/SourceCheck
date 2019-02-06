@@ -1,5 +1,7 @@
 if (!require(plyr)) install.packages("plyr")
 library(plyr)
+library(reshape2)
+library(corrplot)
 
 ###
 # This is a simple example of how to build and evaluate a classifier for the Data Challenge.
@@ -19,6 +21,36 @@ runMe <- function() {
   predict <- predict[order(predict$SubjectID, predict$StartOrder),]
   predict$time <- as.numeric(predict$ServerTimestamp)
   predict$time <- predict$time - min(predict$time)
+  
+  allAttrs <- addAttributes(predict, getProblemStats(predict))
+  simpleModel <- lm(FirstCorrect ~ pCorrectForProblem + priorPercentCorrect, data=allAttrs)
+  allAttrs$pred <- predict(simpleModel, allAttrs)
+  allAttrs$pred <- pmin(pmax(allAttrs$pred, 0), 1)
+  allAttrs$perf <- allAttrs$FirstCorrect - allAttrs$pred
+  allAttrs$perf <- allAttrs$FirstCorrect - allAttrs$pCorrectForProblem
+  hist(allAttrs$perf)
+  performance <- dcast(allAttrs[,c("SubjectID", "ProblemID", "perf")], SubjectID ~ ProblemID)
+  problems <- sort(unique(predict$ProblemID))
+  coincidence <- sapply(problems, function(prob1) sapply(problems, function(prob2) {
+    sum(!is.na(performance[,prob1]) & !is.na(performance[,prob2]))
+  }))
+  pred <- sapply(problems, function(prob1) sapply(problems, function(prob2) {
+    p1 <- allAttrs[allAttrs$ProblemID==prob1,]
+    p2 <- allAttrs[allAttrs$ProblemID==prob2,]
+    p1$p1Order <- p1$StartOrder
+    p2$p2Order <- p2$StartOrder
+    p1$p1Perf <- p1$perf
+    p2$p2Perf <- p2$perf
+    shared <- merge(p1[,c("SubjectID", "p1Order", "p1Perf")], p2[,c("SubjectID", "p2Order", "p2Perf")], all=F)
+    #print(shared$p1Order)
+    shared <- shared[shared$p1Order <= shared$p2Order,]
+    if (nrow(shared) < 10) return (NA)
+    return (cor(shared$p1Perf, shared$p2Perf))
+  }))
+  rownames(pred) <- colnames(pred) <- problems
+  corrplot(pred)
+  cMat <- cor(performance[,-1], use="complete.obs")
+  corrplot(cMat)
   
   # Build a model using full dataset for training
   model <- buildModel(predict)
@@ -43,8 +75,8 @@ getProblemStats <- function(data) {
 }
 
 # Calculate some additional attributes to use in prediction
-addAttributes <- function(data, problemStats=NULL) {
-  #data <- merge(data, problemStats)
+addAttributes <- function(data, problemStats) {
+  data <- merge(data, problemStats)
   
   
   
@@ -62,6 +94,7 @@ addAttributes <- function(data, problemStats=NULL) {
   data$priorAttempts <- 0
   data$pStudentCorrect <- 0
   data$elapsed <- 0
+  data$eggs <- 0
   
   lastStudent <- ""
   # Go through each row in the data...
@@ -73,11 +106,15 @@ addAttributes <- function(data, problemStats=NULL) {
       firstCorrectAttempts <- 0
       completedAttempts <- 0
       lastTime <- data$time[i]
+      eggs <- 0
     }
     lastStudent <- student
     
     data$elapsed[i] <- data$time[i] - lastTime
     lastTime <- data$time[i]
+    
+    data$eggs[i] <- eggs
+    if (data$ProblemID[i] == "howManyEggCartons") eggs <- data$FirstCorrect[i] * 2 - 1
     
     data$priorAttempts[i] <- attempts
     # If this isn't their first attempt, calculate their prior percent correct and completed
@@ -115,9 +152,10 @@ buildModel <- function(training, subset=1:nrow(training)) {
   # Build a simple logistic model
   model <- glm(FirstCorrect ~ #pCorrectForProblem + medAttemptsForProblem + 
                #ProblemID +
-               time + elapsed + 
+               # time + elapsed + 
+               eggs +
                #priorAttempts + priorPercentCorrect + priorPercentCompleted, 
-               priorPercentCorrect + pStudentCorrect
+               priorPercentCorrect #+ pStudentCorrect
                ,
                data=training[subset,], family = "binomial")
   
