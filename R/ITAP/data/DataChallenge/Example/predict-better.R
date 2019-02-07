@@ -17,26 +17,24 @@ runMe <- function() {
   
   events <- read.csv("../MainTable.csv")
   events$ServerTimestamp <- strptime(events$ServerTimestamp, format="%Y-%m-%dT%H:%M:%S")
-  predict <- merge(predict, events[,c("Order", "ServerTimestamp")], by.x="StartOrder", by.y = "Order")
-  predict <- predict[order(predict$SubjectID, predict$StartOrder),]
-  predict$time <- as.numeric(predict$ServerTimestamp)
-  predict$time <- predict$time - min(predict$time)
+  progress <- read.csv("Progress.csv")
+  progress <- progress[progress$ProblemID %in% predict$ProblemID,]
   
+  problems <- sort(unique(predict$ProblemID))
   allAttrs <- addAttributes(predict, getProblemStats(predict))
   #simpleModel <- lm(FirstCorrect ~ pCorrectForProblem + priorPercentCorrect, data=allAttrs)
   #allAttrs$pred <- predict(simpleModel, allAttrs)
   #allAttrs$pred <- pmin(pmax(allAttrs$pred, 0), 1)
   #allAttrs$perf <- allAttrs$FirstCorrect - allAttrs$pred
-  allAttrs$perf <- allAttrs$FirstCorrect
+  allAttrs$perf <- allAttrs$BestProgress
   #hist(allAttrs$perf)
-  problems <- sort(unique(predict$ProblemID))
   pred <- sapply(problems, function(prob1) sapply(problems, function(prob2) {
     p1 <- allAttrs[allAttrs$ProblemID==prob1,]
     p2 <- allAttrs[allAttrs$ProblemID==prob2,]
     p1$p1Order <- p1$StartOrder
     p2$p2Order <- p2$StartOrder
     p1$p1Perf <- p1$perf
-    p2$p2Perf <- p2$perf
+    p2$p2Perf <- p2$FirstCorrect
     shared <- merge(p1[,c("SubjectID", "p1Order", "p1Perf")], p2[,c("SubjectID", "p2Order", "p2Perf")], all=F)
     #print(shared$p1Order)
     shared <- shared[shared$p1Order <= shared$p2Order,]
@@ -45,6 +43,7 @@ runMe <- function() {
   }))
   rownames(pred) <- colnames(pred) <- problems
   corrplot(pred)
+  mean(abs(pred), na.rm=T)
   
   # Build a model using full dataset for training
   model <- buildModel(predict)
@@ -68,11 +67,20 @@ getProblemStats <- function(data) {
   return (problemStats)
 }
 
+
 # Calculate some additional attributes to use in prediction
 addAttributes <- function(data, problemStats) {
   data <- merge(data, problemStats)
   
-  
+  data <- merge(data, events[,c("Order", "ServerTimestamp")], by.x="StartOrder", by.y = "Order")
+  data <- data[order(data$SubjectID, data$StartOrder),]
+  data$time <- as.numeric(data$ServerTimestamp)
+  data$time <- data$time - min(data$time)
+
+  data <- merge(data, progress, all.x=T)
+  data <- data[order(data$SubjectID, data$StartOrder),]
+  data$FirstProgress[is.na(data$FirstProgress)] <- 1
+  data$BestProgress[is.na(data$BestProgress)] <- 1
   
   # Now we want to calculate the *prior* rate of success/completion for each
   # student before they attempted each problem
@@ -127,7 +135,8 @@ addAttributes <- function(data, problemStats) {
     
     # Now update the number of problems they attempted and got right (on their first try)
     attempts <- attempts + 1
-    if (data$FirstCorrect[i]) {
+    #if (data$FirstCorrect[i]) {
+    if (data$BestProgress[i] >= 0.7) {
       firstCorrectAttempts <- firstCorrectAttempts + 1
     }
     if (data$EverCorrect[i]) {
@@ -145,9 +154,9 @@ buildModel <- function(training, subset=1:nrow(training)) {
   
   # Build a simple logistic model
   model <- glm(FirstCorrect ~ #pCorrectForProblem + medAttemptsForProblem + 
-               #ProblemID +
+               ProblemID +
                # time + elapsed + 
-               eggs +
+               # eggs +
                #priorAttempts + priorPercentCorrect + priorPercentCompleted, 
                priorPercentCorrect #+ pStudentCorrect
                ,
