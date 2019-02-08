@@ -4,11 +4,10 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.csv.CSVFormat;
@@ -47,36 +46,34 @@ public class ProgressCalculator {
 	static void parseProblem(String problem, List<CSVRecord> rows, Map<String, String> codeMap,
 			Spreadsheet spreadsheet) {
 
-		Set<String> solutions = new HashSet<>();
+		Map<String, String> solutions = new HashMap<>();
 		ListMap<String, String> attemptMap = new ListMap<>();
 
 		String currentUser = null;
 		List<String> attempt = null;
-		boolean correct = false;
+		boolean lastCorrect = false;
 		for (CSVRecord row : rows) {
 			String user = row.get("SubjectID");
-			if (user != currentUser) {
-				if (currentUser != null && !correct) {
-					attemptMap.put(currentUser, attempt);
+			if (!user.equals(currentUser)) {
+				if (currentUser != null) {
+					if (attempt.size() > 1 || !lastCorrect) {
+						attemptMap.put(currentUser, attempt);
+					}
 				}
 
 				currentUser = user;
 				attempt = new ArrayList<>();
-				correct = false;
 			}
 
-			boolean rowCorrect = row.get("Correct").equals("TRUE");
+			lastCorrect = row.get("Correct").equals("TRUE");
 			String code = codeMap.get(row.get("CodeStateID"));
 			attempt.add(code);
 
-			if (rowCorrect) {
-				correct = true;
-				solutions.add(code);
+			if (lastCorrect) {
+				solutions.put(user, code);
 			}
 		}
 
-		List<List<String>> solutionTokens = solutions.stream().map(ProgressCalculator::tokenize)
-				.collect(Collectors.toList());
 
 		System.out.println(problem);
 
@@ -88,22 +85,29 @@ public class ProgressCalculator {
 
 		for (String user : attemptMap.keySet() ) {
 			attempt = attemptMap.get(user);
+
 			// for now, just use last attempt
 			String source = attempt.get(attempt.size() - 1);
 			List<String> attemptTokens = tokenize(source);
+
+			Map<String, String> loo = new HashMap<>(solutions);
+			loo.remove(user);
+			List<List<String>> solutionTokens = loo.values().stream()
+					.map(ProgressCalculator::tokenize)
+					.collect(Collectors.toList());
 
 			spreadsheet.newRow();
 			spreadsheet.put("ProblemID", problem);
 			spreadsheet.put("SubjectID", user);
 
 
-			double bestProgress = findBestProgress(solutions, solutionTokens, source,
+			double bestProgress = findBestProgress(loo.values(), solutionTokens, source,
 					attemptTokens);
 			spreadsheet.put("BestProgress", bestProgress);
 
 			source = attempt.get(0);
 			attemptTokens = tokenize(source);
-			double firstProgress = findBestProgress(solutions, solutionTokens, source,
+			double firstProgress = findBestProgress(loo.values(), solutionTokens, source,
 					attemptTokens);
 			spreadsheet.put("FirstProgress", firstProgress);
 		}
@@ -112,7 +116,7 @@ public class ProgressCalculator {
 		System.out.println();
 	}
 
-	private static double findBestProgress(Set<String> solutions,
+	private static double findBestProgress(Collection<String> solutions,
 			List<List<String>> solutionTokens, String source,
 			List<String> attemptTokens) {
 		double bestProgress = Double.NEGATIVE_INFINITY;

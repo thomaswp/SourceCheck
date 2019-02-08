@@ -14,13 +14,13 @@ library(corrplot)
 runMe <- function() {
   # Get all data
   predict <- read.csv("../Predict.csv")
+  problems <- sort(unique(predict$ProblemID))
   
   events <- read.csv("../MainTable.csv")
   events$ServerTimestamp <- strptime(events$ServerTimestamp, format="%Y-%m-%dT%H:%M:%S")
   progress <- read.csv("Progress.csv")
   progress <- progress[progress$ProblemID %in% predict$ProblemID,]
   
-  problems <- sort(unique(predict$ProblemID))
   allAttrs <- addAttributes(predict, getProblemStats(predict))
   #simpleModel <- lm(FirstCorrect ~ pCorrectForProblem + priorPercentCorrect, data=allAttrs)
   #allAttrs$pred <- predict(simpleModel, allAttrs)
@@ -79,8 +79,8 @@ addAttributes <- function(data, problemStats) {
 
   data <- merge(data, progress, all.x=T)
   data <- data[order(data$SubjectID, data$StartOrder),]
-  data$FirstProgress[is.na(data$FirstProgress)] <- 1
-  data$BestProgress[is.na(data$BestProgress)] <- 1
+  data$FirstProgress[is.na(data$FirstProgress) | data$FirstCorrect] <- 1
+  data$BestProgress[is.na(data$BestProgress) | data$EverCorrect] <- 1
   
   # Now we want to calculate the *prior* rate of success/completion for each
   # student before they attempted each problem
@@ -136,7 +136,7 @@ addAttributes <- function(data, problemStats) {
     # Now update the number of problems they attempted and got right (on their first try)
     attempts <- attempts + 1
     #if (data$FirstCorrect[i]) {
-    if (data$BestProgress[i] >= 0.7) {
+    if (data$FirstProgress[i] >= 0.8) {
       firstCorrectAttempts <- firstCorrectAttempts + 1
     }
     if (data$EverCorrect[i]) {
@@ -154,11 +154,11 @@ buildModel <- function(training, subset=1:nrow(training)) {
   
   # Build a simple logistic model
   model <- glm(FirstCorrect ~ #pCorrectForProblem + medAttemptsForProblem + 
-               ProblemID +
+               priorPercentCorrect +
                # time + elapsed + 
-               # eggs +
+               eggs
                #priorAttempts + priorPercentCorrect + priorPercentCompleted, 
-               priorPercentCorrect #+ pStudentCorrect
+               #+ pStudentCorrect
                ,
                data=training[subset,], family = "binomial")
   
@@ -167,11 +167,18 @@ buildModel <- function(training, subset=1:nrow(training)) {
 
 # Build a model with the training data and make predictions for the test data
 makePredictions <- function(training, test) {
-  model <- buildModel(training)
   # Add attributes to the test dataset, but use the per-problem performance statistics from the test dataset
   # (since we would not actually know these for a real test dataset)
   test <- addAttributes(test, getProblemStats(training))
-  test$prediction <- predict(model, test) > 0.5
+  test$estimate <- 0
+  
+  for (problem in unique(test$ProblemID)) {
+    trainProb <- training[training$ProblemID == problem,]
+    testProbl <- test[test$ProblemID == problem,]
+    model <- buildModel(trainProb)
+    test$estimate[test$ProblemID == problem] <- predict(model, testProbl)
+  }
+  test$prediction <- test$estimate > 0.5
   return (test)
 }
 
