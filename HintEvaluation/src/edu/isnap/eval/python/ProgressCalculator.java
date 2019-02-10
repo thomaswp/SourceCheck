@@ -119,14 +119,15 @@ public class ProgressCalculator {
 	private static double findBestProgress(Collection<String> solutions,
 			List<List<String>> solutionTokens, String source,
 			List<String> attemptTokens) {
+		String[] attemptArray = attemptTokens.toArray(new String[attemptTokens.size()]);
 		double bestProgress = Double.NEGATIVE_INFINITY;
 		int bestIndex = -1;
 		for (int i = 0; i < solutionTokens.size(); i++) {
 			List<String> solutionTokenList = solutionTokens.get(i);
-			double progress = Alignment.getProgress(
-					attemptTokens.toArray(new String[attemptTokens.size()]),
-					solutionTokenList.toArray(new String[solutionTokenList.size()]),
-					2, 1, 0.5);
+			String[] solutionArray = solutionTokenList.toArray(
+					new String[solutionTokenList.size()]);
+//			double progress = Alignment.getProgress(attemptArray, solutionArray, 2, 1, 0.5);
+			double progress = -Alignment.alignCost(attemptArray, solutionArray, 2, 2, 1);
 			if (progress > bestProgress) {
 				bestProgress = progress;
 				bestIndex = i;
