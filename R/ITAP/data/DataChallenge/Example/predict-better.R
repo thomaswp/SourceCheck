@@ -156,8 +156,8 @@ addAttributes <- function(data, problemStats) {
     
     # Now update the number of problems they attempted and got right (on their first try)
     attempts <- attempts + 1
-    #if (data$FirstCorrect[i]) {
-    if (data$FirstProgress[i] >= 0.8) {
+    if (data$FirstCorrect[i]) {
+    #if (data$FirstProgress[i] >= 0.8) {
       firstCorrectAttempts <- firstCorrectAttempts + 1
     }
     if (data$EverCorrect[i]) {
@@ -186,6 +186,8 @@ buildModel <- function(training) {
                         oversample(training[training$FirstCorrect,], size = nrow(training) / 2))
   }
   # oversample <- training
+  
+  oversample$priorPercentCorrect <- 0
   
   #print(mean(oversample[,"nearestBusStop"]))
   probs <- problems[problems %in% colnames(oversample)]
@@ -219,11 +221,12 @@ makePredictions <- function(training, test) {
     testProbl <- test[test$ProblemID == problem,]
     row <- pred[problem,]
     removeCols <- names(row)[is.na(row) | row <= 0]
+    # if (length(removeCols) == length(problems)) removeCols = c(removeCols, "")
     # print(removeCols)
     model <- buildModel(training[training$ProblemID == problem, !(colnames(training) %in% removeCols)])
-    if (problem == "leftoverCandy") {
-      print(summary(model))
-    }
+    #if (problem == "helloWorld") {
+    #  print(summary(model))
+    #}
     suppressWarnings(test$estimate[test$ProblemID == problem] <- predict(model, testProbl))
   }
   test$prediction <- test$estimate > 0.5
