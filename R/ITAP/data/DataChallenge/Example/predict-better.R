@@ -12,6 +12,11 @@ library(MASS)
 # 2) How to use the provided 10-fold crossvalidation datasets to evaluate a classifier.
 ###
 
+meanNAZero <- function(x) {
+  x[is.na(x) | is.nan(x) | is.infinite(x)] <- 0
+  return (mean(x))
+}
+
 runMe <- function() {
   # Get all data
   predict <- read.csv("../Predict.csv")
@@ -64,6 +69,7 @@ runMe <- function() {
     results <- crossValidate()
     evaluateByProblem <- evaluatePredictions(results, c("ProblemID"))
     evaluateOverall <- evaluatePredictions(results, c())
+    evaluateMacro <- colwise(meanNAZero)(evaluateByProblem[,-1])
   }
   
   # Write the results
@@ -179,15 +185,15 @@ buildModel <- function(training) {
   nCorrect <- sum(training$FirstCorrect)
   nIncorrect <- sum(!training$FirstCorrect)
   if (nCorrect > nIncorrect) {
-    oversample <- rbind(training[training$FirstCorrect,],
-                        oversample(training[!training$FirstCorrect,], size = nrow(training) / 2))  
+    #oversample <- rbind(training[training$FirstCorrect,],
+    #                    oversample(training[!training$FirstCorrect,], size = nrow(training) / 2))  
+    # Only oversample if the positive class is underrepresented
+    oversample <- training
   } else {
     oversample <- rbind(training[!training$FirstCorrect,],
                         oversample(training[training$FirstCorrect,], size = nrow(training) / 2))
   }
   # oversample <- training
-  
-  oversample$priorPercentCorrect <- 0
   
   #print(mean(oversample[,"nearestBusStop"]))
   probs <- problems[problems %in% colnames(oversample)]
