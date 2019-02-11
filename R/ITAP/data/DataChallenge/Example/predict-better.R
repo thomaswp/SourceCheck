@@ -3,6 +3,7 @@ library(plyr)
 library(reshape2)
 library(corrplot)
 library(MASS)
+library(rpart)
 
 ###
 # This is a simple example of how to build and evaluate a classifier for the Data Challenge.
@@ -35,6 +36,7 @@ runMe <- function() {
   #allAttrs$perf <- allAttrs$FirstCorrect - allAttrs$pred
   allAttrs$perf <- allAttrs$FirstProgress
   allAttrs$perf <- allAttrs$FirstCorrect
+  #allAttrs$perf <- allAttrs$startTime
   #hist(allAttrs$perf)
   pred <- sapply(problems, function(prob1) sapply(problems, function(prob2) {
     if (prob1 == prob2) return (NA)
@@ -50,7 +52,7 @@ runMe <- function() {
     if (nrow(shared) < 5) return (NA)
     suppressWarnings(test <- cor.test(shared$p1Perf + 0, shared$p2Perf + 0))
     if (is.na(test$p.value) || test$p.value >= 0.1) return (NA)
-    #if (prob2 == "isEvenPositiveInt" && prob1 == "howManyEggCartons") {
+    #if (prob1 == "raiseToPower" && prob2 == "findRoot") {
     #  print(shared)
     #  print(test)
     #}
@@ -71,6 +73,9 @@ runMe <- function() {
     evaluateOverall <- evaluatePredictions(results, c())
     evaluateMacro <- colwise(meanNAZero)(evaluateByProblem[,-1])
   }
+  
+  matrixBaseline <- evaluateMacro
+  matrixBaselineProblems <- evaluateByProblem
   
   # Write the results
   write.csv(results, "cv_predict.csv", row.names = F)
@@ -115,6 +120,7 @@ addAttributes <- function(data, problemStats) {
   data$priorAttempts <- 0
   data$pStudentCorrect <- 0
   data$elapsed <- 0
+  data$startTime <- 0
   
   probs <- list()
   for (problem in problems) {
@@ -131,6 +137,7 @@ addAttributes <- function(data, problemStats) {
       firstCorrectAttempts <- 0
       completedAttempts <- 0
       lastTime <- data$time[i]
+      startTime <- data$time[i]
       for (problem in problems) {
         probs[problem] <- 0
       }
@@ -139,6 +146,7 @@ addAttributes <- function(data, problemStats) {
     
     data$elapsed[i] <- data$time[i] - lastTime
     lastTime <- data$time[i]
+    data$startTime[i] <- startTime
     
     for (problem in problems) {
       data[i,problem] <- probs[problem]
@@ -203,6 +211,9 @@ buildModel <- function(training) {
   relevantProblems <- names(model$coefficients)[!is.na(model$coefficients)]
   relevantProblems <- relevantProblems[relevantProblems %in% probs]
   oversample <- oversample[,c("FirstCorrect", "priorPercentCorrect", as.character(relevantProblems))]
+  
+  return (rpart(FirstCorrect ~ ., data=oversample))
+  
   model <- lm(FirstCorrect ~ ., data=oversample)#, family = "binomial")
   simple <- lm(FirstCorrect ~ 1, data=oversample)
   
@@ -230,11 +241,12 @@ makePredictions <- function(training, test) {
     # if (length(removeCols) == length(problems)) removeCols = c(removeCols, "")
     # print(removeCols)
     model <- buildModel(training[training$ProblemID == problem, !(colnames(training) %in% removeCols)])
-    #if (problem == "helloWorld") {
-    #  print(summary(model))
-    #}
+    if (problem == "findRoot") {
+      print(summary(model))
+    }
     suppressWarnings(test$estimate[test$ProblemID == problem] <- predict(model, testProbl))
   }
+  # test$estimate <- runif(n = nrow(test), min = 0, max = 1)
   test$prediction <- test$estimate > 0.5
   return (test)
 }
@@ -256,6 +268,7 @@ crossValidate <- function() {
 # Evaluate a given set of classifier prediction results using a variety of metrics
 evaluatePredictions <- function(results, groupingCols) {
   eval <- ddply(results, groupingCols, summarize,
+                nStudents = length(unique(SubjectID)),
                 pCorrect = mean(FirstCorrect),
                 pPredicted = mean(prediction),
                 tp = mean(FirstCorrect & prediction),
