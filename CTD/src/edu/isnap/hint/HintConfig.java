@@ -3,11 +3,14 @@ package edu.isnap.hint;
 import java.io.Serializable;
 
 import edu.isnap.node.Node;
-import edu.isnap.node.SimpleNode;
 import edu.isnap.node.Node.NodeConstructor;
+import edu.isnap.node.SimpleNode;
 
 public abstract class HintConfig implements Serializable {
 	private static final long serialVersionUID = 1L;
+
+	/** If true, uses new version of SourceCheck with more global alignment */
+	public boolean sourceCheckV2 = true;
 
 	/**
 	 * Should return true if the hint generator can expect traces to keep consistent node IDs
