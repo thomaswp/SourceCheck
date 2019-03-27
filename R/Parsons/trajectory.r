@@ -81,7 +81,7 @@ oldAnalysis <- function() {
 
 
 plotTraj <- function(data) {
-  ggplot(data, aes(x=x, y=y, color=semester, group=student)) + coord_fixed(ratio = 1) +
+  ggplot(data, aes(x=x, y=y, color=student, group=student)) + coord_fixed(ratio = 1) +
     geom_point(aes(size = i)) +
     geom_path()
 }
