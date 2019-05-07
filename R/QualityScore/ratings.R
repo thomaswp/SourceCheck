@@ -698,9 +698,9 @@ plotComparisonStacked <- function(assignments, dataset) {
   fillLabs <- 
     if (isnap) c(`squiralHW` = "Squiral (n=30)", `guess1Lab` = "GuessingGame (n=31)") 
     else c(`helloWorld`="HelloWorld (n=7)", `firstAndLast`="FirstAndLast n=(7)", `isPunctuation`="IsPunctuation (n=13)", `kthDigit`="KthDigit (n=14)", `oneToN`="OneToN (n=10)")
-  title <- paste("QualityScore Ratings -", if (isnap) "iSnap" else "ITAP")
-  textOffsetX <- if (isnap) 0.15 else 0.16
-  yMax <- if (isnap) 1.1 else 1.25
+  title <- paste("QualityScore Ratings -", if (isnap) "iSnap" else "Python")
+  textOffsetX <- if (isnap) 0.19 else 0.17
+  yMax <- if (isnap) 1.18 else 1.28
   ylabs <- c("Tutors", "ITAP", "SourceCheck", "CTD", "CHF", "NSNLS", "TR-ER")
   if (isnap) ylabs <- ylabs[ylabs != "ITAP"]
   
@@ -715,13 +715,13 @@ plotComparisonStackedDS <- function(assignments, ylabs, fillLabs, title, yMax, t
   assignments <- assignments[assignments$source != "chf_without_past",]
   melted <- melt(assignments[,c("dataset", "source", "assignmentID", "mScorePartialPlus", "mScoreFull")], id=c("dataset", "source", "assignmentID"))
   ggplot(melted,aes(x=source, y=value, fill=variable)) + geom_bar(stat="identity") +
-    suppressWarnings(geom_text(aes(x=source, y=mScoreFull+mScorePartialPlus+textOffsetX, label = sprintf("%.02f (%.02f)", mScoreFull, mScoreFull+mScorePartialPlus), fill=NULL), data = assignments)) +
+    suppressWarnings(geom_text(size=5, aes(x=source, y=mScoreFull+mScorePartialPlus+textOffsetX, label = sprintf("%.02f (%.02f)", mScoreFull, mScoreFull+mScorePartialPlus), fill=NULL), data = assignments)) +
     scale_fill_manual(labels=c("Partial", "Full"), values=twoColors) + 
     scale_x_discrete(labels=rev(ylabs)) +
     scale_y_continuous(limits=c(0, yMax), breaks = c(0, 0.25, 0.5, 0.75, 1.0)) +
     labs(fill="Match", x="Algorithm", y="QualityScore", title=title) +
-    theme_bw(base_size = 17) +
-    theme(plot.title = element_text(hjust = 0.5)) +
+    theme_bw(base_size = 18) +
+    theme(plot.title = element_text(hjust = 0.5, size=18)) +
     coord_flip() + facet_wrap(~assignmentID, labeller = as_labeller(fillLabs), ncol=2)
 }
 
@@ -753,15 +753,15 @@ plotComparisonTogetherStacked1 <- function(together, niSnap, nITAP, lockXAxis=T)
   together <- together[c("dataset", "source", "mScorePartialPlus", "mScoreFull")]
   #return (together)
   plot <- ggplot(melt(together, id=c("dataset", "source")),aes(x=source, y=value, fill=variable)) + geom_bar(stat="identity") +
-    suppressWarnings(geom_text(aes(x=source, y=mScoreFull+mScorePartialPlus+0.15, label = sprintf("%.02f (%.02f)", mScoreFull, mScoreFull+mScorePartialPlus), fill=NULL), data = together)) +
+    suppressWarnings(geom_text(size=5, aes(x=source, y=mScoreFull+mScorePartialPlus+0.20, label = sprintf("%.02f (%.02f)", mScoreFull, mScoreFull+mScorePartialPlus), fill=NULL), data = together)) +
     scale_fill_manual(labels=c("Partial", "Full"), values=twoColors) + 
     scale_x_discrete(labels=rev(c("Tutors", "ITAP", "SourceCheck", "CTD", "CHF", "NSNLS", "TR-ER"))) +
     labs(fill="Match", x="Algorithm", y="QualityScore", title="QualityScore Ratings") +
-    theme_bw(base_size = 17) +
-    theme(plot.title = element_text(hjust = 0.5)) +
-    coord_flip() + facet_wrap(~dataset, labeller = as_labeller(c(`isnap` = paste0("iSnap (n=", niSnap, ")"), `itap` = paste0("ITAP (n=", nITAP, ")")))) 
+    theme_bw(base_size = 18) +
+    theme(plot.title = element_text(hjust = 0.5, size=18)) +
+    coord_flip() + facet_wrap(~dataset, labeller = as_labeller(c(`isnap` = paste0("iSnap (n=", niSnap, ")"), `itap` = paste0("Python (n=", nITAP, ")")))) 
   if (lockXAxis) {
-    plot <- plot + scale_y_continuous(limits=c(0, 1.15), breaks = c(0, 0.25, 0.5, 0.75, 1.0))
+    plot <- plot + scale_y_continuous(limits=c(0, 1.20), breaks = c(0, 0.25, 0.5, 0.75, 1.0))
   }
   return (plot)
 }
