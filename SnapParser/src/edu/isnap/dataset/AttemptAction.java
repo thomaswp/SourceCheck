@@ -31,6 +31,9 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	public static final String IDE_CHANGE_CATEGORY = "IDE.changeCategory";
 	public final static String IDE_GREEN_FLAG_RUN = "IDE.greenFlag";
 	public final static String IDE_EXPORT_PROJECT = "IDE.exportProject";
+	public final static String IDE_NEW_PROJECT = "IDE.newProject";
+	public final static String IDE_OPEN_PROJECT = "IDE.openProject";
+	public final static String IDE_OPEN_PROJECT_STRING = "IDE.openProjectString";
 	public final static String IDE_OPENED = "IDE.opened";
 	public static final String IDE_REMOVE_SPRITE = "IDE.removeSprite";
 	public static final String IDE_SELECT_SPRITE = "IDE.selectSprite";

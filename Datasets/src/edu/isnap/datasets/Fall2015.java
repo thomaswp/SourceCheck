@@ -10,7 +10,7 @@ import edu.isnap.dataset.Dataset;
 import edu.isnap.parser.SnapParser.Filter;
 import edu.isnap.parser.Store.Mode;
 
-public class Fall2015 extends Dataset {
+public class Fall2015 extends CSC200Dataset {
 
 		public final static Date start = Assignment.date(2015, 8, 10);
 		public final static String dataDir = Assignment.CSC200_BASE_DIR + "/fall2015";
@@ -20,7 +20,6 @@ public class Fall2015 extends Dataset {
 		// Used this submission for testing, so not using it in evaluation
 		// For the comparison 2015/2016 study we should keep it, though
 		public final static String GG1_SKIP = "3c3ce047-b408-417e-b556-f9406ac4c7a8";
-
 
 		// Note: the first three assignments were not recorded in Fall 2015
 		public final static Assignment LightsCameraAction = new FakeAssignment(instance,

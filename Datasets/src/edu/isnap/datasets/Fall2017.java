@@ -3,10 +3,9 @@ package edu.isnap.datasets;
 import java.util.Date;
 
 import edu.isnap.dataset.Assignment;
-import edu.isnap.dataset.Dataset;
 
 // TODO: Check for students starting on different assignments
-public class Fall2017 extends Dataset {
+public class Fall2017 extends CSC200Dataset {
 
 	public final static Date start = Assignment.date(2017, 8, 15);
 	public final static String dataDir = Assignment.CSC200_BASE_DIR + "/fall2017";

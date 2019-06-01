@@ -57,4 +57,8 @@ public abstract class Dataset {
 	public String getToolInstances() {
 		return "iSnap (Unknown Version)";
 	}
+
+	public String courseID() {
+		return "";
+	}
 }
