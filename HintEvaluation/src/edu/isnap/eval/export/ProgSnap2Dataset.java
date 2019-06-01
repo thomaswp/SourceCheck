@@ -53,11 +53,6 @@ public class ProgSnap2Dataset implements Closeable {
 //			"InterventionMessage",
 //	};
 //
-//	private final static String[] METADATA_HEADER = {
-//			"Property",
-//			"Value",
-//	};
-//
 //	private final static String[] CODE_STATES_HEADER = {
 //			"ID",
 //			"Code",
@@ -76,6 +71,71 @@ public class ProgSnap2Dataset implements Closeable {
 //			"Progress",
 //			"Interpretability",
 //	};
+
+	// Unlogged events
+//	Assignment.setID
+//	Assignment.setIDFrom
+//	Block.clickStopRun
+//	Block.created
+//	Block.dragDestroy
+//	Block.duplicateAll
+//	Block.grabbed
+//	Block.hidePrimitive
+//	Block.relabel
+//	Block.showHelp
+//	Block.snapped
+//	Block.userDestroy
+//	BlockEditor.apply
+//	BlockEditor.cancel
+//	BlockEditor.ok
+//	BlockEditor.start
+//	BlockEditor.updateBlockLabel
+//	BlockTypeDialog.cancel
+//	BlockTypeDialog.changeBlockType
+//	BlockTypeDialog.newBlock
+//	BlockTypeDialog.ok
+//	Error
+//	HighlightDialogBoxMorph.cancelShowOnRun
+//	HighlightDialogBoxMorph.destroy
+//	HighlightDialogBoxMorph.promptShowOnRun
+//	HighlightDialogBoxMorph.showOnRun
+//	HighlightDialogBoxMorph.toggleAutoClear
+//	HighlightDialogBoxMorph.toggleInsert
+//	HighlightDialogBoxMorph.toggleShowOnRun
+//	HighlightDisplay.autoClear
+//	HighlightDisplay.checkMyWork
+//	HighlightDisplay.informNoHints
+//	HighlightDisplay.promptShowBlockHints
+//	HighlightDisplay.promptShowInserts
+//	HighlightDisplay.showInsertsFromPrompt
+//	HighlightDisplay.startHighlight
+//	HighlightDisplay.stopHighlight
+//	HintDialogBox.destroy
+//	HintProvider.processHints
+//	IDE.changeCategory
+//	IDE.deleteCustomBlock
+//	IDE.exportProject
+//	IDE.opened
+//	IDE.pause
+//	IDE.removeSprite
+//	IDE.rotationStyleChanged
+//	IDE.saveProject
+//	IDE.selectSprite
+//	IDE.setSpriteTab
+//	IDE.stop
+//	IDE.toggleAppMode
+//	InputSlot.edited
+//	InputSlot.menuItemSelected
+//	MultiArg.addInput
+//	MultiArg.removeInput
+//	ProjectDialog.setSource
+//	ProjectDialog.shown
+//	SnapDisplay.showBlockHint
+//	SnapDisplay.showScriptHint
+//	SnapDisplay.showStructureHint
+//	Sprite.addVariable
+//	Sprite.deleteVariable
+//	TemplateArg.rename
 
 	public static void main(String[] args) throws IOException {
 		exportAndWrite(Spring2017.GuessingGame1);
