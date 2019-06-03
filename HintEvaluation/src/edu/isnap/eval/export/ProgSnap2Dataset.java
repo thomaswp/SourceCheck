@@ -399,7 +399,16 @@ public class ProgSnap2Dataset implements Closeable {
 				// TODO: Add file open/close
 			case AttemptAction.BLOCK_CLICK_RUN:
 			case AttemptAction.IDE_GREEN_FLAG_RUN:
-				EventType = "Run.Program";
+				EventType = "Run.Program"; break;
+			case AttemptAction.IDE_ADD_SPRITE:
+			case AttemptAction.IDE_DUPLICATE_SPRITE:
+				EventType = "File.Create"; break;
+			case AttemptAction.IDE_REMOVE_SPRITE:
+				EventType = "File.Delete"; break;
+			case AttemptAction.IDE_SELECT_SPRITE:
+				EventType = "File.Focus"; break;
+			case AttemptAction.SPRITE_SET_NAME:
+				EventType = "File.Rename"; break;
 			}
 
 			if (EventType == null) {
