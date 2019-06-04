@@ -8,6 +8,8 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.json.JSONObject;
+
 import edu.isnap.parser.elements.Snapshot;
 
 public class AttemptAction implements Serializable, Comparable<AttemptAction> {
@@ -127,5 +129,65 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 		int tsc = timestamp.compareTo(o.timestamp);
 		if (tsc != 0) return tsc;
 		return Integer.compare(id, o.id);
+	}
+
+	public ActionData getData() {
+		return new ActionData(data);
+	}
+
+	public static class ActionData {
+		public final String data;
+		private final JSONObject jsonData;
+
+		public ActionData(String dataString) {
+			this.data = dataString;
+			jsonData = (data == null || !data.startsWith("{")) ?
+					null : new JSONObject(data);
+		}
+
+		public String asString() {
+			if (data == null) return null;
+			String data = this.data;
+			if (data.startsWith("\"") && data.endsWith("\"")) {
+				data = data.substring(1, data.length() - 1);
+			}
+			return data;
+		}
+
+		public String getID() {
+			if (jsonData == null) return null;
+			JSONObject jsonData = this.jsonData;
+			if (jsonData.has("id") && jsonData.get("id") instanceof JSONObject) {
+				jsonData = jsonData.getJSONObject("id");
+			}
+			if (jsonData.has("id")) {
+				return jsonData.get("id").toString();
+			} else if (jsonData.has("guid")) {
+				return jsonData.getString("guid");
+			}
+			return null;
+		}
+
+		public String getSelector() {
+			if (jsonData == null) return null;
+			JSONObject jsonData = this.jsonData;
+			if (jsonData.has("id") && jsonData.get("id") instanceof JSONObject) {
+				jsonData = jsonData.getJSONObject("id");
+			}
+			return jsonData.optString("selector");
+		}
+
+		public String getHintDialogFeedback() {
+			if (data.length() > 4) {
+				return data.substring(2, data.length() - 2);
+			}
+			return asString();
+		}
+
+		public String getBlock() {
+			if (jsonData == null) return null;
+			return String.valueOf(jsonData.opt("block"));
+		}
+
 	}
 }

@@ -340,6 +340,7 @@ public class DatashopExporter {
 				}
 			}
 
+			// TODO: Use the new AttemptAction.ActionData methods
 			if (action.data != null && data.startsWith("{")) {
 				JSONObject jsonData = new JSONObject(data);
 				if (jsonData.has("id") && jsonData.get("id") instanceof JSONObject) {

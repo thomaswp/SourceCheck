@@ -19,6 +19,7 @@ import org.apache.commons.csv.CSVFormat;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
+import edu.isnap.dataset.AttemptAction.ActionData;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.datasets.Spring2017;
 import edu.isnap.node.ASTNode;
@@ -284,8 +285,10 @@ public class ProgSnap2Dataset implements Closeable {
 		public String InterventionType = null;
 		public String InterventionMessage = null;
 
-		public Event(int order, Assignment assignment, AssignmentAttempt attempt, AttemptAction action,
-				String eventType, String code, String pseudocode) {
+		public String spriteName, newSpriteName;
+
+		public Event(int order, Assignment assignment, AssignmentAttempt attempt,
+				AttemptAction action, String eventType, String code, String pseudocode) {
 			this.assignment = assignment;
 			this.action = action;
 			this.EventType = eventType;
@@ -340,6 +343,8 @@ public class ProgSnap2Dataset implements Closeable {
 			spreadsheet.put("EditType", EditType);
 			spreadsheet.put("InterventionType", InterventionType);
 			spreadsheet.put("InterventionMessage", InterventionMessage);
+			spreadsheet.put("FileID", spriteName); // TODO: rename
+			spreadsheet.put("SecondFileID", newSpriteName); // TODO: rename
 		}
 
 //		private Comparator<Event> comparator =
@@ -351,6 +356,78 @@ public class ProgSnap2Dataset implements Closeable {
 //		public int compareTo(Event o) {
 //			return comparator.compare(this, o);
 //		}
+	}
+
+	private interface DataConsumer {
+		void read(Event event, ActionData data);
+	}
+
+	private class EventConverter {
+		final String eventType;
+		final String[] actions;
+		private final List<DataConsumer> dataConsumers = new ArrayList<>();
+
+		EventConverter(String eventType, String... actions) {
+			this.eventType = eventType;
+			this.actions = actions;
+		}
+
+		EventConverter addData(DataConsumer dataConsumer) {
+			dataConsumers.add(dataConsumer);
+			return this;
+		}
+
+		Event createEvent(int order, Assignment assignment, AssignmentAttempt attempt,
+				AttemptAction action, String code, String pseudocode) {
+			Event event = new Event(order, assignment, attempt, action, eventType, code,
+					pseudocode);
+			dataConsumers.forEach(c -> c.read(event, action.getData()));
+			return event;
+		}
+	}
+
+	private final Map<String, EventConverter> converters = new HashMap<>();
+	{
+		DataConsumer getSpriteName = (Event event, ActionData data) -> {
+			event.spriteName = data.asString();
+		};
+
+		List<EventConverter> converters = new ArrayList<>();
+
+		converters.add(new EventConverter("Project.Open",
+				AttemptAction.IDE_OPEN_PROJECT,
+				AttemptAction.IDE_OPEN_PROJECT_STRING,
+				AttemptAction.IDE_NEW_PROJECT));
+
+		converters.add(new EventConverter("Run.Program",
+				AttemptAction.BLOCK_CLICK_RUN,
+				AttemptAction.IDE_GREEN_FLAG_RUN));
+
+		converters.add(new EventConverter("File.Create",
+				AttemptAction.IDE_ADD_SPRITE,
+				AttemptAction.IDE_DUPLICATE_SPRITE)
+				.addData(getSpriteName));
+
+		converters.add(new EventConverter("File.Delete",
+				AttemptAction.IDE_REMOVE_SPRITE)
+				.addData(getSpriteName));
+
+		converters.add(new EventConverter("File.Focus",
+				AttemptAction.IDE_SELECT_SPRITE)
+				.addData(getSpriteName));
+
+		converters.add(new EventConverter("File.Rename",
+				AttemptAction.SPRITE_SET_NAME)
+				.addData((Event event, ActionData data) -> {
+						// TODO
+					}
+				));
+
+		for (EventConverter converter : converters) {
+			for (String action : converter.actions) {
+				this.converters.put(action, converter);
+			}
+		}
 	}
 
 	private void export(Assignment assignment, AssignmentAttempt attempt, Spreadsheet spreadsheet)
@@ -387,19 +464,14 @@ public class ProgSnap2Dataset implements Closeable {
 			}
 			lastSessionID = action.sessionID;
 
-			String EventType = null;
-			switch (message) {
-			case AttemptAction.IDE_OPEN_PROJECT:
-			case AttemptAction.IDE_OPEN_PROJECT_STRING:
+			if (message.equals(AttemptAction.IDE_OPEN_PROJECT) ||
+					message.equals(AttemptAction.IDE_OPEN_PROJECT_STRING)) {
 				rows.add(new Event(order++, assignment, attempt, action, "Project.Close",
 						lastCode, humanReadableCode));
-			case AttemptAction.IDE_NEW_PROJECT:
-				EventType = "Project.Open";
-				break;
-				// TODO: Add file open/close
-			case AttemptAction.BLOCK_CLICK_RUN:
-			case AttemptAction.IDE_GREEN_FLAG_RUN:
-				EventType = "Run.Program"; break;
+			}
+
+			String EventType = null;
+			switch (message) {
 			case AttemptAction.IDE_ADD_SPRITE:
 			case AttemptAction.IDE_DUPLICATE_SPRITE:
 				EventType = "File.Create"; break;
@@ -411,12 +483,11 @@ public class ProgSnap2Dataset implements Closeable {
 				EventType = "File.Rename"; break;
 			}
 
-			if (EventType == null) {
-				unexportedMessages.add(action.message);
+			if (converters.containsKey(message)) {
+				rows.add(converters.get(message).createEvent(order, assignment, attempt, action,
+						lastCode, humanReadableCode));
 			} else {
-				Event mainEvent = new Event(order++, assignment, attempt, action, EventType,
-						lastCode, humanReadableCode);
-				rows.add(mainEvent);
+				unexportedMessages.add(action.message);
 			}
 
 
