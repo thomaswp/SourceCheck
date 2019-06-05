@@ -343,8 +343,8 @@ public class ProgSnap2Dataset implements Closeable {
 			spreadsheet.put("EditType", EditType);
 			spreadsheet.put("InterventionType", InterventionType);
 			spreadsheet.put("InterventionMessage", InterventionMessage);
-			spreadsheet.put("FileID", spriteName); // TODO: rename
-			spreadsheet.put("SecondFileID", newSpriteName); // TODO: rename
+			spreadsheet.put("FilePath", spriteName); // TODO: May need to update to CodeStateSection
+			spreadsheet.put("NewFilePath", newSpriteName); // TODO: May need to update
 		}
 
 //		private Comparator<Event> comparator =
