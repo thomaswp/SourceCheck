@@ -269,30 +269,40 @@ public class ProgSnap2Dataset implements Closeable {
 
 		private final Assignment assignment;
 		private final AttemptAction action;
-		private Integer EventID = null;
 
 		// Required columns
-		public final String EventType;
-		public final String SubjectID;
-		public final Integer CodeStateID;
-		public final Integer Order;
+		private Integer eventID = null;
+		public final String eventType;
+		public final String subjectID;
+		public final Integer codeStateID;
+		public final Integer order;
 
 		// Optional columns
-		public Event ParentEvent = null;
-		public String CodeStateSection = null;
-		public String EventInitiator = null;
-		public String EditType = null;
-		public String InterventionType = null;
-		public String InterventionMessage = null;
+		public String projectID = null;
+		public Event parentEvent = null;
+		public String resourceID = null; // For Block.showHelp events
+		public String codeStateSection = null;
+		public String eventInitiator = null;
+		public String editType = null;
+		public String interventionType = null;
+		public String interventionMessage = null;
+		public String newSpriteName = null;
+		public String editTrigger = null;
+		public String sourceLocation = null;
+		public Double score = null;
+		public String programErrorOutput = null;
 
-		public String spriteName, newSpriteName;
+		// X-Columns
+		public String editSubtype = null;
+		public String codeClickedForRun = null;
 
 		public Event(int order, Assignment assignment, AssignmentAttempt attempt,
 				AttemptAction action, String eventType, String code, String pseudocode) {
 			this.assignment = assignment;
 			this.action = action;
-			this.EventType = eventType;
-			this.Order = order;
+			this.eventType = eventType;
+			this.order = order;
+			this.projectID = attempt.id;
 
 			String subjectID = attempt.userID();
 			if (subjectID == null || subjectID.isEmpty()) {
@@ -302,7 +312,7 @@ public class ProgSnap2Dataset implements Closeable {
 				subjectID = subjectID.substring(subjectID.length() - 16, subjectID.length());
 			}
 			users.increment(subjectID);
-			this.SubjectID = subjectID;
+			this.subjectID = subjectID;
 
 			Integer codeStateID = codeStates.get(code);
 			if (codeStateID == null) {
@@ -314,37 +324,48 @@ public class ProgSnap2Dataset implements Closeable {
 				codeStateTable.put("Code", code);
 				codeStateTable.put("Pseudocode", pseudocode);
 			}
-			this.CodeStateID = codeStateID;
+			this.codeStateID = codeStateID;
 		}
 
 		public void write(Spreadsheet spreadsheet, int eventID) {
-			if (ParentEvent != null && ParentEvent.EventID == null) {
+			if (parentEvent != null && parentEvent.eventID == null) {
 				throw new RuntimeException("Parents should always be logged before children!");
 			}
 
-			EventID = eventID;
+			this.eventID = eventID;
 
 			spreadsheet.newRow();
-			spreadsheet.put("EventType", EventType);
-			spreadsheet.put("EventID", EventID);
-			spreadsheet.put("Order", Order);
-			spreadsheet.put("SubjectID", SubjectID);
+			// Required Columns
+			spreadsheet.put("EventType", eventType);
+			spreadsheet.put("EventID", this.eventID);
+			spreadsheet.put("Order", order);
+			spreadsheet.put("SubjectID", subjectID);
 			spreadsheet.put("Toolnstances", assignment.dataset.getToolInstances());
-			spreadsheet.put("CodeStateID", CodeStateID);
-			spreadsheet.put("ParentEventID", ParentEvent == null ? null : ParentEvent.EventID);
+			spreadsheet.put("CodeStateID", codeStateID);
+			// Recommended All-Event Columns
 			spreadsheet.put("ClientTimestamp", DateFormat.format(action.timestamp));
 			spreadsheet.put("ClientTimezone", TimeZoneFormat.format(action.timestamp));
 			spreadsheet.put("SessionID", action.sessionID);
+			spreadsheet.put("ProjectID", projectID);
 			spreadsheet.put("CourseID", assignment.dataset.courseID());
 			spreadsheet.put("TermID", assignment.dataset.getName());
 			spreadsheet.put("AssignmentID", assignment.name);
-			spreadsheet.put("CodeStateSection", CodeStateSection);
-			spreadsheet.put("EventInitiator", EventInitiator);
-			spreadsheet.put("EditType", EditType);
-			spreadsheet.put("InterventionType", InterventionType);
-			spreadsheet.put("InterventionMessage", InterventionMessage);
-			spreadsheet.put("FilePath", spriteName); // TODO: May need to update to CodeStateSection
-			spreadsheet.put("NewFilePath", newSpriteName); // TODO: May need to update
+			// Event-specific Columns
+			spreadsheet.put("ParentEventID", parentEvent == null ? null : parentEvent.eventID);
+			spreadsheet.put("ResourceID", resourceID);
+			spreadsheet.put("CodeStateSection", codeStateSection);
+			spreadsheet.put("EventInitiator", eventInitiator);
+			spreadsheet.put("NewFileLocation", newSpriteName);
+			spreadsheet.put("EditType", editType);
+			spreadsheet.put("EditTrigger", editTrigger);
+			spreadsheet.put("SourceLocation", sourceLocation);
+			spreadsheet.put("Score", score);
+			spreadsheet.put("ProgramErrorOutput", programErrorOutput);
+			spreadsheet.put("InterventionType", interventionType);
+			spreadsheet.put("InterventionMessage", interventionMessage);
+			// X-Columns
+			spreadsheet.put("X-EditSubtype", editSubtype);
+			spreadsheet.put("X-CodeClickedForRun", codeClickedForRun);
 		}
 
 //		private Comparator<Event> comparator =
@@ -389,7 +410,7 @@ public class ProgSnap2Dataset implements Closeable {
 	private final Map<String, EventConverter> converters = new HashMap<>();
 	{
 		DataConsumer getSpriteName = (Event event, ActionData data) -> {
-			event.spriteName = data.asString();
+			event.codeStateSection  = data.asString();
 		};
 
 		List<EventConverter> converters = new ArrayList<>();
@@ -419,9 +440,55 @@ public class ProgSnap2Dataset implements Closeable {
 		converters.add(new EventConverter("File.Rename",
 				AttemptAction.SPRITE_SET_NAME)
 				.addData((Event event, ActionData data) -> {
-						// TODO
+						event.newSpriteName = data.asString();
 					}
 				));
+
+		// Block edit events only
+		Map<String, String> blockEditActionMap = new HashMap<>();
+		blockEditActionMap.put(AttemptAction.BLOCK_CREATED, "Insert");
+		blockEditActionMap.put(AttemptAction.BLOCK_DUPLICATE_ALL, "Paste");
+		blockEditActionMap.put(AttemptAction.BLOCK_DUPLICATE_BLOCK, "Paste");
+		blockEditActionMap.put(AttemptAction.BLOCK_GRABBED, "Move");
+		blockEditActionMap.put(AttemptAction.BLOCK_SNAPPED, "Move");
+		blockEditActionMap.put(AttemptAction.BLOCK_USER_DESTROY, "Delete");
+		blockEditActionMap.put(AttemptAction.BLOCK_DRAG_DESTROY, "Delete");
+		blockEditActionMap.put(AttemptAction.BLOCK_RELABEL, "Replace");
+		blockEditActionMap.put(AttemptAction.BLOCK_RENAME, "Replace");
+		blockEditActionMap.put(AttemptAction.BLOCK_RINGIFY, "Insert");
+		blockEditActionMap.put(AttemptAction.BLOCK_UNRINGIFY, "Delete");
+		blockEditActionMap.put(AttemptAction.BLOCK_REFACTOR_VAR, "Replace");
+
+		String[] blockEditActions = blockEditActionMap.keySet().stream()
+				.toArray(x -> new String[x]);
+
+		converters.add(new EventConverter("File.Edit", blockEditActions)
+				.addData((Event event, ActionData data) -> {
+						event.codeStateSection = ""; // TODO: get block and sprite
+						event.editType = blockEditActionMap.get(data.parent.message);
+						event.editTrigger = "SubjectDirectAction";
+						event.editSubtype = data.parent.message;
+						event.sourceLocation = ""; // TODO: get block and sprite
+					}
+				));
+
+		converters.add(new EventConverter("Run.Program",
+				AttemptAction.BLOCK_CLICK_RUN,
+				AttemptAction.IDE_GREEN_FLAG_RUN)
+				.addData((Event event, ActionData data) -> {
+						event.codeClickedForRun = ""; // TODO: get block
+						event.programErrorOutput = ""; // TODO: get subsequent error events
+					}
+				));
+
+		converters.add(new EventConverter("Resource.View",
+				AttemptAction.BLOCK_SHOW_HELP)
+				.addData((Event event, ActionData data) -> {
+						event.resourceID = data.getSelector();
+					}
+				));
+
+		// TODO: Handle hints/intervention
 
 		for (EventConverter converter : converters) {
 			for (String action : converter.actions) {
@@ -616,9 +683,14 @@ public class ProgSnap2Dataset implements Closeable {
 			if (i == attempt.rows.size() - 1) {
 				rows.add(new Event(order++, assignment, attempt, action, "Project.Close",
 						lastCode, humanReadableCode));
-				if (attempt.isSubmitted())
-				rows.add(new Event(order++, assignment, attempt, action, "Project.Submit",
-						lastCode, humanReadableCode));
+				if (attempt.isSubmitted()) {
+					Event submitEvent = new Event(order++, assignment, attempt, action,
+							"Project.Submit", lastCode, humanReadableCode);
+					rows.add(submitEvent);
+					if (attempt.grade != null) {
+						submitEvent.score = attempt.grade.average(); // TODO: Get actual grade
+					}
+				}
 			}
 		}
 	}

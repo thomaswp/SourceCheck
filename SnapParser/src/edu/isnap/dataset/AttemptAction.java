@@ -29,6 +29,14 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	public final static String BLOCK_DUPLICATE_BLOCK = "Block.duplicateBlock";
 	public final static String BLOCK_CREATED = "Block.created";
 	public final static String BLOCK_SNAPPED = "Block.snapped";
+	public final static String BLOCK_USER_DESTROY = "Block.userDestroy";
+	public final static String BLOCK_DRAG_DESTROY = "Block.dragDestroy";
+	public final static String BLOCK_RELABEL = "Block.relabel";
+	public final static String BLOCK_RENAME = "Block.rename";
+	public final static String BLOCK_RINGIFY = "Block.ringify";
+	public final static String BLOCK_UNRINGIFY = "Block.unringify";
+	public final static String BLOCK_REFACTOR_VAR = "Block.refactorVar";
+	public final static String BLOCK_SHOW_HELP = "Block.showHelp";
 	public static final String IDE_ADD_SPRITE = "IDE.addSprite";
 	public static final String IDE_CHANGE_CATEGORY = "IDE.changeCategory";
 	public final static String IDE_GREEN_FLAG_RUN = "IDE.greenFlag";
@@ -135,8 +143,9 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 		return new ActionData(data);
 	}
 
-	public static class ActionData {
+	public class ActionData {
 		public final String data;
+		public final AttemptAction parent = AttemptAction.this;
 		private final JSONObject jsonData;
 
 		public ActionData(String dataString) {
@@ -169,7 +178,7 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 		}
 
 		public String getSelector() {
-			if (jsonData == null) return null;
+			if (jsonData == null) return asString();
 			JSONObject jsonData = this.jsonData;
 			if (jsonData.has("id") && jsonData.get("id") instanceof JSONObject) {
 				jsonData = jsonData.getJSONObject("id");
