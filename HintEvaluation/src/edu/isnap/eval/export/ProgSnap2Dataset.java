@@ -8,7 +8,9 @@ import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -23,9 +25,9 @@ import edu.isnap.dataset.AttemptAction.ActionData;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.datasets.Spring2017;
 import edu.isnap.node.ASTNode;
+import edu.isnap.node.INode;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
-import edu.isnap.parser.elements.Snapshot;
 import edu.isnap.rating.RatingConfig;
 import edu.isnap.util.Spreadsheet;
 import edu.isnap.util.map.CountMap;
@@ -152,6 +154,12 @@ public class ProgSnap2Dataset implements Closeable {
 	private final static String EVENT_ORDER_SCOPE_COLUMNS =
 			"TermID;CourseID;AssignmentID;SubjectID";
 	private final static String CODE_STATE_REPRESENTATION = "Table";
+
+
+	private final static Set<String> SECTION_TYPES = new HashSet<String>(Arrays.asList(
+			new String[] {
+					"sprite", "stage", "customBlock", "snapshot", "Snap!shot"
+			}));
 
 	private final String dir;
 	private final Spreadsheet mainTable;
@@ -282,7 +290,7 @@ public class ProgSnap2Dataset implements Closeable {
 		public Event parentEvent = null;
 		public String resourceID = null; // For Block.showHelp events
 		public String codeStateSection = null;
-		public String eventInitiator = null;
+		public String eventInitiator = "User"; // Default to user-initiation, and override if needed
 		public String editType = null;
 		public String interventionType = null;
 		public String interventionMessage = null;
@@ -294,7 +302,8 @@ public class ProgSnap2Dataset implements Closeable {
 
 		// X-Columns
 		public String editSubtype = null;
-		public String codeClickedForRun = null;
+		public String blockSelector = null;
+		public String blockID = null;
 
 		public Event(int order, Assignment assignment, AssignmentAttempt attempt,
 				AttemptAction action, String eventType, String code, String pseudocode) {
@@ -365,7 +374,8 @@ public class ProgSnap2Dataset implements Closeable {
 			spreadsheet.put("InterventionMessage", interventionMessage);
 			// X-Columns
 			spreadsheet.put("X-EditSubtype", editSubtype);
-			spreadsheet.put("X-CodeClickedForRun", codeClickedForRun);
+			spreadsheet.put("X-BlockID", blockID);
+			spreadsheet.put("X-BlockSelector", blockSelector);
 		}
 
 //		private Comparator<Event> comparator =
@@ -410,7 +420,7 @@ public class ProgSnap2Dataset implements Closeable {
 	private final Map<String, EventConverter> converters = new HashMap<>();
 	{
 		DataConsumer getSpriteName = (Event event, ActionData data) -> {
-			event.codeStateSection  = data.asString();
+			event.codeStateSection  = "sprite:" + data.asString(); // TODO: need to filter values
 		};
 
 		List<EventConverter> converters = new ArrayList<>();
@@ -440,7 +450,8 @@ public class ProgSnap2Dataset implements Closeable {
 		converters.add(new EventConverter("File.Rename",
 				AttemptAction.SPRITE_SET_NAME)
 				.addData((Event event, ActionData data) -> {
-						event.newSpriteName = data.asString();
+						// TODO: need to filter values
+						event.newSpriteName = "sprite: " + data.asString();
 					}
 				));
 
@@ -464,19 +475,21 @@ public class ProgSnap2Dataset implements Closeable {
 
 		converters.add(new EventConverter("File.Edit", blockEditActions)
 				.addData((Event event, ActionData data) -> {
-						event.codeStateSection = ""; // TODO: get block and sprite
 						event.editType = blockEditActionMap.get(data.parent.message);
 						event.editTrigger = "SubjectDirectAction";
 						event.editSubtype = data.parent.message;
-						event.sourceLocation = ""; // TODO: get block and sprite
+						event.blockID = data.getID();
+						event.blockSelector = data.getSelector();
 					}
 				));
+
+		// TODO: Add other edit events
 
 		converters.add(new EventConverter("Run.Program",
 				AttemptAction.BLOCK_CLICK_RUN,
 				AttemptAction.IDE_GREEN_FLAG_RUN)
 				.addData((Event event, ActionData data) -> {
-						event.codeClickedForRun = ""; // TODO: get block
+						event.blockID = data.getID();
 						event.programErrorOutput = ""; // TODO: get subsequent error events
 					}
 				));
@@ -500,7 +513,7 @@ public class ProgSnap2Dataset implements Closeable {
 	private void export(Assignment assignment, AssignmentAttempt attempt, Spreadsheet spreadsheet)
 			throws IOException {
 
-		Snapshot lastSnapshot = null;
+		ASTNode lastASTNode = null;
 		String lastCode = "";
 		String lastSessionID = "";
 
@@ -509,19 +522,14 @@ public class ProgSnap2Dataset implements Closeable {
 			AttemptAction action = attempt.rows.get(i);
 
 			String message = action.message;
-			String data = action.data;
-
-			String selection = "";
-
 			String humanReadableCode = "";
 
 			if (action.snapshot != null) {
-				ASTNode ast = JsonAST.toAST(action.snapshot, false);
-				String newCode = ast.prettyPrint(true, RatingConfig.Snap);
+				lastASTNode = JsonAST.toAST(action.snapshot, false);
+				String newCode = lastASTNode.prettyPrint(true, RatingConfig.Snap);
 				if (!newCode.equals(lastCode)) {
-					lastCode = ast.toJSON().toString();
+					lastCode = lastASTNode.toJSON().toString();
 					humanReadableCode = newCode;
-					lastSnapshot = action.snapshot;
 				}
 			}
 
@@ -537,25 +545,27 @@ public class ProgSnap2Dataset implements Closeable {
 						lastCode, humanReadableCode));
 			}
 
-			String EventType = null;
-			switch (message) {
-			case AttemptAction.IDE_ADD_SPRITE:
-			case AttemptAction.IDE_DUPLICATE_SPRITE:
-				EventType = "File.Create"; break;
-			case AttemptAction.IDE_REMOVE_SPRITE:
-				EventType = "File.Delete"; break;
-			case AttemptAction.IDE_SELECT_SPRITE:
-				EventType = "File.Focus"; break;
-			case AttemptAction.SPRITE_SET_NAME:
-				EventType = "File.Rename"; break;
+			if (!converters.containsKey(message)) {
+				unexportedMessages.add(action.message);
+			} else {
+
+				Event event = converters.get(message).createEvent(order, assignment, attempt,
+						action, lastCode, humanReadableCode);
+				rows.add(event);
+
+
+				if (event.blockID != null && lastASTNode != null) {
+					INode block = lastASTNode.search(
+							node -> event.blockID.equals(node.id())
+					);
+					if (block != null) {
+						event.sourceLocation = getSourceLocation(block, lastASTNode);
+						event.codeStateSection = getCodeStateSection(block, lastASTNode);
+						if (event.blockSelector == null) event.blockSelector = block.type();
+					}
+				}
 			}
 
-			if (converters.containsKey(message)) {
-				rows.add(converters.get(message).createEvent(order, assignment, attempt, action,
-						lastCode, humanReadableCode));
-			} else {
-				unexportedMessages.add(action.message);
-			}
 
 
 //			if (action.data != null && data.startsWith("{")) {
@@ -668,11 +678,6 @@ public class ProgSnap2Dataset implements Closeable {
 //					selection = selection.replace(toStrip, JsonAST.valueReplacements.get(toStrip));
 //				}
 //			}
-//
-//			mainEvent.ParentEvent = null;
-//			mainEvent.CodeStateSection = selection;
-//			mainEvent.EventInitiator = null;
-//			mainEvent.EditType = null;
 
 			if (i + 1 >= attempt.rows.size() ||
 					!attempt.rows.rows.get(i + 1).sessionID.equals(lastSessionID)) {
@@ -693,5 +698,24 @@ public class ProgSnap2Dataset implements Closeable {
 				}
 			}
 		}
+	}
+
+	private static String getCodeStateSection(INode node, ASTNode root) {
+		while (node != null && !SECTION_TYPES.contains(node.type())) {
+			node = node.parent();
+		}
+		if (node == null) return null;
+		return node.type() + ":" + ("customBlock".equals(node.type()) ? node.id() : node.value());
+	}
+
+	private String getSourceLocation(INode node, INode root) {
+		if (node == null) return null;
+		String location = "";
+		while (node.parent() != null) {
+			location = ":" + node.index() + location;
+			node = node.parent();
+		}
+		location = "Tree" + location;
+		return location;
 	}
 }
