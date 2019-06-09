@@ -11,134 +11,35 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.apache.commons.csv.CSVFormat;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
+import edu.isnap.ctd.graph.Node;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.AttemptAction.ActionData;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.datasets.Spring2017;
+import edu.isnap.eval.user.CheckHintUsage;
+import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.node.ASTNode;
 import edu.isnap.node.INode;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
+import edu.isnap.parser.elements.Script;
+import edu.isnap.parser.elements.util.IHasID;
 import edu.isnap.rating.RatingConfig;
 import edu.isnap.util.Spreadsheet;
 import edu.isnap.util.map.CountMap;
 
 public class ProgSnap2Dataset implements Closeable {
-
-//	private final static String[] MAIN_EVENT_TABLE_HEADER = {
-//			"EventType",
-//			"EventID",
-//			"Order",
-//			"SubjectID",
-//			"Toolnstances",
-//			"CodeStateID",
-//			"ParentEventID",
-//			"ClientTimestamp",
-//			"ClientTimezone",
-//			"SessionID",
-//			"CourseID",
-//			"TermID",
-//			"AssignmentID",
-//			"ExperimentalCondition",
-//			"CodeStateSection",
-//			"EventInitiator",
-//			"EditType",
-//			"InterventionType",
-//			"InterventionMessage",
-//	};
-//
-//	private final static String[] CODE_STATES_HEADER = {
-//			"ID",
-//			"Code",
-//	};
-//
-//	private final static String[] SUBJECT_ASSIGNMENT_LINK_HEADER = {
-//			"SubjectID",
-//			"AssignmentID",
-//			"Grade",
-//			"NumberOfGraders",
-//	};
-//
-//	private final static String[] EVENT_LINK_HEADER = {
-//			"EventID",
-//			"Relevance",
-//			"Progress",
-//			"Interpretability",
-//	};
-
-	// Unlogged events
-//	Assignment.setID
-//	Assignment.setIDFrom
-//	Block.clickStopRun
-//	Block.created
-//	Block.dragDestroy
-//	Block.duplicateAll
-//	Block.grabbed
-//	Block.hidePrimitive
-//	Block.relabel
-//	Block.showHelp
-//	Block.snapped
-//	Block.userDestroy
-//	BlockEditor.apply
-//	BlockEditor.cancel
-//	BlockEditor.ok
-//	BlockEditor.start
-//	BlockEditor.updateBlockLabel
-//	BlockTypeDialog.cancel
-//	BlockTypeDialog.changeBlockType
-//	BlockTypeDialog.newBlock
-//	BlockTypeDialog.ok
-//	Error
-//	HighlightDialogBoxMorph.cancelShowOnRun
-//	HighlightDialogBoxMorph.destroy
-//	HighlightDialogBoxMorph.promptShowOnRun
-//	HighlightDialogBoxMorph.showOnRun
-//	HighlightDialogBoxMorph.toggleAutoClear
-//	HighlightDialogBoxMorph.toggleInsert
-//	HighlightDialogBoxMorph.toggleShowOnRun
-//	HighlightDisplay.autoClear
-//	HighlightDisplay.checkMyWork
-//	HighlightDisplay.informNoHints
-//	HighlightDisplay.promptShowBlockHints
-//	HighlightDisplay.promptShowInserts
-//	HighlightDisplay.showInsertsFromPrompt
-//	HighlightDisplay.startHighlight
-//	HighlightDisplay.stopHighlight
-//	HintDialogBox.destroy
-//	HintProvider.processHints
-//	IDE.changeCategory
-//	IDE.deleteCustomBlock
-//	IDE.exportProject
-//	IDE.opened
-//	IDE.pause
-//	IDE.removeSprite
-//	IDE.rotationStyleChanged
-//	IDE.saveProject
-//	IDE.selectSprite
-//	IDE.setSpriteTab
-//	IDE.stop
-//	IDE.toggleAppMode
-//	InputSlot.edited
-//	InputSlot.menuItemSelected
-//	MultiArg.addInput
-//	MultiArg.removeInput
-//	ProjectDialog.setSource
-//	ProjectDialog.shown
-//	SnapDisplay.showBlockHint
-//	SnapDisplay.showScriptHint
-//	SnapDisplay.showStructureHint
-//	Sprite.addVariable
-//	Sprite.deleteVariable
-//	TemplateArg.rename
 
 	public static void main(String[] args) throws IOException {
 		exportAndWrite(Spring2017.GuessingGame1);
@@ -156,7 +57,7 @@ public class ProgSnap2Dataset implements Closeable {
 	private final static String CODE_STATE_REPRESENTATION = "Table";
 
 
-	private final static Set<String> SECTION_TYPES = new HashSet<String>(Arrays.asList(
+	private final static Set<String> SECTION_TYPES = new HashSet<>(Arrays.asList(
 			new String[] {
 					"sprite", "stage", "customBlock", "snapshot", "Snap!shot"
 			}));
@@ -166,7 +67,7 @@ public class ProgSnap2Dataset implements Closeable {
 	private final Spreadsheet codeStateTable;
 	private final Spreadsheet assignmentLinkTable;
 
-	private final Set<String> unexportedMessages = new LinkedHashSet<>();
+	private final Set<String> unexportedMessages = new TreeSet<>();
 	private final CountMap<String> users = new CountMap<>();
 
 	private final List<Event> rows = new ArrayList<>();
@@ -286,24 +187,26 @@ public class ProgSnap2Dataset implements Closeable {
 		public final Integer order;
 
 		// Optional columns
-		public String projectID = null;
-		public Event parentEvent = null;
-		public String resourceID = null; // For Block.showHelp events
-		public String codeStateSection = null;
+		public String projectID;
+		public Event parentEvent;
+		public String resourceID; // For Block.showHelp events
+		public String codeStateSection;
 		public String eventInitiator = "User"; // Default to user-initiation, and override if needed
-		public String editType = null;
-		public String interventionType = null;
-		public String interventionMessage = null;
-		public String newSpriteName = null;
-		public String editTrigger = null;
-		public String sourceLocation = null;
-		public Double score = null;
-		public String programErrorOutput = null;
+		public String editType;
+		public String interventionType;
+		public String interventionMessage;
+		public String newSpriteName;
+		public String editTrigger;
+		public String sourceLocation;
+		public Double score;
+		public String programErrorOutput;
 
 		// X-Columns
-		public String editSubtype = null;
-		public String blockSelector = null;
-		public String blockID = null;
+		public String editSubtype;
+		public String blockSelector;
+		public String blockID;
+		public String blockCategorySelected;
+		public String hintData;
 
 		public Event(int order, Assignment assignment, AssignmentAttempt attempt,
 				AttemptAction action, String eventType, String code, String pseudocode) {
@@ -376,6 +279,8 @@ public class ProgSnap2Dataset implements Closeable {
 			spreadsheet.put("X-EditSubtype", editSubtype);
 			spreadsheet.put("X-BlockID", blockID);
 			spreadsheet.put("X-BlockSelector", blockSelector);
+			spreadsheet.put("X-BlockCategorySelected", blockCategorySelected);
+			spreadsheet.put("X-HintData", hintData);
 		}
 
 //		private Comparator<Event> comparator =
@@ -430,10 +335,6 @@ public class ProgSnap2Dataset implements Closeable {
 				AttemptAction.IDE_OPEN_PROJECT_STRING,
 				AttemptAction.IDE_NEW_PROJECT));
 
-		converters.add(new EventConverter("Run.Program",
-				AttemptAction.BLOCK_CLICK_RUN,
-				AttemptAction.IDE_GREEN_FLAG_RUN));
-
 		converters.add(new EventConverter("File.Create",
 				AttemptAction.IDE_ADD_SPRITE,
 				AttemptAction.IDE_DUPLICATE_SPRITE)
@@ -455,44 +356,70 @@ public class ProgSnap2Dataset implements Closeable {
 					}
 				));
 
-		// Block edit events only
-		Map<String, String> blockEditActionMap = new HashMap<>();
-		blockEditActionMap.put(AttemptAction.BLOCK_CREATED, "Insert");
-		blockEditActionMap.put(AttemptAction.BLOCK_DUPLICATE_ALL, "Paste");
-		blockEditActionMap.put(AttemptAction.BLOCK_DUPLICATE_BLOCK, "Paste");
-		blockEditActionMap.put(AttemptAction.BLOCK_GRABBED, "Move");
-		blockEditActionMap.put(AttemptAction.BLOCK_SNAPPED, "Move");
-		blockEditActionMap.put(AttemptAction.BLOCK_USER_DESTROY, "Delete");
-		blockEditActionMap.put(AttemptAction.BLOCK_DRAG_DESTROY, "Delete");
-		blockEditActionMap.put(AttemptAction.BLOCK_RELABEL, "Replace");
-		blockEditActionMap.put(AttemptAction.BLOCK_RENAME, "Replace");
-		blockEditActionMap.put(AttemptAction.BLOCK_RINGIFY, "Insert");
-		blockEditActionMap.put(AttemptAction.BLOCK_UNRINGIFY, "Delete");
-		blockEditActionMap.put(AttemptAction.BLOCK_REFACTOR_VAR, "Replace");
+		Map<String, String> editActionMap = new HashMap<>();
+		// Block edit events
+		editActionMap.put(AttemptAction.BLOCK_CREATED, "Insert");
+		editActionMap.put(AttemptAction.BLOCK_DUPLICATE_ALL, "Paste");
+		editActionMap.put(AttemptAction.BLOCK_DUPLICATE_BLOCK, "Paste");
+		editActionMap.put(AttemptAction.BLOCK_GRABBED, "Move");
+		editActionMap.put(AttemptAction.BLOCK_SNAPPED, "Move");
+		editActionMap.put(AttemptAction.BLOCK_USER_DESTROY, "Delete");
+		editActionMap.put(AttemptAction.BLOCK_DRAG_DESTROY, "Delete");
+		editActionMap.put(AttemptAction.BLOCK_RELABEL, "Replace");
+		editActionMap.put(AttemptAction.BLOCK_RENAME, "Replace");
+		editActionMap.put(AttemptAction.BLOCK_RINGIFY, "Insert");
+		editActionMap.put(AttemptAction.BLOCK_UNRINGIFY, "Delete");
+		editActionMap.put(AttemptAction.BLOCK_REFACTOR_VAR, "Replace");
+		// Input (including multiarg and template) events (which also have block IDs)
+		editActionMap.put(AttemptAction.INPUT_SLOT_EDITED, "Replace");
+		editActionMap.put(AttemptAction.INPUT_SLOT_MENU_ITEM_SELECTED, "Replace");
+		editActionMap.put(AttemptAction.MULTI_ARG_ADD_INPUT, "Insert");
+		editActionMap.put(AttemptAction.MULTI_ARG_REMOVE_INPUT, "Delete");
+		editActionMap.put(AttemptAction.TEMPLATE_ARG_RENAME, "Replace");
+		// Variables
+		editActionMap.put(AttemptAction.SPRITE_ADD_VARIABLE, "Insert");
+		editActionMap.put(AttemptAction.SPRITE_DELETE_VARIABLE, "Delete");
 
-		String[] blockEditActions = blockEditActionMap.keySet().stream()
+		String[] blockEditActions = editActionMap.keySet().stream()
 				.toArray(x -> new String[x]);
 
+		DataConsumer getBlockIDAndSelector = (Event event, ActionData data) -> {
+			event.blockID = data.getBlockID();
+			event.blockSelector = data.getSelector();
+		};
+
 		converters.add(new EventConverter("File.Edit", blockEditActions)
+				.addData(getBlockIDAndSelector)
 				.addData((Event event, ActionData data) -> {
-						event.editType = blockEditActionMap.get(data.parent.message);
+						event.editType = editActionMap.get(data.parent.message);
 						event.editTrigger = "SubjectDirectAction";
 						event.editSubtype = data.parent.message;
-						event.blockID = data.getID();
-						event.blockSelector = data.getSelector();
+
 					}
 				));
 
-		// TODO: Add other edit events
+		Map<String, String> customBlockEditActionMap = new HashMap<>();
+		customBlockEditActionMap.put(AttemptAction.BLOCK_EDITOR_APPLY, "Replace");
+		customBlockEditActionMap.put(AttemptAction.BLOCK_EDITOR_CANCEL, "Replace");
+		customBlockEditActionMap.put(AttemptAction.BLOCK_EDITOR_START, "Insert");
+		customBlockEditActionMap.put(AttemptAction.IDE_DELETE_CUSTOM_BLOCK, "Delete");
 
-		converters.add(new EventConverter("Run.Program",
-				AttemptAction.BLOCK_CLICK_RUN,
-				AttemptAction.IDE_GREEN_FLAG_RUN)
+		String[] customBlockEditActions = customBlockEditActionMap.keySet().stream()
+				.toArray(x -> new String[x]);
+
+		converters.add(new EventConverter("File.Edit", customBlockEditActions)
 				.addData((Event event, ActionData data) -> {
-						event.blockID = data.getID();
-						event.programErrorOutput = ""; // TODO: get subsequent error events
+						event.editType = customBlockEditActionMap.get(data.parent.message);
+						event.editTrigger = "SubjectDirectAction";
+						event.editSubtype = data.parent.message;
+						String guid = data.getBlockDefinitionGUID();
+						if (guid != null) event.codeStateSection = "customBlock:" + guid;
 					}
 				));
+
+		converters.add(new EventConverter("File.Save", // TODO: Confirm whether X-File.Save
+				AttemptAction.IDE_EXPORT_PROJECT,
+				AttemptAction.IDE_SAVE_PROJECT));
 
 		converters.add(new EventConverter("Resource.View",
 				AttemptAction.BLOCK_SHOW_HELP)
@@ -501,11 +428,61 @@ public class ProgSnap2Dataset implements Closeable {
 					}
 				));
 
-		// TODO: Handle hints/intervention
+		// TODO: Get and add run errors
+		converters.add(new EventConverter("Run.Program",
+				AttemptAction.BLOCK_CLICK_RUN,
+				AttemptAction.IDE_GREEN_FLAG_RUN)
+				.addData(getBlockIDAndSelector));
+
+		// X-events:
+
+		converters.add(new EventConverter("X-Run.Stop",
+				AttemptAction.BLOCK_CLICK_STOP_RUN,
+				AttemptAction.IDE_STOP)
+				.addData(getBlockIDAndSelector));
+		converters.add(new EventConverter("X-Run.Pause", AttemptAction.IDE_PAUSE));
+		converters.add(new EventConverter("X-Run.Unpause", AttemptAction.IDE_UNPAUSE));
+
+		converters.add(new EventConverter("X-ChangeBlockCategory",
+				AttemptAction.IDE_CHANGE_CATEGORY)
+				.addData((Event event, ActionData data) -> {
+						event.blockCategorySelected = data.asString();
+					}
+				));
+
+		converters.add(new EventConverter("Intervention",
+				AttemptAction.SHOW_HINT_MESSAGES.stream().toArray(x -> new String[x]))
+				.addData((Event event, ActionData data) -> {
+						event.eventInitiator = "User";
+						event.interventionType = data.parent.message
+								.replace("SnapDisplay.show", "");
+						event.interventionMessage = data.getTextHint();
+					}
+				));
+
+		// TODO: Handle other hints/intervention
+//		HighlightDialogBoxMorph.cancelShowOnRun
+//		HighlightDialogBoxMorph.destroy
+//		HighlightDialogBoxMorph.promptShowOnRun
+//		HighlightDialogBoxMorph.showOnRun
+//		HighlightDialogBoxMorph.toggleAutoClear
+//		HighlightDialogBoxMorph.toggleInsert
+//		HighlightDialogBoxMorph.toggleShowOnRun
+//		HighlightDisplay.autoClear
+//		HighlightDisplay.checkMyWork
+//		HighlightDisplay.informNoHints
+//		HighlightDisplay.promptShowBlockHints
+//		HighlightDisplay.promptShowInserts
+//		HighlightDisplay.showInsertsFromPrompt
+//		HighlightDisplay.startHighlight
+//		HighlightDisplay.stopHighlight
+//		HintDialogBox.destroy
+//		HintProvider.processHints
 
 		for (EventConverter converter : converters) {
 			for (String action : converter.actions) {
-				this.converters.put(action, converter);
+				EventConverter old = this.converters.put(action, converter);
+				if (old != null) throw new RuntimeException("DULPICATE CONVERTER: " + action);
 			}
 		}
 	}
@@ -545,134 +522,72 @@ public class ProgSnap2Dataset implements Closeable {
 						lastCode, humanReadableCode));
 			}
 
+			Event event = null;
 			if (!converters.containsKey(message)) {
 				unexportedMessages.add(action.message);
 			} else {
 
-				Event event = converters.get(message).createEvent(order, assignment, attempt,
+				event = converters.get(message).createEvent(order, assignment, attempt,
 						action, lastCode, humanReadableCode);
 				rows.add(event);
+			}
 
-
-				if (event.blockID != null && lastASTNode != null) {
-					INode block = lastASTNode.search(
-							node -> event.blockID.equals(node.id())
-					);
-					if (block != null) {
-						event.sourceLocation = getSourceLocation(block, lastASTNode);
-						event.codeStateSection = getCodeStateSection(block, lastASTNode);
-						if (event.blockSelector == null) event.blockSelector = block.type();
-					}
+			if (event != null && event.blockID != null && lastASTNode != null) {
+				String blockID = event.blockID;
+				INode block = lastASTNode.search(
+						node -> blockID.equals(node.id())
+				);
+				if (block != null) {
+					event.sourceLocation = getSourceLocation(block, lastASTNode);
+					event.codeStateSection = getCodeStateSection(block, lastASTNode);
+					if (event.blockSelector == null) event.blockSelector = block.type();
 				}
 			}
 
+			if (event != null && AttemptAction.SHOW_HINT_MESSAGES.contains(message)) {
+				JSONObject jsonData = new JSONObject(action.data);
+				Node root = SimpleNodeBuilder.toTree(action.lastSnapshot, true);
+				Node parent = CheckHintUsage.findParent(message, action.lastSnapshot, root,
+						jsonData, new String[0]);
+				if (parent == null) System.err.println("Null parent: " + action.data);
+				int scriptOrListIndex = -1;
+				while (parent.tag instanceof Script || !(parent.tag instanceof IHasID)) {
+					if (parent.hasType("list", "script")) {
+						scriptOrListIndex = parent.index();
+					} else {
+						System.out.println("No ID: " + parent.type());
+					}
+					parent = parent.parent;
+				}
+				String parentID = ((IHasID) parent.tag).getID();
 
+				JSONArray toArray = jsonData.getJSONArray("to");
+				JSONArray fromArray;
+				if (jsonData.has("from")) {
+					fromArray = jsonData.getJSONArray("from");
+				} else {
+					fromArray = jsonData.getJSONArray("fromList").getJSONArray(0);
+				}
+				for (JSONArray array : new JSONArray[] {toArray, fromArray}) {
+					if (array.length() > 0 && array.getString(0).equals("prototypeHatBlock")) {
+						array.remove(0);
+					}
+				}
 
-//			if (action.data != null && data.startsWith("{")) {
-//				JSONObject jsonData = new JSONObject(data);
-//				if (jsonData.has("id") && jsonData.get("id") instanceof JSONObject) {
-//					jsonData = jsonData.getJSONObject("id");
-//				}
-//				if (jsonData.has("selector") && jsonData.has("id")) {
-//					String id = jsonData.get("id").toString();
-//					selection = id + ";" + jsonData.get("selector");
-//				} else if (jsonData.has("guid")) {
-//					selection = jsonData.getString("guid");
-//				}
-//			}
-//			if (data.startsWith("\"") && data.endsWith("\"")) {
-//				data = data.substring(1, data.length() - 1);
-//			}
-//			if (AttemptAction.SINGLE_ARG_MESSAGES.contains(message)) {
-//				selection = data;
-//			} else if (AttemptAction.SPRITE_ADD_VARIABLE.contains(message) ||
-//					AttemptAction.SPRITE_DELETE_VARIABLE.contains(message)) {
-//				selection = data;
-//			} else if (AttemptAction.IDE_ADD_SPRITE.equals(message) ||
-//					AttemptAction.IDE_REMOVE_SPRITE.equals(message) ||
-//					AttemptAction.IDE_SELECT_SPRITE.equals(message)) {
-//				selection = data;
-//			} else if (AttemptAction.HINT_DIALOG_LOG_FEEDBACK.equals(message)) {
-//				if (data.length() > 4) {
-//					selection = data.substring(2, data.length() - 2);
-//				}
-//			} else if (AttemptAction.SCRIPTS_UNDROP.equals(message) || AttemptAction.SCRIPTS_REDROP.equals(message)) {
-//				JSONObject jsonData = new JSONObject(data);
-//				selection = String.valueOf(jsonData.opt("block"));
-//			} else if (message.matches("HighlightDisplay\\.((show)|(hide)).*Insert")) {
-//				JSONObject jsonData = new JSONObject(data);
-//				JSONObject candidate = jsonData.getJSONObject("candidate");
-//				selection = candidate.getInt("id") + ";" + candidate.getString("selector");
-//			} else if (AttemptAction.SHOW_HINT_MESSAGES.contains(message) && lastSnapshot != null) {
-//
-//				mainEvent.InterventionType = message.replace("SnapDisplay.", "");
-//
-//				JSONObject jsonData = new JSONObject(data);
-//				Node root = SimpleNodeBuilder.toTree(lastSnapshot, true);
-//
-//				JSONArray toArray = jsonData.getJSONArray("to");
-//				JSONArray fromArray;
-//				if (jsonData.has("from")) {
-//					fromArray = jsonData.getJSONArray("from");
-//				} else {
-//					fromArray = jsonData.getJSONArray("fromList").getJSONArray(0);
-//				}
-//				for (JSONArray array : new JSONArray[] {toArray, fromArray}) {
-//					if (array.length() > 0 && array.getString(0).equals("prototypeHatBlock")) {
-//						array.remove(0);
-//					}
-//				}
-//
-//				String[] from = new String[fromArray.length()];
-//				for (int j = 0; j < from.length; j++) from[j] = fromArray.getString(j);
-//
-//				Node parent = CheckHintUsage.findParent(
-//						message, lastSnapshot, root, jsonData, from);
-//				if (parent == null) {
-//					parent = CheckHintUsage.checkForZombieHintParent(attempt, jsonData, from, i);
-//				}
-//				if (parent == null) System.err.println("Null parent: " + data);
-//
-//				Integer scriptIndex = -1;
-//				String parentID = null;
-//				if (parent != null) {
-//					scriptIndex = -1;
-//					while (parent.tag instanceof Script || !(parent.tag instanceof IHasID)) {
-//						if (parent.tag instanceof Script || parent.tag instanceof ListBlock) {
-//							scriptIndex = parent.index();
-//						} else {
-//							out.println("No ID: " + parent.type());
-//						}
-//						parent = parent.parent;
-//					}
-//					parentID = ((IHasID)parent.tag).getID();
-//					if (parentID == null) {
-//						System.err.println("No parentID: " + parent.type());
-//					} else {
-//						selection = parentID;
-//					}
-//				}
-//
-//				JSONObject saveData = new JSONObject();
-//				saveData.put("parentID", parentID);
-//				saveData.put("parentType", parent == null ? null : parent.type());
-//				if (scriptIndex >= 0) {
-//					// Because scripts have no IDs, we use their parents' IDs, and mark
-//					// which script was referenced
-//					saveData.put("scriptIndex", scriptIndex);
-//				}
-//				saveData.put("from", fromArray);
-//				saveData.put("to", toArray);
-//				if (jsonData.has("message")) {
-//					saveData.put("message", jsonData.get("message"));
-//				}
-//
-//				mainEvent.InterventionMessage = saveData.toString();
-//			} else if (selection.length() == 0 && data.length() > 0) {
-////				out.println(message + ": " + data);
-//				unexportedMessages.add(message);
-//			}
-//
+				JSONObject saveData = new JSONObject();
+				saveData.put("parentID", parentID);
+				saveData.put("parentType", parent.type());
+				if (scriptOrListIndex >= 0) {
+					// Because scripts have no IDs, we use their parents' IDs, and mark which script
+					// was referenced
+					saveData.put("scriptOrListIndex", scriptOrListIndex);
+				}
+				saveData.put("from", fromArray);
+				saveData.put("to", toArray);
+				event.hintData = saveData.toString();
+			}
+
+			// TODO: More careful anonymization
 //			for (String toStrip : JsonAST.valueReplacements.keySet()) {
 //				if (selection.contains(toStrip)) {
 //					selection = selection.replace(toStrip, JsonAST.valueReplacements.get(toStrip));

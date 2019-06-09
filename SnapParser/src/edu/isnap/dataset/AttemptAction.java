@@ -19,6 +19,7 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	public static final String ASSIGNMENT_SET_ID_FROM = "Assignment.setIDFrom";
 	public static final String ASSIGNMENT_SET_ID = "Assignment.setID";
 	public final static String BLOCK_CLICK_RUN = "Block.clickRun";
+	public final static String BLOCK_CLICK_STOP_RUN = "Block.clickStopRun";
 	public final static String BLOCK_EDITOR_START = "BlockEditor.start";
 	public final static String BLOCK_EDITOR_APPLY = "BlockEditor.apply";
 	public final static String BLOCK_EDITOR_OK = "BlockEditor.ok";
@@ -39,6 +40,7 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	public final static String BLOCK_SHOW_HELP = "Block.showHelp";
 	public static final String IDE_ADD_SPRITE = "IDE.addSprite";
 	public static final String IDE_CHANGE_CATEGORY = "IDE.changeCategory";
+	public final static String IDE_DELETE_CUSTOM_BLOCK = "IDE.deleteCustomBlock";
 	public final static String IDE_GREEN_FLAG_RUN = "IDE.greenFlag";
 	public final static String IDE_EXPORT_PROJECT = "IDE.exportProject";
 	public final static String IDE_NEW_PROJECT = "IDE.newProject";
@@ -46,11 +48,17 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	public final static String IDE_OPEN_PROJECT_STRING = "IDE.openProjectString";
 	public final static String IDE_OPENED = "IDE.opened";
 	public static final String IDE_REMOVE_SPRITE = "IDE.removeSprite";
+	public static final String IDE_SAVE_PROJECT = "IDE.saveProject";
 	public static final String IDE_SELECT_SPRITE = "IDE.selectSprite";
 	public static final String IDE_SET_SPRITE_TAB = "IDE.setSpriteTab";
+	public static final String IDE_STOP = "IDE.stop";
 	public static final String IDE_TOGGLE_APP_MODE = "IDE.toggleAppMode";
 	public static final String IDE_DUPLICATE_SPRITE = "IDE.duplicateSprite";
 	public static final String IDE_PAINT_NEW_SPRITE = "IDE.paintNewSprite";
+	public static final String IDE_PAUSE = "IDE.pause";
+	public static final String IDE_UNPAUSE = "IDE.unpause";
+	public static final String INPUT_SLOT_EDITED = "InputSlot.edited";
+	public static final String INPUT_SLOT_MENU_ITEM_SELECTED = "InputSlot.menuItemSelected";
 	public final static String HELP_BUTTON_TOGGLED = "HelpButton.toggled";
 	public final static String HIGHLIGHT_CHECK_WORK = "HighlightDisplay.checkMyWork";
 	public final static String HIGHLIGHT_TOGGLE_INSERT = "HighlightDialogBoxMorph.toggleInsert";
@@ -60,6 +68,8 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	public final static String HINT_DIALOG_LOG_FEEDBACK = "HintDialogBox.logFeedback";
 	public final static String HINT_PROCESS_HINTS = "HintProvider.processHints";
 	public final static String LOGGER_STARTED = "Logger.started";
+	public static final String MULTI_ARG_ADD_INPUT = "MultiArg.addInput";
+	public static final String MULTI_ARG_REMOVE_INPUT = "MultiArg.removeInput";
 	public final static String SCRIPTS_UNDROP = "Scripts.undrop";
 	public final static String SCRIPTS_REDROP = "Scripts.redrop";
 	public final static String SHOW_SCRIPT_HINT = "SnapDisplay.showScriptHint";
@@ -68,6 +78,7 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 	public static final String SPRITE_ADD_VARIABLE = "Sprite.addVariable";
 	public static final String SPRITE_DELETE_VARIABLE = "Sprite.deleteVariable";
 	public static final String SPRITE_SET_NAME = "Sprite.setName";
+	public static final String TEMPLATE_ARG_RENAME = "TemplateArg.rename";
 	public final static String WE_START = "WE.Start";
 	public final static String PROACTIVE_MIDSURVEY = "ProactiveDisplay.midSurveyShown";
 	public final static String PROACTIVE_SEE_HINT = "ProactiveDisplay.seeHint";
@@ -163,7 +174,7 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 			return data;
 		}
 
-		public String getID() {
+		public String getBlockID() {
 			if (jsonData == null) return null;
 			JSONObject jsonData = this.jsonData;
 			if (jsonData.has("id") && jsonData.get("id") instanceof JSONObject) {
@@ -171,10 +182,14 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 			}
 			if (jsonData.has("id")) {
 				return jsonData.get("id").toString();
-			} else if (jsonData.has("guid")) {
-				return jsonData.getString("guid");
 			}
 			return null;
+		}
+
+		public String getBlockDefinitionGUID() {
+			if (jsonData == null) return null;
+			JSONObject jsonData = this.jsonData;
+			return jsonData.optString("guid");
 		}
 
 		public String getSelector() {
@@ -196,6 +211,13 @@ public class AttemptAction implements Serializable, Comparable<AttemptAction> {
 		public String getBlock() {
 			if (jsonData == null) return null;
 			return String.valueOf(jsonData.opt("block"));
+		}
+
+		public String getTextHint() {
+			if (jsonData == null) return null;
+			String hint = jsonData.optString("textHint");
+			if (hint == null) hint = jsonData.optString("message");
+			return hint;
 		}
 
 	}
