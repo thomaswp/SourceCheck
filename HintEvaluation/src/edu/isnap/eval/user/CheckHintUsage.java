@@ -33,7 +33,7 @@ import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.dataset.Grade;
 import edu.isnap.datasets.Fall2015;
-import edu.isnap.datasets.Fall2018;
+import edu.isnap.datasets.Fall2016;
 import edu.isnap.eval.AutoGrader;
 import edu.isnap.eval.AutoGrader.Grader;
 import edu.isnap.eval.util.Prune;
@@ -45,11 +45,11 @@ import util.LblTree;
 
 public class CheckHintUsage {
 
-	private static final long MIN_DURATON_PS = 5 * 60;
+	private static final long MIN_DURATON_PS = 0 * 60;
 	private static final long MIN_DURATON_WE = 30;
 
 	public static void main(String[] args) throws IOException {
-		writeHints(Fall2018.instance);
+		writeHints(Fall2016.instance);
 	}
 
 	private static boolean isValidSubmission(AssignmentAttempt attempt) {
