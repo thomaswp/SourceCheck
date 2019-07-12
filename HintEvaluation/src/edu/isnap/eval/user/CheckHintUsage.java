@@ -33,7 +33,7 @@ import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.dataset.Grade;
 import edu.isnap.datasets.Fall2015;
-import edu.isnap.datasets.Fall2016;
+import edu.isnap.datasets.Fall2017;
 import edu.isnap.eval.AutoGrader;
 import edu.isnap.eval.AutoGrader.Grader;
 import edu.isnap.eval.util.Prune;
@@ -49,7 +49,7 @@ public class CheckHintUsage {
 	private static final long MIN_DURATON_WE = 30;
 
 	public static void main(String[] args) throws IOException {
-		writeHints(Fall2016.instance);
+		writeHints(Fall2017.instance);
 	}
 
 	private static boolean isValidSubmission(AssignmentAttempt attempt) {

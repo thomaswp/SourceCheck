@@ -19,16 +19,34 @@ public class VisualizationTest {
 		SnapParser parser = new SnapParser(assignment, Mode.Ignore, true);
 		String[] ids = null;
 		String[] names = null;
+		String[] times = null;
 
-
+//		Map<String, AssignmentAttempt> attempts =
+//				parser.parseActionsFromDatabase(testData.name, ids, names);
 		Map<String, AssignmentAttempt> attempts =
-				parser.parseActionsFromDatabase(testData.name, ids, names);
+				parser.parseActionsFromDatabaseWithTimestamps(testData.name, ids, names, times);
 		List<AssignmentAttempt> selected = new ArrayList<>();
 		for (AssignmentAttempt attempt : attempts.values()) {
 			selected.add(attempt);
 		}
 		return selected;
 	}
+//		List<AssignmentAttempt> attempts = selectAttempts(testData);
+//		System.out.println(attempts.size());
+//		for (AssignmentAttempt attempt : attempts) {
+//
+////			if (!attempt.id.equals("ba36c1cc-9e60-4c29-aef6-d07b20d11f6f")) continue;
+//			// for each project (submission)
+//			System.out.println(attempt.id);
+//			System.out.println(attempt.size());
+//			System.out.println(attempt.timeSegments);
+////			for (AttemptAction action : attempt) {
+////				System.out.println(action.message);
+////				if (action.snapshot == null) continue;
+////				Node node = SimpleNodeBuilder.toTree(action.snapshot, true);
+//////				System.out.println(node.prettyPrint(true));
+////			}
+//		}
 
 	public static List<AssignmentAttempt> selectAttempts(Assignment assignment) {
 		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, false, true,
@@ -44,22 +62,8 @@ public class VisualizationTest {
 
 		// TODO: Compare the result of doing this from database and read from files
 
-		List<AssignmentAttempt> attempts = selectAttempts(testData);
-		System.out.println(attempts.size());
-		for (AssignmentAttempt attempt : attempts) {
 
-//			if (!attempt.id.equals("ba36c1cc-9e60-4c29-aef6-d07b20d11f6f")) continue;
-			// for each project (submission)
-			System.out.println(attempt.id);
-			System.out.println(attempt.size());
-//			for (AttemptAction action : attempt) {
-//				System.out.println(action.message);
-//				if (action.snapshot == null) continue;
-//				Node node = SimpleNodeBuilder.toTree(action.snapshot, true);
-////				System.out.println(node.prettyPrint(true));
-//			}
-		}
-
+		System.out.println("Database:");
 		List<AssignmentAttempt> attempts2 = selectAttemptsFromDatabase(testData);
 		System.out.println(attempts2.size());
 		for (AssignmentAttempt attempt : attempts2) {
