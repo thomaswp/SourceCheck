@@ -16,10 +16,10 @@ public class VisualizationTest {
 
 	public static List<AssignmentAttempt> selectAttemptsFromDatabase(
 			Assignment assignment) throws Exception {
-		SnapParser parser = new SnapParser(assignment, Mode.Ignore, true);
+		SnapParser parser = new SnapParser(assignment, Mode.Ignore, false);
 		String[] ids = null;
 		String[] names = null;
-		String[] times = null;
+		String[] times = {"2019-01-01"};
 
 //		Map<String, AssignmentAttempt> attempts =
 //				parser.parseActionsFromDatabase(testData.name, ids, names);
@@ -64,6 +64,7 @@ public class VisualizationTest {
 
 
 		System.out.println("Database:");
+//		List<AssignmentAttempt> attempts2 = selectAttempts(testData);
 		List<AssignmentAttempt> attempts2 = selectAttemptsFromDatabase(testData);
 		System.out.println(attempts2.size());
 		for (AssignmentAttempt attempt : attempts2) {
@@ -82,6 +83,7 @@ public class VisualizationTest {
 ////				System.out.println(node.prettyPrint(true));
 //			}
 		}
+
 	}
 
 }
