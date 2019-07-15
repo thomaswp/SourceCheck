@@ -135,8 +135,8 @@ public class Snapshot extends Code implements IHasID {
 
 			return snapshot;
 		} catch (Exception e) {
-			System.out.println("Error parsing: " + name);
-			System.out.println(xmlSource);
+			System.err.println("Error parsing: " + name);
+			System.err.println(xmlSource);
 			e.printStackTrace();
 		} finally {
 			XML.clearRefMap();
