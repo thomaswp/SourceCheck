@@ -4,11 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import edu.isnap.ctd.graph.Node;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.datasets.Fall2018;
+import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
+import edu.isnap.parser.elements.Snapshot;
 
 public class VisualizationTest {
 
@@ -58,21 +61,34 @@ public class VisualizationTest {
 		return selected;
 	}
 
+	/***
+	 * this function takes a snapshot and returns the tree size of the resulting AST
+	 * @param lastSnapshot is the last snapshot in a given attempt
+	 * @return the size of the resulting abstract syntax tree
+	 */
+	private static int getTreeSize(Snapshot lastSnapshot) {
+		Node node = SimpleNodeBuilder.toTree(lastSnapshot, true);
+		return node.treeSize();
+	}
+
 	public static void main(String[] args) throws Exception {
 
 		// TODO: Compare the result of doing this from database and read from files
-
 
 		System.out.println("Database:");
 //		List<AssignmentAttempt> attempts2 = selectAttempts(testData);
 		List<AssignmentAttempt> attempts2 = selectAttemptsFromDatabase(testData);
 		System.out.println(attempts2.size());
+		System.out.println("here");
 		for (AssignmentAttempt attempt : attempts2) {
 
 //			if (!attempt.id.equals("ba36c1cc-9e60-4c29-aef6-d07b20d11f6f")) continue;
 			//BUG: ce5b3694-79f4-41ad-9712-3716e8b98877 cannot be found, since its assignmentID is none.
 			// for each project (submission)
 			if (attempt.size() == 0) continue;
+			Snapshot lastSnapshot = attempt.rows.getLast().lastSnapshot;
+			//System.out.println(lastSnapshot.toCode());
+			System.out.println("tree size: " + getTreeSize(lastSnapshot));
 			System.out.println(attempt.id);
 			System.out.println(attempt.size());
 

@@ -421,6 +421,16 @@ public class SnapParser {
 
 	}
 
+	/**
+	 * parseActionsFromDatabaseWithTimestamps parses through the data given in the database between
+	 * a specified start and end time and returns a map of the resulting rows
+	 * @param assignmentID is the ID of the assignment that will be parsed
+	 * @param ids
+	 * @param names
+	 * @param times is an array containing the start and end times
+	 * @return a map containing all of the rows of information as a result of the given constraints
+	 * @throws Exception
+	 */
 	public Map<String, AssignmentAttempt> parseActionsFromDatabaseWithTimestamps(String assignmentID, String[] ids, String[] names, String[] times) throws Exception {
 
 		Map<String, AssignmentAttempt> map = new HashMap<String, AssignmentAttempt>();
@@ -429,7 +439,7 @@ public class SnapParser {
 
 			conn = DriverManager.getConnection(DB_URL, USER, PASS);
 			stmt = conn.createStatement();
-
+			//gets projectIDs from database where the assignmentID = the given assignmentID
 			PreparedStatement stment = conn
 					.prepareStatement("SELECT DISTINCT projectID FROM trace WHERE assignmentID = ?");
 			stment.setString(1, assignmentID);
@@ -450,6 +460,7 @@ public class SnapParser {
 				ResultSet rs = statement.executeQuery();
 				RowBuilder builder = new RowBuilder(projectID);
 				int testCnt = 0;
+				//adds resulting rows to builder
 				while (rs.next()) {
 					testCnt++;
 					String action = rs.getString("message");
@@ -470,6 +481,7 @@ public class SnapParser {
 				AttemptParams params = new AttemptParams(projectID, "", assignmentID, true, false);
 				AssignmentAttempt attempt = parseRows(params, rows);
 
+				//maps resulting information
 				map.put(projectID, attempt);
 				//				System.out.println("Parsed: " + projectID);
 				rs.close();
@@ -497,9 +509,6 @@ public class SnapParser {
 				se.printStackTrace();
 			} // end finally try
 		} // end try
-
-		System.out.println("start date " +assignment.start);
-		System.out.println("end date: " + assignment.end);
 
 		return map;
 

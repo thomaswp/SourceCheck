@@ -15,6 +15,7 @@ import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.datasets.Fall2018;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
+import edu.isnap.parser.elements.Snapshot;
 
 @SuppressWarnings("serial")
 @WebServlet(name="dashboard", urlPatterns="/dashboard")
