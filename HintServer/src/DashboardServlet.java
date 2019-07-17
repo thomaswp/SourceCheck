@@ -3,6 +3,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -10,15 +11,20 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import edu.isnap.ctd.graph.Node;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.datasets.Fall2018;
+import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.Snapshot;
+//import edu.isnap.eval.dashboard.VisualizationTest;
+
 
 @SuppressWarnings("serial")
 @WebServlet(name="dashboard", urlPatterns="/dashboard")
+
 
 public class DashboardServlet extends HttpServlet {
 
@@ -39,6 +45,8 @@ public class DashboardServlet extends HttpServlet {
 		}
 		return selected;
 	}
+
+
 
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -73,6 +81,16 @@ public class DashboardServlet extends HttpServlet {
 
 	}
 
+	/***
+	 * this function takes a snapshot and returns the tree size of the resulting AST
+	 * @param lastSnapshot is the last snapshot in a given attempt
+	 * @return the size of the resulting abstract syntax tree
+	 */
+	public static int getTreeSize(Snapshot lastSnapshot) {
+		Node node = SimpleNodeBuilder.toTree(lastSnapshot, true);
+		return node.treeSize();
+	}
+
 	@Override
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
@@ -83,42 +101,43 @@ public class DashboardServlet extends HttpServlet {
 		resp.setHeader("Access-Control-Allow-Headers",
 				"Content-Type, Authorization, X-Requested-With");
 
-		List<AssignmentAttempt> attempts2;
-		try {
-			attempts2 = selectAttemptsFromDatabase(testData);
-			System.out.println(attempts2.size());
-			for (AssignmentAttempt attempt : attempts2) {
-
-//				if (!attempt.id.equals("ba36c1cc-9e60-4c29-aef6-d07b20d11f6f")) continue;
-				//BUG: ce5b3694-79f4-41ad-9712-3716e8b98877 cannot be found, since its assignmentID is none.
-				// for each project (submission)
-				if (attempt.size() == 0) continue;
-				System.out.println(attempt.id);
-				System.out.println(attempt.size());
-
-//				for (AttemptAction action : attempt) {
-//					System.out.println(action.message);
-//					if (action.snapshot == null) continue;
-//					Node node = SimpleNodeBuilder.toTree(action.snapshot, true);
-////					System.out.println(node.prettyPrint(true));
 				PrintStream out = new PrintStream(resp.getOutputStream());
 
-				String codeJSON = getCodeJSON();
-				resp.setContentType("text/json");
-				out.println(codeJSON);
-//				}
-			}
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+				List<AssignmentAttempt> attempts2;
+				//jsonAttempts is a stack of the data we are getting from each attempt in JSON form
+				Stack<String> jsonAttempts = new Stack<String>();
+				//gets data from database and converts it into a JSON string
+				try {
+					attempts2 = selectAttemptsFromDatabase(testData);
+					System.out.println("attempt2 size " + attempts2.size());
+					for(AssignmentAttempt attempt : attempts2) {
+					    if (attempt.size() == 0) continue;
+					    //gets treeSize of lastSnapshot
+						Snapshot lastSnapshot = attempt.rows.getLast().lastSnapshot;
+						int finalTreeSize = getTreeSize(lastSnapshot);
+						//adds data to a string and pushes that string to jsonAttempts stack
+						String JSONattempts = "{\"id\":"+"\""+attempt.id+"\""+",\"activeTime\":"+attempt.totalActiveTime+
+								",\"idleTime\":"+attempt.totalIdleTime+",\"size\":"+attempt.size()+
+								",\"treeSize\":"+finalTreeSize+"}";
+						jsonAttempts.push(JSONattempts);
+					}
+					//gets JSON String for resulting stack
+					String codeJSON = getCodeJSON(jsonAttempts);
+					resp.setContentType("text/json");
+					out.println(codeJSON);
+
+
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 
 
 	}
 
-	private String getCodeJSON() {
-
-		return null;
+	//returns a JSON string to return to the client side
+	private String getCodeJSON(Stack<String> jsonStack) {
+		return jsonStack.toString();
 	}
 
 }

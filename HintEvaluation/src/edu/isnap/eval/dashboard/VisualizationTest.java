@@ -66,7 +66,7 @@ public class VisualizationTest {
 	 * @param lastSnapshot is the last snapshot in a given attempt
 	 * @return the size of the resulting abstract syntax tree
 	 */
-	private static int getTreeSize(Snapshot lastSnapshot) {
+	public static int getTreeSize(Snapshot lastSnapshot) {
 		Node node = SimpleNodeBuilder.toTree(lastSnapshot, true);
 		return node.treeSize();
 	}
@@ -86,6 +86,7 @@ public class VisualizationTest {
 			//BUG: ce5b3694-79f4-41ad-9712-3716e8b98877 cannot be found, since its assignmentID is none.
 			// for each project (submission)
 			if (attempt.size() == 0) continue;
+
 			Snapshot lastSnapshot = attempt.rows.getLast().lastSnapshot;
 			//System.out.println(lastSnapshot.toCode());
 			System.out.println("tree size: " + getTreeSize(lastSnapshot));

@@ -391,7 +391,7 @@ public class SnapParser {
 
 				map.put(projectID, attempt);
 				//System.out.println("Parsed: " + projectID);
-				rs.close();
+				//rs.close();
 			}
 
 		} catch (SQLException se) {
