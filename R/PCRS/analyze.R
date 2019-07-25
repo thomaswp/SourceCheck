@@ -2,6 +2,7 @@
 
 library(plyr)
 library(readr)
+library(stringr)
 
 
 loadData <- function() {
@@ -20,4 +21,18 @@ loadData <- function() {
   plot(byProblem$nStudents, col=byProblem$type)
   plot(sort(byProblem$nStudents))
   byProblem$problem_id[byProblem$nStudents < 400]
+  
+  printSolutions(57, "Fail", 5)
+}
+
+printSolutions <- function (id, status, n) {
+  p57 <- code.states[code.states$problem_id==id,]
+  p57$code <- as.character(p57$code)
+  p57$codeW <- str_replace_all(p57$code, "[\\s|\\n]*", "")
+  p57.correct <- table(p57$codeW[p57$status==status])
+  p57.correct <- p57.correct[order(p57.correct, decreasing = T)]
+  for (i in 1:n) {
+    print(paste(i, p57.correct[i], "/", sum(p57.correct), "=", p57.correct[i]/sum(p57.correct), "%"))
+    cat(head(p57$code[p57$codeW == names(p57.correct)[i]], 1))
+  }
 }
