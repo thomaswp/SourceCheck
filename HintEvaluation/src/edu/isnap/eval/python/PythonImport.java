@@ -124,7 +124,12 @@ public class PythonImport {
 				} else {
 					marked = toDelete.getSourceLocationEnd().markSource(marked, end);
 				}
-				marked = toDelete.getSourceLocationStart().markSource(marked, start);
+				if (toDelete.getSourceLocationStart() != null) {
+					marked = toDelete.getSourceLocationStart().markSource(marked, start);
+					System.out.println("MARKED: ");
+				} else {
+					System.out.println("Missing source start: " + toDelete);
+				}
 				System.out.println(marked);
 			}
 
