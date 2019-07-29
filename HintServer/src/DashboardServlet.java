@@ -28,17 +28,17 @@ import edu.isnap.parser.elements.Snapshot;
 
 public class DashboardServlet extends HttpServlet {
 
-	public static Assignment testData = Fall2018.PolygonMaker;
+	public static Assignment testData = Fall2018.Squiral;
 
 	public static List<AssignmentAttempt> selectAttemptsFromDatabase(
-			Assignment assignment) throws Exception {
-		SnapParser parser = new SnapParser(assignment, Mode.Ignore, true);
+			Assignment assignment, String[] times) throws Exception {
+		SnapParser parser = new SnapParser(assignment, Mode.Ignore, false);
 		String[] ids = null;
 		String[] names = null;
-
+		//String[] times = {"2019-01-01"};
 
 		Map<String, AssignmentAttempt> attempts =
-				parser.parseActionsFromDatabase(testData.name, ids, names);
+				parser.parseActionsFromDatabaseWithTimestamps(testData.name, ids, names, times);
 		List<AssignmentAttempt> selected = new ArrayList<>();
 		for (AssignmentAttempt attempt : attempts.values()) {
 			selected.add(attempt);
@@ -56,7 +56,8 @@ public class DashboardServlet extends HttpServlet {
 
 		List<AssignmentAttempt> attempts2;
 		try {
-			attempts2 = selectAttemptsFromDatabase(testData);
+			String[] times = {"2019-01-01"};
+			attempts2 = selectAttemptsFromDatabase(testData, times);
 			System.out.println(attempts2.size());
 			for (AssignmentAttempt attempt : attempts2) {
 
@@ -96,6 +97,7 @@ public class DashboardServlet extends HttpServlet {
 			throws ServletException, IOException {
 
 		String origin = req.getHeader("origin");
+
 		if (origin != null) resp.setHeader("Access-Control-Allow-Origin", origin);
 		resp.setHeader("Access-Control-Allow-Methods", "GET, POST");
 		resp.setHeader("Access-Control-Allow-Headers",
@@ -103,24 +105,29 @@ public class DashboardServlet extends HttpServlet {
 
 				PrintStream out = new PrintStream(resp.getOutputStream());
 
+				String time = req.getParameter("time");
+				System.out.println(time);
 				List<AssignmentAttempt> attempts2;
 				//jsonAttempts is a stack of the data we are getting from each attempt in JSON form
 				Stack<String> jsonAttempts = new Stack<String>();
 				//gets data from database and converts it into a JSON string
 				try {
-					attempts2 = selectAttemptsFromDatabase(testData);
+					String[] times = {time};
+					attempts2 = selectAttemptsFromDatabase(testData, times);
 					System.out.println("attempt2 size " + attempts2.size());
 					for(AssignmentAttempt attempt : attempts2) {
+
 					    if (attempt.size() == 0) continue;
 					    //gets treeSize of lastSnapshot
 						Snapshot lastSnapshot = attempt.rows.getLast().lastSnapshot;
 						int finalTreeSize = getTreeSize(lastSnapshot);
 						//adds data to a string and pushes that string to jsonAttempts stack
-						String JSONattempts = "{\"id\":"+"\""+attempt.id+"\""+",\"activeTime\":"+attempt.totalActiveTime+
-								",\"idleTime\":"+attempt.totalIdleTime+",\"size\":"+attempt.size()+
-								",\"treeSize\":"+finalTreeSize+"}";
+						String JSONattempts = "{\"id\":"+"\""+attempt.id +"\""+",\"active\":"+attempt.totalActiveTime+
+								",\"idle\":"+attempt.totalIdleTime+",\"size\":"+attempt.size()+
+								",\"treeSize\":"+finalTreeSize+",\"assignment\":"+"\""+attempt.loggedAssignmentID+"\""+"}";
 						jsonAttempts.push(JSONattempts);
 					}
+					System.out.println(jsonAttempts.size());
 					//gets JSON String for resulting stack
 					String codeJSON = getCodeJSON(jsonAttempts);
 					resp.setContentType("text/json");
@@ -131,12 +138,11 @@ public class DashboardServlet extends HttpServlet {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-
-
 	}
 
 	//returns a JSON string to return to the client side
 	private String getCodeJSON(Stack<String> jsonStack) {
+		System.out.println(jsonStack.size());
 		return jsonStack.toString();
 	}
 

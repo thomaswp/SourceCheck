@@ -80,6 +80,8 @@ public class VisualizationTest {
 		List<AssignmentAttempt> attempts2 = selectAttemptsFromDatabase(testData);
 		System.out.println(attempts2.size());
 		System.out.println("here");
+
+
 		for (AssignmentAttempt attempt : attempts2) {
 
 //			if (!attempt.id.equals("ba36c1cc-9e60-4c29-aef6-d07b20d11f6f")) continue;

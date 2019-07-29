@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Stack;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -54,14 +55,11 @@ public class SnapParser {
 	/** Number of seconds that pass without an action before the student is considered not working*/
 	public final static int SKIP_DURATION = 60 * 5;
 
-	private static Connection conn = null;
-	private static Statement stmt = null;
 	static String JDBC_DRIVER = "com.mysql.jdbc.Driver";
 	static String DB_URL = "jdbc:mysql://localhost:3306/snap?useLegacyDatetimeCode=false&serverTimezone=EST5EDT";
 
 	static String USER = "snap";
 	static String PASS = "password";
-	// private PreparedStatement preparedStatement = null;
 
 	/**
 	 * Removes all cached files at the given path.
@@ -284,70 +282,9 @@ public class SnapParser {
 	public Map<String, AssignmentAttempt> parseActionsFromDatabase(String assignmentID, String[] ids, String[] names) throws Exception {
 
 		Map<String, AssignmentAttempt> map = new HashMap<String, AssignmentAttempt>();
+		Connection conn = null;
+		Statement stmt = null;
 		try {
-//			Class.forName("com.mysql.cj.jdbc.Driver");
-//			conn = DriverManager.getConnection(DB_URL, USER, PASS);
-//			stmt = conn.createStatement();
-//
-//			PreparedStatement stment1 = conn
-//					.prepareStatement("SELECT id FROM trace WHERE name = ?");
-//			stment1.setString(1, assignmentID);
-//			ResultSet result1 = stment1.executeQuery();
-//			while (result1.next()) {
-//				PreparedStatement statement1 = conn.prepareStatement("SELECT * FROM solution");
-//				ResultSet rs1 = statement1.executeQuery();
-//				while (rs1.next()) {
-//
-//					String action = "";
-//					int id = rs1.getInt("id");
-//					String name = rs1.getString("name");
-//					String time = rs1.getString("createdTime");
-//					String data = "";
-//
-//					String userID = "";
-//					String session = "";
-//					String xml = rs1.getString("description");
-//					if (xml.equals("")) {
-//						continue;
-//					}
-//
-//					if (names != null) {
-//						boolean nameExists = false;
-//						for (int i = 0; i < names.length; i++) {
-//							if (names[i].equals(name)) {
-//								System.out.println("id: " + names[i]);
-//								nameExists = true;
-//								break;
-//							}
-//						}
-//						if (nameExists) {
-//							RowBuilder builder = new RowBuilder("");
-//							builder.addRow(action, data, userID, session, xml, id, time);
-//							ActionRows rows = builder.finish();
-//
-//							AttemptParams params = new AttemptParams("", "", assignmentID, true, true);
-//							AssignmentAttempt attempt = parseRows(params, rows);
-//
-//							String idStr = Integer.toString(id);
-//							int length = 12 - String.valueOf(idStr).length();
-//							StringBuilder sb = new StringBuilder();
-//							for (int i = 0; i < length; i++) {
-//								sb.append("0");
-//							}
-//							map.put("00000000-0000-4000-0000-" + sb.toString() + idStr, attempt);
-//						}
-//					}
-//
-//
-//					// Display values
-//					// System.out.print( "ID: " + id );
-//					// System.out.print( ", Time: " + time );
-//					// Retrieve by column name
-//					//					System.out.println(String.join(" ", action, data, userID, session, xml, " " + id, time));
-//				}
-//				//				System.out.println("Parsed: " + projectID);
-//				rs1.close();
-//			}
 
 			Class.forName("com.mysql.cj.jdbc.Driver");
 
@@ -434,48 +371,54 @@ public class SnapParser {
 	public Map<String, AssignmentAttempt> parseActionsFromDatabaseWithTimestamps(String assignmentID, String[] ids, String[] names, String[] times) throws Exception {
 
 		Map<String, AssignmentAttempt> map = new HashMap<String, AssignmentAttempt>();
+		Connection conn = null;
+		Statement stmt = null;
 		try {
 			Class.forName("com.mysql.cj.jdbc.Driver");
-
+			Stack<String> users = new Stack<String>();
 			conn = DriverManager.getConnection(DB_URL, USER, PASS);
 			stmt = conn.createStatement();
 			//gets projectIDs from database where the assignmentID = the given assignmentID
-			PreparedStatement stment = conn
+			PreparedStatement projectIdsStatement = conn
 					.prepareStatement("SELECT DISTINCT projectID FROM trace WHERE assignmentID = ?");
-			stment.setString(1, assignmentID);
-			ResultSet result = stment.executeQuery();
-			while (result.next()) {
-				String projectID = result.getString("projectID");
+			projectIdsStatement.setString(1, assignmentID);
+			ResultSet projectIdsResults = projectIdsStatement.executeQuery();
+			int count = 0;
+			while (projectIdsResults.next()) {
+				String projectID = projectIdsResults.getString("projectID");
 
 				if (projectID.equals("")) {
 					continue;
 				}
 
-				PreparedStatement statement = conn.prepareStatement(
+				PreparedStatement traceDataStatement = conn.prepareStatement(
 						"SELECT * FROM trace WHERE projectID = ? AND time < ?");
 
-				statement.setString(1, projectID);
-				statement.setString(2, times[0]);
+				traceDataStatement.setString(1, projectID);
+				traceDataStatement.setString(2, times[0]);
 
-				ResultSet rs = statement.executeQuery();
+				ResultSet traceData = traceDataStatement.executeQuery();
 				RowBuilder builder = new RowBuilder(projectID);
-				int testCnt = 0;
+
 				//adds resulting rows to builder
-				while (rs.next()) {
-					testCnt++;
-					String action = rs.getString("message");
-					int id = rs.getInt("id");
-					String time = rs.getString("time");
-					String data = rs.getString("data");
+				while (traceData.next()) {
+					String action = traceData.getString("message");
+					int id = traceData.getInt("id");
+					String time = traceData.getString("time");
+					String data = traceData.getString("data");
 
-					String userID = rs.getString("userID");
-					String session = rs.getString("sessionId");
-					String xml = rs.getString("code");
-
+					String userID = traceData.getString("userID");
+					String session = traceData.getString("sessionId");
+					String xml = traceData.getString("code");
+					if(!(users.contains(userID))) {
+						users.push(userID);
+					}
+					count++;
 					//System.out.println(time);
 					builder.addRow(action, data, userID, session, xml, id, time);
 
 				}
+
 				ActionRows rows = builder.finish();
 
 				AttemptParams params = new AttemptParams(projectID, "", assignmentID, true, false);
@@ -484,9 +427,11 @@ public class SnapParser {
 				//maps resulting information
 				map.put(projectID, attempt);
 				//				System.out.println("Parsed: " + projectID);
-				rs.close();
-			}
+				traceData.close();
 
+			}
+			System.out.println("count: " + count);
+			System.out.println(users.size());
 		} catch (SQLException se) {
 			// Handle errors for JDBC
 			se.printStackTrace();
