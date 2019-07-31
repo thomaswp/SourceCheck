@@ -23,6 +23,7 @@ import edu.isnap.hint.IDataModel;
 import edu.isnap.hint.SolutionsModel;
 import edu.isnap.hint.util.Alignment;
 import edu.isnap.hint.util.Cast;
+import edu.isnap.hint.util.NullStream;
 import edu.isnap.node.Node;
 import edu.isnap.node.Node.Action;
 import edu.isnap.sourcecheck.NodeAlignment.DistanceMeasure;
@@ -45,7 +46,7 @@ public class HintHighlighter {
 		Good, Add, Delete, Order, Move, Replaced
 	}
 
-	public PrintStream trace = System.out;
+	public PrintStream trace = NullStream.instance;
 
 	public final HintConfig config;
 	public final HintData hintData;

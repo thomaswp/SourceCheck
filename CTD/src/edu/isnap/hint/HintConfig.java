@@ -10,7 +10,7 @@ public abstract class HintConfig implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	/** If true, uses new version of SourceCheck with more global alignment */
-	public boolean sourceCheckV2 = true;
+	public boolean sourceCheckV2 = false;
 
 	/**
 	 * Should return true if the hint generator can expect traces to keep consistent node IDs
