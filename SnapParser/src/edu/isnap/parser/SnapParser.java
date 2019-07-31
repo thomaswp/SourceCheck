@@ -53,11 +53,16 @@ public class SnapParser {
 	 * @param path
 	 */
 	public static void clean(String path) {
-		if (!new File(path).exists()) return;
+		if (!new File(path).exists()) {
+			return;
+		}
 		for (String file : new File(path).list()) {
 			File f = new File(path, file);
-			if (f.isDirectory()) clean(f.getAbsolutePath());
-			else if (f.getName().endsWith(".cached")) f.delete();
+			if (f.isDirectory()) {
+				clean(f.getAbsolutePath());
+			} else if (f.getName().endsWith(".cached")) {
+				f.delete();
+			}
 		}
 	}
 
@@ -106,7 +111,9 @@ public class SnapParser {
 
 					// Backwards compatibility from when we used to call it jsonData
 					String dataKey = "data";
-					if (!parser.getHeaderMap().containsKey(dataKey)) dataKey = "jsonData";
+					if (!parser.getHeaderMap().containsKey(dataKey)) {
+						dataKey = "jsonData";
+					}
 
 					DateFormat format = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
 					BlockIndex editingIndex = null;
@@ -140,9 +147,13 @@ public class SnapParser {
 						// row, rather than as a separate column
 						if (action.equals(AttemptAction.IDE_OPENED) && data.length() > 2) {
 							JSONObject dataObject = new JSONObject(data);
-							if (dataObject.has("userID")) userID = dataObject.getString("userID");
+							if (dataObject.has("userID")) {
+								userID = dataObject.getString("userID");
+							}
 						}
-						if (solution.userID == null) solution.userID = userID;
+						if (solution.userID == null) {
+							solution.userID = userID;
+						}
 
 						if (AttemptAction.IDE_EXPORT_PROJECT.equals(action)) {
 							if (userID != null && !userID.equals("none")) {
@@ -187,8 +198,9 @@ public class SnapParser {
 							editingIndex = null;
 						}
 						if (row.snapshot != null) {
-							if (row.snapshot.editing.size() == 0) editingIndex = null;
-							else if (row.snapshot.editing.size() == 1) {
+							if (row.snapshot.editing.size() == 0) {
+								editingIndex = null;
+							} else if (row.snapshot.editing.size() == 1) {
 								BlockDefinition editing = row.snapshot.editing.get(0);
 								if (editing.guid == null) {
 									// Only set the blockIndex if we're not using GUIDs
@@ -215,7 +227,9 @@ public class SnapParser {
 
 	private JSONObject loadRepairedHints(String attemptID) {
 		File file = new File(assignment.hintRepairDir() + "/" + attemptID + ".json");
-		if (!file.exists()) return null;
+		if (!file.exists()) {
+			return null;
+		}
 		try {
 			String content = new String(Files.readAllBytes(file.toPath()));
 			return new JSONObject(content);
@@ -249,21 +263,31 @@ public class SnapParser {
 		// add the rows that occurred in between
 		for (int i = 0; i < actions.size() - 1; i++) {
 			AttemptAction actionSet = actions.get(i);
-			if (!AttemptAction.ASSIGNMENT_SET_ID.equals(actionSet.message)) continue;
+			if (!AttemptAction.ASSIGNMENT_SET_ID.equals(actionSet.message)) {
+				continue;
+			}
 			String assignmentID = actionSet.data;
-			if (assignmentID == null || assignmentID.length() <= 2) continue;
+			if (assignmentID == null || assignmentID.length() <= 2) {
+				continue;
+			}
 			// At some point, this may need to be less specific, but it seems for now they're always
 			// back to back
 			AttemptAction actionSetFrom = actions.get(i + 1);
-			if (!AttemptAction.ASSIGNMENT_SET_ID_FROM.equals(actionSetFrom.message)) continue;
-			if (!actionSetFrom.data.equals(assignmentID)) continue;
+			if (!AttemptAction.ASSIGNMENT_SET_ID_FROM.equals(actionSetFrom.message)) {
+				continue;
+			}
+			if (!actionSetFrom.data.equals(assignmentID)) {
+				continue;
+			}
 			// Trim the quotes
 			assignmentID = assignmentID.substring(1, assignmentID.length() - 1);
 			ActionRows interlude = parseActions(new File(getLogFilePath(assignmentID, attemptID)));
 			// Keep only the rows that come in between the set and setFrom actions
 			interlude.rows.removeIf(
 					action -> action.id < actionSet.id || action.id > actionSetFrom.id);
-			for (AttemptAction action : interlude) action.loggedAssignmentID = assignmentID;
+			for (AttemptAction action : interlude) {
+				action.loggedAssignmentID = assignmentID;
+			}
 			actions.rows.addAll(i + 1, interlude.rows);
 			i += interlude.size();
 		}
@@ -292,7 +316,9 @@ public class SnapParser {
 		Snapshot lastSnaphot = null;
 
 		JSONObject repairedHints = null;
-		if (params.addMetadata) repairedHints = loadRepairedHints(attemptID);
+		if (params.addMetadata) {
+			repairedHints = loadRepairedHints(attemptID);
+		}
 
 		int activeTime = 0;
 		int idleTime = 0;
@@ -317,9 +343,13 @@ public class SnapParser {
 			}
 			// If we're using log data from a prequel assignment, ignore rows before the prequel was
 			// submitted
-			if (params.prequelEndID != null && action.id <= params.prequelEndID) continue;
+			if (params.prequelEndID != null && action.id <= params.prequelEndID) {
+				continue;
+			}
 			// If we have a start ID, ignore rows that come before it
-			if (params.startID != null && action.id < params.startID) continue;
+			if (params.startID != null && action.id < params.startID) {
+				continue;
+			}
 
 			// In Spring 2017 there was a logging error that failed to log processed hints
 			// The are recreated by the HighlightDataRepairer and stored as .json files, which
@@ -366,7 +396,9 @@ public class SnapParser {
 
 			}
 
-			if (action.snapshot != null) lastSnaphot = action.snapshot;
+			if (action.snapshot != null) {
+				lastSnaphot = action.snapshot;
+			}
 			action.lastSnapshot = lastSnaphot;
 
 			// Add this row unless it has not snapshot and we want snapshots only
@@ -462,7 +494,9 @@ public class SnapParser {
 		}
 
 		for (File file : assignmentDir.listFiles()) {
-			if (!file.getName().endsWith(".csv")) continue;
+			if (!file.getName().endsWith(".csv")) {
+				continue;
+			}
 			// TODO: Parse the file name to get the projectID (before the _)
 			// Do the same throughout this class
 			String attemptID = file.getName().replace(".csv", "");
@@ -484,11 +518,17 @@ public class SnapParser {
 		for (String attemptID : paramsMap.keySet()) {
 			AttemptParams params = paramsMap.get(attemptID);
 
-			if (assignment.ignore(attemptID)) continue;
+			if (assignment.ignore(attemptID)) {
+				continue;
+			}
 			// TODO: Need to check that all attempts without a grade are really outliers
-			if (params.grade != null && params.grade.outlier) continue;
+			if (params.grade != null && params.grade.outlier) {
+				continue;
+			}
 			// Allow filters to skip over attempts before parsing them
-			if (Arrays.stream(filters).anyMatch(filter -> filter.skip(params))) continue;
+			if (Arrays.stream(filters).anyMatch(filter -> filter.skip(params))) {
+				continue;
+			}
 
 			File file = new File(params.logPath);
 			if (!file.exists()) {
@@ -496,8 +536,12 @@ public class SnapParser {
 			}
 			executor.submit(() -> {
 				AssignmentAttempt attempt = parseRows(params);
-				if (!Arrays.stream(filters).allMatch(filter -> filter.keep(attempt))) return;
-				if (attempt.size() <= 3) return;
+				if (!Arrays.stream(filters).allMatch(filter -> filter.keep(attempt))) {
+					return;
+				}
+				if (attempt.size() <= 3) {
+					return;
+				}
 				synchronized (attempts) {
 					attempts.put(attemptID, attempt);
 				}
@@ -518,16 +562,22 @@ public class SnapParser {
 				ParseSubmitted.getAllSubmissions(assignment.dataset);
 		Map<String, Submission> submissions = allSubmissions.get(assignment.name);
 
-		if (submissions == null) return;
+		if (submissions == null) {
+			return;
+		}
 
 		for (String attemptID : submissions.keySet()) {
 			Integer prequelEndID = null;
 			Submission submission = submissions.get(attemptID);
-			if (submission.location == null) continue;
+			if (submission.location == null) {
+				continue;
+			}
 
 			// Loop through all earlier assignments and see if any have the same submission ID.
 			for (Assignment prequel : assignment.dataset.all()) {
-				if (prequel == assignment) break;
+				if (prequel == assignment) {
+					break;
+				}
 				Map<String, Submission> prequelSubmissions = allSubmissions.get(prequel.name);
 				if (prequelSubmissions.containsKey(attemptID)) {
 					Submission prequelSubmission = prequelSubmissions.get(attemptID);
@@ -593,7 +643,9 @@ public class SnapParser {
 
 			for (CSVRecord record : parser) {
 				String assignmentID = record.get("assignment");
-				if (!assignmentID.equals(assignment.name)) continue;
+				if (!assignmentID.equals(assignment.name)) {
+					continue;
+				}
 
 				String attemptID = record.get("id");
 				String codeStartString = record.get("code");
@@ -607,7 +659,9 @@ public class SnapParser {
 					params.startID = codeStart;
 					if (record.isMapped("startAssignment")) {
 						String startAssignment = record.get("startAssignment");
-						if (startAssignment.length() > 0) params.startAssignment = startAssignment;
+						if (startAssignment.length() > 0) {
+							params.startAssignment = startAssignment;
+						}
 					}
 				}
 			}
@@ -621,7 +675,9 @@ public class SnapParser {
 	public void addGrades(Map<String, AttemptParams> paramsMap) {
 		HashMap<String,Grade> grades = parseGrades();
 		for (String attemptID : grades.keySet()) {
-			if (assignment.ignore(attemptID)) continue;
+			if (assignment.ignore(attemptID)) {
+				continue;
+			}
 			Grade grade = grades.get(attemptID);
 			AttemptParams params = paramsMap.get(attemptID);
 			if (params == null) {
@@ -639,7 +695,9 @@ public class SnapParser {
 
 		File file = new File(assignment.gradesFile());
 		if (!file.exists()) {
-			if (assignment.graded) System.err.println("No grades file for: " + assignment);
+			if (assignment.graded) {
+				System.err.println("No grades file for: " + assignment);
+			}
 			return grades;
 		}
 
@@ -651,7 +709,9 @@ public class SnapParser {
 				header[entry.getValue()] = entry.getKey();
 			}
 			for (CSVRecord record : parser) {
-				if (record.get(0).isEmpty()) break;
+				if (record.get(0).isEmpty()) {
+					break;
+				}
 				Grade grade = new Grade(record, header);
 				grades.put(grade.id, grade);
 			}
@@ -717,8 +777,8 @@ public class SnapParser {
 		public Integer submittedActionID;
 		public Integer prequelEndID;
 
-		public AttemptParams(String id, String logPath, String loggedAssignmentID, boolean addMetadata,
-				boolean snapshotsOnly) {
+		public AttemptParams(String id, String logPath, String loggedAssignmentID,
+				boolean addMetadata, boolean snapshotsOnly) {
 			this.id = id;
 			this.logPath = logPath;
 			this.loggedAssignmentID = loggedAssignmentID;
