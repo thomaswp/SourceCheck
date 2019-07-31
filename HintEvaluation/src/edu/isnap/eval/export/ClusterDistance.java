@@ -19,28 +19,28 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
 import distance.RTED_InfoTree_Opt;
-import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.hint.HintConfig;
-import edu.isnap.ctd.hint.HintHighlighter;
-import edu.isnap.ctd.util.Alignment;
-import edu.isnap.ctd.util.NodeAlignment;
-import edu.isnap.ctd.util.KMedoids.DistanceMeasure;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AssignmentAttempt.ActionRows;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.datasets.Fall2016;
+import edu.isnap.hint.HintConfig;
 import edu.isnap.hint.SnapHintConfig;
+import edu.isnap.hint.util.Alignment;
+import edu.isnap.hint.util.KMedoids.DistanceMeasure;
 import edu.isnap.hint.util.SimpleNodeBuilder;
+import edu.isnap.node.Node;
 import edu.isnap.parser.Store.Mode;
+import edu.isnap.sourcecheck.HintHighlighter;
+import edu.isnap.sourcecheck.NodeAlignment;
 import edu.isnap.util.map.DoubleMap;
 
 public class ClusterDistance {
-	
+
 	public interface NodeDistanceMeasure extends DistanceMeasure<Node> {
 		String name();
 	}
-	
+
 	public final static NodeDistanceMeasure RTEDDistanceMeasure = new NodeDistanceMeasure() {
 		private final ThreadLocal<RTED_InfoTree_Opt> opt = new ThreadLocal<RTED_InfoTree_Opt>() {
 			@Override
@@ -119,8 +119,9 @@ public class ClusterDistance {
 			return "SourceCheck_EditCount";
 		}
 	};
-	
+
 	public final static NodeDistanceMeasure SourceCheckMeasure = new NodeDistanceMeasure() {
+		@Override
 		public double measure(Node a, Node b) {
 			HintConfig config = new SnapHintConfig();
 			double distance = new NodeAlignment(a, b, config)
@@ -133,7 +134,7 @@ public class ClusterDistance {
 			return "SourceCheck";
 		};
 	};
-	
+
 	public final static List<NodeDistanceMeasure> DistanceMeasures = new ArrayList<>(
 			Arrays.asList(
 				RTEDDistanceMeasure, DFSAlignmentMeasure, DFSNormAlignmentMeasure, NodeCountMeasure,

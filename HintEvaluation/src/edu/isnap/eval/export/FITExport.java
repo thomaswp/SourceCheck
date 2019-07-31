@@ -17,12 +17,12 @@ import de.citec.tcs.alignment.sequence.SymbolicValue;
 import de.unibi.citec.fit.objectgraphs.Graph;
 import de.unibi.citec.fit.objectgraphs.api.factories.TreeFactory;
 import de.unibi.citec.fit.objectgraphs.api.matlab.print.PlainTextPrintModule;
-import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.graph.Node.Action;
 import edu.isnap.dataset.Grade;
 import edu.isnap.datasets.Fall2015;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.SnapHintBuilder.LoadedAttempt;
+import edu.isnap.node.Node;
+import edu.isnap.node.Node.Action;
 import edu.isnap.parser.elements.Snapshot;
 
 public class FITExport {

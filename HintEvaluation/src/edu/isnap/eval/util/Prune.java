@@ -3,8 +3,8 @@ package edu.isnap.eval.util;
 import java.util.ArrayList;
 import java.util.List;
 
-import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.graph.Node.Action;
+import edu.isnap.node.Node;
+import edu.isnap.node.Node.Action;
 
 public class Prune {
 

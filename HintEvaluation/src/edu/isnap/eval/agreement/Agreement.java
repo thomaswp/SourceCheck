@@ -7,22 +7,22 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.graph.Node.Action;
-import edu.isnap.ctd.hint.HintConfig;
-import edu.isnap.ctd.hint.HintConfig.ValuesPolicy;
-import edu.isnap.ctd.hint.HintHighlighter;
-import edu.isnap.ctd.hint.edit.EditHint;
-import edu.isnap.ctd.hint.edit.Insertion;
-import edu.isnap.ctd.util.NodeAlignment.Mapping;
-import edu.isnap.ctd.util.NullStream;
+import edu.isnap.hint.HintConfig;
+import edu.isnap.hint.HintConfig.ValuesPolicy;
 import edu.isnap.hint.SnapHintConfig;
+import edu.isnap.hint.util.NullStream;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.hint.util.SimpleNodeBuilder.IDer;
+import edu.isnap.node.Node;
+import edu.isnap.node.Node.Action;
 import edu.isnap.parser.elements.Code;
 import edu.isnap.parser.elements.Script;
 import edu.isnap.parser.elements.Snapshot;
 import edu.isnap.parser.elements.util.IHasID;
+import edu.isnap.sourcecheck.HintHighlighter;
+import edu.isnap.sourcecheck.NodeAlignment.Mapping;
+import edu.isnap.sourcecheck.edit.EditHint;
+import edu.isnap.sourcecheck.edit.Insertion;
 import edu.isnap.util.Diff;
 
 public class Agreement {

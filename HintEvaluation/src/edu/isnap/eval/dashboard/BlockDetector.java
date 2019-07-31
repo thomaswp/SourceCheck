@@ -4,13 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.graph.Node.Predicate;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.datasets.Fall2016;
 import edu.isnap.hint.util.SimpleNodeBuilder;
+import edu.isnap.node.Node;
+import edu.isnap.node.Node.Predicate;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
 

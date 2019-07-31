@@ -4,6 +4,7 @@ import java.util.Date;
 
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
+import edu.isnap.hint.ConfigurableAssignment;
 
 public class Samples extends Dataset {
 
@@ -16,7 +17,8 @@ public class Samples extends Dataset {
 	public final static String dataFile = dataDir + ".csv";
 	public final static Samples instance = new Samples();
 
-	public final static Assignment Square = new Assignment(instance, "square", null, true);
+	public final static Assignment Square =
+			new ConfigurableAssignment(instance, "square", null, true);
 
 	public final static Assignment[] All = {
 		Square

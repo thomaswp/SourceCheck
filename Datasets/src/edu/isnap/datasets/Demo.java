@@ -4,6 +4,7 @@ import java.util.Date;
 
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
+import edu.isnap.hint.ConfigurableAssignment;
 
 /** Demo dataset from http://go.ncsu.edu/isnap - publicly sharable data */
 public class Demo extends Dataset {
@@ -13,17 +14,17 @@ public class Demo extends Dataset {
 	public final static String dataFile = dataDir + ".csv";
 	public final static Demo instance = new Demo();
 
-	public final static Assignment LightsCameraAction = new Assignment(instance,
+	public final static Assignment LightsCameraAction = new ConfigurableAssignment(instance,
 			"lightsCameraActionHW", null, true);
-	public final static Assignment PolygonMaker = new Assignment(instance,
+	public final static Assignment PolygonMaker = new ConfigurableAssignment(instance,
 			"polygonMakerLab", null, true);
-	public final static Assignment Squiral = new Assignment(instance,
+	public final static Assignment Squiral = new ConfigurableAssignment(instance,
 			"squiralHW", null, true);
-	public final static Assignment GuessingGame1 = new Assignment(instance,
+	public final static Assignment GuessingGame1 = new ConfigurableAssignment(instance,
 			"guess1Lab", null, true, true, null);
-	public final static Assignment GuessingGame2 = new Assignment(instance,
+	public final static Assignment GuessingGame2 = new ConfigurableAssignment(instance,
 			"guess2HW", null, true, false, GuessingGame1);
-	public final static Assignment GuessingGame3 = new Assignment(instance,
+	public final static Assignment GuessingGame3 = new ConfigurableAssignment(instance,
 			"guess3Lab", null, true);
 
 	public final static Assignment[] All = {

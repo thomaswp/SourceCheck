@@ -1,7 +1,7 @@
 package pqgram.edits;
 
 import astrecognition.model.Graph;
-import edu.isnap.ctd.graph.Node;
+import edu.isnap.node.Node;
 
 public class Deletion extends PositionalEdit {
 

@@ -11,9 +11,9 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import edu.isnap.ctd.graph.Node;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.hint.util.SimpleNodeBuilder;
+import edu.isnap.node.Node;
 import edu.isnap.parser.SnapDatabaseParser;
 import edu.isnap.parser.elements.Snapshot;
 //import edu.isnap.eval.dashboard.VisualizationTest;

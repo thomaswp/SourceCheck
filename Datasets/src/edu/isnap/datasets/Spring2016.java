@@ -3,6 +3,8 @@ package edu.isnap.datasets;
 import java.util.Date;
 
 import edu.isnap.dataset.Assignment;
+import edu.isnap.hint.ConfigurableAssignment;
+
 
 public class Spring2016 extends CSC200Dataset {
 
@@ -11,7 +13,7 @@ public class Spring2016 extends CSC200Dataset {
 	public final static String dataFile = dataDir + ".csv";
 	public final static Spring2016 instance = new Spring2016();
 
-	public final static Assignment LightsCameraAction = new Assignment(instance,
+	public final static Assignment LightsCameraAction = new ConfigurableAssignment(instance,
 			"lightsCameraActionHW", Assignment.date(2016, 1, 29), true) {
 		@Override
 		public boolean ignore(String attemptID) {
@@ -20,10 +22,10 @@ public class Spring2016 extends CSC200Dataset {
 		};
 
 	};
-	public final static Assignment PolygonMaker = new Assignment(instance,
+	public final static Assignment PolygonMaker = new ConfigurableAssignment(instance,
 			"polygonMakerLab", Assignment.date(2016, 2, 2), true);
 
-	public final static Assignment Squiral = new Assignment(instance,
+	public final static Assignment Squiral = new ConfigurableAssignment(instance,
 			"squiralHW", Assignment.date(2016, 2, 9), true) {
 		@Override
 		public boolean ignore(String attemptID) {
@@ -43,10 +45,10 @@ public class Spring2016 extends CSC200Dataset {
 		}
 	};
 
-	public final static Assignment GuessingGame1 = new Assignment(instance,
+	public final static Assignment GuessingGame1 = new ConfigurableAssignment(instance,
 			"guess1Lab", Assignment.date(2016, 2, 9), true);
 
-	public final static Assignment GuessingGame2 = new Assignment(instance,
+	public final static Assignment GuessingGame2 = new ConfigurableAssignment(instance,
 			"guess2HW", Assignment.date(2016, 2, 16), true, false, GuessingGame1) {
 		@Override
 		public boolean ignore(String attemptID) {
@@ -55,7 +57,7 @@ public class Spring2016 extends CSC200Dataset {
 		}
 	};
 
-	public final static Assignment GuessingGame3 = new Assignment(instance,
+	public final static Assignment GuessingGame3 = new ConfigurableAssignment(instance,
 			"guess3Lab", Assignment.date(2016, 2, 23), true) {
 		@Override
 		public Assignment getLocationAssignment(String attemptID) {

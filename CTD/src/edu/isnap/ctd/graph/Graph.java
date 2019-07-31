@@ -6,7 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import edu.isnap.ctd.util.StringHashable;
+import edu.isnap.hint.util.StringHashable;
 
 public class Graph<N,E> {
 

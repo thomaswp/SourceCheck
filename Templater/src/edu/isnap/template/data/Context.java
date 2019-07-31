@@ -3,9 +3,9 @@ package edu.isnap.template.data;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 
-import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.graph.Node.Action;
-import edu.isnap.ctd.hint.TextHint;
+import edu.isnap.hint.TextHint;
+import edu.isnap.node.Node;
+import edu.isnap.node.Node.Action;
 
 public class Context {
 

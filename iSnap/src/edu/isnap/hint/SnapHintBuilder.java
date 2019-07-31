@@ -3,30 +3,29 @@ package edu.isnap.hint;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import com.esotericsoftware.kryo.Kryo;
 
 import edu.isnap.ctd.graph.Graph;
-import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.vector.IndexedVectorState;
 import edu.isnap.ctd.graph.vector.VectorGraph;
 import edu.isnap.ctd.graph.vector.VectorState;
-import edu.isnap.ctd.hint.HintConfig;
+import edu.isnap.ctd.hint.CTDHintGenerator;
+import edu.isnap.ctd.hint.CTDModel;
 import edu.isnap.ctd.hint.HintMap;
-import edu.isnap.ctd.hint.HintMapBuilder;
-import edu.isnap.ctd.util.StringHashable;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Grade;
 import edu.isnap.hint.util.SimpleNodeBuilder;
+import edu.isnap.hint.util.StringHashable;
+import edu.isnap.node.Node;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store;
 import edu.isnap.parser.Store.Mode;
+import edu.isnap.sourcecheck.HintHighlighter;
 
 
 /**
@@ -35,9 +34,7 @@ import edu.isnap.parser.Store.Mode;
 public class SnapHintBuilder {
 
 	public final Assignment assignment;
-	private final HintMap hintMap;
-	private final HashMap<String, HintMap> studentSubtreeCache =
-			new HashMap<>();
+	private final HintConfig config;
 
 	private Map<String, LoadedAttempt> nodeMapCache;
 
@@ -62,16 +59,12 @@ public class SnapHintBuilder {
 	 * @param assignment
 	 */
 	public SnapHintBuilder(Assignment assignment) {
-		this(assignment, new HintMap(ConfigurableAssignment.getConfig(assignment)));
+		this(assignment, ConfigurableAssignment.getConfig(assignment));
 	}
 
-	public SnapHintBuilder(Assignment assignment, SnapHintConfig config) {
-		this(assignment, new HintMap(config));
-	}
-
-	public SnapHintBuilder(Assignment assignment, HintMap hintMap) {
+	public SnapHintBuilder(Assignment assignment, HintConfig config) {
 		this.assignment = assignment;
-		this.hintMap = hintMap;
+		this.config = config;
 	}
 
 	/**
@@ -79,7 +72,7 @@ public class SnapHintBuilder {
 	 * @param storeMode
 	 * @return
 	 */
-	public HintMapBuilder buildGenerator(Mode storeMode) {
+	public HintData buildGenerator(Mode storeMode) {
 		return buildGenerator(storeMode, 0);
 	}
 
@@ -90,13 +83,13 @@ public class SnapHintBuilder {
 	 * @param minGrade
 	 * @return
 	 */
-	public HintMapBuilder buildGenerator(Mode storeMode, final double minGrade) {
+	public HintData buildGenerator(Mode storeMode, final double minGrade) {
 		String storePath = getStorePath(assignment, minGrade);
-		HintMapBuilder builder = Store.getCachedObject(getKryo(),
-				storePath, HintMapBuilder.class, storeMode,
-				new Store.Loader<HintMapBuilder>() {
+		HintData builder = Store.getCachedObject(getKryo(),
+				storePath, HintData.class, storeMode,
+				new Store.Loader<HintData>() {
 			@Override
-			public HintMapBuilder load() {
+			public HintData load() {
 				return buildGenerator((String)null, minGrade);
 			}
 		});
@@ -113,9 +106,15 @@ public class SnapHintBuilder {
 
 	public static String getStorePath(String baseDir, String assignmentName, double minGrade,
 			String dataset) {
-		return new File(baseDir, String.format("%s-g%03d%s.cached",
+		return new File(baseDir, String.format("%s-g%03d%s.hdata",
 				assignmentName, Math.round(minGrade * 100),
 				dataset == null ? "" : ("-" + dataset))).getAbsolutePath();
+	}
+
+	public static String getStorePath(String assignmentName, double minGrade, String dataset) {
+		return String.format("%s-g%03d%s.hdata",
+				assignmentName, Math.round(minGrade * 100),
+				dataset == null ? "" : ("-" + dataset));
 	}
 
 	/**
@@ -127,11 +126,9 @@ public class SnapHintBuilder {
 	 * @param minGrade
 	 * @return
 	 */
-	public HintMapBuilder buildGenerator(String testAttempt, double minGrade) {
-		HintConfig config = hintMap.getHintConfig();
-		final HintMapBuilder builder = new HintMapBuilder(hintMap.instance(), minGrade);
-		builder.startBuilding();
-		final AtomicInteger count = new AtomicInteger();
+	public HintData buildGenerator(String testAttempt, double minGrade) {
+		final HintData builder = new HintData(assignment.name, config, minGrade,
+				HintHighlighter.DataConsumer, CTDHintGenerator.DataConsumer);
 		for (String student : nodeMap().keySet()) {
 			if (student.equals(testAttempt)) continue;
 
@@ -140,37 +137,9 @@ public class SnapHintBuilder {
 			if (config.requireGrade && nodes.grade == null) continue;
 			if (nodes.grade != null && nodes.grade.average() < minGrade) continue;
 
-			final String fStudent = student;
-
-			count.incrementAndGet();
-			new Thread(new Runnable() {
-				@Override
-				public void run() {
-					HintMap studentMap;
-					synchronized (studentSubtreeCache) {
-						studentMap = studentSubtreeCache.get(fStudent);
-					}
-					if (studentMap == null) {
-//						System.out.println(fStudent);
-						studentMap = builder.addAttempt(nodes, nodes.hasIDs);
-						synchronized (studentSubtreeCache) {
-							studentSubtreeCache.put(fStudent, studentMap);
-						}
-					} else {
-						builder.addAttemptMap(studentMap);
-					}
-					count.decrementAndGet();
-				}
-			}).run(); // Threading this causes bugs
+			builder.addTrace(nodes.id, nodes);
 		}
-		while (count.get() != 0) {
-			try {
-				Thread.sleep(100);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-		builder.finishedAdding();
+		builder.finished();
 		return builder;
 	}
 
@@ -188,7 +157,7 @@ public class SnapHintBuilder {
 				System.err.println("No grade for: " + attemptID);
 			}
 
-			LoadedAttempt nodes = new LoadedAttempt(assignment.hasIDs, attempt.grade);
+			LoadedAttempt nodes = new LoadedAttempt(attempt.id, attempt.grade);
 			for (AttemptAction row : attempt) {
 				Node node = SimpleNodeBuilder.toTree(row.snapshot, true);
 				nodes.add(node);
@@ -203,21 +172,22 @@ public class SnapHintBuilder {
 	public static class LoadedAttempt extends ArrayList<Node> {
 		private static final long serialVersionUID = 1L;
 
-		public final boolean hasIDs;
+		public final String id;
 		public final Grade grade;
 
-		public LoadedAttempt(boolean hasIDs, Grade grade) {
-			this.hasIDs = hasIDs;
+		public LoadedAttempt(String id, Grade grade) {
+			this.id = id;
 			this.grade = grade;
 		}
 	}
 
 	public static Kryo getKryo() {
 		Kryo kryo = new Kryo();
-		kryo.register(HintMapBuilder.class);
+		kryo.register(CTDModel.class);
 		kryo.register(StringHashable.class);
 		kryo.register(Node.class);
 		kryo.register(HintMap.class);
+		kryo.register(HintData.class);
 		kryo.register(VectorState.class);
 		kryo.register(IndexedVectorState.class);
 		kryo.register(VectorGraph.class);

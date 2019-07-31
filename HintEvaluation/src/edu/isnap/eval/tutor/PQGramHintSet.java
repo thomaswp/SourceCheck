@@ -9,11 +9,14 @@ import java.util.stream.Collectors;
 
 import astrecognition.model.Convert;
 import astrecognition.model.Tree;
-import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.hint.HintConfig;
-import edu.isnap.ctd.hint.HintMapBuilder;
 import edu.isnap.eval.export.JsonAST;
+import edu.isnap.hint.HintConfig;
+import edu.isnap.hint.HintData;
+import edu.isnap.hint.IDataConsumer;
+import edu.isnap.hint.IDataModel;
+import edu.isnap.hint.SolutionsModel;
 import edu.isnap.node.ASTNode;
+import edu.isnap.node.Node;
 import edu.isnap.rating.data.HintOutcome;
 import edu.isnap.rating.data.HintRequest;
 import edu.isnap.rating.data.Trace;
@@ -25,26 +28,41 @@ import pqgram.Profile;
 import pqgram.edits.Deletion;
 import pqgram.edits.Edit;
 
-public class PQGramHintSet extends HintMapHintSet {
+public class PQGramHintSet extends HintDataHintSet {
 
 	private final static int P = 2, Q = 3;
 
 	private final Map<String, List<Tree>> solutionsMap = new HashMap<>();
 	private final HashMap<String, Integer> labelMap = new HashMap<>();
 
+	private final static IDataConsumer DataConsumer = new IDataConsumer() {
+		@Override
+		public IDataModel[] getRequiredData(HintData data) {
+			return new IDataModel[] {
+					new SolutionsModel(),
+			};
+		}
+	};
+
+	@Override
+	public IDataConsumer getDataConsumer() {
+		return DataConsumer;
+	}
+
 	public PQGramHintSet(String name, HintConfig hintConfig, TrainingDataset dataset) {
 		super(name, hintConfig);
 		for (String assignmentID : dataset.getAssignmentIDs()) {
 			List<Trace> traces = dataset.getTraces(assignmentID);
-			HintMapBuilder builder = createHintBuilder(hintConfig, traces);
-			solutionsMap.put(assignmentID, builder.hintMap.solutions.keySet().stream()
+			HintData data = createHintData(assignmentID, hintConfig, traces);
+			solutionsMap.put(assignmentID,
+					data.getModel(SolutionsModel.class).getSolutions().stream()
 					.map(this::treeToNode)
 					.collect(Collectors.toList()));
 		}
 	}
 
 	@Override
-	public HintMapHintSet addHints(List<HintRequest> requests) {
+	public HintDataHintSet addHints(List<HintRequest> requests) {
 		for (HintRequest request : requests) {
 			List<Tree> solutions = this.solutionsMap.get(request.assignmentID);
 			Node code = JsonAST.toNode(request.code, hintConfig.getNodeConstructor());

@@ -2,8 +2,8 @@ package edu.isnap.ctd.hint;
 
 import org.json.JSONObject;
 
-import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.vector.VectorState;
+import edu.isnap.node.Node;
 
 public class LinkHint extends VectorHint {
 

@@ -32,7 +32,7 @@ import edu.isnap.hint.SnapHintConfig;
 				return config;
 			};
 		};
-		public final static Assignment GuessingGame1 = new Assignment(instance,
+		public final static Assignment GuessingGame1 = new ConfigurableAssignment(instance,
 				"guess1Lab", null, true);
 
 		public final static Assignment[] All = {

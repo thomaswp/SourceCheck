@@ -8,13 +8,13 @@ import java.util.Map;
 
 import org.apache.commons.csv.CSVPrinter;
 
-import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.graph.Node.Action;
-import edu.isnap.ctd.hint.edit.Deletion;
-import edu.isnap.ctd.hint.edit.EditHint;
-import edu.isnap.ctd.hint.edit.Insertion;
-import edu.isnap.ctd.hint.edit.Reorder;
-import edu.isnap.ctd.util.Cast;
+import edu.isnap.hint.util.Cast;
+import edu.isnap.node.Node;
+import edu.isnap.node.Node.Action;
+import edu.isnap.sourcecheck.edit.Deletion;
+import edu.isnap.sourcecheck.edit.EditHint;
+import edu.isnap.sourcecheck.edit.Insertion;
+import edu.isnap.sourcecheck.edit.Reorder;
 
 public class EditComparer {
 

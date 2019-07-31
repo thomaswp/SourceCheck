@@ -14,7 +14,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 
-import edu.isnap.ctd.util.Alignment;
+import edu.isnap.hint.util.Alignment;
 import edu.isnap.util.Spreadsheet;
 import edu.isnap.util.map.ListMap;
 

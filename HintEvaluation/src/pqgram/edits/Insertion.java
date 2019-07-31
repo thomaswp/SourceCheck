@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import astrecognition.model.Graph;
-import edu.isnap.ctd.graph.Node;
+import edu.isnap.node.Node;
 
 public class Insertion extends PositionalEdit {
 

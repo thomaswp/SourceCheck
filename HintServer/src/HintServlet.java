@@ -18,17 +18,16 @@ import org.json.JSONObject;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 
-import edu.isnap.ctd.graph.Node;
+import edu.isnap.ctd.hint.CTDHintGenerator;
 import edu.isnap.ctd.hint.Hint;
-import edu.isnap.ctd.hint.HintGenerator;
-import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.hint.HintJSON;
-import edu.isnap.ctd.hint.HintMap;
-import edu.isnap.ctd.hint.HintMapBuilder;
-import edu.isnap.ctd.hint.debug.HintDebugInfo;
+import edu.isnap.hint.HintData;
+import edu.isnap.hint.HintDebugInfo;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.util.SimpleNodeBuilder;
+import edu.isnap.node.Node;
 import edu.isnap.parser.elements.Snapshot;
+import edu.isnap.sourcecheck.HintHighlighter;
 import edu.isnap.unittest.UnitTest;
 
 
@@ -37,9 +36,9 @@ import edu.isnap.unittest.UnitTest;
 public class HintServlet extends HttpServlet {
 
 	private final static String DEFAULT_ASSIGNMENT = "guess1Lab";
-	private final static int DEFAULT_MIN_GRADE = 100;
+	private final static double DEFAULT_MIN_GRADE = 1;
 
-	private static HashMap<String, HintMap> hintMaps = new HashMap<>();
+	private static HashMap<String, HintData> hintDatas = new HashMap<>();
 
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -68,11 +67,11 @@ public class HintServlet extends HttpServlet {
 
 		PrintStream out = new PrintStream(resp.getOutputStream());
 
-		int minGrade = DEFAULT_MIN_GRADE;
+		double minGrade = DEFAULT_MIN_GRADE;
 		String mgs = req.getParameter("minGrade");
 		if (mgs != null) {
 			try {
-				minGrade = Integer.parseInt(mgs);
+				minGrade = Integer.parseInt(mgs) / 100;
 			} catch (Exception e) { }
 		}
 
@@ -93,11 +92,11 @@ public class HintServlet extends HttpServlet {
 		}
 	}
 
-	private String getHintJSON(String snapshotXML, String assignment, String dataset, int minGrade,
-			String hintTypes) {
+	private String getHintJSON(String snapshotXML, String assignment, String dataset,
+			double minGrade, String hintTypes) {
 		JSONArray array = new JSONArray();
 		List<Hint> hints = new LinkedList<>();
-		HintMap hintMap;
+		HintData hintMap;
 		Node node;
 
 		try {
@@ -124,7 +123,7 @@ public class HintServlet extends HttpServlet {
 		if (hintTypes != null) hintTypes = hintTypes.toLowerCase();
 		if (hintTypes == null || hintTypes.contains("bubble")) {
 			try {
-				hints.addAll(new HintGenerator(hintMap).getHints(node));
+				hints.addAll(new CTDHintGenerator(hintMap).getHints(node));
 			} catch (Exception e) {
 				array.put(HintJSON.errorToJSON(e, true));
 			}
@@ -154,24 +153,25 @@ public class HintServlet extends HttpServlet {
 		return array.toString();
 	}
 
-	private HintMap loadHintMap(String assignment, String dataset, int minGrade) {
+	private HintData loadHintMap(String assignment, String dataset, double minGrade) {
 		if (assignment == null || "test".equals(assignment)) {
 			assignment = DEFAULT_ASSIGNMENT;
 		}
 		String key = assignment + dataset + minGrade;
-		HintMap hintMap = hintMaps.get(key);
-		if (hintMap == null) {
+		HintData hintData = hintDatas.get(key);
+		if (hintData == null) {
 			Kryo kryo = SnapHintBuilder.getKryo();
-			String path = String.format("/WEB-INF/data/%s-g%03d%s.cached", assignment, minGrade,
-					dataset == null ? "" : ("-" + dataset));
+			String path = "/WEB-INF/data/" + SnapHintBuilder.getStorePath(
+					assignment, minGrade, dataset);
+			System.out.println(path);
 			InputStream stream = getServletContext().getResourceAsStream(path);
 			if (stream == null) return null;
 			Input input = new Input(stream);
-			HintMapBuilder builder = kryo.readObject(input, HintMapBuilder.class);
+			hintData = kryo.readObject(input, HintData.class);
 			input.close();
 
-			hintMaps.put(key, hintMap = builder.hintMap);
+			hintDatas.put(key, hintData);
 		}
-		return hintMap;
+		return hintData;
 	}
 }

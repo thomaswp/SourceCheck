@@ -22,27 +22,24 @@ public class Assignment {
 	public final boolean graded;
 	public final Assignment prequel;
 	public final Assignment None;
-	public final boolean hasIDs;
 
 	public Assignment(Dataset dataset, String name) {
-		this(dataset, name, null, true);
+		this(dataset, name, null);
 	}
 
-	public Assignment(Dataset dataset, String name, Date end, boolean hasNodeIDs) {
-		this(dataset, name, end, hasNodeIDs, false, null);
+	public Assignment(Dataset dataset, String name, Date end) {
+		this(dataset, name, end, false, null);
 	}
 
-	public Assignment(Dataset dataset, String name, Date end, boolean hasIDs, boolean graded,
-			Assignment prequel) {
+	public Assignment(Dataset dataset, String name, Date end, boolean graded, Assignment prequel) {
 		this.dataset = dataset;
 		this.dataDir = dataset.dataDir;
 		this.name = name;
 		this.start = dataset.start;
 		this.end = end;
-		this.hasIDs = hasIDs;
 		this.graded = graded;
 		this.prequel = prequel;
-		this.None = name.equals("none") ? null : new Assignment(dataset, "none", end, hasIDs);
+		this.None = name.equals("none") ? null : new Assignment(dataset, "none", end);
 	}
 
 	public String analysisDir() {

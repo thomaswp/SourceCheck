@@ -6,10 +6,11 @@ import java.util.List;
 
 import org.json.JSONObject;
 
-import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.graph.vector.VectorState;
-import edu.isnap.ctd.hint.Canonicalization.SwapBinaryArgs;
-import edu.isnap.ctd.util.StringHashable;
+import edu.isnap.hint.Canonicalization;
+import edu.isnap.hint.Canonicalization.SwapBinaryArgs;
+import edu.isnap.hint.util.StringHashable;
+import edu.isnap.node.Node;
 
 public class VectorHint extends StringHashable implements Hint {
 

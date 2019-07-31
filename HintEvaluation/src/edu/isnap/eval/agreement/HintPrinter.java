@@ -5,12 +5,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 
-import edu.isnap.ctd.graph.Node;
-import edu.isnap.ctd.hint.HintHighlighter;
-import edu.isnap.ctd.hint.RuleSet;
-import edu.isnap.ctd.hint.edit.EditHint;
-import edu.isnap.ctd.util.NodeAlignment.Mapping;
-import edu.isnap.ctd.util.NullStream;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.datasets.Fall2016;
@@ -18,9 +12,15 @@ import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.agreement.HintSelection.HintRequest;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.hint.SnapHintBuilder;
+import edu.isnap.hint.util.NullStream;
 import edu.isnap.hint.util.SimpleNodeBuilder;
+import edu.isnap.node.Node;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
+import edu.isnap.sourcecheck.HintHighlighter;
+import edu.isnap.sourcecheck.NodeAlignment.Mapping;
+import edu.isnap.sourcecheck.edit.EditHint;
+import edu.isnap.sourcecheck.priority.RuleSet;
 import edu.isnap.util.Diff;
 import edu.isnap.util.Diff.ColorStyle;
 

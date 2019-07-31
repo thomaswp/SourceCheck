@@ -2,7 +2,7 @@ package edu.isnap.template.data;
 
 import java.util.List;
 
-import edu.isnap.ctd.hint.TextHint;
+import edu.isnap.hint.TextHint;
 
 public class HintNode extends DefaultNode {
 

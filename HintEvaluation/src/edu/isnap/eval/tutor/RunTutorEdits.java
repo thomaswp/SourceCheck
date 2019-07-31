@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.datasets.CSC200Solutions;
@@ -16,6 +15,7 @@ import edu.isnap.datasets.Fall2016;
 import edu.isnap.datasets.Fall2017;
 import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.python.PythonHintConfig;
+import edu.isnap.hint.HintConfig;
 import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.rating.ColdStart;
 import edu.isnap.rating.ColdStart.IHintGenerator;
@@ -305,8 +305,8 @@ public class RunTutorEdits extends TutorEdits {
 			} else {
 				hintSet = algorithm.getHintSetFromTemplate(hintConfig, getTemplateDir(source));
 			}
-			if (hintSet instanceof HintMapHintSet) {
-				((HintMapHintSet) hintSet).addHints(getRequestDataset());
+			if (hintSet instanceof HintDataHintSet) {
+				((HintDataHintSet) hintSet).addHints(getRequestDataset());
 			}
 			return hintSet;
 		}
@@ -480,13 +480,13 @@ public class RunTutorEdits extends TutorEdits {
 	private static HintAlgorithm SourceCheck = new HintAlgorithm() {
 
 		@Override
-		public HintMapHintSet getHintSetFromTrainingDataset(HintConfig config,
+		public HintDataHintSet getHintSetFromTrainingDataset(HintConfig config,
 				TrainingDataset dataset) throws IOException {
 			return new ImportHighlightHintSet(getName(), config, dataset);
 		}
 
 		@Override
-		public HintMapHintSet getHintSetFromTemplate(HintConfig config, String directory) {
+		public HintDataHintSet getHintSetFromTemplate(HintConfig config, String directory) {
 			return new TemplateHighlightHintSet(getName(), config, directory);
 		}
 
@@ -504,13 +504,13 @@ public class RunTutorEdits extends TutorEdits {
 	private static HintAlgorithm CTD = new HintAlgorithm() {
 
 		@Override
-		public HintMapHintSet getHintSetFromTrainingDataset(HintConfig config,
+		public HintDataHintSet getHintSetFromTrainingDataset(HintConfig config,
 				TrainingDataset dataset) throws IOException {
 			return new CTDHintSet(getName(), config, dataset);
 		}
 
 		@Override
-		public HintMapHintSet getHintSetFromTemplate(HintConfig config, String directory) {
+		public HintDataHintSet getHintSetFromTemplate(HintConfig config, String directory) {
 			throw new UnsupportedOperationException("CTD does not fully support templates.");
 		}
 
@@ -529,13 +529,13 @@ public class RunTutorEdits extends TutorEdits {
 	private static HintAlgorithm PQGram = new HintAlgorithm() {
 
 		@Override
-		public HintMapHintSet getHintSetFromTrainingDataset(HintConfig config,
+		public HintDataHintSet getHintSetFromTrainingDataset(HintConfig config,
 				TrainingDataset dataset) throws IOException {
 			return new PQGramHintSet(getName(), config, dataset);
 		}
 
 		@Override
-		public HintMapHintSet getHintSetFromTemplate(HintConfig config, String directory) {
+		public HintDataHintSet getHintSetFromTemplate(HintConfig config, String directory) {
 			throw new UnsupportedOperationException("PQGram does not support templates.");
 		}
 
@@ -558,7 +558,7 @@ public class RunTutorEdits extends TutorEdits {
 				TrainingDataset dataset) throws IOException {
 			ListMap<String, PrintableTutorHint> tutorEdits =
 					readTutorEditsPython(ITAP_DIR + "handmade_hints_itap_ast.csv", null);
-			HintSet hintSet = new HintSet(getName(), HintMapHintSet.getRatingConfig(config));
+			HintSet hintSet = new HintSet(getName(), HintDataHintSet.getRatingConfig(config));
 			for (String assignmentID : tutorEdits.keySet()) {
 				for (PrintableTutorHint edit : tutorEdits.get(assignmentID)) {
 					hintSet.add(edit.toOutcome());
@@ -568,7 +568,7 @@ public class RunTutorEdits extends TutorEdits {
 		}
 
 		@Override
-		public HintMapHintSet getHintSetFromTemplate(HintConfig config, String directory) {
+		public HintDataHintSet getHintSetFromTemplate(HintConfig config, String directory) {
 			throw new UnsupportedOperationException("ITAP does not support templates.");
 		}
 

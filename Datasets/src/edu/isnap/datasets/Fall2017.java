@@ -3,6 +3,8 @@ package edu.isnap.datasets;
 import java.util.Date;
 
 import edu.isnap.dataset.Assignment;
+import edu.isnap.hint.ConfigurableAssignment;
+
 
 // TODO: Check for students starting on different assignments
 public class Fall2017 extends CSC200Dataset {
@@ -12,16 +14,16 @@ public class Fall2017 extends CSC200Dataset {
 	public final static String dataFile = dataDir + ".csv";
 	public final static Fall2017 instance = new Fall2017();
 
-	public final static Assignment LightsCameraAction = new Assignment(instance,
+	public final static Assignment LightsCameraAction = new ConfigurableAssignment(instance,
 			"lightsCameraActionHW", Assignment.date(2017, 9, 1), true) {
 	};
 
-	public final static Assignment PolygonMaker = new Assignment(instance,
+	public final static Assignment PolygonMaker = new ConfigurableAssignment(instance,
 			"polygonMakerLab", Assignment.date(2017, 9, 1), true, false, null) {
 	};
 
 	// Added starts for students starting on different assignments
-	public final static Assignment Squiral = new Assignment(instance,
+	public final static Assignment Squiral = new ConfigurableAssignment(instance,
 			"squiralHW", Assignment.date(2017, 9, 9), true, false, null) {
 
 		@Override
@@ -32,7 +34,7 @@ public class Fall2017 extends CSC200Dataset {
 	};
 
 	// Added starts for students starting on different assignments
-	public final static Assignment GuessingGame1 = new Assignment(instance,
+	public final static Assignment GuessingGame1 = new ConfigurableAssignment(instance,
 			"guess1Lab", Assignment.date(2017, 9, 8), true, false, null) {
 
 		@Override
@@ -54,11 +56,11 @@ public class Fall2017 extends CSC200Dataset {
 
 	// NOTE: One student plagiarized another, and I have removed the copied submission, since the
 	// second student did no actual work, logged or otherwise
-	public final static Assignment GuessingGame2 = new Assignment(instance,
+	public final static Assignment GuessingGame2 = new ConfigurableAssignment(instance,
 			"guess2HW", Assignment.date(2017, 9, 15), true, false, GuessingGame1) {
 	};
 
-	public final static Assignment GuessingGame3 = new Assignment(instance,
+	public final static Assignment GuessingGame3 = new ConfigurableAssignment(instance,
 			"guess3Lab", Assignment.date(2017, 9, 15), true, false, GuessingGame1) {
 
 		@Override
@@ -74,7 +76,7 @@ public class Fall2017 extends CSC200Dataset {
 		};
 	};
 
-	public final static Assignment Project = new Assignment(instance,
+	public final static Assignment Project = new ConfigurableAssignment(instance,
 			"project", Assignment.date(2017, 9, 22), true, false, null) {
 	};
 
