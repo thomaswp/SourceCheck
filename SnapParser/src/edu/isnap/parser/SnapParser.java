@@ -4,12 +4,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -21,7 +15,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Stack;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -55,11 +48,6 @@ public class SnapParser {
 	/** Number of seconds that pass without an action before the student is considered not working*/
 	public final static int SKIP_DURATION = 60 * 5;
 
-	static String JDBC_DRIVER = "com.mysql.jdbc.Driver";
-	static String DB_URL = "jdbc:mysql://localhost:3306/snap?useLegacyDatetimeCode=false&serverTimezone=EST5EDT";
-
-	static String USER = "snap";
-	static String PASS = "password";
 
 	/**
 	 * Removes all cached files at the given path.
@@ -101,7 +89,7 @@ public class SnapParser {
 	public AssignmentAttempt parseSubmission(String id, boolean snapshotsOnly) throws IOException {
 		return parseRows(new AttemptParams(id,
 				assignment.parsedDir() + File.separator + id + ".csv",
-				assignment.name, false, snapshotsOnly));
+				assignment.name, false, snapshotsOnly, onlyLogExportedCode));
 	}
 
 	private String getLogFilePath(String assignmentID, String attemptID) {
@@ -154,35 +142,30 @@ public class SnapParser {
 						solution.userID = userID;
 						exportedUserID = true;
 					} else if (!solution.userID.equals(userID)) {
-						// TODO: Make this impossible by
-						// implementing the TODOs here and
-						// in LogSplitter
+						// TODO: Make this impossible by implementing the TODOs here and in
+						// LogSplitter
 						throw new RuntimeException(
-								String.format("Project %s exported under multiple userIDs: %s and %s", projectID,
-										solution.userID, userID));
+								String.format(
+										"Project %s exported under multiple userIDs: %s and %s",
+										projectID, solution.userID, userID));
 					}
 				}
 			}
 
-			AttemptAction row = new AttemptAction(id, projectID, timestamp, session, action, data, xml);
+			AttemptAction row = new AttemptAction(
+					id, projectID, timestamp, session, action, data, xml);
+
 			if (row.snapshot != null) {
 				lastSnaphot = row.snapshot;
 			}
 
-			// Before BlockDefinitions had GUIDs, they
-			// weren't easily identifiable. This
-			// is a 99% accurate work-around that stores the
-			// index of a the custom
-			// block when editing starts and then sets the
-			// editing block's index to that
-			// index until the editor is closed. Note that
-			// we store the index at the
-			// start because the spec/type/category may
-			// change when editing. Note also
-			// that before GUIDs only one block could be
-			// edited at a time, so there
-			// should only ever be one editing index at a
-			// time. If GUIDs are present
+			// Before BlockDefinitions had GUIDs, they weren't easily identifiable. This
+			// is a 99% accurate work-around that stores the index of a the custom
+			// block when editing starts and then sets the editing block's index to that
+			// index until the editor is closed. Note that we store the index at the
+			// start because the spec/type/category may change when editing. Note also
+			// that before GUIDs only one block could be edited at a time, so there
+			// should only ever be one editing index at a time. If GUIDs are present
 			// this does nothing.
 			if (AttemptAction.BLOCK_EDITOR_START.equals(action)) {
 				JSONObject json = new JSONObject(data);
@@ -232,8 +215,7 @@ public class SnapParser {
 					CSVParser parser = new CSVParser(new FileReader(logFile),
 							CSVFormat.EXCEL.withHeader());
 
-					// Backwards compatibility from when we used to call
-					// it jsonData
+					// Backwards compatibility from when we used to call it jsonData
 					String dataKey = "data";
 					if (!parser.getHeaderMap().containsKey(dataKey)) {
 						dataKey = "jsonData";
@@ -255,8 +237,7 @@ public class SnapParser {
 						} catch (NumberFormatException e) {
 						}
 
-						// For the help-seeking study the userID was
-						// stored in the Logger.started
+						// For the help-seeking study the userID was stored in the Logger.started
 						// row, rather than as a separate column
 						if (action.equals(AttemptAction.IDE_OPENED) && data.length() > 2) {
 							JSONObject dataObject = new JSONObject(data);
@@ -279,188 +260,8 @@ public class SnapParser {
 		});
 	}
 
-	public Map<String, AssignmentAttempt> parseActionsFromDatabase(String assignmentID, String[] ids, String[] names) throws Exception {
-
-		Map<String, AssignmentAttempt> map = new HashMap<String, AssignmentAttempt>();
-		Connection conn = null;
-		Statement stmt = null;
-		try {
-
-			Class.forName("com.mysql.cj.jdbc.Driver");
-
-			conn = DriverManager.getConnection(DB_URL, USER, PASS);
-			stmt = conn.createStatement();
-
-			PreparedStatement stment = conn
-					.prepareStatement("SELECT DISTINCT projectID FROM trace WHERE assignmentID = ?");
-			stment.setString(1, assignmentID);
-			ResultSet result = stment.executeQuery();
-			while (result.next()) {
-				String projectID = result.getString("projectID");
-
-				if (projectID.equals("")) {
-					continue;
-				}
-
-				PreparedStatement statement = conn.prepareStatement("SELECT * FROM trace WHERE projectID = ?");
-				statement.setString(1, projectID);
-				ResultSet rs = statement.executeQuery();
-				RowBuilder builder = new RowBuilder(projectID);
-				int testCnt = 0;
-				while (rs.next()) {
-					testCnt++;
-					String action = rs.getString("message");
-					int id = rs.getInt("id");
-					String time = rs.getString("time");
-					String data = rs.getString("data");
-
-					String userID = rs.getString("userID");
-					String session = rs.getString("sessionId");
-					String xml = rs.getString("code");
-
-
-					builder.addRow(action, data, userID, session, xml, id, time);
-
-				}
-				ActionRows rows = builder.finish();
-				AttemptParams params = new AttemptParams(projectID, "", assignmentID, true, false);
-				AssignmentAttempt attempt = parseRows(params, rows);
-
-				map.put(projectID, attempt);
-				//System.out.println("Parsed: " + projectID);
-				//rs.close();
-			}
-
-		} catch (SQLException se) {
-			// Handle errors for JDBC
-			se.printStackTrace();
-		} catch (Exception e) {
-			// Handle errors for Class.forName
-			e.printStackTrace();
-		} finally {
-			// finally block used to close resources
-			try {
-				if (stmt != null) {
-					conn.close();
-				}
-			} catch (SQLException se) {
-			} // do nothing
-			try {
-				if (conn != null) {
-					conn.close();
-				}
-			} catch (SQLException se) {
-				se.printStackTrace();
-			} // end finally try
-		} // end try
-
-		return map;
-
-	}
-
-	/**
-	 * parseActionsFromDatabaseWithTimestamps parses through the data given in the database between
-	 * a specified start and end time and returns a map of the resulting rows
-	 * @param assignmentID is the ID of the assignment that will be parsed
-	 * @param ids
-	 * @param names
-	 * @param times is an array containing the start and end times
-	 * @return a map containing all of the rows of information as a result of the given constraints
-	 * @throws Exception
-	 */
-	public Map<String, AssignmentAttempt> parseActionsFromDatabaseWithTimestamps(String assignmentID, String[] ids, String[] names, String[] times) throws Exception {
-
-		Map<String, AssignmentAttempt> map = new HashMap<String, AssignmentAttempt>();
-		Connection conn = null;
-		Statement stmt = null;
-		try {
-			Class.forName("com.mysql.cj.jdbc.Driver");
-			Stack<String> users = new Stack<String>();
-			conn = DriverManager.getConnection(DB_URL, USER, PASS);
-			stmt = conn.createStatement();
-			//gets projectIDs from database where the assignmentID = the given assignmentID
-			PreparedStatement projectIdsStatement = conn
-					.prepareStatement("SELECT DISTINCT projectID FROM trace WHERE assignmentID = ?");
-			projectIdsStatement.setString(1, assignmentID);
-			ResultSet projectIdsResults = projectIdsStatement.executeQuery();
-			int count = 0;
-			while (projectIdsResults.next()) {
-				String projectID = projectIdsResults.getString("projectID");
-
-				if (projectID.equals("")) {
-					continue;
-				}
-
-				PreparedStatement traceDataStatement = conn.prepareStatement(
-						"SELECT * FROM trace WHERE projectID = ? AND time < ?");
-
-				traceDataStatement.setString(1, projectID);
-				traceDataStatement.setString(2, times[0]);
-
-				ResultSet traceData = traceDataStatement.executeQuery();
-				RowBuilder builder = new RowBuilder(projectID);
-
-				//adds resulting rows to builder
-				while (traceData.next()) {
-					String action = traceData.getString("message");
-					int id = traceData.getInt("id");
-					String time = traceData.getString("time");
-					String data = traceData.getString("data");
-
-					String userID = traceData.getString("userID");
-					String session = traceData.getString("sessionId");
-					String xml = traceData.getString("code");
-					if(!(users.contains(userID))) {
-						users.push(userID);
-					}
-					count++;
-					//System.out.println(time);
-					builder.addRow(action, data, userID, session, xml, id, time);
-
-				}
-
-				ActionRows rows = builder.finish();
-
-				AttemptParams params = new AttemptParams(projectID, "", assignmentID, true, false);
-				AssignmentAttempt attempt = parseRows(params, rows);
-
-				//maps resulting information
-				map.put(projectID, attempt);
-				//				System.out.println("Parsed: " + projectID);
-				traceData.close();
-
-			}
-			System.out.println("count: " + count);
-			System.out.println(users.size());
-		} catch (SQLException se) {
-			// Handle errors for JDBC
-			se.printStackTrace();
-		} catch (Exception e) {
-			// Handle errors for Class.forName
-			e.printStackTrace();
-		} finally {
-			// finally block used to close resources
-			try {
-				if (stmt != null) {
-					conn.close();
-				}
-			} catch (SQLException se) {
-			} // do nothing
-			try {
-				if (conn != null) {
-					conn.close();
-				}
-			} catch (SQLException se) {
-				se.printStackTrace();
-			} // end finally try
-		} // end try
-
-		return map;
-
-	}
-
-
-	private JSONObject loadRepairedHints(String attemptID) {
+	private static JSONObject loadRepairedHints(String attemptID, Assignment assignment) {
+		if (assignment == null) return null;
 		File file = new File(assignment.hintRepairDir() + "/" + attemptID + ".json");
 		if (!file.exists()) {
 			return null;
@@ -535,12 +336,17 @@ public class SnapParser {
 
 	private AssignmentAttempt parseRows(AttemptParams params) {
 		ActionRows actions = getAllActionRows(params);
-		return parseRows(params, actions);
+		return parseRows(params, actions, assignment);
 	}
 
-	private AssignmentAttempt parseRows(AttemptParams params, ActionRows actions) {
+	static AssignmentAttempt parseRows(AttemptParams params, ActionRows actions,
+			Assignment assignment) {
 		String attemptID = params.id;
-		Date minDate = assignment.start, maxDate = assignment.end;
+		Date minDate = null, maxDate = null;
+		if (assignment != null) {
+			minDate = assignment.start;
+			maxDate = assignment.end;
+		}
 
 		AssignmentAttempt attempt = new AssignmentAttempt(attemptID, params.loggedAssignmentID,
 				params.grade);
@@ -555,7 +361,7 @@ public class SnapParser {
 
 		JSONObject repairedHints = null;
 		if (params.addMetadata) {
-			repairedHints = loadRepairedHints(attemptID);
+			repairedHints = loadRepairedHints(attemptID, assignment);
 		}
 
 		int activeTime = 0;
@@ -652,7 +458,7 @@ public class SnapParser {
 				}
 
 				boolean done = false;
-				boolean saveWork = !onlyLogExportedCode;
+				boolean saveWork = !params.onlyLogExportedCode;
 
 				// If this is an export keep the work we've seen so far
 				if (AttemptAction.IDE_EXPORT_PROJECT.equals(action.message)) {
@@ -695,7 +501,7 @@ public class SnapParser {
 				if (attempt.size() > 0) {
 					System.out.println(attemptID + ": " + attempt.rows.getLast().id);
 				} else {
-					System.out.println(assignment.name + " " +
+					System.out.println((assignment == null ? "NONE" : assignment.name) + " " +
 							attemptID + ": 0 / " + actions.size() + " / " + params.prequelEndID);
 				}
 				System.err.printf("Submitted id not found for %s: %s\n",
@@ -739,7 +545,7 @@ public class SnapParser {
 			String attemptID = file.getName().replace(".csv", "");
 			String path = getLogFilePath(assignment.name, attemptID);
 			AttemptParams params = new AttemptParams(attemptID, path, assignment.name, addMetadata,
-					snapshotsOnly);
+					snapshotsOnly, onlyLogExportedCode);
 			paramsMap.put(attemptID, params);
 		}
 
@@ -842,11 +648,11 @@ public class SnapParser {
 									attemptID);
 							continue;
 						}
-						//						System.out.printf("%s.%s / %s:\n\t%s: %d vs\n\t%s: %d\n",
-						//								assignment.dataset.getName(), assignment.name, attemptID,
-						//								submission.location, submission.submittedRowID,
-						//								prequelSubmission.location,
-						//								prequelSubmission.submittedRowID);
+//						System.out.printf("%s.%s / %s:\n\t%s: %d vs\n\t%s: %d\n",
+//								assignment.dataset.getName(), assignment.name, attemptID,
+//								submission.location, submission.submittedRowID,
+//								prequelSubmission.location,
+//								prequelSubmission.submittedRowID);
 						prequelEndID = prequalSubmittedRowID;
 					}
 				}
@@ -858,7 +664,8 @@ public class SnapParser {
 			AttemptParams params = paramsMap.get(attemptID);
 			if (params == null) {
 				paramsMap.put(attemptID, params = new AttemptParams(
-						attemptID, path, submission.location, addMetadata, snapshotsOnly));
+						attemptID, path, submission.location, addMetadata, snapshotsOnly,
+						onlyLogExportedCode));
 			} else {
 				params.logPath = path;
 				params.loggedAssignmentID = submission.location;
@@ -1000,11 +807,12 @@ public class SnapParser {
 		}
 	}
 
-	private static class AttemptParams {
+	public static class AttemptParams {
 
 		public final String id;
 		public final boolean addMetadata;
 		public final boolean snapshotsOnly;
+		public final boolean onlyLogExportedCode;
 
 		public String logPath;
 		public String loggedAssignmentID;
@@ -1015,13 +823,14 @@ public class SnapParser {
 		public Integer submittedActionID;
 		public Integer prequelEndID;
 
-		public AttemptParams(String id, String logPath, String loggedAssignmentID, boolean addMetadata,
-				boolean snapshotsOnly) {
+		public AttemptParams(String id, String logPath, String loggedAssignmentID,
+				boolean addMetadata, boolean snapshotsOnly, boolean onlyLogExportedCode) {
 			this.id = id;
 			this.logPath = logPath;
 			this.loggedAssignmentID = loggedAssignmentID;
 			this.addMetadata = addMetadata;
 			this.snapshotsOnly = snapshotsOnly;
+			this.onlyLogExportedCode = onlyLogExportedCode;
 		}
 
 	}

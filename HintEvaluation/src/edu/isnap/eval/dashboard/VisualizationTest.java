@@ -9,6 +9,7 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.datasets.Fall2018;
 import edu.isnap.hint.util.SimpleNodeBuilder;
+import edu.isnap.parser.SnapDatabaseParser;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.parser.elements.Snapshot;
@@ -19,7 +20,6 @@ public class VisualizationTest {
 
 	public static List<AssignmentAttempt> selectAttemptsFromDatabase(
 			Assignment assignment) throws Exception {
-		SnapParser parser = new SnapParser(assignment, Mode.Ignore, false);
 		String[] ids = null;
 		String[] names = null;
 		String[] times = {"2019-01-01"};
@@ -27,7 +27,8 @@ public class VisualizationTest {
 //		Map<String, AssignmentAttempt> attempts =
 //				parser.parseActionsFromDatabase(testData.name, ids, names);
 		Map<String, AssignmentAttempt> attempts =
-				parser.parseActionsFromDatabaseWithTimestamps(testData.name, ids, names, times);
+				SnapDatabaseParser.parseActionsFromDatabaseWithTimestamps(
+						testData.name, ids, names, times);
 		List<AssignmentAttempt> selected = new ArrayList<>();
 		for (AssignmentAttempt attempt : attempts.values()) {
 			selected.add(attempt);

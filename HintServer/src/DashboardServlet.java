@@ -12,11 +12,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import edu.isnap.ctd.graph.Node;
-import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.hint.util.SimpleNodeBuilder;
-import edu.isnap.parser.SnapParser;
-import edu.isnap.parser.Store.Mode;
+import edu.isnap.parser.SnapDatabaseParser;
 import edu.isnap.parser.elements.Snapshot;
 //import edu.isnap.eval.dashboard.VisualizationTest;
 
@@ -27,17 +25,18 @@ import edu.isnap.parser.elements.Snapshot;
 
 public class DashboardServlet extends HttpServlet {
 
-	public static Assignment testData = null;//Fall2018.Squiral;
+	// TODO: Make configurable
+	public final static String ASSIGNMENT_NAME = "squiralHW";
 
-	public static List<AssignmentAttempt> selectAttemptsFromDatabase(
-			Assignment assignment, String[] times) throws Exception {
-		SnapParser parser = new SnapParser(assignment, Mode.Ignore, false);
+	public static List<AssignmentAttempt> selectAttemptsFromDatabase(String[] times)
+			throws Exception {
 		String[] ids = null;
 		String[] names = null;
 		//String[] times = {"2019-01-01"};
 
 		Map<String, AssignmentAttempt> attempts =
-				parser.parseActionsFromDatabaseWithTimestamps(testData.name, ids, names, times);
+				SnapDatabaseParser.parseActionsFromDatabaseWithTimestamps(ASSIGNMENT_NAME,
+						ids, names, times);
 		List<AssignmentAttempt> selected = new ArrayList<>();
 		for (AssignmentAttempt attempt : attempts.values()) {
 			selected.add(attempt);
@@ -56,7 +55,7 @@ public class DashboardServlet extends HttpServlet {
 		List<AssignmentAttempt> attempts2;
 		try {
 			String[] times = {"2019-01-01"};
-			attempts2 = selectAttemptsFromDatabase(testData, times);
+			attempts2 = selectAttemptsFromDatabase(times);
 			System.out.println(attempts2.size());
 			for (AssignmentAttempt attempt : attempts2) {
 
@@ -112,7 +111,7 @@ public class DashboardServlet extends HttpServlet {
 				//gets data from database and converts it into a JSON string
 				try {
 					String[] times = {time};
-					attempts2 = selectAttemptsFromDatabase(testData, times);
+					attempts2 = selectAttemptsFromDatabase(times);
 					System.out.println("attempt2 size " + attempts2.size());
 					for(AssignmentAttempt attempt : attempts2) {
 
