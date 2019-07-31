@@ -4,6 +4,7 @@ library(tsne)
 library(factoextra)
 library(MASS)
 library(reshape2)
+library(dtw)
 
 compressDisMat <- function(disMat) {
   ns <- 25
@@ -27,11 +28,23 @@ compressDisMat <- function(disMat) {
 
 oldAnalysis <- function() {
   
-  originalDisMat <- as.matrix(read_csv(paste0("data/ted-poly.csv"), col_names = FALSE))
-  samples <-data.frame("semester"=c(rep("S17", 250), rep("F17", 250), rep("S19", 250)), "student"=floor(0:749/25), "i"=rep(1:25,250*3))
+  disMat <- as.matrix(read_csv(paste0("data/ted-poly.csv"), col_names = FALSE))
+  samples <-data.frame("semester"=c(rep("S17", 250), rep("F17", 250), rep("S19", 250)), "student"=floor(0:749/25), "i"=rep(1:25,10*3))
   samples$student <- as.factor(samples$student)
   
-  disMat <- originalDisMat
+  dtwMat <- disMat
+  pb <- txtProgressBar(min = 0, max = nrow(disMat), style = 3)
+  for (i in 1:nrow(disMat)) {
+    for (j in 1:ncol(disMat)) {
+      rowRange <- (floor((i-1) / 25) * 25 + 1) : i
+      colRange <- (floor((j-1) / 25) * 25 + 1) : j
+      subMat <- as.matrix(disMat[rowRange,colRange])
+      dtwMat[i,j] <- dtw(subMat)$distance
+    }
+    setTxtProgressBar(pb, i)
+  }
+  close(pb)
+  
   # disMat <- compressDisMat(disMat)
   
   #smallDisMat <- disMat[sample(nrow(samples), 250, F), sample(nrow(samples), 250, F)]
@@ -69,19 +82,19 @@ oldAnalysis <- function() {
   #embed <- tsne(disMat, k=2, max_iter = 200, epoch=100)
   
   # plot all
-  #fit <- cmdscale(disMat,eig=TRUE, k=2)
-  fit <- isoMDS(log(disMat+1), k=2)
+  fit <- cmdscale(dtwMat,eig=TRUE, k=2)
+  #fit <- isoMDS(log(dtwMat+1), k=2)
   samples$x <- fit$points[,1]
   samples$y <- fit$points[,2]
   plotTraj(samples)
   
   # plot just submitted solutions
-  ggplot(samples[samples$i == 25,], aes(x=x, y=y, color=semester)) + geom_point()
+  ggplot(samples[samples$i == 25,], aes(x=x, y=y, color=semester)) + geom_point(position = "jitter")
 }
 
 
 plotTraj <- function(data) {
   ggplot(data, aes(x=x, y=y, color=student, group=student)) + coord_fixed(ratio = 1) +
-    geom_point(aes(size = i)) +
+    #geom_point(aes(size = i)) +
     geom_path()
 }

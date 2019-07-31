@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -22,6 +23,7 @@ import edu.isnap.ctd.graph.Node;
 import edu.isnap.ctd.hint.HintConfig;
 import edu.isnap.ctd.hint.HintHighlighter;
 import edu.isnap.ctd.util.Alignment;
+import edu.isnap.ctd.util.NodeAlignment;
 import edu.isnap.ctd.util.KMedoids.DistanceMeasure;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
@@ -34,8 +36,12 @@ import edu.isnap.parser.Store.Mode;
 import edu.isnap.util.map.DoubleMap;
 
 public class ClusterDistance {
-
-	public final static DistanceMeasure<Node> RTEDDistanceMeasure = new DistanceMeasure<Node>() {
+	
+	public interface NodeDistanceMeasure extends DistanceMeasure<Node> {
+		String name();
+	}
+	
+	public final static NodeDistanceMeasure RTEDDistanceMeasure = new NodeDistanceMeasure() {
 		private final ThreadLocal<RTED_InfoTree_Opt> opt = new ThreadLocal<RTED_InfoTree_Opt>() {
 			@Override
 			protected RTED_InfoTree_Opt initialValue() {
@@ -47,25 +53,40 @@ public class ClusterDistance {
 		public double measure(Node a, Node b) {
 			return opt.get().nonNormalizedTreeDist(a.toTree(), b.toTree());
 		}
+
+		@Override
+		public String name() {
+			return "RTED";
+		}
 	};
 
-	public final static DistanceMeasure<Node> DFSAlignmentMeasure = new DistanceMeasure<Node>() {
+	public final static NodeDistanceMeasure DFSAlignmentMeasure = new NodeDistanceMeasure() {
 		@Override
 		public double measure(Node a, Node b) {
 			return Alignment.alignCost(a.depthFirstIteration(), b.depthFirstIteration());
 		}
+
+		@Override
+		public String name() {
+			return "SED_DFS";
+		}
 	};
 
-	public final static DistanceMeasure<Node> DFSNormAlignmentMeasure =
-			new DistanceMeasure<Node>() {
+	public final static NodeDistanceMeasure DFSNormAlignmentMeasure =
+			new NodeDistanceMeasure() {
 		@Override
 		public double measure(Node a, Node b) {
 			return Alignment.normAlignCost(a.depthFirstIteration(), b.depthFirstIteration(),
 					1, 1, 1);
 		}
+
+		@Override
+		public String name() {
+			return "SED_BFS";
+		}
 	};
 
-	public final static DistanceMeasure<Node> NodeCountMeasure = new DistanceMeasure<Node>() {
+	public final static NodeDistanceMeasure NodeCountMeasure = new NodeDistanceMeasure() {
 		@Override
 		public double measure(Node a, Node b) {
 			String[] aDF = a.depthFirstIteration();
@@ -74,9 +95,14 @@ public class ClusterDistance {
 			Arrays.sort(bDF);
 			return Alignment.alignCost(aDF, bDF, 1, 1, 100);
 		}
+
+		@Override
+		public String name() {
+			return "BoW";
+		}
 	};
 
-	public final static DistanceMeasure<Node> EditCountMeasure = new DistanceMeasure<Node>() {
+	public final static NodeDistanceMeasure EditCountMeasure = new NodeDistanceMeasure() {
 		@Override
 		public double measure(Node a, Node b) {
 			List<Node> la = Collections.singletonList(a);
@@ -87,7 +113,32 @@ public class ClusterDistance {
 			int editsB = new HintHighlighter(lb, config).highlight(a).size();
 			return (editsA + editsB) / 2.0;
 		}
+
+		@Override
+		public String name() {
+			return "SourceCheck_EditCount";
+		}
 	};
+	
+	public final static NodeDistanceMeasure SourceCheckMeasure = new NodeDistanceMeasure() {
+		public double measure(Node a, Node b) {
+			HintConfig config = new SnapHintConfig();
+			double distance = new NodeAlignment(a, b, config)
+					.calculateMapping(HintHighlighter.getDistanceMeasure(config)).cost();
+			return distance / a.treeSize();
+		}
+
+		@Override
+		public String name() {
+			return "SourceCheck";
+		};
+	};
+	
+	public final static List<NodeDistanceMeasure> DistanceMeasures = new ArrayList<>(
+			Arrays.asList(
+				RTEDDistanceMeasure, DFSAlignmentMeasure, DFSNormAlignmentMeasure, NodeCountMeasure,
+				EditCountMeasure, SourceCheckMeasure
+			));
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 		List<Assignment> assignments = new LinkedList<>();
@@ -96,7 +147,7 @@ public class ClusterDistance {
 	}
 
 	private static void write(String path, List<Assignment> assignments,
-			DistanceMeasure<Node> dm, int snapshotIntervalSeconds, int skipRatio)
+			NodeDistanceMeasure dm, int snapshotIntervalSeconds, int skipRatio)
 					throws FileNotFoundException, IOException {
 
 		Map<String, Node> nodes = new TreeMap<>();

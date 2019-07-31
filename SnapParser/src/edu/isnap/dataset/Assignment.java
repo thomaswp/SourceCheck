@@ -147,7 +147,7 @@ public class Assignment {
 	}
 
 	public Map<String, AssignmentAttempt> load(Mode mode, boolean snapshotsOnly) {
-		return load(mode, snapshotsOnly, true);
+		return load(mode, snapshotsOnly, dataset.onlyLogExportedCode());
 	}
 
 	public Map<String, AssignmentAttempt> load(Mode mode, boolean snapshotsOnly,
