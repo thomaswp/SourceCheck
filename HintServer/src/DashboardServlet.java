@@ -14,7 +14,6 @@ import javax.servlet.http.HttpServletResponse;
 import edu.isnap.ctd.graph.Node;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
-import edu.isnap.datasets.Fall2018;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.Store.Mode;
@@ -28,7 +27,7 @@ import edu.isnap.parser.elements.Snapshot;
 
 public class DashboardServlet extends HttpServlet {
 
-	public static Assignment testData = Fall2018.Squiral;
+	public static Assignment testData = null;//Fall2018.Squiral;
 
 	public static List<AssignmentAttempt> selectAttemptsFromDatabase(
 			Assignment assignment, String[] times) throws Exception {

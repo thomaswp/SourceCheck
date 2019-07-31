@@ -24,6 +24,5 @@
 	<classpathentry kind="lib" path="FITObjectGraphs-3.0.1.jar"/>
 	<classpathentry kind="lib" path="FITValidators-2.0.0.jar"/>
 	<classpathentry kind="lib" path="apted.jar"/>
-	<classpathentry kind="src" path="/HintServer"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

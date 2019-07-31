@@ -19,7 +19,7 @@ import edu.isnap.datasets.Samples;
 import edu.isnap.datasets.Spring2016;
 import edu.isnap.datasets.Spring2017;
 import edu.isnap.datasets.Spring2018;
-import edu.isnap.datasets.Summer2019;
+import edu.isnap.datasets.TestDataset;
 import edu.isnap.datasets.aggregate.CSC200;
 import edu.isnap.parser.LogSplitter;
 import edu.isnap.parser.ParseSubmitted;
@@ -45,7 +45,7 @@ public class Shell {
 			BJC2017.instance,
 			CampHS2018.instance,
 			MTurk2018.instance,
-			Summer2019.instance,
+			TestDataset.instance,
 	};
 
 	public static void main(String[] args) {

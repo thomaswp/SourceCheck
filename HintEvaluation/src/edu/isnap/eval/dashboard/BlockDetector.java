@@ -96,11 +96,11 @@ public class BlockDetector {
 				}
 			}
 
-			public int numOfCondition(Node node) {
-				List<Node> ifElseBlocks = node.searchAll(backbone);
-				System.out.println("num conditionals: " +ifElseBlocks.size());
-				return ifElseBlocks.size();
-			}
+//			public int numOfCondition(Node node) {
+//				List<Node> ifElseBlocks = node.searchAll(backbone);
+//				System.out.println("num conditionals: " +ifElseBlocks.size());
+//				return ifElseBlocks.size();
+//			}
 		};
 		private final static Predicate check =
 				new Node.ConjunctionPredicate(true, backbone, usesDoIfElse);

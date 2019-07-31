@@ -5,12 +5,12 @@ import java.util.Date;
 import edu.isnap.dataset.Assignment;
 
 // TODO: Check for students starting on different assignments (for all but GG1, SQ)
-public class Summer2019 extends CSC200Dataset {
+public class TestDataset extends CSC200Dataset {
 
 	public final static Date start = Assignment.date(2017, 1, 1);
 	public final static String dataDir = Assignment.CSC200_BASE_DIR + "/summer2019";
 	public final static String dataFile = dataDir + ".csv";
-	public final static Summer2019 instance = new Summer2019();
+	public final static TestDataset instance = new TestDataset();
 
 	// TODO: resolve 5 missing assignments
 	public final static Assignment LightsCameraAction = new Assignment(instance,
@@ -122,7 +122,7 @@ public class Summer2019 extends CSC200Dataset {
 		GuessingGame3, Project
 	};
 
-	private Summer2019() {
+	private TestDataset() {
 		super(start, dataDir);
 	}
 
