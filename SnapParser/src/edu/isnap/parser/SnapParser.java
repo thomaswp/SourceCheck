@@ -123,8 +123,7 @@ public class SnapParser {
 				e.printStackTrace();
 			}
 
-			// For the help-seeking study the userID was
-			// stored in the Logger.started
+			// For the help-seeking study the userID was stored in the Logger.started
 			// row, rather than as a separate column
 			if (action.equals(AttemptAction.IDE_OPENED) && data.length() > 2) {
 				JSONObject dataObject = new JSONObject(data);
@@ -185,8 +184,7 @@ public class SnapParser {
 				} else if (row.snapshot.editing.size() == 1) {
 					BlockDefinition editing = row.snapshot.editing.get(0);
 					if (editing.guid == null) {
-						// Only set the blockIndex if we're
-						// not using GUIDs
+						// Only set the blockIndex if we're not using GUIDs
 						editing.blockIndex = editingIndex;
 					}
 				}
