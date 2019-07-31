@@ -245,8 +245,9 @@ public class SnapParser {
 								userID = dataObject.getString("userID");
 							}
 						}
-						// TODO: Add deleted code back
+
 						builder.addRow(action, data, userID, session, xml, id, timestampString);
+
 					}
 
 					parser.close();
