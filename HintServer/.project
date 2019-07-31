@@ -5,6 +5,8 @@
 	<projects>
 		<project>iSnap</project>
 		<project>SnapParser</project>
+		<project>QualityScore</project>
+		<project>CTD</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
