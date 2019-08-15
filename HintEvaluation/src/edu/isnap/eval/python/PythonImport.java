@@ -1,6 +1,7 @@
 package edu.isnap.eval.python;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.LinkedHashMap;
@@ -12,8 +13,12 @@ import java.util.stream.Collectors;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Output;
+
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.hint.HintData;
+import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.util.NullStream;
 import edu.isnap.node.ASTNode;
 import edu.isnap.node.ASTSnapshot;
@@ -30,7 +35,9 @@ public class PythonImport {
 
 	public static void main(String[] args) throws IOException {
 //		generateHints("../../PythonAST/data/datacamp", "65692");
-		generateHints("../../PythonAST/data/itap", "firstAndLast");
+//		generateHints("../../PythonAST/data/itap", "firstAndLast");
+		serializeHintData("../../PythonAST/data/itap", "firstAndLast", 
+				"../HintServer/WebContent/WEB-INF/data/firstAndLast.hdata");
 //		generateHints("../data/", "test");
 
 //		Map<String, ListMap<String, PythonNode>> nodes = loadAllAssignments("../../PythonAST/data");
@@ -66,6 +73,16 @@ public class PythonImport {
 		}
 		return hintData;
 	}
+	
+	static void serializeHintData(String dataDir, String assignment, String outputPath) 
+			throws IOException {
+		ListMap<String, PythonNode> attempts = loadAssignment(dataDir, assignment);
+		HintData hintData = createHintData(assignment, attempts);
+		Kryo kryo = SnapHintBuilder.getKryo();
+		Output output = new Output(new FileOutputStream(outputPath));
+		kryo.writeObject(output, hintData);
+		output.close();
+	}
 
 	static void generateHints(String dataDir, String assignment) throws IOException {
 		ListMap<String, PythonNode> attempts = loadAssignment(dataDir, assignment);
@@ -75,7 +92,10 @@ public class PythonImport {
 
 			ListMap<String, PythonNode> subset = new ListMap<>();
 			for (String attemptID : attempts.keySet()) {
-				subset.put(attemptID, attempts.get(attemptID));
+				List<PythonNode> trace = attempts.get(attemptID);
+				if (trace.get(trace.size() - 1).correct.orElse(false)) {
+					subset.put(attemptID, attempts.get(attemptID));
+				}
 			}
 			subset.remove(student);
 			HintData hintData = createHintData(assignment, subset);
