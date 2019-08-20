@@ -19,18 +19,12 @@ import com.esotericsoftware.kryo.io.Output;
 import edu.isnap.eval.export.JsonAST;
 import edu.isnap.hint.HintData;
 import edu.isnap.hint.SnapHintBuilder;
-import edu.isnap.hint.util.NullStream;
-import edu.isnap.node.ASTNode;
 import edu.isnap.node.ASTSnapshot;
 import edu.isnap.node.Node;
 import edu.isnap.python.PythonHintConfig;
 import edu.isnap.python.PythonNode;
+import edu.isnap.python.SourceCodeHighlighter;
 import edu.isnap.sourcecheck.HintHighlighter;
-import edu.isnap.sourcecheck.NodeAlignment.Mapping;
-import edu.isnap.sourcecheck.edit.Deletion;
-import edu.isnap.sourcecheck.edit.EditHint;
-import edu.isnap.sourcecheck.edit.Insertion;
-import edu.isnap.util.Diff;
 import edu.isnap.util.map.ListMap;
 
 public class PythonImport {
@@ -101,66 +95,9 @@ public class PythonImport {
 			}
 			subset.remove(student);
 			HintData hintData = createHintData(assignment, subset);
-			HintHighlighter highlighter = hintData.hintHighlighter();
-
-			highlighter.trace = NullStream.instance;
-
-			String from = firstAttempt.prettyPrint(true);
-			List<EditHint> edits = highlighter.highlight(firstAttempt);
-			Node copy = firstAttempt.copy();
-			EditHint.applyEdits(copy, edits);
-			String to = copy.prettyPrint(true);
-
-			Mapping mapping = highlighter.findSolutionMapping(firstAttempt);
-			PythonNode target = (PythonNode) mapping.to;
-
-			System.out.println(student);
-			System.out.println(firstAttempt.source);
-			System.out.println("\nTarget (" + target.student + "):");
-			System.out.println(Diff.diff(firstAttempt.source, target.source, 2));
-			System.out.println(from);
-			mapping.printValueMappings(System.out);
-			System.out.println();
-
-
-			for (EditHint hint : edits) {
-				ASTNode toDelete = null;
-				if (hint instanceof Deletion) {
-					Deletion del = (Deletion) hint;
-					toDelete = (ASTNode) del.node.tag;
-				}
-				if (hint instanceof Insertion) {
-					Insertion ins = (Insertion) hint;
-					if (ins.replaced != null) toDelete = (ASTNode) ins.replaced.tag;
-				}
-				if (toDelete == null || toDelete.hasType("null")) continue;
-				System.out.println(hint);
-				System.out.println(toDelete);
-				System.out.println(toDelete.getSourceLocationStart() + " --> " +
-						toDelete.getSourceLocationEnd());
-				String marked = firstAttempt.source;
-				String start = "\u001b[31m";
-				String end = "\u001b[0m";
-				if (toDelete.getSourceLocationEnd() == null) {
-					marked += end;
-				} else {
-					marked = toDelete.getSourceLocationEnd().markSource(marked, end);
-				}
-				if (toDelete.getSourceLocationStart() != null) {
-					marked = toDelete.getSourceLocationStart().markSource(marked, start);
-					System.out.println("MARKED: ");
-				} else {
-					System.out.println("Missing source start: " + toDelete);
-				}
-				System.out.println(marked);
-			}
-
-//			System.out.println(Diff.diff(from, to));
-//			System.out.println(String.join("\n",
-//					edits.stream().map(e -> e.toString()).collect(Collectors.toList())));
-//			System.out.println("------------------------");
-//			System.out.println();
-
+			
+			System.out.println(SourceCodeHighlighter.highlightSourceCode(
+					hintData, firstAttempt));
 		}
 
 	}
