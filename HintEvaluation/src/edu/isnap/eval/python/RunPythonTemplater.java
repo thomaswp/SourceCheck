@@ -5,10 +5,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 import edu.isnap.eval.export.JsonAST;
-import edu.isnap.eval.python.PythonImport.PythonNode;
 import edu.isnap.hint.HintData;
 import edu.isnap.node.ASTNode;
 import edu.isnap.node.Node;
+import edu.isnap.python.PythonHintConfig;
+import edu.isnap.python.PythonNode;
 import edu.isnap.template.parse.TemplateParser;
 
 public class RunPythonTemplater {

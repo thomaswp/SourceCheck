@@ -1,10 +1,9 @@
-package edu.isnap.eval.python;
+package edu.isnap.python;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import edu.isnap.eval.python.PythonImport.PythonNode;
 import edu.isnap.hint.HintConfig;
 import edu.isnap.node.Node;
 import edu.isnap.node.Node.NodeConstructor;

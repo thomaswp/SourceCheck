@@ -5,13 +5,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import edu.isnap.eval.export.JsonAST;
-import edu.isnap.eval.python.PythonHintConfig;
 import edu.isnap.hint.HintConfig;
 import edu.isnap.hint.HintData;
 import edu.isnap.hint.IDataConsumer;
 import edu.isnap.hint.SnapHintConfig;
 import edu.isnap.hint.util.SnapNode;
 import edu.isnap.node.Node;
+import edu.isnap.python.PythonHintConfig;
 import edu.isnap.rating.RatingConfig;
 import edu.isnap.rating.data.HintRequest;
 import edu.isnap.rating.data.HintRequestDataset;
