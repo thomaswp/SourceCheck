@@ -236,6 +236,9 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 		}
 
 		public Application(Node parent, int index, int pairIndex, EditAction action) {
+			if(parent == null) {
+//				throw new Error("Parent node should not be null");
+			}
 			this.parent = parent;
 			this.index = index;
 			this.pairIndex = pairIndex;

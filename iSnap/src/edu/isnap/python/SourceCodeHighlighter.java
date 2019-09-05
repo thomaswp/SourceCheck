@@ -14,7 +14,12 @@ import edu.isnap.sourcecheck.edit.Insertion;
 import edu.isnap.util.Diff;
 
 public class SourceCodeHighlighter {
-	
+
+	/*public static String EDIT_START = "\u001b[31m"; //TODO: configure this for HTML or ASCII output
+	public static String EDIT_END = "\u001b[0m";*/
+	public static String EDIT_START = "<u>"; //TODO: configure this for HTML or ASCII output
+	public static String EDIT_END = "</u>";
+
 	// TODO: Eventually this should be a non-static method and the class
 	// should allow configuration of the HTML output (e.g. colors, etc.)
 	
@@ -56,15 +61,13 @@ public class SourceCodeHighlighter {
 			System.out.println(toDelete.getSourceLocationStart() + " --> " +
 					toDelete.getSourceLocationEnd());
 			String marked = studentCode.source;
-			String start = "\u001b[31m";
-			String end = "\u001b[0m";
 			if (toDelete.getSourceLocationEnd() == null) {
-				marked += end;
+				marked += EDIT_END;
 			} else {
-				marked = toDelete.getSourceLocationEnd().markSource(marked, end);
+				marked = toDelete.getSourceLocationEnd().markSource(marked, EDIT_END);
 			}
 			if (toDelete.getSourceLocationStart() != null) {
-				marked = toDelete.getSourceLocationStart().markSource(marked, start);
+				marked = toDelete.getSourceLocationStart().markSource(marked, EDIT_START);
 				System.out.println("MARKED: ");
 			} else {
 				System.out.println("Missing source start: " + toDelete);

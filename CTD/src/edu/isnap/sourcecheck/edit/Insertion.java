@@ -217,16 +217,20 @@ public class Insertion extends EditHint {
 					}
 				}
 
-				// In case this is a newly inserted parent, we pad with placeholder nodes
-				while (parent.children.size() < index) {
-					parent.children.add(parent.constructNode(parent, ASTNode.EMPTY_TYPE));
+				if(parent != null) {
+					// In case this is a newly inserted parent, we pad with placeholder nodes
+					while (parent.children.size() < index) {
+						parent.children.add(parent.constructNode(parent, ASTNode.EMPTY_TYPE));
+					}
+					// and then remove them as children are inserted
+					if (replaced == null && index < parent.children.size() &&
+							parent.children.get(index).hasType(ASTNode.EMPTY_TYPE)) {
+						parent.children.remove(index);
+					}
+					parent.children.add(index, toInsert);
+				} else {
+					System.out.println("parent is null in Insertion.addApplications()");
 				}
-				// and then remove them as children are inserted
-				if (replaced == null && index < parent.children.size() &&
-						parent.children.get(index).hasType(ASTNode.EMPTY_TYPE)) {
-					parent.children.remove(index);
-				}
-				parent.children.add(index, toInsert);
 			}
 		}));
 	}

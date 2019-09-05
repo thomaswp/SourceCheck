@@ -43,13 +43,17 @@ public class Deletion extends EditHint {
 	@Override
 	protected void addApplications(Node root, Node editParent, List<Application> applications) {
 		Node node = Node.findMatchingNodeInCopy(this.node, root);
-		final int index = node.index();
-		applications.add(new Application(editParent, index, new EditAction() {
-			@Override
-			public void apply(BiMap<Node, Node> createdNodeMap) {
-				node.parent.children.remove(index);
-			}
-		}));
+		if(node != null) {
+			final int index = node.index();
+			applications.add(new Application(editParent, index, new EditAction() {
+				@Override
+				public void apply(BiMap<Node, Node> createdNodeMap) {
+					node.parent.children.remove(index);
+				}
+			}));
+		} else {
+			System.out.println("Node is null in Deletion.addApplications()");
+		}
 	}
 
 	@Override

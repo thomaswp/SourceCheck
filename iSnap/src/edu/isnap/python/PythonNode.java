@@ -53,6 +53,8 @@ public class PythonNode extends Node {
 	
 	public static PythonNode fromJSON(JSONObject jsonAST, String pythonSource) {
 		ASTSnapshot astNode = ASTSnapshot.parse(jsonAST, pythonSource);
-		return (PythonNode) ASTNodeConverter.toNode(astNode, PythonNode::new);
+		PythonNode node = (PythonNode)ASTNodeConverter.toNode(astNode, PythonNode::new);
+		node.source = pythonSource;
+		return node;
 	}
 }
