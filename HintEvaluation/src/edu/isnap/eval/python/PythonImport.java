@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +33,7 @@ public class PythonImport {
 	public static void main(String[] args) throws IOException {
 //		generateHints("../../PythonAST/data/datacamp", "65692");
 //		generateHints("../../PythonAST/data/itap", "firstAndLast");
-		serializeHintData("../../PythonAST/data/itap", "firstAndLast", 
+		serializeHintData("../../PythonAST/data/itap", "firstAndLast",
 				"../HintServer/WebContent/WEB-INF/data/firstAndLast.hdata");
 //		generateHints("../data/", "test");
 
@@ -69,10 +70,19 @@ public class PythonImport {
 		}
 		return hintData;
 	}
-	
-	static void serializeHintData(String dataDir, String assignment, String outputPath) 
+
+	static void serializeHintData(String dataDir, String assignment, String outputPath)
 			throws IOException {
 		ListMap<String, PythonNode> attempts = loadAssignment(dataDir, assignment);
+		List<String> toRemove = new ArrayList<String>();
+		// Remove incorrect attempts before serializing
+		for (String attemptID : attempts.keySet()) {
+			List<PythonNode> attempt = attempts.get(attemptID);
+			if (attempt.size() == 0 || !attempt.get(attempt.size() - 1).correct.orElse(false)) {
+				toRemove.add(attemptID);
+			}
+		}
+		toRemove.forEach(attempts::remove);
 		HintData hintData = createHintData(assignment, attempts);
 		Kryo kryo = SnapHintBuilder.getKryo();
 		Output output = new Output(new FileOutputStream(outputPath));
@@ -95,7 +105,7 @@ public class PythonImport {
 			}
 			subset.remove(student);
 			HintData hintData = createHintData(assignment, subset);
-			
+
 			System.out.println(SourceCodeHighlighter.highlightSourceCode(
 					hintData, firstAttempt));
 		}
