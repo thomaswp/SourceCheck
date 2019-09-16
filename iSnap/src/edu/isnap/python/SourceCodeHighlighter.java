@@ -17,8 +17,8 @@ public class SourceCodeHighlighter {
 
 	/*public static String EDIT_START = "\u001b[31m"; //TODO: configure this for HTML or ASCII output
 	public static String EDIT_END = "\u001b[0m";*/
-	public static String EDIT_START = "<u>"; //TODO: configure this for HTML or ASCII output
-	public static String EDIT_END = "</u>";
+	public static String DELETE_START = "<span class=\"delete\">"; //TODO: configure this for HTML or ASCII output
+	public static String DELETE_END = "</span>";
 
 	// TODO: Eventually this should be a non-static method and the class
 	// should allow configuration of the HTML output (e.g. colors, etc.)
@@ -44,7 +44,6 @@ public class SourceCodeHighlighter {
 		mapping.printValueMappings(System.out);
 		System.out.println();
 
-
 		for (EditHint hint : edits) {
 			ASTNode toDelete = null;
 			if (hint instanceof Deletion) {
@@ -62,12 +61,12 @@ public class SourceCodeHighlighter {
 					toDelete.getSourceLocationEnd());
 			String marked = studentCode.source;
 			if (toDelete.getSourceLocationEnd() == null) {
-				marked += EDIT_END;
+				marked += DELETE_END;
 			} else {
-				marked = toDelete.getSourceLocationEnd().markSource(marked, EDIT_END);
+				marked = toDelete.getSourceLocationEnd().markSource(marked, DELETE_END);
 			}
 			if (toDelete.getSourceLocationStart() != null) {
-				marked = toDelete.getSourceLocationStart().markSource(marked, EDIT_START);
+				marked = toDelete.getSourceLocationStart().markSource(marked, DELETE_START);
 				System.out.println("MARKED: ");
 			} else {
 				System.out.println("Missing source start: " + toDelete);
