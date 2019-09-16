@@ -14,11 +14,11 @@ import edu.isnap.sourcecheck.edit.Insertion;
 import edu.isnap.util.Diff;
 
 public class SourceCodeHighlighter {
-	
+
 	// TODO: Eventually this should be a non-static method and the class
 	// should allow configuration of the HTML output (e.g. colors, etc.)
-	
-	public static String highlightSourceCode(HintData hintData, PythonNode studentCode) {
+
+	public static String highlightSourceCode(HintData hintData, TextualNode studentCode) {
 		HintHighlighter highlighter = hintData.hintHighlighter();
 
 		highlighter.trace = NullStream.instance;
