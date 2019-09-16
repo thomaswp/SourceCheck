@@ -1,13 +1,11 @@
-package edu.isnap.eval.python;
+package edu.isnap.eval.java;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -23,46 +21,25 @@ import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.node.ASTSnapshot;
 import edu.isnap.node.Node;
 import edu.isnap.python.PythonHintConfig;
-import edu.isnap.python.PythonNode;
 import edu.isnap.python.SourceCodeHighlighter;
 import edu.isnap.sourcecheck.HintHighlighter;
 import edu.isnap.util.map.ListMap;
 
-public class PythonImport {
+public class JavaImport {
 
 	public static void main(String[] args) throws IOException {
 
 		// Run generate hints to load data, generate hints for each student and print them out
 		// You need to update the file path to wherever you unzipped the data
 		generateHints("../../../../Desktop", "anyLowercase");
-
-
-//		serializeHintData("../../PythonAST/data/itap", "firstAndLast",
-//				"../HintServer/WebContent/WEB-INF/data/firstAndLast.hdata");
-//		generateHints("../data/", "test");
-
-//		Map<String, ListMap<String, PythonNode>> nodes = loadAllAssignments("../../PythonAST/data");
-//		for (String assignment : nodes.keySet()) {
-//			long correct = nodes.get(assignment).values().stream()
-//					.filter(list -> list.stream().anyMatch(n -> n.correct.orElse(false)))
-//					.count();
-//			if (correct > 0) {
-//				System.out.println(assignment + ": " + correct + "/" +
-//					nodes.get(assignment).size());
-//			}
-//		}
-//		GrammarBuilder builder = new GrammarBuilder("python", new HashMap<>());
-//		nodes.values().forEach(listMap -> listMap.values()
-//				.forEach(list -> list.forEach(n -> builder.add(n))));
-//		System.out.println(builder.toJSON());
 	}
 
 	static HintData createHintData(String dataDir, String assignment) throws IOException {
-		ListMap<String, PythonNode> attempts = loadAssignment(dataDir, assignment);
+		ListMap<String, JavaNode> attempts = loadAssignment(dataDir, assignment);
 		return createHintData(assignment, attempts);
 	}
 
-	static HintData createHintData(String assignmentID, ListMap<String, PythonNode> attempts) {
+	static HintData createHintData(String assignmentID, ListMap<String, JavaNode> attempts) {
 		PythonHintConfig config = new PythonHintConfig();
 		HintData hintData = new HintData(assignmentID, config, 1, HintHighlighter.DataConsumer);
 		for (String attemptID : attempts.keySet()) {
@@ -75,13 +52,14 @@ public class PythonImport {
 		return hintData;
 	}
 
+	// Don't worry about this method for now
 	static void serializeHintData(String dataDir, String assignment, String outputPath)
 			throws IOException {
-		ListMap<String, PythonNode> attempts = loadAssignment(dataDir, assignment);
+		ListMap<String, JavaNode> attempts = loadAssignment(dataDir, assignment);
 		List<String> toRemove = new ArrayList<String>();
 		// Remove incorrect attempts before serializing
 		for (String attemptID : attempts.keySet()) {
-			List<PythonNode> attempt = attempts.get(attemptID);
+			List<JavaNode> attempt = attempts.get(attemptID);
 			if (attempt.size() == 0 || !attempt.get(attempt.size() - 1).correct.orElse(false)) {
 				toRemove.add(attemptID);
 			}
@@ -95,46 +73,46 @@ public class PythonImport {
 	}
 
 	static void generateHints(String dataDir, String assignment) throws IOException {
-		ListMap<String, PythonNode> attempts = loadAssignment(dataDir, assignment);
+		ListMap<String, JavaNode> attempts = loadAssignment(dataDir, assignment);
 		for (String student : attempts.keySet()) {
-			PythonNode firstAttempt = attempts.get(student).get(0);
+			// May want to change this to a random attempt, not just the first one, but you can
+			// start with the first one
+			JavaNode firstAttempt = attempts.get(student).get(0);
 			if (firstAttempt.correct.orElse(false)) continue;
 
-			ListMap<String, PythonNode> subset = new ListMap<>();
+			ListMap<String, JavaNode> subset = new ListMap<>();
 			for (String attemptID : attempts.keySet()) {
-				List<PythonNode> trace = attempts.get(attemptID);
+				// Get the sequence of snapshots over time
+				List<JavaNode> trace = attempts.get(attemptID);
+				// If it was correct, then add it to the subset
 				if (trace.get(trace.size() - 1).correct.orElse(false)) {
 					subset.put(attemptID, attempts.get(attemptID));
 				}
 			}
+			// Remove the student we're generating hints for, because you can't give yourself a hint
 			subset.remove(student);
+
+			// We create a "HintData" object, which represents the data from which we generate all
+			// hints
 			HintData hintData = createHintData(assignment, subset);
 
+			// Then we use this method to "highlight" the java source code using the SourceCheck
+			// hints
 			System.out.println(SourceCodeHighlighter.highlightSourceCode(
 					hintData, firstAttempt));
 		}
 
 	}
 
-	public static Map<String, ListMap<String, PythonNode>> loadAllAssignments(String dataDir)
+	// TODO: Modify this so that it loads from your spreadsheet instead of a folder of folders
+	static ListMap<String, JavaNode> loadAssignment(String dataDir, String assignment)
 			throws IOException {
-		Map<String, ListMap<String, PythonNode>> map = new LinkedHashMap<>();
-		for (File dir : new File(dataDir).listFiles(f -> f.isDirectory())) {
-			String assignment = dir.getName();
-			map.put(assignment, loadAssignment(dataDir, assignment));
-		}
-		return map;
-	}
-
-	static ListMap<String, PythonNode> loadAssignment(String dataDir, String assignment)
-			throws IOException {
-		ListMap<String, PythonNode> nodes = new ListMap<>();
+		ListMap<String, JavaNode> nodes = new ListMap<>();
 		for (File studentDir : new File(dataDir, assignment).listFiles(File::isDirectory)) {
-			// TODO: maybe don't use the folder name?
 			String student = studentDir.getName();
 			for (File file : studentDir.listFiles()) {
 				if (!file.getName().endsWith(".json")) continue;
-				PythonNode node;
+				JavaNode node;
 				try {
 					String source = null;
 					File sourceFile = new File(studentDir, file.getName().replace(".json", ".py"));
@@ -144,7 +122,7 @@ public class PythonImport {
 					String json = new String(Files.readAllBytes(file.toPath()));
 					JSONObject obj = new JSONObject(json);
 					ASTSnapshot astNode = ASTSnapshot.parse(obj, source);
-					node = (PythonNode) JsonAST.toNode(astNode, PythonNode::new);
+					node = (JavaNode) JsonAST.toNode(astNode, JavaNode::new);
 					if (obj.has("correct")) {
 						boolean correct = obj.getBoolean("correct");
 						node.correct = Optional.of(correct);
@@ -157,7 +135,7 @@ public class PythonImport {
 					break;
 				}
 //				System.out.println(file.getName());
-//				System.out.println(node.toNode(PythonNode::new).prettyPrint(true));
+//				System.out.println(node.toNode(JavaNode::new).prettyPrint(true));
 				nodes.add(student, node);
 			}
 		}
