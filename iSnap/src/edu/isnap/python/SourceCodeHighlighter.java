@@ -1,5 +1,7 @@
 package edu.isnap.python;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import edu.isnap.hint.HintData;
@@ -10,6 +12,7 @@ import edu.isnap.sourcecheck.HintHighlighter;
 import edu.isnap.sourcecheck.NodeAlignment.Mapping;
 import edu.isnap.sourcecheck.edit.Deletion;
 import edu.isnap.sourcecheck.edit.EditHint;
+import edu.isnap.sourcecheck.edit.EditSorter;
 import edu.isnap.sourcecheck.edit.Insertion;
 import edu.isnap.util.Diff;
 
@@ -17,11 +20,21 @@ public class SourceCodeHighlighter {
 
 	/*public static String EDIT_START = "\u001b[31m"; //TODO: configure this for HTML or ASCII output
 	public static String EDIT_END = "\u001b[0m";*/
-	public static String DELETE_START = "<span class=\"delete\">"; //TODO: configure this for HTML or ASCII output
+	public static String DELETE_START = "<span class=\"deletion\">"; //TODO: configure this for HTML or ASCII output
 	public static String DELETE_END = "</span>";
+	public static String INSERT_START = "<span class=\"insertion\">";
+	public static String INSERT_END = "</span>";
 
 	// TODO: Eventually this should be a non-static method and the class
 	// should allow configuration of the HTML output (e.g. colors, etc.)
+
+
+	private static List<EditHint> sortEdits(List<EditHint> unsortedEdits){
+		List<EditHint> sortedEdits = new ArrayList<EditHint>();
+		sortedEdits.addAll(unsortedEdits);
+		Collections.sort(sortedEdits, new EditSorter());
+		return sortedEdits;
+	}
 	
 	public static String highlightSourceCode(HintData hintData, PythonNode studentCode) {
 		HintHighlighter highlighter = hintData.hintHighlighter();
@@ -44,6 +57,13 @@ public class SourceCodeHighlighter {
 		mapping.printValueMappings(System.out);
 		System.out.println();
 
+		if(edits.size() > 1) {
+			System.out.println("Multiple edits suggested");
+			//TODO: sort the edits by their location, so that last edit gets processed first. Need to consider overlapping areas.
+			edits = sortEdits(edits);
+		}
+
+		String marked = studentCode.source;
 		for (EditHint hint : edits) {
 			ASTNode toDelete = null;
 			if (hint instanceof Deletion) {
@@ -57,9 +77,8 @@ public class SourceCodeHighlighter {
 			if (toDelete == null || toDelete.hasType("null")) continue;
 			System.out.println(hint);
 			System.out.println(toDelete);
-			System.out.println(toDelete.getSourceLocationStart() + " --> " +
-					toDelete.getSourceLocationEnd());
-			String marked = studentCode.source;
+			System.out.println(toDelete.getSourceLocationStart() + " --> " + toDelete.getSourceLocationEnd());
+
 			if (toDelete.getSourceLocationEnd() == null) {
 				marked += DELETE_END;
 			} else {
@@ -71,13 +90,10 @@ public class SourceCodeHighlighter {
 			} else {
 				System.out.println("Missing source start: " + toDelete);
 			}
+			//TODO: Need to handle insertions as well
 			System.out.println(marked);
-
-			// TODO: Right now we return the code with only the first edit highighted
-			// but we want to return the code with all edits highlighted
-			return marked;
 		}
-		return studentCode.source;
+		return marked;
 
 //		System.out.println(Diff.diff(from, to));
 //		System.out.println(String.join("\n",
