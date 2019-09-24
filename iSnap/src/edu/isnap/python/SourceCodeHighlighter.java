@@ -58,14 +58,15 @@ public class SourceCodeHighlighter {
 		System.out.println();
 
 		if(edits.size() > 1) {
-			System.out.println("Multiple edits suggested");
-			//TODO: sort the edits by their location, so that last edit gets processed first. Need to consider overlapping areas.
-			edits = sortEdits(edits);
+			System.out.println("Multiple edits suggested\n");
+			//sort the edits by their location, so that last edit gets processed first. 
+			edits = sortEdits(edits); //TODO: Need to consider overlapping areas.
 		}
 
 		String marked = studentCode.source;
 		for (EditHint hint : edits) {
 			ASTNode toDelete = null;
+			ASTNode toInsert = null;
 			if (hint instanceof Deletion) {
 				Deletion del = (Deletion) hint;
 				toDelete = (ASTNode) del.node.tag;
@@ -73,25 +74,38 @@ public class SourceCodeHighlighter {
 			if (hint instanceof Insertion) {
 				Insertion ins = (Insertion) hint;
 				if (ins.replaced != null) toDelete = (ASTNode) ins.replaced.tag;
+				if (ins.candidate != null) toInsert = (ASTNode) ins.candidate.tag; //It should only ever be one or the other?
 			}
-			if (toDelete == null || toDelete.hasType("null")) continue;
-			System.out.println(hint);
-			System.out.println(toDelete);
-			System.out.println(toDelete.getSourceLocationStart() + " --> " + toDelete.getSourceLocationEnd());
+			if ( (toDelete == null || toDelete.hasType("null")) && (toInsert == null || toInsert.hasType("null")) ) {continue;}
+			System.out.println("Hint:\n" + hint);
 
-			if (toDelete.getSourceLocationEnd() == null) {
-				marked += DELETE_END;
-			} else {
-				marked = toDelete.getSourceLocationEnd().markSource(marked, DELETE_END);
-			}
-			if (toDelete.getSourceLocationStart() != null) {
-				marked = toDelete.getSourceLocationStart().markSource(marked, DELETE_START);
+			if(toDelete != null) {
+				System.out.println("Deletion: " + toDelete);
+				System.out.println("Deletion location: " + toDelete.getSourceLocationStart() + " --> " + toDelete.getSourceLocationEnd());
 				System.out.println("MARKED: ");
-			} else {
-				System.out.println("Missing source start: " + toDelete);
+				if (toDelete.getSourceLocationEnd() == null) {
+					marked += DELETE_END;
+				} else {
+					marked = toDelete.getSourceLocationEnd().markSource(marked, DELETE_END);
+				}
+				if (toDelete.getSourceLocationStart() != null) {
+					marked = toDelete.getSourceLocationStart().markSource(marked, DELETE_START);
+				} else {
+					System.out.println("Missing source start: " + toDelete);
+				}
 			}
-			//TODO: Need to handle insertions as well
-			System.out.println(marked);
+			if(toInsert != null) {
+				System.out.println("Insertion: " + toInsert);
+				System.out.println("Insertion location: " + toInsert.getSourceLocationStart() + " --> " + toInsert.getSourceLocationEnd());
+				System.out.println("MARKED: ");
+
+				//TODO: Need to think about how to handle other modifications throwing off the location index
+				if(toInsert.getSourceLocationStart() != null) {
+					marked = toInsert.getSourceLocationStart().markSource(marked, INSERT_START + toInsert.value + INSERT_END);
+				}
+			}
+			
+			System.out.println(marked + "\n");
 		}
 		return marked;
 

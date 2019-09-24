@@ -18,6 +18,8 @@ public class EditSorter implements Comparator<EditHint> {
     	} else if (a instanceof Deletion) {
     		a_start = getDeletionStart(a);
     		a_end = getDeletionEnd(a);
+    	} else if(a instanceof Reorder) {
+    		throw new RuntimeException();
     	}
     	
     	if (b instanceof Insertion) {
@@ -26,6 +28,8 @@ public class EditSorter implements Comparator<EditHint> {
     	} else if (b instanceof Deletion) {
     		b_start = getDeletionStart(b);
     		b_end = getDeletionEnd(b);
+    	} else if(b instanceof Reorder) {
+    		throw new RuntimeException();
     	}
         return a_end.compareTo(b_end);
     }
