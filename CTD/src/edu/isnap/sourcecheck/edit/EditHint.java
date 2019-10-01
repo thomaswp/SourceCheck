@@ -13,6 +13,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import edu.isnap.node.Node;
+import edu.isnap.node.ASTNode.SourceLocation;
 import edu.isnap.sourcecheck.NodeAlignment.Mapping;
 import edu.isnap.sourcecheck.priority.Priority;
 import edu.isnap.ctd.hint.Hint;
@@ -27,11 +28,13 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 	protected abstract double priority();
 	protected abstract void appendHashCodeFieds(HashCodeBuilder builder);
 	protected abstract void appendEqualsFieds(EqualsBuilder builder, EditHint rhs);
-	protected abstract void addApplications(Node root, Node editParent,
-			List<Application> applications);
+	protected abstract void addApplications(Node root, Node editParent, List<Application> applications);
 	public abstract String action();
 	public abstract Node getPriorityToNode(Mapping mapping);
-
+	public abstract SourceLocation getCorrectedEditStart();
+	public abstract SourceLocation getCorrectedEditEnd();
+	public abstract EditType getEditType();
+	
 	public static boolean useValues = true;
 
 	public final Node parent;
@@ -43,6 +46,10 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 
 	public final List<EditHint> subedits = new ArrayList<>();
 
+	public enum EditType {
+		DELETION, REPLACEMENT, INSERTION, CANDIDATE, REORDER
+	}
+	
 	public EditHint(Node parent) {
 		this.parent = parent;
 		boolean swap = false;

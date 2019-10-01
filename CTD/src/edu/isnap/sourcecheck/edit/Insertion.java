@@ -11,8 +11,10 @@ import org.json.JSONObject;
 import edu.isnap.hint.TextHint;
 import edu.isnap.node.ASTNode;
 import edu.isnap.node.Node;
+import edu.isnap.node.ASTNode.SourceLocation;
 import edu.isnap.node.Node.Predicate;
 import edu.isnap.sourcecheck.NodeAlignment.Mapping;
+import edu.isnap.sourcecheck.edit.EditHint.EditType;
 import edu.isnap.util.map.BiMap;
 
 public class Insertion extends EditHint {
@@ -271,5 +273,38 @@ public class Insertion extends EditHint {
 	@Override
 	public Node getPriorityToNode(Mapping mapping) {
 		return pair;
+	}
+	
+	@Override
+	public SourceLocation getCorrectedEditStart() {
+		ASTNode node = null;
+		
+		if (this.replaced != null) { node = (ASTNode) this.replaced.tag; }
+		if (this.candidate != null /*&& !this.missingParent*/) { node = (ASTNode) this.candidate.tag; } //TODO: investigate this
+		
+		if (node != null) {
+			return node.startSourceLocation;
+		}
+		return null;
+	}
+
+	@Override
+	public SourceLocation getCorrectedEditEnd() {
+		ASTNode node = null;
+		
+		if (this.replaced != null) { node = (ASTNode) this.replaced.tag; }
+		if (this.candidate != null /*&& !this.missingParent*/) { node = (ASTNode) this.candidate.tag; }
+		
+		if (node != null) {
+			return node.endSourceLocation;
+		}
+		return null;
+	}
+	
+	@Override
+	public EditType getEditType() {
+		if (this.replaced != null) { return EditType.REPLACEMENT; }
+		if (this.candidate != null && !this.missingParent) {return EditType.CANDIDATE;}		
+		return EditType.INSERTION;
 	}
 }

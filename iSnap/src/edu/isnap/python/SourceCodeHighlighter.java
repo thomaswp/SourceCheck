@@ -2,11 +2,16 @@ package edu.isnap.python;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import edu.isnap.hint.HintData;
 import edu.isnap.hint.util.NullStream;
 import edu.isnap.node.ASTNode;
+import edu.isnap.node.ASTNode.SourceLocation;
 import edu.isnap.node.Node;
 import edu.isnap.sourcecheck.HintHighlighter;
 import edu.isnap.sourcecheck.NodeAlignment.Mapping;
@@ -21,10 +26,12 @@ public class SourceCodeHighlighter {
 	/*public static String EDIT_START = "\u001b[31m"; //TODO: configure this for HTML or ASCII output
 	public static String EDIT_END = "\u001b[0m";*/
 	public static String DELETE_START = "<span class=\"deletion\">"; //TODO: configure this for HTML or ASCII output
-	public static String DELETE_END = "</span>";
 	public static String INSERT_START = "<span class=\"insertion\">";
-	public static String INSERT_END = "</span>";
-
+	public static String REPLACE_START = "<span class=\"replacement\">";
+	public static String CANDIDATE_START = "<span class=\"candidate\">";
+	public static String REORDER_START = "<span class=\"reorder\">";
+	public static String SPAN_END = "</span>";
+	
 	// TODO: Eventually this should be a non-static method and the class
 	// should allow configuration of the HTML output (e.g. colors, etc.)
 
@@ -33,9 +40,19 @@ public class SourceCodeHighlighter {
 		List<EditHint> sortedEdits = new ArrayList<EditHint>();
 		sortedEdits.addAll(unsortedEdits);
 		Collections.sort(sortedEdits, new EditSorter());
+		Collections.sort(sortedEdits, new EditSorter());
 		return sortedEdits;
 	}
 	
+	private static SortedMap<SourceLocation, EditHint> getSortedHintMap(List<EditHint> edits){
+		SortedMap<SourceLocation, EditHint> editMap = new TreeMap<SourceLocation, EditHint>();
+		for (EditHint hint : edits) {
+			editMap.put(hint.getCorrectedEditStart(), hint);
+			editMap.put(hint.getCorrectedEditEnd(), hint);
+		}		
+		return editMap;
+	}
+
 	public static String highlightSourceCode(HintData hintData, PythonNode studentCode) {
 		HintHighlighter highlighter = hintData.hintHighlighter();
 
@@ -56,63 +73,39 @@ public class SourceCodeHighlighter {
 		System.out.println(from);
 		mapping.printValueMappings(System.out);
 		System.out.println();
-
-		if(edits.size() > 1) {
-			System.out.println("Multiple edits suggested\n");
-			//sort the edits by their location, so that last edit gets processed first. 
-			edits = sortEdits(edits); //TODO: Need to consider overlapping areas.
-		}
-
 		String marked = studentCode.source;
-		for (EditHint hint : edits) {
-			ASTNode toDelete = null;
-			ASTNode toInsert = null;
-			if (hint instanceof Deletion) {
-				Deletion del = (Deletion) hint;
-				toDelete = (ASTNode) del.node.tag;
-			}
-			if (hint instanceof Insertion) {
-				Insertion ins = (Insertion) hint;
-				if (ins.replaced != null) toDelete = (ASTNode) ins.replaced.tag;
-				if (ins.candidate != null) toInsert = (ASTNode) ins.candidate.tag; //It should only ever be one or the other?
-			}
-			if ( (toDelete == null || toDelete.hasType("null")) && (toInsert == null || toInsert.hasType("null")) ) {continue;}
-			System.out.println("Hint:\n" + hint);
+		
+		SortedMap<SourceLocation, EditHint> editMap = getSortedHintMap(edits);
 
-			if(toDelete != null) {
-				System.out.println("Deletion: " + toDelete);
-				System.out.println("Deletion location: " + toDelete.getSourceLocationStart() + " --> " + toDelete.getSourceLocationEnd());
-				System.out.println("MARKED: ");
-				if (toDelete.getSourceLocationEnd() == null) {
-					marked += DELETE_END;
-				} else {
-					marked = toDelete.getSourceLocationEnd().markSource(marked, DELETE_END);
-				}
-				if (toDelete.getSourceLocationStart() != null) {
-					marked = toDelete.getSourceLocationStart().markSource(marked, DELETE_START);
-				} else {
-					System.out.println("Missing source start: " + toDelete);
+		for(Entry<SourceLocation, EditHint> editLocation : editMap.entrySet()) {
+			System.out.println("Location: " + editLocation.getKey() + "\nEditHint:\n" + editLocation.getValue());
+			SourceLocation location = editLocation.getKey();
+			EditHint editHint = editLocation.getValue();
+			if(location == editHint.getCorrectedEditEnd()) {
+				marked = location.markSource(marked, SPAN_END);
+			} else if(location == editHint.getCorrectedEditStart()) {
+				switch (editHint.getEditType()){
+					case DELETION:
+						marked = location.markSource(marked, DELETE_START);
+						break;
+					case REPLACEMENT:
+						marked = location.markSource(marked, REPLACE_START);
+						break;
+					case INSERTION: //TODO: handle the thing to insert/replace/etc. as well
+						marked = location.markSource(marked, INSERT_START);
+//						 + ((ASTNode)((Insertion)editHint).candidate.tag).value
+						break;
+					case CANDIDATE:
+						marked = location.markSource(marked, CANDIDATE_START);
+						break;
+					case REORDER:
+						marked = location.markSource(marked, REORDER_START);
+						break;
 				}
 			}
-			if(toInsert != null) {
-				System.out.println("Insertion: " + toInsert);
-				System.out.println("Insertion location: " + toInsert.getSourceLocationStart() + " --> " + toInsert.getSourceLocationEnd());
-				System.out.println("MARKED: ");
-
-				//TODO: Need to think about how to handle other modifications throwing off the location index
-				if(toInsert.getSourceLocationStart() != null) {
-					marked = toInsert.getSourceLocationStart().markSource(marked, INSERT_START + toInsert.value + INSERT_END);
-				}
-			}
-			
+			System.out.println("MARKED: ");
 			System.out.println(marked + "\n");
 		}
 		return marked;
-
-//		System.out.println(Diff.diff(from, to));
-//		System.out.println(String.join("\n",
-//				edits.stream().map(e -> e.toString()).collect(Collectors.toList())));
-//		System.out.println("------------------------");
-//		System.out.println();
 	}
 }
