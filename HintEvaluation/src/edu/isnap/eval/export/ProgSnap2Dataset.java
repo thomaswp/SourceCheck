@@ -42,7 +42,7 @@ import edu.isnap.util.map.CountMap;
 public class ProgSnap2Dataset implements Closeable {
 
 	public static void main(String[] args) throws IOException {
-		exportAndWrite(Spring2017.GuessingGame1);
+		exportAndWrite(Spring2017.instance);
 	}
 
 	private final static CSVFormat CSV_FORMAT = CSVFormat.RFC4180;
@@ -544,47 +544,17 @@ public class ProgSnap2Dataset implements Closeable {
 				}
 			}
 
-			if (event != null && AttemptAction.SHOW_HINT_MESSAGES.contains(message)) {
+			if (event != null && AttemptAction.SHOW_HINT_MESSAGES.contains(message) &&
+					action.lastSnapshot != null) {
 				JSONObject jsonData = new JSONObject(action.data);
 				Node root = SimpleNodeBuilder.toTree(action.lastSnapshot, true);
 				Node parent = CheckHintUsage.findParent(message, action.lastSnapshot, root,
 						jsonData, new String[0]);
-				if (parent == null) System.err.println("Null parent: " + action.data);
-				int scriptOrListIndex = -1;
-				while (parent.tag instanceof Script || !(parent.tag instanceof IHasID)) {
-					if (parent.hasType("list", "script")) {
-						scriptOrListIndex = parent.index();
-					} else {
-						System.out.println("No ID: " + parent.type());
-					}
-					parent = parent.parent;
-				}
-				String parentID = ((IHasID) parent.tag).getID();
-
-				JSONArray toArray = jsonData.getJSONArray("to");
-				JSONArray fromArray;
-				if (jsonData.has("from")) {
-					fromArray = jsonData.getJSONArray("from");
+				if (parent == null) {
+					System.err.println("Null parent: " + action.data);
 				} else {
-					fromArray = jsonData.getJSONArray("fromList").getJSONArray(0);
+					processHintRequest(event, jsonData, parent);
 				}
-				for (JSONArray array : new JSONArray[] {toArray, fromArray}) {
-					if (array.length() > 0 && array.getString(0).equals("prototypeHatBlock")) {
-						array.remove(0);
-					}
-				}
-
-				JSONObject saveData = new JSONObject();
-				saveData.put("parentID", parentID);
-				saveData.put("parentType", parent.type());
-				if (scriptOrListIndex >= 0) {
-					// Because scripts have no IDs, we use their parents' IDs, and mark which script
-					// was referenced
-					saveData.put("scriptOrListIndex", scriptOrListIndex);
-				}
-				saveData.put("from", fromArray);
-				saveData.put("to", toArray);
-				event.hintData = saveData.toString();
 			}
 
 			// TODO: More careful anonymization
@@ -613,6 +583,44 @@ public class ProgSnap2Dataset implements Closeable {
 				}
 			}
 		}
+	}
+
+	private void processHintRequest(Event event, JSONObject jsonData, Node parent) {
+		int scriptOrListIndex = -1;
+		while (parent.tag instanceof Script || !(parent.tag instanceof IHasID)) {
+			if (parent.hasType("list", "script")) {
+				scriptOrListIndex = parent.index();
+			} else {
+				System.out.println("No ID: " + parent.type());
+			}
+			parent = parent.parent;
+		}
+		String parentID = ((IHasID) parent.tag).getID();
+
+		JSONArray toArray = jsonData.getJSONArray("to");
+		JSONArray fromArray;
+		if (jsonData.has("from")) {
+			fromArray = jsonData.getJSONArray("from");
+		} else {
+			fromArray = jsonData.getJSONArray("fromList").getJSONArray(0);
+		}
+		for (JSONArray array : new JSONArray[] {toArray, fromArray}) {
+			if (array.length() > 0 && array.getString(0).equals("prototypeHatBlock")) {
+				array.remove(0);
+			}
+		}
+
+		JSONObject saveData = new JSONObject();
+		saveData.put("parentID", parentID);
+		saveData.put("parentType", parent.type());
+		if (scriptOrListIndex >= 0) {
+			// Because scripts have no IDs, we use their parents' IDs, and mark which script
+			// was referenced
+			saveData.put("scriptOrListIndex", scriptOrListIndex);
+		}
+		saveData.put("from", fromArray);
+		saveData.put("to", toArray);
+		event.hintData = saveData.toString();
 	}
 
 	private static String getCodeStateSection(INode node, ASTNode root) {
