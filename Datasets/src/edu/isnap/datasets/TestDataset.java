@@ -3,13 +3,14 @@ package edu.isnap.datasets;
 import java.util.Date;
 
 import edu.isnap.dataset.Assignment;
+import edu.isnap.datasets.csc200.CSC200Dataset;
 import edu.isnap.hint.ConfigurableAssignment;
 
 // TODO: Check for students starting on different assignments (for all but GG1, SQ)
 public class TestDataset extends CSC200Dataset {
 
 	public final static Date start = Assignment.date(2017, 1, 1);
-	public final static String dataDir = Assignment.CSC200_BASE_DIR + "/summer2019";
+	public final static String dataDir = "../data/csc200/summer2019";
 	public final static String dataFile = dataDir + ".csv";
 	public final static TestDataset instance = new TestDataset();
 

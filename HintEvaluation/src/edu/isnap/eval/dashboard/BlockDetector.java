@@ -7,7 +7,7 @@ import java.util.Map;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
-import edu.isnap.datasets.Fall2016;
+import edu.isnap.datasets.csc200.Fall2016;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.node.Node;
 import edu.isnap.node.Node.Predicate;

@@ -1,8 +1,8 @@
 package edu.isnap.datasets.aggregate;
 
 import edu.isnap.dataset.Assignment;
-import edu.isnap.datasets.Fall2017;
-import edu.isnap.datasets.Spring2016;
+import edu.isnap.datasets.csc200.Fall2017;
+import edu.isnap.datasets.csc200.Spring2016;
 import edu.isnap.hint.SnapHintConfig;
 
 public class HintEvalData extends AggregateDataset {

@@ -13,7 +13,7 @@ public class Samples extends Dataset {
 	}
 
 	public final static Date start = Assignment.date(2017, 1, 1);
-	public final static String dataDir = Assignment.CSC200_BASE_DIR + "/samples";
+	public final static String dataDir = "../data/samples";
 	public final static String dataFile = dataDir + ".csv";
 	public final static Samples instance = new Samples();
 

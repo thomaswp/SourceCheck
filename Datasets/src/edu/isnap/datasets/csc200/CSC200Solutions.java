@@ -1,4 +1,4 @@
-package edu.isnap.datasets;
+package edu.isnap.datasets.csc200;
 
 import java.util.Date;
 

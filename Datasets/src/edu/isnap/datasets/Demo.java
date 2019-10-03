@@ -10,7 +10,7 @@ import edu.isnap.hint.ConfigurableAssignment;
 public class Demo extends Dataset {
 
 	public final static Date start = Assignment.date(2015, 8, 10);
-	public final static String dataDir = Assignment.CSC200_BASE_DIR + "/demo";
+	public final static String dataDir = "../data/demo";
 	public final static String dataFile = dataDir + ".csv";
 	public final static Demo instance = new Demo();
 

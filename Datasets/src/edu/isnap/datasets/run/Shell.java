@@ -8,19 +8,20 @@ import edu.isnap.dataset.Dataset;
 import edu.isnap.datasets.BJC2017;
 import edu.isnap.datasets.CampHS2018;
 import edu.isnap.datasets.Demo;
-import edu.isnap.datasets.Fall2015;
-import edu.isnap.datasets.Fall2016;
-import edu.isnap.datasets.Fall2017;
-import edu.isnap.datasets.Fall2018;
 import edu.isnap.datasets.HelpSeeking;
 import edu.isnap.datasets.HelpSeekingExperts;
 import edu.isnap.datasets.MTurk2018;
 import edu.isnap.datasets.Samples;
-import edu.isnap.datasets.Spring2016;
-import edu.isnap.datasets.Spring2017;
-import edu.isnap.datasets.Spring2018;
 import edu.isnap.datasets.TestDataset;
 import edu.isnap.datasets.aggregate.CSC200;
+import edu.isnap.datasets.csc110.CSC110Fall2019;
+import edu.isnap.datasets.csc200.Fall2015;
+import edu.isnap.datasets.csc200.Fall2016;
+import edu.isnap.datasets.csc200.Fall2017;
+import edu.isnap.datasets.csc200.Fall2018;
+import edu.isnap.datasets.csc200.Spring2016;
+import edu.isnap.datasets.csc200.Spring2017;
+import edu.isnap.datasets.csc200.Spring2018;
 import edu.isnap.parser.LogSplitter;
 import edu.isnap.parser.ParseSubmitted;
 import edu.isnap.parser.SnapParser;
@@ -46,6 +47,7 @@ public class Shell {
 			CampHS2018.instance,
 			MTurk2018.instance,
 			TestDataset.instance,
+			CSC110Fall2019.instance
 	};
 
 	public static void main(String[] args) {

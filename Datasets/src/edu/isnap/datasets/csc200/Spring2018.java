@@ -1,4 +1,4 @@
-package edu.isnap.datasets;
+package edu.isnap.datasets.csc200;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,7 +28,7 @@ import edu.isnap.util.Spreadsheet;
 public class Spring2018 extends CSC200Dataset {
 
 	public final static Date start = Assignment.date(2018, 1, 6);
-	public final static String dataDir = Assignment.CSC200_BASE_DIR + "/spring2018";
+	public final static String dataDir = CSC200_BASE_DIR + "/spring2018";
 	public final static String dataFile = dataDir + ".csv";
 	public final static Spring2018 instance = new Spring2018();
 

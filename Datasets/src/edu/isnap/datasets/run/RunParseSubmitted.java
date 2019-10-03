@@ -2,7 +2,7 @@ package edu.isnap.datasets.run;
 
 import java.io.IOException;
 
-import edu.isnap.datasets.Fall2018;
+import edu.isnap.datasets.csc110.CSC110Fall2019;
 import edu.isnap.parser.ParseSubmitted;
 
 public class RunParseSubmitted {
@@ -12,7 +12,7 @@ public class RunParseSubmitted {
 //		for (Assignment assignment : Spring2017.All) {
 //			ParseSubmitted.parseSubmitted(assignment);
 //		}
-		ParseSubmitted.parseSubmitted(Fall2018.GuessingGame2);
+		ParseSubmitted.parseSubmitted(CSC110Fall2019.DaisyDesign);
 //		ParseSubmitted.printToGrade(Fall2015.GuessingGame1);
 	}
 }

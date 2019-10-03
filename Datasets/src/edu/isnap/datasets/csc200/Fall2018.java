@@ -1,4 +1,4 @@
-package edu.isnap.datasets;
+package edu.isnap.datasets.csc200;
 
 import java.util.Date;
 
@@ -9,7 +9,7 @@ import edu.isnap.hint.ConfigurableAssignment;
 public class Fall2018 extends CSC200Dataset {
 
 	public final static Date start = Assignment.date(2018, 8, 15);
-	public final static String dataDir = Assignment.CSC200_BASE_DIR + "/fall2018";
+	public final static String dataDir = CSC200_BASE_DIR + "/fall2018";
 	public final static String dataFile = dataDir + ".csv";
 	public final static Fall2018 instance = new Fall2018();
 

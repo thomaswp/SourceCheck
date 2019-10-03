@@ -10,10 +10,10 @@ import java.util.stream.Collectors;
 
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.Dataset;
-import edu.isnap.datasets.CSC200Solutions;
-import edu.isnap.datasets.Fall2016;
-import edu.isnap.datasets.Fall2017;
-import edu.isnap.datasets.Spring2017;
+import edu.isnap.datasets.csc200.CSC200Solutions;
+import edu.isnap.datasets.csc200.Fall2016;
+import edu.isnap.datasets.csc200.Fall2017;
+import edu.isnap.datasets.csc200.Spring2017;
 import edu.isnap.eval.python.PythonHintConfig;
 import edu.isnap.hint.HintConfig;
 import edu.isnap.hint.SnapHintConfig;

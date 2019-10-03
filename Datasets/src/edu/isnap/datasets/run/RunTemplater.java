@@ -3,7 +3,7 @@ package edu.isnap.datasets.run;
 import java.io.IOException;
 
 import edu.isnap.dataset.Assignment;
-import edu.isnap.datasets.CSC200Solutions;
+import edu.isnap.datasets.csc200.CSC200Solutions;
 import edu.isnap.node.Node;
 import edu.isnap.template.parse.TemplateParser;
 

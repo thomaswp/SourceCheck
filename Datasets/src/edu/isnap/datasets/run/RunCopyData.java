@@ -6,7 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
-import edu.isnap.datasets.Spring2016;
+import edu.isnap.datasets.csc200.Spring2016;
 
 public class RunCopyData {
 	public static void main(String[] args) throws IOException {
