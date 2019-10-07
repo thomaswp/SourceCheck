@@ -47,8 +47,10 @@ public class SourceCodeHighlighter {
 	private static SortedMap<SourceLocation, EditHint> getSortedHintMap(List<EditHint> edits){
 		SortedMap<SourceLocation, EditHint> editMap = new TreeMap<SourceLocation, EditHint>();
 		for (EditHint hint : edits) {
-			editMap.put(hint.getCorrectedEditStart(), hint);
-			editMap.put(hint.getCorrectedEditEnd(), hint);
+			if(hint.getCorrectedEditStart() != null && hint.getCorrectedEditEnd() != null) {
+				editMap.put(hint.getCorrectedEditStart(), hint);
+				editMap.put(hint.getCorrectedEditEnd(), hint);
+			}
 		}		
 		return editMap;
 	}
@@ -78,9 +80,9 @@ public class SourceCodeHighlighter {
 		SortedMap<SourceLocation, EditHint> editMap = getSortedHintMap(edits);
 
 		for(Entry<SourceLocation, EditHint> editLocation : editMap.entrySet()) {
-			System.out.println("Location: " + editLocation.getKey() + "\nEditHint:\n" + editLocation.getValue());
-			SourceLocation location = editLocation.getKey();
 			EditHint editHint = editLocation.getValue();
+			System.out.println("Location: " + editLocation.getKey() + "\nEditHint (" + editHint.getEditType()+ "):\n" + editLocation.getValue());
+			SourceLocation location = editLocation.getKey();
 			if(location == editHint.getCorrectedEditEnd()) {
 				marked = location.markSource(marked, SPAN_END);
 			} else if(location == editHint.getCorrectedEditStart()) {
@@ -89,7 +91,8 @@ public class SourceCodeHighlighter {
 						marked = location.markSource(marked, DELETE_START);
 						break;
 					case REPLACEMENT:
-						marked = location.markSource(marked, REPLACE_START);
+						String insertionCode = INSERT_START + ((Insertion)editHint).pair + SPAN_END; //TODO: convert the "pretty printed" value of the pair to actual code
+						marked = location.markSource(marked, insertionCode + REPLACE_START);
 						break;
 					case INSERTION: //TODO: handle the thing to insert/replace/etc. as well
 						marked = location.markSource(marked, INSERT_START);

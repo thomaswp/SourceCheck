@@ -279,9 +279,14 @@ public class Insertion extends EditHint {
 	public SourceLocation getCorrectedEditStart() {
 		ASTNode node = null;
 		
-		if (this.replaced != null) { node = (ASTNode) this.replaced.tag; }
-		if (this.candidate != null /*&& !this.missingParent*/) { node = (ASTNode) this.candidate.tag; } //TODO: investigate this
-		
+		if (this.replaced != null) {//if there's a replaced, the new code should go right after the replaced location. Cross out the replace, add the contents of the pair
+			node = (ASTNode) this.replaced.tag;
+		} else {//else, take the parent, which may or may not have children. The Insertion's index property is the index at which we want to insert in the parent
+			
+		}
+//		don't do this, candidate is where it used to be, not where it should go
+//		if (this.candidate != null /*&& !this.missingParent*/) { node = (ASTNode) this.candidate.tag; } //TODO: investigate this
+
 		if (node != null) {
 			return node.startSourceLocation;
 		}
@@ -292,9 +297,14 @@ public class Insertion extends EditHint {
 	public SourceLocation getCorrectedEditEnd() {
 		ASTNode node = null;
 		
-		if (this.replaced != null) { node = (ASTNode) this.replaced.tag; }
-		if (this.candidate != null /*&& !this.missingParent*/) { node = (ASTNode) this.candidate.tag; }
-		
+		if (this.replaced != null) {//if there's a replaced, the new code should go right after the replaced location. Cross out the replace, add the contents of the pair
+			node = (ASTNode) this.replaced.tag;
+		} else {//else, take the parent, which may or may not have children. The Insertion's index property is the index at which we want to insert in the parent
+			
+		}
+//		don't do this, candidate is where it used to be, not where it should go
+//		if (this.candidate != null /*&& !this.missingParent*/) { node = (ASTNode) this.candidate.tag; } //TODO: investigate this
+
 		if (node != null) {
 			return node.endSourceLocation;
 		}
