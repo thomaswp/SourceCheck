@@ -13,15 +13,11 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import edu.isnap.hint.Canonicalization;
-import edu.isnap.hint.TextHint;
 import edu.isnap.hint.Canonicalization.Rename;
 import edu.isnap.hint.Canonicalization.Reorder;
 import edu.isnap.hint.Canonicalization.SwapBinaryArgs;
+import edu.isnap.hint.TextHint;
 import edu.isnap.hint.util.StringHashable;
-import edu.isnap.node.ASTNode;
-import edu.isnap.node.ASTSnapshot;
-import edu.isnap.node.INode;
-import edu.isnap.node.PrettyPrint;
 import util.LblTree;
 
 public abstract class Node extends StringHashable implements INode {
@@ -366,6 +362,11 @@ public abstract class Node extends StringHashable implements INode {
 	 */
 	public static Node findMatchingNodeInCopy(Node node, Node copyRoot) {
 		if (node == null || copyRoot == null) return null;
+
+		// Make sure if we've recursed all the way to a root, we return the copyRoot
+		if (node.parent == null && node.shallowEquals(copyRoot)) {
+			return copyRoot;
+		}
 
 		// Fist try to find the single match with the same ID
 		if (node.id != null) {

@@ -2,7 +2,6 @@ package edu.isnap.python;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.SortedMap;
@@ -10,12 +9,10 @@ import java.util.TreeMap;
 
 import edu.isnap.hint.HintData;
 import edu.isnap.hint.util.NullStream;
-import edu.isnap.node.ASTNode;
 import edu.isnap.node.ASTNode.SourceLocation;
 import edu.isnap.node.Node;
 import edu.isnap.sourcecheck.HintHighlighter;
 import edu.isnap.sourcecheck.NodeAlignment.Mapping;
-import edu.isnap.sourcecheck.edit.Deletion;
 import edu.isnap.sourcecheck.edit.EditHint;
 import edu.isnap.sourcecheck.edit.EditSorter;
 import edu.isnap.sourcecheck.edit.Insertion;
@@ -31,7 +28,7 @@ public class SourceCodeHighlighter {
 	public static String CANDIDATE_START = "<span class=\"candidate\">";
 	public static String REORDER_START = "<span class=\"reorder\">";
 	public static String SPAN_END = "</span>";
-	
+
 	// TODO: Eventually this should be a non-static method and the class
 	// should allow configuration of the HTML output (e.g. colors, etc.)
 
@@ -43,7 +40,7 @@ public class SourceCodeHighlighter {
 		Collections.sort(sortedEdits, new EditSorter());
 		return sortedEdits;
 	}
-	
+
 	private static SortedMap<SourceLocation, EditHint> getSortedHintMap(List<EditHint> edits){
 		SortedMap<SourceLocation, EditHint> editMap = new TreeMap<SourceLocation, EditHint>();
 		for (EditHint hint : edits) {
@@ -51,7 +48,7 @@ public class SourceCodeHighlighter {
 				editMap.put(hint.getCorrectedEditStart(), hint);
 				editMap.put(hint.getCorrectedEditEnd(), hint);
 			}
-		}		
+		}
 		return editMap;
 	}
 
@@ -74,9 +71,10 @@ public class SourceCodeHighlighter {
 		System.out.println(Diff.diff(studentCode.source, target.source, 2));
 		System.out.println(from);
 		mapping.printValueMappings(System.out);
+		edits.forEach(System.out::println);
 		System.out.println();
 		String marked = studentCode.source;
-		
+
 		SortedMap<SourceLocation, EditHint> editMap = getSortedHintMap(edits);
 
 		for(Entry<SourceLocation, EditHint> editLocation : editMap.entrySet()) {

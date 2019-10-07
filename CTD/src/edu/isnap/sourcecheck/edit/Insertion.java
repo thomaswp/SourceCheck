@@ -10,11 +10,10 @@ import org.json.JSONObject;
 
 import edu.isnap.hint.TextHint;
 import edu.isnap.node.ASTNode;
-import edu.isnap.node.Node;
 import edu.isnap.node.ASTNode.SourceLocation;
+import edu.isnap.node.Node;
 import edu.isnap.node.Node.Predicate;
 import edu.isnap.sourcecheck.NodeAlignment.Mapping;
-import edu.isnap.sourcecheck.edit.EditHint.EditType;
 import edu.isnap.util.map.BiMap;
 
 public class Insertion extends EditHint {
@@ -138,6 +137,11 @@ public class Insertion extends EditHint {
 	}
 
 	@Override
+	protected boolean shouldHaveParent() {
+		return !missingParent;
+	}
+
+	@Override
 	protected void addApplications(Node root, Node editParent, List<Application> applications) {
 		Node candidate = Node.findMatchingNodeInCopy(this.candidate, root);
 		Node replaced = Node.findMatchingNodeInCopy(this.replaced, root);
@@ -219,20 +223,16 @@ public class Insertion extends EditHint {
 					}
 				}
 
-				if(parent != null) {
-					// In case this is a newly inserted parent, we pad with placeholder nodes
-					while (parent.children.size() < index) {
-						parent.children.add(parent.constructNode(parent, ASTNode.EMPTY_TYPE));
-					}
-					// and then remove them as children are inserted
-					if (replaced == null && index < parent.children.size() &&
-							parent.children.get(index).hasType(ASTNode.EMPTY_TYPE)) {
-						parent.children.remove(index);
-					}
-					parent.children.add(index, toInsert);
-				} else {
-					System.out.println("parent is null in Insertion.addApplications()");
+				// In case this is a newly inserted parent, we pad with placeholder nodes
+				while (parent.children.size() < index) {
+					parent.children.add(parent.constructNode(parent, ASTNode.EMPTY_TYPE));
 				}
+				// and then remove them as children are inserted
+				if (replaced == null && index < parent.children.size() &&
+						parent.children.get(index).hasType(ASTNode.EMPTY_TYPE)) {
+					parent.children.remove(index);
+				}
+				parent.children.add(index, toInsert);
 			}
 		}));
 	}
@@ -274,20 +274,21 @@ public class Insertion extends EditHint {
 	public Node getPriorityToNode(Mapping mapping) {
 		return pair;
 	}
-	
+
 	@Override
 	public SourceLocation getCorrectedEditStart() {
 		ASTNode node = null;
-		
+
 		if (this.replaced != null) {//if there's a replaced, the new code should go right after the replaced location. Cross out the replace, add the contents of the pair
 			node = (ASTNode) this.replaced.tag;
 		} else {//else, take the parent, which may or may not have children. The Insertion's index property is the index at which we want to insert in the parent
-			
+
 		}
 //		don't do this, candidate is where it used to be, not where it should go
 //		if (this.candidate != null /*&& !this.missingParent*/) { node = (ASTNode) this.candidate.tag; } //TODO: investigate this
 
 		if (node != null) {
+			// TODO: There are some times when the replaced will have no start source (e.g. null)
 			return node.startSourceLocation;
 		}
 		return null;
@@ -296,11 +297,11 @@ public class Insertion extends EditHint {
 	@Override
 	public SourceLocation getCorrectedEditEnd() {
 		ASTNode node = null;
-		
+
 		if (this.replaced != null) {//if there's a replaced, the new code should go right after the replaced location. Cross out the replace, add the contents of the pair
 			node = (ASTNode) this.replaced.tag;
 		} else {//else, take the parent, which may or may not have children. The Insertion's index property is the index at which we want to insert in the parent
-			
+
 		}
 //		don't do this, candidate is where it used to be, not where it should go
 //		if (this.candidate != null /*&& !this.missingParent*/) { node = (ASTNode) this.candidate.tag; } //TODO: investigate this
@@ -310,11 +311,11 @@ public class Insertion extends EditHint {
 		}
 		return null;
 	}
-	
+
 	@Override
 	public EditType getEditType() {
 		if (this.replaced != null) { return EditType.REPLACEMENT; }
-		if (this.candidate != null && !this.missingParent) {return EditType.CANDIDATE;}		
+		if (this.candidate != null && !this.missingParent) {return EditType.CANDIDATE;}
 		return EditType.INSERTION;
 	}
 }

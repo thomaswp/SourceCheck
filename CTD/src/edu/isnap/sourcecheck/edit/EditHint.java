@@ -12,13 +12,13 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import edu.isnap.node.Node;
-import edu.isnap.node.ASTNode.SourceLocation;
-import edu.isnap.sourcecheck.NodeAlignment.Mapping;
-import edu.isnap.sourcecheck.priority.Priority;
 import edu.isnap.ctd.hint.Hint;
 import edu.isnap.hint.Canonicalization;
 import edu.isnap.hint.Canonicalization.SwapBinaryArgs;
+import edu.isnap.node.ASTNode.SourceLocation;
+import edu.isnap.node.Node;
+import edu.isnap.sourcecheck.NodeAlignment.Mapping;
+import edu.isnap.sourcecheck.priority.Priority;
 import edu.isnap.util.Diff;
 import edu.isnap.util.Diff.ColorStyle;
 import edu.isnap.util.map.BiMap;
@@ -34,7 +34,7 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 	public abstract SourceLocation getCorrectedEditStart();
 	public abstract SourceLocation getCorrectedEditEnd();
 	public abstract EditType getEditType();
-	
+
 	public static boolean useValues = true;
 
 	public final Node parent;
@@ -49,7 +49,7 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 	public enum EditType {
 		DELETION, REPLACEMENT, INSERTION, CANDIDATE, REORDER
 	}
-	
+
 	public EditHint(Node parent) {
 		this.parent = parent;
 		boolean swap = false;
@@ -217,9 +217,22 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 		for (Application application : applications) application.action.apply(createdNodeMap);
 	}
 
+	protected boolean shouldHaveParent() {
+		return true;
+	}
+
 	private static void getApplications(Node root, List<Application> applications, EditHint hint,
 			int depth) {
 		Node editParent = Node.findMatchingNodeInCopy(hint.parent, root);
+		if (hint.shouldHaveParent() && editParent == null) {
+			System.out.println("Parent to match:");
+			System.out.println(hint.parent.prettyPrintWithIDs());
+			System.out.println("\nParent's root:");
+			System.out.println(hint.parent.root().prettyPrintWithIDs());
+			System.out.println("\nRoot with not match:");
+			System.out.println(root.prettyPrintWithIDs());
+			throw new RuntimeException("Hint parent not found in root");
+		}
 		int start = applications.size();
 		hint.addApplications(root, editParent, applications);
 		// Mark all newly added applications with the depth of this recursive call
