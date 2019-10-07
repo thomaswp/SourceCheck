@@ -38,7 +38,12 @@ public class CSC110Fall2019 extends CSC110Dataset {
 			case "13e1ac22-1a7d-47d9-87f4-00d0c4aaa158":
 			case "4181d740-dd01-487c-af8d-1fd0b5f21353":
 			case "a34c2bd8-723d-4d4b-8eb0-f7b94669e9a5":
+			case "bfcbfcc6-3815-4aba-a543-fd09fc89b5c7":
+			case "b158f447-455a-4834-a7b2-0ee4ee52ec94":
+			case "c2e07169-d1cc-4244-9fc8-80ed0356c6a4":
 				return PolygonMakerLab;
+			case "352bdbcf-62d0-4aa6-ab37-9be62e5a0e2b":
+				return Intro;
 			}
 			return super.getLocationAssignment(attemptID);
 		};
