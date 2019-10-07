@@ -13,56 +13,73 @@ public class CSC110Fall2019 extends CSC110Dataset {
 	public final static String dataFile = dataDir + ".csv";
 	public final static CSC110Fall2019 instance = new CSC110Fall2019();
 
-	public final static Assignment BrickWall = new ConfigurableAssignment(instance,
-			"brickWall", null, true) {
-	};
-	public final static Assignment DaisyDesign = new ConfigurableAssignment(instance,
-			"daisyDesignHW", null, true) {
-	};
-	public final static Assignment Frogger = new ConfigurableAssignment(instance,
-			"frogger", null, true) {
-	};
-	public final static Assignment GuessingGame1 = new ConfigurableAssignment(instance,
-			"guess1Lab", null, true) {
-	};
-	public final static Assignment GuessingGame = new ConfigurableAssignment(instance,
-			"guessingGame", null, true) {
-	};
-	public final static Assignment GuessingGame2 = new ConfigurableAssignment(instance,
-			"guessingGame2", null, true) {
-	};
-	public final static Assignment Hangman1 = new ConfigurableAssignment(instance,
-			"hangman1", null, true) {
-	};
-	public final static Assignment Hangman3 = new ConfigurableAssignment(instance,
-			"hangman3", null, true) {
-	};
-	public final static Assignment Intro = new ConfigurableAssignment(instance,
-			"intro", null, true) {
-	};
 	public final static Assignment None = new ConfigurableAssignment(instance,
 			"none", null, true) {
 	};
+
+	public final static Assignment Intro = new ConfigurableAssignment(instance,
+			"intro", null, true) {
+	};
+
 	public final static Assignment PolygonMakerLab = new ConfigurableAssignment(instance,
 			"polygonMakerLab", null, true) {
 	};
-	public final static Assignment Project1 = new ConfigurableAssignment(instance,
-			"project1", null, true) {
-	};
-	public final static Assignment Squiral = new ConfigurableAssignment(instance,
-			"squiral", null, true) {
-	};
+
 	public final static Assignment SquiralHW = new ConfigurableAssignment(instance,
 			"squiralHW", null, true) {
 	};
+
+	public final static Assignment DaisyDesign = new ConfigurableAssignment(instance,
+			"daisyDesignHW", null, true, true, SquiralHW) {
+
+		@Override
+		public Assignment getLocationAssignment(String attemptID) {
+			switch (attemptID) {
+			case "13e1ac22-1a7d-47d9-87f4-00d0c4aaa158":
+			case "4181d740-dd01-487c-af8d-1fd0b5f21353":
+			case "a34c2bd8-723d-4d4b-8eb0-f7b94669e9a5":
+				return PolygonMakerLab;
+			}
+			return super.getLocationAssignment(attemptID);
+		};
+	};
+
+	public final static Assignment GuessingGame = new ConfigurableAssignment(instance,
+			"guessingGame", null, true) {
+	};
+
+	public final static Assignment BrickWall = new ConfigurableAssignment(instance,
+			"brickWall", null, true) {
+	};
+
+	public final static Assignment Frogger = new ConfigurableAssignment(instance,
+			"frogger", null, true) {
+	};
+
+	public final static Assignment Hangman1 = new ConfigurableAssignment(instance,
+			"hangman1", null, true) {
+	};
+
+	public final static Assignment Hangman3 = new ConfigurableAssignment(instance,
+			"hangman3", null, true) {
+	};
+
+	public final static Assignment GuessingGame2 = new ConfigurableAssignment(instance,
+			"guessingGame2", null, true) {
+	};
+
 	public final static Assignment TypingRace = new ConfigurableAssignment(instance,
 			"typingRace", null, true) {
 	};
+
+	public final static Assignment Project1 = new ConfigurableAssignment(instance,
+			"project1", null, true) {
+	};
+
 	public final static Assignment[] All = {
 			BrickWall,
 			DaisyDesign,
 //			Frogger,
-			GuessingGame1,
 			GuessingGame,
 			GuessingGame2,
 			Hangman1,
@@ -71,7 +88,6 @@ public class CSC110Fall2019 extends CSC110Dataset {
 			None,
 			PolygonMakerLab,
 			Project1,
-			Squiral,
 			SquiralHW,
 			TypingRace,
 	};
