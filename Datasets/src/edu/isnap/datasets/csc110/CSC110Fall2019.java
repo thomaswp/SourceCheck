@@ -42,6 +42,24 @@ public class CSC110Fall2019 extends CSC110Dataset {
 			}
 			return super.getLocationAssignment(attemptID);
 		};
+
+		@Override
+		public Integer getSubmittedRow(String attemptID) {
+			switch (attemptID) {
+			case "dfde3a85-65f7-4561-83c0-2396639b0dda":
+				return 148834;
+			}
+			return super.getSubmittedRow(attemptID);
+		};
+
+		@Override
+		public boolean ignore(String attemptID) {
+			switch (attemptID) {
+			case "1aec587f-1d5e-4dfc-9116-289ed5eff5c7":
+				return true;
+			}
+			return super.ignore(attemptID);
+		};
 	};
 
 	public final static Assignment GuessingGame = new ConfigurableAssignment(instance,
