@@ -26,7 +26,7 @@ import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.AttemptAction.ActionData;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.dataset.Grade;
-import edu.isnap.datasets.Spring2017;
+import edu.isnap.datasets.Fall2017;
 import edu.isnap.eval.user.CheckHintUsage;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.node.ASTNode;
@@ -43,7 +43,7 @@ import edu.isnap.util.map.CountMap;
 public class ProgSnap2Dataset implements Closeable {
 
 	public static void main(String[] args) throws IOException {
-		exportAndWrite(Spring2017.instance);
+		exportAndWrite(Fall2017.instance);
 	}
 
 	private final static boolean METADATA_ONLY = false;
@@ -154,9 +154,11 @@ public class ProgSnap2Dataset implements Closeable {
 			spreadsheet.newRow();
 			spreadsheet.put("AssignmentID", assignment.name);
 			spreadsheet.put("SubjectID", attempt.userID());
+			spreadsheet.put("Grade", !attempt.classGrade.isPresent() ? null :
+				attempt.classGrade.get());
 
 			Double researcherGrade = null;
-			Grade grade = attempt.grade;
+			Grade grade = attempt.researcherGrade;
 			if (grade != null) {
 				researcherGrade = grade.average();
 				spreadsheet.put("ResearcherGradeAverage", researcherGrade);
@@ -671,8 +673,8 @@ public class ProgSnap2Dataset implements Closeable {
 					Event submitEvent = new Event(order++, assignment, attempt, action,
 							"Project.Submit", lastCode, humanReadableCode);
 					rows.add(submitEvent);
-					if (attempt.grade != null) {
-						submitEvent.score = attempt.grade.average(); // TODO: Get actual grade
+					if (attempt.researcherGrade != null) {
+						submitEvent.score = attempt.researcherGrade.average(); // TODO: Get actual grade
 					}
 				}
 			}

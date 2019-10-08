@@ -347,14 +347,17 @@ public class SnapParser {
 			maxDate = assignment.end;
 		}
 
+		Double classGrade = actions.userID == null ? null :
+			params.classGradesMap.get(actions.userID);
+//		System.out.println(actions.userID + ": " + classGrade);
 		AssignmentAttempt attempt = new AssignmentAttempt(attemptID, params.loggedAssignmentID,
-				params.grade);
+				params.researcherGrade, classGrade);
 		attempt.rows.userID = actions.userID;
 		attempt.submittedActionID = params.knownSubmissions ?
 				AssignmentAttempt.NOT_SUBMITTED : AssignmentAttempt.UNKNOWN;
 		List<AttemptAction> currentWork = new ArrayList<>();
 
-		int gradedRow = params.grade == null ? -1 : params.grade.gradedRow;
+		int gradedRow = params.researcherGrade == null ? -1 : params.researcherGrade.gradedRow;
 		boolean foundGraded = false;
 		Snapshot lastSnaphot = null;
 
@@ -551,7 +554,8 @@ public class SnapParser {
 		if (addMetadata) {
 			// Must come first, since it adds attempts that may have grades/startIDs
 			addSubmissionInfo(snapshotsOnly, addMetadata, paramsMap);
-			addGrades(paramsMap);
+			addResearcherGrades(paramsMap);
+			addClassGrades(paramsMap);
 			addStartIDs(paramsMap);
 		}
 
@@ -564,7 +568,7 @@ public class SnapParser {
 				continue;
 			}
 			// TODO: Need to check that all attempts without a grade are really outliers
-			if (params.grade != null && params.grade.outlier) {
+			if (params.researcherGrade != null && params.researcherGrade.outlier) {
 				continue;
 			}
 			// Allow filters to skip over attempts before parsing them
@@ -716,7 +720,48 @@ public class SnapParser {
 		}
 	}
 
-	public void addGrades(Map<String, AttemptParams> paramsMap) {
+	private void addClassGrades(Map<String, AttemptParams> paramsMap) {
+		// TODO: Add clean failure
+		File file = new File(assignment.dataset.gradeTotalsFile());
+		if (!file.exists()) {
+			return;
+		}
+
+		int total = 0;
+		try {
+			CSVParser parser = new CSVParser(new FileReader(file), CSVFormat.DEFAULT.withHeader());
+			for (CSVRecord record : parser) {
+				String totalS = record.get(assignment.name);
+				total = Integer.parseInt(totalS);
+			}
+			parser.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		file = new File(assignment.dataset.gradesFile());
+		if (!file.exists()) {
+			return;
+		}
+
+		Map<String, Double> gradesMap = new HashMap<>();
+		try {
+			CSVParser parser = new CSVParser(new FileReader(file), CSVFormat.DEFAULT.withHeader());
+			for (CSVRecord record : parser) {
+				String userID = record.get("AnonID");
+				String gradeS = record.get(assignment.name);
+				Integer grade = Integer.parseInt(gradeS);
+				gradesMap.put(userID, (double) grade / total);
+			}
+			parser.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		paramsMap.values().forEach(params -> params.classGradesMap = gradesMap);
+	}
+
+	public void addResearcherGrades(Map<String, AttemptParams> paramsMap) {
 		HashMap<String,Grade> grades = parseGrades();
 		for (String attemptID : grades.keySet()) {
 			if (assignment.ignore(attemptID)) {
@@ -730,7 +775,7 @@ public class SnapParser {
 				}
 				continue;
 			}
-			params.grade = grade;
+			params.researcherGrade = grade;
 		}
 	}
 
@@ -815,7 +860,8 @@ public class SnapParser {
 
 		public String logPath;
 		public String loggedAssignmentID;
-		public Grade grade;
+		public Grade researcherGrade;
+		public Map<String, Double> classGradesMap;
 		public Integer startID;
 		public String startAssignment;
 		public boolean knownSubmissions;

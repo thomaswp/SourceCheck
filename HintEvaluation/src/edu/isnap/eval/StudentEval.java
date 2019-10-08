@@ -56,9 +56,9 @@ public class StudentEval {
 
 				Node solution = nodes.get(nodes.size() - 1);
 				double grade;
-				if (solutionPath.grade != null) {
-					grade = solutionPath.grade.average();
-					if (solutionPath.grade.passed("Welcome player")) pass0++;
+				if (solutionPath.researcherGrade != null) {
+					grade = solutionPath.researcherGrade.average();
+					if (solutionPath.researcherGrade.passed("Welcome player")) pass0++;
 				} else {
 					grade = AutoGrader.numberGrade(solution);
 					if (AutoGrader.graders[0].pass(solution)) pass0++;

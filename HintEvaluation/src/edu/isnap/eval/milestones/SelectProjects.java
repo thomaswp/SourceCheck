@@ -34,7 +34,7 @@ public class SelectProjects {
 					"=HYPERLINK(\"%s?id=%s&assignment=%s&start=%d&end=%d\", \"%s\")",
 					baseURL, attempt.id, attempt.loggedAssignmentID, attempt.rows.getFirst().id,
 					attempt.rows.getLast().id, attempt.id));
-			spreadsheet.put("grade", attempt.grade.average());
+			spreadsheet.put("grade", attempt.researcherGrade.average());
 			spreadsheet.put("activeTime", attempt.totalActiveTime);
 		}
 

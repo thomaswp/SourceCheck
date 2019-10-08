@@ -14,3 +14,4 @@ help-seeking/*/submitted/*/*
 !*/*/starts.csv
 *.zip
 *.gz
+ClassGrades.csv

@@ -31,7 +31,7 @@ public class RunParallelTest {
 		List<Integer> hashes = new LinkedList<>();
 		for (AssignmentAttempt attempt : attempts.values()) {
 			hashes.add(attempt.id.hashCode());
-			hashes.add(attempt.grade == null ? null : Double.hashCode(attempt.grade.average()));
+			hashes.add(attempt.researcherGrade == null ? null : Double.hashCode(attempt.researcherGrade.average()));
 			hashes.add(attempt.loggedAssignmentID == null ?
 					null : attempt.loggedAssignmentID.hashCode());
 			hashes.add(attempt.submittedActionID);

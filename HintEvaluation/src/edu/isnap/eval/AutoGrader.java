@@ -95,12 +95,12 @@ public class AutoGrader {
 		for (String student : students.keySet()) {
 			AssignmentAttempt path = students.get(student);
 			if (!path.exported) continue;
-			if (path.grade == null) {
+			if (path.researcherGrade == null) {
 				System.err.println("No grade for: " + student);
 				continue;
 			}
 
-			if (path.grade.outlier) continue;
+			if (path.researcherGrade.outlier) continue;
 
 			Snapshot last = null;
 			for (AttemptAction row : path) {
@@ -108,7 +108,7 @@ public class AutoGrader {
 			}
 
 			if (last == null) continue;
-			graded.put(path.grade, SimpleNodeBuilder.toTree(last, true));
+			graded.put(path.researcherGrade, SimpleNodeBuilder.toTree(last, true));
 		}
 	}
 
