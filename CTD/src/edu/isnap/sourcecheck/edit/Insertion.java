@@ -11,6 +11,7 @@ import org.json.JSONObject;
 import edu.isnap.hint.TextHint;
 import edu.isnap.node.ASTNode;
 import edu.isnap.node.ASTNode.SourceLocation;
+import edu.isnap.node.ASTSnapshot;
 import edu.isnap.node.Node;
 import edu.isnap.node.Node.Predicate;
 import edu.isnap.sourcecheck.NodeAlignment.Mapping;
@@ -281,16 +282,16 @@ public class Insertion extends EditHint {
 
 		if (this.replaced != null) {//if there's a replaced, the new code should go right after the replaced location. Cross out the replace, add the contents of the pair
 			node = (ASTNode) this.replaced.tag;
-		} else {//else, take the parent, which may or may not have children. The Insertion's index property is the index at which we want to insert in the parent
-			System.out.println("!!!");
-			System.out.println(parent);
+		} else if (!this.missingParent) {//else, take the parent, which may or may not have children. The Insertion's index property is the index at which we want to insert in the parent
+//			System.out.println("!!!");
+//			System.out.println(parent);
 			parent.children.forEach(c -> System.out.println(c.tag));
 			if (index == parent.children.size()) {
 				// If the index to insert is after all the other children...
 				if (parent.children.size() > 0) {
 					// If there's a child to insert after, insert it *afterwards*
 					Node sibling = parent.children.get(index - 1);
-					System.out.println("Sibling: " + sibling);
+//					System.out.println("Sibling: " + sibling);
 					node = (ASTNode) sibling.tag;
 				} else {
 					// Otherwise insert it *after* the first ancestor with a tag
@@ -301,7 +302,7 @@ public class Insertion extends EditHint {
 					System.out.println(p);
 					node = (ASTNode) p.tag;
 				}
-				System.out.println("Node: " + node);
+//				System.out.println("Node: " + node);
 				if (node != null) System.out.println("End loc: " + node.endSourceLocation);
 				if (node != null) return node.endSourceLocation;
 			} else {
@@ -325,7 +326,7 @@ public class Insertion extends EditHint {
 
 		if (this.replaced != null) {//if there's a replaced, the new code should go right after the replaced location. Cross out the replace, add the contents of the pair
 			node = (ASTNode) this.replaced.tag;
-		} else {//else, take the parent, which may or may not have children. The Insertion's index property is the index at which we want to insert in the parent
+		} else if (!this.missingParent) {//else, take the parent, which may or may not have children. The Insertion's index property is the index at which we want to insert in the parent
 			return getCorrectedEditStart();
 		}
 //		don't do this, candidate is where it used to be, not where it should go
@@ -347,6 +348,8 @@ public class Insertion extends EditHint {
 	public String getTextToInsert() {
 		// TODO: Return actual source code
 		// TODO: Also need to handle newlines properly
+		ASTSnapshot snapshot = (ASTSnapshot) pair.root().tag;
+		if (snapshot != null) System.out.println(snapshot.source);
 		return pair.prettyPrint().replace("\n", "");
 	}
 }
