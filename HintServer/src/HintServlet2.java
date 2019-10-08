@@ -1,11 +1,6 @@
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Scanner;
 import java.util.stream.Collectors;
 
 import javax.servlet.ServletException;
@@ -14,24 +9,16 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 
-import edu.isnap.ctd.hint.CTDHintGenerator;
-import edu.isnap.ctd.hint.Hint;
-import edu.isnap.ctd.hint.HintJSON;
 import edu.isnap.hint.HintData;
-import edu.isnap.hint.HintDebugInfo;
 import edu.isnap.hint.SnapHintBuilder;
-import edu.isnap.hint.util.SimpleNodeBuilder;
-import edu.isnap.node.Node;
-import edu.isnap.parser.elements.Snapshot;
 import edu.isnap.python.PythonNode;
 import edu.isnap.python.SourceCodeHighlighter;
-import edu.isnap.sourcecheck.HintHighlighter;
+import edu.isnap.python.TextualNode;
 
 @SuppressWarnings("serial")
 @WebServlet(name="hints2", urlPatterns="/hints2")
@@ -52,9 +39,9 @@ public class HintServlet2 extends HttpServlet {
 	@Override
 	protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 //		super.doPut(req, resp);
-		
+
 		loadHintMap(DEFAULT_ASSIGNMENT, "", DEFAULT_MIN_GRADE);
-		
+
 		String origin = req.getHeader("origin");
 		if (origin != null) resp.setHeader("Access-Control-Allow-Origin", origin);
 		resp.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT");
@@ -69,13 +56,14 @@ public class HintServlet2 extends HttpServlet {
 			String problemName = (String) jsonAST.get("problem");
 
 			JSONObject parsedTree = new JSONObject(parsedTreeRaw);
-			PythonNode fullStudentCode = PythonNode.fromJSON(parsedTree, originalSource);
+			TextualNode fullStudentCode = PythonNode.fromJSON(parsedTree, originalSource,
+					PythonNode::new);
 
 			String highlightedCode = SourceCodeHighlighter.highlightSourceCode(hintDatas.get(problemName), fullStudentCode);
 //			String jsonString = "{'output' : '" + highlightedCode + "'}";
 			JSONObject jsonObj = new JSONObject();
 			jsonObj.put("highlighted", highlightedCode);
-			
+
 			resp.setContentType("text/json");
 			resp.getWriter().print(jsonObj);
 		} catch (Exception e) {
@@ -87,7 +75,7 @@ public class HintServlet2 extends HttpServlet {
 		if (assignment == null || "test".equals(assignment)) {
 			assignment = DEFAULT_ASSIGNMENT;
 		}
-		
+
 		String key = "";
 		if(minGrade > 0) {
 			key = assignment + dataset + minGrade;

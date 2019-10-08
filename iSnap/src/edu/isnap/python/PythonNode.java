@@ -1,9 +1,5 @@
 package edu.isnap.python;
 
-import org.json.JSONObject;
-
-import edu.isnap.hint.util.ASTNodeConverter;
-import edu.isnap.node.ASTSnapshot;
 import edu.isnap.node.Node;
 
 public class PythonNode extends TextualNode {
@@ -29,12 +25,5 @@ public class PythonNode extends TextualNode {
 	@Override
 	protected boolean nodeTypeHasBody(String type) {
 		return typeHasBody(type);
-	}
-
-	public static PythonNode fromJSON(JSONObject jsonAST, String pythonSource) {
-		ASTSnapshot astNode = ASTSnapshot.parse(jsonAST, pythonSource);
-		PythonNode node = (PythonNode)ASTNodeConverter.toNode(astNode, PythonNode::new);
-		node.source = pythonSource;
-		return node;
 	}
 }

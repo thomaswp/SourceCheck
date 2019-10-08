@@ -11,7 +11,6 @@ import org.json.JSONObject;
 import edu.isnap.hint.TextHint;
 import edu.isnap.node.ASTNode;
 import edu.isnap.node.ASTNode.SourceLocation;
-import edu.isnap.node.ASTSnapshot;
 import edu.isnap.node.Node;
 import edu.isnap.node.Node.Predicate;
 import edu.isnap.sourcecheck.NodeAlignment.Mapping;
@@ -343,15 +342,5 @@ public class Insertion extends EditHint {
 		if (this.replaced != null) { return EditType.REPLACEMENT; }
 		if (this.candidate != null && !this.missingParent) {return EditType.CANDIDATE;}
 		return EditType.INSERTION;
-	}
-
-	public String getTextToInsert() {
-		// TODO: Return actual source code
-		// TODO: Also need to handle newlines properly
-		ASTSnapshot snapshot = (ASTSnapshot) pair.root().tag;
-		System.out.println("Insert snapshot!");
-		System.out.println(snapshot);
-		if (snapshot != null) System.out.println(snapshot.source);
-		return pair.prettyPrint().replace("\n", "");
 	}
 }

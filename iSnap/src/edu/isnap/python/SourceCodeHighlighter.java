@@ -67,11 +67,12 @@ public class SourceCodeHighlighter {
 		EditHint.applyEdits(copy, edits);
 
 		Mapping mapping = highlighter.findSolutionMapping(studentCode);
-		PythonNode target = (PythonNode) mapping.to;
+		TextualNode target = (TextualNode) mapping.to;
 
+//		target.recurse(n -> System.out.println(((TextualNode) n).startSourceLocation));
 		System.out.println(studentCode.id);
 		System.out.println(studentCode.source);
-		System.out.println("\nTarget (" + target.student + "):");
+		System.out.println("Target");
 		System.out.println(Diff.diff(studentCode.source, target.source, 2));
 		System.out.println(from);
 		mapping.printValueMappings(System.out);
@@ -96,12 +97,12 @@ public class SourceCodeHighlighter {
 						break;
 					case REPLACEMENT:
 						String insertionCode =
-							INSERT_START + ((Insertion)editHint).getTextToInsert() + SPAN_END;
+							INSERT_START + getTextToInsert((Insertion)editHint) + SPAN_END;
 						marked = location.markSource(marked, insertionCode + REPLACE_START);
 						break;
 					case INSERTION:
 						insertionCode =
-							INSERT_START + ((Insertion)editHint).getTextToInsert() + SPAN_END;
+							INSERT_START + getTextToInsert((Insertion)editHint) + SPAN_END;
 						marked = location.markSource(marked, insertionCode);
 //						 + ((ASTNode)((Insertion)editHint).candidate.tag).value
 						break;
@@ -117,5 +118,19 @@ public class SourceCodeHighlighter {
 			System.out.println(marked + "\n");
 		}
 		return marked;
+	}
+
+
+
+	public static String getTextToInsert(Insertion insertion) {
+		// TODO: Return actual source code
+		// TODO: Also need to handle newlines properly
+//		ASTSnapshot snapshot = (ASTSnapshot) insertion.pair.root().tag;
+//		System.out.println("Insert snapshot!");
+//		System.out.println(snapshot);
+//		if (snapshot != null) System.out.println(snapshot.source);
+		String source = ((TextualNode) insertion.pair).getSource();
+		if (source != null) return source;
+		return insertion.pair.prettyPrint().replace("\n", "");
 	}
 }
