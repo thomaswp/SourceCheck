@@ -14,6 +14,7 @@ import edu.isnap.node.Node;
 import edu.isnap.sourcecheck.HintHighlighter;
 import edu.isnap.sourcecheck.NodeAlignment.Mapping;
 import edu.isnap.sourcecheck.edit.EditHint;
+import edu.isnap.sourcecheck.edit.EditHint.EditType;
 import edu.isnap.sourcecheck.edit.EditSorter;
 import edu.isnap.sourcecheck.edit.Insertion;
 import edu.isnap.util.Diff;
@@ -46,7 +47,10 @@ public class SourceCodeHighlighter {
 		for (EditHint hint : edits) {
 			if(hint.getCorrectedEditStart() != null && hint.getCorrectedEditEnd() != null) {
 				editMap.put(hint.getCorrectedEditStart(), hint);
-				editMap.put(hint.getCorrectedEditEnd(), hint);
+				if (hint.getEditType() != EditType.INSERTION) {
+					// Insertions don't have ends
+					editMap.put(hint.getCorrectedEditEnd(), hint);
+				}
 			}
 		}
 		return editMap;
@@ -81,7 +85,9 @@ public class SourceCodeHighlighter {
 			EditHint editHint = editLocation.getValue();
 			System.out.println("Location: " + editLocation.getKey() + "\nEditHint (" + editHint.getEditType()+ "):\n" + editLocation.getValue());
 			SourceLocation location = editLocation.getKey();
-			if(location == editHint.getCorrectedEditEnd()) {
+			if(location == editHint.getCorrectedEditEnd() &&
+					// Insertion handle both open and close spans
+					editHint.getEditType() != EditType.INSERTION) {
 				marked = location.markSource(marked, SPAN_END);
 			} else if(location == editHint.getCorrectedEditStart()) {
 				switch (editHint.getEditType()){
@@ -89,11 +95,14 @@ public class SourceCodeHighlighter {
 						marked = location.markSource(marked, DELETE_START);
 						break;
 					case REPLACEMENT:
-						String insertionCode = INSERT_START + ((Insertion)editHint).pair + SPAN_END; //TODO: convert the "pretty printed" value of the pair to actual code
+						String insertionCode =
+							INSERT_START + ((Insertion)editHint).getTextToInsert() + SPAN_END;
 						marked = location.markSource(marked, insertionCode + REPLACE_START);
 						break;
-					case INSERTION: //TODO: handle the thing to insert/replace/etc. as well
-						marked = location.markSource(marked, INSERT_START);
+					case INSERTION:
+						insertionCode =
+							INSERT_START + ((Insertion)editHint).getTextToInsert() + SPAN_END;
+						marked = location.markSource(marked, insertionCode);
 //						 + ((ASTNode)((Insertion)editHint).candidate.tag).value
 						break;
 					case CANDIDATE:
