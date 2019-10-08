@@ -349,6 +349,8 @@ public class Insertion extends EditHint {
 		// TODO: Return actual source code
 		// TODO: Also need to handle newlines properly
 		ASTSnapshot snapshot = (ASTSnapshot) pair.root().tag;
+		System.out.println("Insert snapshot!");
+		System.out.println(snapshot);
 		if (snapshot != null) System.out.println(snapshot.source);
 		return pair.prettyPrint().replace("\n", "");
 	}

@@ -56,7 +56,7 @@ public class SourceCodeHighlighter {
 		return editMap;
 	}
 
-	public static String highlightSourceCode(HintData hintData, PythonNode studentCode) {
+	public static String highlightSourceCode(HintData hintData, TextualNode studentCode) {
 		HintHighlighter highlighter = hintData.hintHighlighter();
 
 		highlighter.trace = NullStream.instance;
