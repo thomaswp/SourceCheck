@@ -1,7 +1,9 @@
 package edu.isnap.python;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -74,6 +76,7 @@ public class SourceCodeHighlighter {
 
 		SortedMap<SourceLocation, EditHint> editMap = getSortedHintMap(edits);
 
+		Set<String> missing = new LinkedHashSet<String>();
 		for(Entry<SourceLocation, EditHint> editLocation : editMap.entrySet()) {
 			EditHint editHint = editLocation.getValue();
 			System.out.println("Location: " + editLocation.getKey() + "\nEditHint (" + editHint.getEditType()+ "):\n" + editLocation.getValue());
@@ -88,12 +91,14 @@ public class SourceCodeHighlighter {
 						marked = location.markSource(marked, DELETE_START);
 						break;
 					case REPLACEMENT:
-						String insertionCode = getInsertText(mapping, editHint);
+						String insertionCode = getInsertHTML(mapping, editHint);
 						marked = location.markSource(marked, insertionCode + REPLACE_START);
+						missing.add(getHumanReadableName((Insertion) editHint, mapping.config));
 						break;
 					case INSERTION:
-						insertionCode = getInsertText(mapping, editHint);
+						insertionCode = getInsertHTML(mapping, editHint);
 						marked = location.markSource(marked, insertionCode);
+						missing.add(getHumanReadableName((Insertion) editHint, mapping.config));
 						break;
 					case CANDIDATE:
 						marked = location.markSource(marked, CANDIDATE_START);
@@ -106,30 +111,42 @@ public class SourceCodeHighlighter {
 //			System.out.println("MARKED: ");
 //			System.out.println(marked + "\n");
 		}
+
+		if (!missing.isEmpty()) {
+			marked += "\n\nYou may be missing the following:<ul>";
+			for (String m : missing) marked += "<li/>" + m + "\n";
+			marked += "</ul>";
+		}
+
 		return marked;
 	}
 
-	private static String getInsertText(Mapping mapping, EditHint editHint) {
+	private static String getInsertHTML(Mapping mapping, EditHint editHint) {
 		String hint = getInsertHint((Insertion)editHint, mapping.config);
-		if (((Insertion)editHint).replaced != null) {
-			hint += ", instead of what you have.";
-		} else {
-			hint += ".";
-		}
-		String escapedInsert = StringEscapeUtils.escapeHtml(hint);
 		String insertionCode = String.format("%s title=\"%s\">%s%s",
-				INSERT_START, escapedInsert, "<+>", SPAN_END);
+				INSERT_START, hint, "<+>", SPAN_END);
 		return insertionCode;
 	}
 
 	public static String getInsertHint(Insertion insertion, HintConfig config) {
+		String hrName = getHumanReadableName(insertion, config);
+		String hint = "You may need to add " + hrName + " here";
+		if (insertion.replaced != null) {
+			hint += ", instead of what you have.";
+		} else {
+			hint += ".";
+		}
+		return StringEscapeUtils.escapeHtml(hint);
+	}
+
+	private static String getHumanReadableName(Insertion insertion, HintConfig config) {
 		String hrName = config.getHumanReadableName(insertion.pair);
 		if (hrName == null) hrName = "some code";
 		if (insertion.replaced != null && insertion.replaced.hasType(insertion.type)) {
 			hrName = hrName.replaceAll("^(an?)", "$1 different");
 			System.out.println(hrName);
 		}
-		return "You may need to add " + hrName + " here";
+		return hrName;
 	}
 
 
