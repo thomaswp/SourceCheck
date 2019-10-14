@@ -18,6 +18,7 @@ import edu.isnap.hint.Canonicalization.Reorder;
 import edu.isnap.hint.Canonicalization.SwapBinaryArgs;
 import edu.isnap.hint.TextHint;
 import edu.isnap.hint.util.StringHashable;
+import edu.isnap.sourcecheck.NodeAlignment.Mapping;
 import util.LblTree;
 
 public abstract class Node extends StringHashable implements INode {
@@ -338,11 +339,35 @@ public abstract class Node extends StringHashable implements INode {
 		return copy;
 	}
 
+	/**
+	 * Makes a copy of this node, applying the given mapping to map values appropriately.
+	 * Note: does not make a copy of this Node's ancestors.
+	 */
+	public Node applyMapping(Mapping mapping) {
+		return applyMapping(mapping, parent);
+	}
+
+	private Node applyMapping(Mapping mapping, Node parent) {
+		Node copy = shallowCopy(parent, mapping);
+		for (Node child : children) {
+			copy.children.add(child == null ? null : child.applyMapping(mapping, copy));
+		}
+		return copy;
+	}
+
 	public final Node constructNode(Node parent, String type) {
 		return constructNode(parent, type, null, null);
 	}
 
 	public Node shallowCopy(Node parent) {
+		return shallowCopy(parent, null);
+	}
+
+	protected Node shallowCopy(Node parent, Mapping mapping) {
+		String value = this.value;
+		if (mapping != null) {
+			value = mapping.getMappedValue(this, false);
+		}
 		Node copy = constructNode(parent, type, value, id);
 		copy.tag = tag;
 		copy.annotations = annotations == null ? null : annotations.copy();

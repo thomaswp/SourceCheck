@@ -3,8 +3,8 @@ package edu.isnap.hint;
 import java.io.Serializable;
 
 import edu.isnap.node.Node;
-import edu.isnap.node.SimpleNode;
 import edu.isnap.node.Node.NodeConstructor;
+import edu.isnap.node.SimpleNode;
 
 public abstract class HintConfig implements Serializable {
 	private static final long serialVersionUID = 1L;
@@ -76,6 +76,14 @@ public abstract class HintConfig implements Serializable {
 	 */
 	public boolean isHarmlessType(String type) {
 		return false;
+	}
+
+
+	/**
+	 * Gets a human-readable name for the given Node
+	 */
+	public String getHumanReadableName(Node node) {
+		return null;
 	}
 
 	/**

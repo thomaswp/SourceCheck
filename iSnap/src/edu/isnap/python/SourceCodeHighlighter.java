@@ -1,12 +1,13 @@
 package edu.isnap.python;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import org.apache.commons.lang.StringEscapeUtils;
+
+import edu.isnap.hint.HintConfig;
 import edu.isnap.hint.HintData;
 import edu.isnap.hint.util.NullStream;
 import edu.isnap.node.ASTNode.SourceLocation;
@@ -15,7 +16,6 @@ import edu.isnap.sourcecheck.HintHighlighter;
 import edu.isnap.sourcecheck.NodeAlignment.Mapping;
 import edu.isnap.sourcecheck.edit.EditHint;
 import edu.isnap.sourcecheck.edit.EditHint.EditType;
-import edu.isnap.sourcecheck.edit.EditSorter;
 import edu.isnap.sourcecheck.edit.Insertion;
 import edu.isnap.util.Diff;
 
@@ -23,24 +23,16 @@ public class SourceCodeHighlighter {
 
 	/*public static String EDIT_START = "\u001b[31m"; //TODO: configure this for HTML or ASCII output
 	public static String EDIT_END = "\u001b[0m";*/
-	public static String DELETE_START = "<span class=\"deletion\">"; //TODO: configure this for HTML or ASCII output
-	public static String INSERT_START = "<span class=\"insertion\">";
-	public static String REPLACE_START = "<span class=\"replacement\">";
-	public static String CANDIDATE_START = "<span class=\"candidate\">";
-	public static String REORDER_START = "<span class=\"reorder\">";
+	public static String DELETE_START = "<span class=\"deletion\" "
+			+ "title=\"This code may be incorrect.\">";
+	public static String INSERT_START = "<span class=\"insertion\"";
+	public static String REPLACE_START = "<span class=\"replacement\" "
+			+ "title=\"This code may need to be replaced with something else.\">";
+	public static String CANDIDATE_START = "<span class=\"candidate\" "
+			+ "title=\"This code is good, but it may be in the wrong place.\">";
+	public static String REORDER_START = "<span class=\"reorder\" "
+			+ "title=\"This code is good, but it may be in the wrong place.\">";
 	public static String SPAN_END = "</span>";
-
-	// TODO: Eventually this should be a non-static method and the class
-	// should allow configuration of the HTML output (e.g. colors, etc.)
-
-
-	private static List<EditHint> sortEdits(List<EditHint> unsortedEdits){
-		List<EditHint> sortedEdits = new ArrayList<EditHint>();
-		sortedEdits.addAll(unsortedEdits);
-		Collections.sort(sortedEdits, new EditSorter());
-		Collections.sort(sortedEdits, new EditSorter());
-		return sortedEdits;
-	}
 
 	private static SortedMap<SourceLocation, EditHint> getSortedHintMap(List<EditHint> edits){
 		SortedMap<SourceLocation, EditHint> editMap = new TreeMap<SourceLocation, EditHint>();
@@ -96,15 +88,12 @@ public class SourceCodeHighlighter {
 						marked = location.markSource(marked, DELETE_START);
 						break;
 					case REPLACEMENT:
-						String insertionCode =
-							INSERT_START + getTextToInsert((Insertion)editHint) + SPAN_END;
+						String insertionCode = getInsertText(mapping, editHint);
 						marked = location.markSource(marked, insertionCode + REPLACE_START);
 						break;
 					case INSERTION:
-						insertionCode =
-							INSERT_START + getTextToInsert((Insertion)editHint) + SPAN_END;
+						insertionCode = getInsertText(mapping, editHint);
 						marked = location.markSource(marked, insertionCode);
-//						 + ((ASTNode)((Insertion)editHint).candidate.tag).value
 						break;
 					case CANDIDATE:
 						marked = location.markSource(marked, CANDIDATE_START);
@@ -114,22 +103,41 @@ public class SourceCodeHighlighter {
 						break;
 				}
 			}
-			System.out.println("MARKED: ");
-			System.out.println(marked + "\n");
+//			System.out.println("MARKED: ");
+//			System.out.println(marked + "\n");
 		}
 		return marked;
 	}
 
+	private static String getInsertText(Mapping mapping, EditHint editHint) {
+		String hint = getInsertHint((Insertion)editHint, mapping.config);
+		if (((Insertion)editHint).replaced != null) {
+			hint += ", instead of what you have.";
+		} else {
+			hint += ".";
+		}
+		String escapedInsert = StringEscapeUtils.escapeHtml(hint);
+		String insertionCode = String.format("%s title=\"%s\">%s%s",
+				INSERT_START, escapedInsert, "<+>", SPAN_END);
+		return insertionCode;
+	}
+
+	public static String getInsertHint(Insertion insertion, HintConfig config) {
+		String hrName = config.getHumanReadableName(insertion.pair);
+		if (hrName == null) hrName = "some code";
+		if (insertion.replaced != null && insertion.replaced.hasType(insertion.type)) {
+			hrName = hrName.replaceAll("^(an?)", "$1 different");
+			System.out.println(hrName);
+		}
+		return "You may need to add " + hrName + " here";
+	}
 
 
-	public static String getTextToInsert(Insertion insertion) {
-		// TODO: Return actual source code
+	public static String getTextToInsert(Insertion insertion, Mapping mapping) {
 		// TODO: Also need to handle newlines properly
-//		ASTSnapshot snapshot = (ASTSnapshot) insertion.pair.root().tag;
-//		System.out.println("Insert snapshot!");
-//		System.out.println(snapshot);
-//		if (snapshot != null) System.out.println(snapshot.source);
-		String source = ((TextualNode) insertion.pair).getSource();
+		Node mappedPair = insertion.pair.applyMapping(mapping);
+//		System.out.println("Pair:\n" + mappedPair);
+		String source = ((TextualNode) mappedPair).getSource();
 		if (source != null) return source;
 		return insertion.pair.prettyPrint().replace("\n", "");
 	}

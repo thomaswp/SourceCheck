@@ -8,6 +8,7 @@ import edu.isnap.hint.util.ASTNodeConverter;
 import edu.isnap.node.ASTNode.SourceLocation;
 import edu.isnap.node.ASTSnapshot;
 import edu.isnap.node.Node;
+import edu.isnap.sourcecheck.NodeAlignment.Mapping;
 
 public abstract class TextualNode extends Node {
 
@@ -34,8 +35,8 @@ public abstract class TextualNode extends Node {
 	}
 
 	@Override
-	public Node shallowCopy(Node parent) {
-		TextualNode copy = (TextualNode) super.shallowCopy(parent);
+	protected Node shallowCopy(Node parent, Mapping mapping) {
+		TextualNode copy = (TextualNode) super.shallowCopy(parent, mapping);
 		copy.source = source;
 		copy.correct = correct;
 		copy.startSourceLocation = startSourceLocation == null ? null :

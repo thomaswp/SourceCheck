@@ -2,6 +2,8 @@ package edu.isnap.python;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 
 import edu.isnap.hint.HintConfig;
@@ -87,5 +89,40 @@ public class PythonHintConfig extends HintConfig {
 	@Override
 	public boolean areNodeIDsConsistent() {
 		return false;
+	}
+
+	private final static Map<String, String> nameMap = new LinkedHashMap<>();
+	static {
+		nameMap.put("Name", "a variable (e.g. x)");
+		nameMap.put("BinOp", "a binary operation (e.g. + or *)");
+		nameMap.put("Compare", "a comparisong (e.g. a = b or a < b)");
+		nameMap.put("Call", "a function call (e.g. len() or max())");
+		nameMap.put("Subscript", "a list with a subscript (e.g. x[1])");
+		nameMap.put("Index", "a subscript for a list (e.g. x[1])");
+		nameMap.put("Assign", "a variable assignment (e.g. x = 5)");
+		nameMap.put("AugAssign", "a variable increment/decrement (e.g. x += 5)");
+		nameMap.put("Import", "an import statement (e.g. import math");
+		nameMap.put("ImportFrom", "an import statement (e.g. from math import sin)");
+		nameMap.put("Num", "a number literal (e.g. 3)");
+		nameMap.put("Str", "a string literal (e.g. \"hello\")");
+		nameMap.put("If", "an if statement");
+		nameMap.put("For", "a for loop");
+		nameMap.put("While", "a while loop");
+		nameMap.put("Break", "a break statement");
+		nameMap.put("Continue", "a continue statement");
+		nameMap.put("Return", "a return statement");
+	}
+
+	@Override
+	public String getHumanReadableName(Node node) {
+		if (node == null) return null;
+		if (node.hasType("UnaryOp")) {
+			if (node.search(new Node.TypePredicate("USub")) != null) {
+				return "a negative value (e.g. -1)";
+			} else if (node.search(new Node.TypePredicate("Not")) != null) {
+				return "a not operator (e.g. not x)";
+			}
+		}
+		return nameMap.get(node.type());
 	}
 }
