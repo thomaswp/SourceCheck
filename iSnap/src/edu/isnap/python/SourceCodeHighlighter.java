@@ -26,14 +26,14 @@ public class SourceCodeHighlighter {
 	/*public static String EDIT_START = "\u001b[31m"; //TODO: configure this for HTML or ASCII output
 	public static String EDIT_END = "\u001b[0m";*/
 	public static String DELETE_START = "<span class=\"deletion\" "
-			+ "title=\"This code may be incorrect.\">";
+			+ "data-tooltip=\"This code may be incorrect.\">";
 	public static String INSERT_START = "<span class=\"insertion\"";
 	public static String REPLACE_START = "<span class=\"replacement\" "
-			+ "title=\"This code may need to be replaced with something else.\">";
+			+ "data-tooltip=\"This code may need to be replaced with something else.\">";
 	public static String CANDIDATE_START = "<span class=\"candidate\" "
-			+ "title=\"This code is good, but it may be in the wrong place.\">";
+			+ "data-tooltip=\"This code is good, but it may be in the wrong place.\">";
 	public static String REORDER_START = "<span class=\"reorder\" "
-			+ "title=\"This code is good, but it may be in the wrong place.\">";
+			+ "data-tooltip=\"This code is good, but it may be in the wrong place.\">";
 	public static String SPAN_END = "</span>";
 
 	private static SortedMap<SourceLocation, EditHint> getSortedHintMap(List<EditHint> edits){
@@ -123,7 +123,7 @@ public class SourceCodeHighlighter {
 
 	private static String getInsertHTML(Mapping mapping, EditHint editHint) {
 		String hint = getInsertHint((Insertion)editHint, mapping.config);
-		String insertionCode = String.format("%s title=\"%s\">%s%s",
+		String insertionCode = String.format("%s data-tooltip=\"%s\">%s%s",
 				INSERT_START, hint, "<+>", SPAN_END);
 		return insertionCode;
 	}
