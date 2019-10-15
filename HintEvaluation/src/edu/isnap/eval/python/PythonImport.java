@@ -31,8 +31,8 @@ public class PythonImport {
 	public static void main(String[] args) throws IOException {
 //		generateHints("../../PythonAST/data/datacamp", "65692");
 //		generateHints("../../PythonAST/data/itap", "firstAndLast");
-		serializeHintData("../../PythonAST/data/itap", "firstAndLast",
-				"../HintServer/WebContent/WEB-INF/data/firstAndLast.hdata");
+		serializeHintData("../../PythonAST/data/PCRS", "39",
+				"../HintServer/WebContent/WEB-INF/data/39.hdata");
 //		generateHints("../data/", "test");
 
 //		Map<String, ListMap<String, PythonNode>> nodes = loadAllAssignments("../../PythonAST/data");

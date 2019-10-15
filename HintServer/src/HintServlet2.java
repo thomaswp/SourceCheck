@@ -40,7 +40,6 @@ public class HintServlet2 extends HttpServlet {
 	protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 //		super.doPut(req, resp);
 
-		loadHintMap(DEFAULT_ASSIGNMENT, "", DEFAULT_MIN_GRADE);
 
 		String origin = req.getHeader("origin");
 		if (origin != null) resp.setHeader("Access-Control-Allow-Origin", origin);
@@ -55,11 +54,14 @@ public class HintServlet2 extends HttpServlet {
 			String originalSource = (String) jsonAST.get("source");
 			String problemName = (String) jsonAST.get("problem");
 
+			loadHintMap(problemName, "", DEFAULT_MIN_GRADE);
+
 			JSONObject parsedTree = new JSONObject(parsedTreeRaw);
 			TextualNode fullStudentCode = PythonNode.fromJSON(parsedTree, originalSource,
 					PythonNode::new);
 
-			String highlightedCode = SourceCodeHighlighter.highlightSourceCode(hintDatas.get(problemName), fullStudentCode);
+			String highlightedCode = SourceCodeHighlighter.highlightSourceCode(
+					hintDatas.get(problemName), fullStudentCode);
 //			String jsonString = "{'output' : '" + highlightedCode + "'}";
 			JSONObject jsonObj = new JSONObject();
 			jsonObj.put("highlighted", highlightedCode);

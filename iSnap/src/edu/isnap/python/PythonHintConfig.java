@@ -93,7 +93,7 @@ public class PythonHintConfig extends HintConfig {
 
 	private final static Map<String, String> nameMap = new LinkedHashMap<>();
 	static {
-		nameMap.put("Name", "a variable (e.g. x)");
+		nameMap.put("Name", "a variable");
 		nameMap.put("BinOp", "a binary operation (e.g. + or *)");
 		nameMap.put("Compare", "a comparisong (e.g. a = b or a < b)");
 		nameMap.put("Call", "a function call (e.g. len() or max())");
@@ -103,8 +103,8 @@ public class PythonHintConfig extends HintConfig {
 		nameMap.put("AugAssign", "a variable increment/decrement (e.g. x += 5)");
 		nameMap.put("Import", "an import statement (e.g. import math");
 		nameMap.put("ImportFrom", "an import statement (e.g. from math import sin)");
-		nameMap.put("Num", "a number literal (e.g. 3)");
-		nameMap.put("Str", "a string literal (e.g. \"hello\")");
+		nameMap.put("Num", "a number literal");
+		nameMap.put("Str", "a string literal");
 		nameMap.put("If", "an if statement");
 		nameMap.put("For", "a for loop");
 		nameMap.put("While", "a while loop");
