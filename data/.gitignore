@@ -15,3 +15,4 @@ help-seeking/*/submitted/*/*
 *.zip
 *.gz
 ClassGrades.csv
+.DS_Store
