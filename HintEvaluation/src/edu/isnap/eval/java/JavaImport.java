@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.json.JSONException;
@@ -15,13 +14,12 @@ import org.json.JSONObject;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
 
-import edu.isnap.eval.export.JsonAST;
 import edu.isnap.hint.HintData;
 import edu.isnap.hint.SnapHintBuilder;
-import edu.isnap.node.ASTSnapshot;
 import edu.isnap.node.Node;
 import edu.isnap.python.PythonHintConfig;
 import edu.isnap.python.SourceCodeHighlighter;
+import edu.isnap.python.TextualNode;
 import edu.isnap.sourcecheck.HintHighlighter;
 import edu.isnap.util.map.ListMap;
 
@@ -121,14 +119,7 @@ public class JavaImport {
 					}
 					String json = new String(Files.readAllBytes(file.toPath()));
 					JSONObject obj = new JSONObject(json);
-					ASTSnapshot astNode = ASTSnapshot.parse(obj, source);
-					node = (JavaNode) JsonAST.toNode(astNode, JavaNode::new);
-					if (obj.has("correct")) {
-						boolean correct = obj.getBoolean("correct");
-						node.correct = Optional.of(correct);
-						node.student = student;
-					}
-					node.source = source;
+					node = (JavaNode) TextualNode.fromJSON(obj, source, JavaNode::new);
 				} catch (JSONException e) {
 					System.out.println("Error parsing: " + file.getAbsolutePath());
 					e.printStackTrace();
