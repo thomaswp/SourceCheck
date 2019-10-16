@@ -21,7 +21,6 @@ import com.opencsv.CSVReaderBuilder;
 import edu.isnap.hint.HintData;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.node.Node;
-import edu.isnap.python.PythonNode;
 import edu.isnap.python.SourceCodeHighlighter;
 import edu.isnap.python.TextualNode;
 import edu.isnap.sourcecheck.HintHighlighter;
@@ -151,7 +150,7 @@ public class JavaImport {
 			String json = new String(Files.readAllBytes(testJson.toPath()));
 
 			JSONObject obj = new JSONObject(json);
-			JavaNode node = (JavaNode) TextualNode.fromJSON(obj, sourceCode, PythonNode::new);
+			JavaNode node = (JavaNode) TextualNode.fromJSON(obj, sourceCode, JavaNode::new);
 			if (isCorrect.equals("True")) {
 				boolean correct = true;
 				node.correct = Optional.of(correct);
