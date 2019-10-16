@@ -1,5 +1,7 @@
 package edu.isnap.eval.java;
 
+import java.util.Arrays;
+
 import org.json.JSONObject;
 
 import edu.isnap.hint.util.ASTNodeConverter;
@@ -25,7 +27,9 @@ public class JavaNode extends TextualNode {
 
 	public static boolean typeHasBody(String type) {
 		// TODO: finish this
-		return "list".equals(type);
+		String[] variableChildrenTypes = {"Modifier", "Operator", "NameExpr",
+				"Parameter", "IntegerLiteralExpr", "VoidType", "PrimitiveType"};
+		return !Arrays.asList(variableChildrenTypes).contains(type);
 	}
 
 	@Override
