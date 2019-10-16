@@ -1,22 +1,54 @@
 package edu.isnap.python;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
+import org.apache.commons.lang.StringEscapeUtils;
+
+import edu.isnap.hint.HintConfig;
 import edu.isnap.hint.HintData;
 import edu.isnap.hint.util.NullStream;
-import edu.isnap.node.ASTNode;
+import edu.isnap.node.ASTNode.SourceLocation;
 import edu.isnap.node.Node;
 import edu.isnap.sourcecheck.HintHighlighter;
 import edu.isnap.sourcecheck.NodeAlignment.Mapping;
-import edu.isnap.sourcecheck.edit.Deletion;
 import edu.isnap.sourcecheck.edit.EditHint;
+import edu.isnap.sourcecheck.edit.EditHint.EditType;
 import edu.isnap.sourcecheck.edit.Insertion;
 import edu.isnap.util.Diff;
 
 public class SourceCodeHighlighter {
 
-	// TODO: Eventually this should be a non-static method and the class
-	// should allow configuration of the HTML output (e.g. colors, etc.)
+	/*public static String EDIT_START = "\u001b[31m"; //TODO: configure this for HTML or ASCII output
+	public static String EDIT_END = "\u001b[0m";*/
+	public static String DELETE_START = "<span class=\"deletion\" "
+			+ "data-tooltip=\"This code may be incorrect.\">";
+	public static String INSERT_START = "<span class=\"insertion\"";
+	public static String REPLACE_START = "<span class=\"replacement\" "
+			+ "data-tooltip=\"This code may need to be replaced with something else.\">";
+	public static String CANDIDATE_START = "<span class=\"candidate\" "
+			+ "data-tooltip=\"This code is good, but it may be in the wrong place.\">";
+	public static String REORDER_START = "<span class=\"reorder\" "
+			+ "data-tooltip=\"This code is good, but it may be in the wrong place.\">";
+	public static String SPAN_END = "</span>";
+
+	private static SortedMap<SourceLocation, EditHint> getSortedHintMap(List<EditHint> edits){
+		SortedMap<SourceLocation, EditHint> editMap = new TreeMap<SourceLocation, EditHint>();
+		for (EditHint hint : edits) {
+			if(hint.getCorrectedEditStart() != null && hint.getCorrectedEditEnd() != null) {
+				editMap.put(hint.getCorrectedEditStart(), hint);
+				if (hint.getEditType() != EditType.INSERTION) {
+					// Insertions don't have ends
+					editMap.put(hint.getCorrectedEditEnd(), hint);
+				}
+			}
+		}
+		return editMap;
+	}
 
 	public static String highlightSourceCode(HintData hintData, TextualNode studentCode) {
 		HintHighlighter highlighter = hintData.hintHighlighter();
@@ -29,58 +61,101 @@ public class SourceCodeHighlighter {
 		EditHint.applyEdits(copy, edits);
 
 		Mapping mapping = highlighter.findSolutionMapping(studentCode);
-		PythonNode target = (PythonNode) mapping.to;
+		TextualNode target = (TextualNode) mapping.to;
 
+//		target.recurse(n -> System.out.println(((TextualNode) n).startSourceLocation));
 		System.out.println(studentCode.id);
 		System.out.println(studentCode.source);
-		System.out.println("\nTarget (" + target.student + "):");
+		System.out.println("Target");
 		System.out.println(Diff.diff(studentCode.source, target.source, 2));
 		System.out.println(from);
 		mapping.printValueMappings(System.out);
+		edits.forEach(System.out::println);
 		System.out.println();
+		String marked = studentCode.source;
 
+		SortedMap<SourceLocation, EditHint> editMap = getSortedHintMap(edits);
 
-		for (EditHint hint : edits) {
-			ASTNode toDelete = null;
-			if (hint instanceof Deletion) {
-				Deletion del = (Deletion) hint;
-				toDelete = (ASTNode) del.node.tag;
+		Set<String> missing = new LinkedHashSet<String>();
+		for(Entry<SourceLocation, EditHint> editLocation : editMap.entrySet()) {
+			EditHint editHint = editLocation.getValue();
+			System.out.println("Location: " + editLocation.getKey() + "\nEditHint (" + editHint.getEditType()+ "):\n" + editLocation.getValue());
+			SourceLocation location = editLocation.getKey();
+			if(location == editHint.getCorrectedEditEnd() &&
+					// Insertion handle both open and close spans
+					editHint.getEditType() != EditType.INSERTION) {
+				marked = location.markSource(marked, SPAN_END);
+			} else if(location == editHint.getCorrectedEditStart()) {
+				switch (editHint.getEditType()){
+					case DELETION:
+						marked = location.markSource(marked, DELETE_START);
+						break;
+					case REPLACEMENT:
+						String insertionCode = getInsertHTML(mapping, editHint);
+						marked = location.markSource(marked, insertionCode + REPLACE_START);
+						missing.add(getHumanReadableName((Insertion) editHint, mapping.config));
+						break;
+					case INSERTION:
+						insertionCode = getInsertHTML(mapping, editHint);
+						marked = location.markSource(marked, insertionCode);
+						missing.add(getHumanReadableName((Insertion) editHint, mapping.config));
+						break;
+					case CANDIDATE:
+						marked = location.markSource(marked, CANDIDATE_START);
+						break;
+					case REORDER:
+						marked = location.markSource(marked, REORDER_START);
+						break;
+				}
 			}
-			if (hint instanceof Insertion) {
-				Insertion ins = (Insertion) hint;
-				if (ins.replaced != null) toDelete = (ASTNode) ins.replaced.tag;
-			}
-			if (toDelete == null || toDelete.hasType("null")) continue;
-			System.out.println(hint);
-			System.out.println(toDelete);
-			System.out.println(toDelete.getSourceLocationStart() + " --> " +
-					toDelete.getSourceLocationEnd());
-			String marked = studentCode.source;
-			String start = "\u001b[31m";
-			String end = "\u001b[0m";
-			if (toDelete.getSourceLocationEnd() == null) {
-				marked += end;
-			} else {
-				marked = toDelete.getSourceLocationEnd().markSource(marked, end);
-			}
-			if (toDelete.getSourceLocationStart() != null) {
-				marked = toDelete.getSourceLocationStart().markSource(marked, start);
-				System.out.println("MARKED: ");
-			} else {
-				System.out.println("Missing source start: " + toDelete);
-			}
-			System.out.println(marked);
-
-			// TODO: Right now we return the code with only the first edit highighted
-			// but we want to return the code with all edits highlighted
-			return marked;
+//			System.out.println("MARKED: ");
+//			System.out.println(marked + "\n");
 		}
-		return studentCode.source;
 
-//		System.out.println(Diff.diff(from, to));
-//		System.out.println(String.join("\n",
-//				edits.stream().map(e -> e.toString()).collect(Collectors.toList())));
-//		System.out.println("------------------------");
-//		System.out.println();
+		if (!missing.isEmpty()) {
+			marked += "\n\nYou may be missing the following:<ul>";
+			for (String m : missing) marked += "<li/>" + m + "\n";
+			marked += "</ul>";
+		}
+
+		return marked;
+	}
+
+	private static String getInsertHTML(Mapping mapping, EditHint editHint) {
+		String hint = getInsertHint((Insertion)editHint, mapping.config);
+		String insertionCode = String.format("%s data-tooltip=\"%s\">%s%s",
+				INSERT_START, hint, "<+>", SPAN_END);
+		return insertionCode;
+	}
+
+	public static String getInsertHint(Insertion insertion, HintConfig config) {
+		String hrName = getHumanReadableName(insertion, config);
+		String hint = "You may need to add " + hrName + " here";
+		if (insertion.replaced != null) {
+			hint += ", instead of what you have.";
+		} else {
+			hint += ".";
+		}
+		return StringEscapeUtils.escapeHtml(hint);
+	}
+
+	private static String getHumanReadableName(Insertion insertion, HintConfig config) {
+		String hrName = config.getHumanReadableName(insertion.pair);
+		if (hrName == null) hrName = "some code";
+		if (insertion.replaced != null && insertion.replaced.hasType(insertion.type)) {
+			hrName = hrName.replaceAll("^(an?)", "$1 different");
+			System.out.println(hrName);
+		}
+		return hrName;
+	}
+
+
+	public static String getTextToInsert(Insertion insertion, Mapping mapping) {
+		// TODO: Also need to handle newlines properly
+		Node mappedPair = insertion.pair.applyMapping(mapping);
+//		System.out.println("Pair:\n" + mappedPair);
+		String source = ((TextualNode) mappedPair).getSource();
+		if (source != null) return source;
+		return insertion.pair.prettyPrint().replace("\n", "");
 	}
 }

@@ -10,6 +10,7 @@ import org.json.JSONObject;
 
 import edu.isnap.hint.TextHint;
 import edu.isnap.node.ASTNode;
+import edu.isnap.node.ASTNode.SourceLocation;
 import edu.isnap.node.Node;
 import edu.isnap.node.Node.Predicate;
 import edu.isnap.sourcecheck.NodeAlignment.Mapping;
@@ -133,6 +134,11 @@ public class Insertion extends EditHint {
 		if (candidate == null) return base;
 		base += " w/ " + rootString(candidate);
 		return base;
+	}
+
+	@Override
+	protected boolean shouldHaveParent() {
+		return !missingParent;
 	}
 
 	@Override
@@ -267,5 +273,74 @@ public class Insertion extends EditHint {
 	@Override
 	public Node getPriorityToNode(Mapping mapping) {
 		return pair;
+	}
+
+	@Override
+	public SourceLocation getCorrectedEditStart() {
+		ASTNode node = null;
+
+		if (this.replaced != null) {//if there's a replaced, the new code should go right after the replaced location. Cross out the replace, add the contents of the pair
+			node = (ASTNode) this.replaced.tag;
+		} else if (!this.missingParent) {//else, take the parent, which may or may not have children. The Insertion's index property is the index at which we want to insert in the parent
+//			System.out.println("!!!");
+//			System.out.println(parent);
+			parent.children.forEach(c -> System.out.println(c.tag));
+			if (index == parent.children.size()) {
+				// If the index to insert is after all the other children...
+				if (parent.children.size() > 0) {
+					// If there's a child to insert after, insert it *afterwards*
+					Node sibling = parent.children.get(index - 1);
+//					System.out.println("Sibling: " + sibling);
+					node = (ASTNode) sibling.tag;
+				} else {
+					// Otherwise insert it *after* the first ancestor with a tag
+					Node p = parent;
+					while (p.tag == null) {
+						p = p.parent;
+					}
+					System.out.println(p);
+					node = (ASTNode) p.tag;
+				}
+//				System.out.println("Node: " + node);
+				if (node != null) System.out.println("End loc: " + node.endSourceLocation);
+				if (node != null) return node.endSourceLocation;
+			} else {
+				// Otherwise, return the location of the current child at that location
+				node = (ASTNode) parent.children.get(index).tag;
+			}
+		}
+//		don't do this, candidate is where it used to be, not where it should go
+//		if (this.candidate != null /*&& !this.missingParent*/) { node = (ASTNode) this.candidate.tag; } //TODO: investigate this
+
+		if (node != null) {
+			// TODO: There are some times when the replaced will have no start source (e.g. null)
+			return node.startSourceLocation;
+		}
+		return null;
+	}
+
+	@Override
+	public SourceLocation getCorrectedEditEnd() {
+		ASTNode node = null;
+
+		if (this.replaced != null) {//if there's a replaced, the new code should go right after the replaced location. Cross out the replace, add the contents of the pair
+			node = (ASTNode) this.replaced.tag;
+		} else if (!this.missingParent) {//else, take the parent, which may or may not have children. The Insertion's index property is the index at which we want to insert in the parent
+			return getCorrectedEditStart();
+		}
+//		don't do this, candidate is where it used to be, not where it should go
+//		if (this.candidate != null /*&& !this.missingParent*/) { node = (ASTNode) this.candidate.tag; } //TODO: investigate this
+
+		if (node != null) {
+			return node.endSourceLocation;
+		}
+		return null;
+	}
+
+	@Override
+	public EditType getEditType() {
+		if (this.replaced != null) { return EditType.REPLACEMENT; }
+		if (this.candidate != null && !this.missingParent) {return EditType.CANDIDATE;}
+		return EditType.INSERTION;
 	}
 }

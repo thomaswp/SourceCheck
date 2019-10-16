@@ -18,12 +18,12 @@ import com.esotericsoftware.kryo.io.Output;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 
-import edu.isnap.eval.export.JsonAST;
 import edu.isnap.hint.HintData;
 import edu.isnap.hint.SnapHintBuilder;
-import edu.isnap.node.ASTSnapshot;
 import edu.isnap.node.Node;
+import edu.isnap.python.PythonNode;
 import edu.isnap.python.SourceCodeHighlighter;
+import edu.isnap.python.TextualNode;
 import edu.isnap.sourcecheck.HintHighlighter;
 import edu.isnap.util.map.ListMap;
 
@@ -149,12 +149,9 @@ public class JavaImport {
 			String isCorrect = record[10];
 			File testJson = new File(sourceCodeJSON);
 			String json = new String(Files.readAllBytes(testJson.toPath()));
-			//System.out.println(sourceCodeJSON);
 
 			JSONObject obj = new JSONObject(json);
-			//System.out.println(obj);
-			ASTSnapshot astNode = ASTSnapshot.parse(obj, sourceCode);
-			JavaNode node = (JavaNode) JsonAST.toNode(astNode, JavaNode::new);
+			JavaNode node = (JavaNode) TextualNode.fromJSON(obj, sourceCode, PythonNode::new);
 			if (isCorrect.equals("True")) {
 				boolean correct = true;
 				node.correct = Optional.of(correct);

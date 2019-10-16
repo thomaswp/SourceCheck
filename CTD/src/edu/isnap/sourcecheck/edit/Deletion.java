@@ -6,6 +6,8 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.json.JSONObject;
 
+import edu.isnap.node.ASTNode.SourceLocation;
+import edu.isnap.node.ASTNode;
 import edu.isnap.node.Node;
 import edu.isnap.sourcecheck.NodeAlignment.Mapping;
 import edu.isnap.util.map.BiMap;
@@ -43,13 +45,17 @@ public class Deletion extends EditHint {
 	@Override
 	protected void addApplications(Node root, Node editParent, List<Application> applications) {
 		Node node = Node.findMatchingNodeInCopy(this.node, root);
-		final int index = node.index();
-		applications.add(new Application(editParent, index, new EditAction() {
-			@Override
-			public void apply(BiMap<Node, Node> createdNodeMap) {
-				node.parent.children.remove(index);
-			}
-		}));
+		if(node != null) {
+			final int index = node.index();
+			applications.add(new Application(editParent, index, new EditAction() {
+				@Override
+				public void apply(BiMap<Node, Node> createdNodeMap) {
+					node.parent.children.remove(index);
+				}
+			}));
+		} else {
+			System.out.println("Node is null in Deletion.addApplications()");
+		}
 	}
 
 	@Override
@@ -71,5 +77,26 @@ public class Deletion extends EditHint {
 	@Override
 	protected Object getParentForComparison() {
 		return parent;
+	}
+
+	@Override
+	public SourceLocation getCorrectedEditStart() {
+		if(this.node.tag instanceof ASTNode) {
+			return ((ASTNode) this.node.tag).startSourceLocation;	
+		}
+		return null;
+	}
+
+	@Override
+	public SourceLocation getCorrectedEditEnd() {
+		if(this.node.tag instanceof ASTNode) {
+			return ((ASTNode) this.node.tag).endSourceLocation;	
+		}
+		return null;
+	}
+
+	@Override
+	public EditType getEditType() {
+		return EditType.DELETION;
 	}
 }
