@@ -155,9 +155,7 @@ public class JavaImport {
 			if (isCorrect.equals("True")) {
 				boolean correct = true;
 				node.correct = Optional.of(correct);
-				node.student = projectID;
 			}
-			node.source = sourceCode;
 			nodes.add(projectID, node);
 		}
 		return nodes;
