@@ -1,25 +1,22 @@
 package edu.isnap.eval.java;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.json.JSONObject;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Output;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 
 import edu.isnap.hint.HintData;
-import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.node.Node;
 import edu.isnap.python.SourceCodeHighlighter;
 import edu.isnap.python.TextualNode;
@@ -35,10 +32,10 @@ public class JavaImport {
 		generateHints("/Users/rajatnarang/Desktop/Black_Box/ASTs/10__output_clock-display-ast.csv", "ClockDisplay");
 	}
 
-	static HintData createHintData(String inputCSV, String assignment) throws IOException {
+	/*static HintData createHintData(String inputCSV, String assignment) throws IOException {
 		ListMap<String, JavaNode> attempts = loadAssignment(inputCSV);
 		return createHintData(assignment, attempts);
-	}
+	}*/
 
 	static HintData createHintData(String assignmentID, ListMap<String, JavaNode> attempts) {
 		JavaHintConfig config = new JavaHintConfig();
@@ -54,7 +51,7 @@ public class JavaImport {
 	}
 
 	// Don't worry about this method for now
-	static void serializeHintData(String inputCSV, String assignment, String outputPath)
+	/*static void serializeHintData(String inputCSV, String assignment, String outputPath)
 			throws IOException {
 		ListMap<String, JavaNode> attempts = loadAssignment(inputCSV);
 		List<String> toRemove = new ArrayList<String>();
@@ -71,37 +68,39 @@ public class JavaImport {
 		Output output = new Output(new FileOutputStream(outputPath));
 		kryo.writeObject(output, hintData);
 		output.close();
-	}
+	}*/
 
 	static void generateHints(String inputCSV, String assignment) throws IOException {
-		ListMap<String, JavaNode> attempts = loadAssignment(inputCSV);
+		HashMap<String, ListMap<String, JavaNode>> filePathToattempts = loadAssignment(inputCSV);
 
-		for (String student : attempts.keySet()) {
-			// May want to change this to a random attempt, not just the first one, but you can
-			// start with the first one
-			JavaNode firstAttempt = attempts.get(student).get(0);
-			if (firstAttempt.correct.orElse(false)) continue;
+		for(String filePath: filePathToattempts.keySet()) {
+			ListMap<String, JavaNode> attempts = filePathToattempts.get(filePath);
+			for (String student : attempts.keySet()) {
+				// May want to change this to a random attempt, not just the first one, but you can
+				// start with the first one
+				JavaNode firstAttempt = attempts.get(student).get(0);
+				if (firstAttempt.correct.orElse(false)) continue;
 
-			ListMap<String, JavaNode> subset = new ListMap<>();
-			for (String attemptID : attempts.keySet()) {
-				// Get the sequence of snapshots over time
-				List<JavaNode> trace = attempts.get(attemptID);
-				// If it was correct, then add it to the subset
-				if (trace.get(trace.size() - 1).correct.orElse(false)) {
-					subset.put(attemptID, attempts.get(attemptID));
+				ListMap<String, JavaNode> subset = new ListMap<>();
+				for (String attemptID : attempts.keySet()) {
+					// Get the sequence of snapshots over time
+					List<JavaNode> trace = attempts.get(attemptID);
+					// If it was correct, then add it to the subset
+					if (trace.get(trace.size() - 1).correct.orElse(false)) {
+						subset.put(attemptID, attempts.get(attemptID));
+					}
 				}
+				// Remove the student we're generating hints for, because you can't give yourself a hint
+				subset.remove(student);
+				// We create a "HintData" object, which represents the data from which we generate all
+				// hints
+				HintData hintData = createHintData(assignment, subset);
+
+				// Then we use this method to "highlight" the java source code using the SourceCheck
+				// hints
+				System.out.println(SourceCodeHighlighter.highlightSourceCode(hintData, firstAttempt));
 			}
-			// Remove the student we're generating hints for, because you can't give yourself a hint
-			subset.remove(student);
-			// We create a "HintData" object, which represents the data from which we generate all
-			// hints
-			HintData hintData = createHintData(assignment, subset);
-
-			// Then we use this method to "highlight" the java source code using the SourceCheck
-			// hints
-			System.out.println(SourceCodeHighlighter.highlightSourceCode(hintData, firstAttempt));
 		}
-
 	}
 
 	public static List<String[]> readCSV(String fileName){
@@ -137,26 +136,32 @@ public class JavaImport {
 	}
 
 	// TODO: Modify this so that it loads from your spreadsheet instead of a folder of folders
-	static ListMap<String, JavaNode> loadAssignment(String inputCSV)
+	static HashMap<String, ListMap<String, JavaNode>> loadAssignment(String inputCSV)
 			throws IOException {
-		ListMap<String, JavaNode> nodes = new ListMap<>();
+		HashMap<String, ListMap<String, JavaNode>> filePathToNodes = new HashMap<String, ListMap<String, JavaNode>>();
 		List<String[]> csvRecords= readCSV(inputCSV);
 		for(String[] record: csvRecords) {
 			String projectID = record[0];
 			String sourceCode = record[4];
 			String sourceCodeJSON = record[12];
 			String isCorrect = record[10];
-			File testJson = new File(sourceCodeJSON);
-			String json = new String(Files.readAllBytes(testJson.toPath()));
+			String filePath = record[3].split("/")[1];
+			if(filePath.equals("ClockDisplay.java") || filePath.equals("NumberDisplay.java")) {
+				File testJson = new File(sourceCodeJSON);
+				String json = new String(Files.readAllBytes(testJson.toPath()));
 
-			JSONObject obj = new JSONObject(json);
-			JavaNode node = (JavaNode) TextualNode.fromJSON(obj, sourceCode, JavaNode::new);
-			if (isCorrect.equals("True")) {
-				boolean correct = true;
-				node.correct = Optional.of(correct);
+				JSONObject obj = new JSONObject(json);
+				JavaNode node = (JavaNode) TextualNode.fromJSON(obj, sourceCode, JavaNode::new);
+				if (isCorrect.equals("True")) {
+					boolean correct = true;
+					node.correct = Optional.of(correct);
+				}
+				if(filePathToNodes.get(filePath) == null) {
+					filePathToNodes.put(filePath, new ListMap<String, JavaNode>());
+				}
+				filePathToNodes.get(filePath).add(projectID, node);
 			}
-			nodes.add(projectID, node);
 		}
-		return nodes;
+		return filePathToNodes;
 	}
 }
