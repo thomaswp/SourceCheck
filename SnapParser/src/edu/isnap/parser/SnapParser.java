@@ -347,7 +347,7 @@ public class SnapParser {
 			maxDate = assignment.end;
 		}
 
-		Double classGrade = actions.userID == null ? null :
+		Double classGrade = params.classGradesMap == null ? null :
 			params.classGradesMap.get(actions.userID);
 //		System.out.println(actions.userID + ": " + classGrade);
 		AssignmentAttempt attempt = new AssignmentAttempt(attemptID, params.loggedAssignmentID,
@@ -581,15 +581,20 @@ public class SnapParser {
 				throw new RuntimeException("Missing submission data: " + file.getPath());
 			}
 			executor.submit(() -> {
-				AssignmentAttempt attempt = parseRows(params);
-				if (!Arrays.stream(filters).allMatch(filter -> filter.keep(attempt))) {
-					return;
-				}
-				if (attempt.size() <= 3) {
-					return;
-				}
-				synchronized (attempts) {
-					attempts.put(attemptID, attempt);
+				try {
+					AssignmentAttempt attempt = parseRows(params);
+					if (!Arrays.stream(filters).allMatch(filter -> filter.keep(attempt))) {
+						return;
+					}
+					if (attempt.size() <= 3) {
+						return;
+					}
+					synchronized (attempts) {
+						attempts.put(attemptID, attempt);
+					}
+				} catch (Exception e) {
+					System.err.println("Error parsing: " + attemptID);
+					e.printStackTrace();
 				}
 			});
 		}
