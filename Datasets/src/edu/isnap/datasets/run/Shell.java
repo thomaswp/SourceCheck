@@ -1,6 +1,12 @@
 package edu.isnap.datasets.run;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Scanner;
 
 import edu.isnap.dataset.Assignment;
@@ -48,18 +54,66 @@ public class Shell {
 			TestDataset.instance,
 	};
 
-	public static void main(String[] args) {
+	private final static String HISTORY_FILE = "history.txt";
+
+	public static void main(String[] args) throws IOException {
 		HashMap<String, Dataset> datasets = new HashMap<>();
 		for (Dataset dataset : DATASETS) {
 			datasets.put(dataset.getClass().getSimpleName().toLowerCase(), dataset);
 		}
 
+		List<String> history = new ArrayList<>();
+		File historyFile = new File(HISTORY_FILE);
+		if (historyFile.exists()) {
+			Scanner sc = new Scanner(historyFile);
+			while (sc.hasNextLine()) {
+				history.add(sc.nextLine());
+			}
+			sc.close();
+		}
+		PrintWriter historyWriter = new PrintWriter(new FileWriter(historyFile, true));
+		int historyIndex = history.size();
+		boolean suppressPrompt = false;
+
 		Scanner sc = new Scanner(System.in);
 		String line;
 		while (true) {
-			System.out.println("Enter Command:");
+			if (!suppressPrompt) System.out.println("Enter Command:");
+			suppressPrompt = false;
 			line = sc.nextLine().toLowerCase();
-			if (line.isEmpty()) break;
+			if (line.isEmpty()) {
+				if (historyIndex >= history.size()) {
+					break;
+				} else {
+					line = history.get(historyIndex);
+					historyIndex = history.size();
+					System.out.println(line);
+				}
+			} else if (line.equals("[")) {
+				if (historyIndex > 0) historyIndex--;
+				if (historyIndex < history.size()) {
+					System.out.println(history.get(historyIndex));
+					suppressPrompt = true;
+				} else {
+					System.out.println();
+				}
+				continue;
+			} else if (line.equals("]")) {
+				if (historyIndex < history.size()) historyIndex++;
+				if (historyIndex < history.size() && historyIndex >= 0) {
+					System.out.println(history.get(historyIndex));
+					suppressPrompt = true;
+				} else {
+					System.out.println();
+				}
+				continue;
+			} else {
+				historyWriter.println(line);
+				historyWriter.flush();
+				history.add(line);
+				historyIndex = history.size();
+			}
+
 			switch (line) {
 			case "cleanall":
 				SnapParser.clean("../data/csc200");
@@ -149,6 +203,7 @@ public class Shell {
 			}
 		}
 		sc.close();
+		historyWriter.close();
 	}
 
 }
