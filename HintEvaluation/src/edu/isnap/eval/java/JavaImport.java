@@ -2,6 +2,7 @@ package edu.isnap.eval.java;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -29,7 +30,9 @@ public class JavaImport {
 
 		// Run generate hints to load data, generate hints for each student and print them out
 		// You need to update the file path to wherever you unzipped the data
-		generateHints("/Users/rajatnarang/Desktop/Black_Box/ASTs/10__output_clock-display-ast.csv", "ClockDisplay");
+		PrintStream fileOut = new PrintStream("/Users/rajatnarang/Desktop/Black_Box/output_hints.txt");
+		System.setOut(fileOut);
+		generateHints("/Users/rajatnarang/Desktop/Black_Box/ASTs/1__output_clock-display-ast.csv", "ClockDisplay");
 	}
 
 	/*static HintData createHintData(String inputCSV, String assignment) throws IOException {
