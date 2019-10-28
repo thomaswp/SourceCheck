@@ -26,13 +26,16 @@ import edu.isnap.util.map.ListMap;
 
 public class JavaImport {
 
+	static String DATA_DIR = "../data/blackbox/ClockDisplay/";
+
 	public static void main(String[] args) throws IOException {
 
 		// Run generate hints to load data, generate hints for each student and print them out
 		// You need to update the file path to wherever you unzipped the data
-		PrintStream fileOut = new PrintStream("/Users/rajatnarang/Desktop/Black_Box/output_hints.txt");
+
+		PrintStream fileOut = new PrintStream(DATA_DIR + "output_hints.txt");
 		System.setOut(fileOut);
-		generateHints("/Users/rajatnarang/Desktop/Black_Box/ASTs/1__output_clock-display-ast.csv", "ClockDisplay");
+		generateHints(DATA_DIR + "1__output_clock-display-ast.csv", "ClockDisplay");
 	}
 
 	/*static HintData createHintData(String inputCSV, String assignment) throws IOException {
@@ -93,21 +96,23 @@ public class JavaImport {
 						subset.put(attemptID, attempts.get(attemptID));
 					}
 				}
-				// Remove the student we're generating hints for, because you can't give yourself a hint
+				// Remove the student we're generating hints for, because you can't give yourself a
+				// hint
 				subset.remove(student);
-				// We create a "HintData" object, which represents the data from which we generate all
-				// hints
+				// We create a "HintData" object, which represents the data from which we generate
+				// all hints
 				HintData hintData = createHintData(assignment, subset);
 
 				// Then we use this method to "highlight" the java source code using the SourceCheck
 				// hints
-				System.out.println(SourceCodeHighlighter.highlightSourceCode(hintData, firstAttempt));
+				System.out.println(
+						SourceCodeHighlighter.highlightSourceCode(hintData, firstAttempt));
 			}
 		}
 	}
 
 	public static List<String[]> readCSV(String fileName){
-		List<String[]> csvRecords = new ArrayList<String[]>();
+		List<String[]> csvRecords = new ArrayList<>();
 
         try (
         		Reader reader = Files.newBufferedReader(Paths.get(fileName));
@@ -128,7 +133,8 @@ public class JavaImport {
     			String isCorrect = nextLine[10];
     			String doesCompile = nextLine[11];
     			String sourceCodeJSON = nextLine[12];
-    			String[] record = {projectID, sourceFileID, compileTime, filePath, sourceCode, diff, isLastDiff, sessionID,
+    			String[] record = {projectID, sourceFileID, compileTime, filePath, sourceCode, diff,
+    					isLastDiff, sessionID,
     					compileID, originalFileID, isCorrect, doesCompile, sourceCodeJSON};
     			csvRecords.add(record);
             }
@@ -141,7 +147,7 @@ public class JavaImport {
 	// TODO: Modify this so that it loads from your spreadsheet instead of a folder of folders
 	static HashMap<String, ListMap<String, JavaNode>> loadAssignment(String inputCSV)
 			throws IOException {
-		HashMap<String, ListMap<String, JavaNode>> filePathToNodes = new HashMap<String, ListMap<String, JavaNode>>();
+		HashMap<String, ListMap<String, JavaNode>> filePathToNodes = new HashMap<>();
 		List<String[]> csvRecords= readCSV(inputCSV);
 		for(String[] record: csvRecords) {
 			String projectID = record[0];
@@ -150,7 +156,7 @@ public class JavaImport {
 			String isCorrect = record[10];
 			String filePath = record[3].split("/")[1];
 			if(filePath.equals("ClockDisplay.java") || filePath.equals("NumberDisplay.java")) {
-				File testJson = new File(sourceCodeJSON);
+				File testJson = new File(DATA_DIR + "ASTs/" + sourceCodeJSON);
 				String json = new String(Files.readAllBytes(testJson.toPath()));
 
 				JSONObject obj = new JSONObject(json);
