@@ -80,6 +80,8 @@ public class JavaImport {
 		HashMap<String, ListMap<String, JavaNode>> filePathToattempts = loadAssignment(inputCSV);
 
 		for (String filePath : filePathToattempts.keySet()) {
+			// For now, just look at ClockDisplay, since NumberDisplay didn't have to be edited
+			if (!filePath.equals("ClockDisplay.java")) continue;
 			ListMap<String, JavaNode> attempts = filePathToattempts.get(filePath);
 			for (String student : attempts.keySet()) {
 				// May want to change this to a random attempt, not just the first one, but you can
@@ -162,8 +164,7 @@ public class JavaImport {
 				JSONObject obj = new JSONObject(json);
 				JavaNode node = (JavaNode) TextualNode.fromJSON(obj, sourceCode, JavaNode::new);
 				if (isCorrect.equals("True")) {
-					boolean correct = true;
-					node.correct = Optional.of(correct);
+					node.correct = Optional.of(true);
 				}
 				if(filePathToNodes.get(filePath) == null) {
 					filePathToNodes.put(filePath, new ListMap<String, JavaNode>());

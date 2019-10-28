@@ -284,7 +284,7 @@ public class Insertion extends EditHint {
 		} else if (!this.missingParent) {//else, take the parent, which may or may not have children. The Insertion's index property is the index at which we want to insert in the parent
 //			System.out.println("!!!");
 //			System.out.println(parent);
-			parent.children.forEach(c -> System.out.println(c.tag));
+//			parent.children.forEach(c -> System.out.println(c.tag));
 			if (index == parent.children.size()) {
 				// If the index to insert is after all the other children...
 				if (parent.children.size() > 0) {
@@ -302,7 +302,7 @@ public class Insertion extends EditHint {
 					node = (ASTNode) p.tag;
 				}
 //				System.out.println("Node: " + node);
-				if (node != null) System.out.println("End loc: " + node.endSourceLocation);
+//				if (node != null) System.out.println("End loc: " + node.endSourceLocation);
 				if (node != null) return node.endSourceLocation;
 			} else {
 				// Otherwise, return the location of the current child at that location

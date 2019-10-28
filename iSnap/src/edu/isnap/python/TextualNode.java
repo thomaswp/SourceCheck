@@ -70,10 +70,7 @@ public abstract class TextualNode extends Node {
 		ASTSnapshot astNode = ASTSnapshot.parse(jsonAST, source);
 		TextualNode node = (TextualNode) ASTNodeConverter.toNode(astNode, constructor);
 		node.source = source;
-		if (jsonAST.has("correct")) {
-			boolean correct = jsonAST.getBoolean("correct");
-			node.correct = Optional.of(correct);
-		}
+		node.correct = Optional.of(astNode.isCorrect);
 		return node;
 	}
 }

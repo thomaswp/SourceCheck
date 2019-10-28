@@ -64,18 +64,17 @@ public class SourceCodeHighlighter {
 		TextualNode target = (TextualNode) mapping.to;
 
 //		target.recurse(n -> System.out.println(((TextualNode) n).startSourceLocation));
-		//System.out.println(studentCode.id);
-//		System.out.println(studentCode.source);
-		System.out.println("From:");
-		System.out.println(from);
-		System.out.println("Target:");
-		System.out.println(target);
+
+//		System.out.println("From:");
+//		System.out.println(from);
+//		System.out.println("Target:");
+//		System.out.println(target);
 		System.out.println("Node Diff:");
 		System.out.println(Diff.diff(studentCode.prettyPrint(), target.prettyPrint(), 2));
-		System.out.println("Student source:");
-		System.out.println(studentCode.source);
-		System.out.println("Target source:");
-		System.out.println(target.source);
+//		System.out.println("Student source:");
+//		System.out.println(studentCode.source);
+//		System.out.println("Target source:");
+//		System.out.println(target.source);
 		System.out.println("Source Diff:");
 		System.out.println(Diff.diff(studentCode.source, target.source, 2));
 		mapping.printValueMappings(System.out);
@@ -153,7 +152,7 @@ public class SourceCodeHighlighter {
 		if (hrName == null) hrName = "some code";
 		if (insertion.replaced != null && insertion.replaced.hasType(insertion.type)) {
 			hrName = hrName.replaceAll("^(an?)", "$1 different");
-			System.out.println(hrName);
+//			System.out.println(hrName);
 		}
 		return hrName;
 	}
