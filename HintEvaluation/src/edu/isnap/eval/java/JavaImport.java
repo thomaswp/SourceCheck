@@ -79,7 +79,7 @@ public class JavaImport {
 	static void generateHints(String inputCSV, String assignment) throws IOException {
 		HashMap<String, ListMap<String, JavaNode>> filePathToattempts = loadAssignment(inputCSV);
 
-		for(String filePath: filePathToattempts.keySet()) {
+		for (String filePath : filePathToattempts.keySet()) {
 			ListMap<String, JavaNode> attempts = filePathToattempts.get(filePath);
 			for (String student : attempts.keySet()) {
 				// May want to change this to a random attempt, not just the first one, but you can
@@ -144,7 +144,6 @@ public class JavaImport {
 		return csvRecords;
 	}
 
-	// TODO: Modify this so that it loads from your spreadsheet instead of a folder of folders
 	static HashMap<String, ListMap<String, JavaNode>> loadAssignment(String inputCSV)
 			throws IOException {
 		HashMap<String, ListMap<String, JavaNode>> filePathToNodes = new HashMap<>();

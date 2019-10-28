@@ -37,7 +37,7 @@ public class SourceCodeHighlighter {
 	public static String SPAN_END = "</span>";
 
 	private static SortedMap<SourceLocation, EditHint> getSortedHintMap(List<EditHint> edits){
-		SortedMap<SourceLocation, EditHint> editMap = new TreeMap<SourceLocation, EditHint>();
+		SortedMap<SourceLocation, EditHint> editMap = new TreeMap<>();
 		for (EditHint hint : edits) {
 			if(hint.getCorrectedEditStart() != null && hint.getCorrectedEditEnd() != null) {
 				editMap.put(hint.getCorrectedEditStart(), hint);
@@ -66,8 +66,9 @@ public class SourceCodeHighlighter {
 //		target.recurse(n -> System.out.println(((TextualNode) n).startSourceLocation));
 		//System.out.println(studentCode.id);
 		System.out.println(studentCode.source);
-		System.out.println("Target");
+		System.out.println("Target:");
 		System.out.println(Diff.diff(studentCode.source, target.source, 2));
+		System.out.println("From:");
 		System.out.println(from);
 		mapping.printValueMappings(System.out);
 		edits.forEach(System.out::println);
@@ -76,7 +77,7 @@ public class SourceCodeHighlighter {
 
 		SortedMap<SourceLocation, EditHint> editMap = getSortedHintMap(edits);
 
-		Set<String> missing = new LinkedHashSet<String>();
+		Set<String> missing = new LinkedHashSet<>();
 		for(Entry<SourceLocation, EditHint> editLocation : editMap.entrySet()) {
 			EditHint editHint = editLocation.getValue();
 			System.out.println("Location: " + editLocation.getKey() + "\nEditHint (" + editHint.getEditType()+ "):\n" + editLocation.getValue());
