@@ -65,11 +65,19 @@ public class SourceCodeHighlighter {
 
 //		target.recurse(n -> System.out.println(((TextualNode) n).startSourceLocation));
 		//System.out.println(studentCode.id);
-		System.out.println(studentCode.source);
-		System.out.println("Target:");
-		System.out.println(Diff.diff(studentCode.source, target.source, 2));
+//		System.out.println(studentCode.source);
 		System.out.println("From:");
 		System.out.println(from);
+		System.out.println("Target:");
+		System.out.println(target);
+		System.out.println("Node Diff:");
+		System.out.println(Diff.diff(studentCode.prettyPrint(), target.prettyPrint(), 2));
+		System.out.println("Student source:");
+		System.out.println(studentCode.source);
+		System.out.println("Target source:");
+		System.out.println(target.source);
+		System.out.println("Source Diff:");
+		System.out.println(Diff.diff(studentCode.source, target.source, 2));
 		mapping.printValueMappings(System.out);
 		edits.forEach(System.out::println);
 		System.out.println();

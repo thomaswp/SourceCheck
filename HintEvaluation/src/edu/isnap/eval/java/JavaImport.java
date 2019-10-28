@@ -89,6 +89,8 @@ public class JavaImport {
 
 				ListMap<String, JavaNode> subset = new ListMap<>();
 				for (String attemptID : attempts.keySet()) {
+					// Don't add this student to their own hint generation data
+					if (attemptID.equals(student)) continue;
 					// Get the sequence of snapshots over time
 					List<JavaNode> trace = attempts.get(attemptID);
 					// If it was correct, then add it to the subset
@@ -96,9 +98,8 @@ public class JavaImport {
 						subset.put(attemptID, attempts.get(attemptID));
 					}
 				}
-				// Remove the student we're generating hints for, because you can't give yourself a
-				// hint
-				subset.remove(student);
+				System.out.println("Student: " + student);
+				System.out.println("Building with: " + subset.size());
 				// We create a "HintData" object, which represents the data from which we generate
 				// all hints
 				HintData hintData = createHintData(assignment, subset);
