@@ -1,13 +1,12 @@
 package edu.isnap.eval.java;
 
-import java.util.Arrays;
-
 import org.json.JSONObject;
 
 import edu.isnap.hint.util.ASTNodeConverter;
 import edu.isnap.node.ASTSnapshot;
 import edu.isnap.node.Node;
 import edu.isnap.python.TextualNode;
+import edu.isnap.rating.RatingConfig;
 
 public class JavaNode extends TextualNode {
 
@@ -25,16 +24,9 @@ public class JavaNode extends TextualNode {
 		return new JavaNode(parent, type, value, id);
 	}
 
-	public static boolean typeHasBody(String type) {
-		// TODO: finish this
-		String[] variableChildrenTypes = {"Modifier", "Operator", "NameExpr",
-				"Parameter", "IntegerLiteralExpr", "VoidType", "PrimitiveType"};
-		return !Arrays.asList(variableChildrenTypes).contains(type);
-	}
-
 	@Override
 	protected boolean nodeTypeHasBody(String type) {
-		return typeHasBody(type);
+		return RatingConfig.Java.nodeTypeHasBody(type);
 	}
 
 	public static JavaNode fromJSON(JSONObject jsonAST, String pythonSource) {

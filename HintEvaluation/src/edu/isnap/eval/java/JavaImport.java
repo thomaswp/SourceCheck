@@ -33,8 +33,16 @@ public class JavaImport {
 		// Run generate hints to load data, generate hints for each student and print them out
 		// You need to update the file path to wherever you unzipped the data
 
+//		Map<String, ListMap<String, JavaNode>> nodes = loadAssignment(
+//				DATA_DIR + "1__output_clock-display-ast.csv");
+//		GrammarBuilder builder = new GrammarBuilder("java", new HashMap<>());
+//		nodes.values().forEach(listMap -> listMap.values()
+//				.forEach(list -> list.forEach(n -> builder.add(n))));
+//		System.out.println(builder.toJSON());
+
+
 		PrintStream fileOut = new PrintStream(DATA_DIR + "output_hints.txt");
-		System.setOut(fileOut);
+//		System.setOut(fileOut);
 		generateHints(DATA_DIR + "1__output_clock-display-ast.csv", "ClockDisplay");
 	}
 
@@ -80,6 +88,13 @@ public class JavaImport {
 		HashMap<String, ListMap<String, JavaNode>> filePathToattempts = loadAssignment(inputCSV);
 
 		for (String filePath : filePathToattempts.keySet()) {
+			File startSourceFile = new File(DATA_DIR + "Start/" + filePath);
+			String startSource = "";
+			if (startSourceFile.exists()) {
+				startSource = new String(Files.readAllBytes(startSourceFile.toPath()));
+				startSource = stripComments(startSource);
+			}
+
 			// For now, just look at ClockDisplay, since NumberDisplay didn't have to be edited
 			if (!filePath.equals("ClockDisplay.java")) continue;
 			ListMap<String, JavaNode> attempts = filePathToattempts.get(filePath);
@@ -97,9 +112,15 @@ public class JavaImport {
 					List<JavaNode> trace = attempts.get(attemptID);
 					// If it was correct, then add it to the subset
 					if (trace.get(trace.size() - 1).correct.orElse(false)) {
+//						String solutionSource = stripComments(
+//								trace.get(trace.size() - 1).getSource());
+//						System.out.println("Solution #: " + subset.size());
+//						System.out.println(Diff.diff(startSource, solutionSource, 2));
+//						System.out.println("--------------------------");
 						subset.put(attemptID, attempts.get(attemptID));
 					}
 				}
+//				if (1==1) break;
 				System.out.println("Student: " + student);
 				System.out.println("Building with: " + subset.size());
 				// We create a "HintData" object, which represents the data from which we generate
@@ -110,8 +131,22 @@ public class JavaImport {
 				// hints
 				System.out.println(
 						SourceCodeHighlighter.highlightSourceCode(hintData, firstAttempt));
+				break;
 			}
 		}
+	}
+
+	private static String stripComments(String source) {
+		String[] lines = source.split("\n");
+		List<String> l = new ArrayList<>();
+		for (String line : lines) {
+			String trimmed = line.trim();
+			if (trimmed.startsWith("*") || trimmed.startsWith("/**") || trimmed.startsWith("*/")) {
+				continue;
+			}
+			l.add(line);
+		}
+		return String.join("\n", l);
 	}
 
 	public static List<String[]> readCSV(String fileName){

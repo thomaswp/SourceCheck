@@ -70,7 +70,7 @@ public class SourceCodeHighlighter {
 //		System.out.println("Target:");
 //		System.out.println(target);
 		System.out.println("Node Diff:");
-		System.out.println(Diff.diff(studentCode.prettyPrint(), target.prettyPrint(), 2));
+		System.out.println(Diff.diff(studentCode.prettyPrint(), target.prettyPrint())); //, 2));
 //		System.out.println("Student source:");
 //		System.out.println(studentCode.source);
 //		System.out.println("Target source:");

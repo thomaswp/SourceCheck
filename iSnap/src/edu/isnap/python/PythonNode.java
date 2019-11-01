@@ -1,6 +1,7 @@
 package edu.isnap.python;
 
 import edu.isnap.node.Node;
+import edu.isnap.rating.RatingConfig;
 
 public class PythonNode extends TextualNode {
 
@@ -18,12 +19,8 @@ public class PythonNode extends TextualNode {
 		return new PythonNode(parent, type, value, id);
 	}
 
-	public static boolean typeHasBody(String type) {
-		return "list".equals(type);
-	}
-
 	@Override
 	protected boolean nodeTypeHasBody(String type) {
-		return typeHasBody(type);
+		return RatingConfig.Python.nodeTypeHasBody(type);
 	}
 }

@@ -21,8 +21,8 @@ import edu.isnap.hint.HintConfig.ValuesPolicy;
 import edu.isnap.hint.util.Alignment;
 import edu.isnap.hint.util.HungarianAlgorithm;
 import edu.isnap.node.Node;
-import edu.isnap.node.SimpleNode;
 import edu.isnap.node.Node.Action;
+import edu.isnap.node.SimpleNode;
 import edu.isnap.util.map.BiMap;
 import edu.isnap.util.map.CountMap;
 import edu.isnap.util.map.ListMap;
@@ -685,9 +685,13 @@ public class NodeAlignment {
 		}
 
 		Arrays.sort(mappings);
+//		Arrays.stream(mappings).forEach(mapping -> System.out.println(mapping.cost));
 
 		for (int i = 0; i < maxReturned && i < mappings.length; i++) {
 			best.add(mappings[i]);
+//			System.out.println("Best:");
+//			mappings[i].printValueMappings(System.out);;
+//			mappings[i].itemizedCost.forEach(System.out::println);
 		}
 		return best;
 	}
