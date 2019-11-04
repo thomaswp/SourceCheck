@@ -68,7 +68,7 @@ public class SourceCodeHighlighter {
 		System.out.println(studentCode.source);
 		System.out.println("Target");
 		System.out.println(Diff.diff(studentCode.source, target.source, 2));
-		System.out.println(from);
+		System.out.println(Diff.diff(from, target.prettyPrint(true), 2));
 		mapping.printValueMappings(System.out);
 		edits.forEach(System.out::println);
 		System.out.println();
@@ -79,7 +79,7 @@ public class SourceCodeHighlighter {
 		Set<String> missing = new LinkedHashSet<String>();
 		for(Entry<SourceLocation, EditHint> editLocation : editMap.entrySet()) {
 			EditHint editHint = editLocation.getValue();
-			System.out.println("Location: " + editLocation.getKey() + "\nEditHint (" + editHint.getEditType()+ "):\n" + editLocation.getValue());
+//			System.out.println("Location: " + editLocation.getKey() + "\nEditHint (" + editHint.getEditType()+ "):\n" + editLocation.getValue());
 			SourceLocation location = editLocation.getKey();
 			if(location == editHint.getCorrectedEditEnd() &&
 					// Insertion handle both open and close spans
@@ -144,7 +144,7 @@ public class SourceCodeHighlighter {
 		if (hrName == null) hrName = "some code";
 		if (insertion.replaced != null && insertion.replaced.hasType(insertion.type)) {
 			hrName = hrName.replaceAll("^(an?)", "$1 different");
-			System.out.println(hrName);
+//			System.out.println(hrName);
 		}
 		return hrName;
 	}
