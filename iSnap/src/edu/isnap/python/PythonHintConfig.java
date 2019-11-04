@@ -29,6 +29,11 @@ public class PythonHintConfig extends HintConfig {
 		return node != null && RatingConfig.Python.hasFixedChildren(node.type(), node.parentType());
 	}
 
+	@Override
+	public boolean shouldIgnoreNodesValues(Node node) {
+		return node != null && node.hasType("Str", "JoinedStr");
+	}
+
 	// No hint should suggest moving lists or most literal types
 	private final Set<String> immobileTypes = new HashSet<>(Arrays.asList(
 			new String[] {

@@ -21,8 +21,8 @@ import edu.isnap.hint.HintConfig.ValuesPolicy;
 import edu.isnap.hint.util.Alignment;
 import edu.isnap.hint.util.HungarianAlgorithm;
 import edu.isnap.node.Node;
-import edu.isnap.node.SimpleNode;
 import edu.isnap.node.Node.Action;
+import edu.isnap.node.SimpleNode;
 import edu.isnap.util.map.BiMap;
 import edu.isnap.util.map.CountMap;
 import edu.isnap.util.map.ListMap;
@@ -120,6 +120,11 @@ public class NodeAlignment {
 		 */
 		public String getMappedValue(Node node, boolean isFrom) {
 			String type = node.type(), value = node.value;
+			// If we should ignore value in general or for this node, we return the type
+			if (config.valuesPolicy == ValuesPolicy.IgnoreAll ||
+					config.shouldIgnoreNodesValues(node)) {
+				return type;
+			}
 			// If we match values exactly, the we don't check the mapping
 			if (config.valuesPolicy == ValuesPolicy.MatchAllExactly) return value;
 			// If we match all values, we only use the mapping for those with a mapped type
