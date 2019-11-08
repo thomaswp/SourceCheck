@@ -116,6 +116,7 @@ public class PythonHintConfig extends HintConfig {
 		nameMap.put("Break", "a break statement");
 		nameMap.put("Continue", "a continue statement");
 		nameMap.put("Return", "a return statement");
+		nameMap.put("arg", "a function argument");
 		for (String op : new String[] {
 				"Eq", "NotEq", "Lt", "LtE", "Gt", "GtE", "Is", "IsNot", "In", "NotIn"}) {
 			nameMap.put(op, "a comparison operator (e.g. == or <)");
@@ -138,6 +139,7 @@ public class PythonHintConfig extends HintConfig {
 		}
 		String value = nameMap.get(node.type());
 		if (value != null) return value;
+		System.err.println("No label for code: " + node);
 		return "some code";
 	}
 }

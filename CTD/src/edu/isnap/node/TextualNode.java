@@ -76,15 +76,20 @@ public abstract class TextualNode extends Node {
 	 */
 	public SourceLocation getLocationOfChildIndex(int index) {
 		// The Insertion's index is the index at which we want to insert in the parent
-		 if (index < children.size()) {
-			// Otherwise, return the location of the current child at that location
-			return ((TextualNode) children.get(index)).startSourceLocation;
+		if (index < children.size()) {
+			// Otherwise, return the location of the first child at that location w/ a location
+			SourceLocation location = null;
+			while (location == null && index >= 0) {
+				location = ((TextualNode) children.get(index)).startSourceLocation;
+				index--;
+			}
+			return location;
 		} else if (index == children.size()) {
 			// If the index to insert is after all the other children...
 			if (children.size() > 0) {
 				// If there's a child to insert after, insert it *afterwards*
 				TextualNode sibling = (TextualNode) children.get(index - 1);
-//				System.out.println("Sibling: " + sibling);
+				// System.out.println("Sibling: " + sibling);
 				return sibling.endSourceLocation;
 			} else {
 				// Otherwise insert it after the first ancestor with an end source location

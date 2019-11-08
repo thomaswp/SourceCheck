@@ -84,6 +84,8 @@ public class SourceCodeHighlighter {
 				marked = location.markSource(marked, insertionCode);
 				missing.add(getHumanReadableName((Insertion) hint, mapping.config));
 			}
+			System.out.println(suggestion.type + ": " + suggestion.location);
+			System.out.println(marked);
 		}
 
 		if (!missing.isEmpty()) {

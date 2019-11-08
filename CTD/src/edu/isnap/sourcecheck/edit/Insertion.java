@@ -289,7 +289,8 @@ public class Insertion extends EditHint {
 				// If there's a replaced, the new code should go right after the replaced location.
 				// Cross out the replace, add the contents of the pair
 				location = replaced.startSourceLocation;
-			} else {
+			}
+			if (location == null) {
 				// Else get the location of the insertion index (which may be null if it cannot
 				// be calculated
 				location = parent.getLocationOfChildIndex(index);
@@ -298,7 +299,7 @@ public class Insertion extends EditHint {
 				suggestions.add(new Suggestion(this, location, SuggestionType.INSERT, true));
 			} else {
 				// Print failed insertions
-				System.out.println("Unknown insertion location for: " + this + "\n" + pair);
+				System.err.println("Unknown insertion location for: " + this + "\n" + pair);
 			}
 		}
 		if (candidate != null) {
