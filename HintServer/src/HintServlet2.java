@@ -45,7 +45,7 @@ public class HintServlet2 extends HttpServlet {
 	protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 //		super.doPut(req, resp);
 
-
+		resp.setCharacterEncoding("UTF-8");
 		String origin = req.getHeader("origin");
 		if (origin != null) resp.setHeader("Access-Control-Allow-Origin", origin);
 		resp.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT");

@@ -118,13 +118,14 @@ public class SourceCodeHighlighter {
 			marked += "</ul>";
 		}
 
+		System.out.println(marked);
 		return marked;
 	}
 
 	private static String getInsertHTML(Mapping mapping, EditHint editHint) {
 		String hint = getInsertHint((Insertion)editHint, mapping.config);
 		String insertionCode = String.format("%s data-tooltip=\"%s\">%s%s",
-				INSERT_START, hint, "<+>", SPAN_END);
+				INSERT_START, hint, "\u2795", SPAN_END);
 		return insertionCode;
 	}
 
@@ -141,7 +142,6 @@ public class SourceCodeHighlighter {
 
 	private static String getHumanReadableName(Insertion insertion, HintConfig config) {
 		String hrName = config.getHumanReadableName(insertion.pair);
-		if (hrName == null) hrName = "some code";
 		if (insertion.replaced != null && insertion.replaced.hasType(insertion.type)) {
 			hrName = hrName.replaceAll("^(an?)", "$1 different");
 //			System.out.println(hrName);

@@ -133,7 +133,11 @@ public class PythonHintConfig extends HintConfig {
 			}
 		} else if (node.hasType("Attribute") && node.parentHasType("Call")) {
 			return "a function call (e.g. len() or max())";
+		} else if (node.hasType("Expr") && node.childHasType("Str", 0)) {
+			return "some function documentation";
 		}
-		return nameMap.get(node.type());
+		String value = nameMap.get(node.type());
+		if (value != null) return value;
+		return "some code";
 	}
 }
