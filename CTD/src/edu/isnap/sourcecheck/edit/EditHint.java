@@ -15,7 +15,6 @@ import org.json.JSONObject;
 import edu.isnap.ctd.hint.Hint;
 import edu.isnap.hint.Canonicalization;
 import edu.isnap.hint.Canonicalization.SwapBinaryArgs;
-import edu.isnap.node.ASTNode.SourceLocation;
 import edu.isnap.node.Node;
 import edu.isnap.sourcecheck.NodeAlignment.Mapping;
 import edu.isnap.sourcecheck.priority.Priority;
@@ -31,9 +30,7 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 	protected abstract void addApplications(Node root, Node editParent, List<Application> applications);
 	public abstract String action();
 	public abstract Node getPriorityToNode(Mapping mapping);
-	public abstract SourceLocation getCorrectedEditStart();
-	public abstract SourceLocation getCorrectedEditEnd();
-	public abstract EditType getEditType();
+	public abstract void addSuggestions(List<Suggestion> suggestions);
 
 	public static boolean useValues = true;
 

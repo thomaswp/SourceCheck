@@ -16,9 +16,9 @@ import com.esotericsoftware.kryo.io.Input;
 
 import edu.isnap.hint.HintData;
 import edu.isnap.hint.SnapHintBuilder;
+import edu.isnap.node.TextualNode;
 import edu.isnap.python.PythonNode;
 import edu.isnap.python.SourceCodeHighlighter;
-import edu.isnap.python.TextualNode;
 
 @SuppressWarnings("serial")
 @WebServlet(name="hints2", urlPatterns="/hints2")

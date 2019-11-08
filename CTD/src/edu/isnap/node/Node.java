@@ -23,6 +23,8 @@ import util.LblTree;
 
 public abstract class Node extends StringHashable implements INode {
 
+	public final static String OLD_SNAPSHOT_TYPE = "Snap!shot";
+
 	public static int PrettyPrintSpacing = 2;
 	public static boolean PrettyPrintUseColon = false;
 
@@ -669,6 +671,26 @@ public abstract class Node extends StringHashable implements INode {
 		ASTNode node = new ASTNode(type, value, id);
 		children.forEach(child -> node.addChild(child == null ? null : child.toASTNode()));
 		return node;
+	}
+
+	public static Node fromASTNode(ASTNode astNode, NodeConstructor constructor) {
+		return fromASTNode(astNode, null, constructor);
+	}
+
+	public static Node fromASTNode(ASTNode astNode, Node parent, NodeConstructor constructor) {
+		String type = astNode.type;
+		if (OLD_SNAPSHOT_TYPE.equals(type)) type = "snapshot";
+		Node node = constructor.constructNode(parent, type, astNode.value, astNode.id);
+		node.readFromASTNode(astNode);
+		node.tag = astNode;
+		for (ASTNode child : astNode.children()) {
+			node.children.add(fromASTNode(child, node, constructor));
+		}
+		return node;
+	}
+
+	protected void readFromASTNode(ASTNode node) {
+		// Does nothing in Node, but can be overwritten, e.g. to read source code in Textual Node
 	}
 
 	@Override

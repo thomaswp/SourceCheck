@@ -1,11 +1,8 @@
 package edu.isnap.python;
 
-import java.util.LinkedHashSet;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
 import org.apache.commons.lang.StringEscapeUtils;
 
@@ -14,11 +11,12 @@ import edu.isnap.hint.HintData;
 import edu.isnap.hint.util.NullStream;
 import edu.isnap.node.ASTNode.SourceLocation;
 import edu.isnap.node.Node;
+import edu.isnap.node.TextualNode;
 import edu.isnap.sourcecheck.HintHighlighter;
 import edu.isnap.sourcecheck.NodeAlignment.Mapping;
 import edu.isnap.sourcecheck.edit.EditHint;
-import edu.isnap.sourcecheck.edit.EditHint.EditType;
 import edu.isnap.sourcecheck.edit.Insertion;
+import edu.isnap.sourcecheck.edit.Suggestion;
 import edu.isnap.util.Diff;
 
 public class SourceCodeHighlighter {
@@ -32,23 +30,10 @@ public class SourceCodeHighlighter {
 			+ "data-tooltip=\"This code may need to be replaced with something else.\">";
 	public static String CANDIDATE_START = "<span class=\"candidate\" "
 			+ "data-tooltip=\"This code is good, but it may be in the wrong place.\">";
-	public static String REORDER_START = "<span class=\"reorder\" "
-			+ "data-tooltip=\"This code is good, but it may be in the wrong place.\">";
+//	public static String REORDER_START = "<span class=\"reorder\" "
+//			+ "data-tooltip=\"This code is good, but it may be in the wrong place.\">";
 	public static String SPAN_END = "</span>";
 
-	private static SortedMap<SourceLocation, EditHint> getSortedHintMap(List<EditHint> edits){
-		SortedMap<SourceLocation, EditHint> editMap = new TreeMap<SourceLocation, EditHint>();
-		for (EditHint hint : edits) {
-			if(hint.getCorrectedEditStart() != null && hint.getCorrectedEditEnd() != null) {
-				editMap.put(hint.getCorrectedEditStart(), hint);
-				if (hint.getEditType() != EditType.INSERTION) {
-					// Insertions don't have ends
-					editMap.put(hint.getCorrectedEditEnd(), hint);
-				}
-			}
-		}
-		return editMap;
-	}
 
 	public static String highlightSourceCode(HintData hintData, TextualNode studentCode) {
 		HintHighlighter highlighter = hintData.hintHighlighter();
@@ -65,51 +50,40 @@ public class SourceCodeHighlighter {
 
 //		target.recurse(n -> System.out.println(((TextualNode) n).startSourceLocation));
 		System.out.println(studentCode.id);
-		System.out.println(studentCode.source);
+		System.out.println(studentCode.getSource());
 		System.out.println("Target");
-		System.out.println(Diff.diff(studentCode.source, target.source, 2));
+		System.out.println(Diff.diff(studentCode.getSource(), target.getSource(), 2));
 		System.out.println(Diff.diff(from, target.prettyPrint(true), 2));
 		mapping.printValueMappings(System.out);
 		edits.forEach(System.out::println);
 		System.out.println();
-		String marked = studentCode.source;
+		String marked = studentCode.getSource();
 
-		SortedMap<SourceLocation, EditHint> editMap = getSortedHintMap(edits);
+		List<Suggestion> suggestions = getSuggestions(edits);
+		List<String> missing = new ArrayList<String>();
 
-		Set<String> missing = new LinkedHashSet<String>();
-		for(Entry<SourceLocation, EditHint> editLocation : editMap.entrySet()) {
-			EditHint editHint = editLocation.getValue();
-//			System.out.println("Location: " + editLocation.getKey() + "\nEditHint (" + editHint.getEditType()+ "):\n" + editLocation.getValue());
-			SourceLocation location = editLocation.getKey();
-			if(location == editHint.getCorrectedEditEnd() &&
-					// Insertion handle both open and close spans
-					editHint.getEditType() != EditType.INSERTION) {
+		for (Suggestion suggestion : suggestions) {
+			SourceLocation location = suggestion.location;
+			EditHint hint = suggestion.hint;
+			if (!suggestion.start) {
 				marked = location.markSource(marked, SPAN_END);
-			} else if(location == editHint.getCorrectedEditStart()) {
-				switch (editHint.getEditType()){
-					case DELETION:
-						marked = location.markSource(marked, DELETE_START);
-						break;
-					case REPLACEMENT:
-						String insertionCode = getInsertHTML(mapping, editHint);
-						marked = location.markSource(marked, insertionCode + REPLACE_START);
-						missing.add(getHumanReadableName((Insertion) editHint, mapping.config));
-						break;
-					case INSERTION:
-						insertionCode = getInsertHTML(mapping, editHint);
-						marked = location.markSource(marked, insertionCode);
-						missing.add(getHumanReadableName((Insertion) editHint, mapping.config));
-						break;
-					case CANDIDATE:
-						marked = location.markSource(marked, CANDIDATE_START);
-						break;
-					case REORDER:
-						marked = location.markSource(marked, REORDER_START);
-						break;
-				}
+				continue;
 			}
-//			System.out.println("MARKED: ");
-//			System.out.println(marked + "\n");
+			switch (suggestion.type) {
+			case DELETE:
+				marked = location.markSource(marked, DELETE_START);
+				break;
+			case MOVE:
+				marked = location.markSource(marked, CANDIDATE_START);
+				break;
+			case REPLACE:
+				marked = location.markSource(marked, REPLACE_START);
+				break;
+			case INSERT:
+				String insertionCode = getInsertHTML(mapping, hint);
+				marked = location.markSource(marked, insertionCode);
+				missing.add(getHumanReadableName((Insertion) hint, mapping.config));
+			}
 		}
 
 		if (!missing.isEmpty()) {
@@ -120,6 +94,15 @@ public class SourceCodeHighlighter {
 
 		System.out.println(marked);
 		return marked;
+	}
+
+	private static List<Suggestion> getSuggestions(List<EditHint> edits) {
+		List<Suggestion> suggestions = new ArrayList<>();
+		for (EditHint hint : edits) {
+			hint.addSuggestions(suggestions);
+		}
+		Collections.sort(suggestions);
+		return suggestions;
 	}
 
 	private static String getInsertHTML(Mapping mapping, EditHint editHint) {
