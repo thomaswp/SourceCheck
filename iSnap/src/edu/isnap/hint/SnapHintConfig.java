@@ -22,6 +22,8 @@ public class SnapHintConfig extends HintConfig {
 		// iSnap doesn't currently support displaying these, so they should not be used except in
 		// algorithm evaluation
 		this.createSubedits = false;
+		// Historically, SourceCheck has not done this, and we have not tested the impact for Snap
+		this.penalizeUnmatchedNodeDescendants = false;
 	}
 
 	@Override
