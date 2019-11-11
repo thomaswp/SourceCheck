@@ -88,10 +88,18 @@ public abstract class HintConfig implements Serializable {
 	public int progressOrderFactor = 2;
 	/**
 	 * When measuring progress towards a goal, nodes in the student's solution but not in the goal
-	 * solution are given negative weight multiplied by this factor compared to nodes that are
-	 * out of order
+	 * _and_ nodes in the goal solution but not in the student's solution are given negative weight
+	 * multiplied by this factor compared to nodes that are out of order
 	 */
 	public double progressMissingFactor = 0.25;
+
+	/**
+	 * If true, the {@link HintConfig#progressMissingFactor} penalty is applied to the descendants
+	 * of nodes in a potential solution that have no match in the student's code. Otherwise,
+	 * the penalty is only applied to nodes with a matching parent.
+	 */
+	public boolean penalizeUnmatchedNodeDescendants = true;
+
 	/**
 	 * If true, infers decision rules about correct solutions and uses these to filter solutions
 	 * based on the decisions that the hint-requesting student has made.

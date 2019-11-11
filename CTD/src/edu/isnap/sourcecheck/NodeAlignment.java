@@ -336,6 +336,18 @@ public class NodeAlignment {
 			}
 		}
 
+		// The matching only works one level deep, so if the config says so, add penalties for
+		// other descendants of unmatched nodes.
+//		if (config.penalizeUnmatchedNodeDescendants) {
+			to.recurse(node -> {
+				if (config.isValueless(node.type())) return;
+				if (mapping.containsTo(node)) return;
+				if (mapping.containsTo(node.parent)) return;
+				mapping.incrementCost(node, node, config.progressMissingFactor,
+						"Descendant of unmatched node");
+			});
+//		}
+
 		// Clear mapping before returning it
 		Mapping ret = mapping;
 		mapping = null;
