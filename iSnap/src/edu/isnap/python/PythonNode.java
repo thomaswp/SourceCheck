@@ -1,6 +1,7 @@
 package edu.isnap.python;
 
 import edu.isnap.node.Node;
+import edu.isnap.node.TextualNode;
 import edu.isnap.rating.RatingConfig;
 
 public class PythonNode extends TextualNode {

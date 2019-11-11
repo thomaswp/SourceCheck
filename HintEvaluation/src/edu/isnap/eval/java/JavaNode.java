@@ -2,10 +2,9 @@ package edu.isnap.eval.java;
 
 import org.json.JSONObject;
 
-import edu.isnap.hint.util.ASTNodeConverter;
 import edu.isnap.node.ASTSnapshot;
 import edu.isnap.node.Node;
-import edu.isnap.python.TextualNode;
+import edu.isnap.node.TextualNode;
 import edu.isnap.rating.RatingConfig;
 
 public class JavaNode extends TextualNode {
@@ -31,6 +30,6 @@ public class JavaNode extends TextualNode {
 
 	public static JavaNode fromJSON(JSONObject jsonAST, String pythonSource) {
 		ASTSnapshot astNode = ASTSnapshot.parse(jsonAST, pythonSource);
-		return (JavaNode) ASTNodeConverter.toNode(astNode, JavaNode::new);
+		return (JavaNode) fromASTNode(astNode, JavaNode::new);
 	}
 }

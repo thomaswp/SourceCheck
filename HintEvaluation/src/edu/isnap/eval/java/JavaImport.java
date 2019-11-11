@@ -19,8 +19,8 @@ import com.opencsv.CSVReaderBuilder;
 
 import edu.isnap.hint.HintData;
 import edu.isnap.node.Node;
+import edu.isnap.node.TextualNode;
 import edu.isnap.python.SourceCodeHighlighter;
-import edu.isnap.python.TextualNode;
 import edu.isnap.sourcecheck.HintHighlighter;
 import edu.isnap.util.map.ListMap;
 

@@ -6,11 +6,9 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.json.JSONObject;
 
-import edu.isnap.node.ASTNode;
 import edu.isnap.node.Node;
-import edu.isnap.node.ASTNode.SourceLocation;
 import edu.isnap.sourcecheck.NodeAlignment.Mapping;
-import edu.isnap.sourcecheck.edit.EditHint.EditType;
+import edu.isnap.sourcecheck.edit.Suggestion.SuggestionType;
 import edu.isnap.util.map.BiMap;
 
 public class Reorder extends EditHint {
@@ -125,25 +123,9 @@ public class Reorder extends EditHint {
 	public Node getPriorityToNode(Mapping mapping) {
 		return mapping.getFrom(node);
 	}
-	
-	@Override
-	public SourceLocation getCorrectedEditStart() {
-		if(this.node.tag instanceof ASTNode) {
-			return ((ASTNode) this.node.tag).startSourceLocation;	
-		}
-		return null;
-	}
 
 	@Override
-	public SourceLocation getCorrectedEditEnd() {
-		if(this.node.tag instanceof ASTNode) {
-			return ((ASTNode) this.node.tag).endSourceLocation;	
-		}
-		return null;
-	}
-	
-	@Override
-	public EditType getEditType() {
-		return EditType.REORDER;
+	public void addSuggestions(List<Suggestion> suggestions) {
+		Suggestion.addSuggestionsForNode(suggestions, this, node, SuggestionType.DELETE);
 	}
 }
