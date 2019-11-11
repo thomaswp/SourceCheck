@@ -503,33 +503,7 @@ public class NodeAlignment {
 
 			// If to's children match anything, edit them to match the children of from
 			if (to.readOnlyAnnotations().matchAnyChildren) {
-				mapping.put(from, to);
-				to.children.clear();
-				from.recurse(new Action() {
-					@Override
-					public void run(Node node) {
-						if (node == from) return;
-						// Make a copy of the node and match them together
-						Node parent = mapping.getFrom(node.parent);
-						Node copy = node.shallowCopy(parent);
-						copy.tag = GENERATED_TAG;
-						parent.children.add(copy);
-						mapping.put(node, copy);
-
-						// Remove the from-child from the fromMap, so it doesn't get matched to
-						// other things later on
-						List<Node> list = fromMap.get(parentNodeKey(node, true));
-						if (list != null) {
-							for (int i = 0; i < list.size(); i++) {
-								if (list.get(i) == node) {
-									list.remove(i);
-									break;
-								}
-							}
-						}
-					}
-				});
-
+				addMatchingChildren(from, to, fromMap);
 				// Then we're done, so continue
 				continue;
 			}
@@ -546,43 +520,78 @@ public class NodeAlignment {
 						-distanceMeasure.matchedOrphanReward(type), "Match Parents");
 			}
 			mapping.put(from, to);
-
-			// Get any reordering of the to states that needs to be done and see if anything is
-			// out of order
-			// TODO: This doesn't catch reorders that will be needed for child nodes
-			// We do have a failsafe in HintHighlighter, but this would be better fixed
-			// TODO: This does not work well for arguments, which cannot be deleted.
-			// So [A, B] and [B, C] won't reorder, since a is assumed to be deleted.
-			int[] reorders = Alignment.reorderIndices(fromStates[i], toStates[j], toOrderGroups[j]);
-			boolean needsReorder = needsReorder(reorders);
-			if (needsReorder) {
-
-				// If so, re-add the children of to in the correct order
-				List<Node> reordered = new LinkedList<>();
-				for (int k = 0; k < reorders.length; k++) {
-					reordered.add(null);
-				}
-				for (int k = 0; k < reorders.length; k++) {
-					reordered.set(reorders[k], to.children.get(k));
-				}
-
-				// Sanity check
-				Arrays.sort(reorders);
-				if (reorders.length != to.children.size() || needsReorder(reorders)) {
-					// For debugging
-					Alignment.reorderIndices(fromStates[i], toStates[j], toOrderGroups[j]);
-					throw new RuntimeException("Invalid reorder indices: " +
-							Arrays.toString(reorders));
-				}
-
-				to.children.clear();
-				to.children.addAll(reordered);
-				toStates[j] = mapping.getMappedChildArray(to, false);
-			}
+			toStates[j] = reorderToIfNeeded(from, to, fromStates[i], toStates[j], toOrderGroups[j]);
 
 			matchChildren(from.children, to.children);
 
 		}
+	}
+
+	private void addMatchingChildren(final Node from, final Node to,
+			final ListMap<String, Node> fromMap) {
+		mapping.put(from, to);
+		to.children.clear();
+		from.recurse(new Action() {
+			@Override
+			public void run(Node node) {
+				if (node == from) return;
+				// Make a copy of the node and match them together
+				Node parent = mapping.getFrom(node.parent);
+				Node copy = node.shallowCopy(parent);
+				copy.tag = GENERATED_TAG;
+				parent.children.add(copy);
+				mapping.put(node, copy);
+
+				// Remove the from-child from the fromMap, so it doesn't get matched to
+				// other things later on
+				List<Node> list = fromMap.get(parentNodeKey(node, true));
+				if (list != null) {
+					for (int i = 0; i < list.size(); i++) {
+						if (list.get(i) == node) {
+							list.remove(i);
+							break;
+						}
+					}
+				}
+			}
+		});
+	}
+
+	private String[] reorderToIfNeeded(Node from, Node to, String[] fromState,
+			String[] toState, int[] toOrderGroups) {
+		// Get any reordering of the to states that needs to be done and see if anything is
+		// out of order
+		// TODO: This doesn't catch reorders that will be needed for child nodes
+		// We do have a failsafe in HintHighlighter, but this would be better fixed
+		// TODO: This does not work well for arguments, which cannot be deleted.
+		// So [A, B] and [B, C] won't reorder, since a is assumed to be deleted.
+		int[] reorders = Alignment.reorderIndices(fromState, toState, toOrderGroups);
+		boolean needsReorder = needsReorder(reorders);
+		if (needsReorder) {
+
+			// If so, re-add the children of to in the correct order
+			List<Node> reordered = new LinkedList<>();
+			for (int k = 0; k < reorders.length; k++) {
+				reordered.add(null);
+			}
+			for (int k = 0; k < reorders.length; k++) {
+				reordered.set(reorders[k], to.children.get(k));
+			}
+
+			// Sanity check
+			Arrays.sort(reorders);
+			if (reorders.length != to.children.size() || needsReorder(reorders)) {
+				// For debugging
+				Alignment.reorderIndices(fromState, toState, toOrderGroups);
+				throw new RuntimeException("Invalid reorder indices: " +
+						Arrays.toString(reorders));
+			}
+
+			to.children.clear();
+			to.children.addAll(reordered);
+			return mapping.getMappedChildArray(to, false);
+		}
+		return toState;
 	}
 
 	private void matchChildren(List<Node> fromChildren, List<Node> toChildren) {
