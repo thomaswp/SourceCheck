@@ -353,7 +353,7 @@ public class FeatureExtraction {
 		Map<AssignmentAttempt, List<Node>> traceMap = loadTrainingData();
 
 		List<List<Node>> correctTraces = traceMap.keySet().stream()
-				.filter(attempt -> attempt.grade != null && attempt.grade.average() == 1)
+				.filter(attempt -> attempt.researcherGrade != null && attempt.researcherGrade.average() == 1)
 				.map(attempt -> traceMap.get(attempt))
 				.collect(Collectors.toList());
 

@@ -33,7 +33,7 @@ public class PlotProgress {
 
 		List<Node> submissions = new LinkedList<>();
 		for (AssignmentAttempt attempt : attempts.values()) {
-			if (attempt.grade.average() < 1) continue;
+			if (attempt.researcherGrade.average() < 1) continue;
 			submissions.add(SimpleNodeBuilder.toTree(attempt.submittedSnapshot, true));
 		}
 
@@ -41,8 +41,8 @@ public class PlotProgress {
 
 		int i = 0;
 		for (AssignmentAttempt attempt : attempts.values()) {
-			double grade = attempt.grade.average();
-			double partialGrade = attempt.grade.partialAverage();
+			double grade = attempt.researcherGrade.average();
+			double partialGrade = attempt.researcherGrade.partialAverage();
 			List<Node> otherSubmissions = new LinkedList<>(submissions);
 			if (grade == 1) {
 				otherSubmissions.remove(i++);

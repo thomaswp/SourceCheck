@@ -9,3 +9,6 @@
 data/**/analysis
 data/**/export
 HintRating
+*.sql
+*.iml
+history.txt

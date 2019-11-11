@@ -96,7 +96,7 @@ public class CheckHintUsage {
 		for (String attemptID : attempts.keySet()) {
 
 			AssignmentAttempt attempt = attempts.get(attemptID);
-			Grade grade = attempt.grade;
+			Grade grade = attempt.researcherGrade;
 			if (grade != null && grade.outlier) continue;
 			String userID = attempt.userID();
 			String userIDShort = userID;
@@ -113,7 +113,7 @@ public class CheckHintUsage {
 			// attempt, which results in 0 for almost every column, but still includes the grades
 			if (!isValidSubmission(attempt)) {
 				attempt = new AssignmentAttempt(attemptID, attempt.loggedAssignmentID,
-						attempt.grade);
+						attempt.researcherGrade, attempt.classGrade.orElseGet(null));
 				hasLogs = false;
 			}
 
@@ -568,8 +568,8 @@ public class CheckHintUsage {
 			AssignmentAttempt path = submissions.get(key);
 			if (!isValidSubmission(path)) continue;
 
-			Map<String, Integer> grade = path.grade.tests;
-			double numberGrade = path.grade.average();
+			Map<String, Integer> grade = path.researcherGrade.tests;
+			double numberGrade = path.researcherGrade.average();
 //			if (numberGrade < 0.5f) {
 //				System.out.println(key + ": " + grade);
 //				System.out.println(((Snapshot)code.tag).toCode());

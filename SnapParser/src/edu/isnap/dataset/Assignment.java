@@ -144,7 +144,7 @@ public class Assignment {
 	}
 
 	public Map<String, AssignmentAttempt> load(Mode mode, boolean snapshotsOnly) {
-		return load(mode, snapshotsOnly, true);
+		return load(mode, snapshotsOnly, dataset.onlyLogExportedCode());
 	}
 
 	public Map<String, AssignmentAttempt> load(Mode mode, boolean snapshotsOnly,
@@ -190,7 +190,7 @@ public class Assignment {
 			// If we don't have an attempt, add a fake one
 			if (attempts.containsKey(attemptID)) continue;
 			Grade grade = grades.get(attemptID);
-			AssignmentAttempt attempt = new AssignmentAttempt(attemptID, name, grade);
+			AssignmentAttempt attempt = new AssignmentAttempt(attemptID, name, grade, null);
 			attempt.exported = grade == null || !grade.outlier;
 			attempts.put(attemptID, attempt);
 		}

@@ -33,7 +33,7 @@ public class ProgressAttributes implements AttributeGenerator {
 		Map<Node, Double> submittedGrades = new HashMap<>();
 		for (AssignmentAttempt attempt : attemptMap.keySet()) {
 			Node submitted = SnapGradePrediction.getSubmittedNode(attempt);
-			double grade = attempt.grade.average();
+			double grade = attempt.researcherGrade.average();
 			if (grade == 1) {
 				goodSubmitted.add(submitted);
 			}
@@ -46,7 +46,7 @@ public class ProgressAttributes implements AttributeGenerator {
 		int i = 0, j = 0;
 		for (AssignmentAttempt attempt : attemptMap.keySet()) {
 			List<Node> otherGoodSubmitted = new LinkedList<>(goodSubmitted);
-			if (attempt.grade.average() == 1) {
+			if (attempt.researcherGrade.average() == 1) {
 				otherGoodSubmitted.remove(i++);
 			}
 			List<Node> otherSubmitted = new LinkedList<>(allSubmitted);
