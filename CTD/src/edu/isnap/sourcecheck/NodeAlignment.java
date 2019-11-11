@@ -76,6 +76,11 @@ public class NodeAlignment {
 			return cost;
 		}
 
+		public void clearCost() {
+			cost = 0;
+			itemizedCost.clear();
+		}
+
 		private void incrementCost(Node fromNode, Node toNode, double cost, String type) {
 			this.cost += cost;
 			itemizedCost.add(new MappingCost(fromNode, toNode, cost, type));
@@ -142,9 +147,13 @@ public class NodeAlignment {
 		}
 
 		public String[] getMappedChildArray(Node node, boolean isFrom) {
-			String[] children = new String[node.children.size()];
+			return getMappedNodeTypeArray(node.children, isFrom);
+		}
+
+		public String[] getMappedNodeTypeArray(List<Node> nodes, boolean isFrom) {
+			String[] children = new String[nodes.size()];
 			for (int i = 0; i < children.length; i++) {
-				children[i] = getMappedType(node.children.get(i), isFrom);
+				children[i] = getMappedType(nodes.get(i), isFrom);
 			}
 			return children;
 		}
@@ -256,10 +265,13 @@ public class NodeAlignment {
 
 			@Override
 			public String toString() {
-				return String.format("[%.02f] %s / %s: %s vs %s",
+				String out = String.format("[%.02f] %s / %s: %s vs %s",
 						cost, type, fromNode.rootPathString(),
 						Arrays.toString(fromNode.getChildArray()),
 						Arrays.toString(toNode.getChildArray()));
+				if (fromNode.id == null) out = "*" + out;
+				if (toNode.id == null) out = "+" + out;
+				return out;
 			}
 
 			public JSONObject toJSON() {
@@ -573,37 +585,44 @@ public class NodeAlignment {
 				toStates[j] = mapping.getMappedChildArray(to, false);
 			}
 
-			// Try to align the children of these paired nodes and add them to the mapping,
-			// but don't worry about score, since that's accounted for in the progress score
-			// These mappings may be overwritten later if the nodes themselves are matched as
-			// parents, but this is not a wholly consistent alignment algorithm
-			// We use 2/2/3 here to use replacements only if necessary (these are not returned as
-			// pairs if they do not match)
-			List<int[]> childPairs = Alignment.alignPairs(fromStates[i], toStates[j], 2, 2, 3);
-			List<Node> unpairedFrom = new LinkedList<>(), unpairedTo = new LinkedList<>();
-			for (int[] pair : childPairs) {
-				if (pair[0] >= 0 && pair[1] >= 0) {
-					mapping.put(from.children.get(pair[0]), to.children.get(pair[1]));
-				} else if (pair[1] >= 0) {
-					// We also keep track of unpaired nodes to match up out-of-order nodes
-					unpairedTo.add(to.children.get(pair[1]));
-				} else if (pair[0] >= 0) {
-					unpairedFrom.add(from.children.get(pair[0]));
-				}
-			}
-			// Look back through all the unpaired from and to nodes and try to find matches
-			// (i.e. out-of-order nodes)
-			for (Node uf : unpairedFrom) {
-				for (int k = 0; k < unpairedTo.size(); k++) {
-					Node ut = unpairedTo.get(k);
-					if (mapping.getMappedType(uf, true).equals(mapping.getMappedType(ut, false))) {
-						mapping.put(uf, ut);
-						unpairedTo.remove(k);
-						break;
-					}
-				}
-			}
+			matchChildren(from.children, to.children);
 
+		}
+	}
+
+	private void matchChildren(List<Node> fromChildren, List<Node> toChildren) {
+		String[] fromChildrenTypes = mapping.getMappedNodeTypeArray(fromChildren, true);
+		String[] toChildrenTypes = mapping.getMappedNodeTypeArray(toChildren, false);
+
+		// Try to align the children of these paired nodes and add them to the mapping,
+		// but don't worry about score, since that's accounted for in the progress score
+		// These mappings may be overwritten later if the nodes themselves are matched as
+		// parents, but this is not a wholly consistent alignment algorithm
+		// We use 2/2/3 here to use replacements only if necessary (these are not returned as
+		// pairs if they do not match)
+		List<int[]> childPairs = Alignment.alignPairs(fromChildrenTypes, toChildrenTypes, 2, 2, 3);
+		List<Node> unpairedFrom = new LinkedList<>(), unpairedTo = new LinkedList<>();
+		for (int[] pair : childPairs) {
+			if (pair[0] >= 0 && pair[1] >= 0) {
+				mapping.put(fromChildren.get(pair[0]), toChildren.get(pair[1]));
+			} else if (pair[1] >= 0) {
+				// We also keep track of unpaired nodes to match up out-of-order nodes
+				unpairedTo.add(toChildren.get(pair[1]));
+			} else if (pair[0] >= 0) {
+				unpairedFrom.add(fromChildren.get(pair[0]));
+			}
+		}
+		// Look back through all the unpaired from and to nodes and try to find matches
+		// (i.e. out-of-order nodes)
+		for (Node uf : unpairedFrom) {
+			for (int k = 0; k < unpairedTo.size(); k++) {
+				Node ut = unpairedTo.get(k);
+				if (mapping.getMappedType(uf, true).equals(mapping.getMappedType(ut, false))) {
+					mapping.put(uf, ut);
+					unpairedTo.remove(k);
+					break;
+				}
+			}
 		}
 	}
 
@@ -682,10 +701,13 @@ public class NodeAlignment {
 		List<Mapping> best = new LinkedList<>();
 		if (matches.size() == 0) return best;
 
+		boolean v2 = config.sourceCheckV2;
+
 		Mapping[] mappings = new Mapping[matches.size()];
 		for (int i = 0; i < mappings.length; i++) {
 			NodeAlignment align = new NodeAlignment(from, matches.get(i), config);
-			Mapping mapping = align.calculateMapping(distanceMeasure);
+			Mapping mapping = v2 ? align.align(distanceMeasure) :
+				align.calculateMapping(distanceMeasure);
 			mappings[i] = mapping;
 		}
 
@@ -735,5 +757,170 @@ public class NodeAlignment {
 			Node n2c = na.mapping.getFrom(n1c);
 			System.out.println(n1c + "  -->  " + n2c);
 		}
+	}
+
+	public Mapping align(DistanceMeasure distanceMeasure) {
+		return align(distanceMeasure, null);
+	}
+
+	private Mapping align(DistanceMeasure dm, Mapping previousMapping) {
+		mapping = new Mapping(from, to, config);
+		if (previousMapping != null) mapping.calculateValueMappings(previousMapping);
+
+		ListMap<String, Node> fromNodeMap = getNodesByType(from, true);
+		ListMap<String, Node> toNodeMap = getNodesByType(to, false);
+
+		// TODO: idea: maybe do a BF-iteration of the from nodes and greedily match them, then
+		// when calculating the root path match cost, stop alignment at the nearest matched parent,
+		// so a pair of matched nodes with matched parents have 0 RP alignment cost
+		for (String type : fromNodeMap.keySet()) {
+			List<Node> fromNodes = fromNodeMap.get(type);
+			List<Node> toNodes = toNodeMap.get(type);
+			if (toNodes == null) continue;
+
+			double[][] costMatrix = new double[fromNodes.size()][toNodes.size()];
+
+			if (fromNodes.size() * toNodes.size() == 0) continue;
+
+			for (int i = 0; i < fromNodes.size(); i++) {
+				for (int j = 0; j < toNodes.size(); j++) {
+					Node fromCandidate = fromNodes.get(i);
+					Node toCandidate = toNodes.get(j);
+
+					double subCost = -getSubCostEsitmate(fromCandidate, toCandidate, config, dm);
+
+					String[] rpFrom = getRootPathArray(fromCandidate, true);
+					String[] rpTo = getRootPathArray(toCandidate, true);
+					double parentCost = Alignment.alignCost(rpFrom, rpTo, 1, 1, 1);
+
+					// TODO: config
+					double cost = subCost * 0.5 + parentCost;
+					costMatrix[i][j] = cost;
+				}
+			}
+
+			HungarianAlgorithm alg = new HungarianAlgorithm(costMatrix);
+			int[] matching = alg.execute();
+
+			for (int i = 0; i < fromNodes.size(); i++) {
+				int j = matching[i];
+				if (j < 0) continue;
+
+				// TODO: determine/config
+				if (costMatrix[i][j] > 1000) continue;
+				mapping.put(fromNodes.get(i), toNodes.get(j));
+			}
+		}
+
+		List<Node> queue = new ArrayList<>();
+		queue.add(from);
+		while (queue.size() > 0) {
+			Node fromCandidate = queue.remove(0);
+			for (Node child : fromCandidate.children) {
+				if (!fromCandidate.children.isEmpty()) queue.add(child);
+			}
+
+			Node toCandidate = mapping.getFrom(fromCandidate);
+			if (toCandidate == null) continue;
+
+			List<Node> fromChildren = new ArrayList<>(fromCandidate.children);
+			List<Node> toChildren = new ArrayList<>(toCandidate.children);
+			for (int i = 0; i < fromChildren.size(); i++) {
+				Node fromChild = fromChildren.get(i);
+				Node pair = mapping.getFrom(fromChild);
+				boolean matched = false;
+				for (int j = 0; j < toChildren.size(); j++) {
+					if (toChildren.get(j) == pair) {
+						toChildren.remove(j);
+						matched = true;
+						break;
+					}
+				}
+				if (matched) {
+					fromChildren.remove(i--);
+				}
+			}
+
+			// Basic problem here: if we remap a node to be under it's parent's match, it's old
+			// match is now unpaired
+			matchChildren(fromChildren, toChildren);
+		}
+
+		if (config.shouldCalculateValueMapping() && previousMapping == null) {
+			// If we we're not given a previous mapping, this is the first round, so recalculate
+			// using this mapping to map values
+			return align(dm, mapping);
+		}
+
+		mapping.calculateValueMappings();
+		calculateMappingReward();
+		return mapping;
+	}
+
+	private void calculateMappingReward() {
+		mapping.clearCost();
+		// Each node in from can contribute up to 2 reward points:
+		//  - One for how close it's root path is to it's pair
+		//  - One for being in the proper order for its parent
+		// Each unpaired node in "to" adds 0.5 cost point
+		from.recurse(node -> {
+			if (config.isValueless(node.type())) return;
+			Node pair = mapping.getFrom(node);
+			if (pair == null) return;
+
+			List<String> fromIDs = new ArrayList<>();
+			List<String> toIDs = new ArrayList<>();
+			for (Node child : node.children) {
+				Node childPair = mapping.getFrom(child);
+				if (!config.isValueless(node.type()) &&
+						childPair != null && childPair.parent == pair) {
+					fromIDs.add(child.hexHash());
+				}
+			}
+			for (Node child : pair.children) {
+				Node childPair = mapping.getTo(child);
+				if (!config.isValueless(node.type()) &&
+						childPair != null && childPair.parent == node) {
+					toIDs.add(childPair.hexHash());
+				}
+			}
+			double reward = -Alignment.getProgress(
+					fromIDs.toArray(new String[fromIDs.size()]),
+					toIDs.toArray(new String[toIDs.size()]), 1, 0);
+			reward--;
+			mapping.incrementCost(node, pair, reward, "Paired nodes");
+
+		});
+		to.recurse(node -> {
+			if (!config.isValueless(node.type()) && !mapping.containsTo(node)) {
+				mapping.incrementCost(node, node, 0.5, "Unpaired node in to");
+			}
+		});
+	}
+
+	private String[] getRootPathArray(Node node, boolean isFrom) {
+		String[] rp = new String[node.rootPathLength()];
+		int i = rp.length - 1;
+		while (i >= 0) {
+			rp[i--] = mapping.getMappedType(node, isFrom);
+			node = node.parent;
+		}
+		return rp;
+	}
+
+	private ListMap<String, Node> getNodesByType(Node node, boolean isFrom) {
+		final ListMap<String, Node> map = new ListMap<>(MapFactory.LinkedHashMapFactory);
+		node.recurse(new Action() {
+			@Override
+			public void run(Node node) {
+				if (node.children.isEmpty() && node.parent != null &&
+						!node.readOnlyAnnotations().matchAnyChildren) {
+					return;
+				}
+				String key = mapping.getMappedType(node, isFrom);
+				map.add(key, node);
+			}
+		});
+		return map;
 	}
 }

@@ -13,7 +13,7 @@ public class Grade {
 	public final boolean outlier;
 	public final LinkedHashMap<String, Integer> tests = new LinkedHashMap<>();
 
-	public final static Integer FAIL = 2, ATTEMPT = 1, PASS = 2;
+	public final static Integer FAIL = 0, ATTEMPT = 1, PASS = 2;
 
     private final static Set<String> NonTestColumns = new HashSet<>();
     static {

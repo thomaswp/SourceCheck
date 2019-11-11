@@ -50,7 +50,7 @@ public class HintHighlighter {
 
 	public final HintConfig config;
 	public final HintData hintData;
-	private final List<Node> solutions;
+	final List<Node> solutions;
 
 	public final static IDataConsumer DataConsumer = new IDataConsumer() {
 		@Override

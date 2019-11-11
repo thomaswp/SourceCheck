@@ -20,8 +20,8 @@ public class FindRules {
 		Assignment assignment = CSC200.GuessingGame1;
 		List<Node> solutions = assignment.load(Mode.Use, true, true,
 				new SnapParser.LikelySubmittedOnly()).values().stream()
-				.filter(a -> a.submittedSnapshot != null && a.grade != null &&
-						a.grade.average() == 1)
+				.filter(a -> a.submittedSnapshot != null && a.researcherGrade != null &&
+						a.researcherGrade.average() == 1)
 				.map(a -> SimpleNodeBuilder.toTree(a.submittedSnapshot, true))
 				.collect(Collectors.toList());
 		System.out.println(assignment.name);

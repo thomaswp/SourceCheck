@@ -383,7 +383,7 @@ public class Alignment {
 			}
 		}
 
-		// Then sort it to be in order, will the blanks (MAX_VALUE) at the end
+		// Then sort it to be in order, with the blanks (MAX_VALUE) at the end
 		Arrays.sort(unusedIndices);
 
 		// Then fill in the unused indices in toIndices with the sequential missing values

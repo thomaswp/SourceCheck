@@ -41,7 +41,7 @@ condCompare <- function(x, cond, test = wilcox.test, filter = T) {
 compareStats <- function(x, y, test = wilcox.test) {
   #x <- x[!is.na(x)]
   #y <- y[!is.na(y)]
-  print(paste("Nx =", length(x), "Ny =", length(y)))
+  print(sprintf("Nx = %d (%d NA); Ny = %d (%d NA)", sum(!is.na(x)), sum(is.na(x)), sum(!is.na(y)), sum(is.na(y))))
   print(paste("Mx =", mean(x, na.rm=T), "SD =", sd(x, na.rm=T)))
   print(paste("My =", mean(y, na.rm=T), "SD =", sd(y, na.rm=T)))
   print(paste("Medx =", median(x, na.rm=T), "IQR =", IQR(x, na.rm=T)))

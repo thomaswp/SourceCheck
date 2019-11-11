@@ -18,7 +18,6 @@ import org.apache.commons.csv.CSVRecord;
 
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
-import edu.isnap.dataset.Dataset;
 import edu.isnap.hint.ConfigurableAssignment;
 import edu.isnap.parser.SnapParser.Filter;
 import edu.isnap.parser.Store.Mode;
@@ -26,7 +25,7 @@ import edu.isnap.parser.elements.Snapshot;
 import edu.isnap.util.Spreadsheet;
 
 //TODO: Check for students starting on different assignments
-public class Spring2018 extends Dataset {
+public class Spring2018 extends CSC200Dataset {
 
 	public final static Date start = Assignment.date(2018, 1, 6);
 	public final static String dataDir = Assignment.CSC200_BASE_DIR + "/spring2018";

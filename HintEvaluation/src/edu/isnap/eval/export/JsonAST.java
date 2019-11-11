@@ -112,7 +112,7 @@ public class JsonAST {
 			boolean stripAllNonNumericLits, Integer stopID) {
 		Snapshot lastSnapshot = null;
 		ASTSnapshot lastNode = null;
-		boolean attemptCorrect = attempt.grade != null && attempt.grade.average() == 1;
+		boolean attemptCorrect = attempt.researcherGrade != null && attempt.researcherGrade.average() == 1;
 		String id = stopID == null ? attempt.id : String.valueOf(stopID);
 		Trace trace = new Trace(id, assignmentID);
 		boolean stop = false;
