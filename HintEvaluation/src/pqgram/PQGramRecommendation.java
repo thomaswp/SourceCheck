@@ -178,6 +178,7 @@ public class PQGramRecommendation {
 		return insertions;
 	}
 
+	@SuppressWarnings("unlikely-arg-type")
 	private static List<PositionalEdit> getPositionalEdits(Profile pieces, Map<String, Tree> built, Map<String, String> childToParent) {
 		pieces = pieces.clone();
 		built = Utilities.cloneMap(built);

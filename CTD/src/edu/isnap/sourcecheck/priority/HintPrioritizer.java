@@ -67,6 +67,7 @@ public class HintPrioritizer {
 		findOrderingPriority(hints, node, bestMatch);
 	}
 
+	@SuppressWarnings("unlikely-arg-type")
 	private void findPlacementTimes(Mapping bestMatch, List<EditHint> hints, List<Mapping> bestMatches) {
 		PlacementTimesModel placementTimesModel = hintData.getModel(PlacementTimesModel.class);
 		if (placementTimesModel == null) return;
