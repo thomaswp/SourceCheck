@@ -78,6 +78,14 @@ public abstract class HintConfig implements Serializable {
 		return false;
 	}
 
+	/**
+	 * Should return true if the given node's value should be ignored when matching, regardless of
+	 * whether it is mapped.
+	 */
+	public boolean shouldIgnoreNodesValues(Node node) {
+		return false;
+	}
+
 
 	/**
 	 * Gets a human-readable name for the given Node

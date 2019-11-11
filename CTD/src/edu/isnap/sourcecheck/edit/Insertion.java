@@ -277,10 +277,13 @@ public class Insertion extends EditHint {
 
 	@Override
 	public SourceLocation getCorrectedEditStart() {
+		// TODO: Move this into SourceCodeHighlighter - it doesn't really belong here and we can't
+		// reference TextualNode, so we're using tags...
 		ASTNode node = null;
 
 		if (this.replaced != null) {//if there's a replaced, the new code should go right after the replaced location. Cross out the replace, add the contents of the pair
 			node = (ASTNode) this.replaced.tag;
+			if (node != null) System.out.println("Replaced: " + node.type + " " + node.startSourceLocation);
 		} else if (!this.missingParent) {//else, take the parent, which may or may not have children. The Insertion's index property is the index at which we want to insert in the parent
 //			System.out.println("!!!");
 //			System.out.println(parent);

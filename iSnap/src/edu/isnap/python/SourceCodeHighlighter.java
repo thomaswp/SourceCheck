@@ -77,6 +77,7 @@ public class SourceCodeHighlighter {
 //		System.out.println(target.source);
 		System.out.println("Source Diff:");
 		System.out.println(Diff.diff(studentCode.source, target.source, 2));
+		System.out.println(Diff.diff(from, target.prettyPrint(true), 2));
 		mapping.printValueMappings(System.out);
 		edits.forEach(System.out::println);
 		System.out.println();
@@ -87,7 +88,7 @@ public class SourceCodeHighlighter {
 		Set<String> missing = new LinkedHashSet<>();
 		for(Entry<SourceLocation, EditHint> editLocation : editMap.entrySet()) {
 			EditHint editHint = editLocation.getValue();
-			System.out.println("Location: " + editLocation.getKey() + "\nEditHint (" + editHint.getEditType()+ "):\n" + editLocation.getValue());
+//			System.out.println("Location: " + editLocation.getKey() + "\nEditHint (" + editHint.getEditType()+ "):\n" + editLocation.getValue());
 			SourceLocation location = editLocation.getKey();
 			if(location == editHint.getCorrectedEditEnd() &&
 					// Insertion handle both open and close spans

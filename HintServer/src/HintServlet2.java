@@ -37,6 +37,11 @@ public class HintServlet2 extends HttpServlet {
 	}
 
 	@Override
+	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		doPut(req, resp);
+	}
+
+	@Override
 	protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 //		super.doPut(req, resp);
 

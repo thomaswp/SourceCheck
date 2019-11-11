@@ -29,15 +29,11 @@ import edu.isnap.util.map.ListMap;
 public class PythonImport {
 
 	public static void main(String[] args) throws IOException {
-
-		// Run generate hints to load data, generate hints for each student and print them out
-		// You need to update the file path to wherever you unzipped the data
-		generateHints("../../../../Desktop", "anyLowercase");
-
-
-//		serializeHintData("../../PythonAST/data/itap", "firstAndLast",
-//				"../HintServer/WebContent/WEB-INF/data/firstAndLast.hdata");
-//		generateHints("../data/", "test");
+//		generateHints("../../PythonAST/data/datacamp", "65692");
+//		generateHints("../../PythonAST/data/itap", "firstAndLast");
+		serializeHintData("../../PythonAST/data/PCRS", "8",
+				"../HintServer/WebContent/WEB-INF/data/8.hdata");
+//		generateHints("../../PythonAST/data/pcrs", "8");
 
 //		Map<String, ListMap<String, PythonNode>> nodes = loadAllAssignments("../../PythonAST/data");
 //		for (String assignment : nodes.keySet()) {
