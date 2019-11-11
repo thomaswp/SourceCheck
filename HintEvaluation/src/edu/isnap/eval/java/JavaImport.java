@@ -4,12 +4,16 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.Reader;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.json.JSONObject;
@@ -182,10 +186,24 @@ public class JavaImport {
 		return csvRecords;
 	}
 
+	private static String removeComments(String code) {
+		return String.join("\n",
+				Arrays.stream(code.split("\n"))
+				.filter(l -> !(l.trim().startsWith("*") || l.trim().startsWith("/**")))
+				.collect(Collectors.toList())
+				);
+	}
+
 	static HashMap<String, ListMap<String, JavaNode>> loadAssignment(String inputCSV)
 			throws IOException {
 		HashMap<String, ListMap<String, JavaNode>> filePathToNodes = new HashMap<>();
 		List<String[]> csvRecords= readCSV(inputCSV);
+		Set<String> numberDisplayProjects = new HashSet<>();
+		File startSourceFile = new File(DATA_DIR + "Start/NumberDisplay.java");
+		String numberDisplayStartSource = new String(Files.readAllBytes(startSourceFile.toPath()),
+				Charset.forName("UTF-8"));
+		numberDisplayStartSource = numberDisplayStartSource.replaceAll("\r", "");
+		numberDisplayStartSource = removeComments(numberDisplayStartSource);
 		for(String[] record: csvRecords) {
 			String projectID = record[0];
 			String sourceCode = record[4];
@@ -196,6 +214,16 @@ public class JavaImport {
 				File testJson = new File(DATA_DIR + "ASTs/" + sourceCodeJSON);
 				String json = new String(Files.readAllBytes(testJson.toPath()));
 
+				if (filePath.contentEquals("NumberDisplay.java") && isCorrect.equals("True")) {
+					String source = removeComments(sourceCode);
+					if (!source.equals(numberDisplayStartSource)) {
+						numberDisplayProjects.add(projectID);
+//						if (Math.random() < 0.05) {
+//							System.out.println(Diff.diff(source, numberDisplayStartSource, 2));
+//						}
+					}
+				}
+
 				JSONObject obj = new JSONObject(json);
 				JavaNode node = (JavaNode) TextualNode.fromJSON(obj, sourceCode, JavaNode::new);
 				if (isCorrect.equals("True")) {
@@ -205,6 +233,13 @@ public class JavaImport {
 					filePathToNodes.put(filePath, new ListMap<String, JavaNode>());
 				}
 				filePathToNodes.get(filePath).add(projectID, node);
+			}
+		}
+		System.out.println("NDPs: " + numberDisplayProjects.size());
+		// Remove all solutions that changed the NumberDisplay class
+		for (String filePath : filePathToNodes.keySet()) {
+			for (String project : numberDisplayProjects) {
+				filePathToNodes.get(filePath).remove(project);
 			}
 		}
 		return filePathToNodes;

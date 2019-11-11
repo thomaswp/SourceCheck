@@ -54,14 +54,13 @@ public class SourceCodeHighlighter {
 //		System.out.println("Target:");
 //		System.out.println(target);
 		System.out.println("Node Diff:");
-		System.out.println(Diff.diff(studentCode.prettyPrint(), target.prettyPrint())); //, 2));
+		System.out.println(Diff.diff(studentCode.prettyPrint(), target.prettyPrint(), 2));
 //		System.out.println("Student source:");
 //		System.out.println(studentCode.source);
 //		System.out.println("Target source:");
 //		System.out.println(target.source);
 		System.out.println("Source Diff:");
 		System.out.println(Diff.diff(studentCode.getSource(), target.getSource(), 2));
-		System.out.println(Diff.diff(from, target.prettyPrint(true), 2));
 		mapping.printValueMappings(System.out);
 		edits.forEach(System.out::println);
 		System.out.println();
@@ -94,7 +93,7 @@ public class SourceCodeHighlighter {
 				missing.add(getHumanReadableName((Insertion) hint, mapping.config));
 			}
 			System.out.println(suggestion.type + ": " + suggestion.location);
-			System.out.println(marked);
+//			System.out.println(marked);
 		}
 
 		if (!missing.isEmpty()) {

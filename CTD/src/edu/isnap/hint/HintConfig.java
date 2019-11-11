@@ -94,7 +94,7 @@ public abstract class HintConfig implements Serializable {
 	 * Gets a human-readable name for the given Node
 	 */
 	public String getHumanReadableName(Node node) {
-		return null;
+		return "some code";
 	}
 
 	/**
