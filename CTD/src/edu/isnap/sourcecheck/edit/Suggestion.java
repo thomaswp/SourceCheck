@@ -10,7 +10,7 @@ import edu.isnap.node.TextualNode;
 public class Suggestion implements Comparable<Suggestion> {
 
 	public enum SuggestionType {
-		DELETE, REPLACE, MOVE, INSERT
+		INSERT, DELETE, REPLACE, MOVE
 	}
 
 	public final EditHint hint;
@@ -34,8 +34,8 @@ public class Suggestion implements Comparable<Suggestion> {
 		if (comp != 0) return -comp;
 		// Otherwise, process starts before ends, so spans don't overlap
 		if (start != s.start) return start ? 1 : -1;
-		// Otherwise use the type order
-		return Integer.compare(type.ordinal(), s.type.ordinal());
+		// Otherwise use the type order (reversed so the first is processed last)
+		return -Integer.compare(type.ordinal(), s.type.ordinal());
 	}
 
 	public static void addSuggestionsForNode(List<Suggestion> suggestions, EditHint hint, Node node,
