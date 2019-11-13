@@ -1,4 +1,7 @@
-package edu.isnap.eval.java;
+package edu.isnap.java;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import edu.isnap.hint.HintConfig;
 import edu.isnap.node.JavaNode;
@@ -67,5 +70,22 @@ public class JavaHintConfig extends HintConfig {
 	@Override
 	public boolean areNodeIDsConsistent() {
 		return false;
+	}
+
+	private final static Map<String, String> nameMap = new LinkedHashMap<>();
+	static {
+		nameMap.put("IfStmt", "an if statement");
+		nameMap.put("NameExpr", "a variable");
+		nameMap.put("BinaryExpr", "an operarator");
+		nameMap.put("ExpressionStmt", "an expression");
+		// TODO: Add more to nameMap
+	}
+
+	@Override
+	public String getHumanReadableName(Node node) {
+		String name = nameMap.get(node.type());
+		if (name != null) return name;
+		return node.type();
+//		return node.prettyPrint().replace("\n", "");
 	}
 }

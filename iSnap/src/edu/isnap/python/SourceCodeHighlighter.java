@@ -121,7 +121,7 @@ public class SourceCodeHighlighter {
 		return insertionCode;
 	}
 
-	public static String getInsertHint(Insertion insertion, HintConfig config) {
+	private static String getInsertHint(Insertion insertion, HintConfig config) {
 		String hrName = getHumanReadableName(insertion, config);
 		String hint = "You may need to add " + hrName + " here";
 		if (insertion.replaced != null) {
@@ -142,7 +142,8 @@ public class SourceCodeHighlighter {
 	}
 
 
-	public static String getTextToInsert(Insertion insertion, Mapping mapping) {
+	@SuppressWarnings("unused")
+	private static String getTextToInsert(Insertion insertion, Mapping mapping) {
 		// TODO: Also need to handle newlines properly
 		Node mappedPair = insertion.pair.applyMapping(mapping);
 //		System.out.println("Pair:\n" + mappedPair);

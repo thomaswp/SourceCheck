@@ -94,11 +94,11 @@ public abstract class TextualNode extends Node {
 			} else {
 				// Otherwise insert it after the first ancestor with an end source location
 				TextualNode p = this;
-				while (p.endSourceLocation == null) {
+				while (p != null && p.endSourceLocation == null) {
 					p = (TextualNode) p.parent;
 				}
 				// System.out.println(p);
-				return p.endSourceLocation;
+				return p == null ? null : p.endSourceLocation;
 			}
 		}
 		return null;

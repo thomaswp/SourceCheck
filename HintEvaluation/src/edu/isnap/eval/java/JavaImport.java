@@ -1,6 +1,7 @@
 package edu.isnap.eval.java;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.Reader;
@@ -18,10 +19,14 @@ import java.util.stream.Collectors;
 
 import org.json.JSONObject;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Output;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 
 import edu.isnap.hint.HintData;
+import edu.isnap.hint.SnapHintBuilder;
+import edu.isnap.java.JavaHintConfig;
 import edu.isnap.node.JavaNode;
 import edu.isnap.node.Node;
 import edu.isnap.node.TextualNode;
@@ -48,7 +53,9 @@ public class JavaImport {
 
 		PrintStream fileOut = new PrintStream(DATA_DIR + "output_hints.txt");
 //		System.setOut(fileOut);
-		generateHints(DATA_DIR + "1__output_clock-display-ast.csv", "ClockDisplay");
+//		generateHints(DATA_DIR + "1__output_clock-display-ast.csv", "ClockDisplay");
+		serializeHintData(DATA_DIR + "1__output_clock-display-ast.csv", "ClockDisplay",
+				"../HintServer/WebContent/WEB-INF/data/ClockDisplay.hdata");
 	}
 
 	/*static HintData createHintData(String inputCSV, String assignment) throws IOException {
@@ -70,9 +77,9 @@ public class JavaImport {
 	}
 
 	// Don't worry about this method for now
-	/*static void serializeHintData(String inputCSV, String assignment, String outputPath)
+	static void serializeHintData(String inputCSV, String assignment, String outputPath)
 			throws IOException {
-		ListMap<String, JavaNode> attempts = loadAssignment(inputCSV);
+		ListMap<String, JavaNode> attempts = loadAssignment(inputCSV).get("ClockDisplay.java");
 		List<String> toRemove = new ArrayList<String>();
 		// Remove incorrect attempts before serializing
 		for (String attemptID : attempts.keySet()) {
@@ -87,7 +94,7 @@ public class JavaImport {
 		Output output = new Output(new FileOutputStream(outputPath));
 		kryo.writeObject(output, hintData);
 		output.close();
-	}*/
+	}
 
 	static void generateHints(String inputCSV, String assignment) throws IOException {
 		HashMap<String, ListMap<String, JavaNode>> filePathToattempts = loadAssignment(inputCSV);
