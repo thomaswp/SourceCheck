@@ -39,8 +39,7 @@ public class SourceCodeHighlighter {
 
 		highlighter.trace = NullStream.instance;
 
-		String from = studentCode.prettyPrint(true);
-		List<EditHint> edits = highlighter.highlight(studentCode);
+		List<EditHint> edits = highlighter.highlightWithPriorities(studentCode);
 		Node copy = studentCode.copy();
 		EditHint.applyEdits(copy, edits);
 
@@ -62,13 +61,13 @@ public class SourceCodeHighlighter {
 		System.out.println("Source Diff:");
 		System.out.println(Diff.diff(studentCode.getSource(), target.getSource(), 2));
 		mapping.printValueMappings(System.out);
-		edits.forEach(System.out::println);
+		edits.forEach(e -> System.out.printf("%.02f: %s\n", e.priority.consensus(), e));
 		System.out.println();
 
 		String marked = studentCode.getSource();
 
 		List<Suggestion> suggestions = getSuggestions(edits);
-		List<String> missing = new ArrayList<String>();
+		List<String> missing = new ArrayList<>();
 
 		for (Suggestion suggestion : suggestions) {
 			SourceLocation location = suggestion.location;

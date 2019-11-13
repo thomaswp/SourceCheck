@@ -22,6 +22,7 @@ import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 
 import edu.isnap.hint.HintData;
+import edu.isnap.node.JavaNode;
 import edu.isnap.node.Node;
 import edu.isnap.node.TextualNode;
 import edu.isnap.python.SourceCodeHighlighter;
@@ -218,9 +219,6 @@ public class JavaImport {
 					String source = removeComments(sourceCode);
 					if (!source.equals(numberDisplayStartSource)) {
 						numberDisplayProjects.add(projectID);
-//						if (Math.random() < 0.05) {
-//							System.out.println(Diff.diff(source, numberDisplayStartSource, 2));
-//						}
 					}
 				}
 
@@ -236,7 +234,8 @@ public class JavaImport {
 			}
 		}
 		System.out.println("NDPs: " + numberDisplayProjects.size());
-		// Remove all solutions that changed the NumberDisplay class
+		// Remove all solutions that changed the NumberDisplay class (for now)
+		// TODO: At some point, we need to use both source files in hint generation...
 		for (String filePath : filePathToNodes.keySet()) {
 			for (String project : numberDisplayProjects) {
 				filePathToNodes.get(filePath).remove(project);

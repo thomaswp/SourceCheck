@@ -13,9 +13,11 @@ import org.json.JSONObject;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
+import com.github.javaparser.javaparser_symbol_solver_core.ASTParserJSON;
 
 import edu.isnap.hint.HintData;
 import edu.isnap.hint.SnapHintBuilder;
+import edu.isnap.node.JavaNode;
 import edu.isnap.node.TextualNode;
 import edu.isnap.python.PythonNode;
 import edu.isnap.python.SourceCodeHighlighter;
@@ -55,15 +57,26 @@ public class HintServlet2 extends HttpServlet {
 
 		try {
 			JSONObject jsonAST = new JSONObject(requestData);
-			String parsedTreeRaw = (String) jsonAST.get("parsed");
 			String originalSource = (String) jsonAST.get("source");
 			String problemName = (String) jsonAST.get("problem");
 
-			loadHintMap(problemName, "", DEFAULT_MIN_GRADE);
+			TextualNode fullStudentCode;
+			if (jsonAST.has("parsed")) {
+				String parsedTreeRaw = (String) jsonAST.get("parsed");
+				JSONObject parsedTree = new JSONObject(parsedTreeRaw);
+				fullStudentCode = PythonNode.fromJSON(parsedTree, originalSource,
+						PythonNode::new);
+			} else if ("java".equalsIgnoreCase(jsonAST.optString("lang"))) {
+				JSONObject parsedTree = new JSONObject(ASTParserJSON.toJSON(originalSource));
+				fullStudentCode = JavaNode.fromJSON(parsedTree, originalSource,
+						JavaNode::new);
+			} else {
+				return;
+			}
 
-			JSONObject parsedTree = new JSONObject(parsedTreeRaw);
-			TextualNode fullStudentCode = PythonNode.fromJSON(parsedTree, originalSource,
-					PythonNode::new);
+
+
+			loadHintMap(problemName, "", DEFAULT_MIN_GRADE);
 
 			String highlightedCode = SourceCodeHighlighter.highlightSourceCode(
 					hintDatas.get(problemName), fullStudentCode);

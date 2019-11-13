@@ -1,6 +1,7 @@
 package edu.isnap.eval.java;
 
 import edu.isnap.hint.HintConfig;
+import edu.isnap.node.JavaNode;
 import edu.isnap.node.Node;
 import edu.isnap.node.Node.NodeConstructor;
 import edu.isnap.rating.RatingConfig;

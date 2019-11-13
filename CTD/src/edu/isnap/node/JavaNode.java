@@ -1,10 +1,8 @@
-package edu.isnap.eval.java;
+package edu.isnap.node;
 
 import org.json.JSONObject;
 
 import edu.isnap.node.ASTSnapshot;
-import edu.isnap.node.Node;
-import edu.isnap.node.TextualNode;
 import edu.isnap.rating.RatingConfig;
 
 public class JavaNode extends TextualNode {

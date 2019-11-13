@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Python parser hint generator</title>
+    
+    <style>
+      body * {
+        box-sizing: border-box;
+      }
+
+      .wrapper {
+        display: flex;
+        justify-content: space-around;
+      }
+
+      .wrapper > * {
+        width: 45%;
+      }
+
+      fieldset {
+        border: none;
+      }
+
+      textarea,input {
+        display: block;
+        padding: 0.5rem;
+        font-size: 14px;
+        width: 100%;
+      }
+
+      button {
+        background: #ccc;
+        cursor: pointer;
+        font-size: 14px;
+        margin: 1rem 0;
+        padding: 1rem;
+        width: 100%;
+      }
+
+      .display {
+        border: 1px solid #444;
+        white-space: pre-wrap; //this is incredibly important! It will show newline characters as actual linebreaks in the display area
+      }
+      
+      .deletion {
+      	text-decoration: line-through;
+      	color: red;
+      }
+      
+      .replacement {
+      	text-decoration: line-through;
+      	color: purple;
+      }
+
+      .insertion {
+      	font-weight: bold;
+      	color: blue;
+      }
+           
+      .candidate {
+      	font-weight: underline;
+      	color: red;
+      }
+      
+      .reorder {
+      	color: green;
+      }
+
+      ul {
+        margin-top: 0
+      }
+      
+      //Tooltip mouseover styles. Copied from: http://jsfiddle.net/8nnwytbL/ and https://stackoverflow.com/questions/1055581/how-do-i-add-a-tool-tip-to-a-span-element
+	[data-tooltip] {
+	    display: inline-block;
+	    position: relative;
+	    cursor: help;
+	    padding: 4px;
+	}
+	/* Tooltip styling */
+	[data-tooltip]:before {
+	    content: attr(data-tooltip);
+	    display: none;
+	    position: absolute;
+	    background: #000;
+	    color: #fff;
+	    padding: 4px 8px;
+	    font-size: 14px;
+	    line-height: 1.4;
+	    min-width: 100px;
+	    text-align: center;
+	    border-radius: 4px;
+	}
+	/* Dynamic horizontal centering */
+	[data-tooltip-position="top"]:before,
+	[data-tooltip-position="bottom"]:before {
+	    left: 50%;
+	    -ms-transform: translateX(-50%);
+	    -moz-transform: translateX(-50%);
+	    -webkit-transform: translateX(-50%);
+	    transform: translateX(-50%);
+	}
+	/* Dynamic vertical centering */
+	[data-tooltip-position="right"]:before,
+	[data-tooltip-position="left"]:before {
+	    top: 50%;
+	    -ms-transform: translateY(-50%);
+	    -moz-transform: translateY(-50%);
+	    -webkit-transform: translateY(-50%);
+	    transform: translateY(-50%);
+	}
+	[data-tooltip-position="top"]:before {
+	    bottom: 100%;
+	    margin-bottom: 6px;
+	}
+	[data-tooltip-position="right"]:before {
+	    left: 100%;
+	    margin-left: 6px;
+	}
+	[data-tooltip-position="bottom"]:before {
+	    top: 100%;
+	    margin-top: 6px;
+	}
+	[data-tooltip-position="left"]:before {
+	    right: 100%;
+	    margin-right: 6px;
+	}
+	
+	/* Tooltip arrow styling/placement */
+	[data-tooltip]:after {
+	    content: '';
+	    display: none;
+	    position: absolute;
+	    width: 0;
+	    height: 0;
+	    border-color: transparent;
+	    border-style: solid;
+	}
+	/* Dynamic horizontal centering for the tooltip */
+	[data-tooltip-position="top"]:after,
+	[data-tooltip-position="bottom"]:after {
+	    left: 50%;
+	    margin-left: -6px;
+	}
+	/* Dynamic vertical centering for the tooltip */
+	[data-tooltip-position="right"]:after,
+	[data-tooltip-position="left"]:after {
+	    top: 50%;
+	    margin-top: -6px;
+	}
+	[data-tooltip-position="top"]:after {
+	    bottom: 100%;
+	    border-width: 6px 6px 0;
+	    border-top-color: #000;
+	}
+	[data-tooltip-position="right"]:after {
+	    left: 100%;
+	    border-width: 6px 6px 6px 0;
+	    border-right-color: #000;
+	}
+	[data-tooltip-position="bottom"]:after {
+	    top: 100%;
+	    border-width: 0 6px 6px;
+	    border-bottom-color: #000;
+	}
+	[data-tooltip-position="left"]:after {
+	    right: 100%;
+	    border-width: 6px 0 6px 6px;
+	    border-left-color: #000;
+	}
+	/* Show the tooltip when hovering */
+	[data-tooltip]:hover:before,
+	[data-tooltip]:hover:after {
+	    display: block;
+	    z-index: 50;
+	}
+      
+    </style>
+  </head>
+  <body>
+
+    <div class='wrapper'>
+      <form>
+          <label for="student_code" rows="10" cols="50">Enter Code:</label>
+          <textarea name='student_code'></textarea>
+          <br/>
+          <label for="problem_name">Problem Name:</label>
+          <input name='problem_name' type="text"/>
+          <button>Get Hints</button>
+      </form>
+
+      <pre class='display' contentEditable="true">
+      </pre>
+    </div>
+    
+    <script type='text/javascript'>
+      let _textArea = document.querySelector('textarea')
+      let _textInput = document.querySelector('input')
+      let _button = document.querySelector('button')
+      let _display = document.querySelector('.display')
+
+      let doAjax = function (event) {
+        event.preventDefault()
+
+        let _payload = function () {
+          return JSON.stringify({
+            source: _textArea.value,
+            problem: _textInput.value,
+            lang: 'java',
+          })
+        }
+
+        // change url to api
+        fetch('http://localhost:8080/HintServer/hints2', {
+          method: 'PUT',
+          mode: 'cors',
+          headers: {
+              'Content-Type': 'application/json',
+          },
+          body: _payload()
+        })
+          .then(function (response) {
+        	  return response.json()
+          })
+          .then(function (json) {
+            // json will be an object just point to the property
+            // in this case, {'highlighted' : 'foo'}, below will print out 'foo'            
+            _display.innerHTML = json.highlighted;
+          })
+          .catch(function (e) {
+            _display.innerHTML = e
+          })
+      }
+
+      _button.addEventListener('click', doAjax)
+
+    </script>
+  </body>
+</html>
