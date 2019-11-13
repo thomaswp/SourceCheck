@@ -10,9 +10,11 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -32,6 +34,7 @@ import edu.isnap.node.Node;
 import edu.isnap.node.TextualNode;
 import edu.isnap.python.SourceCodeHighlighter;
 import edu.isnap.sourcecheck.HintHighlighter;
+import edu.isnap.sourcecheck.edit.EditHint;
 import edu.isnap.util.map.ListMap;
 
 public class JavaImport {
@@ -143,7 +146,45 @@ public class JavaImport {
 				// hints
 				System.out.println(
 						SourceCodeHighlighter.highlightSourceCode(hintData, firstAttempt));
+
 				break;
+			}
+		}
+	}
+
+	static void generateHintsForGS(String inputCSV, String assignment) throws IOException {
+		ListMap<String, JavaNode> attempts =
+				loadAssignment(inputCSV).get("ClockDisplay.java");
+
+		ListMap<String, JavaNode> correct = new ListMap<>();
+		for (String attemptID : attempts.keySet()) {
+			// Get the sequence of snapshots over time
+			List<JavaNode> trace = attempts.get(attemptID);
+			// If it was correct, then add it to the subset
+			if (trace.get(trace.size() - 1).correct.orElse(false)) {
+				correct.put(attemptID, attempts.get(attemptID));
+			}
+		}
+		HintData hintData = createHintData(assignment, correct);
+		HintHighlighter highlighter = hintData.hintHighlighter();
+
+		// TODO: Get the actual list from a .csv file, map project_id to the hint request
+		Map<String, JavaNode> goldStandardHintRequests = new HashMap<String, JavaNode>();
+
+		for (String student : goldStandardHintRequests.keySet()) {
+			JavaNode hintRequest = goldStandardHintRequests.get(student);
+			List<EditHint> edits = highlighter.highlightWithPriorities(hintRequest);
+			int i = 0;
+			for (EditHint hint : edits) {
+				Node copy = hintRequest.copy();
+				EditHint.applyEdits(copy, Collections.singletonList(hint));
+				double priority = hint.priority.consensus();
+				JSONObject json = copy.toJSON();
+				json.put("priority", priority);
+				String file = String.format("%s_%02d.json", student, i);
+				// TODO: save this to a file
+				System.out.println(file + ": " + json.toString());
+				i++;
 			}
 		}
 	}
