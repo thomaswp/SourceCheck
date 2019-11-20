@@ -14,7 +14,6 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
-import edu.isnap.hint.util.ASTNodeConverter;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.node.ASTNode;
 import edu.isnap.node.ASTSnapshot;
@@ -33,7 +32,7 @@ import edu.isnap.parser.elements.util.IHasID;
 import edu.isnap.rating.data.Trace;
 import edu.isnap.rating.data.TraceDataset;
 
-public class JsonAST extends ASTNodeConverter {
+public class JsonAST {
 
 	public final static Set<String> values = new TreeSet<>();
 
@@ -113,7 +112,7 @@ public class JsonAST extends ASTNodeConverter {
 			boolean stripAllNonNumericLits, Integer stopID) {
 		Snapshot lastSnapshot = null;
 		ASTSnapshot lastNode = null;
-		boolean attemptCorrect = attempt.grade != null && attempt.grade.average() == 1;
+		boolean attemptCorrect = attempt.researcherGrade != null && attempt.researcherGrade.average() == 1;
 		String id = stopID == null ? attempt.id : String.valueOf(stopID);
 		Trace trace = new Trace(id, assignmentID);
 		boolean stop = false;
@@ -238,5 +237,13 @@ public class JsonAST extends ASTNodeConverter {
 
 	public static Node toNode(Code code, boolean canon, NodeConstructor constructor) {
 		return toNode(toAST(code, canon), constructor);
+	}
+
+	public static Node toNode(ASTNode astNode, NodeConstructor constructor) {
+		return toNode(astNode, null, constructor);
+	}
+
+	public static Node toNode(ASTNode astNode, Node parent, NodeConstructor constructor) {
+		return Node.fromASTNode(astNode, parent, constructor);
 	}
 }

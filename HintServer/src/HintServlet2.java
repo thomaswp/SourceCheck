@@ -16,9 +16,9 @@ import com.esotericsoftware.kryo.io.Input;
 
 import edu.isnap.hint.HintData;
 import edu.isnap.hint.SnapHintBuilder;
+import edu.isnap.node.TextualNode;
 import edu.isnap.python.PythonNode;
 import edu.isnap.python.SourceCodeHighlighter;
-import edu.isnap.python.TextualNode;
 
 @SuppressWarnings("serial")
 @WebServlet(name="hints2", urlPatterns="/hints2")
@@ -45,7 +45,7 @@ public class HintServlet2 extends HttpServlet {
 	protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 //		super.doPut(req, resp);
 
-
+		resp.setCharacterEncoding("UTF-8");
 		String origin = req.getHeader("origin");
 		if (origin != null) resp.setHeader("Access-Control-Allow-Origin", origin);
 		resp.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT");

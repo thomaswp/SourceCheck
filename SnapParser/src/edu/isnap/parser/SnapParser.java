@@ -48,16 +48,22 @@ public class SnapParser {
 	/** Number of seconds that pass without an action before the student is considered not working*/
 	public final static int SKIP_DURATION = 60 * 5;
 
+
 	/**
 	 * Removes all cached files at the given path.
 	 * @param path
 	 */
 	public static void clean(String path) {
-		if (!new File(path).exists()) return;
+		if (!new File(path).exists()) {
+			return;
+		}
 		for (String file : new File(path).list()) {
 			File f = new File(path, file);
-			if (f.isDirectory()) clean(f.getAbsolutePath());
-			else if (f.getName().endsWith(".cached")) f.delete();
+			if (f.isDirectory()) {
+				clean(f.getAbsolutePath());
+			} else if (f.getName().endsWith(".cached")) {
+				f.delete();
+			}
 		}
 	}
 
@@ -73,7 +79,7 @@ public class SnapParser {
 	 * @param cacheUse The cache {@link Mode} to use when loading data.
 	 * @param onlyLogExportedCode
 	 */
-	public SnapParser(Assignment assignment, Mode cacheUse, boolean onlyLogExportedCode){
+	public SnapParser(Assignment assignment, Mode cacheUse, boolean onlyLogExportedCode) {
 		this.assignment = assignment;
 		this.storeMode = cacheUse;
 		this.onlyLogExportedCode = onlyLogExportedCode;
@@ -83,12 +89,115 @@ public class SnapParser {
 	public AssignmentAttempt parseSubmission(String id, boolean snapshotsOnly) throws IOException {
 		return parseRows(new AttemptParams(id,
 				assignment.parsedDir() + File.separator + id + ".csv",
-				assignment.name, false, snapshotsOnly));
+				assignment.name, false, snapshotsOnly, onlyLogExportedCode));
 	}
 
 	private String getLogFilePath(String assignmentID, String attemptID) {
 		return String.format("%s/parsed/%s/%s.csv",
 				assignment.dataDir, assignmentID, attemptID);
+	}
+
+	static class RowBuilder {
+		public ActionRows solution;
+		public String projectID;
+
+		private BlockIndex editingIndex = null;
+		private Snapshot lastSnaphot = null;
+		private boolean exportedUserID = false;
+
+		// Add variables for missing
+
+		public RowBuilder(String projectID) {
+			solution = new ActionRows();
+			this.projectID = projectID;
+		}
+
+		public void addRow(String action, String data, String userID, String session,
+				String xml, int id, String timestampString) {
+
+			Date timestamp = null;
+			DateFormat format = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
+			try {
+				timestamp = format.parse(timestampString);
+			} catch (ParseException e) {
+				e.printStackTrace();
+			}
+
+			// For the help-seeking study the userID was stored in the Logger.started
+			// row, rather than as a separate column
+			if (action.equals(AttemptAction.IDE_OPENED) && data.length() > 2) {
+				JSONObject dataObject = new JSONObject(data);
+				if (dataObject.has("userID")) {
+					userID = dataObject.getString("userID");
+				}
+			}
+			if (solution.userID == null) {
+				solution.userID = userID;
+			}
+
+			if (AttemptAction.IDE_EXPORT_PROJECT.equals(action)) {
+				if (userID != null && !userID.equals("none")) {
+					if (solution.userID == null || !exportedUserID) {
+						solution.userID = userID;
+						exportedUserID = true;
+					} else if (!solution.userID.equals(userID)) {
+						// TODO: Make this impossible by implementing the TODOs here and in
+						// LogSplitter
+						throw new RuntimeException(
+								String.format(
+										"Project %s exported under multiple userIDs: %s and %s",
+										projectID, solution.userID, userID));
+					}
+				}
+			}
+
+			AttemptAction row = new AttemptAction(
+					id, projectID, timestamp, session, action, data, xml);
+
+			if (row.snapshot != null) {
+				lastSnaphot = row.snapshot;
+			}
+
+			// Before BlockDefinitions had GUIDs, they weren't easily identifiable. This
+			// is a 99% accurate work-around that stores the index of a the custom
+			// block when editing starts and then sets the editing block's index to that
+			// index until the editor is closed. Note that we store the index at the
+			// start because the spec/type/category may change when editing. Note also
+			// that before GUIDs only one block could be edited at a time, so there
+			// should only ever be one editing index at a time. If GUIDs are present
+			// this does nothing.
+			if (AttemptAction.BLOCK_EDITOR_START.equals(action)) {
+				JSONObject json = new JSONObject(data);
+				String name = json.getString("spec");
+				String type = json.getString("type");
+				String category = json.getString("category");
+				editingIndex = lastSnaphot.getEditingIndex(name, type, category);
+				if (editingIndex == null) {
+					System.err.println("Edit index not found");
+				}
+			} else if (AttemptAction.BLOCK_EDITOR_OK.equals(action)) {
+				editingIndex = null;
+			}
+			if (row.snapshot != null) {
+				if (row.snapshot.editing.size() == 0) {
+					editingIndex = null;
+				} else if (row.snapshot.editing.size() == 1) {
+					BlockDefinition editing = row.snapshot.editing.get(0);
+					if (editing.guid == null) {
+						// Only set the blockIndex if we're not using GUIDs
+						editing.blockIndex = editingIndex;
+					}
+				}
+			}
+
+			solution.add(row);
+		}
+
+		public ActionRows finish() {
+
+			Collections.sort(solution.rows);
+			return solution;
+		}
 	}
 
 	private ActionRows parseActions(final File logFile) {
@@ -98,7 +207,7 @@ public class SnapParser {
 				new Store.Loader<ActionRows>() {
 			@Override
 			public ActionRows load() {
-				ActionRows solution = new ActionRows();
+				RowBuilder builder = new RowBuilder(attemptID);
 
 				try {
 					CSVParser parser = new CSVParser(new FileReader(logFile),
@@ -106,24 +215,13 @@ public class SnapParser {
 
 					// Backwards compatibility from when we used to call it jsonData
 					String dataKey = "data";
-					if (!parser.getHeaderMap().containsKey(dataKey)) dataKey = "jsonData";
-
-					DateFormat format = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
-					BlockIndex editingIndex = null;
-					Snapshot lastSnaphot = null;
-					boolean exportedUserID = false;
+					if (!parser.getHeaderMap().containsKey(dataKey)) {
+						dataKey = "jsonData";
+					}
 
 					boolean hasUserIDs = parser.getHeaderMap().containsKey("userID");
-
 					for (CSVRecord record : parser) {
 						String timestampString = record.get("time");
-						Date timestamp = null;
-						try {
-							timestamp = format.parse(timestampString);
-						} catch (ParseException e) {
-							e.printStackTrace();
-						}
-
 
 						String action = record.get("message");
 						String data = record.get(dataKey);
@@ -134,88 +232,39 @@ public class SnapParser {
 						int id = -1;
 						try {
 							id = Integer.parseInt(idS);
-						} catch (NumberFormatException e) { }
+						} catch (NumberFormatException e) {
+						}
 
 						// For the help-seeking study the userID was stored in the Logger.started
 						// row, rather than as a separate column
 						if (action.equals(AttemptAction.IDE_OPENED) && data.length() > 2) {
 							JSONObject dataObject = new JSONObject(data);
-							if (dataObject.has("userID")) userID = dataObject.getString("userID");
-						}
-						if (solution.userID == null) solution.userID = userID;
-
-						if (AttemptAction.IDE_EXPORT_PROJECT.equals(action)) {
-							if (userID != null && !userID.equals("none")) {
-								if (solution.userID == null || !exportedUserID) {
-									solution.userID = userID;
-									exportedUserID = true;
-								} else if (!solution.userID.equals(userID)) {
-									parser.close();
-									// TODO: Make this impossible by implementing the TODOs here and
-									// in LogSplitter
-									throw new RuntimeException(String.format(
-											"Project %s exported under multiple userIDs: %s and %s",
-											logFile.getPath(), solution.userID, userID));
-								}
+							if (dataObject.has("userID")) {
+								userID = dataObject.getString("userID");
 							}
 						}
 
-						AttemptAction row = new AttemptAction(id, attemptID, timestamp, session,
-								action, data, xml);
-						if (row.snapshot != null) {
-							lastSnaphot = row.snapshot;
-						}
-
-						// Before BlockDefinitions had GUIDs, they weren't easily identifiable. This
-						// is a 99% accurate work-around that stores the index of a the custom
-						// block when editing starts and then sets the editing block's index to that
-						// index until the editor is closed. Note that we store the index at the
-						// start because the spec/type/category may change when editing. Note also
-						// that before GUIDs only one block could be edited at a time, so there
-						// should only ever be one editing index at a time. If GUIDs are present
-						// this does nothing.
-						if (AttemptAction.BLOCK_EDITOR_START.equals(action)) {
-							JSONObject json = new JSONObject(data);
-							String name = json.getString("spec");
-							String type = json.getString("type");
-							String category = json.getString("category");
-							editingIndex = lastSnaphot.getEditingIndex(name, type, category);
-							if (editingIndex == null) {
-								System.err.println("Edit index not found");
-							}
-						} else if (AttemptAction.BLOCK_EDITOR_OK.equals(action)) {
-							editingIndex = null;
-						}
-						if (row.snapshot != null) {
-							if (row.snapshot.editing.size() == 0) editingIndex = null;
-							else if (row.snapshot.editing.size() == 1) {
-								BlockDefinition editing = row.snapshot.editing.get(0);
-								if (editing.guid == null) {
-									// Only set the blockIndex if we're not using GUIDs
-									editing.blockIndex = editingIndex;
-								}
-							}
-						}
-
-						solution.add(row);
+						builder.addRow(action, data, userID, session, xml, id, timestampString);
 
 					}
+
 					parser.close();
 					System.out.println("Parsed: " + logFile.getName());
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
 
-				Collections.sort(solution.rows);
-
-				return solution;
+				return builder.finish();
 			}
 		});
 	}
 
-	private JSONObject loadRepairedHints(String attemptID) {
+	private static JSONObject loadRepairedHints(String attemptID, Assignment assignment) {
+		if (assignment == null) return null;
 		File file = new File(assignment.hintRepairDir() + "/" + attemptID + ".json");
-		if (!file.exists()) return null;
+		if (!file.exists()) {
+			return null;
+		}
 		try {
 			String content = new String(Files.readAllBytes(file.toPath()));
 			return new JSONObject(content);
@@ -249,21 +298,31 @@ public class SnapParser {
 		// add the rows that occurred in between
 		for (int i = 0; i < actions.size() - 1; i++) {
 			AttemptAction actionSet = actions.get(i);
-			if (!AttemptAction.ASSIGNMENT_SET_ID.equals(actionSet.message)) continue;
+			if (!AttemptAction.ASSIGNMENT_SET_ID.equals(actionSet.message)) {
+				continue;
+			}
 			String assignmentID = actionSet.data;
-			if (assignmentID == null || assignmentID.length() <= 2) continue;
+			if (assignmentID == null || assignmentID.length() <= 2) {
+				continue;
+			}
 			// At some point, this may need to be less specific, but it seems for now they're always
 			// back to back
 			AttemptAction actionSetFrom = actions.get(i + 1);
-			if (!AttemptAction.ASSIGNMENT_SET_ID_FROM.equals(actionSetFrom.message)) continue;
-			if (!actionSetFrom.data.equals(assignmentID)) continue;
+			if (!AttemptAction.ASSIGNMENT_SET_ID_FROM.equals(actionSetFrom.message)) {
+				continue;
+			}
+			if (!actionSetFrom.data.equals(assignmentID)) {
+				continue;
+			}
 			// Trim the quotes
 			assignmentID = assignmentID.substring(1, assignmentID.length() - 1);
 			ActionRows interlude = parseActions(new File(getLogFilePath(assignmentID, attemptID)));
 			// Keep only the rows that come in between the set and setFrom actions
 			interlude.rows.removeIf(
 					action -> action.id < actionSet.id || action.id > actionSetFrom.id);
-			for (AttemptAction action : interlude) action.loggedAssignmentID = assignmentID;
+			for (AttemptAction action : interlude) {
+				action.loggedAssignmentID = assignmentID;
+			}
 			actions.rows.addAll(i + 1, interlude.rows);
 			i += interlude.size();
 		}
@@ -275,24 +334,37 @@ public class SnapParser {
 	}
 
 	private AssignmentAttempt parseRows(AttemptParams params) {
-		String attemptID = params.id;
 		ActionRows actions = getAllActionRows(params);
+		return parseRows(params, actions, assignment);
+	}
 
-		Date minDate = assignment.start, maxDate = assignment.end;
+	static AssignmentAttempt parseRows(AttemptParams params, ActionRows actions,
+			Assignment assignment) {
+		String attemptID = params.id;
+		Date minDate = null, maxDate = null;
+		if (assignment != null) {
+			minDate = assignment.start;
+			maxDate = assignment.end;
+		}
 
+		Double classGrade = params.classGradesMap == null ? null :
+			params.classGradesMap.get(actions.userID);
+//		System.out.println(actions.userID + ": " + classGrade);
 		AssignmentAttempt attempt = new AssignmentAttempt(attemptID, params.loggedAssignmentID,
-				params.grade);
+				params.researcherGrade, classGrade);
 		attempt.rows.userID = actions.userID;
 		attempt.submittedActionID = params.knownSubmissions ?
 				AssignmentAttempt.NOT_SUBMITTED : AssignmentAttempt.UNKNOWN;
 		List<AttemptAction> currentWork = new ArrayList<>();
 
-		int gradedRow = params.grade == null ? -1 : params.grade.gradedRow;
+		int gradedRow = params.researcherGrade == null ? -1 : params.researcherGrade.gradedRow;
 		boolean foundGraded = false;
 		Snapshot lastSnaphot = null;
 
 		JSONObject repairedHints = null;
-		if (params.addMetadata) repairedHints = loadRepairedHints(attemptID);
+		if (params.addMetadata) {
+			repairedHints = loadRepairedHints(attemptID, assignment);
+		}
 
 		int activeTime = 0;
 		int idleTime = 0;
@@ -301,7 +373,6 @@ public class SnapParser {
 
 		for (int i = 0; i < actions.size(); i++) {
 			AttemptAction action = actions.get(i);
-
 			if (AttemptAction.WE_START.equals(action.message)) {
 				attempt.hasWorkedExample = true;
 			}
@@ -317,9 +388,13 @@ public class SnapParser {
 			}
 			// If we're using log data from a prequel assignment, ignore rows before the prequel was
 			// submitted
-			if (params.prequelEndID != null && action.id <= params.prequelEndID) continue;
+			if (params.prequelEndID != null && action.id <= params.prequelEndID) {
+				continue;
+			}
 			// If we have a start ID, ignore rows that come before it
-			if (params.startID != null && action.id < params.startID) continue;
+			if (params.startID != null && action.id < params.startID) {
+				continue;
+			}
 
 			// In Spring 2017 there was a logging error that failed to log processed hints
 			// The are recreated by the HighlightDataRepairer and stored as .json files, which
@@ -366,7 +441,9 @@ public class SnapParser {
 
 			}
 
-			if (action.snapshot != null) lastSnaphot = action.snapshot;
+			if (action.snapshot != null) {
+				lastSnaphot = action.snapshot;
+			}
 			action.lastSnapshot = lastSnaphot;
 
 			// Add this row unless it has not snapshot and we want snapshots only
@@ -383,7 +460,7 @@ public class SnapParser {
 				}
 
 				boolean done = false;
-				boolean saveWork = !onlyLogExportedCode;
+				boolean saveWork = !params.onlyLogExportedCode;
 
 				// If this is an export keep the work we've seen so far
 				if (AttemptAction.IDE_EXPORT_PROJECT.equals(action.message)) {
@@ -410,7 +487,7 @@ public class SnapParser {
 				if (done) {
 					break;
 				}
-			} else if (addRow){
+			} else if (addRow) {
 				attempt.rows.add(action);
 			}
 		}
@@ -426,7 +503,7 @@ public class SnapParser {
 				if (attempt.size() > 0) {
 					System.out.println(attemptID + ": " + attempt.rows.getLast().id);
 				} else {
-					System.out.println(assignment.name + " " +
+					System.out.println((assignment == null ? "NONE" : assignment.name) + " " +
 							attemptID + ": 0 / " + actions.size() + " / " + params.prequelEndID);
 				}
 				System.err.printf("Submitted id not found for %s: %s\n",
@@ -462,20 +539,23 @@ public class SnapParser {
 		}
 
 		for (File file : assignmentDir.listFiles()) {
-			if (!file.getName().endsWith(".csv")) continue;
+			if (!file.getName().endsWith(".csv")) {
+				continue;
+			}
 			// TODO: Parse the file name to get the projectID (before the _)
 			// Do the same throughout this class
 			String attemptID = file.getName().replace(".csv", "");
 			String path = getLogFilePath(assignment.name, attemptID);
 			AttemptParams params = new AttemptParams(attemptID, path, assignment.name, addMetadata,
-					snapshotsOnly);
+					snapshotsOnly, onlyLogExportedCode);
 			paramsMap.put(attemptID, params);
 		}
 
 		if (addMetadata) {
 			// Must come first, since it adds attempts that may have grades/startIDs
 			addSubmissionInfo(snapshotsOnly, addMetadata, paramsMap);
-			addGrades(paramsMap);
+			addResearcherGrades(paramsMap);
+			addClassGrades(paramsMap);
 			addStartIDs(paramsMap);
 		}
 
@@ -484,22 +564,37 @@ public class SnapParser {
 		for (String attemptID : paramsMap.keySet()) {
 			AttemptParams params = paramsMap.get(attemptID);
 
-			if (assignment.ignore(attemptID)) continue;
+			if (assignment.ignore(attemptID)) {
+				continue;
+			}
 			// TODO: Need to check that all attempts without a grade are really outliers
-			if (params.grade != null && params.grade.outlier) continue;
+			if (params.researcherGrade != null && params.researcherGrade.outlier) {
+				continue;
+			}
 			// Allow filters to skip over attempts before parsing them
-			if (Arrays.stream(filters).anyMatch(filter -> filter.skip(params))) continue;
+			if (Arrays.stream(filters).anyMatch(filter -> filter.skip(params))) {
+				continue;
+			}
 
 			File file = new File(params.logPath);
 			if (!file.exists()) {
 				throw new RuntimeException("Missing submission data: " + file.getPath());
 			}
 			executor.submit(() -> {
-				AssignmentAttempt attempt = parseRows(params);
-				if (!Arrays.stream(filters).allMatch(filter -> filter.keep(attempt))) return;
-				if (attempt.size() <= 3) return;
-				synchronized (attempts) {
-					attempts.put(attemptID, attempt);
+				try {
+					AssignmentAttempt attempt = parseRows(params);
+					if (!Arrays.stream(filters).allMatch(filter -> filter.keep(attempt))) {
+						return;
+					}
+					if (attempt.size() <= 3) {
+						return;
+					}
+					synchronized (attempts) {
+						attempts.put(attemptID, attempt);
+					}
+				} catch (Exception e) {
+					System.err.println("Error parsing: " + attemptID);
+					e.printStackTrace();
 				}
 			});
 		}
@@ -518,16 +613,22 @@ public class SnapParser {
 				ParseSubmitted.getAllSubmissions(assignment.dataset);
 		Map<String, Submission> submissions = allSubmissions.get(assignment.name);
 
-		if (submissions == null) return;
+		if (submissions == null) {
+			return;
+		}
 
 		for (String attemptID : submissions.keySet()) {
 			Integer prequelEndID = null;
 			Submission submission = submissions.get(attemptID);
-			if (submission.location == null) continue;
+			if (submission.location == null) {
+				continue;
+			}
 
 			// Loop through all earlier assignments and see if any have the same submission ID.
 			for (Assignment prequel : assignment.dataset.all()) {
-				if (prequel == assignment) break;
+				if (prequel == assignment) {
+					break;
+				}
 				Map<String, Submission> prequelSubmissions = allSubmissions.get(prequel.name);
 				if (prequelSubmissions.containsKey(attemptID)) {
 					Submission prequelSubmission = prequelSubmissions.get(attemptID);
@@ -571,7 +672,8 @@ public class SnapParser {
 			AttemptParams params = paramsMap.get(attemptID);
 			if (params == null) {
 				paramsMap.put(attemptID, params = new AttemptParams(
-						attemptID, path, submission.location, addMetadata, snapshotsOnly));
+						attemptID, path, submission.location, addMetadata, snapshotsOnly,
+						onlyLogExportedCode));
 			} else {
 				params.logPath = path;
 				params.loggedAssignmentID = submission.location;
@@ -593,7 +695,9 @@ public class SnapParser {
 
 			for (CSVRecord record : parser) {
 				String assignmentID = record.get("assignment");
-				if (!assignmentID.equals(assignment.name)) continue;
+				if (!assignmentID.equals(assignment.name)) {
+					continue;
+				}
 
 				String attemptID = record.get("id");
 				String codeStartString = record.get("code");
@@ -607,21 +711,67 @@ public class SnapParser {
 					params.startID = codeStart;
 					if (record.isMapped("startAssignment")) {
 						String startAssignment = record.get("startAssignment");
-						if (startAssignment.length() > 0) params.startAssignment = startAssignment;
+						if (startAssignment.length() > 0) {
+							params.startAssignment = startAssignment;
+						}
 					}
 				}
 			}
 
 			parser.close();
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	public void addGrades(Map<String, AttemptParams> paramsMap) {
+	private void addClassGrades(Map<String, AttemptParams> paramsMap) {
+		// TODO: Add clean failure
+		File file = new File(assignment.dataset.gradeTotalsFile());
+		if (!file.exists()) {
+			return;
+		}
+
+		int total = 0;
+		try {
+			CSVParser parser = new CSVParser(new FileReader(file), CSVFormat.DEFAULT.withHeader());
+			for (CSVRecord record : parser) {
+				String totalS = record.get(assignment.name);
+				total = Integer.parseInt(totalS);
+			}
+			parser.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		file = new File(assignment.dataset.gradesFile());
+		if (!file.exists()) {
+			return;
+		}
+
+		Map<String, Double> gradesMap = new HashMap<>();
+		try {
+			CSVParser parser = new CSVParser(new FileReader(file), CSVFormat.DEFAULT.withHeader());
+			for (CSVRecord record : parser) {
+				String userID = record.get("AnonID");
+				String gradeS = record.get(assignment.name);
+				Integer grade = Integer.parseInt(gradeS);
+				gradesMap.put(userID, (double) grade / total);
+			}
+			parser.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		paramsMap.values().forEach(params -> params.classGradesMap = gradesMap);
+	}
+
+	public void addResearcherGrades(Map<String, AttemptParams> paramsMap) {
 		HashMap<String,Grade> grades = parseGrades();
 		for (String attemptID : grades.keySet()) {
-			if (assignment.ignore(attemptID)) continue;
+			if (assignment.ignore(attemptID)) {
+				continue;
+			}
 			Grade grade = grades.get(attemptID);
 			AttemptParams params = paramsMap.get(attemptID);
 			if (params == null) {
@@ -630,7 +780,7 @@ public class SnapParser {
 				}
 				continue;
 			}
-			params.grade = grade;
+			params.researcherGrade = grade;
 		}
 	}
 
@@ -639,7 +789,9 @@ public class SnapParser {
 
 		File file = new File(assignment.gradesFile());
 		if (!file.exists()) {
-			if (assignment.graded) System.err.println("No grades file for: " + assignment);
+			if (assignment.graded) {
+				System.err.println("No grades file for: " + assignment);
+			}
 			return grades;
 		}
 
@@ -651,7 +803,9 @@ public class SnapParser {
 				header[entry.getValue()] = entry.getKey();
 			}
 			for (CSVRecord record : parser) {
-				if (record.get(0).isEmpty()) break;
+				if (record.get(0).isEmpty()) {
+					break;
+				}
 				Grade grade = new Grade(record, header);
 				grades.put(grade.id, grade);
 			}
@@ -702,28 +856,31 @@ public class SnapParser {
 		}
 	}
 
-	private static class AttemptParams {
+	public static class AttemptParams {
 
 		public final String id;
 		public final boolean addMetadata;
 		public final boolean snapshotsOnly;
+		public final boolean onlyLogExportedCode;
 
 		public String logPath;
 		public String loggedAssignmentID;
-		public Grade grade;
+		public Grade researcherGrade;
+		public Map<String, Double> classGradesMap;
 		public Integer startID;
 		public String startAssignment;
 		public boolean knownSubmissions;
 		public Integer submittedActionID;
 		public Integer prequelEndID;
 
-		public AttemptParams(String id, String logPath, String loggedAssignmentID, boolean addMetadata,
-				boolean snapshotsOnly) {
+		public AttemptParams(String id, String logPath, String loggedAssignmentID,
+				boolean addMetadata, boolean snapshotsOnly, boolean onlyLogExportedCode) {
 			this.id = id;
 			this.logPath = logPath;
 			this.loggedAssignmentID = loggedAssignmentID;
 			this.addMetadata = addMetadata;
 			this.snapshotsOnly = snapshotsOnly;
+			this.onlyLogExportedCode = onlyLogExportedCode;
 		}
 
 	}

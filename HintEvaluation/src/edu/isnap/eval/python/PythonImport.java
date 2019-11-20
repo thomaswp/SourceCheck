@@ -19,10 +19,10 @@ import com.esotericsoftware.kryo.io.Output;
 import edu.isnap.hint.HintData;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.node.Node;
+import edu.isnap.node.TextualNode;
 import edu.isnap.python.PythonHintConfig;
 import edu.isnap.python.PythonNode;
 import edu.isnap.python.SourceCodeHighlighter;
-import edu.isnap.python.TextualNode;
 import edu.isnap.sourcecheck.HintHighlighter;
 import edu.isnap.util.map.ListMap;
 
@@ -31,9 +31,9 @@ public class PythonImport {
 	public static void main(String[] args) throws IOException {
 //		generateHints("../../PythonAST/data/datacamp", "65692");
 //		generateHints("../../PythonAST/data/itap", "firstAndLast");
-		serializeHintData("../../PythonAST/data/PCRS", "39",
-				"../HintServer/WebContent/WEB-INF/data/39.hdata");
-//		generateHints("../data/", "test");
+		serializeHintData("../../PythonAST/data/PCRS", "8",
+				"../HintServer/WebContent/WEB-INF/data/8.hdata");
+//		generateHints("../../PythonAST/data/pcrs", "8");
 
 //		Map<String, ListMap<String, PythonNode>> nodes = loadAllAssignments("../../PythonAST/data");
 //		for (String assignment : nodes.keySet()) {

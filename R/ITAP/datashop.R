@@ -174,3 +174,14 @@ for (fold in 0:(nSplits-1)) {
   write.csv(test, paste0("data/DataChallenge/CV/Fold", fold, "/Test.csv"), row.names = F)
 }
 
+# Second test dataset
+createDir("data/DataChallenge", "CV2")
+for (fold in 0:(nSplits-1)) {
+  trainingIDs <- splits$SubjectID[splits$Split2 != fold]
+  training <- predict[predict$SubjectID %in% trainingIDs,]
+  test <- predict[!(predict$SubjectID %in% trainingIDs),]
+  createDir("data/DataChallenge/CV2", paste0("Fold", fold))
+  write.csv(training, paste0("data/DataChallenge/CV2/Fold", fold, "/Training.csv"), row.names = F)
+  write.csv(test, paste0("data/DataChallenge/CV2/Fold", fold, "/Test.csv"), row.names = F)
+}
+

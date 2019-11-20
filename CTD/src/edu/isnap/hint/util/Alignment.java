@@ -383,7 +383,7 @@ public class Alignment {
 			}
 		}
 
-		// Then sort it to be in order, will the blanks (MAX_VALUE) at the end
+		// Then sort it to be in order, with the blanks (MAX_VALUE) at the end
 		Arrays.sort(unusedIndices);
 
 		// Then fill in the unused indices in toIndices with the sequential missing values
@@ -482,6 +482,10 @@ public class Alignment {
 		return reward;
 	}
 
+	/**
+	 * Gets the number of items in from that are not in to (regardless of order),
+	 * including duplicates
+	 */
 	public static int getMissingNodeCount(String[] from, String[] to) {
 		return to.length - getProgress(to, from, 1, 1);
 	}
@@ -499,13 +503,13 @@ public class Alignment {
 //		}
 
 		String[] from = new String[] {
-				"a", "b",
+				"a", "c",
 		}, to = new String[] {
-				"a", "c", "b", "d", "e"
+				"a", "b", "c", //"d", "e"
 //				"a", "b", "c", "a", "d", "e"
 		};
 
-		System.out.println(getProgress(from, to, 2, 1, 0.5));
+		System.out.println(getProgress(from, to, 2, 1, 0.25));
 		System.out.println(getMissingNodeCount(from, to) * 0.25);
 
 //		System.out.println(Arrays.toString(reorderIndices(new String[] {

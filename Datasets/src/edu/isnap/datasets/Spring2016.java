@@ -3,10 +3,10 @@ package edu.isnap.datasets;
 import java.util.Date;
 
 import edu.isnap.dataset.Assignment;
-import edu.isnap.dataset.Dataset;
 import edu.isnap.hint.ConfigurableAssignment;
 
-public class Spring2016 extends Dataset {
+
+public class Spring2016 extends CSC200Dataset {
 
 	public final static Date start = Assignment.date(2016, 1, 1);
 	public final static String dataDir = Assignment.CSC200_BASE_DIR + "/spring2016";

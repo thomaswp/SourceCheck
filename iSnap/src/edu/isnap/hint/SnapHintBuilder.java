@@ -153,11 +153,11 @@ public class SnapHintBuilder {
 			AssignmentAttempt attempt = students.get(attemptID);
 
 			if (attempt.size() == 0) continue;
-			if (assignment.graded && attempt.grade == null) {
+			if (assignment.graded && attempt.researcherGrade == null) {
 				System.err.println("No grade for: " + attemptID);
 			}
 
-			LoadedAttempt nodes = new LoadedAttempt(attempt.id, attempt.grade);
+			LoadedAttempt nodes = new LoadedAttempt(attempt.id, attempt.researcherGrade);
 			for (AttemptAction row : attempt) {
 				Node node = SimpleNodeBuilder.toTree(row.snapshot, true);
 				nodes.add(node);

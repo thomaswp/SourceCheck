@@ -1,20 +1,18 @@
-package edu.isnap.python;
+package edu.isnap.node;
 
 import java.util.Optional;
 
 import org.json.JSONObject;
 
-import edu.isnap.hint.util.ASTNodeConverter;
 import edu.isnap.node.ASTNode.SourceLocation;
-import edu.isnap.node.ASTSnapshot;
-import edu.isnap.node.Node;
 import edu.isnap.sourcecheck.NodeAlignment.Mapping;
 
 public abstract class TextualNode extends Node {
 
 	public Optional<Boolean> correct = Optional.empty();
-	protected String source;
+	private String source;
 
+	// TODO: Protect
 	public SourceLocation startSourceLocation;
 	public SourceLocation endSourceLocation;
 
@@ -65,10 +63,51 @@ public abstract class TextualNode extends Node {
 		return index;
 	}
 
+	@Override
+	public void readFromASTNode(ASTNode node) {
+		startSourceLocation = node.startSourceLocation;
+		endSourceLocation = node.endSourceLocation;
+	}
+
+	/**
+	 * Get the {@link SourceLocation} of the given insertion index in this nodes children.
+	 * This may be the location of an existing child at that index (if present) or a calculated
+	 * position of a hypothetical child to be added (e.g. at the end of the children).
+	 */
+	public SourceLocation getLocationOfChildIndex(int index) {
+		// The Insertion's index is the index at which we want to insert in the parent
+		if (index < children.size()) {
+			// Otherwise, return the location of the first child at that location w/ a location
+			SourceLocation location = null;
+			while (location == null && index >= 0) {
+				location = ((TextualNode) children.get(index)).startSourceLocation;
+				index--;
+			}
+			return location;
+		} else if (index == children.size()) {
+			// If the index to insert is after all the other children...
+			if (children.size() > 0) {
+				// If there's a child to insert after, insert it *afterwards*
+				TextualNode sibling = (TextualNode) children.get(index - 1);
+				// System.out.println("Sibling: " + sibling);
+				return sibling.endSourceLocation;
+			} else {
+				// Otherwise insert it after the first ancestor with an end source location
+				TextualNode p = this;
+				while (p.endSourceLocation == null) {
+					p = (TextualNode) p.parent;
+				}
+				// System.out.println(p);
+				return p.endSourceLocation;
+			}
+		}
+		return null;
+	}
+
 	public static TextualNode fromJSON(JSONObject jsonAST, String source,
 			NodeConstructor constructor) {
 		ASTSnapshot astNode = ASTSnapshot.parse(jsonAST, source);
-		TextualNode node = (TextualNode) ASTNodeConverter.toNode(astNode, constructor);
+		TextualNode node = (TextualNode) fromASTNode(astNode, constructor);
 		node.source = source;
 		if (jsonAST.has("correct")) {
 			boolean correct = jsonAST.getBoolean("correct");
