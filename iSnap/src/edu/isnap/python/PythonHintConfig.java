@@ -136,6 +136,8 @@ public class PythonHintConfig extends HintConfig {
 			return "a function call (e.g. len() or max())";
 		} else if (node.hasType("Expr") && node.childHasType("Str", 0)) {
 			return "some function documentation";
+		} else if(node.hasType("NameConstant") && (node.value().equals("True") || node.value().equals("False")) ) {
+			return "a boolean value";
 		}
 		String value = nameMap.get(node.type());
 		if (value != null) return value;

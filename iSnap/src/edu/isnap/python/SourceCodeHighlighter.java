@@ -90,7 +90,7 @@ public class SourceCodeHighlighter {
 
 		if (!missing.isEmpty()) {
 			marked += "\n\nYou may be missing the following:<ul>";
-			for (String m : missing) marked += "<li/>" + m + "\n";
+			for (String m : missing) { marked += "<li>" + m + "</li>" ; }
 			marked += "</ul>";
 		}
 
@@ -116,7 +116,12 @@ public class SourceCodeHighlighter {
 
 	public static String getInsertHint(Insertion insertion, HintConfig config) {
 		String hrName = getHumanReadableName(insertion, config);
-		String hint = "You may need to add " + hrName + " here";
+		String hint = "";
+		if(insertion.pair.type().equals("Return")) {
+			hint = "You may need to add " + hrName + " after here";
+		} else {
+			hint = "You may need to add " + hrName + " here";
+		}
 		if (insertion.replaced != null) {
 			hint += ", instead of what you have.";
 		} else {
