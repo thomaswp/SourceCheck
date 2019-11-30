@@ -65,17 +65,42 @@ public class HintServlet2 extends HttpServlet {
 			TextualNode fullStudentCode = PythonNode.fromJSON(parsedTree, originalSource,
 					PythonNode::new);
 
-			String highlightedCode = SourceCodeHighlighter.highlightSourceCode(
-					hintDatas.get(problemName), fullStudentCode);
-//			String jsonString = "{'output' : '" + highlightedCode + "'}";
+			String highlightedCode = SourceCodeHighlighter.highlightSourceCode(hintDatas.get(problemName), fullStudentCode);
 			JSONObject jsonObj = new JSONObject();
 			jsonObj.put("highlighted", highlightedCode);
-
+			
+			String html = buildHTML(highlightedCode);
+			jsonObj.put("html", html);
+			
 			resp.setContentType("text/json");
 			resp.getWriter().print(jsonObj);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	/**
+	 * Builds an HTML string from the annotated code with suggestions. For nicer display/easier integration into the PCRS system.
+	 * The string will have a <div> block as the outermost element, with a <p>, <div>, and <p> as its children.
+	 * The first paragraph is simply a display header. The highlighted code that is passed in will be split and used to make the
+	 * second and third elements, which are the annotated student code and the suggestions for what to add, respectively.
+	 * 
+	 * @param highlightedCode The fully annotated code
+	 * @return An HTML string contained in a <div> block
+	 */
+	private String buildHTML(String highlightedCode) {
+		String header = "We have annotated your code below with some suggestions. Hover your mouse over them to see more details.";
+		
+		int split_index = highlightedCode.indexOf("You may be missing the following");
+		String missing_summary = highlightedCode.substring(split_index);
+		highlightedCode = highlightedCode.substring(0, split_index - 1);
+		
+		return "<div>" + 
+				"<p>" + header + "</p>" +
+				"<div class=display>" + highlightedCode + "</div>" +
+				"<p class=missing>" + missing_summary + "</p>" +
+//				"<iframe src=\"https://www.qualtrics.com\"></iframe>" +
+			   "</div>";
 	}
 
 	private HintData loadHintMap(String assignment, String dataset, double minGrade) {
