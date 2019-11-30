@@ -31,9 +31,31 @@ public class PythonImport {
 	public static void main(String[] args) throws IOException {
 //		generateHints("../../PythonAST/data/datacamp", "65692");
 //		generateHints("../../PythonAST/data/itap", "firstAndLast");
-		serializeHintData("../../PythonAST/data/PCRS", "8",
-				"../HintServer/WebContent/WEB-INF/data/8.hdata");
+//		serializeHintData("../../PythonAST/data/PCRS", "8",	"../HintServer/WebContent/WEB-INF/data/8.hdata");
 //		generateHints("../../PythonAST/data/pcrs", "8");
+//		generateHints("../../PythonAST/data/itap", "firstAndLast");
+//		serializeHintData("../../PythonAST/data/itap", "firstAndLast", "../HintServer/WebContent/WEB-INF/data/firstAndLast.hdata");
+
+//		generateHints("../../PythonAST/data/PCRS", "69");
+//		serializeHintData("../../PythonAST/data/PCRS", "69", "../HintServer/WebContent/WEB-INF/data/69.hdata");
+		
+		for(int i = 1; i < 141; i++) {
+			try {
+				long start = System.currentTimeMillis();
+
+//				generateHints("../../PythonAST/data/PCRS", String.valueOf(i));
+				serializeHintData("../../PythonAST/data/PCRS", String.valueOf(i), "../HintServer/WebContent/WEB-INF/data/" + i + ".hdata");
+
+				long finish = System.currentTimeMillis();
+				long timeElapsed = finish - start;
+				System.out.println("Elapsed time for problem: " + i + " is " + (timeElapsed/1000.0) );
+			} catch(Exception e) {
+				System.err.println("Not found: " + i);
+				e.printStackTrace();
+			}
+		}
+			
+//		generateHints("../data/", "test");
 
 //		Map<String, ListMap<String, PythonNode>> nodes = loadAllAssignments("../../PythonAST/data");
 //		for (String assignment : nodes.keySet()) {
