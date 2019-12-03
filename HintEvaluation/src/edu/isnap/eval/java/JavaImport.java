@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -14,7 +15,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -56,9 +56,9 @@ public class JavaImport {
 
 		PrintStream fileOut = new PrintStream(DATA_DIR + "output_hints.txt");
 //		System.setOut(fileOut);
-//		generateHints(DATA_DIR + "1__output_clock-display-ast.csv", "ClockDisplay");
-		serializeHintData(DATA_DIR + "1__output_clock-display-ast.csv", "ClockDisplay",
-				"../HintServer/WebContent/WEB-INF/data/ClockDisplay.hdata");
+		generateHintsForGS(DATA_DIR + "1__output_clock-display-ast-gs.csv", "ClockDisplay");
+//		serializeHintData(DATA_DIR + "1__output_clock-display-ast.csv", "ClockDisplay",
+//				"../HintServer/WebContent/WEB-INF/data/ClockDisplay.hdata");
 	}
 
 	/*static HintData createHintData(String inputCSV, String assignment) throws IOException {
@@ -82,7 +82,7 @@ public class JavaImport {
 	// Don't worry about this method for now
 	static void serializeHintData(String inputCSV, String assignment, String outputPath)
 			throws IOException {
-		ListMap<String, JavaNode> attempts = loadAssignment(inputCSV).get("ClockDisplay.java");
+		ListMap<String, JavaNode> attempts = loadAssignment(inputCSV, false).get("ClockDisplay.java");
 		List<String> toRemove = new ArrayList<String>();
 		// Remove incorrect attempts before serializing
 		for (String attemptID : attempts.keySet()) {
@@ -100,7 +100,7 @@ public class JavaImport {
 	}
 
 	static void generateHints(String inputCSV, String assignment) throws IOException {
-		HashMap<String, ListMap<String, JavaNode>> filePathToattempts = loadAssignment(inputCSV);
+		HashMap<String, ListMap<String, JavaNode>> filePathToattempts = loadAssignment(inputCSV, false);
 
 		for (String filePath : filePathToattempts.keySet()) {
 			File startSourceFile = new File(DATA_DIR + "Start/" + filePath);
@@ -154,25 +154,30 @@ public class JavaImport {
 
 	static void generateHintsForGS(String inputCSV, String assignment) throws IOException {
 		ListMap<String, JavaNode> attempts =
-				loadAssignment(inputCSV).get("ClockDisplay.java");
-
+				loadAssignment(inputCSV, true).get("ClockDisplay.java");
+		//System.out.println(attempts);
 		ListMap<String, JavaNode> correct = new ListMap<>();
 		for (String attemptID : attempts.keySet()) {
-			// Get the sequence of snapshots over time
-			List<JavaNode> trace = attempts.get(attemptID);
-			// If it was correct, then add it to the subset
-			if (trace.get(trace.size() - 1).correct.orElse(false)) {
-				correct.put(attemptID, attempts.get(attemptID));
+			if(attemptID.startsWith("s") || attemptID.startsWith("r")) {
+				// Get the sequence of snapshots over time
+				List<JavaNode> trace = attempts.get(attemptID);
+				// If it was correct, then add it to the subset
+				if (trace.get(trace.size() - 1).correct.orElse(false)) {
+					correct.put(attemptID, attempts.get(attemptID));
+				}
 			}
 		}
 		HintData hintData = createHintData(assignment, correct);
 		HintHighlighter highlighter = hintData.hintHighlighter();
 
 		// TODO: Get the actual list from a .csv file, map project_id to the hint request
-		Map<String, JavaNode> goldStandardHintRequests = new HashMap<String, JavaNode>();
+		ListMap<String, JavaNode> goldStandardHintRequests = attempts;
 
 		for (String student : goldStandardHintRequests.keySet()) {
-			JavaNode hintRequest = goldStandardHintRequests.get(student);
+			if(student.startsWith("s") || student.startsWith("r")) {
+				continue;
+			}
+			JavaNode hintRequest = goldStandardHintRequests.get(student).get(0);
 			List<EditHint> edits = highlighter.highlightWithPriorities(hintRequest);
 			int i = 0;
 			for (EditHint hint : edits) {
@@ -182,7 +187,9 @@ public class JavaImport {
 				JSONObject json = copy.toJSON();
 				json.put("priority", priority);
 				String file = String.format("%s_%02d.json", student, i);
-				// TODO: save this to a file
+				PrintWriter out = new PrintWriter(DATA_DIR+"GS/"+file);
+				out.println(json.toString());
+				out.close();
 				System.out.println(file + ": " + json.toString());
 				i++;
 			}
@@ -243,27 +250,41 @@ public class JavaImport {
 				);
 	}
 
-	static HashMap<String, ListMap<String, JavaNode>> loadAssignment(String inputCSV)
+	static HashMap<String, ListMap<String, JavaNode>> loadAssignment(String inputCSV, boolean GS)
 			throws IOException {
 		HashMap<String, ListMap<String, JavaNode>> filePathToNodes = new HashMap<>();
 		List<String[]> csvRecords= readCSV(inputCSV);
-		Set<String> numberDisplayProjects = new HashSet<>();
-		File startSourceFile = new File(DATA_DIR + "Start/NumberDisplay.java");
-		String numberDisplayStartSource = new String(Files.readAllBytes(startSourceFile.toPath()),
-				Charset.forName("UTF-8"));
-		numberDisplayStartSource = numberDisplayStartSource.replaceAll("\r", "");
-		numberDisplayStartSource = removeComments(numberDisplayStartSource);
+		Set<String> numberDisplayProjects = new HashSet<>();;
+		String numberDisplayStartSource = null;
+		if(!GS) {
+			numberDisplayProjects = new HashSet<>();
+			File startSourceFile = new File(DATA_DIR + "Start/NumberDisplay.java");
+			numberDisplayStartSource = new String(Files.readAllBytes(startSourceFile.toPath()),
+					Charset.forName("UTF-8"));
+			numberDisplayStartSource = numberDisplayStartSource.replaceAll("\r", "");
+			numberDisplayStartSource = removeComments(numberDisplayStartSource);
+		}
+
 		for(String[] record: csvRecords) {
 			String projectID = record[0];
 			String sourceCode = record[4];
 			String sourceCodeJSON = record[12];
 			String isCorrect = record[10];
-			String filePath = record[3].split("/")[1];
+			String filePath = record[3];
+			if(!GS) {
+				filePath = filePath.split("/")[1];
+			}
+			else {
+				filePath = "ClockDisplay.java";
+			}
 			if(filePath.equals("ClockDisplay.java") || filePath.equals("NumberDisplay.java")) {
 				File testJson = new File(DATA_DIR + "ASTs/" + sourceCodeJSON);
+				if(GS) {
+					testJson = new File(DATA_DIR + "ASTsGS/" + sourceCodeJSON);
+				}
 				String json = new String(Files.readAllBytes(testJson.toPath()));
 
-				if (filePath.contentEquals("NumberDisplay.java") && isCorrect.equals("True")) {
+				if (!GS && filePath.contentEquals("NumberDisplay.java") && isCorrect.equals("True")) {
 					String source = removeComments(sourceCode);
 					if (!source.equals(numberDisplayStartSource)) {
 						numberDisplayProjects.add(projectID);
@@ -272,16 +293,19 @@ public class JavaImport {
 
 				JSONObject obj = new JSONObject(json);
 				JavaNode node = (JavaNode) TextualNode.fromJSON(obj, sourceCode, JavaNode::new);
-				if (isCorrect.equals("True")) {
+				if (isCorrect.toLowerCase().equals("true") || GS) {
 					node.correct = Optional.of(true);
 				}
+
 				if(filePathToNodes.get(filePath) == null) {
 					filePathToNodes.put(filePath, new ListMap<String, JavaNode>());
 				}
 				filePathToNodes.get(filePath).add(projectID, node);
 			}
 		}
-		System.out.println("NDPs: " + numberDisplayProjects.size());
+		if(!GS) {
+			System.out.println("NDPs: " + numberDisplayProjects.size());
+		}
 		// Remove all solutions that changed the NumberDisplay class (for now)
 		// TODO: At some point, we need to use both source files in hint generation...
 		for (String filePath : filePathToNodes.keySet()) {
