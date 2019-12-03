@@ -172,7 +172,7 @@ public class JavaImport {
 
 		// TODO: Get the actual list from a .csv file, map project_id to the hint request
 		ListMap<String, JavaNode> goldStandardHintRequests = attempts;
-
+		new File(DATA_DIR+"GS").mkdirs();
 		for (String student : goldStandardHintRequests.keySet()) {
 			if(student.startsWith("s") || student.startsWith("r")) {
 				continue;
