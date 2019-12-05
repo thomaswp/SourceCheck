@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 import org.json.JSONException;
@@ -29,32 +30,21 @@ import edu.isnap.util.map.ListMap;
 public class PythonImport {
 
 	public static void main(String[] args) throws IOException {
+		String hintsDir = "../../PythonAST/data/PCRS";
+		String serverDir = "../HintServer/WebContent/WEB-INF/data/";
+
 //		generateHints("../../PythonAST/data/datacamp", "65692");
 //		generateHints("../../PythonAST/data/itap", "firstAndLast");
-//		serializeHintData("../../PythonAST/data/PCRS", "8",	"../HintServer/WebContent/WEB-INF/data/8.hdata");
-//		generateHints("../../PythonAST/data/pcrs", "8");
+//		serializeHintData(hintsDir, "8", serverDir);
+//		generateHints(hintsDir, "8");
 //		generateHints("../../PythonAST/data/itap", "firstAndLast");
-//		serializeHintData("../../PythonAST/data/itap", "firstAndLast", "../HintServer/WebContent/WEB-INF/data/firstAndLast.hdata");
+//		serializeHintData("../../PythonAST/data/itap", serverDir);
 
-//		generateHints("../../PythonAST/data/PCRS", "69");
-//		serializeHintData("../../PythonAST/data/PCRS", "69", "../HintServer/WebContent/WEB-INF/data/69.hdata");
-		
-		for(int i = 1; i < 141; i++) {
-			try {
-				long start = System.currentTimeMillis();
+//		generateHints(hintsDir, "69");
+//		serializeHintData(hintsDir, "69", serverDir);
 
-//				generateHints("../../PythonAST/data/PCRS", String.valueOf(i));
-				serializeHintData("../../PythonAST/data/PCRS", String.valueOf(i), "../HintServer/WebContent/WEB-INF/data/" + i + ".hdata");
+		serializeAll(hintsDir, serverDir);
 
-				long finish = System.currentTimeMillis();
-				long timeElapsed = finish - start;
-				System.out.println("Elapsed time for problem: " + i + " is " + (timeElapsed/1000.0) );
-			} catch(Exception e) {
-				System.err.println("Not found: " + i);
-				e.printStackTrace();
-			}
-		}
-			
 //		generateHints("../data/", "test");
 
 //		Map<String, ListMap<String, PythonNode>> nodes = loadAllAssignments("../../PythonAST/data");
@@ -71,6 +61,23 @@ public class PythonImport {
 //		nodes.values().forEach(listMap -> listMap.values()
 //				.forEach(list -> list.forEach(n -> builder.add(n))));
 //		System.out.println(builder.toJSON());
+	}
+
+	private static void serializeAll(String hintsDir, String serverDir) {
+		for(int i = 1; i < 141; i++) {
+			String assignment = String.valueOf(i);
+			if (!new File(hintsDir, assignment).exists()) continue;
+			try {
+				long start = System.currentTimeMillis();
+				serializeHintData(hintsDir, assignment, serverDir, 150);
+				long finish = System.currentTimeMillis();
+				long timeElapsed = finish - start;
+				System.out.printf("Elapsed time for problem %s: %.01fs\n",
+						assignment, timeElapsed / 1000.0);
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	static HintData createHintData(String dataDir, String assignment) throws IOException {
@@ -91,10 +98,15 @@ public class PythonImport {
 		return hintData;
 	}
 
-	static void serializeHintData(String dataDir, String assignment, String outputPath)
+	static void serializeHintData(String dataDir, String assignment, String outDir)
+			throws IOException {
+		serializeHintData(dataDir, assignment, outDir, Integer.MAX_VALUE);
+	}
+
+	static void serializeHintData(String dataDir, String assignment, String outDir, int maxAttempts)
 			throws IOException {
 		ListMap<String, PythonNode> attempts = loadAssignment(dataDir, assignment);
-		List<String> toRemove = new ArrayList<String>();
+		List<String> toRemove = new ArrayList<>();
 		// Remove incorrect attempts before serializing
 		for (String attemptID : attempts.keySet()) {
 			List<PythonNode> attempt = attempts.get(attemptID);
@@ -103,9 +115,15 @@ public class PythonImport {
 			}
 		}
 		toRemove.forEach(attempts::remove);
+		System.out.printf("Serializing %d->%d attempts for assignment: %s\n",
+				attempts.size(), Math.min(attempts.size(), maxAttempts), assignment);
+		Random rand = new Random(1234);
+		while (attempts.size() > maxAttempts) {
+			attempts.remove(new ArrayList<>(attempts.keySet()).get(rand.nextInt(attempts.size())));
+		}
 		HintData hintData = createHintData(assignment, attempts);
 		Kryo kryo = SnapHintBuilder.getKryo();
-		Output output = new Output(new FileOutputStream(outputPath));
+		Output output = new Output(new FileOutputStream(new File(outDir, assignment + ".hdata")));
 		kryo.writeObject(output, hintData);
 		output.close();
 	}
