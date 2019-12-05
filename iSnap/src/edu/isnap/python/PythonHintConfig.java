@@ -117,6 +117,8 @@ public class PythonHintConfig extends HintConfig {
 		nameMap.put("Continue", "a continue statement");
 		nameMap.put("Return", "a return statement");
 		nameMap.put("arg", "a function argument");
+		nameMap.put("Add", "an addition operation");
+		nameMap.put("Sub", "a subtraction operation");
 		for (String op : new String[] {
 				"Eq", "NotEq", "Lt", "LtE", "Gt", "GtE", "Is", "IsNot", "In", "NotIn"}) {
 			nameMap.put(op, "a comparison operator (e.g. == or <)");
@@ -146,7 +148,7 @@ public class PythonHintConfig extends HintConfig {
 	}
 
 	// No hint should suggest moving lists or most literal types
-	private final Set<String> newlineTypes = new HashSet<>(Arrays.asList(
+	private final static Set<String> statements = new HashSet<>(Arrays.asList(
 			new String[] {
 					"Assign",
 					"AugAssign",
@@ -162,6 +164,6 @@ public class PythonHintConfig extends HintConfig {
 
 	@Override
 	public boolean shouldAppearOnNewline(Node node) {
-		return node != null && newlineTypes.contains(node.type());
+		return node != null && statements.contains(node.type());
 	}
 }

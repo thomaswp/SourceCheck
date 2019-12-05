@@ -419,6 +419,7 @@ public class HintHighlighter {
 //		printHighlight(node, colors);
 
 		Collections.sort(edits);
+		for (int i = 0; i < edits.size(); i++) edits.get(i).order = i;
 
 		return edits;
 	}

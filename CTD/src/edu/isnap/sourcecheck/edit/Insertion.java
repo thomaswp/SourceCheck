@@ -17,6 +17,7 @@ import edu.isnap.node.Node.Predicate;
 import edu.isnap.node.TextualNode;
 import edu.isnap.sourcecheck.NodeAlignment.Mapping;
 import edu.isnap.sourcecheck.edit.Suggestion.SuggestionType;
+import edu.isnap.sourcecheck.edit.Suggestion.TagType;
 import edu.isnap.util.map.BiMap;
 
 public class Insertion extends EditHint {
@@ -296,7 +297,8 @@ public class Insertion extends EditHint {
 				location = parent.getLocationOfChildIndex(index);
 			}
 			if (location != null) {
-				suggestions.add(new Suggestion(this, location, SuggestionType.INSERT, true));
+				suggestions.add(
+						new Suggestion(this, location, SuggestionType.INSERT, TagType.BOTH));
 			} else {
 				// Print failed insertions
 				System.err.println("Unknown insertion location for: " + this + "\n" + pair);

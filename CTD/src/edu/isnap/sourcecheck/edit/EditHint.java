@@ -41,6 +41,12 @@ public abstract class EditHint implements Hint, Comparable<EditHint> {
 
 	private final boolean argsCanonSwapped;
 
+	/**
+	 * Used to store the order this hint was generated, which helps break ordering ties for
+	 * inserts at the same index.
+	 */
+	public int order;
+
 	public final List<EditHint> subedits = new ArrayList<>();
 
 	public enum EditType {

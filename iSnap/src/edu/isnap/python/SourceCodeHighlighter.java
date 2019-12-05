@@ -1,6 +1,7 @@
 package edu.isnap.python;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -17,6 +18,7 @@ import edu.isnap.sourcecheck.NodeAlignment.Mapping;
 import edu.isnap.sourcecheck.edit.EditHint;
 import edu.isnap.sourcecheck.edit.Insertion;
 import edu.isnap.sourcecheck.edit.Suggestion;
+import edu.isnap.sourcecheck.edit.Suggestion.TagType;
 import edu.isnap.util.Diff;
 
 public class SourceCodeHighlighter {
@@ -101,8 +103,9 @@ public class SourceCodeHighlighter {
 
 		for (Suggestion suggestion : suggestions) {
 			SourceLocation location = suggestion.location;
+			System.out.println(suggestion.type + ": " + suggestion.location);
 			EditHint hint = suggestion.hint;
-			if (!suggestion.start) {
+			if (suggestion.tagType == TagType.END) {
 				marked = location.markSource(marked, SPAN_END);
 				continue;
 			}
@@ -121,16 +124,37 @@ public class SourceCodeHighlighter {
 				marked = location.markSource(marked, insertionCode);
 				missing.add(getHumanReadableName((Insertion) hint, mapping.config));
 			}
-			System.out.println(suggestion.type + ": " + suggestion.location);
 			System.out.println(marked);
 		}
+
+		marked = removeComments(marked);
 
 		SourceCodeFeedbackHTML feedback = new SourceCodeFeedbackHTML();
 		feedback.highlightedCode = marked;
 		feedback.missingCode.addAll(missing);
 
-		System.out.println(marked);
+//		System.out.println(marked);
 		return feedback;
+	}
+
+	private static String removeComments(String source) {
+		List<String> lines = new ArrayList<>(Arrays.asList(source.split("\n")));
+		boolean commenting = false;
+		for (int i = 0; i < lines.size(); i++) {
+			String line = lines.get(i);
+			boolean remove = false;
+			if (!commenting && line.trim().startsWith("\"\"\"")) {
+				commenting = true;
+				remove = true;
+			} else if (line.contains("\"\"\"")) {
+				commenting = false;
+				remove = true;
+			} else if (commenting) {
+				remove = true;
+			}
+			if (remove) lines.remove(i--);
+		}
+		return String.join("\n", lines);
 	}
 
 	private static List<Suggestion> getSuggestions(List<EditHint> edits) {
@@ -139,6 +163,8 @@ public class SourceCodeHighlighter {
 			hint.addSuggestions(suggestions);
 		}
 		Collections.sort(suggestions);
+//		System.out.println("Sugg:");
+//		suggestions.forEach(System.out::println);
 		return suggestions;
 	}
 
@@ -152,8 +178,8 @@ public class SourceCodeHighlighter {
 	public static String getInsertHint(Insertion insertion, HintConfig config) {
 		String hrName = getHumanReadableName(insertion, config);
 		String hint = "";
-		if(config.shouldAppearOnNewline(insertion.pair)) {
-			hint = "You may need to add " + hrName + " on the next line";
+		if(insertion.replaced == null && config.shouldAppearOnNewline(insertion.pair)) {
+			hint = "You may need to add " + hrName + " on another line";
 		} else {
 			hint = "You may need to add " + hrName + " here";
 		}
