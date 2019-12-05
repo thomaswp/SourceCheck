@@ -34,8 +34,45 @@ public class SourceCodeHighlighter {
 //			+ "data-tooltip=\"This code is good, but it may be in the wrong place.\">";
 	public static String SPAN_END = "</span>";
 
+	public static class SourceCodeFeedbackHTML {
+		public String highlightedCode;
+		public List<String> missingCode = new ArrayList<>();
 
-	public static String highlightSourceCode(HintData hintData, TextualNode studentCode) {
+		public String getMissingHTML() {
+			String missingHTML = "";
+			if (!missingCode.isEmpty()) {
+				missingHTML += "\n\nYou may be missing the following:<ul>";
+				for (String m : missingCode) { missingHTML += "<li>" + m + "</li>" ; }
+				missingHTML += "</ul>";
+			}
+			return missingHTML;
+		}
+
+		public String getHeader() {
+			return "We have added suggestions to your code below. Hover over one to see it.";
+		}
+
+		/**
+		 * Builds an HTML string from the annotated code with suggestions. For nicer display/easier
+		 * integration into the PCRS system. The string will have a <div> block as the outermost
+		 * element, with a <p>, <div>, and <p> as its children. The first paragraph is simply a
+		 * display header. The highlighted code that is passed in will be split and used to make the
+		 * second and third elements, which are the annotated student code and the suggestions for
+		 * what to add, respectively.
+		 */
+		public String getAllHTML() {
+			return "<div>" +
+					"<p>" + getHeader() + "</p>" +
+					"<pre class='display'>" + highlightedCode + "</pre>" +
+					"<p class='missing'>" + getMissingHTML() + "</p>" +
+//					"<iframe src=\"https://www.qualtrics.com\"></iframe>" +
+				   "</div>";
+		}
+	}
+
+
+	public static SourceCodeFeedbackHTML highlightSourceCode(HintData hintData,
+			TextualNode studentCode) {
 		HintHighlighter highlighter = hintData.hintHighlighter();
 
 		highlighter.trace = NullStream.instance;
@@ -60,7 +97,7 @@ public class SourceCodeHighlighter {
 		String marked = studentCode.getSource();
 
 		List<Suggestion> suggestions = getSuggestions(edits);
-		List<String> missing = new ArrayList<String>();
+		List<String> missing = new ArrayList<>();
 
 		for (Suggestion suggestion : suggestions) {
 			SourceLocation location = suggestion.location;
@@ -88,14 +125,12 @@ public class SourceCodeHighlighter {
 			System.out.println(marked);
 		}
 
-		if (!missing.isEmpty()) {
-			marked += "\n\nYou may be missing the following:<ul>";
-			for (String m : missing) { marked += "<li>" + m + "</li>" ; }
-			marked += "</ul>";
-		}
+		SourceCodeFeedbackHTML feedback = new SourceCodeFeedbackHTML();
+		feedback.highlightedCode = marked;
+		feedback.missingCode.addAll(missing);
 
 		System.out.println(marked);
-		return marked;
+		return feedback;
 	}
 
 	private static List<Suggestion> getSuggestions(List<EditHint> edits) {
@@ -117,8 +152,8 @@ public class SourceCodeHighlighter {
 	public static String getInsertHint(Insertion insertion, HintConfig config) {
 		String hrName = getHumanReadableName(insertion, config);
 		String hint = "";
-		if(insertion.pair.type().equals("Return")) {
-			hint = "You may need to add " + hrName + " after here";
+		if(config.shouldAppearOnNewline(insertion.pair)) {
+			hint = "You may need to add " + hrName + " on the next line";
 		} else {
 			hint = "You may need to add " + hrName + " here";
 		}

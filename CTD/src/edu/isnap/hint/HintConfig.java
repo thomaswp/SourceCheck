@@ -97,6 +97,10 @@ public abstract class HintConfig implements Serializable {
 		return null;
 	}
 
+	public boolean shouldAppearOnNewline(Node node) {
+		return false;
+	}
+
 	/**
 	 * When measuring progress towards a goal, nodes in order are given weight multiplied by
 	 * this factor compared to nodes that are out of order

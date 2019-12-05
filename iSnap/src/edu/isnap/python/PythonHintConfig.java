@@ -144,4 +144,24 @@ public class PythonHintConfig extends HintConfig {
 		System.err.println("No label for code: " + node);
 		return "some code";
 	}
+
+	// No hint should suggest moving lists or most literal types
+	private final Set<String> newlineTypes = new HashSet<>(Arrays.asList(
+			new String[] {
+					"Assign",
+					"AugAssign",
+					"Import",
+					"ImportFrom",
+					"For",
+					"While",
+					"Break",
+					"Continue",
+					"Return",
+			}
+	));
+
+	@Override
+	public boolean shouldAppearOnNewline(Node node) {
+		return node != null && newlineTypes.contains(node.type());
+	}
 }
