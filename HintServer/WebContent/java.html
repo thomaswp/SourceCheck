@@ -211,7 +211,7 @@
         }
 
         // change url to api
-        fetch('http://localhost:8080/HintServer/hints2', {
+        fetch(document.location.href.replace('/java.html', '/hints2'), {
           method: 'PUT',
           mode: 'cors',
           headers: {
