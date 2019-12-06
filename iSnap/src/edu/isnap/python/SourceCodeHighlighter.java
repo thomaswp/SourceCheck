@@ -1,5 +1,6 @@
 package edu.isnap.python;
 
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,6 +31,14 @@ public class SourceCodeHighlighter {
 	public static String INSERT_START = "<span class=\"insertion\"";
 	public static String SPAN_END = "</span>";
 
+	public static PrintStream out = NullStream.instance;
+	static {
+		// Hack to get logging on dev but not prod
+		if ("Windows 10".equals(System.getProperty("os.name"))) {
+			out = System.out;
+		}
+	}
+
 	public static class SourceCodeFeedbackHTML {
 		private String highlightedCode;
 		private boolean changed;
@@ -52,7 +61,9 @@ public class SourceCodeHighlighter {
 		}
 
 		public String getHeader() {
-			return "We have added suggestions to your code below. Hover over one to see it.";
+			return "We have added suggestions to your code below. Hover over one to see it. " +
+					"<small>[<a href='http://go.ncsu.edu/cs108-hints' target='_blank'>"
+					+ "What is this?</a>]</small>";
 		}
 
 		/**
@@ -64,12 +75,13 @@ public class SourceCodeHighlighter {
 		 * what to add, respectively.
 		 */
 		public String getAllHTML() {
-			if (!config.showHints || !changed) return null;
+			if (!config.showHints) return null;
+			if (!changed) return config.getNoSuggestionsText();
 			return String.format("<div><p>%s</p>"
-					+ "<pre class='display'>%s</pre>"
+					+ "<pre class='display' style='padding: 3px;'>%s</pre>"
 					+ "<p class='missing'>%s</p>"
 					+ "</div>",
-					StringEscapeUtils.escapeHtml(getHeader()),
+					getHeader(),
 					highlightedCode,
 					getMissingHTML()
 			);
@@ -110,16 +122,27 @@ public class SourceCodeHighlighter {
 					new Random(conditionSeed.hashCode());
 			this.showHints = random.nextBoolean() == reverseShow;
 			HighlightLevel level;
-			// Preference All (50%) and divide the rest among the other 2 conditions
 			if (random.nextBoolean()) {
 				level = HighlightLevel.All;
 			} else {
-				level = random.nextBoolean() ?
-						HighlightLevel.DeleteReplaceMove : HighlightLevel.DeleteOnly;
+				// For now, no delete-only hints
+				level = HighlightLevel.DeleteReplaceMove;
 			}
 			this.highlightLevel = level;
 			this.showMissing = random.nextBoolean();
 			this.suggest = random.nextBoolean();
+		}
+
+		public String getNoSuggestionsText() {
+			String response = "We have checked your code, and ";
+			switch (highlightLevel) {
+			case DeleteOnly:
+			case DeleteReplaceMove:
+				return response + "everything looks good so far (though you may not be done).";
+			default:
+				return response + "everything looks good!";
+			}
+
 		}
 
 		public SourceCodeHighlightConfig(boolean showHints, HighlightLevel highlightLevel,
@@ -162,12 +185,13 @@ public class SourceCodeHighlighter {
 		}
 
 		public String getMoveTip() {
-			return suggest ? "This code may be incorrect." : "Is this code incorrect?";
+			return suggest ? "This code is good, but it may be in the wrong place." :
+				"This code is good, but is it in the wrong place?";
 		}
 
 		public String getReplaceTip() {
-			return suggest ? "This code is good, but it may be in the wrong place." :
-				"This code is good, but is it in the wrong place?";
+			return suggest ? "This code may need to be replaced with something else." :
+				"Should this code be replaced with something else?";
 		}
 
 		public String getMissingHeader() {
@@ -213,7 +237,6 @@ public class SourceCodeHighlighter {
 
 		highlighter.trace = NullStream.instance;
 
-		String from = studentCode.prettyPrint(true);
 		List<EditHint> edits = highlighter.highlight(studentCode);
 		Node copy = studentCode.copy();
 		EditHint.applyEdits(copy, edits);
@@ -221,15 +244,15 @@ public class SourceCodeHighlighter {
 		Mapping mapping = highlighter.findSolutionMapping(studentCode);
 		TextualNode target = (TextualNode) mapping.to;
 
-//		target.recurse(n -> System.out.println(((TextualNode) n).startSourceLocation));
-		System.out.println(studentCode.id);
-		System.out.println(studentCode.getSource());
-		System.out.println("Target");
-		System.out.println(Diff.diff(studentCode.getSource(), target.getSource(), 2));
-		System.out.println(Diff.diff(from, target.prettyPrint(true), 2));
-		mapping.printValueMappings(System.out);
-		edits.forEach(System.out::println);
-		System.out.println();
+//		target.recurse(n -> out.println(((TextualNode) n).startSourceLocation));
+		out.println(studentCode.id);
+		out.println(studentCode.getSource());
+		out.println("Target");
+		out.println(Diff.diff(studentCode.getSource(), target.getSource(), 2));
+		out.println(Diff.diff(studentCode.prettyPrint(), target.prettyPrint(), 2));
+		mapping.printValueMappings(out);
+		edits.forEach(out::println);
+		out.println();
 		String marked = studentCode.getSource();
 
 		List<Suggestion> suggestions = getSuggestions(edits);
@@ -237,7 +260,7 @@ public class SourceCodeHighlighter {
 
 		for (Suggestion suggestion : suggestions) {
 			SourceLocation location = suggestion.location;
-			System.out.println(suggestion.type + ": " + suggestion.location);
+			out.println(suggestion.type + ": " + suggestion.location);
 			EditHint hint = suggestion.hint;
 			if (suggestion.tagType == TagType.END) {
 				marked = location.markSource(marked, SPAN_END);
@@ -254,7 +277,7 @@ public class SourceCodeHighlighter {
 				marked = location.markSource(marked, insertionCode);
 				break;
 			}
-			System.out.println(marked);
+			out.println(marked);
 		}
 		marked = removeComments(marked);
 
@@ -270,7 +293,7 @@ public class SourceCodeHighlighter {
 
 		feedback.highlightedCode = marked;
 
-//		System.out.println(marked);
+//		out.println(marked);
 		return feedback;
 	}
 
@@ -289,6 +312,7 @@ public class SourceCodeHighlighter {
 			} else if (commenting) {
 				remove = true;
 			}
+			if (line.contains("<span")) remove = false;
 			if (remove) lines.remove(i--);
 		}
 		return String.join("\n", lines);
@@ -305,8 +329,8 @@ public class SourceCodeHighlighter {
 			}
 		}
 		Collections.sort(suggestions);
-//		System.out.println("Sugg:");
-//		suggestions.forEach(System.out::println);
+//		out.println("Sugg:");
+//		suggestions.forEach(out::println);
 		return suggestions;
 	}
 
@@ -343,8 +367,8 @@ public class SourceCodeHighlighter {
 	public String getInsertHint(Insertion insertion, HintConfig config) {
 		String hrName = getHumanReadableName(insertion, config);
 		String hint = highlightConfig.getInsertTip(hrName,
-				config.shouldAppearOnNewline(insertion.pair),
-				insertion.replaced != null);
+				insertion.replaced != null,
+				config.shouldAppearOnNewline(insertion.pair));
 		return StringEscapeUtils.escapeHtml(hint);
 	}
 
@@ -360,7 +384,7 @@ public class SourceCodeHighlighter {
 	public static String getTextToInsert(Insertion insertion, Mapping mapping) {
 		// TODO: Also need to handle newlines properly
 		Node mappedPair = insertion.pair.applyMapping(mapping);
-//		System.out.println("Pair:\n" + mappedPair);
+//		out.println("Pair:\n" + mappedPair);
 		String source = ((TextualNode) mappedPair).getSource();
 		if (source != null) return source;
 		return insertion.pair.prettyPrint().replace("\n", "");

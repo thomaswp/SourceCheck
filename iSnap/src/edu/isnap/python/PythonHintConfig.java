@@ -101,7 +101,7 @@ public class PythonHintConfig extends HintConfig {
 		nameMap.put("Name", "a variable");
 		nameMap.put("BinOp", "a binary operation (e.g. + or *)");
 		nameMap.put("Compare", "a comparison (e.g. a == b or a < b)");
-		nameMap.put("Call", "a function call (e.g. len() or max())");
+		nameMap.put("Call", "a function call (e.g. len() or obj.foo())");
 		nameMap.put("Subscript", "a list with a subscript (e.g. x[1])");
 		nameMap.put("Index", "a subscript for a list (e.g. x[1])");
 		nameMap.put("Assign", "a variable assignment (e.g. x = 5)");
@@ -119,6 +119,9 @@ public class PythonHintConfig extends HintConfig {
 		nameMap.put("arg", "a function argument");
 		nameMap.put("Add", "an addition operation");
 		nameMap.put("Sub", "a subtraction operation");
+		nameMap.put("Mult", "an multiplication operation");
+		nameMap.put("Div", "a division operation");
+		nameMap.put("Mod", "a modulus operation");
 		for (String op : new String[] {
 				"Eq", "NotEq", "Lt", "LtE", "Gt", "GtE", "Is", "IsNot", "In", "NotIn"}) {
 			nameMap.put(op, "a comparison operator (e.g. == or <)");
@@ -138,8 +141,12 @@ public class PythonHintConfig extends HintConfig {
 			return "a function call (e.g. len() or max())";
 		} else if (node.hasType("Expr") && node.childHasType("Str", 0)) {
 			return "some function documentation";
-		} else if(node.hasType("NameConstant") && (node.value().equals("True") || node.value().equals("False")) ) {
+		} else if(node.hasType("NameConstant") && (node.value().equals("True") ||
+				node.value().equals("False")) ) {
 			return "a boolean value";
+		} else if (node.hasType("Expr") && node.children.size() == 1) {
+			// Expr nodes should be named as their children would be
+			return getHumanReadableName(node.children.get(0));
 		}
 		String value = nameMap.get(node.type());
 		if (value != null) return value;

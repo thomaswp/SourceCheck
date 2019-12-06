@@ -71,12 +71,17 @@ public class HintServlet2 extends HttpServlet {
 			// TODO: This should be configured somewhere else for sure...
 			// Reverse the conditions for these problems
 			boolean reverseConditions = "69".equals(problemName) || "33".equals(problemName);
+			SourceCodeHighlightConfig highlightConfig =
+					new SourceCodeHighlightConfig(conditionSeed, reverseConditions);
 
-			SourceCodeHighlighter highlighter = new SourceCodeHighlighter(
-					new SourceCodeHighlightConfig(conditionSeed, reverseConditions));
+			SourceCodeHighlighter highlighter = new SourceCodeHighlighter(highlightConfig);
 			SourceCodeFeedbackHTML feedback = highlighter.highlightSourceCode(
 					hintDatas.get(problemName), fullStudentCode);
 			JSONObject jsonObj = feedback.toJSON();
+
+			// Use for debuging conditions on PCRS
+//			jsonObj.put("highlighted",
+//					"<pre>" + StringEscapeUtils.escapeHtml(jsonObj.toString(2)) + "</pre>");
 
 			// Eventually we should change this to HTML, but we'll keep it as highlighted for
 			// backwards compatibility
