@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 
 import org.apache.commons.lang.StringEscapeUtils;
+import org.json.JSONObject;
 
 import edu.isnap.hint.HintConfig;
 import edu.isnap.hint.HintData;
@@ -18,32 +20,31 @@ import edu.isnap.sourcecheck.NodeAlignment.Mapping;
 import edu.isnap.sourcecheck.edit.EditHint;
 import edu.isnap.sourcecheck.edit.Insertion;
 import edu.isnap.sourcecheck.edit.Suggestion;
+import edu.isnap.sourcecheck.edit.Suggestion.SuggestionType;
 import edu.isnap.sourcecheck.edit.Suggestion.TagType;
 import edu.isnap.util.Diff;
 
 public class SourceCodeHighlighter {
 
-	/*public static String EDIT_START = "\u001b[31m"; //TODO: configure this for HTML or ASCII output
-	public static String EDIT_END = "\u001b[0m";*/
-	public static String DELETE_START = "<span class=\"deletion\" "
-			+ "data-tooltip=\"This code may be incorrect.\">";
+	//TODO: configure this for HTML or ASCII output
 	public static String INSERT_START = "<span class=\"insertion\"";
-	public static String REPLACE_START = "<span class=\"replacement\" "
-			+ "data-tooltip=\"This code may need to be replaced with something else.\">";
-	public static String CANDIDATE_START = "<span class=\"candidate\" "
-			+ "data-tooltip=\"This code is good, but it may be in the wrong place.\">";
-//	public static String REORDER_START = "<span class=\"reorder\" "
-//			+ "data-tooltip=\"This code is good, but it may be in the wrong place.\">";
 	public static String SPAN_END = "</span>";
 
 	public static class SourceCodeFeedbackHTML {
-		public String highlightedCode;
-		public List<String> missingCode = new ArrayList<>();
+		private String highlightedCode;
+		private boolean changed;
+		private List<String> missingCode = new ArrayList<>();
+
+		public final SourceCodeHighlightConfig config;
+
+		public SourceCodeFeedbackHTML(SourceCodeHighlightConfig config) {
+			this.config = config;
+		}
 
 		public String getMissingHTML() {
 			String missingHTML = "";
-			if (!missingCode.isEmpty()) {
-				missingHTML += "\n\nYou may be missing the following:<ul>";
+			if (config.showMissing && !missingCode.isEmpty()) {
+				missingHTML += "\n\n" + config.getMissingHeader() + "<ul>";
 				for (String m : missingCode) { missingHTML += "<li>" + m + "</li>" ; }
 				missingHTML += "</ul>";
 			}
@@ -63,18 +64,151 @@ public class SourceCodeHighlighter {
 		 * what to add, respectively.
 		 */
 		public String getAllHTML() {
-			return "<div>" +
-					"<p>" + getHeader() + "</p>" +
-					"<pre class='display'>" + highlightedCode + "</pre>" +
-					"<p class='missing'>" + getMissingHTML() + "</p>" +
-//					"<iframe src=\"https://www.qualtrics.com\"></iframe>" +
-				   "</div>";
+			if (!config.showHints || !changed) return null;
+			return String.format("<div><p>%s</p>"
+					+ "<pre class='display'>%s</pre>"
+					+ "<p class='missing'>%s</p>"
+					+ "</div>",
+					StringEscapeUtils.escapeHtml(getHeader()),
+					highlightedCode,
+					getMissingHTML()
+			);
+		}
+
+		public JSONObject toJSON() {
+			JSONObject jsonObj = new JSONObject();
+			jsonObj.put("highlighted", getAllHTML());
+			jsonObj.put("hasHints", changed);
+			jsonObj.put("config", config.toJSON());
+			return jsonObj;
+		}
+	}
+
+	public enum HighlightLevel {
+		DeleteOnly, DeleteReplaceMove, All
+	}
+
+
+	public static class SourceCodeHighlightConfig {
+		/** True if any hints should be shown */
+		public final boolean showHints;
+		/** How much highlight information to show */
+		public final HighlightLevel highlightLevel;
+		/** Whether to suggest (true) or ask questions (false) suggestions */
+		public final boolean suggest;
+		/** Whether to show missing code summary at the end */
+		public final boolean showMissing;
+		/** Seed which was used to generate the hash code used to assign conditions */
+		public final String conditionSeed;
+		/** If true, showHints is reversed (e.g. for switching replications) */
+		public final boolean reverseShow;
+
+		public SourceCodeHighlightConfig(String conditionSeed, boolean reverseShow) {
+			this.conditionSeed = conditionSeed;
+			this.reverseShow = reverseShow;
+			Random random = conditionSeed == null ? new Random() :
+					new Random(conditionSeed.hashCode());
+			this.showHints = random.nextBoolean() == reverseShow;
+			HighlightLevel level;
+			// Preference All (50%) and divide the rest among the other 2 conditions
+			if (random.nextBoolean()) {
+				level = HighlightLevel.All;
+			} else {
+				level = random.nextBoolean() ?
+						HighlightLevel.DeleteReplaceMove : HighlightLevel.DeleteOnly;
+			}
+			this.highlightLevel = level;
+			this.showMissing = random.nextBoolean();
+			this.suggest = random.nextBoolean();
+		}
+
+		public SourceCodeHighlightConfig(boolean showHints, HighlightLevel highlightLevel,
+				boolean suggest, boolean showMissing) {
+			this.showHints = showHints;
+			this.highlightLevel = highlightLevel;
+			this.showMissing = showMissing;
+			this.suggest = suggest;
+			this.conditionSeed = null;
+			this.reverseShow = false;
+		}
+
+		public SourceCodeHighlightConfig() {
+			this(true, HighlightLevel.All, true, true);
+		}
+
+		public JSONObject toJSON() {
+			JSONObject obj = new JSONObject();
+			obj.put("showHints", showHints);
+			obj.put("highlightLevel", highlightLevel.toString());
+			obj.put("highlightLevelInt", highlightLevel.ordinal());
+			obj.put("suggest", suggest);
+			obj.put("showMissing", showMissing);
+			obj.put("conditionSeed", conditionSeed);
+			obj.put("reversedShow", reverseShow);
+			return obj;
+		}
+
+		public boolean shouldIgnore(SuggestionType type) {
+			switch (highlightLevel) {
+			case All: return false;
+			case DeleteReplaceMove: return type == SuggestionType.INSERT;
+			case DeleteOnly: return type != SuggestionType.DELETE;
+			}
+			return false;
+		}
+
+		public String getDeletionTip() {
+			return suggest ? "This code may be incorrect." : "Is this code incorrect?";
+		}
+
+		public String getMoveTip() {
+			return suggest ? "This code may be incorrect." : "Is this code incorrect?";
+		}
+
+		public String getReplaceTip() {
+			return suggest ? "This code is good, but it may be in the wrong place." :
+				"This code is good, but is it in the wrong place?";
+		}
+
+		public String getMissingHeader() {
+			return suggest ? "You may be missing the following:" :
+				"Are you missing any of the following?:";
+		}
+
+		public String getInsertTip(String hrName, boolean replaced, boolean shouldAppearOnNewline) {
+			String start = suggest ? "You may need to add " : "Do you need to add ";
+			String end = suggest ? "." : "?";
+			String hint = "";
+			if(!replaced && shouldAppearOnNewline) {
+				hint = start + hrName + " on another line";
+			} else {
+				hint = start + hrName + " here";
+			}
+			if (replaced) {
+				hint += ", instead of what you have" + end;
+			} else {
+				hint += end;
+			}
+			return hint;
 		}
 	}
 
 
-	public static SourceCodeFeedbackHTML highlightSourceCode(HintData hintData,
+	private final SourceCodeHighlightConfig highlightConfig;
+
+	public SourceCodeHighlighter(SourceCodeHighlightConfig highlightConfig) {
+		this.highlightConfig = highlightConfig;
+	}
+
+	public SourceCodeHighlighter() {
+		this(new SourceCodeHighlightConfig());
+	}
+
+	public SourceCodeFeedbackHTML highlightSourceCode(HintData hintData,
 			TextualNode studentCode) {
+		SourceCodeFeedbackHTML feedback = new SourceCodeFeedbackHTML(highlightConfig);
+		if (!highlightConfig.showHints) return feedback;
+
 		HintHighlighter highlighter = hintData.hintHighlighter();
 
 		highlighter.trace = NullStream.instance;
@@ -99,7 +233,7 @@ public class SourceCodeHighlighter {
 		String marked = studentCode.getSource();
 
 		List<Suggestion> suggestions = getSuggestions(edits);
-		List<String> missing = new ArrayList<>();
+		if (suggestions.size() > 0) feedback.changed = true;
 
 		for (Suggestion suggestion : suggestions) {
 			SourceLocation location = suggestion.location;
@@ -111,27 +245,30 @@ public class SourceCodeHighlighter {
 			}
 			switch (suggestion.type) {
 			case DELETE:
-				marked = location.markSource(marked, DELETE_START);
-				break;
 			case MOVE:
-				marked = location.markSource(marked, CANDIDATE_START);
-				break;
 			case REPLACE:
-				marked = location.markSource(marked, REPLACE_START);
+				marked = location.markSource(marked, getSpanStart(suggestion.type));
 				break;
 			case INSERT:
 				String insertionCode = getInsertHTML(mapping, hint);
 				marked = location.markSource(marked, insertionCode);
-				missing.add(getHumanReadableName((Insertion) hint, mapping.config));
+				break;
 			}
 			System.out.println(marked);
 		}
-
 		marked = removeComments(marked);
 
-		SourceCodeFeedbackHTML feedback = new SourceCodeFeedbackHTML();
+		if (highlightConfig.showMissing) {
+			for (EditHint hint : edits) {
+				if (hint instanceof Insertion) {
+					feedback.missingCode.add(
+							getHumanReadableName((Insertion) hint, mapping.config));
+					feedback.changed = true;
+				}
+			}
+		}
+
 		feedback.highlightedCode = marked;
-		feedback.missingCode.addAll(missing);
 
 //		System.out.println(marked);
 		return feedback;
@@ -157,10 +294,15 @@ public class SourceCodeHighlighter {
 		return String.join("\n", lines);
 	}
 
-	private static List<Suggestion> getSuggestions(List<EditHint> edits) {
+	private List<Suggestion> getSuggestions(List<EditHint> edits) {
 		List<Suggestion> suggestions = new ArrayList<>();
 		for (EditHint hint : edits) {
 			hint.addSuggestions(suggestions);
+		}
+		for (int i = 0; i < suggestions.size(); i++) {
+			if (highlightConfig.shouldIgnore(suggestions.get(i).type)) {
+				suggestions.remove(i--);
+			}
 		}
 		Collections.sort(suggestions);
 //		System.out.println("Sugg:");
@@ -168,26 +310,41 @@ public class SourceCodeHighlighter {
 		return suggestions;
 	}
 
-	private static String getInsertHTML(Mapping mapping, EditHint editHint) {
+	private String getSpanStart(SuggestionType type) {
+		String typeString = "";
+		String tip = "";
+		switch(type) {
+		case DELETE:
+			typeString = "deletion";
+			tip = highlightConfig.getDeletionTip();
+			break;
+		case MOVE:
+			typeString = "candidate";
+			tip = highlightConfig.getMoveTip();
+			break;
+		case REPLACE:
+			typeString = "replacement";
+			tip = highlightConfig.getReplaceTip();
+			break;
+		default:
+			System.err.print("Unknown type: " + type);
+		}
+
+		return String.format("<span class=\"%s\" data-tooltip=\"%s\">", typeString, tip);
+	}
+
+	private String getInsertHTML(Mapping mapping, EditHint editHint) {
 		String hint = getInsertHint((Insertion)editHint, mapping.config);
 		String insertionCode = String.format("%s data-tooltip=\"%s\">%s%s",
 				INSERT_START, hint, "\u2795", SPAN_END);
 		return insertionCode;
 	}
 
-	public static String getInsertHint(Insertion insertion, HintConfig config) {
+	public String getInsertHint(Insertion insertion, HintConfig config) {
 		String hrName = getHumanReadableName(insertion, config);
-		String hint = "";
-		if(insertion.replaced == null && config.shouldAppearOnNewline(insertion.pair)) {
-			hint = "You may need to add " + hrName + " on another line";
-		} else {
-			hint = "You may need to add " + hrName + " here";
-		}
-		if (insertion.replaced != null) {
-			hint += ", instead of what you have.";
-		} else {
-			hint += ".";
-		}
+		String hint = highlightConfig.getInsertTip(hrName,
+				config.shouldAppearOnNewline(insertion.pair),
+				insertion.replaced != null);
 		return StringEscapeUtils.escapeHtml(hint);
 	}
 
@@ -195,7 +352,6 @@ public class SourceCodeHighlighter {
 		String hrName = config.getHumanReadableName(insertion.pair);
 		if (insertion.replaced != null && insertion.replaced.hasType(insertion.type)) {
 			hrName = hrName.replaceAll("^(an?)", "$1 different");
-//			System.out.println(hrName);
 		}
 		return hrName;
 	}

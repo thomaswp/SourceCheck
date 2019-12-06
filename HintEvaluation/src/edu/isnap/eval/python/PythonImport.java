@@ -144,7 +144,8 @@ public class PythonImport {
 			subset.remove(student);
 			HintData hintData = createHintData(assignment, subset);
 
-			System.out.println(SourceCodeHighlighter.highlightSourceCode(
+			SourceCodeHighlighter highlighter = new SourceCodeHighlighter();
+			System.out.println(highlighter.highlightSourceCode(
 					hintData, firstAttempt));
 		}
 

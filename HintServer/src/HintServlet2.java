@@ -20,6 +20,7 @@ import edu.isnap.node.TextualNode;
 import edu.isnap.python.PythonNode;
 import edu.isnap.python.SourceCodeHighlighter;
 import edu.isnap.python.SourceCodeHighlighter.SourceCodeFeedbackHTML;
+import edu.isnap.python.SourceCodeHighlighter.SourceCodeHighlightConfig;
 
 @SuppressWarnings("serial")
 @WebServlet(name="hints2", urlPatterns="/hints2")
@@ -59,6 +60,7 @@ public class HintServlet2 extends HttpServlet {
 			String parsedTreeRaw = (String) jsonAST.get("parsed");
 			String originalSource = (String) jsonAST.get("source");
 			String problemName = (String) jsonAST.get("problem");
+			String conditionSeed = (String) jsonAST.opt("condition_seed");
 
 			loadHintMap(problemName, "", DEFAULT_MIN_GRADE);
 
@@ -66,10 +68,15 @@ public class HintServlet2 extends HttpServlet {
 			TextualNode fullStudentCode = PythonNode.fromJSON(parsedTree, originalSource,
 					PythonNode::new);
 
-			SourceCodeFeedbackHTML feedback = SourceCodeHighlighter.highlightSourceCode(
+			// TODO: This should be configured somewhere else for sure...
+			// Reverse the conditions for these problems
+			boolean reverseConditions = "69".equals(problemName) || "33".equals(problemName);
+
+			SourceCodeHighlighter highlighter = new SourceCodeHighlighter(
+					new SourceCodeHighlightConfig(conditionSeed, reverseConditions));
+			SourceCodeFeedbackHTML feedback = highlighter.highlightSourceCode(
 					hintDatas.get(problemName), fullStudentCode);
-			JSONObject jsonObj = new JSONObject();
-			jsonObj.put("highlighted", feedback.getAllHTML());
+			JSONObject jsonObj = feedback.toJSON();
 
 			// Eventually we should change this to HTML, but we'll keep it as highlighted for
 			// backwards compatibility
