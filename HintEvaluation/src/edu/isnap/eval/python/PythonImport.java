@@ -41,7 +41,7 @@ public class PythonImport {
 //		serializeHintData("../../PythonAST/data/itap", serverDir);
 
 //		generateHints(hintsDir, "69");
-//		serializeHintData(hintsDir, "69", serverDir);
+//		serializeHintData(hintsDir, "23", serverDir);
 
 		serializeAll(hintsDir, serverDir);
 

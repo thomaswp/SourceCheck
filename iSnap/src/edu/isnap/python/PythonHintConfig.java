@@ -110,6 +110,7 @@ public class PythonHintConfig extends HintConfig {
 		nameMap.put("ImportFrom", "an import statement (e.g. from math import sin)");
 		nameMap.put("Num", "a number literal");
 		nameMap.put("Str", "a string literal");
+		nameMap.put("Dict", "a dict literal, (e.g. {})");
 		nameMap.put("If", "an if statement");
 		nameMap.put("For", "a for loop");
 		nameMap.put("While", "a while loop");

@@ -70,7 +70,8 @@ public class HintServlet2 extends HttpServlet {
 
 			// TODO: This should be configured somewhere else for sure...
 			// Reverse the conditions for these problems
-			boolean reverseConditions = "69".equals(problemName) || "33".equals(problemName);
+			boolean reverseConditions = "69".equals(problemName) || "23".equals(problemName) ||
+					"33".equals(problemName); // Backwards compatibility in case ID isn't updated
 			SourceCodeHighlightConfig highlightConfig =
 					new SourceCodeHighlightConfig(conditionSeed, reverseConditions);
 

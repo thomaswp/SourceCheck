@@ -34,7 +34,8 @@ public class SourceCodeHighlighter {
 	public static PrintStream out = NullStream.instance;
 	static {
 		// Hack to get logging on dev but not prod
-		if ("Windows 10".equals(System.getProperty("os.name"))) {
+		String os = System.getProperty("os.name");
+		if (os != null && os.contains("Windows")) {
 			out = System.out;
 		}
 	}
@@ -273,13 +274,13 @@ public class SourceCodeHighlighter {
 				marked = location.markSource(marked, getSpanStart(suggestion.type));
 				break;
 			case INSERT:
-				String insertionCode = getInsertHTML(mapping, hint);
-				marked = location.markSource(marked, insertionCode);
+				marked = location.markSource(marked, getInsertHTML(mapping, hint));
 				break;
 			}
-			out.println(marked);
+//			out.println(marked);
 		}
 		marked = removeComments(marked);
+		out.println(marked);
 
 		if (highlightConfig.showMissing) {
 			for (EditHint hint : edits) {
