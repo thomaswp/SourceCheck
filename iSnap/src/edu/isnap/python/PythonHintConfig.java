@@ -102,7 +102,7 @@ public class PythonHintConfig extends HintConfig {
 		nameMap.put("BinOp", "a binary operation (e.g. + or *)");
 		nameMap.put("Compare", "a comparison (e.g. a == b or a < b)");
 		nameMap.put("Call", "a function call (e.g. len() or obj.foo())");
-		nameMap.put("Subscript", "a list with a subscript (e.g. x[1])");
+		nameMap.put("Subscript", "a variable with a subscript (e.g. x[1])");
 		nameMap.put("Index", "a subscript for a list (e.g. x[1])");
 		nameMap.put("Assign", "a variable assignment (e.g. x = 5)");
 		nameMap.put("AugAssign", "a variable increment/decrement (e.g. x += 5)");
