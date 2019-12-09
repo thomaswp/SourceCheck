@@ -42,7 +42,7 @@ public class SourceCodeHighlighter {
 
 	public static class SourceCodeFeedbackHTML {
 		private String highlightedCode;
-		private boolean changed;
+		private boolean hadCodeSuggestion, hadMissingSuggestion;
 		private List<String> missingCode = new ArrayList<>();
 
 		public final SourceCodeHighlightConfig config;
@@ -62,7 +62,9 @@ public class SourceCodeHighlighter {
 		}
 
 		public String getHeader() {
-			return "We have added suggestions to your code below. Hover over one to see it. " +
+			String explanation = "We have added suggestions to your code below. ";
+			if (hadCodeSuggestion) explanation += "Hover over one to see it. ";
+			return  explanation +
 					"<small>[<a href='http://go.ncsu.edu/cs108-hints' target='_blank'>"
 					+ "What is this?</a>]</small>";
 		}
@@ -77,21 +79,35 @@ public class SourceCodeHighlighter {
 		 */
 		public String getAllHTML() {
 			if (!config.showHints) return null;
-			if (!changed) return config.getNoSuggestionsText();
-			return String.format("<div><p>%s</p>"
-					+ "<pre class='display' style='padding: 3px;'>%s</pre>"
+			if (!hadCodeSuggestion && !hadMissingSuggestion) return config.getNoSuggestionsText();
+			return String.format("<div>"
+					+ "<h4>%s</h4>"
+					+ "<p>%s</p>"
+					+ "%s"
 					+ "<p class='missing'>%s</p>"
 					+ "</div>",
+					getTitle(),
 					getHeader(),
-					highlightedCode,
+					getHighlightedCode(),
 					getMissingHTML()
 			);
+		}
+
+		private String getHighlightedCode() {
+			if (!hadCodeSuggestion) return "";
+			return String.format("<pre class='display' style='padding: 3px;'>%s</pre>",
+					highlightedCode);
+		}
+
+		private String getTitle() {
+			return "Code Suggestions <span style='color: #009100;'>[New!]</span></h4>";
 		}
 
 		public JSONObject toJSON() {
 			JSONObject jsonObj = new JSONObject();
 			jsonObj.put("highlighted", getAllHTML());
-			jsonObj.put("hasHints", changed);
+			jsonObj.put("hadCodeSuggestion", hadCodeSuggestion);
+			jsonObj.put("hadMissingSuggestion", hadMissingSuggestion);
 			jsonObj.put("config", config.toJSON());
 			return jsonObj;
 		}
@@ -257,7 +273,7 @@ public class SourceCodeHighlighter {
 		String marked = studentCode.getSource();
 
 		List<Suggestion> suggestions = getSuggestions(edits);
-		if (suggestions.size() > 0) feedback.changed = true;
+		if (suggestions.size() > 0) feedback.hadCodeSuggestion = true;
 
 		for (Suggestion suggestion : suggestions) {
 			SourceLocation location = suggestion.location;
@@ -287,7 +303,7 @@ public class SourceCodeHighlighter {
 				if (hint instanceof Insertion) {
 					feedback.missingCode.add(
 							getHumanReadableName((Insertion) hint, mapping.config));
-					feedback.changed = true;
+					feedback.hadMissingSuggestion = true;
 				}
 			}
 		}
