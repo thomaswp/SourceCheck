@@ -53,13 +53,14 @@ public class JavaHintConfig extends HintConfig {
 		return valueMappedTypes;
 	}
 
-	//Could you please explain this?
+
 	@Override
 	public boolean shouldAutoAdd(Node node) {
 		if (node == null || node.parent == null) return false;
 		Node parent = node.parent;
 		int index = node.index();
-		return (parent.hasType("BinaryExp") && index == 0);
+		return (parent.hasType("BinaryExp") && index == 0) ||
+				(parent.hasType("ExpressionStmt") && index == 0);
 	}
 
 	@Override
