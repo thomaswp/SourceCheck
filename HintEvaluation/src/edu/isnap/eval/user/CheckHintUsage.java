@@ -49,7 +49,7 @@ public class CheckHintUsage {
 	private static final long MIN_DURATON_WE = 30;
 
 	public static void main(String[] args) throws IOException {
-		writeHints(Fall2018.instance);
+		writeHints(Fall2018.GuessingGame1);
 	}
 
 	private static boolean isValidSubmission(AssignmentAttempt attempt) {
@@ -112,8 +112,8 @@ public class CheckHintUsage {
 			// For any that attempt for which we have no logs, we use an empty assignment
 			// attempt, which results in 0 for almost every column, but still includes the grades
 			if (!isValidSubmission(attempt)) {
-				attempt = new AssignmentAttempt(attemptID, attempt.loggedAssignmentID,
-						attempt.researcherGrade, attempt.classGrade.orElseGet(null));
+				attempt = new AssignmentAttempt(attempt.id, attempt.loggedAssignmentID,
+						attempt.researcherGrade, null);
 				hasLogs = false;
 			}
 
