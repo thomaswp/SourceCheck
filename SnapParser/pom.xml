@@ -28,13 +28,6 @@
 		</plugins>
 	</build>
 	<dependencies>
-		<!-- The CTD dependency is really only for convenience, sharing util classes 
-			without having to extract them to a separate project -->
-		<dependency>
-			<groupId>edu.isnap</groupId>
-			<artifactId>ctd</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
-		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-csv</artifactId>
