@@ -26,7 +26,7 @@ import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.AttemptAction.ActionData;
 import edu.isnap.dataset.Dataset;
 import edu.isnap.dataset.Grade;
-import edu.isnap.datasets.Fall2017;
+import edu.isnap.datasets.Spring2017;
 import edu.isnap.eval.user.CheckHintUsage;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.node.ASTNode;
@@ -43,7 +43,7 @@ import edu.isnap.util.map.CountMap;
 public class ProgSnap2Dataset implements Closeable {
 
 	public static void main(String[] args) throws IOException {
-		exportAndWrite(Fall2017.instance);
+		exportAndWrite(Spring2017.PolygonMaker);
 	}
 
 	private final static boolean METADATA_ONLY = false;
