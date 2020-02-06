@@ -14,6 +14,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
@@ -32,6 +33,8 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.datasets.Fall2016;
+import edu.isnap.datasets.Spring2016;
+import edu.isnap.datasets.Spring2017;
 import edu.isnap.datasets.aggregate.CSC200;
 import edu.isnap.eval.util.PrintUpdater;
 import edu.isnap.feature.CodeShapeRule;
@@ -53,8 +56,8 @@ import util.LblTree;
 public class FeatureExtraction {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
-		writeFeatures(true);
-//		readFeatures();
+//		writeFeatures(true);
+		readFeatures(readCodeShapesAsFeatures(), false);
 //		writeDistance();
 //		readDistance();
 //		testRPairs();
@@ -62,18 +65,19 @@ public class FeatureExtraction {
 //		exportFeatures(Fall2016.Squiral);
 	}
 
-	private static Assignment out = CSC200.GuessingGame1;
+	private static Assignment out = CSC200.Squiral;
 	private static Assignment[] trainingData = new Assignment[] {
 			// Use not-Fall2016 data so training and test are separate (duh :P)
 //			Spring2016.Squiral, Spring2017.Squiral,
 			// But also test with same training/test data for training accuracy
 //			Fall2016.Squiral,
-//			Spring2016.Squiral, Spring2017.Squiral, Fall2016.Squiral,
+			Spring2016.Squiral, Spring2017.Squiral, Fall2016.Squiral,
+			//Fall2017.Squiral
 
-//			Fall2016.GuessingGame1
-			CSC200.GuessingGame1
+//			Fall2016.Squiral
+//			CSC200.GuessingGame1
 	};
-	private static Assignment testData = CSC200.GuessingGame1;
+	private static Assignment testData = CSC200.Squiral;
 
 	private static Map<AssignmentAttempt, List<Node>> loadTrainingData() {
 		Map<AssignmentAttempt, List<Node>> data = loadAssignments(trainingData);
@@ -278,6 +282,16 @@ public class FeatureExtraction {
 
 	}
 
+	private static List<Feature> readCodeShapesAsFeatures() throws IOException {
+		Kryo kryo = new Kryo();
+		Input input = new Input(new FileInputStream(out.analysisDir() + "/features.cached"));
+		@SuppressWarnings("unchecked")
+		ArrayList<CodeShapeRule> allRules = kryo.readObject(input, ArrayList.class);
+		input.close();
+		return allRules.stream()
+				.map(rule -> new Feature(rule, rule.index))
+				.collect(Collectors.toList());
+	}
 
 	private static List<Feature> readClusters() throws IOException {
 		Kryo kryo = new Kryo();
@@ -319,12 +333,15 @@ public class FeatureExtraction {
 	}
 
 	private static void readFeatures() throws IOException {
-		List<Feature> features = readClusters();
+		readFeatures(readClusters(), true);
+	}
+
+	private static void readFeatures(List<Feature> features, boolean filter) throws IOException {
 		boolean disjunct = features.stream()
 				.anyMatch(f -> f.rules.stream().anyMatch(r -> r instanceof DisjunctionRule));
 
 		Spreadsheet spreadsheet = new Spreadsheet();
-		List<AssignmentAttempt> attempts = SelectProjects.selectAttempts(testData);
+		List<AssignmentAttempt> attempts = SelectProjects.selectAttempts(testData, filter);
 		int nActions = attempts.stream().mapToInt(attempt -> attempt.size()).sum();
 
 		System.out.println("Testing features: ");
@@ -336,6 +353,12 @@ public class FeatureExtraction {
 				spreadsheet.newRow();
 				spreadsheet.put("traceID", attempt.id);
 				spreadsheet.put("RowID", action.id);
+				spreadsheet.put("submitted", action.id == attempt.submittedActionID);
+				if (attempt.researcherGrade != null) {
+					for (Entry<String, Integer> entry : attempt.researcherGrade.tests.entrySet()) {
+						spreadsheet.put(entry.getKey(), entry.getValue());
+					}
+				}
 				Node node = SimpleNodeBuilder.toTree(action.snapshot, true);
 				Set<PQGram> pqGrams = PQGram.extractAllFromNode(node);
 				for (Feature feature : features) {

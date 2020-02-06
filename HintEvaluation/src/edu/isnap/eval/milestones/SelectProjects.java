@@ -42,15 +42,21 @@ public class SelectProjects {
 	}
 
 	public static List<AssignmentAttempt> selectAttempts(Assignment assignment) {
+		return selectAttempts(assignment, true);
+	}
+
+	public static List<AssignmentAttempt> selectAttempts(Assignment assignment, boolean filter) {
 		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, false, true,
 				new SnapParser.SubmittedOnly());
 		List<AssignmentAttempt> selected = new ArrayList<>();
 		for (AssignmentAttempt attempt : attempts.values()) {
 			boolean usedHint = false;
-			for (AttemptAction action : attempt) {
-				if (AttemptAction.HINT_DIALOG_DESTROY.equals(action.message)) {
-					usedHint = true;
-					break;
+			if (filter) {
+				for (AttemptAction action : attempt) {
+					if (AttemptAction.HINT_DIALOG_DESTROY.equals(action.message)) {
+						usedHint = true;
+						break;
+					}
 				}
 			}
 			if (usedHint) continue;
