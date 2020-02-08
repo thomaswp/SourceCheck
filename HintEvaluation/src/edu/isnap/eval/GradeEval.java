@@ -15,7 +15,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
 import edu.isnap.dataset.Assignment;
-import edu.isnap.datasets.Fall2015;
+import edu.isnap.datasets.csc200.Fall2015;
 import edu.isnap.eval.AutoGrader.Grader;
 import edu.isnap.eval.policy.DirectEditPolicy;
 import edu.isnap.eval.policy.HintFactoryPolicy;

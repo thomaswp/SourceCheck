@@ -7,4 +7,5 @@ data/**/export
 HintRating
 *.sql
 *.iml
+*.DS_STORE
 history.txt

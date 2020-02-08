@@ -6,7 +6,7 @@ import java.util.Map;
 
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
-import edu.isnap.datasets.Fall2018;
+import edu.isnap.datasets.csc200.Fall2018;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.node.Node;
 import edu.isnap.parser.SnapDatabaseParser;

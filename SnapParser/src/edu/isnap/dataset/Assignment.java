@@ -155,8 +155,6 @@ public class Assignment {
 		return attempts;
 	}
 
-	public final static String CSC200_BASE_DIR = "../data/csc200";
-
 	// Note: end dates are generally 2 days past last class due date
 	public static Date date(int year, int month, int day) {
 		// NOTE: GregorianCalendar months are 0-based, thus the 'month - 1'

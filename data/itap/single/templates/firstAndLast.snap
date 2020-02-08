@@ -1,9 +1,0 @@
-Module(list {
-    FunctionDef:firstAndLast(arguments(list {
-        arg:s(null)
-    }, null, list, list, null, list), list {
-        Return(BinOp(Subscript(Name:s(Load), Index(Num:0), Load), Add, Subscript(Name:s(Load), Index(BinOp(Call(Name:len(Load), list {
-            Name:s(Load)
-        }, list), Sub, Num:1)), Load)))
-    }, list, null)
-})

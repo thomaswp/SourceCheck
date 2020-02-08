@@ -3,7 +3,7 @@ package edu.isnap.eval.user;
 import java.io.IOException;
 
 import edu.isnap.dataset.Assignment;
-import edu.isnap.datasets.Spring2016;
+import edu.isnap.datasets.csc200.Spring2016;
 import edu.isnap.parser.LogSplitter;
 import edu.isnap.parser.Store.Mode;
 

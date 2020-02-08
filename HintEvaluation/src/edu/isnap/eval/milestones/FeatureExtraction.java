@@ -32,10 +32,10 @@ import distance.RTED_InfoTree_Opt;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
-import edu.isnap.datasets.Fall2016;
-import edu.isnap.datasets.Spring2016;
-import edu.isnap.datasets.Spring2017;
 import edu.isnap.datasets.aggregate.CSC200;
+import edu.isnap.datasets.csc200.Fall2016;
+import edu.isnap.datasets.csc200.Spring2016;
+import edu.isnap.datasets.csc200.Spring2017;
 import edu.isnap.eval.util.PrintUpdater;
 import edu.isnap.feature.CodeShapeRule;
 import edu.isnap.feature.DisjunctionRule;
@@ -62,7 +62,7 @@ public class FeatureExtraction {
 //		readDistance();
 //		testRPairs();
 //		extractNodeAndEdges();
-//		exportFeatures(Fall2016.Squiral);
+//		exportFeatures(Fall2016.Squiral)
 	}
 
 	private static Assignment out = CSC200.Squiral;

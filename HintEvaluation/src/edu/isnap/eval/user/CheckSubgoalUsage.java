@@ -18,7 +18,7 @@ import org.apache.commons.csv.CSVPrinter;
 import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
-import edu.isnap.datasets.Spring2016;
+import edu.isnap.datasets.csc200.Spring2016;
 import edu.isnap.eval.AutoGrader;
 import edu.isnap.eval.AutoGrader.Grader;
 import edu.isnap.hint.util.SimpleNodeBuilder;
