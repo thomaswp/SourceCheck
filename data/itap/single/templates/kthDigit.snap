@@ -1,8 +1,0 @@
-Module(list {
-    FunctionDef:kthDigit(arguments(list {
-        arg:x(null)
-        arg:k(null)
-    }, null, list, list, null, list), list {
-        Return(BinOp(BinOp(Name:x(Load), FloorDiv, BinOp(Num:10, Pow, BinOp(Name:k(Load), Sub, Num:1))), Mod, Num:10))
-    }, list, null)
-})

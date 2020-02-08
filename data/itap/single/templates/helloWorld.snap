@@ -1,5 +1,0 @@
-Module(list {
-    FunctionDef:helloWorld(arguments(list, null, list, list, null, list), list {
-        Return(Str:`Hello World!`)
-    }, list, null)
-})
