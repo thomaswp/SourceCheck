@@ -9,7 +9,7 @@ import java.util.Set;
 
 import astrecognition.model.Convert;
 import astrecognition.model.Tree;
-import edu.isnap.datasets.Fall2015;
+import edu.isnap.datasets.csc200.Fall2015;
 import edu.isnap.hint.SnapHintBuilder;
 import edu.isnap.hint.SnapHintBuilder.LoadedAttempt;
 import edu.isnap.hint.util.Tuple;

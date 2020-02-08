@@ -8,7 +8,7 @@ import edu.isnap.dataset.Assignment;
 import edu.isnap.dataset.AssignmentAttempt;
 import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.Dataset;
-import edu.isnap.datasets.Spring2016;
+import edu.isnap.datasets.csc200.Spring2016;
 import edu.isnap.parser.Store.Mode;
 import edu.isnap.util.Spreadsheet;
 
