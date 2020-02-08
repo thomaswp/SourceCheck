@@ -1,11 +1,7 @@
 */bin
-*.graphml
-*.RData
-*.Rhistory
-*/.Rproj.user
-.Rproj.user
 */target
 */.settings
+*.graphml
 data/**/analysis
 data/**/export
 HintRating
