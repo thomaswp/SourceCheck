@@ -4,3 +4,9 @@
 [submodule "R"]
 	path = R
 	url = https://github.ncsu.edu/iSnap/SnapHintsR.git
+[submodule "data"]
+	path = data
+	url = https://github.ncsu.edu/iSnap/SnapHintsData.git
+[submodule "Datasets"]
+	path = Datasets
+	url = https://github.ncsu.edu/iSnap/SnapHintsDatasets.git
