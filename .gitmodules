@@ -1,6 +1,6 @@
 [submodule "QualityScore"]
 	path = QualityScore
-	url = ../QualityScore
+	url = ../QualityScore.git
 [submodule "R"]
 	path = R
 	url = https://github.ncsu.edu/iSnap/SnapHintsR.git
