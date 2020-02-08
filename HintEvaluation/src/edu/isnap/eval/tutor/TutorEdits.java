@@ -114,7 +114,7 @@ public class TutorEdits {
 
 				if (requestIDs.size() == 0) {
 					if (assignment.wasLoggingUnstable(attempt.id) ||
-							attempt.grade == null || attempt.grade.average() != 1) continue;
+							attempt.researcherGrade == null || attempt.researcherGrade.average() != 1) continue;
 					Trace trace = JsonAST.createTrace(attempt, assignment.name, true, true, null);
 					training.addTrace(trace);
 				} else {

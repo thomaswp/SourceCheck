@@ -26,6 +26,7 @@ import edu.isnap.dataset.AttemptAction;
 import edu.isnap.dataset.AttemptAction.ActionData;
 import edu.isnap.datasets.csc200.Spring2017;
 import edu.isnap.dataset.Dataset;
+import edu.isnap.dataset.Grade;
 import edu.isnap.eval.user.CheckHintUsage;
 import edu.isnap.hint.util.SimpleNodeBuilder;
 import edu.isnap.node.ASTNode;
@@ -42,8 +43,10 @@ import edu.isnap.util.map.CountMap;
 public class ProgSnap2Dataset implements Closeable {
 
 	public static void main(String[] args) throws IOException {
-		exportAndWrite(Spring2017.instance);
+		exportAndWrite(Spring2017.PolygonMaker);
 	}
+
+	private final static boolean METADATA_ONLY = false;
 
 	private final static CSVFormat CSV_FORMAT = CSVFormat.RFC4180;
 	private final static String OUTPUT_DIR = "ProgSnap2";
@@ -65,13 +68,17 @@ public class ProgSnap2Dataset implements Closeable {
 	private final String dir;
 	private final Spreadsheet mainTable;
 	private final Spreadsheet codeStateTable;
-	private final Spreadsheet assignmentLinkTable;
 
 	private final Set<String> unexportedMessages = new TreeSet<>();
 	private final CountMap<String> users = new CountMap<>();
 
 	private final List<Event> rows = new ArrayList<>();
 	private final Map<String, Integer> codeStates = new HashMap<>();
+
+	private final LinkTable[] linkTables = new LinkTable[] {
+			new AssignmentLinkTable(),
+			new AssignmentSubjectLinkTable(),
+	};
 
 	public PrintStream out = System.out;
 
@@ -89,17 +96,98 @@ public class ProgSnap2Dataset implements Closeable {
 		progsnap.close();
 	}
 
+	private abstract class LinkTable {
+		final Spreadsheet spreadsheet;
+
+		abstract String[] getIDs();
+
+		void addAssignment(Assignment assignment) { };
+		void addAttempt(AssignmentAttempt attempt, Assignment assignment) { };
+
+		String getName() {
+			return String.join("", getIDs());
+		}
+
+		LinkTable() {
+			spreadsheet = new Spreadsheet(CSV_FORMAT);
+		}
+
+		void beginWrite() throws IOException {
+			spreadsheet.beginWrite(getPath("LinkTables/" + getName() + ".csv"));
+		}
+
+		void close() throws IOException {
+			spreadsheet.endWrite();
+		}
+
+	}
+
+	private class AssignmentLinkTable extends LinkTable {
+		@Override
+		String[] getIDs() {
+			return new String[] {"Assignment"};
+		}
+
+		@Override
+		protected void addAssignment(Assignment assignment) {
+			spreadsheet.newRow();
+			spreadsheet.put("AssignmentID", assignment.name);
+			spreadsheet.put("URL", "file:///Resources/Assignments.pdf");
+			spreadsheet.put("Type", assignment.name.contains("HW") ? "Homework" : "In-Lab");
+		}
+
+		@Override
+		void addAttempt(AssignmentAttempt attempt, Assignment assignment) {
+			// TODO: Add the names of the tests to the Assignment LinkTable
+			super.addAttempt(attempt, assignment);
+		}
+	}
+
+	private class AssignmentSubjectLinkTable extends LinkTable {
+		@Override
+		String[] getIDs() {
+			return new String[] {"Assignment", "Subject"};
+		}
+
+		@Override
+		void addAttempt(AssignmentAttempt attempt, Assignment assignment) {
+			spreadsheet.newRow();
+			spreadsheet.put("AssignmentID", assignment.name);
+			spreadsheet.put("SubjectID", attempt.userID());
+			spreadsheet.put("Grade", !attempt.classGrade.isPresent() ? null :
+				attempt.classGrade.get());
+
+			Double researcherGrade = null;
+			Grade grade = attempt.researcherGrade;
+			if (grade != null) {
+				researcherGrade = grade.average();
+				spreadsheet.put("ResearcherGradeAverage", researcherGrade);
+				int i = 0;
+				for (String test : grade.tests.keySet()) {
+					Integer numericGrade = grade.tests.get(test);
+					String result = numericGrade == Grade.FAIL ? "Fail" :
+						(numericGrade == Grade.ATTEMPT ? "Attempt" : "Pass");
+					spreadsheet.put("ResearcherGrade" + i++, result);
+				}
+			} else {
+				spreadsheet.put("ResearcherGradeAverage", researcherGrade);
+				for (int i = 0; i < 6; i++) spreadsheet.put("ResearcherGrade" + i, null);
+			}
+		}
+	}
+
 	public ProgSnap2Dataset(String dir) throws IOException {
 		this.dir = dir;
 		JsonAST.values.clear();
 		mainTable = new Spreadsheet(CSV_FORMAT);
 		mainTable.beginWrite(getPath("MainTable.csv"));
 
-		assignmentLinkTable = new Spreadsheet(CSV_FORMAT);
-		assignmentLinkTable.beginWrite(getPath("LinkTables/Assignment.csv"));
-
 		codeStateTable = new Spreadsheet(CSV_FORMAT);
 		codeStateTable.beginWrite(getPath("CodeStates/CodeStates.csv"));
+
+		for (LinkTable table : linkTables) {
+			table.beginWrite();
+		}
 	}
 
 	private String getPath(String path) {
@@ -115,9 +203,12 @@ public class ProgSnap2Dataset implements Closeable {
 			rows.get(eventID).write(mainTable, eventID);
 		}
 
+		for (LinkTable table : linkTables) {
+			table.close();
+		}
+
 		mainTable.endWrite();
 		codeStateTable.endWrite();
-		assignmentLinkTable.endWrite();
 
 		try {
 			JsonAST.write(dir + "/ProgSnap2-values.txt",
@@ -158,10 +249,9 @@ public class ProgSnap2Dataset implements Closeable {
 	public void export(Assignment assignment) throws IOException {
 		out.println("---- Exporting: " + assignment + " ----");
 
-		assignmentLinkTable.newRow();
-		assignmentLinkTable.put("AssignmentID", assignment.name);
-		assignmentLinkTable.put("URL", "file:///Resources/Assignments.pdf");
-		assignmentLinkTable.put("Type", assignment.name.contains("HW") ? "Homework" : "In-Lab");
+		for (LinkTable table : linkTables) {
+			table.addAssignment(assignment);
+		}
 
 		Map<String, AssignmentAttempt> attempts = assignment.load(Mode.Use, false, true,
 				new SnapParser.SubmittedOnly());
@@ -490,6 +580,12 @@ public class ProgSnap2Dataset implements Closeable {
 	private void export(Assignment assignment, AssignmentAttempt attempt, Spreadsheet spreadsheet)
 			throws IOException {
 
+		for (LinkTable table : linkTables) {
+			table.addAttempt(attempt, assignment);
+		}
+
+		if (METADATA_ONLY) return;
+
 		ASTNode lastASTNode = null;
 		String lastCode = "";
 		String lastSessionID = "";
@@ -577,8 +673,8 @@ public class ProgSnap2Dataset implements Closeable {
 					Event submitEvent = new Event(order++, assignment, attempt, action,
 							"Project.Submit", lastCode, humanReadableCode);
 					rows.add(submitEvent);
-					if (attempt.grade != null) {
-						submitEvent.score = attempt.grade.average(); // TODO: Get actual grade
+					if (attempt.researcherGrade != null) {
+						submitEvent.score = attempt.researcherGrade.average(); // TODO: Get actual grade
 					}
 				}
 			}

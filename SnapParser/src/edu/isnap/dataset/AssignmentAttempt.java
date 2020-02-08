@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 
 import edu.isnap.parser.SnapParser;
 import edu.isnap.parser.elements.Snapshot;
@@ -17,7 +18,8 @@ public class AssignmentAttempt implements Iterable<AttemptAction> {
 	public final ActionRows rows = new ActionRows();
 	/** The primary assignmentID of the logs (e.g. when the attempt was submitted). */
 	public final String loggedAssignmentID;
-	public final Grade grade;
+	public final Grade researcherGrade;
+	public final Optional<Double> classGrade;
 	/** Whether the attempt was ever exported from Snap. */
 	public boolean exported;
 	/** The Snapshot which was actually submitted, if known. */
@@ -53,13 +55,14 @@ public class AssignmentAttempt implements Iterable<AttemptAction> {
 
 	@SuppressWarnings("unused")
 	private AssignmentAttempt() {
-		this(null, null, null);
+		this(null, null, null, null);
 	}
 
-	public AssignmentAttempt(String id, String loggedAssignmentID, Grade grade) {
+	public AssignmentAttempt(String id, String loggedAssignmentID, Grade grade, Double classGrade) {
 		this.id = id;
 		this.loggedAssignmentID = loggedAssignmentID;
-		this.grade = grade;
+		this.researcherGrade = grade;
+		this.classGrade = Optional.ofNullable(classGrade);
 	}
 
 	public void add(AttemptAction row) {

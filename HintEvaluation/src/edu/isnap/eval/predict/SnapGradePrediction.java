@@ -80,7 +80,7 @@ public class SnapGradePrediction {
 			}
 //			spreadsheet.put("id", attempt.id);
 //			spreadsheet.put("grade", attempt.grade.average());
-			spreadsheet.put("gradePass", attempt.grade.average() >= 0.8);
+			spreadsheet.put("gradePass", attempt.researcherGrade.average() >= 0.8);
 //			spreadsheet.put("time", attempt.totalActiveTime);
 //			for (Entry<String, Integer> entry : attempt.grade.tests.entrySet()) {
 //				spreadsheet.put("Obj_" + entry.getKey().replace(" ", "_"), entry.getValue() == 2);

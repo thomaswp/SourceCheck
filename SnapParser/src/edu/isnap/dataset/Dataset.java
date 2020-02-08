@@ -34,6 +34,14 @@ public abstract class Dataset {
 		return dataDir + "/starts.csv";
 	}
 
+	public String gradesFile() {
+		return dataDir + "/grades/ClassGrades.csv";
+	}
+
+	public String gradeTotalsFile() {
+		return dataDir + "/grades/ClassGradeTotals.csv";
+	}
+
 	public CSVFormat dataFileCSVFormat() {
 		return CSVFormat.DEFAULT.withHeader();
 	}

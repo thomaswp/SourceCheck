@@ -106,7 +106,7 @@ public class CheckSubgoalUsage {
 					if (satisfied(lastCode, f)) satisfiedEnd++;
 				}
 
-				printer.printRecord(key, finished.size(), satisfied, satisfiedEnd, path.grade.average(), gap);
+				printer.printRecord(key, finished.size(), satisfied, satisfiedEnd, path.researcherGrade.average(), gap);
 			}
 
 
