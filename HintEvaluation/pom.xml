@@ -28,11 +28,11 @@
 		</plugins>
 	</build>
 	<dependencies>
-		<dependency>
+		<!-- <dependency>
 			<groupId>edu.isnap</groupId>
 			<artifactId>datasets</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
-		</dependency>
+		</dependency> -->
 		<dependency>
 			<groupId>de.cit-ec.tcs.alignment</groupId>
 			<artifactId>sequences</artifactId>
