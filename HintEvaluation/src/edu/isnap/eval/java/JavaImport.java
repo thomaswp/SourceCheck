@@ -182,6 +182,11 @@ public class JavaImport {
 			JavaNode hintRequest = attempts.get(student).get(0);
 			String highlightedCode = SourceCodeHighlighter.highlightSourceCode(
 					hintData, hintRequest);
+			highlightedCode = highlightedCode.replace("\n", "<br>\n");
+			highlightedCode = "<meta http-equiv=\"content-type\" charset=\"utf-8\">\n" + 
+					"<link rel = \"stylesheet\"\n" + 
+					"   type = \"text/css\"\n" + 
+					"   href = \"../style.css\" />\n" + highlightedCode;
 			PrintWriter out = new PrintWriter(DATA_DIR + student + "/output_hints.html");
 			out.println(highlightedCode);
 			out.close();

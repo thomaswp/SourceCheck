@@ -110,7 +110,7 @@ public class SourceCodeHighlighter {
 		for (EditHint hint : edits) {
 			hint.addSuggestions(suggestions);
 		}
-		Collections.sort(suggestions);
+		Collections.sort(suggestions, Collections.reverseOrder());
 		return suggestions;
 	}
 
