@@ -25,6 +25,14 @@ public class Alignment {
 	}
 
 	// Credit: http://introcs.cs.princeton.edu/java/96optimization/Diff.java.html
+	/**
+	 * @param sequenceA
+	 * @param sequenceB
+	 * @param insCost
+	 * @param delCost
+	 * @param subCost
+	 * @return Levenshtein distance between "sequenceA" and "sequenceB"??
+	 */
 	public static int alignCost(String[] sequenceA, String[] sequenceB, int insCost, int delCost,
 			int subCost) {
 		int[][] opt = createAlignmentMatrix(sequenceA, sequenceB, insCost, delCost, subCost, false);
@@ -300,7 +308,7 @@ public class Alignment {
 		return closestA;
 	}
 
-	private static int[][] createAlignmentMatrix(String[] sequenceA, String[] sequenceB,
+	public static int[][] createAlignmentMatrix(String[] sequenceA, String[] sequenceB,
 			int insCost, int delCost, int subCost, boolean flipInvalid) {
 		// The penalties to apply
 		int matchCost = 0;
@@ -397,7 +405,7 @@ public class Alignment {
 		return toIndices;
 	}
 
-	public static int getProgress(String[] from, String[] to, int orderReward, int unorderReward) {
+	public static double getProgress(String[] from, String[] to, int orderReward, int unorderReward) {
 		return (int) Math.round(getProgress(from, to, orderReward, unorderReward, 0));
 	}
 
@@ -417,14 +425,19 @@ public class Alignment {
 	private static double getProgress(String[] from, String[] to, int[] toOrderGroups,
 			int orderReward, int unorderReward, double skipCost, int[] toIndices) {
 		// TODO: This can and should be much more efficient
+		// toList[k] = "\0" if the k-th node in c(b_{rj}) is in c(a_{ri})
 		List<String> toList = new LinkedList<>(Arrays.asList(to));
 
+		// If indices[k] = l, k-th node in c(a_{ri}) is l-th node in c(b_{rj})
+		// If indices[k] = -1, k-th node in c(a_{ri}) is not in c(b_{rj})
 		int[] indices = new int[from.length];
 		for (int i = 0; i < from.length; i++) {
 			String item = from[i];
 			int index = toList.indexOf(item);
-			if (index >= 0) {
-				toList.set(index, "\0");
+			if (index >= 0) { // i-th node in c(a_{ri}) is in c(b_{rj})
+//				if (orderReward == 1 && unorderReward == 1) {
+					toList.set(index, "\0"); // prevents multiple matches
+//				}
 				indices[i] = index;
 			} else {
 				indices[i] = -1;
@@ -437,7 +450,7 @@ public class Alignment {
 		int lastIndex = -1;
 		int maxIndex = -1;
 		for (Integer index : indices) {
-			if (index < 0) continue;
+			if (index < 0) continue; // don't change reward if k-th node in c(a_{ri}) is not in c(b_{rj})
 			int adjIndex = index;
 			int group;
 //			System.out.println(index);
@@ -487,7 +500,7 @@ public class Alignment {
 	 * including duplicates
 	 */
 	public static int getMissingNodeCount(String[] from, String[] to) {
-		return to.length - getProgress(to, from, 1, 1);
+		return to.length - (int) getProgress(to, from, 1, 1);
 	}
 
 	public static void main(String[] args) {

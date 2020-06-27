@@ -10,6 +10,7 @@ import edu.isnap.sourcecheck.NodeAlignment.Mapping;
 public abstract class TextualNode extends Node {
 
 	public Optional<Boolean> correct = Optional.empty();
+	public Optional<Integer> cluster = Optional.empty();
 	private String source;
 
 	// TODO: Protect

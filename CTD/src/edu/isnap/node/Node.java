@@ -37,6 +37,8 @@ public abstract class Node extends StringHashable implements INode {
 	public final String value;
 	public final Node parent;
 	public final List<Node> children = new ArrayList<>();
+	private String studentID;
+	private String submissionTime;
 
 	public transient Object tag;
 	public final transient List<Canonicalization> canonicalizations = new ArrayList<>();
@@ -501,6 +503,10 @@ public abstract class Node extends StringHashable implements INode {
 		return prettyPrint(false, new HashMap<Node, String>());
 	}
 
+	/**
+	 * @return a list of strings of types obtained by depth-first iteration of
+	 * the AST rooted at this node
+	 */
 	public String[] depthFirstIteration() {
 		String[] array = new String[treeSize()];
 		depthFirstIteration(array, 0);
@@ -683,6 +689,11 @@ public abstract class Node extends StringHashable implements INode {
 		Node node = constructor.constructNode(parent, type, astNode.value, astNode.id);
 		node.readFromASTNode(astNode);
 		node.tag = astNode;
+		if (astNode.annotation != null) {
+			node.writableAnnotations();
+			TextHint hint = new TextHint(astNode.annotation, 1);
+			node.addTextHint(hint);			
+		}
 		for (ASTNode child : astNode.children()) {
 			node.children.add(fromASTNode(child, node, constructor));
 		}
@@ -696,5 +707,21 @@ public abstract class Node extends StringHashable implements INode {
 	@Override
 	public String toString() {
 		return prettyPrint(true);
+	}
+
+	public String getStudentID() {
+		return studentID;
+	}
+
+	public void setStudentID(String studentID) {
+		this.studentID = studentID;
+	}
+
+	public String getSubmissionTime() {
+		return submissionTime;
+	}
+
+	public void setSubmissionTime(String submissionTime) {
+		this.submissionTime = submissionTime;
 	}
 }

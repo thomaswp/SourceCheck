@@ -1,6 +1,7 @@
 package edu.isnap.hint;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import edu.isnap.ctd.hint.CTDHintGenerator;
@@ -17,7 +18,15 @@ public class HintData {
 	public final double minGrade;
 	public final HintConfig config;
 	private final List<IDataModel> dataModels;
+	private LinkedHashMap<Integer, Node> referenceSolutions;
 
+	/**
+	 * @param assignment the name of java file used in this assignment. Omit ".java".
+	 * @param config
+	 * @param minGrade
+	 * @param consumer
+	 * @param additionalConsumers
+	 */
 	public HintData(String assignment, HintConfig config, double minGrade,
 			IDataConsumer consumer, IDataConsumer... additionalConsumers) {
 		this.assignment = assignment;
@@ -29,6 +38,7 @@ public class HintData {
 		for (IDataConsumer con : additionalConsumers) {
 			addDataModels(con.getRequiredData(this));
 		}
+		referenceSolutions = new LinkedHashMap<>();
 	}
 
 	private void addDataModels(IDataModel[] models) {
@@ -72,5 +82,13 @@ public class HintData {
 
 	public HintHighlighter hintHighlighter() {
 		return new HintHighlighter(this);
+	}
+
+	public LinkedHashMap<Integer, Node> getReferenceSolutions() {
+		return referenceSolutions;
+	}
+	
+	public Node addReferenceSoltion(int clusterID, Node solution) {
+		return referenceSolutions.put(clusterID, solution);
 	}
 }
