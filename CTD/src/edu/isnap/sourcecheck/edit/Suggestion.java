@@ -27,11 +27,11 @@ public class Suggestion implements Comparable<Suggestion> {
 
 	@Override
 	public int compareTo(Suggestion s) {
-		if (location == null) return -1;
-		if (s == null) return 1;
+		if (location == null) return 1;
+		if (s == null) return -1;
 		int comp = location.compareTo(s.location);
 		// If the source locations are different, return the later one (we work backwards)
-		if (comp != 0) return -comp;
+		if (comp != 0) return comp;
 		// Otherwise, process starts before ends, so spans don't overlap
 		if (start != s.start) return start ? 1 : -1;
 		// Otherwise use the type order (reversed so the first is processed last)
