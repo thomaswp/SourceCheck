@@ -3,5 +3,13 @@
   <display-name>HintServer</display-name>
   <welcome-file-list>
     <welcome-file>hints</welcome-file>
+    <welcome-file>java.html</welcome-file>
+    <welcome-file>java.htm</welcome-file>
+    <welcome-file>java.jsp</welcome-file>
   </welcome-file-list>
+  
+  <servlet>
+<servlet-name>HighLelelHintServlet</servlet-name>
+<servlet-class>HintServlet2</servlet-class>
+</servlet>
 </web-app>

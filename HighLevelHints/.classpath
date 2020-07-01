@@ -14,5 +14,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/QualityScore"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/SnapParser"/>
 	<classpathentry kind="src" path="/iSnap"/>
+	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

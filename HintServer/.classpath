@@ -6,9 +6,6 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry combineaccessrules="false" kind="src" path="/CTD"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/SnapParser"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/iSnap"/>
 	<classpathentry kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER">
 		<attributes>
 			<attribute name="maven.pomderived" value="true"/>
@@ -22,6 +19,11 @@
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.web.container"/>
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/CTD"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/SnapParser"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/iSnap"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/JavaParser"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/HighLevelHints"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/QualityScore"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
