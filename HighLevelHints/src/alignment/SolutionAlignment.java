@@ -2,9 +2,11 @@ package alignment;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.Set;
 
 import edu.isnap.hint.HintConfig;
 import edu.isnap.hint.util.Alignment;
@@ -13,9 +15,9 @@ import edu.isnap.sourcecheck.NodeAlignment;
 
 public class SolutionAlignment extends Alignment {
 	
-	public static double getFullOrderReward(int length, double baseReward, double factor) {
+	public static double getFullOrderReward(double d, double baseReward, double factor) {
 		double reward = 0.0;
-		for (int i = 0; i < length; i++) {
+		for (int i = 0; i < d; i++) {
 			reward += Math.pow(baseReward, Math.pow(factor, i));
 		}
 		return reward;
@@ -38,7 +40,7 @@ public class SolutionAlignment extends Alignment {
 		return getProgress(from, to, null, orderReward, unorderReward, new int[to.length], missing);
 	}
 	
-	private static double getProgress(String[] from, String[] to, int[] toOrderGroups,
+	static double getProgress(String[] from, String[] to, int[] toOrderGroups,
 			int orderReward, int unorderReward, int[] toIndices, boolean missing) {
 		// TODO: This can and should be much more efficient
 		// toList[k] = "\0" if the k-th node in c(b_{rj}) is in c(a_{ri})
@@ -65,46 +67,48 @@ public class SolutionAlignment extends Alignment {
 
 		Arrays.fill(toIndices, -1);
 		
-		Queue<List<Integer>> oneToOneIndices = new LinkedList<>();
-		oneToOneIndices.add(indices);
-		if (!missing) {
-			for (int i = 0; i < to.length; i++) {
-				List<Integer> fromIndices = new ArrayList<>();
-				List<Integer> example = oneToOneIndices.peek();
-				for (int j = 0; j < example.size(); j++) {
-					if (example.get(j) == i) {
-						fromIndices.add(j);
-					}
-				}
-				if (fromIndices.size() < 2) {
-					continue; // no duplicates
-				}
-				// Multiple elements in "from" point to one element in "to"
-				int queueSize = oneToOneIndices.size();
-				for (int j = 0; j < queueSize; j++) {
-					ArrayList<Integer> polled = (ArrayList<Integer>) oneToOneIndices.poll();
-					for (int index : fromIndices) {
-						List<Integer> temp = new ArrayList<>(polled.size());
-						for (int h = 0; h < polled.size(); h++) {
-							if (fromIndices.indexOf(polled.get(h)) != -1 && h != index) {
-								temp.add(h, -1);
-							}else {
-								temp.add(h, polled.get(h));
-							}
-						}
-						oneToOneIndices.add(new ArrayList<Integer>(temp));
-					}
-				}
-			}
-		}
+//		Queue<List<Integer>> oneToOneIndices = new LinkedList<>();
+//		oneToOneIndices.add(indices);
+//		if (!missing) {
+//			for (int i = 0; i < to.length; i++) {
+//				List<Integer> fromIndices = new ArrayList<>();
+//				List<Integer> example = oneToOneIndices.peek();
+//				for (int j = 0; j < example.size(); j++) {
+//					if (example.get(j) == i) {
+//						fromIndices.add(j);
+//					}
+//				}
+//				if (fromIndices.size() < 2) {
+//					continue; // no duplicates
+//				}
+//				// Multiple elements in "from" point to one element in "to"
+//				int queueSize = oneToOneIndices.size();
+//				for (int j = 0; j < queueSize; j++) {
+//					ArrayList<Integer> polled = (ArrayList<Integer>) oneToOneIndices.poll();
+//					for (int index : fromIndices) {
+//						List<Integer> temp = new ArrayList<>(polled.size());
+//						for (int h = 0; h < polled.size(); h++) {
+//							if (fromIndices.indexOf(polled.get(h)) != -1 && h != index) {
+//								temp.add(h, -1);
+//							}else {
+//								temp.add(h, polled.get(h));
+//							}
+//						}
+//						oneToOneIndices.add(new ArrayList<Integer>(temp));
+//					}
+//				}
+//			}
+//		}
 		
 		double maxReward = Double.NEGATIVE_INFINITY;
-		for (List<Integer> filteredIndices : oneToOneIndices) {
+//		for (List<Integer> filteredIndices : oneToOneIndices) {
+		
+		Set<Integer> usedIndices  = new HashSet<>(to.length);
 
 		double reward = 0;
 		int lastIndex = -1;
 		int maxIndex = -1;
-		for (Integer index : filteredIndices) {
+		for (Integer index : indices) {//filteredIndices) {
 			if (index < 0) continue; // don't change reward if k-th node in c(a_{ri}) is not in c(b_{rj})
 			int adjIndex = index;
 			int group;
@@ -139,12 +143,20 @@ public class SolutionAlignment extends Alignment {
 
 			if (to[adjIndex] != null) {
 				reward += adjIndex > lastIndex ? orderReward : unorderReward;
+				if (!missing && adjIndex - lastIndex > 1 && !to[adjIndex].equals(from[indices.indexOf(index)])) {
+					boolean skipped = true;// && !usedIndices.isEmpty();
+					for (int idx = lastIndex + 1; idx < adjIndex; idx++) {
+						skipped = skipped && usedIndices.contains(idx);
+					}
+					if (skipped) reward -= 1;
+				}
 			}
+			usedIndices.add(adjIndex);
 			lastIndex = adjIndex;
 			maxIndex = Math.max(maxIndex, adjIndex);
 		}
 		if (reward > maxReward) maxReward = reward;
-		}
+//		}
 
 		return maxReward;
 	}

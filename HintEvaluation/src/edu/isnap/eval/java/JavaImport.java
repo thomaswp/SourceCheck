@@ -48,17 +48,18 @@ import net.sf.javaml.core.*;
 
 public class JavaImport {
 
-	static String DATA_DIR = "../data/F19_Project_3_2/task4/";
-	static String CMU_CS = "@andrew.cmu.edu_social-network_p32-task4_";
-	static boolean clustered = false;
-
 	public static void main(String[] args) throws IOException {
 
 		// Run generate hints to load data, generate hints for each student and print
 		// them out
 		// You need to update the file path to wherever you unzipped the data
+		int task = 4;
+		String dataDir = "../data/F19_Project_3_2/task" + task + "/";
+		String separator = "@andrew.cmu.edu_social-network_p32-task" + task + "_";
+		String[] assignments = {"ProfileServlet", "FollowerServlet", "HomepageServlet", "TimelineServlet"};
+		String assignment = assignments[task - 1];
 
-		generateHintsForGS(DATA_DIR + "input.csv", "TimelineServlet");
+		generateHintsForGS(dataDir + "input.csv", assignment, dataDir, separator);
 	}
 
 	/*
@@ -130,58 +131,6 @@ public class JavaImport {
 	 * 
 	 * break; } } }
 	 */
-	
-	static void clusterSolutions(List<Node> correct, String assignment) throws IOException {
-		SolutionClusterer clusterer = new SolutionClusterer(correct, assignment);
-		HashMap<String, HashMap<String, Instance>> solutionMaps = clusterer.clusterSolutions();
-		List<String> students = new ArrayList<String>(solutionMaps.keySet());
-		Collections.sort(students);
-		
-		// Open a csv file
-		File clusterCSV = new File(DATA_DIR + "cluster_info.csv");
-		FileWriter outputfile = new FileWriter(clusterCSV); 
-		  
-        // create CSVWriter object filewriter object as parameter 
-        CSVWriter writer = new CSVWriter(outputfile); 
-  
-        // adding header to csv 
-        List<String> header = new ArrayList<String>();
-        header.add("StudentID");
-        header.add("Timestamp"); 
-        header.add("ClusterID");
-        for (int i = 1; i <= clusterer.getNumSolutions(); i++) {
-        	header.add("Dist_" + i);
-        }
-        String[] tempHeader = new String[header.size()];
-        writer.writeNext(header.toArray(tempHeader)); 
-  
-        // add data to csv 
-        for (String student : students) {
-        	HashMap<String, Instance> timeMap = solutionMaps.get(student);
-        	List<String> timestamps = new ArrayList<String>(timeMap.keySet());
-        	String timestamp = timestamps.get(0);
-//        	Collections.sort(timestamps);
-//        	for (String timestamp : timestamps) {
-        		List<String> data = new ArrayList<String>();
-        		Instance inst = timeMap.get(timestamp);
-        		String clusterID = (String) inst.classValue();
-        		data.add(student); // student id
-        		data.add(timestamp); // timestamp
-        		data.add(clusterID); // cluster id
-        		
-        		// Add distances
-        		Iterator<Double> itr = inst.iterator();
-    			while (itr.hasNext()) {
-    				data.add(itr.next().toString());
-    			}
-    			String[] tempData = new String[data.size()];
-    			writer.writeNext(data.toArray(tempData));
-//        	}
-        }
-  
-        // closing writer connection 
-        writer.close(); 
-	}
 
 	/**
 	 * Exports html files highlighting hints
@@ -192,14 +141,13 @@ public class JavaImport {
 	 *                   ".java".
 	 * @throws IOException
 	 */
-	static void generateHintsForGS(String inputCSV, String assignment) throws IOException {
-		HashMap<String, LinkedHashMap<String, JavaNode>> attempts = loadAssignment(inputCSV, true, assignment);
+	static void generateHintsForGS(String inputCSV, String assignment, String dataDir, String separator) throws IOException {
+		HashMap<String, LinkedHashMap<String, JavaNode>> attempts = loadAssignment(inputCSV, true, assignment, dataDir, separator);
 
 		// Maps student id's to their history of submissions. Only students
 		// who eventually got correct are considered
 		LinkedHashMap<String, List<JavaNode>> correctTraces = new LinkedHashMap<>();
 		// List of correct submissions
-		List<Node> correct = new ArrayList<>();
 		LinkedHashMap<Integer, JavaNode> annotated = new LinkedHashMap<>();
 		for (String studentID : attempts.keySet()) {
 			List<JavaNode> trace = new ArrayList<>();
@@ -220,14 +168,9 @@ public class JavaImport {
 			// If it was correct, then add it to the subset
 			if (trace.get(trace.size() - 1).correct.orElse(false)) {
 				correctTraces.put(studentID, trace);
-				correct.add(trace.get(trace.size() - 1));
 			}
 		}
 		HintData hintData = createHintData(assignment, correctTraces);
-		if (!clustered) {
-			clusterSolutions(correct, assignment);
-	        return;
-		}
 		
 		for (int clusterID : annotated.keySet()) {
 			hintData.addReferenceSoltion(clusterID, annotated.get(clusterID));
@@ -245,7 +188,7 @@ public class JavaImport {
 			highlightedCode = highlightedCode.replace("\n", "<br>\n");
 			highlightedCode = "<meta http-equiv=\"content-type\" charset=\"utf-8\">\n" + "<link rel = \"stylesheet\"\n"
 					+ "   type = \"text/css\"\n" + "   href = \"../../../style.css\" />\n" + highlightedCode;
-			PrintWriter out = new PrintWriter(DATA_DIR + student + CMU_CS + timestamp + "/output_hints.html");
+			PrintWriter out = new PrintWriter(dataDir + student + separator + timestamp + "/output_hints.html");
 			out.println(highlightedCode);
 			out.close();
 
@@ -315,11 +258,10 @@ public class JavaImport {
 	 *
 	 */
 	static HashMap<String, LinkedHashMap<String, JavaNode>> loadAssignment(String inputCSV, boolean GS,
-			String assignment) throws IOException {
+			String assignment, String dataDir, String separator) throws IOException {
 		HashMap<String, LinkedHashMap<String, JavaNode>> filePathToNodes = new HashMap<>();
 		List<String[]> csvRecords = readCSV(inputCSV);
 
-		clustered = false;
 		for (String[] record : csvRecords) {
 			String timestamp = record[0];
 			String studentID = record[1];
@@ -327,36 +269,32 @@ public class JavaImport {
 			String isAnnotated = record[13];
 			String clusterID = record[14];
 
-			// JSONObject obj = new JSONObject(json);
-			File originalCode = new File(DATA_DIR + studentID + CMU_CS + timestamp + "/" + assignment + ".java");
+			File originalCode = new File(dataDir + studentID + separator + timestamp + "/" + assignment + ".java");
 			String originalSourceCode = new String(Files.readAllBytes(originalCode.toPath()));
 			String jsonString;
 			if (isAnnotated.toLowerCase().equals("true")) {
-				File annotatedCode = new File(DATA_DIR + studentID + CMU_CS + timestamp + "/" + assignment + ".json");
+				File annotatedCode = new File(dataDir + studentID + separator + timestamp + "/" + assignment + ".json");
 				jsonString = new String(Files.readAllBytes(annotatedCode.toPath()));
 			}else {
 				jsonString = ASTParserJSON.toJSON(originalSourceCode);
 			}
 			
 			// TODO has to be commented out
-//			if ((studentID + CMU_CS + timestamp).equals("84895@andrew.cmu.edu_social-network_p32-task4_20191003042705") || 
-//					(studentID + CMU_CS + timestamp).equals("69641@andrew.cmu.edu_social-network_p32-task4_20191013030137") || 
-//					(studentID + CMU_CS + timestamp).equals("27319@andrew.cmu.edu_social-network_p32-task4_20191011031955")) {
-//				PrintWriter out = new PrintWriter(DATA_DIR + studentID + CMU_CS + timestamp + "/" + assignment + ".json");
+//			if ((studentID + separator + timestamp).equals("84895@andrew.cmu.edu_social-network_p32-task4_20191003042705") || 
+//					(studentID + separator + timestamp).equals("69641@andrew.cmu.edu_social-network_p32-task4_20191013030137") || 
+//					(studentID + separator + timestamp).equals("27319@andrew.cmu.edu_social-network_p32-task4_20191011031955")) {
+//				PrintWriter out = new PrintWriter(dataDir + studentID + separator + timestamp + "/" + assignment + ".json");
 //				out.println(jsonString);
 //				out.close();
 //			}
 			
 			JSONObject parsedTree = new JSONObject(jsonString);
-			// JavaNode node = (JavaNode) TextualNode.fromJSON(obj, sourceCode,
-			// JavaNode::new);
 			JavaNode node = (JavaNode) JavaNode.fromJSON(parsedTree, originalSourceCode, JavaNode::new);
 			if (isCorrect.toLowerCase().equals("true")) {// || GS) {
 				node.correct = Optional.of(true);
 			}
 			if (!clusterID.equals("")) {
 				node.cluster = Optional.of(Integer.parseInt(clusterID));
-				clustered = true;
 			}
 
 			node.setStudentID(studentID);
@@ -365,12 +303,7 @@ public class JavaImport {
 			if (filePathToNodes.get(studentID) == null) {
 				filePathToNodes.put(studentID, new LinkedHashMap<String, JavaNode>());
 			}
-			/*
-			 * if(filePathToNodes.get(studentID).get(timestamp) == null) {
-			 * filePathToNodes.get(studentID).put(timestamp, node); }
-			 */
 			filePathToNodes.get(studentID).put(timestamp, node);
-			// filePathToNodes.get(studentID).get(timestamp).add(node);
 		}
 
 		return filePathToNodes;
