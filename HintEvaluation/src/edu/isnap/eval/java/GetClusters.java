@@ -21,15 +21,19 @@ import net.sf.javaml.core.Instance;
 public class GetClusters {
 
 	public static void main(String[] args) throws IOException {
-		int task = 4;
-		String dataDir = "../data/F19_Project_3_2/task" + task + "/";
-		String separator = "@andrew.cmu.edu_social-network_p32-task" + task + "_";
-		String[] assignments = {"ProfileServlet", "FollowerServlet", "HomepageServlet", "TimelineServlet"};
-		String assignment = assignments[task - 1];
-		String outFile = dataDir + "cluster_info_v2.csv";
+		int task = 1;
+		// String dataDir = "../data/F19_Project_3_2/task" + task + "/";
+		String dataDir = "../data/S20_3.3_OPE_Grading_Anon/3.3_OPE_Submissions-anonymized/"; // The path to the folder containing different students' source files
+		// String separator = "@andrew.cmu.edu_social-network_p32-task" + task + "_";
+		String separator = "@andrew.cmu.edu_data-consistency-ope_consistency-ope-task_"; // You may not need this. This is useful when the names of folders for different students share separator string.
+		// String[] assignments = {"ProfileServlet", "FollowerServlet", "HomepageServlet", "TimelineServlet"};
+		String[] assignments = {"BankUserConcurrentGet", "BankUserConcurrentPut", "BankUserMultiThreaded", "BankUserStrongConsistency"};
+		String assignment = assignments[task - 1]; // The name of the source file
+		String sourcePath = "/src/main/java/Project_OMP/BankUserSystem/"; // The path to the source file folder for each student
+		String outFile = dataDir + "cluster_info_task" + task + ".csv";
 
 		HashMap<String, LinkedHashMap<String, JavaNode>> attempts = JavaImport.loadAssignment(
-				dataDir + "input.csv", true, assignment, dataDir, separator);
+				dataDir + "input_task" + task + ".csv", true, assignment, dataDir, separator, sourcePath);
 
 		List<Node> correct = new ArrayList<>();
 		LinkedHashMap<Integer, JavaNode> annotated = new LinkedHashMap<>();

@@ -54,12 +54,16 @@ public class JavaImport {
 		// them out
 		// You need to update the file path to wherever you unzipped the data
 		int task = 4;
-		String dataDir = "../data/F19_Project_3_2/task" + task + "/";
-		String separator = "@andrew.cmu.edu_social-network_p32-task" + task + "_";
-		String[] assignments = {"ProfileServlet", "FollowerServlet", "HomepageServlet", "TimelineServlet"};
+		// String dataDir = "../data/F19_Project_3_2/task" + task + "/";
+		String dataDir = "../data/S20_3.3_OPE_Grading_Anon/3.3_OPE_Submissions-anonymized/";
+		// String separator = "@andrew.cmu.edu_social-network_p32-task" + task + "_";
+		String separator = "@andrew.cmu.edu_data-consistency-ope_consistency-ope-task_";
+		// String[] assignments = {"ProfileServlet", "FollowerServlet", "HomepageServlet", "TimelineServlet"};
+		String[] assignments = {"BankUserConcurrentGet", "BankUserConcurrentPut", "BankUserMultiThreaded", "BankUserStrongConsistency"};
 		String assignment = assignments[task - 1];
-
-		generateHintsForGS(dataDir + "input.csv", assignment, dataDir, separator);
+		String sourcePath = "/src/main/java/Project_OMP/BankUserSystem/"; // The path to the source file folder for each student
+		
+		generateHintsForGS(dataDir + "input_task" + task + ".csv", assignment, dataDir, separator, sourcePath);
 	}
 
 	/*
@@ -141,8 +145,8 @@ public class JavaImport {
 	 *                   ".java".
 	 * @throws IOException
 	 */
-	static void generateHintsForGS(String inputCSV, String assignment, String dataDir, String separator) throws IOException {
-		HashMap<String, LinkedHashMap<String, JavaNode>> attempts = loadAssignment(inputCSV, true, assignment, dataDir, separator);
+	static void generateHintsForGS(String inputCSV, String assignment, String dataDir, String separator, String sourcePath) throws IOException {
+		HashMap<String, LinkedHashMap<String, JavaNode>> attempts = loadAssignment(inputCSV, true, assignment, dataDir, separator, sourcePath);
 
 		// Maps student id's to their history of submissions. Only students
 		// who eventually got correct are considered
@@ -258,7 +262,7 @@ public class JavaImport {
 	 *
 	 */
 	static HashMap<String, LinkedHashMap<String, JavaNode>> loadAssignment(String inputCSV, boolean GS,
-			String assignment, String dataDir, String separator) throws IOException {
+			String assignment, String dataDir, String separator, String sourcePath) throws IOException {
 		HashMap<String, LinkedHashMap<String, JavaNode>> filePathToNodes = new HashMap<>();
 		List<String[]> csvRecords = readCSV(inputCSV);
 
@@ -268,8 +272,12 @@ public class JavaImport {
 			String isCorrect = record[10];
 			String isAnnotated = record[13];
 			String clusterID = record[14];
+			
+			/*
+			 * if (isCorrect.toLowerCase().equals("false")) { continue; }
+			 */
 
-			File originalCode = new File(dataDir + studentID + separator + timestamp + "/" + assignment + ".java");
+			File originalCode = new File(dataDir + studentID + separator + timestamp + sourcePath + assignment + ".java");
 			String originalSourceCode = new String(Files.readAllBytes(originalCode.toPath()));
 			String jsonString;
 			if (isAnnotated.toLowerCase().equals("true")) {
