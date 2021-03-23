@@ -1,9 +1,9 @@
 package edu.isnap.node;
 
+
+
 import java.util.Optional;
-
 import org.json.JSONObject;
-
 import edu.isnap.node.ASTNode.SourceLocation;
 import edu.isnap.sourcecheck.NodeAlignment.Mapping;
 
@@ -105,9 +105,24 @@ public abstract class TextualNode extends Node {
 		return null;
 	}
 
-	public static TextualNode fromJSON(JSONObject jsonAST, String source,
-			NodeConstructor constructor) {
+	public static TextualNode fromJSON(JSONObject jsonAST, String source, NodeConstructor constructor) {
 		ASTSnapshot astNode = ASTSnapshot.parse(jsonAST, source);
+		TextualNode node = (TextualNode) fromASTNode(astNode, constructor);
+		node.source = source;
+		node.correct = Optional.of(astNode.isCorrect);
+		return node;
+	}
+	
+	/**
+	 * Overloaded method to get clusterID
+	 * @param jsonAST
+	 * @param id
+	 * @param source
+	 * @param constructor
+	 * @return
+	 */
+	public static TextualNode fromJSON(JSONObject jsonAST,String id, String source, NodeConstructor constructor) {
+		ASTSnapshot astNode = ASTSnapshot.parse(jsonAST, id, source);
 		TextualNode node = (TextualNode) fromASTNode(astNode, constructor);
 		node.source = source;
 		node.correct = Optional.of(astNode.isCorrect);
