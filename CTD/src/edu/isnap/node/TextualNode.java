@@ -50,7 +50,7 @@ public abstract class TextualNode extends Node {
 		String rootSource = ((TextualNode) root()).source;
 		if (startSourceLocation == null && endSourceLocation == null) return null;
 		return rootSource.substring(
-				toIndex(rootSource, startSourceLocation),
+				toIndex(rootSource, startSourceLocation) - 1,
 				toIndex(rootSource, endSourceLocation));
 	}
 
