@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="src" path="CTD/src"/>
+	<classpathentry kind="src" path="data/F19_Project_3_2/task1/58376@andrew.cmu.edu_social-network_p32-task1_20191013053247"/>
+	<classpathentry kind="src" path="data/F19_Project_3_2/task2/58376@andrew.cmu.edu_social-network_p32-task2_20191013053354"/>
+	<classpathentry kind="src" path="data/F19_Project_3_2/task4/58376@andrew.cmu.edu_social-network_p32-task4_20191013050650"/>
+	<classpathentry kind="src" path="data/F19_Project_3_2/task4/58376@andrew.cmu.edu_social-network_p32-task4_20191013051101"/>
+	<classpathentry kind="src" path="data/F19_Project_3_2/task4/58376@andrew.cmu.edu_social-network_p32-task4_20191013051714"/>
+	<classpathentry kind="src" path="data/F19_Project_3_2/task4/58376@andrew.cmu.edu_social-network_p32-task4_20191013051925"/>
+	<classpathentry kind="src" path="HintEvaluation/src"/>
+	<classpathentry kind="src" path="HintServer/src"/>
+	<classpathentry kind="src" path="iSnap/src"/>
+	<classpathentry kind="src" path="JavaParser/src"/>
+	<classpathentry kind="src" path="QualityScore/src"/>
+	<classpathentry kind="src" path="SnapParser/src"/>
+	<classpathentry kind="src" path="Templater/src"/>
+	<classpathentry kind="lib" path="CTD/RTED_v1.1.jar"/>
+	<classpathentry kind="lib" path="data/F19_Project_3_2/task4/47922@andrew.cmu.edu_social-network_p32-task4_20191013184035/target/undertow-server-1.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="data/F19_Project_3_2/task4/47922@andrew.cmu.edu_social-network_p32-task4_20191013184306/target/undertow-server-1.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="data/F19_Project_3_2/task4/47922@andrew.cmu.edu_social-network_p32-task4_20191013185737/target/undertow-server-1.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="data/F19_Project_3_2/task4/47922@andrew.cmu.edu_social-network_p32-task4_20191013190657/target/undertow-server-1.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="data/F19_Project_3_2/task5/47922@andrew.cmu.edu_social-network_p32-task5_20191013193400/target/undertow-server-1.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="data/F19_Project_3_2/task5/47922@andrew.cmu.edu_social-network_p32-task5_20191013193529/target/undertow-server-1.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="data/F19_Project_3_2/task5/47922@andrew.cmu.edu_social-network_p32-task5_20191013193622/target/undertow-server-1.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="data/F19_Project_3_2/task5/47922@andrew.cmu.edu_social-network_p32-task5_20191013193716/target/undertow-server-1.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="HintEvaluation/apted.jar"/>
+	<classpathentry kind="lib" path="HintEvaluation/FITObjectGraphAPI-3.0.1.jar"/>
+	<classpathentry kind="lib" path="HintEvaluation/FITObjectGraphs-3.0.1.jar"/>
+	<classpathentry kind="lib" path="HintEvaluation/FITValidators-2.0.0.jar"/>
+	<classpathentry kind="output" path="CTD/target/classes"/>
+</classpath>

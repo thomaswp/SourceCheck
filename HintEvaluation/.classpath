@@ -24,5 +24,13 @@
 	<classpathentry kind="lib" path="FITObjectGraphs-3.0.1.jar"/>
 	<classpathentry kind="lib" path="FITValidators-2.0.0.jar"/>
 	<classpathentry kind="lib" path="apted.jar"/>
+	<classpathentry kind="src" path="/JavaParser"/>
+	<classpathentry kind="lib" path="/Users/akounoroushi/javaml-0.1.7/javaml-0.1.7.jar"/>
+	<classpathentry kind="lib" path="/Users/akounoroushi/javaml-0.1.7/lib/ajt-2.9.jar"/>
+	<classpathentry kind="lib" path="/Users/akounoroushi/javaml-0.1.7/lib/commons-math-1.2.jar"/>
+	<classpathentry kind="lib" path="/Users/akounoroushi/javaml-0.1.7/lib/Jama-1.0.2.jar"/>
+	<classpathentry kind="lib" path="/Users/akounoroushi/javaml-0.1.7/lib/libsvm.jar"/>
+	<classpathentry kind="lib" path="/Users/akounoroushi/javaml-0.1.7/lib/weka.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/HighLevelHints"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

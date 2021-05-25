@@ -11,6 +11,9 @@ public abstract class HintConfig implements Serializable {
 
 	/** If true, uses new version of SourceCheck with more global alignment */
 	public boolean sourceCheckV2 = false;
+	
+	/** If true, uses reference solutions to get high-level hints */
+	public boolean useAnnotation = true;
 
 	/**
 	 * Should return true if the hint generator can expect traces to keep consistent node IDs

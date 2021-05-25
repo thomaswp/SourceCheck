@@ -72,6 +72,9 @@ public class NodeAlignment {
 			}
 		}
 
+		/**
+		 * @return distance between "from" and "to"??
+		 */
 		public double cost() {
 			return cost;
 		}
@@ -300,21 +303,22 @@ public class NodeAlignment {
 		return calculateMapping(distanceMeasure, null);
 	}
 
-	private Mapping calculateMapping(DistanceMeasure distanceMeasure, Mapping previousMapping) {
+	public Mapping calculateMapping(DistanceMeasure distanceMeasure, Mapping previousMapping) {
 		mapping = new Mapping(from, to, config);
 		// If we're given a previous mapping, we use it to calculate value mappings
 		if (previousMapping != null) mapping.calculateValueMappings(previousMapping);
 
+		// Behaves differently depending on previousMapping
 		to.resetAnnotations();
 		ListMap<String, Node> fromMap = getChildMap(from, true);
 		ListMap<String, Node> toMap = getChildMap(to, false);
 
-		for (String key : fromMap.keySet()) {
+		for (String key : fromMap.keySet()) { // Iterate over root paths from shortest to longest
 			List<Node> fromNodes = fromMap.get(key);
 			List<Node> toNodes = toMap.get(key);
 
 			if (toNodes == null) {
-				// Continue if we have no toNodes to match
+				// Continue if we have no toNodes to match because the same root path isn't in "to" (i.e. B)
 				continue;
 			}
 
@@ -322,8 +326,8 @@ public class NodeAlignment {
 			// other containers e.g. Sprites, so we make sure only descendants of a given container
 			// are aligned
 			// TODO: Why do String IDs work so much faster than IDHashMap
-			ListMap<String, Node> fromContainers = new ListMap<>();
-			ListMap<String, Node> toContainers = new ListMap<>();
+			ListMap<String, Node> fromContainers = new ListMap<>(); // map root node or null to "from"?
+			ListMap<String, Node> toContainers = new ListMap<>(); // map root node or null to "to"?
 			for (Node from : fromNodes) {
 				Node container = getContainer(distanceMeasure, from);
 				fromContainers.add(container == null ? null : container.id, from);
@@ -334,6 +338,7 @@ public class NodeAlignment {
 			}
 
 			for (String containerID : fromContainers.keySet()) {
+				// Get child sequences?
 				List<Node> containedFrom = fromContainers.get(containerID);
 				List<Node> containedTo = toContainers.get(containerID);
 				if (containedTo == null) continue;
@@ -430,6 +435,13 @@ public class NodeAlignment {
 		}
 	};
 
+	/**
+	 * 
+	 * @param fromNodes child sequence of "from" node (i.e. a_{ri} in the paper)
+	 * @param toNodes child sequence of "to" node (i.e. b_{ri} in the paper)
+	 * @param distanceMeasure
+	 * @param fromMap
+	 */
 	private void align(List<Node> fromNodes, List<Node> toNodes,
 			DistanceMeasure distanceMeasure, final ListMap<String, Node> fromMap) {
 		String[][] fromStates = stateArray(fromNodes, true);
@@ -439,7 +451,7 @@ public class NodeAlignment {
 		String type = fromNodes.get(0).type();
 
 		double minCost = Integer.MAX_VALUE;
-		double[][] costMatrix = new double[fromStates.length][toStates.length];
+		double[][] costMatrix = new double[fromStates.length][toStates.length]; // pairwise distance
 		CountMap<Double> costCounts = new CountMap<>();
 		for (int i = 0; i < fromStates.length; i++) {
 			for (int j = 0; j < toStates.length; j++) {
@@ -452,7 +464,7 @@ public class NodeAlignment {
 				minCost = Math.min(minCost, cost);
 			}
 		}
-		for (int i = 0; i < fromStates.length; i++) {
+		for (int i = 0; i < fromStates.length; i++) { // Break ties
 			for (int j = 0; j < toStates.length; j++) {
 				Node from = fromNodes.get(i), to = toNodes.get(j);
 				double cost = costMatrix[i][j];
@@ -490,7 +502,7 @@ public class NodeAlignment {
 		}
 
 		HungarianAlgorithm alg = new HungarianAlgorithm(costMatrix);
-		int[] matching = alg.execute();
+		int[] matching = alg.execute(); // matching[k] = l means the k-th node in a_{ri} is matched with the l-th node in b_{rj}
 		Set<Integer> matchedTo = new HashSet<>();
 
 		// We pre-compute whether each of the from and to nodes have been previous put in the
@@ -658,6 +670,14 @@ public class NodeAlignment {
 		return needsReorder;
 	}
 
+	/**
+	 * @param a
+	 * @param b
+	 * @param config
+	 * @param dm
+	 * @return the difference between string representations of a and b obtained by 
+	 * depth-first iteration
+	 */
 	public static double getSubCostEsitmate(Node a, Node b, HintConfig config, DistanceMeasure dm) {
 		String[] aDFI = a.depthFirstIteration();
 		String[] bDFI = b.depthFirstIteration();
@@ -678,6 +698,11 @@ public class NodeAlignment {
 		return states;
 	}
 
+	/**
+	 * 
+	 * @param nodes
+	 * @return relative positions of annotations?
+	 */
 	private int[][] orderGroups(List<Node> nodes) {
 		int[][] orderGroups = new int[nodes.size()][];
 		for (int i = 0; i < orderGroups.length; i++) {
@@ -717,6 +742,14 @@ public class NodeAlignment {
 		return Arrays.toString(list);
 	}
 
+	/**
+	 * @param from node of current student's code for which we show hints 
+	 * @param matches lists from which we find the closest
+	 * @param distanceMeasure the definition of distance between source codes
+	 * @param config
+	 * @param maxReturned the number of the closest codes to return
+	 * @return a list of the mappings from "from" to codes in "matches"
+	 */
 	public static List<Mapping> findBestMatches(Node from, List<Node> matches,
 			DistanceMeasure distanceMeasure, HintConfig config, int maxReturned) {
 		List<Mapping> best = new LinkedList<>();
@@ -825,15 +858,17 @@ public class NodeAlignment {
 			}
 
 			HungarianAlgorithm alg = new HungarianAlgorithm(costMatrix);
-			int[] matching = alg.execute();
+			// i-th node in fromNodes is assigned to matching[i]-th node in toNodes
+			int[] matching = alg.execute(); 
 
 			for (int i = 0; i < fromNodes.size(); i++) {
 				int j = matching[i];
-				if (j < 0) continue;
+				if (j < 0) continue; // i-th node in fromNodes is unassigned
 
 				// TODO: determine/config
-				if (costMatrix[i][j] > 1000) continue;
-				mapping.put(fromNodes.get(i), toNodes.get(j));
+				// too large. Leave j-th node in toNodes unassigned
+				if (costMatrix[i][j] > 1000) continue; 
+				mapping.put(fromNodes.get(i), toNodes.get(j)); // add assignment to mapping
 			}
 		}
 
@@ -923,6 +958,12 @@ public class NodeAlignment {
 		});
 	}
 
+	/**
+	 * 
+	 * @param node
+	 * @param isFrom
+	 * @return a list of strings of types of the parent nodes staring from the closest parent
+	 */
 	private String[] getRootPathArray(Node node, boolean isFrom) {
 		String[] rp = new String[node.rootPathLength()];
 		int i = rp.length - 1;
@@ -933,6 +974,13 @@ public class NodeAlignment {
 		return rp;
 	}
 
+	/**
+	 * 
+	 * @param node
+	 * @param isFrom true if node is the current student's code 
+	 * @return ListMap (extends LinkedHashMap) that maps type or value strings in the AST
+	 * to "node"
+	 */
 	private ListMap<String, Node> getNodesByType(Node node, boolean isFrom) {
 		final ListMap<String, Node> map = new ListMap<>(MapFactory.LinkedHashMapFactory);
 		node.recurse(new Action() {

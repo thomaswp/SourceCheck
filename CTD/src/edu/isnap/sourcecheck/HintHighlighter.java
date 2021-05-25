@@ -50,7 +50,7 @@ public class HintHighlighter {
 
 	public final HintConfig config;
 	public final HintData hintData;
-	final List<Node> solutions;
+	private final List<Node> solutions;
 
 	public final static IDataConsumer DataConsumer = new IDataConsumer() {
 		@Override
@@ -106,12 +106,16 @@ public class HintHighlighter {
 		return highlight(node, mapping);
 	}
 
+	/**
+	 * @param node current student's code for which we show hints
+	 * @return a list of edits with priorities
+	 */
 	public List<EditHint> highlightWithPriorities(Node node) {
 		Mapping mapping = findSolutionMapping(node);
 		return highlightWithPriorities(node, mapping);
 	}
 
-	private List<EditHint> highlightWithPriorities(Node node, Mapping mapping) {
+	public List<EditHint> highlightWithPriorities(Node node, Mapping mapping) {
 		List<EditHint> hints = highlight(node, mapping);
 		new HintPrioritizer(this).assignPriorities(mapping, hints);
 		return hints;
@@ -121,6 +125,12 @@ public class HintHighlighter {
 		return highlight(node, mapping, true);
 	}
 
+	/**
+	 * @param node current student's code for which we show hints
+	 * @param mapping
+	 * @param reuseDeletedBlocks
+	 * @return
+	 */
 	public List<EditHint> highlight(Node node, final Mapping mapping,
 			boolean reuseDeletedBlocks) {
 		final List<EditHint> edits = new ArrayList<>();
@@ -555,6 +565,10 @@ public class HintHighlighter {
 		return new ProgressDistanceMeasure(config);
 	}
 
+	/**
+	 * @param node current student's code for which we show hints
+	 * @return the mapping from "node" to the closest solution
+	 */
 	public Mapping findSolutionMapping(Node node) {
 		long startTime = System.currentTimeMillis();
 
@@ -574,16 +588,21 @@ public class HintHighlighter {
 		return bestMatch;
 	}
 
+	/**
+	 * @param node current student's code for which we show hints
+	 * @param maxReturned the number of the closest codes to return
+	 * @return a mapping from "node" to maxReturned number of closest "solutions"
+	 */
 	public List<Mapping> findBestMappings(Node node, int maxReturned) {
 		DistanceMeasure dm = getDistanceMeasure(config);
-		List<Node> filteredSolutions = solutions;
+		List<Node> filteredSolutions = getSolutions();
 
 		RulesModel rulesModel = hintData.getModel(RulesModel.class);
 		RuleSet ruleSet = rulesModel == null ? null : rulesModel.getRuleSet();
 
 		if (ruleSet != null) {
 			RuleSet.trace = trace;
-			filteredSolutions = ruleSet.filterSolutions(solutions, node);
+			filteredSolutions = ruleSet.filterSolutions(getSolutions(), node);
 			if (filteredSolutions.size() == 0) throw new RuntimeException("No solutions!");
 		}
 		return NodeAlignment.findBestMatches(node, filteredSolutions, dm, config, maxReturned);
@@ -775,7 +794,7 @@ public class HintHighlighter {
 
 		double minDis = Double.MAX_VALUE;
 		Node best = null;
-		for (Node solution : solutions) {
+		for (Node solution : getSolutions()) {
 			double dis = Alignment.alignCost(nodeSeq, solution.depthFirstIteration());
 			if (dis < minDis) {
 				best = solution;
@@ -795,5 +814,9 @@ public class HintHighlighter {
 		}
 
 		return highlight(node, mapping);
+	}
+
+	public List<Node> getSolutions() {
+		return solutions;
 	}
 }

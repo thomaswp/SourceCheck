@@ -38,7 +38,7 @@ public class ConsensusHintHighlighter extends HintHighlighter {
 		double consensusThreshold = 0.6;
 
 		List<Mapping> matches = NodeAlignment.findBestMatches(
-				node, solutions, getDistanceMeasure(config), config, nMatches);
+				node, getSolutions(), getDistanceMeasure(config), config, nMatches);
 
 		final int n = matches.size();
 		final int thresh = (int) Math.ceil(n * consensusThreshold);
